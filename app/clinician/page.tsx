@@ -8,17 +8,17 @@ type ReportRow = {
   id: string
   created_at: string
   score_numeric: number
-  risk_level: 'low' | 'moderate' | 'high'
+  risk_level: 'low' | 'moderate' | 'high' | null
   assessment_id: string
-  assessments?: {
+  assessments: {
     id: string
     patient_id: string
-    patient_profiles?: {
+    patient_profiles: {
       id: string
       full_name: string | null
       user_id: string
-    } | null
-  } | null
+    }[]
+  }[]
 }
 
 export default function ClinicianOverviewPage() {
@@ -55,7 +55,7 @@ export default function ClinicianOverviewPage() {
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        setReports((data ?? []) as ReportRow[])
+        setReports((data ?? []) as unknown as ReportRow[])
       } catch (e: any) {
         console.error(e)
         setError(e.message ?? 'Fehler beim Laden der Reports.')
