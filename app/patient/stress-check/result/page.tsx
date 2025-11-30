@@ -1,12 +1,19 @@
 import { Suspense } from 'react'
 import StressResultClient from './StressResultClient'
 
-// Wichtig: Diese Flags sorgen dafür, dass Next nicht versucht,
-// die Seite statisch zu prerendern und immer zur Laufzeit rendert.
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
-export default function StressResultPage() {
+type Props = {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default function StressResultPage({ searchParams }: Props) {
+  // Unterstütze beide Varianten: ?assessmentId=... und ?assessment=...
+  const rawParam = searchParams.assessmentId ?? searchParams.assessment
+
+  const assessmentId = Array.isArray(rawParam) ? rawParam[0] : rawParam
+
   return (
     <Suspense
       fallback={
@@ -15,7 +22,7 @@ export default function StressResultPage() {
         </main>
       }
     >
-      <StressResultClient />
+      <StressResultClient assessmentId={assessmentId} />
     </Suspense>
   )
 }
