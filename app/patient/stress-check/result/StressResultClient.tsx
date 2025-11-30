@@ -1,6 +1,6 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -14,9 +14,14 @@ type Report = {
 }
 
 export default function StressResultClient() {
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const assessmentId = searchParams.get('assessmentId')
+  const searchParams = useSearchParams()
+
+  // Unterstütze beide Varianten: ?assessmentId=... und ?assessment=...
+  const rawParam =
+    searchParams.get('assessmentId') ?? searchParams.get('assessment')
+
+  const assessmentId = rawParam ?? undefined
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +68,7 @@ export default function StressResultClient() {
 
         const result = await response.json()
 
-        // 3) Versuchen, den neu erzeugten Report aus Supabase zu lesen
+        // 3) Neu erzeugten Report aus Supabase lesen
         const { data: newReport, error: newReportError } = await supabase
           .from('reports')
           .select('*')
