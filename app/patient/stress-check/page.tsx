@@ -88,7 +88,10 @@ export default function StressCheckPage() {
       if (answersError) throw answersError
 
       // 4) Weiterleiten zur Result-Seite
-      router.push(`/patient/stress-check/result?assessment=${assessmentId}`)
+
+      router.push(`/patient/stress-check/result?assessmentId=${assessmentData.id}`)
+
+
     } catch (err: any) {
       console.error('Fehler:', err.message)
     } finally {
