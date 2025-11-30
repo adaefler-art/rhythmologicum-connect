@@ -34,7 +34,7 @@ export default function StressResultClient() {
         setLoading(true)
         setError(null)
 
-        // 1) Gibt es schon einen Report?
+        // 1) Prüfen, ob bereits ein Report existiert
         const { data, error } = await supabase
           .from('reports')
           .select('*')
@@ -49,7 +49,7 @@ export default function StressResultClient() {
           return
         }
 
-        // 2) Wenn nicht: AMY-API aufrufen und Report erzeugen
+        // 2) Wenn nicht: AMY/Claude aufrufen
         const response = await fetch('/api/amy/stress-report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -63,10 +63,7 @@ export default function StressResultClient() {
 
         const result = await response.json()
 
-        // Du hattest schon geprüft, dass sowas in der Art zurückkommt:
-        // { ok: true, score: number, analysis: string }
-        // Hier könnte auch der frisch erzeugte Report zurückkommen, falls du das im Backend schon speicherst.
-        // Minimal: wir lesen ihn danach aus Supabase.
+        // 3) Versuchen, den neu erzeugten Report aus Supabase zu lesen
         const { data: newReport, error: newReportError } = await supabase
           .from('reports')
           .select('*')
@@ -74,10 +71,11 @@ export default function StressResultClient() {
           .maybeSingle()
 
         if (newReportError) throw newReportError
+
         if (newReport) {
           setReport(newReport as Report)
         } else {
-          // Fallback: trotzdem Score + Text aus result verwenden
+          // Fallback: Benutze das, was AMY zurückgegeben hat
           setReport({
             id: 'local',
             created_at: new Date().toISOString(),
