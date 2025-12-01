@@ -4,31 +4,53 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
+type Mode = 'login' | 'signup'
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [mode, setMode] = useState<'login' | 'signup'>('signup')
+  const [mode, setMode] = useState<Mode>('login')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null) // neu: Erfolgsmeldungen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+    setInfo(null)
+
+    const trimmedEmail = email.trim()
+    const trimmedPassword = password.trim()
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setError('Bitte E-Mail und Passwort eingeben.')
+      return
+    }
+
+    setLoading(true)
 
     try {
       if (mode === 'signup') {
         const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: trimmedEmail,
+          password: trimmedPassword,
         })
+
         if (signUpError) throw signUpError
+
+        // Erfolgsmeldung für Signup
+        setInfo(
+          'Ihr Konto wurde angelegt. Bitte prüfen Sie Ihre E-Mails, um Ihre Adresse zu bestätigen.'
+        )
+
+        return // kein sofortiger Login → User soll Mail bestätigen
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: trimmedEmail,
+          password: trimmedPassword,
         })
+
         if (signInError) throw signInError
       }
 
@@ -39,95 +61,148 @@ export default function LoginPage() {
       } = await supabase.auth.getUser()
 
       if (userError) throw userError
-      if (!user) throw new Error('Kein User nach Login gefunden')
+      if (!user) throw new Error('Kein Benutzerprofil gefunden.')
 
-      // patient_profile sicherstellen (upsert = Insert oder Update)
+      // patient_profile sicherstellen
       const { error: profileError } = await supabase
         .from('patient_profiles')
         .upsert(
           {
             user_id: user.id,
-            full_name: user.email, // Platzhalter, kann später geändert werden
+            full_name: user.email ?? trimmedEmail,
           },
-          {
-            onConflict: 'user_id',
-          },
+          { onConflict: 'user_id' }
         )
 
       if (profileError) throw profileError
 
-      // weiter zur Stress-Check-Seite
       router.push('/patient/stress-check')
     } catch (err: any) {
       console.error(err)
-      setError(err.message ?? 'Unbekannter Fehler')
+      const message =
+        err?.message ??
+        err?.error_description ??
+        'Es ist ein unerwarteter Fehler aufgetreten.'
+      setError(message)
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md border rounded-xl p-6 shadow-sm">
-        <h1 className="text-2xl font-bold mb-4 text-center">
-          Rhythm – {mode === 'signup' ? 'Registrierung' : 'Login'}
-        </h1>
+  const canSubmit =
+    email.trim() !== '' && password.trim() !== '' && !loading
 
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-10">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
+        
+        {/* Branding */}
+        <div className="text-center mb-8">
+          <div className="mx-auto w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center">
+            <span className="text-sky-600 font-semibold text-xl">R</span>
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mt-3">
+            Rhythmologicum Connect
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+            Willkommen! Dieser Bereich dient dem sicheren Zugang zu Ihrem 
+            persönlichen Stress- & Resilienz-Programm.
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 grid grid-cols-2 rounded-full bg-slate-100 p-1 text-sm font-medium">
+          <button
+            type="button"
+            onClick={() => setMode('login')}
+            className={`rounded-full py-2 transition ${
+              mode === 'login'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            Einloggen
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('signup')}
+            className={`rounded-full py-2 transition ${
+              mode === 'signup'
+                ? 'bg-white shadow-sm text-slate-900'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            Registrieren
+          </button>
+        </div>
+
+        {/* Formular */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* E-Mail */}
           <div>
-            <label className="block text-sm mb-1">E-Mail</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              E-Mail
+            </label>
             <input
               type="email"
-              className="w-full border rounded px-3 py-2"
+              required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
             />
           </div>
 
+          {/* Passwort */}
           <div>
-            <label className="block text-sm mb-1">Passwort</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Passwort
+            </label>
             <input
               type="password"
-              className="w-full border rounded px-3 py-2"
+              required
+              minLength={6}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
             />
+            <p className="mt-1 text-xs text-slate-400">Mindestens 6 Zeichen.</p>
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {/* Fehlermeldung */}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
 
+          {/* Erfolgsmeldung (nur Signup) */}
+          {info && (
+            <p className="text-sm text-green-600 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+              {info}
+            </p>
+          )}
+
+          {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-2 rounded bg-black text-white font-semibold disabled:opacity-60"
+            disabled={!canSubmit}
+            className="w-full py-2.5 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 disabled:opacity-60 transition"
           >
             {loading
-              ? 'Bitte warten...'
+              ? 'Bitte warten…'
               : mode === 'signup'
               ? 'Konto anlegen'
               : 'Einloggen'}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm">
-          {mode === 'signup' ? (
-            <button
-              className="underline"
-              onClick={() => setMode('login')}
-            >
-              Ich habe schon ein Konto – zum Login
-            </button>
-          ) : (
-            <button
-              className="underline"
-              onClick={() => setMode('signup')}
-            >
-              Ich brauche ein Konto – registrieren
-            </button>
-          )}
-        </div>
+        {/* Microcopy unten */}
+        <p className="mt-6 text-center text-xs text-slate-400 leading-relaxed">
+          Ihre Angaben werden vertraulich behandelt und ausschließlich zur 
+          Durchführung Ihrer Stress- & Resilienz-Analyse genutzt.
+        </p>
       </div>
     </main>
   )
