@@ -27,7 +27,12 @@ export default function StressCheckPage() {
     const checkAuth = async () => {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser()
+
+      if (error) {
+        console.error('Fehler bei getUser:', error)
+      }
 
       if (!user) {
         router.push('/login')
@@ -46,54 +51,80 @@ export default function StressCheckPage() {
   }
 
   const handleSubmit = async () => {
-    if (!userId) return
+    if (!userId) {
+      console.error('Kein userId in handleSubmit')
+      return
+    }
 
     setLoading(true)
 
     try {
-      // 1) Patient Profile holen
-      const { data: profileData } = await supabase
+      // 1) Patient-Profile holen
+      const { data: profileData, error: profileError } = await supabase
         .from('patient_profiles')
         .select('id')
         .eq('user_id', userId)
         .single()
 
-      if (!profileData) throw new Error('Kein patient_profile gefunden')
+      console.log('patient_profiles Result:', { profileData, profileError })
 
-      // 2) Neues Assessment anlegen
+      if (profileError) {
+        throw profileError
+      }
+      if (!profileData) {
+        throw new Error('Kein patient_profile gefunden')
+      }
+
+      // 2) Assessment anlegen
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('assessments')
         .insert({
           patient_id: profileData.id,
           funnel: 'stress',
         })
-        .select()
+        .select('id')
         .single()
 
-      if (assessmentError) throw assessmentError
+      console.log('assessments Insert Result:', { assessmentData, assessmentError })
+
+      if (assessmentError) {
+        throw assessmentError
+      }
+      if (!assessmentData) {
+        throw new Error('Assessment konnte nicht angelegt werden')
+      }
 
       const assessmentId = assessmentData.id
 
-      // 3) Antworten speichern
+      // 3) Antworten vorbereiten
       const answerRows = Object.entries(answers).map(([qId, value]) => ({
         assessment_id: assessmentId,
         question_id: qId,
         answer_value: value,
       }))
 
-      const { error: answersError } = await supabase
+      console.log('Antworten, die gespeichert werden sollen:', answerRows)
+
+      // 4) Antworten speichern
+      const { data: insertedAnswers, error: answersError } = await supabase
         .from('assessment_answers')
         .insert(answerRows)
+        .select('*')
 
-      if (answersError) throw answersError
+      console.log('assessment_answers Insert Result:', {
+        insertedAnswers,
+        answersError,
+      })
 
-      // 4) Weiterleiten zur Result-Seite
+      if (answersError) {
+        throw answersError
+      }
 
-      router.push(`/patient/stress-check/result?assessmentId=${assessmentData.id}`)
-
-
+      // 5) Weiterleiten zur Result-Seite
+      router.push(`/patient/stress-check/result?assessmentId=${assessmentId}`)
     } catch (err: any) {
-      console.error('Fehler:', err.message)
+      console.error('Fehler in handleSubmit:', err)
+      alert('Fehler beim Speichern der Antworten – siehe Console.')
     } finally {
       setLoading(false)
     }

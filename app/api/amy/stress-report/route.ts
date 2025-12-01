@@ -1,133 +1,279 @@
 // app/api/amy/stress-report/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
-import Anthropic from '@anthropic-ai/sdk'
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+// Supabase-ENV robust auslesen
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
-export async function POST(req: NextRequest) {
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.warn(
+    '[stress-report] Supabase-Env nicht gesetzt. Bitte NEXT_PUBLIC_SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY prüfen.'
+  );
+}
+
+const supabase =
+  supabaseUrl && supabaseServiceKey
+    ? createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false },
+      })
+    : null;
+
+const anthropicApiKey =
+  process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_TOKEN;
+const MODEL =
+  process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929';
+
+const anthropic = anthropicApiKey
+  ? new Anthropic({ apiKey: anthropicApiKey })
+  : null;
+
+type RiskLevel = 'low' | 'moderate' | 'high';
+
+type AnswerRow = {
+  question_id: string | null;
+  answer_value: number | null;
+};
+
+const STRESS_KEYS = ['stress_q1', 'stress_q2', 'stress_q3', 'stress_q4', 'stress_q5'];
+
+const SLEEP_KEYS = ['sleep_q1', 'sleep_q2', 'sleep_q3'];
+
+function average(values: number[]): number | null {
+  if (!values.length) return null;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum / values.length;
+}
+
+function computeScores(answers: AnswerRow[]) {
+  const stressVals = answers
+    .filter((a) => a.question_id && STRESS_KEYS.includes(a.question_id))
+    .map((a) => a.answer_value)
+    .filter((v): v is number => typeof v === 'number');
+
+  const sleepVals = answers
+    .filter((a) => a.question_id && SLEEP_KEYS.includes(a.question_id))
+    .map((a) => a.answer_value)
+    .filter((v): v is number => typeof v === 'number');
+
+  const stressAvg = average(stressVals);
+  const sleepAvg = average(sleepVals);
+
+  const scaleTo100 = (avg: number | null): number | null => {
+    if (avg == null) return null;
+    const min = 1;
+    const max = 5;
+    const normalized = (avg - min) / (max - min);
+    return Math.round(normalized * 100);
+  };
+
+  const stressScore = scaleTo100(stressAvg);
+  const sleepScore = scaleTo100(sleepAvg);
+
+  let riskLevel: RiskLevel | null = null;
+  if (stressScore != null) {
+    if (stressScore < 40) riskLevel = 'low';
+    else if (stressScore < 70) riskLevel = 'moderate';
+    else riskLevel = 'high';
+  }
+
+  return { stressScore, sleepScore, riskLevel };
+}
+
+async function createAmySummary(params: {
+  stressScore: number | null;
+  sleepScore: number | null;
+  riskLevel: RiskLevel | null;
+  answers: AnswerRow[];
+}) {
+  const { stressScore, sleepScore, riskLevel, answers } = params;
+
+  // Kein Anthropic-Key → nüchterner Fallback-Text
+  if (!anthropic) {
+    return (
+      `Basierend auf deinen Antworten ergibt sich aktuell ` +
+      (stressScore != null
+        ? `ein Stress-Score von etwa ${stressScore} von 100`
+        : 'kein berechenbarer Stress-Score') +
+      (sleepScore != null
+        ? ` und ein Schlaf-Score von etwa ${sleepScore} von 100.`
+        : '.') +
+      (riskLevel
+        ? ` Das entspricht einem ${
+            riskLevel === 'high'
+              ? 'hohen'
+              : riskLevel === 'moderate'
+              ? 'mittleren'
+              : 'niedrigen'
+          } Stressniveau.`
+        : '')
+    );
+  }
+
+  const answersJson = JSON.stringify(answers, null, 2);
+
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 500,
+    temperature: 0.3,
+    system:
+      'Du bist "AMY", eine empathische, evidenzbasierte Assistenz für Stress, Resilienz und Schlaf. ' +
+      'Du sprichst mit Patienten auf Augenhöhe, in klarer, kurzer Sprache (deutsch), ohne medizinische Diagnosen zu stellen. ' +
+      'Fasse die Ergebnisse in einem kurzen, gut verständlichen Fließtext zusammen (max. ~200 Wörter). ' +
+      'Keine Bulletpoints, keine Überschriften.',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text:
+              `Hier sind die Ergebnisse eines kurzen Stress- und Schlaf-Checks.\n\n` +
+              `Stress-Score (0–100): ${stressScore ?? 'nicht berechenbar'}\n` +
+              `Sleep-Score (0–100): ${sleepScore ?? 'nicht berechenbar'}\n` +
+              `Eingestuftes Stressniveau: ${riskLevel ?? 'nicht klassifiziert'}\n\n` +
+              `Die einzelnen Antworten (JSON):\n${answersJson}\n\n` +
+              `Bitte schreibe einen kurzen, motivierenden und realistischen Einordnungstext. ` +
+              `Erkläre knapp, was der Wert bedeutet, und schlage 2–3 konkrete, alltagstaugliche nächste Schritte vor. ` +
+              `Duzen ist erlaubt und erwünscht.`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const textParts = response.content
+    .filter((c: any) => c.type === 'text')
+    .map((c: any) => c.text);
+
+  return textParts.join('\n').trim();
+}
+
+export async function POST(req: Request) {
   try {
-    const body = await req.json()
-    const { assessmentId } = body
+    if (!supabase) {
+      console.error(
+        '[stress-report] Supabase nicht initialisiert – Env Variablen fehlen.'
+      );
+      return NextResponse.json(
+        { error: 'Server-Konfiguration unvollständig (Supabase).' },
+        { status: 500 }
+      );
+    }
+
+    const body = await req.json().catch(() => null);
+    const assessmentId = body?.assessmentId as string | undefined;
 
     if (!assessmentId) {
       return NextResponse.json(
-        { ok: false, error: 'assessmentId fehlt' },
+        { error: 'assessmentId fehlt im Request-Body.' },
         { status: 400 }
-      )
+      );
     }
 
-    // 1) Antworten zu diesem Assessment laden
-    // Annahme: Tabelle "stress_answers" mit:
-    // - assessment_id (uuid)
-    // - question_key (text)
-    // - answer_value (integer / numeric)
     const { data: answers, error: answersError } = await supabase
-      .from('stress_answers')
-      .select('question_key, answer_value')
-      .eq('assessment_id', assessmentId)
+      .from('assessment_answers')
+      .select('question_id, answer_value')
+      .eq('assessment_id', assessmentId);
 
     if (answersError) {
-      console.error('Supabase Fehler (answers):', answersError)
+      console.error('[stress-report] Fehler beim Laden der Antworten:', answersError);
       return NextResponse.json(
-        { ok: false, error: 'Fehler beim Laden der Antworten' },
+        { error: 'Fehler beim Laden der Antworten aus der Datenbank.' },
         { status: 500 }
-      )
+      );
     }
 
-    const safeAnswers = answers ?? []
+    const typedAnswers: AnswerRow[] = (answers ?? []) as any[];
 
-    // 2) Score berechnen (sehr simpel: Summe)
-    const score = safeAnswers.reduce((sum, a: any) => {
-      const v = typeof a.answer_value === 'number' ? a.answer_value : 0
-      return sum + v
-    }, 0)
+    const { stressScore, sleepScore, riskLevel } = computeScores(typedAnswers);
 
-    // 3) Antworten für Prompt aufbereiten
-    const answersForPrompt =
-      safeAnswers.length === 0
-        ? 'Keine Antworten gefunden.'
-        : safeAnswers
-            .map(
-              (a: any) =>
-                `Frage: ${a.question_key ?? 'ohne_key'} → Antwort: ${
-                  a.answer_value ?? '-'
-                }`
-            )
-            .join('\n')
+    const reportTextShort = await createAmySummary({
+      stressScore,
+      sleepScore,
+      riskLevel,
+      answers: typedAnswers,
+    });
 
-    // 4) Claude (AMY) aufrufen
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022', // eines deiner vorhandenen Modelle
-      max_tokens: 600,
-      temperature: 0.2,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text:
-                `Du bist eine ärztlich denkende KI-Assistentin namens AMY.\n` +
-                `Du bekommst die Antworten eines Patienten auf einen Stress- & Resilienz-Fragebogen.\n\n` +
-                `Bitte analysiere die Situation des Patienten knapp und laienverständlich:\n` +
-                `1. Kurze Einordnung des Stressniveaus.\n` +
-                `2. Wie belastbar / resilient ist die Person?\n` +
-                `3. 3 konkrete, leicht umsetzbare Empfehlungen für die nächsten 1–2 Wochen.\n\n` +
-                `Hier sind die Daten:\n\n` +
-                `Gesamtscore: ${score}\n\n` +
-                `Antworten:\n${answersForPrompt}`,
-            },
-          ],
-        },
-      ],
-    })
+    const { data: existingReports, error: existingError } = await supabase
+      .from('stress_reports')
+      .select('*')
+      .eq('assessment_id', assessmentId)
+      .limit(1);
 
-    const first = message.content[0]
-    const analysis =
-      first && first.type === 'text' ? first.text : 'Keine Auswertung erhalten.'
-
-    // 5) Risk-Level aus Score ableiten (primitive Logik als Platzhalter)
-    let riskLevel: 'low' | 'moderate' | 'high' | null = null
-    if (score <= 10) riskLevel = 'low'
-    else if (score <= 20) riskLevel = 'moderate'
-    else riskLevel = 'high'
-
-    // 6) Report in Supabase ablegen
-    const { error: insertError } = await supabase.from('reports').insert({
-      assessment_id: assessmentId,
-      score_numeric: score,
-      risk_level: riskLevel,
-      report_text_short: analysis,
-    })
-
-    if (insertError) {
-      console.error('Supabase Fehler (insert report):', insertError)
-      // wir brechen *nicht* ab, der Client bekommt trotzdem eine Antwort
+    if (existingError) {
+      console.error('[stress-report] Fehler beim Laden des Reports:', existingError);
     }
 
-    // 7) Antwort an den Client (für Debug & Fallback)
-    return NextResponse.json(
-      {
-        ok: true,
-        assessmentId,
-        score,
-        answerCount: safeAnswers.length,
-        analysis,
+    let reportRow;
+
+    if (existingReports && existingReports.length > 0) {
+      const existing = existingReports[0];
+      const { data: updated, error: updateError } = await supabase
+        .from('stress_reports')
+        .update({
+          score_numeric: stressScore ?? existing.score_numeric,
+          risk_level: riskLevel ?? existing.risk_level,
+          report_text_short: reportTextShort,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error(
+          '[stress-report] Fehler beim Update des Reports:',
+          updateError
+        );
+        return NextResponse.json(
+          { error: 'Fehler beim Aktualisieren des Reports.' },
+          { status: 500 }
+        );
+      }
+
+      reportRow = updated;
+    } else {
+      const { data: inserted, error: insertError } = await supabase
+        .from('stress_reports')
+        .insert({
+          assessment_id: assessmentId,
+          score_numeric: stressScore ?? null,
+          risk_level: riskLevel ?? null,
+          report_text_short: reportTextShort,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[stress-report] Fehler beim Insert des Reports:', insertError);
+        return NextResponse.json(
+          { error: 'Fehler beim Anlegen des Reports.' },
+          { status: 500 }
+        );
+      }
+
+      reportRow = inserted;
+    }
+
+    return NextResponse.json({
+      report: reportRow,
+      scores: {
+        stressScore,
+        sleepScore,
+        riskLevel,
       },
-      { status: 200 }
-    )
-  } catch (e: any) {
-    console.error('AMY-Route Exception:', e)
+    });
+  } catch (err: any) {
+    console.error('[stress-report] Unerwarteter Fehler:', err);
     return NextResponse.json(
       {
-        ok: false,
-        error: 'Fehler beim Aufruf der Claude-API oder bei der Verarbeitung',
-        details: e?.message ?? String(e),
+        error: 'Interner Fehler bei der Erstellung des Reports.',
+        message: err?.message ?? String(err),
       },
       { status: 500 }
-    )
+    );
   }
 }

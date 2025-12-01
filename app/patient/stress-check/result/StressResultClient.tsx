@@ -2,98 +2,79 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
 
 type Report = {
   id: string
   created_at: string
-  score_numeric: number
+  score_numeric: number | null
   risk_level: 'low' | 'moderate' | 'high' | null
   report_text_short: string | null
   assessment_id: string
+}
+
+type ScoresPayload = {
+  stressScore: number | null
+  sleepScore: number | null
+  riskLevel: 'low' | 'moderate' | 'high' | null
 }
 
 export default function StressResultClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Unterstütze beide Varianten: ?assessmentId=... und ?assessment=...
   const rawParam =
     searchParams.get('assessmentId') ?? searchParams.get('assessment')
-
   const assessmentId = rawParam ?? undefined
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [report, setReport] = useState<Report | null>(null)
+  const [scores, setScores] = useState<ScoresPayload | null>(null)
 
   useEffect(() => {
-    const loadOrCreateReport = async () => {
+    async function loadOrCreateReport() {
       if (!assessmentId) {
+        console.error('StressResultClient: Kein assessmentId in der URL')
         setError('Kein Assessment gefunden.')
         setLoading(false)
         return
       }
 
       try {
-        setLoading(true)
-        setError(null)
+        console.log('StressResultClient: rufe AMY-Endpoint auf mit', {
+          assessmentId,
+        })
 
-        // 1) Prüfen, ob bereits ein Report existiert
-        const { data, error } = await supabase
-          .from('reports')
-          .select('*')
-          .eq('assessment_id', assessmentId)
-          .maybeSingle()
-
-        if (error) throw error
-
-        if (data) {
-          setReport(data as Report)
-          setLoading(false)
-          return
-        }
-
-        // 2) Wenn nicht: AMY/Claude aufrufen
         const response = await fetch('/api/amy/stress-report', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ assessmentId }),
         })
 
+        console.log('StressResultClient: Response Status =', response.status)
+
         if (!response.ok) {
-          console.error('AMY-Endpoint nicht erfolgreich', response.status)
+          console.error(
+            'StressResultClient: AMY-Endpoint nicht erfolgreich',
+            response.status
+          )
           throw new Error('AMY-Endpoint nicht erfolgreich')
         }
 
-        const result = await response.json()
+        const data = await response.json()
+        console.log('StressResultClient: Daten von AMY =', data)
 
-        // 3) Neu erzeugten Report aus Supabase lesen
-        const { data: newReport, error: newReportError } = await supabase
-          .from('reports')
-          .select('*')
-          .eq('assessment_id', assessmentId)
-          .maybeSingle()
-
-        if (newReportError) throw newReportError
-
-        if (newReport) {
-          setReport(newReport as Report)
-        } else {
-          // Fallback: Benutze das, was AMY zurückgegeben hat
-          setReport({
-            id: 'local',
-            created_at: new Date().toISOString(),
-            score_numeric: result.score ?? 0,
-            risk_level: null,
-            report_text_short: result.analysis ?? 'Kein Text verfügbar.',
-            assessment_id: assessmentId,
-          })
+        setReport(data.report as Report)
+        if (data.scores) {
+          setScores(data.scores as ScoresPayload)
         }
+
+        setLoading(false)
       } catch (e: any) {
-        console.error('Fehler bei AMY, nutze Fallback:', e)
-        setError(e.message ?? 'Fehler bei der Auswertung.')
-      } finally {
+        console.error('StressResultClient: Fehler bei AMY, nutze Fallback:', e)
+        setError('Die automatische Auswertung ist aktuell nicht verfügbar.')
         setLoading(false)
       }
     }
@@ -138,7 +119,7 @@ export default function StressResultClient() {
 
   return (
     <main className="min-h-screen p-6 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Dein Stress & Resilienz-Report</h1>
+      <h1 className="text-3xl font-bold mb-4">Dein Stress &amp; Resilienz-Report</h1>
 
       <div className="mb-6 space-y-2">
         <div>
@@ -149,9 +130,28 @@ export default function StressResultClient() {
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Score</p>
-          <p className="text-2xl font-bold">{report.score_numeric}</p>
+          <p className="text-sm text-slate-500">Gesamt-Score</p>
+          <p className="text-2xl font-bold">
+            {report.score_numeric != null ? report.score_numeric : '–'}
+          </p>
         </div>
+
+        {scores && (
+          <>
+            <div>
+              <p className="text-sm text-slate-500">Stress-Score (0–100)</p>
+              <p className="font-medium">
+                {scores.stressScore != null ? scores.stressScore : '–'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Schlaf-Score (0–100)</p>
+              <p className="font-medium">
+                {scores.sleepScore != null ? scores.sleepScore : '–'}
+              </p>
+            </div>
+          </>
+        )}
 
         <div>
           <p className="text-sm text-slate-500">Stress-Level</p>
