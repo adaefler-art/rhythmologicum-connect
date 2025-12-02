@@ -1,17 +1,18 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | null
 
 type Report = {
   id: string
-  created_at: string
+  assessment_id: string
   score_numeric: number | null
   risk_level: RiskLevel
   report_text_short: string | null
-  assessment_id: string
+  created_at: string
+  updated_at: string
 }
 
 type ScoresPayload = {
@@ -20,296 +21,319 @@ type ScoresPayload = {
   riskLevel: RiskLevel
 }
 
+type ApiResponse = {
+  report: Report | null
+  scores: ScoresPayload | null
+}
+
+type FetchState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; report: Report | null; scores: ScoresPayload | null }
+  | { status: 'error'; message: string }
+
 export default function StressResultClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const rawParam =
-    searchParams.get('assessmentId') ?? searchParams.get('assessment')
-  const assessmentId = rawParam ?? undefined
+  const rawParam = searchParams.get('assessmentId')
+  const assessmentId = typeof rawParam === 'string' && rawParam.length > 0 ? rawParam : null
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [report, setReport] = useState<Report | null>(null)
-  const [scores, setScores] = useState<ScoresPayload | null>(null)
+  const [state, setState] = useState<FetchState>({ status: 'idle' })
 
-  useEffect(() => {
-    async function loadOrCreateReport() {
-      if (!assessmentId) {
-        console.error('StressResultClient: Kein assessmentId in der URL')
-        setError('Kein Assessment gefunden. Bitte starten Sie den Test erneut.')
-        setLoading(false)
+  const fetchData = useCallback(async () => {
+    if (!assessmentId) {
+      setState({
+        status: 'error',
+        message:
+          'Wir konnten keinen gültigen Link zu deinem Report finden. Bitte öffne den Link direkt aus deiner E-Mail oder wiederhole den Fragebogen.',
+      })
+      return
+    }
+
+    try {
+      setState({ status: 'loading' })
+
+      const res = await fetch('/api/amy/stress-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ assessmentId }),
+      })
+
+      const text = await res.text()
+      let json: ApiResponse | null = null
+
+      try {
+        json = text ? (JSON.parse(text) as ApiResponse) : null
+      } catch (e) {
+        console.error('Stress report: Antwort ist kein valides JSON', e, text)
+      }
+
+      if (!res.ok || !json) {
+        console.error('Stress report: API-Fehler', res.status, json ?? text)
+        setState({
+          status: 'error',
+          message:
+            'Die automatische Auswertung ist aktuell nicht verfügbar. Dein Fragebogen ist sicher gespeichert – bitte versuche es gleich noch einmal oder später erneut.',
+        })
         return
       }
 
-      try {
-        console.log('StressResultClient: rufe AMY-Endpoint auf mit', {
-          assessmentId,
-        })
-
-        const response = await fetch('/api/amy/stress-report', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ assessmentId }),
-        })
-
-        console.log('StressResultClient: Response Status =', response.status)
-
-        if (!response.ok) {
-          console.error(
-            'StressResultClient: AMY-Endpoint nicht erfolgreich',
-            response.status
-          )
-          throw new Error('AMY-Endpoint nicht erfolgreich')
-        }
-
-        const data = await response.json()
-        console.log('StressResultClient: Daten von AMY =', data)
-
-        setReport(data.report as Report)
-        if (data.scores) {
-          setScores(data.scores as ScoresPayload)
-        }
-
-        setLoading(false)
-      } catch (e: any) {
-        console.error('StressResultClient: Fehler bei AMY, nutze Fallback:', e)
-        setError('Die automatische Auswertung ist aktuell nicht verfügbar.')
-        setLoading(false)
-      }
+      setState({
+        status: 'success',
+        report: json.report,
+        scores: json.scores,
+      })
+    } catch (err) {
+      console.error('Stress report: Fetch-Fehler', err)
+      setState({
+        status: 'error',
+        message:
+          'Die automatische Auswertung ist aktuell nicht verfügbar. Dein Fragebogen ist sicher gespeichert – bitte versuche es gleich noch einmal oder später erneut.',
+      })
     }
-
-    loadOrCreateReport()
   }, [assessmentId])
 
-  const formatDateTime = (iso: string) => {
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const handleRetry = () => {
+    fetchData()
+  }
+
+  // Hilfsfunktionen UI
+  const formatDate = (iso: string | null | undefined) => {
+    if (!iso) return 'Datum unbekannt'
     try {
-      return new Date(iso).toLocaleString('de-DE', {
+      const d = new Date(iso)
+      return new Intl.DateTimeFormat('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-      })
+      }).format(d)
     } catch {
-      return iso
+      return 'Datum unbekannt'
     }
   }
 
-  const getRiskLabel = (risk: RiskLevel) => {
+  const riskLabel = (risk: RiskLevel) => {
+    if (!risk) return 'Noch nicht klassifiziert'
     switch (risk) {
-      case 'high':
-        return 'Hohes Stressniveau'
-      case 'moderate':
-        return 'Mittleres Stressniveau'
       case 'low':
-        return 'Niedriges Stressniveau'
+        return 'Niedriges Risiko'
+      case 'moderate':
+        return 'Moderates Risiko'
+      case 'high':
+        return 'Erhöhtes Risiko'
       default:
         return 'Noch nicht klassifiziert'
     }
   }
 
-  const getRiskBadgeClasses = (risk: RiskLevel) => {
+  const riskBadgeClasses = (risk: RiskLevel) => {
     switch (risk) {
-      case 'high':
-        return 'bg-red-50 text-red-700 border-red-200'
-      case 'moderate':
-        return 'bg-amber-50 text-amber-700 border-amber-200'
       case 'low':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'moderate':
+        return 'bg-amber-100 text-amber-800 border-amber-200'
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200'
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200'
+        return 'bg-slate-100 text-slate-700 border-slate-200'
     }
   }
 
-  const getRiskDotClasses = (risk: RiskLevel) => {
-    switch (risk) {
-      case 'high':
-        return 'bg-red-500'
-      case 'moderate':
-        return 'bg-amber-500'
-      case 'low':
-        return 'bg-emerald-500'
-      default:
-        return 'bg-slate-400'
-    }
-  }
+  // Render-Zustände
 
-  if (loading) {
+  if (state.status === 'loading' || state.status === 'idle') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <p className="text-sm text-slate-600 mb-2">
-            Ihr persönlicher Bericht wird erstellt…
-          </p>
-          <p className="text-xs text-slate-400">
-            Dies kann einen kleinen Moment dauern.
-          </p>
-        </div>
+      <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
+        <section>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Dein Stress &amp; Resilienz-Report
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">Wir bereiten deine Ergebnisse auf …</p>
+        </section>
+
+        <section className="space-y-4">
+          <div className="h-6 w-40 animate-pulse rounded bg-slate-200" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
+            <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
+            <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
+          </div>
+          <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
+        </section>
       </main>
     )
   }
 
-  if (error || !report) {
+  if (state.status === 'error') {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-sm p-6 text-center">
-          <p className="text-sm text-red-600 mb-3">
-            {error ?? 'Kein Bericht verfügbar.'}
+      <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
+        <section>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Dein Stress &amp; Resilienz-Report
+          </h1>
+        </section>
+
+        <section className="rounded-xl border border-red-100 bg-red-50 px-4 py-4 text-sm text-red-800">
+          <p className="font-medium">Die automatische Auswertung ist im Moment nicht erreichbar.</p>
+          <p className="mt-1">
+            {state.message ||
+              'Unsere Systeme sind gerade ausgelastet oder in Wartung. Deine Angaben sind sicher gespeichert – du kannst die Seite später erneut öffnen oder gleich noch einmal versuchen.'}
           </p>
-          <p className="text-xs text-slate-500 mb-5">
-            Bitte gehen Sie einen Schritt zurück und starten Sie den
-            Stress-Check erneut.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <div className="mt-3 flex gap-3">
             <button
-              onClick={() => router.push('/patient/stress-check')}
-              className="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition"
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-800 shadow-sm hover:bg-red-50"
             >
-              Zurück zum Fragebogen
+              Noch einmal versuchen
             </button>
             <button
+              type="button"
               onClick={() => router.push('/')}
-              className="px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50 transition"
+              className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Zur Startseite
             </button>
           </div>
-        </div>
+        </section>
       </main>
     )
   }
 
-  const riskLabel = getRiskLabel(report.risk_level)
-  const riskBadge = getRiskBadgeClasses(report.risk_level)
-  const riskDot = getRiskDotClasses(report.risk_level)
+  // status === 'success'
+  const { report, scores } = state
 
-  const hasScores = !!scores && (scores.stressScore != null || scores.sleepScore != null)
+  const hasReport = !!report || !!scores
+  const stressScore = scores?.stressScore ?? report?.score_numeric ?? null
+  const sleepScore = scores?.sleepScore ?? null
+  const risk: RiskLevel = scores?.riskLevel ?? report?.risk_level ?? null
+
+  const primaryText =
+    report?.report_text_short ||
+    (hasReport && risk === 'high'
+      ? 'Deine aktuellen Daten zeigen ein erhöhtes Stressniveau. Das ist ein Hinweis, dass dein System gerade viel tragen muss – du bist damit nicht allein. Die nächsten Schritte helfen dir, wieder in Balance zu kommen.'
+      : hasReport && risk === 'moderate'
+      ? 'Dein Stressniveau ist im mittleren Bereich. Es lohnt sich, jetzt gezielt an Schlaf, Erholung und Grenzen zu arbeiten, bevor sich Beschwerden verstärken.'
+      : hasReport && risk === 'low'
+      ? 'Aktuell liegen deine Werte im eher entspannten Bereich. Das ist eine gute Basis – achte weiter auf Schlaf, Bewegung und Pausen, damit das so bleibt.'
+      : 'Deine Antworten sind sicher gespeichert. Sobald die automatische Auswertung abgeschlossen ist, siehst du hier deinen persönlichen Kurz-Report.')
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
-        {/* Header */}
-        <header className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
-            Ergebnis
-          </p>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-2">
-            Ihr Stress- &amp; Schlaf-Report
-          </h1>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Auf Basis Ihrer Antworten wurde ein individueller Überblick über
-            Ihr aktuelles Stress- und Erholungsniveau erstellt.
-          </p>
-        </header>
+    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
+      <section>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          Dein Stress &amp; Resilienz-Report
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Basierend auf deinen Antworten aus dem Fragebogen.
+        </p>
+      </section>
 
-        {/* Meta + Level */}
-        <section className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-1 text-sm text-slate-600">
-            <p className="text-xs uppercase tracking-wide text-slate-400">
-              Datum der Auswertung
-            </p>
-            <p className="font-medium text-slate-900">
-              {formatDateTime(report.created_at)}
-            </p>
-          </div>
-
-          <div>
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium ${riskBadge}`}
-            >
-              <span className={`w-2 h-2 rounded-full ${riskDot}`} />
-              {riskLabel}
+      {/* Meta / Datum */}
+      <section className="flex items-center justify-between gap-2 text-xs text-slate-500">
+        <div>
+          {hasReport ? (
+            <>
+              <span>Auswertung vom </span>
+              <span className="font-medium text-slate-700">
+                {formatDate(report?.created_at ?? null)}
+              </span>
+            </>
+          ) : (
+            <span>Die Auswertung wird vorbereitet.</span>
+          )}
+        </div>
+        {assessmentId && (
+          <div className="truncate text-right">
+            <span className="font-mono text-[10px] text-slate-400">
+              ID: {assessmentId.slice(0, 8)}…
             </span>
           </div>
-        </section>
-
-        {/* Score-Kacheln */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">
-            <p className="text-xs font-medium text-slate-500 mb-1">
-              Gesamt-Score
-            </p>
-            <p className="text-2xl font-semibold text-slate-900">
-              {report.score_numeric != null ? report.score_numeric : '–'}
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Oberer Orientierungswert aus Ihren Antworten.
-            </p>
-          </div>
-
-          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">
-            <p className="text-xs font-medium text-slate-500 mb-1">
-              Stress-Score (0–100)
-            </p>
-            <p className="text-lg font-semibold text-slate-900">
-              {scores?.stressScore != null ? scores.stressScore : '–'}
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Höherer Wert = mehr Belastung durch Stress.
-            </p>
-          </div>
-
-          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">
-            <p className="text-xs font-medium text-slate-500 mb-1">
-              Schlaf-Score (0–100)
-            </p>
-            <p className="text-lg font-semibold text-slate-900">
-              {scores?.sleepScore != null ? scores.sleepScore : '–'}
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Höherer Wert = stärkere Einschränkungen im Schlaf.
-            </p>
-          </div>
-        </section>
-
-        {/* Hinweis, falls Scores fehlen */}
-        {!hasScores && (
-          <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-            Die numerischen Score-Werte konnten noch nicht vollständig
-            berechnet werden. Ihr Kurzbericht unten steht aber bereits zur
-            Verfügung.
-          </div>
         )}
+      </section>
 
-        {/* Kurzbericht */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            Kurzbericht (AMY)
-          </h2>
-          <div className="border border-slate-200 rounded-xl bg-slate-50/70 px-4 py-3">
-            <p className="whitespace-pre-line text-sm text-slate-800 leading-relaxed">
-              {report.report_text_short ??
-                'Für dieses Assessment liegt noch kein Kurzbericht vor.'}
-            </p>
-          </div>
-        </section>
-
-        {/* Footer / Actions */}
-        <section className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-            Dieser Report ersetzt keine ärztliche Diagnose. Bitte besprechen
-            Sie Auffälligkeiten und Sorgen immer mit Ihrer behandelnden
-            Ärztin bzw. Ihrem behandelnden Arzt.
+      {/* Score Karten */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Stress-Score
           </p>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => router.push('/patient/stress-check')}
-              className="px-4 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50 transition"
+          {stressScore != null ? (
+            <p className="mt-2 text-2xl font-semibold text-slate-900">{Math.round(stressScore)}</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-400">Noch nicht verfügbar</p>
+          )}
+          <p className="mt-1 text-[11px] text-slate-500">
+            Höhere Werte bedeuten mehr Belastung im Alltag.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Schlaf-Score
+          </p>
+          {sleepScore != null ? (
+            <p className="mt-2 text-2xl font-semibold text-slate-900">{Math.round(sleepScore)}</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-400">Noch nicht verfügbar</p>
+          )}
+          <p className="mt-1 text-[11px] text-slate-500">
+            Zeigt, wie erholsam dein Schlaf aktuell ist.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Risiko-Einschätzung
+          </p>
+          <div className="mt-2 inline-flex items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${riskBadgeClasses(
+                risk,
+              )}`}
             >
-              Test erneut durchführen
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2.5 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition"
-            >
-              Zur Startseite
-            </button>
+              {riskLabel(risk)}
+            </span>
           </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Einschätzung deines aktuellen Stress- und Belastungsniveaus.
+          </p>
+        </div>
+      </section>
+
+      {/* AMY Text / Fallback */}
+      <section className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-800">Kurze Einordnung</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+          {primaryText}
+        </p>
+        {!hasReport && (
+          <p className="mt-2 text-xs text-slate-500">
+            Falls diese Meldung länger bestehen bleibt, kannst du den Fragebogen jederzeit erneut
+            ausfüllen oder dich direkt an deine behandelnde Praxis wenden.
+          </p>
+        )}
+      </section>
+
+      {/* Noch-nicht-verfügbar-Hinweis, wenn kein Report */}
+      {!hasReport && (
+        <section className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-xs text-slate-600">
+          <p className="font-medium">Dein Report ist noch nicht vollständig verfügbar.</p>
+          <p className="mt-1">
+            Das ist kein Notfallhinweis. Die medizinische Auswertung im Hintergrund kann etwas
+            Zeit benötigen. Deine Daten sind sicher gespeichert und werden nicht verloren gehen.
+          </p>
         </section>
-      </div>
+      )}
     </main>
   )
 }
