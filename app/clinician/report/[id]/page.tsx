@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { getRiskLabel, type RiskLevel } from '@/lib/utils/riskBadge'
 
 type AnswerRow = {
   question_id: string
@@ -105,12 +106,7 @@ export default function ClinicianReportDetailPage() {
     )
   }
 
-  const riskLabel =
-    report.risk_level === 'high'
-      ? 'Hohes Stressniveau'
-      : report.risk_level === 'moderate'
-      ? 'Mittleres Stressniveau'
-      : 'Niedriges Stressniveau'
+  const riskLabelText = getRiskLabel(report.risk_level as RiskLevel)
 
   return (
     <main className="min-h-screen p-6 max-w-3xl mx-auto">
@@ -146,7 +142,7 @@ export default function ClinicianReportDetailPage() {
 
         <div>
           <p className="text-sm text-slate-500">Stress-Level</p>
-          <p className="font-medium">{riskLabel}</p>
+          <p className="font-medium">{riskLabelText}</p>
         </div>
       </div>
 

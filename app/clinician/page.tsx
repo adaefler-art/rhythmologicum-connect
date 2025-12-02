@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
+import { getRiskLabelShort, type RiskLevel } from '@/lib/utils/riskBadge'
 
 type ReportRow = {
   id: string
@@ -121,13 +122,6 @@ export default function ClinicianOverviewPage() {
                   'Unbekannt'
                 const date = new Date(r.created_at).toLocaleString()
 
-                const levelLabel =
-                  r.risk_level === 'high'
-                    ? 'Hoch'
-                    : r.risk_level === 'moderate'
-                    ? 'Mittel'
-                    : 'Niedrig'
-
                 return (
                   <tr key={r.id} className="hover:bg-slate-50">
                     <td className="px-4 py-2 border-b whitespace-nowrap">
@@ -135,7 +129,7 @@ export default function ClinicianOverviewPage() {
                     </td>
                     <td className="px-4 py-2 border-b">{patientName}</td>
                     <td className="px-4 py-2 border-b">{r.score_numeric}</td>
-                    <td className="px-4 py-2 border-b">{levelLabel}</td>
+                    <td className="px-4 py-2 border-b">{getRiskLabelShort(r.risk_level as RiskLevel)}</td>
                     <td className="px-4 py-2 border-b text-center">
                       <Link
                         href={`/clinician/report/${r.id}`}

@@ -2,8 +2,13 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
-
-type RiskLevel = 'low' | 'moderate' | 'high' | null
+import {
+  getRiskLabel,
+  getRiskBadgeClasses,
+  getAmyFallbackText,
+  AMY_REASSURANCE_TEXT,
+  type RiskLevel,
+} from '@/lib/utils/riskBadge'
 
 type Report = {
   id: string
@@ -121,33 +126,6 @@ export default function StressResultClient() {
     }
   }
 
-  const riskLabel = (risk: RiskLevel) => {
-    if (!risk) return 'Noch nicht klassifiziert'
-    switch (risk) {
-      case 'low':
-        return 'Niedriges Risiko'
-      case 'moderate':
-        return 'Moderates Risiko'
-      case 'high':
-        return 'Erhöhtes Risiko'
-      default:
-        return 'Noch nicht klassifiziert'
-    }
-  }
-
-  const riskBadgeClasses = (risk: RiskLevel) => {
-    switch (risk) {
-      case 'low':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
-      case 'moderate':
-        return 'bg-amber-100 text-amber-800 border-amber-200'
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-200'
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200'
-    }
-  }
-
   // Render-Zustände
 
   if (state.status === 'loading' || state.status === 'idle') {
@@ -217,15 +195,8 @@ export default function StressResultClient() {
   const sleepScore = scores?.sleepScore ?? null
   const risk: RiskLevel = scores?.riskLevel ?? report?.risk_level ?? null
 
-  const primaryText =
-    report?.report_text_short ||
-    (hasReport && risk === 'high'
-      ? 'Deine aktuellen Daten zeigen ein erhöhtes Stressniveau. Das ist ein Hinweis, dass dein System gerade viel tragen muss – du bist damit nicht allein. Die nächsten Schritte helfen dir, wieder in Balance zu kommen.'
-      : hasReport && risk === 'moderate'
-      ? 'Dein Stressniveau ist im mittleren Bereich. Es lohnt sich, jetzt gezielt an Schlaf, Erholung und Grenzen zu arbeiten, bevor sich Beschwerden verstärken.'
-      : hasReport && risk === 'low'
-      ? 'Aktuell liegen deine Werte im eher entspannten Bereich. Das ist eine gute Basis – achte weiter auf Schlaf, Bewegung und Pausen, damit das so bleibt.'
-      : 'Deine Antworten sind sicher gespeichert. Sobald die automatische Auswertung abgeschlossen ist, siehst du hier deinen persönlichen Kurz-Report.')
+  // Use AMY text if available, otherwise use the risk-appropriate fallback
+  const primaryText = report?.report_text_short || getAmyFallbackText(hasReport ? risk : null)
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
@@ -297,11 +268,11 @@ export default function StressResultClient() {
           </p>
           <div className="mt-2 inline-flex items-center gap-2">
             <span
-              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${riskBadgeClasses(
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getRiskBadgeClasses(
                 risk,
               )}`}
             >
-              {riskLabel(risk)}
+              {getRiskLabel(risk)}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500">
@@ -311,24 +282,23 @@ export default function StressResultClient() {
       </section>
 
       {/* AMY Text / Fallback */}
-      <section className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-800">Kurze Einordnung</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+      <section className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-800">Kurze Einordnung</h2>
+        <div className="mt-3 text-base leading-7 text-slate-700 whitespace-pre-line">
           {primaryText}
-        </p>
+        </div>
         {!hasReport && (
-          <p className="mt-2 text-xs text-slate-500">
-            Falls diese Meldung länger bestehen bleibt, kannst du den Fragebogen jederzeit erneut
-            ausfüllen oder dich direkt an deine behandelnde Praxis wenden.
+          <p className="mt-4 text-sm leading-6 text-slate-500 whitespace-pre-line">
+            {AMY_REASSURANCE_TEXT}
           </p>
         )}
       </section>
 
       {/* Noch-nicht-verfügbar-Hinweis, wenn kein Report */}
       {!hasReport && (
-        <section className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-xs text-slate-600">
+        <section className="rounded-xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           <p className="font-medium">Dein Report ist noch nicht vollständig verfügbar.</p>
-          <p className="mt-1">
+          <p className="mt-2 leading-6">
             Das ist kein Notfallhinweis. Die medizinische Auswertung im Hintergrund kann etwas
             Zeit benötigen. Deine Daten sind sicher gespeichert und werden nicht verloren gehen.
           </p>
