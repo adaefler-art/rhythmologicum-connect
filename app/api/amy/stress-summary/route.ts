@@ -101,16 +101,16 @@ function createFallbackSummary(input: StressSummaryInput): string {
   }
 
   if (sleepScore !== null) {
-    text += `Dein Schlaf-Score beträgt ${sleepScore} von 100. `;
+    text += `Dein Schlaf-Score beträgt ${sleepScore} von 100 (niedriger ist besser). `;
     if (sleepScore < 30) {
       text +=
-        'Guter Schlaf ist ein wichtiger Schutzfaktor für deine Gesundheit. ';
+        'Das spricht für eine gute Schlafqualität – ein wichtiger Schutzfaktor für deine Gesundheit. ';
     } else if (sleepScore < 60) {
       text +=
-        'Es gibt Hinweise, dass dein Schlaf Verbesserungspotenzial hat. ';
+        'Das deutet auf Verbesserungspotenzial bei deinem Schlaf hin. ';
     } else {
       text +=
-        'Die Schlafqualität scheint beeinträchtigt zu sein, was Stress verstärken kann. ';
+        'Das weist auf eine beeinträchtigte Schlafqualität hin, die Stress verstärken kann. ';
     }
   }
 
