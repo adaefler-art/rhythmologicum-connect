@@ -226,21 +226,6 @@ export async function POST(req: Request) {
   const requestStartTime = Date.now();
 
   try {
-    // Check API configuration
-    if (!anthropic) {
-      console.warn(
-        '[stress-summary] Anthropic API not configured. Set ANTHROPIC_API_KEY environment variable.'
-      );
-      return NextResponse.json<ErrorResponse>(
-        {
-          error: 'Anthropic API nicht konfiguriert.',
-          errorType: 'configuration',
-          message: 'ANTHROPIC_API_KEY environment variable is missing',
-        },
-        { status: 500 }
-      );
-    }
-
     // Parse request body
     let body;
     try {
@@ -301,7 +286,7 @@ export async function POST(req: Request) {
       }
 
       // Check for API errors
-      if (error?.status && error.status >= 500 || error?.error?.type === 'api_error') {
+      if ((error?.status && error.status >= 500) || error?.error?.type === 'api_error') {
         console.error(
           `[stress-summary] API error after ${duration}ms:`,
           error
