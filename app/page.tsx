@@ -26,7 +26,12 @@ export default function LoginPage() {
   // Fetch version info on component mount
   useEffect(() => {
     fetch('/version.json')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
+      })
       .then((data) => setVersionInfo(data))
       .catch((err) => console.error('Failed to load version info:', err))
   }, [])
