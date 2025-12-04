@@ -1,5 +1,74 @@
 # Supabase Database Schema
 
+## Tabelle: `patient_measures`
+
+Diese Tabelle verfolgt abgeschlossene Patientenmessungen/Assessments mit idempotenter Logik, um Duplikate zu verhindern.
+
+### Schema
+
+| Spalte              | Typ          | Beschreibung                                              | Constraints                           |
+|---------------------|--------------|-----------------------------------------------------------|---------------------------------------|
+| `id`                | UUID         | Eindeutige ID der Messung (Primary Key)                  | PRIMARY KEY, DEFAULT gen_random_uuid()|
+| `assessment_id`     | UUID         | Referenz zum Assessment (Foreign Key, UNIQUE)             | NOT NULL, UNIQUE, REFERENCES assessments(id)|
+| `patient_id`        | UUID         | Patienten-ID für diese Messung                           | NOT NULL                              |
+| `measurement_type`  | TEXT         | Art der Messung (stress, sleep, etc.)                     | NOT NULL, DEFAULT 'stress'            |
+| `status`            | TEXT         | Status: 'completed', 'in_progress', 'failed'              | NOT NULL, CHECK constraint            |
+| `completed_at`      | TIMESTAMPTZ  | Zeitstempel der Fertigstellung                            | DEFAULT NOW()                         |
+| `created_at`        | TIMESTAMPTZ  | Zeitstempel der Erstellung                                | DEFAULT NOW()                         |
+| `updated_at`        | TIMESTAMPTZ  | Zeitstempel der letzten Aktualisierung                    | DEFAULT NOW(), auto-updated via trigger|
+
+### Indizes
+
+- `assessment_id`: UNIQUE constraint (automatischer Index)
+- `idx_patient_measures_patient_id`: Index auf `patient_id` für schnellere Abfragen
+- `idx_patient_measures_completed_at`: Index auf `completed_at` (DESC) für schnelleres Sortieren
+
+### Trigger
+
+- `trigger_patient_measures_updated_at`: Automatisches Update von `updated_at` bei jeder Änderung
+
+### Beziehungen
+
+- **Foreign Key**: `assessment_id` → `assessments(id)` mit `ON DELETE CASCADE`
+  - Wenn ein Assessment gelöscht wird, wird automatisch die zugehörige Messung gelöscht
+- **UNIQUE Constraint**: Verhindert Duplikate für dieselbe `assessment_id` (Idempotenz)
+
+### Verwendung
+
+#### Neue Messung speichern (idempotent)
+
+```typescript
+const response = await fetch('/api/patient-measures/save', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ assessmentId: 'uuid-des-assessments' }),
+})
+
+const data = await response.json()
+// { measure: {...}, message: '...', isNew: true/false }
+```
+
+#### Messungen abfragen
+
+```typescript
+const { data, error } = await supabase
+  .from('patient_measures')
+  .select('*')
+  .eq('patient_id', 'patient-uuid')
+  .order('completed_at', { ascending: false });
+```
+
+### Idempotenz
+
+Die Tabelle stellt durch den UNIQUE Constraint auf `assessment_id` sicher, dass:
+- Jedes Assessment nur einmal als Messung gespeichert wird
+- Wiederholte API-Aufrufe keine Duplikate erzeugen
+- Bei Race Conditions der zweite Insert fehlschlägt und der existierende Eintrag zurückgegeben wird
+
+---
+
 ## Tabelle: `reports`
 
 Diese Tabelle speichert die von AMY generierten Kurzinterpretationen und zugehörigen Scores für Stress- und Schlaf-Assessments.
