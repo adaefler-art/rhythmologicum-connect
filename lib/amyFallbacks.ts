@@ -13,6 +13,27 @@ export interface FallbackParams {
 }
 
 /**
+ * Builds score information text if scores are available
+ */
+function buildScoreInfo(stressScore?: number | null, sleepScore?: number | null): string {
+  if (stressScore == null && sleepScore == null) {
+    return '';
+  }
+
+  const parts: string[] = [];
+  
+  if (stressScore != null) {
+    parts.push(`ein Stress-Score von etwa ${Math.round(stressScore)} von 100`);
+  }
+  
+  if (sleepScore != null) {
+    parts.push(`ein Schlaf-Score von etwa ${Math.round(sleepScore)} von 100`);
+  }
+  
+  return `Basierend auf deinen Antworten ergibt sich ${parts.join(' und ')}. `;
+}
+
+/**
  * Returns a calming, generic fallback text based on risk level
  * These texts provide orientation without suggesting clinical decisions
  */
@@ -20,18 +41,7 @@ export function getAmyFallbackText(params: FallbackParams): string {
   const { riskLevel, stressScore, sleepScore } = params;
 
   // Build score information if available
-  const scoreInfo =
-    stressScore != null || sleepScore != null
-      ? `Basierend auf deinen Antworten ergibt sich ` +
-        (stressScore != null
-          ? `ein Stress-Score von etwa ${Math.round(stressScore)} von 100`
-          : '') +
-        (stressScore != null && sleepScore != null ? ' und ' : '') +
-        (sleepScore != null
-          ? `ein Schlaf-Score von etwa ${Math.round(sleepScore)} von 100`
-          : '') +
-        '. '
-      : '';
+  const scoreInfo = buildScoreInfo(stressScore, sleepScore);
 
   // Risk-specific fallback texts
   switch (riskLevel) {

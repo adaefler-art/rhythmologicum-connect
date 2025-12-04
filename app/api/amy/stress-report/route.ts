@@ -132,8 +132,8 @@ async function createAmySummary(params: {
     });
 
     const textParts = response.content
-      .filter((c: { type: string }) => c.type === 'text')
-      .map((c: { type: string; text?: string }) => c.text || '');
+      .filter((c) => c.type === 'text')
+      .map((c) => ('text' in c ? c.text : ''));
 
     return textParts.join('\n').trim();
   } catch (error) {
