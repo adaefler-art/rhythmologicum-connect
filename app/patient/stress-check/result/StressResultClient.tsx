@@ -9,6 +9,7 @@ type Report = {
   id: string
   assessment_id: string
   score_numeric: number | null
+  sleep_score: number | null
   risk_level: RiskLevel
   report_text_short: string | null
   created_at: string

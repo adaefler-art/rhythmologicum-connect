@@ -140,8 +140,13 @@ export default function ClinicianReportDetailPage() {
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Score</p>
-          <p className="text-xl font-bold">{report.score_numeric}</p>
+          <p className="text-sm text-slate-500">Stress-Score</p>
+          <p className="text-xl font-bold">{report.score_numeric ?? 'N/A'}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-slate-500">Schlaf-Score</p>
+          <p className="text-xl font-bold">{report.sleep_score ?? 'N/A'}</p>
         </div>
 
         <div>
