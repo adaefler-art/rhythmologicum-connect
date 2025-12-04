@@ -1,6 +1,7 @@
 // app/api/amy/stress-summary/route.ts
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 
 // Anthropic API configuration
 const anthropicApiKey =
@@ -10,9 +11,6 @@ const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929';
 const anthropic = anthropicApiKey
   ? new Anthropic({ apiKey: anthropicApiKey })
   : null;
-
-// Types
-type RiskLevel = 'low' | 'moderate' | 'high';
 
 interface StressSummaryRequest {
   stressScore: number | null;
@@ -105,26 +103,10 @@ async function generateSummary(
 
   // Fallback if Anthropic is not configured
   if (!anthropic) {
-    const fallbackText =
-      `Basierend auf den vorliegenden Daten ergibt sich ` +
-      (stressScore != null
-        ? `ein Stress-Score von ${stressScore} von 100`
-        : 'kein berechenbarer Stress-Score') +
-      (sleepScore != null
-        ? ` und ein Schlaf-Score von ${sleepScore} von 100.`
-        : '.') +
-      (riskLevel
-        ? ` Das entspricht einem ${
-            riskLevel === 'high'
-              ? 'hohen'
-              : riskLevel === 'moderate'
-              ? 'mittleren'
-              : 'niedrigen'
-          } Stressniveau.`
-        : '');
-
+    console.warn('[stress-summary] Anthropic not configured, using fallback text');
+    // Return fallback response with same structure as LLM response
     return {
-      report_text_short: fallbackText,
+      report_text_short: getAmyFallbackText({ riskLevel, stressScore, sleepScore }),
       risk_level: riskLevel,
     };
   }
@@ -183,12 +165,15 @@ async function generateSummary(
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(
-      `[stress-summary] LLM request failed after ${duration}ms:`,
+      `[stress-summary] LLM request failed after ${duration}ms, using fallback text:`,
       error
     );
 
-    // Re-throw with context
-    throw error;
+    // LLM-Fehler → Fallback-Text verwenden
+    return {
+      report_text_short: getAmyFallbackText({ riskLevel, stressScore, sleepScore }),
+      risk_level: riskLevel,
+    };
   }
 }
 
@@ -255,55 +240,14 @@ export async function POST(req: Request) {
     }
 
     // Generate summary
-    try {
-      const summary = await generateSummary(validation.data!);
-      
-      const totalDuration = Date.now() - requestStartTime;
-      console.log(
-        `[stress-summary] Request completed successfully in ${totalDuration}ms`
-      );
+    const summary = await generateSummary(validation.data!);
+    
+    const totalDuration = Date.now() - requestStartTime;
+    console.log(
+      `[stress-summary] Request completed successfully in ${totalDuration}ms`
+    );
 
-      return NextResponse.json<StressSummaryResponse>(summary);
-    } catch (apiError) {
-      // Handle specific API errors
-      const duration = Date.now() - requestStartTime;
-      const error = apiError as { status?: number; error?: { type?: string }; message?: string };
-      
-      // Check for rate limiting
-      if (error?.status === 429 || error?.error?.type === 'rate_limit_error') {
-        console.error(
-          `[stress-summary] Rate limit exceeded after ${duration}ms:`,
-          error
-        );
-        return NextResponse.json<ErrorResponse>(
-          {
-            error: 'Rate-Limit überschritten. Bitte versuchen Sie es später erneut.',
-            errorType: 'rate_limit',
-            message: error.message || 'Too many requests',
-          },
-          { status: 429 }
-        );
-      }
-
-      // Check for API errors
-      if ((error?.status && error.status >= 500) || error?.error?.type === 'api_error') {
-        console.error(
-          `[stress-summary] API error after ${duration}ms:`,
-          error
-        );
-        return NextResponse.json<ErrorResponse>(
-          {
-            error: 'Anthropic API ist derzeit nicht verfügbar.',
-            errorType: 'api_error',
-            message: error.message || 'API service unavailable',
-          },
-          { status: 503 }
-        );
-      }
-
-      // Generic API error
-      throw apiError;
-    }
+    return NextResponse.json<StressSummaryResponse>(summary);
   } catch (err) {
     const duration = Date.now() - requestStartTime;
     const error = err as { message?: string };

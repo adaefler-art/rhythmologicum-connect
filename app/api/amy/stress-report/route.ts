@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 
 // Supabase-ENV robust auslesen
 const supabaseUrl =
@@ -30,8 +31,6 @@ const MODEL =
 const anthropic = anthropicApiKey
   ? new Anthropic({ apiKey: anthropicApiKey })
   : null;
-
-type RiskLevel = 'low' | 'moderate' | 'high';
 
 type AnswerRow = {
   question_id: string | null;
@@ -91,65 +90,55 @@ async function createAmySummary(params: {
 }) {
   const { stressScore, sleepScore, riskLevel, answers } = params;
 
-  // Kein Anthropic-Key → nüchterner Fallback-Text
+  // Kein Anthropic-Key → Fallback-Text
   if (!anthropic) {
-    return (
-      `Basierend auf deinen Antworten ergibt sich aktuell ` +
-      (stressScore != null
-        ? `ein Stress-Score von etwa ${stressScore} von 100`
-        : 'kein berechenbarer Stress-Score') +
-      (sleepScore != null
-        ? ` und ein Schlaf-Score von etwa ${sleepScore} von 100.`
-        : '.') +
-      (riskLevel
-        ? ` Das entspricht einem ${
-            riskLevel === 'high'
-              ? 'hohen'
-              : riskLevel === 'moderate'
-              ? 'mittleren'
-              : 'niedrigen'
-          } Stressniveau.`
-        : '')
-    );
+    console.warn('[stress-report] Anthropic not configured, using fallback text');
+    return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
   }
 
   const answersJson = JSON.stringify(answers, null, 2);
 
-  const response = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 500,
-    temperature: 0.3,
-    system:
-      'Du bist "AMY", eine empathische, evidenzbasierte Assistenz für Stress, Resilienz und Schlaf. ' +
-      'Du sprichst mit Patienten auf Augenhöhe, in klarer, kurzer Sprache (deutsch), ohne medizinische Diagnosen zu stellen. ' +
-      'Fasse die Ergebnisse in einem kurzen, gut verständlichen Fließtext zusammen (max. ~200 Wörter). ' +
-      'Keine Bulletpoints, keine Überschriften.',
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text:
-              `Hier sind die Ergebnisse eines kurzen Stress- und Schlaf-Checks.\n\n` +
-              `Stress-Score (0–100): ${stressScore ?? 'nicht berechenbar'}\n` +
-              `Sleep-Score (0–100): ${sleepScore ?? 'nicht berechenbar'}\n` +
-              `Eingestuftes Stressniveau: ${riskLevel ?? 'nicht klassifiziert'}\n\n` +
-              `Die einzelnen Antworten (JSON):\n${answersJson}\n\n` +
-              `Bitte schreibe einen kurzen, motivierenden und realistischen Einordnungstext. ` +
-              `Erkläre knapp, was der Wert bedeutet, und schlage 2–3 konkrete, alltagstaugliche nächste Schritte vor. ` +
-              `Duzen ist erlaubt und erwünscht.`,
-          },
-        ],
-      },
-    ],
-  });
+  try {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 500,
+      temperature: 0.3,
+      system:
+        'Du bist "AMY", eine empathische, evidenzbasierte Assistenz für Stress, Resilienz und Schlaf. ' +
+        'Du sprichst mit Patienten auf Augenhöhe, in klarer, kurzer Sprache (deutsch), ohne medizinische Diagnosen zu stellen. ' +
+        'Fasse die Ergebnisse in einem kurzen, gut verständlichen Fließtext zusammen (max. ~200 Wörter). ' +
+        'Keine Bulletpoints, keine Überschriften.',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text:
+                `Hier sind die Ergebnisse eines kurzen Stress- und Schlaf-Checks.\n\n` +
+                `Stress-Score (0–100): ${stressScore ?? 'nicht berechenbar'}\n` +
+                `Sleep-Score (0–100): ${sleepScore ?? 'nicht berechenbar'}\n` +
+                `Eingestuftes Stressniveau: ${riskLevel ?? 'nicht klassifiziert'}\n\n` +
+                `Die einzelnen Antworten (JSON):\n${answersJson}\n\n` +
+                `Bitte schreibe einen kurzen, motivierenden und realistischen Einordnungstext. ` +
+                `Erkläre knapp, was der Wert bedeutet, und schlage 2–3 konkrete, alltagstaugliche nächste Schritte vor. ` +
+                `Duzen ist erlaubt und erwünscht.`,
+            },
+          ],
+        },
+      ],
+    });
 
-  const textParts = response.content
-    .filter((c: any) => c.type === 'text')
-    .map((c: any) => c.text);
+    const textParts = response.content
+      .filter((c) => c.type === 'text')
+      .map((c) => ('text' in c ? c.text : ''));
 
-  return textParts.join('\n').trim();
+    return textParts.join('\n').trim();
+  } catch (error) {
+    // LLM-Fehler → Fallback-Text verwenden
+    console.error('[stress-report] LLM error, using fallback text:', error);
+    return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
+  }
 }
 
 export async function POST(req: Request) {
@@ -187,7 +176,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const typedAnswers: AnswerRow[] = (answers ?? []) as any[];
+    const typedAnswers: AnswerRow[] = (answers ?? []) as AnswerRow[];
 
     const { stressScore, sleepScore, riskLevel } = computeScores(typedAnswers);
 
@@ -266,12 +255,13 @@ export async function POST(req: Request) {
         riskLevel,
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[stress-report] Unerwarteter Fehler:', err);
+    const error = err as { message?: string };
     return NextResponse.json(
       {
         error: 'Interner Fehler bei der Erstellung des Reports.',
-        message: err?.message ?? String(err),
+        message: error?.message ?? String(err),
       },
       { status: 500 }
     );
