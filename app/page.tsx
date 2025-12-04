@@ -1,10 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
 type Mode = 'login' | 'signup'
+
+interface VersionInfo {
+  commitHash: string
+  commitHashShort: string
+  commitDate: string
+  buildDate: string
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,6 +21,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null) // neu: Erfolgsmeldungen
+  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
+
+  // Fetch version info on component mount
+  useEffect(() => {
+    fetch('/version.json')
+      .then((res) => res.json())
+      .then((data) => setVersionInfo(data))
+      .catch((err) => console.error('Failed to load version info:', err))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,6 +219,24 @@ export default function LoginPage() {
           Ihre Angaben werden vertraulich behandelt und ausschließlich zur 
           Durchführung Ihrer Stress- & Resilienz-Analyse genutzt.
         </p>
+
+        {/* Version Info */}
+        {versionInfo && (
+          <div className="mt-4 pt-4 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-400">
+              Version: <span className="font-mono">{versionInfo.commitHashShort}</span>
+            </p>
+            <p className="text-xs text-slate-400">
+              {new Date(versionInfo.commitDate).toLocaleString('de-DE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          </div>
+        )}
       </div>
     </main>
   )
