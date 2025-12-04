@@ -160,7 +160,7 @@ export default function PatientHistoryClient() {
   // Render states
   if (state.status === 'loading' || state.status === 'idle') {
     return (
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
+      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -178,13 +178,13 @@ export default function PatientHistoryClient() {
             <div className="h-32 animate-pulse rounded-xl bg-slate-200" />
           </div>
         </section>
-      </main>
+      </div>
     )
   }
 
   if (state.status === 'error') {
     return (
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
+      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -211,7 +211,7 @@ export default function PatientHistoryClient() {
             </button>
           </div>
         </section>
-      </main>
+      </div>
     )
   }
 
@@ -220,7 +220,7 @@ export default function PatientHistoryClient() {
 
   if (measures.length === 0) {
     return (
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
+      <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -232,7 +232,7 @@ export default function PatientHistoryClient() {
 
         <section className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
           <div className="mx-auto max-w-md">
-            <p className="text-4xl mb-4">📊</p>
+            <p className="text-4xl mb-4" aria-label="Verlaufsdiagramm-Symbol">📊</p>
             <h2 className="text-lg font-semibold text-slate-900">
               Noch keine Messungen vorhanden
             </h2>
@@ -250,12 +250,12 @@ export default function PatientHistoryClient() {
             </button>
           </div>
         </section>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
       {/* Header */}
       <section>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
@@ -430,6 +430,6 @@ export default function PatientHistoryClient() {
           Neue Messung durchführen
         </button>
       </section>
-    </main>
+    </div>
   )
 }

@@ -50,9 +50,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Hauptinhalt */}
-      <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-4 py-8">{children}</div>
-      </main>
+      <main className="flex-1">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white">
