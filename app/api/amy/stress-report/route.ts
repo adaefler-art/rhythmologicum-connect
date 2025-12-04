@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getAmyFallbackText } from '@/lib/amyFallbacks';
+import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 
 // Supabase-ENV robust auslesen
 const supabaseUrl =
@@ -31,8 +31,6 @@ const MODEL =
 const anthropic = anthropicApiKey
   ? new Anthropic({ apiKey: anthropicApiKey })
   : null;
-
-type RiskLevel = 'low' | 'moderate' | 'high';
 
 type AnswerRow = {
   question_id: string | null;

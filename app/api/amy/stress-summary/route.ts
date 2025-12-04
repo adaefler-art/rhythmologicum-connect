@@ -104,6 +104,7 @@ async function generateSummary(
   // Fallback if Anthropic is not configured
   if (!anthropic) {
     console.warn('[stress-summary] Anthropic not configured, using fallback text');
+    // Return fallback response with same structure as LLM response
     return {
       report_text_short: getAmyFallbackText({ riskLevel, stressScore, sleepScore }),
       risk_level: riskLevel,
