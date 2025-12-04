@@ -217,6 +217,7 @@ export default function StressResultClient() {
   const sleepScore = scores?.sleepScore ?? null
   const risk: RiskLevel = scores?.riskLevel ?? report?.risk_level ?? null
 
+  const hasAmyText = !!report?.report_text_short
   const primaryText =
     report?.report_text_short ||
     (hasReport && risk === 'high'
@@ -225,7 +226,7 @@ export default function StressResultClient() {
       ? 'Dein Stressniveau ist im mittleren Bereich. Es lohnt sich, jetzt gezielt an Schlaf, Erholung und Grenzen zu arbeiten, bevor sich Beschwerden verstärken.'
       : hasReport && risk === 'low'
       ? 'Aktuell liegen deine Werte im eher entspannten Bereich. Das ist eine gute Basis – achte weiter auf Schlaf, Bewegung und Pausen, damit das so bleibt.'
-      : 'Deine Antworten sind sicher gespeichert. Sobald die automatische Auswertung abgeschlossen ist, siehst du hier deinen persönlichen Kurz-Report.')
+      : 'Deine Antworten sind sicher gespeichert. Die automatische Auswertung wird in Kürze erstellt – bitte schaue in wenigen Minuten noch einmal vorbei oder lade diese Seite neu.')
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
@@ -311,29 +312,44 @@ export default function StressResultClient() {
       </section>
 
       {/* AMY Text / Fallback */}
-      <section className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-800">Kurze Einordnung</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-          {primaryText}
-        </p>
-        {!hasReport && (
-          <p className="mt-2 text-xs text-slate-500">
-            Falls diese Meldung länger bestehen bleibt, kannst du den Fragebogen jederzeit erneut
-            ausfüllen oder dich direkt an deine behandelnde Praxis wenden.
+      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="text-base font-semibold text-slate-800">Deine persönliche Einordnung</h2>
+          {hasAmyText && (
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              von AMY
+            </span>
+          )}
+        </div>
+        <div className="prose prose-slate max-w-none">
+          <p className="text-base leading-7 text-slate-700 whitespace-pre-line">
+            {primaryText}
           </p>
+        </div>
+        {!hasAmyText && hasReport && (
+          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+            <p className="text-sm font-medium text-blue-900">
+              💡 Die detaillierte KI-gestützte Auswertung folgt in Kürze
+            </p>
+            <p className="mt-1 text-sm text-blue-800">
+              Deine Daten sind bereits ausgewertet. Eine noch genauere, personalisierte Einordnung durch unsere KI-Assistentin AMY wird gerade erstellt.
+            </p>
+          </div>
+        )}
+        {!hasReport && (
+          <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-medium text-amber-900">
+              ⏳ Auswertung läuft gerade
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              Deine Antworten werden analysiert. Das dauert normalerweise nur wenige Sekunden. Bitte lade die Seite in einem Moment neu.
+            </p>
+            <p className="mt-2 text-xs text-amber-700">
+              Falls die Auswertung länger als 2 Minuten dauert, kannst du dich gerne an deine behandelnde Praxis wenden.
+            </p>
+          </div>
         )}
       </section>
-
-      {/* Noch-nicht-verfügbar-Hinweis, wenn kein Report */}
-      {!hasReport && (
-        <section className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-xs text-slate-600">
-          <p className="font-medium">Dein Report ist noch nicht vollständig verfügbar.</p>
-          <p className="mt-1">
-            Das ist kein Notfallhinweis. Die medizinische Auswertung im Hintergrund kann etwas
-            Zeit benötigen. Deine Daten sind sicher gespeichert und werden nicht verloren gehen.
-          </p>
-        </section>
-      )}
     </main>
   )
 }
