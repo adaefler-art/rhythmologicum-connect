@@ -131,10 +131,10 @@ export async function POST(req: Request) {
           .eq('assessment_id', assessmentId)
           .single();
 
-        if (refetchError) {
+        if (refetchError || !refetchedMeasure) {
           console.error(
             '[patient-measures/save] Fehler beim erneuten Laden nach Race Condition:',
-            refetchError
+            refetchError || 'Kein Eintrag gefunden'
           );
           return NextResponse.json(
             { error: 'Fehler beim Laden der Messung.' },
