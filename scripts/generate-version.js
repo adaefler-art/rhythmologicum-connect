@@ -14,7 +14,7 @@ function getGitInfo() {
     // Get commit hash
     const commitHash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim()
     
-    // Get commit date (ISO 8601 format)
+    // Get committer date in ISO 8601 format
     const commitDate = execSync('git log -1 --format=%cI', { encoding: 'utf8' }).trim()
     
     // Get short commit hash (first 7 characters)

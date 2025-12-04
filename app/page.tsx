@@ -32,7 +32,12 @@ export default function LoginPage() {
         }
         return res.json()
       })
-      .then((data) => setVersionInfo(data))
+      .then((data) => {
+        // Basic validation of the response structure
+        if (data && typeof data.commitHashShort === 'string' && typeof data.commitDate === 'string') {
+          setVersionInfo(data)
+        }
+      })
       .catch((err) => console.error('Failed to load version info:', err))
   }, [])
 
