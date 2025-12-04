@@ -199,7 +199,7 @@ export async function POST(req: Request) {
     });
 
     const { data: existingReports, error: existingError } = await supabase
-      .from('stress_reports')
+      .from('reports')
       .select('*')
       .eq('assessment_id', assessmentId)
       .limit(1);
@@ -213,9 +213,10 @@ export async function POST(req: Request) {
     if (existingReports && existingReports.length > 0) {
       const existing = existingReports[0];
       const { data: updated, error: updateError } = await supabase
-        .from('stress_reports')
+        .from('reports')
         .update({
           score_numeric: stressScore ?? existing.score_numeric,
+          sleep_score: sleepScore ?? existing.sleep_score,
           risk_level: riskLevel ?? existing.risk_level,
           report_text_short: reportTextShort,
         })
@@ -237,10 +238,11 @@ export async function POST(req: Request) {
       reportRow = updated;
     } else {
       const { data: inserted, error: insertError } = await supabase
-        .from('stress_reports')
+        .from('reports')
         .insert({
           assessment_id: assessmentId,
           score_numeric: stressScore ?? null,
+          sleep_score: sleepScore ?? null,
           risk_level: riskLevel ?? null,
           report_text_short: reportTextShort,
         })
