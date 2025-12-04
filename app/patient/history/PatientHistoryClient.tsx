@@ -276,7 +276,7 @@ export default function PatientHistoryClient() {
             {measures.length}
           </p>
           <p className="mt-1 text-[11px] text-slate-500">
-            Seit {formatDate(measures[measures.length - 1]?.completed_at)}
+            Erste Messung: {formatDate(measures[measures.length - 1]?.completed_at)}
           </p>
         </div>
 
@@ -336,7 +336,7 @@ export default function PatientHistoryClient() {
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">
-                      Messung {measures.length - index}
+                      {index === 0 ? 'Neueste Messung' : `Messung vom ${formatDate(measure.completed_at)}`}
                     </h3>
                     <p className="text-xs text-slate-500">
                       {formatDateTime(measure.completed_at)}
