@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS patient_measures (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create index on assessment_id for faster lookups (UNIQUE constraint already creates index)
 -- Create index on patient_id for faster queries by patient
 CREATE INDEX IF NOT EXISTS idx_patient_measures_patient_id ON patient_measures(patient_id);
 

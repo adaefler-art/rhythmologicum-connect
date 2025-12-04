@@ -2,9 +2,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase-ENV robust auslesen
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+// Supabase-ENV robust auslesen (nur private Variablen für Server-Side Code)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
@@ -126,11 +125,22 @@ export async function POST(req: Request) {
         );
         
         // Nochmal laden und zurückgeben (Race Condition)
-        const { data: refetchedMeasure } = await supabase
+        const { data: refetchedMeasure, error: refetchError } = await supabase
           .from('patient_measures')
           .select('*')
           .eq('assessment_id', assessmentId)
           .single();
+
+        if (refetchError) {
+          console.error(
+            '[patient-measures/save] Fehler beim erneuten Laden nach Race Condition:',
+            refetchError
+          );
+          return NextResponse.json(
+            { error: 'Fehler beim Laden der Messung.' },
+            { status: 500 }
+          );
+        }
 
         return NextResponse.json({
           measure: refetchedMeasure,
