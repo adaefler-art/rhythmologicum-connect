@@ -12,6 +12,8 @@ on:
 jobs:
   migrations-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     services:
       postgres:
         image: postgres:13
