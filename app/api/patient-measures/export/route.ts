@@ -127,6 +127,7 @@ export async function GET(req: Request) {
         reportsError
       )
       // Continue without reports rather than failing completely
+      // Measures will be exported with null values for report-related fields
     }
 
     // 5. Combine measures with their reports and prepare export data
@@ -143,6 +144,7 @@ export async function GET(req: Request) {
         created_at: measure.created_at,
         updated_at: measure.updated_at,
         scores: {
+          // Note: stress_score uses score_numeric from the report table
           stress_score: report?.score_numeric ?? null,
           sleep_score: report?.sleep_score ?? null,
         },
