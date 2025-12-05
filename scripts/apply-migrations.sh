@@ -13,9 +13,11 @@ fi
 echo "Applying migrations from $MIGRATIONS_DIR to $DATABASE_URL"
 
 # Run each .sql file in sorted order; stop on first error
-for f in $(ls "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
+shopt -s nullglob
+for f in "$MIGRATIONS_DIR"/*.sql; do
   echo "-> applying $f"
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
 done
+shopt -u nullglob
 
 echo "All migrations applied."
