@@ -7,6 +7,14 @@ const supabaseUrl =
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 
+const usedKeyName = process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? 'SUPABASE_SERVICE_ROLE_KEY'
+  : process.env.SUPABASE_SERVICE_KEY
+  ? 'SUPABASE_SERVICE_KEY'
+  : 'none'
+console.log('[patient-measures/history] using key var:', usedKeyName)
+console.log('[patient-measures/history] supabaseUrl set?', !!(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL))
+
 if (!supabaseUrl || !supabaseServiceKey) {
   console.warn(
     '[patient-measures/history] Supabase-Env nicht gesetzt. Bitte NEXT_PUBLIC_SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY prüfen.'
@@ -43,21 +51,23 @@ export async function GET(req: Request) {
       )
     }
 
-    // Fetch patient measures with related reports
+    // NOTE: Select columns that actually exist in the DB schema.
+    // patient_measures in your schema has report_id (FK), not assessment_id.
     const { data: measures, error: measuresError } = await supabase
       .from('patient_measures')
       .select(
         `
         id,
-        assessment_id,
         patient_id,
-        measurement_type,
-        completed_at,
+        report_id,
+        stress_score,
+        sleep_score,
+        risk_level,
         created_at
       `
       )
       .eq('patient_id', patientId)
-      .order('completed_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (measuresError) {
       console.error(
@@ -77,29 +87,32 @@ export async function GET(req: Request) {
       })
     }
 
-    // Fetch reports for each assessment
-    const assessmentIds = measures.map((m) => m.assessment_id)
-    const { data: reports, error: reportsError } = await supabase
-      .from('reports')
-      .select('*')
-      .in('assessment_id', assessmentIds)
+    // Wenn patient_measures.report_id verwendet wird, hole die Reports über deren id
+    const reportIds = measures.map((m: any) => m.report_id).filter(Boolean)
+    let reports: any[] | undefined = undefined
+    if (reportIds.length > 0) {
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('reports')
+        .select('*')
+        .in('id', reportIds)
 
-    if (reportsError) {
-      console.error(
-        '[patient-measures/history] Fehler beim Laden der Reports:',
-        reportsError
-      )
-      // Continue without reports rather than failing completely
+      if (reportsError) {
+        console.error(
+          '[patient-measures/history] Fehler beim Laden der Reports:',
+          reportsError
+        )
+        // continue without reports
+      } else {
+        reports = reportsData || []
+      }
     }
 
-    // Combine measures with their reports
-    const measuresWithReports = measures.map((measure) => {
-      const report = reports?.find(
-        (r) => r.assessment_id === measure.assessment_id
-      )
+    // Combine measures with their reports (match by report_id -> reports.id)
+    const measuresWithReports = measures.map((measure: any) => {
+      const report = reports?.find((r: any) => r.id === measure.report_id) || null
       return {
         ...measure,
-        report: report || null,
+        report,
       }
     })
 
