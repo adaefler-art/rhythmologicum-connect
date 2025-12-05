@@ -4,6 +4,10 @@ const DEFAULT_MAX = parseInt(process.env.PG_MAX_CLIENTS || '10', 10);
 const DEFAULT_IDLE = parseInt(process.env.PG_IDLE_TIMEOUT || '30000', 10); // ms
 const DEFAULT_CONN_TIMEOUT = parseInt(process.env.PG_CONN_TIMEOUT || '5000', 10); // ms
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
+
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
   max: DEFAULT_MAX,

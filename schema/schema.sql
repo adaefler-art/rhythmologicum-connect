@@ -9,5 +9,3 @@ CREATE TABLE public.users (
     email text,
     created_at timestamp with time zone DEFAULT now()
 );
-
-ALTER TABLE public.users OWNER TO postgres;
