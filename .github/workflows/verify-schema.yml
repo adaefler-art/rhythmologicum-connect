@@ -44,5 +44,6 @@ jobs:
       - name: Apply migrations and verify schema
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          MIGRATIONS_DIR: supabase/migrations
         run: |
           ./scripts/verify-schema.sh
