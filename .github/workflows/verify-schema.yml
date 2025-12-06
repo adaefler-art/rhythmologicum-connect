@@ -8,7 +8,7 @@ jobs:
   verify-schema:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     services:
       postgres:
         image: postgres:15
