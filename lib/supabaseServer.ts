@@ -36,15 +36,6 @@ export async function getCurrentUser() {
   return user
 }
 
-export async function getUserRole(userId: string) {
-  const supabase = await createClient()
-  const { data: user } = await supabase.auth.admin.getUserById(userId)
-  
-  // Check role in app_metadata
-  const role = user?.user?.app_metadata?.role || user?.user?.user_metadata?.role
-  return role as string | undefined
-}
-
 export async function hasClinicianRole(): Promise<boolean> {
   const user = await getCurrentUser()
   if (!user) return false

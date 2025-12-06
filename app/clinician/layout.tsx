@@ -6,6 +6,10 @@ import { supabase } from '@/lib/supabaseClient'
 import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 
+// Constants for redirect URLs
+const AUTH_REQUIRED_REDIRECT = '/?error=authentication_required&message=Bitte melden Sie sich an.'
+const ACCESS_DENIED_REDIRECT = '/?error=access_denied&message=Keine Berechtigung für den Clinician-Bereich.'
+
 export default function ClinicianLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -19,14 +23,14 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/?error=authentication_required&message=Bitte melden Sie sich an.')
+        router.push(AUTH_REQUIRED_REDIRECT)
         return
       }
 
       const role = user.app_metadata?.role || user.user_metadata?.role
       
       if (role !== 'clinician') {
-        router.push('/?error=access_denied&message=Keine Berechtigung für den Clinician-Bereich.')
+        router.push(ACCESS_DENIED_REDIRECT)
         return
       }
 
@@ -42,13 +46,15 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
         router.push('/')
-      } else if (event === 'SIGNED_IN' && session) {
-        const role = session.user.app_metadata?.role || session.user.user_metadata?.role
-        if (role !== 'clinician') {
-          router.push('/?error=access_denied&message=Keine Berechtigung für den Clinician-Bereich.')
-        } else {
-          setUser(session.user)
-          setLoading(false)
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          const role = session.user.app_metadata?.role || session.user.user_metadata?.role
+          if (role !== 'clinician') {
+            router.push(ACCESS_DENIED_REDIRECT)
+          } else {
+            setUser(session.user)
+            setLoading(false)
+          }
         }
       }
     })
