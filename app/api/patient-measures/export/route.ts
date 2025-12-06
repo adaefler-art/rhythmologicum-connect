@@ -81,17 +81,16 @@ export async function GET(req: Request) {
       .select(
         `
         id,
-        assessment_id,
         patient_id,
-        measurement_type,
-        status,
-        completed_at,
         created_at,
-        updated_at
+        report_id,
+        stress_score,
+        sleep_score,
+        risk_level
       `
       )
       .eq('patient_id', patientId)
-      .order('completed_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (measuresError) {
       console.error(
@@ -114,41 +113,44 @@ export async function GET(req: Request) {
       })
     }
 
-    // 4. Fetch reports for each assessment
-    const assessmentIds = measures.map((m) => m.assessment_id)
-    const { data: reports, error: reportsError } = await supabase
-      .from('reports')
-      .select('*')
-      .in('assessment_id', assessmentIds)
+    // 4. Fetch reports referenced by the measures
+    const reportIds = measures.map((m) => m.report_id).filter(Boolean)
+    let reports: any[] | undefined = undefined
+    if (reportIds.length > 0) {
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('reports')
+        .select('*')
+        .in('id', reportIds as string[])
 
-    if (reportsError) {
-      console.error(
-        '[patient-measures/export] Fehler beim Laden der Reports:',
-        reportsError
-      )
-      // Continue without reports rather than failing completely
-      // Measures will be exported with null values for report-related fields
+      if (reportsError) {
+        console.error(
+          '[patient-measures/export] Fehler beim Laden der Reports:',
+          reportsError
+        )
+        // Continue without reports rather than failing completely
+        // Measures will be exported with null values for report-related fields
+      } else {
+        reports = reportsData || []
+      }
     }
 
     // 5. Combine measures with their reports and prepare export data
     const exportData = measures.map((measure) => {
-      const report = reports?.find(
-        (r) => r.assessment_id === measure.assessment_id
-      )
+      const report = reports?.find((r) => r.id === measure.report_id)
+      const measuredAt = report?.created_at ?? measure.created_at
       return {
         measure_id: measure.id,
-        assessment_id: measure.assessment_id,
-        measurement_type: measure.measurement_type,
-        status: measure.status,
-        completed_at: measure.completed_at,
-        created_at: measure.created_at,
-        updated_at: measure.updated_at,
+        patient_id: measure.patient_id,
+        measured_at: measuredAt,
+        stress_score: measure.stress_score ?? report?.score_numeric ?? null,
+        sleep_score: measure.sleep_score ?? report?.sleep_score ?? null,
+        risk_level: measure.risk_level ?? report?.risk_level ?? null,
+        report_id: report?.id ?? measure.report_id,
         scores: {
-          // Note: stress_score uses score_numeric from the report table
-          stress_score: report?.score_numeric ?? null,
-          sleep_score: report?.sleep_score ?? null,
+          stress_score: measure.stress_score ?? report?.score_numeric ?? null,
+          sleep_score: measure.sleep_score ?? report?.sleep_score ?? null,
         },
-        risk_level: report?.risk_level ?? null,
+        report_assessment_id: report?.assessment_id ?? null,
         amy_interpretation: report?.report_text_short ?? null,
         report_created_at: report?.created_at ?? null,
       }

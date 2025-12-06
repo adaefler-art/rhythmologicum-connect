@@ -55,33 +55,7 @@ export default function StressResultClient() {
     try {
       setState({ status: 'loading' })
 
-      // 1. Save patient measure (idempotent)
-      try {
-        const measureRes = await fetch('/api/patient-measures/save', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ assessmentId }),
-        })
-
-        if (!measureRes.ok) {
-          console.error(
-            'Patient measure save: API-Fehler',
-            measureRes.status,
-            await measureRes.text()
-          )
-          // Log error but continue - don't block the user experience
-        } else {
-          const measureData = await measureRes.json()
-          console.log('Patient measure saved:', measureData)
-        }
-      } catch (measureErr) {
-        console.error('Patient measure save: Fetch-Fehler', measureErr)
-        // Log error but continue - don't block the user experience
-      }
-
-      // 2. Fetch stress report
+      // 1. Fetch stress report (creates/updates Supabase records internally)
       const res = await fetch('/api/amy/stress-report', {
         method: 'POST',
         headers: {

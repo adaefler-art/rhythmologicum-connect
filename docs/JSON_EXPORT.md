@@ -32,17 +32,17 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
   "measures": [
     {
       "measure_id": "uuid-of-measure",
-      "assessment_id": "uuid-of-assessment",
-      "measurement_type": "stress",
-      "status": "completed",
-      "completed_at": "2025-12-05T09:15:00.000Z",
-      "created_at": "2025-12-05T09:15:00.000Z",
-      "updated_at": "2025-12-05T09:15:00.000Z",
+      "patient_id": "uuid-of-patient",
+      "measured_at": "2025-12-05T09:15:00.000Z",
+      "stress_score": 65,
+      "sleep_score": 72,
+      "risk_level": "moderate",
+      "report_id": "uuid-of-report",
       "scores": {
         "stress_score": 65,
         "sleep_score": 72
       },
-      "risk_level": "moderate",
+      "report_assessment_id": "uuid-of-assessment",
       "amy_interpretation": "Ihre Stresswerte liegen im moderaten Bereich...",
       "report_created_at": "2025-12-05T09:16:00.000Z"
     }
@@ -62,17 +62,17 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
 #### Measures-Objekt
 
 - **measure_id** (UUID): Eindeutige ID der Messung
-- **assessment_id** (UUID): Referenz zum Assessment
-- **measurement_type** (String): Typ der Messung (z.B. "stress")
-- **status** (String): Status ("completed", "in_progress", "failed")
-- **completed_at** (ISO 8601): Zeitpunkt der Fertigstellung
-- **created_at** (ISO 8601): Erstellungszeitpunkt
-- **updated_at** (ISO 8601): Letzter Änderungszeitpunkt
-- **scores** (Objekt): 
-  - **stress_score** (Zahl | null): Stress-Score (numerischer Wert aus AMY-Auswertung)
-  - **sleep_score** (Zahl | null): Schlaf-Score (numerischer Wert aus AMY-Auswertung)
-- **risk_level** (String | null): Risikoeinstufung ("low", "moderate", "high")
-- **amy_interpretation** (String | null): KI-gestützte Auswertung durch AMY
+- **patient_id** (UUID): Referenz zum Patientenprofil
+- **measured_at** (ISO 8601): Zeitpunkt der Messung (Report-Zeitstempel)
+- **stress_score** (Zahl | null): Normalisierter Stress-Score (0–100)
+- **sleep_score** (Zahl | null): Normalisierter Schlaf-Score (0–100)
+- **risk_level** (String): Einstufung `low`, `moderate`, `high` oder temporär `pending`
+- **report_id** (UUID | null): Referenz zum Report
+- **scores** (Objekt): Duplizierte Scores zur Rückwärtskompatibilität
+  - **stress_score** (Zahl | null)
+  - **sleep_score** (Zahl | null)
+- **report_assessment_id** (UUID | null): Assessment, das dem Report zugrunde liegt
+- **amy_interpretation** (String | null): Kurztext von AMY
 - **report_created_at** (ISO 8601 | null): Zeitpunkt der Report-Erstellung
 
 ### Datei-Name

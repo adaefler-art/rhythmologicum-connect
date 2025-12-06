@@ -19,11 +19,12 @@ type Report = {
 
 type Measure = {
   id: string
-  assessment_id: string
   patient_id: string
-  measurement_type: string
-  completed_at: string
   created_at: string
+  report_id: string | null
+  stress_score: number | null
+  sleep_score: number | null
+  risk_level: RiskLevel | 'pending' | null
   report: Report | null
 }
 
@@ -309,6 +310,12 @@ export default function PatientHistoryClient() {
     )
   }
 
+  const latestMeasurement = measures[0]
+  const latestStressScore =
+    latestMeasurement?.report?.score_numeric ?? latestMeasurement?.stress_score ?? null
+  const latestSleepScore =
+    latestMeasurement?.report?.sleep_score ?? latestMeasurement?.sleep_score ?? null
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
       {/* Header */}
@@ -365,7 +372,7 @@ export default function PatientHistoryClient() {
             {measures.length}
           </p>
           <p className="mt-1 text-[11px] text-slate-500">
-            Erste Messung: {formatDate(measures[measures.length - 1]?.completed_at)}
+            Erste Messung: {formatDate(measures[measures.length - 1]?.created_at)}
           </p>
         </div>
 
@@ -373,15 +380,15 @@ export default function PatientHistoryClient() {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Letzter Stress-Score
           </p>
-          {measures[0]?.report?.score_numeric != null ? (
+          {latestStressScore != null ? (
             <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {Math.round(measures[0].report.score_numeric)}
+              {Math.round(latestStressScore)}
             </p>
           ) : (
             <p className="mt-2 text-sm text-slate-400">Keine Daten</p>
           )}
           <p className="mt-1 text-[11px] text-slate-500">
-            Von {formatDate(measures[0]?.completed_at)}
+            Von {formatDate(measures[0]?.created_at)}
           </p>
         </div>
 
@@ -389,15 +396,15 @@ export default function PatientHistoryClient() {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Letzter Schlaf-Score
           </p>
-          {measures[0]?.report?.sleep_score != null ? (
+          {latestSleepScore != null ? (
             <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {Math.round(measures[0].report.sleep_score)}
+              {Math.round(latestSleepScore)}
             </p>
           ) : (
             <p className="mt-2 text-sm text-slate-400">Keine Daten</p>
           )}
           <p className="mt-1 text-[11px] text-slate-500">
-            Von {formatDate(measures[0]?.completed_at)}
+            Von {formatDate(measures[0]?.created_at)}
           </p>
         </div>
       </section>
@@ -411,9 +418,9 @@ export default function PatientHistoryClient() {
           {measures.map((measure, index) => {
             const report = measure.report
             const hasReport = !!report
-            const stressScore = report?.score_numeric ?? null
-            const sleepScore = report?.sleep_score ?? null
-            const risk = report?.risk_level ?? null
+            const stressScore = report?.score_numeric ?? measure.stress_score ?? null
+            const sleepScore = report?.sleep_score ?? measure.sleep_score ?? null
+            const risk = report?.risk_level ?? measure.risk_level ?? null
             const amyText = report?.report_text_short ?? null
 
             return (
@@ -425,10 +432,10 @@ export default function PatientHistoryClient() {
                 <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">
-                      {index === 0 ? 'Neueste Messung' : `Messung vom ${formatDate(measure.completed_at)}`}
+                      {index === 0 ? 'Neueste Messung' : `Messung vom ${formatDate(measure.created_at)}`}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      {formatDateTime(measure.completed_at)}
+                      {formatDateTime(measure.created_at)}
                     </p>
                   </div>
                   {risk && (

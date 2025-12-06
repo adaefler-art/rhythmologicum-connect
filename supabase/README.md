@@ -2,70 +2,44 @@
 
 ## Tabelle: `patient_measures`
 
-Diese Tabelle verfolgt abgeschlossene Patientenmessungen/Assessments mit idempotenter Logik, um Duplikate zu verhindern.
+Diese Tabelle hält die klinisch relevanten Scores je Patient fest. Jeder Eintrag verweist auf genau einen Report und enthält die normalisierten Stress-/Schlaf-Scores sowie die finale Risiko-Einschätzung. Die Datensätze werden automatisch durch den Endpoint `/api/amy/stress-report` erstellt oder aktualisiert, sobald ein Report generiert wird.
 
 ### Schema
 
-| Spalte              | Typ          | Beschreibung                                              | Constraints                           |
-|---------------------|--------------|-----------------------------------------------------------|---------------------------------------|
-| `id`                | UUID         | Eindeutige ID der Messung (Primary Key)                  | PRIMARY KEY, DEFAULT gen_random_uuid()|
-| `assessment_id`     | UUID         | Referenz zum Assessment (Foreign Key, UNIQUE)             | NOT NULL, UNIQUE, REFERENCES assessments(id)|
-| `patient_id`        | UUID         | Patienten-ID für diese Messung                           | NOT NULL                              |
-| `measurement_type`  | TEXT         | Art der Messung (stress, sleep, etc.)                     | NOT NULL, DEFAULT 'stress'            |
-| `status`            | TEXT         | Status: 'completed', 'in_progress', 'failed'              | NOT NULL, CHECK constraint            |
-| `completed_at`      | TIMESTAMPTZ  | Zeitstempel der Fertigstellung                            | DEFAULT NOW()                         |
-| `created_at`        | TIMESTAMPTZ  | Zeitstempel der Erstellung                                | DEFAULT NOW()                         |
-| `updated_at`        | TIMESTAMPTZ  | Zeitstempel der letzten Aktualisierung                    | DEFAULT NOW(), auto-updated via trigger|
+| Spalte         | Typ         | Beschreibung                                                     | Constraints                                         |
+|----------------|-------------|------------------------------------------------------------------|-----------------------------------------------------|
+| `id`           | UUID        | Eindeutige ID der Messung (Primary Key)                          | PRIMARY KEY, DEFAULT gen_random_uuid()              |
+| `patient_id`   | UUID        | Referenz auf `patient_profiles.id`                               | NOT NULL, REFERENCES patient_profiles(id)           |
+| `stress_score` | INTEGER     | Stress-Score (0-100)                                             | NULL erlaubt, CHECK 0–100                           |
+| `sleep_score`  | INTEGER     | Schlaf-Score (0-100)                                             | NULL erlaubt, CHECK 0–100                           |
+| `risk_level`   | TEXT        | Einstufung `low`, `moderate`, `high` oder temporär `pending`     | NOT NULL                                            |
+| `report_id`    | UUID        | Referenz auf `reports.id` (ermöglicht Idempotenz pro Report)     | REFERENCES reports(id)                              |
+| `created_at`   | TIMESTAMPTZ | Zeitstempel der Erstellung / Messung                             | DEFAULT NOW()                                       |
 
 ### Indizes
 
-- `assessment_id`: UNIQUE constraint (automatischer Index)
-- `idx_patient_measures_patient_id`: Index auf `patient_id` für schnellere Abfragen
-- `idx_patient_measures_completed_at`: Index auf `completed_at` (DESC) für schnelleres Sortieren
-
-### Trigger
-
-- `trigger_patient_measures_updated_at`: Automatisches Update von `updated_at` bei jeder Änderung
+- `idx_patient_measures_patient_id`: Filtert die Historie eines Patienten
+- (Anwendungslogik) `report_id`: Wird pro Report nur einmal befüllt und dadurch idempotent gehalten
 
 ### Beziehungen
 
-- **Foreign Key**: `assessment_id` → `assessments(id)` mit `ON DELETE CASCADE`
-  - Wenn ein Assessment gelöscht wird, wird automatisch die zugehörige Messung gelöscht
-- **UNIQUE Constraint**: Verhindert Duplikate für dieselbe `assessment_id` (Idempotenz)
+- `patient_id` → `patient_profiles(id)`
+- `report_id` → `reports(id)` (NULL möglich, falls Report noch aussteht)
 
 ### Verwendung
 
-#### Neue Messung speichern (idempotent)
-
-```typescript
-const response = await fetch('/api/patient-measures/save', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ assessmentId: 'uuid-des-assessments' }),
-})
-
-const data = await response.json()
-// { measure: {...}, message: '...', isNew: true/false }
-```
-
-#### Messungen abfragen
+- **Messung erstellen**: passiert automatisch innerhalb von `/api/amy/stress-report` nachdem Scores berechnet wurden.
+- **Historie laden**:
 
 ```typescript
 const { data, error } = await supabase
   .from('patient_measures')
-  .select('*')
+  .select('id, patient_id, stress_score, sleep_score, risk_level, report_id, created_at')
   .eq('patient_id', 'patient-uuid')
-  .order('completed_at', { ascending: false });
+  .order('created_at', { ascending: false })
 ```
 
-### Idempotenz
-
-Die Tabelle stellt durch den UNIQUE Constraint auf `assessment_id` sicher, dass:
-- Jedes Assessment nur einmal als Messung gespeichert wird
-- Wiederholte API-Aufrufe keine Duplikate erzeugen
-- Bei Race Conditions der zweite Insert fehlschlägt und der existierende Eintrag zurückgegeben wird
+Die Risiko-Einschätzung wird als `'pending'` gespeichert, solange der endgültige Report noch generiert wird.
 
 ---
 
