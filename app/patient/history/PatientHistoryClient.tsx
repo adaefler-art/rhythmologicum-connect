@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
-type RiskLevel = 'low' | 'moderate' | 'high' | null
+type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
 type Report = {
   id: string
@@ -141,6 +141,8 @@ export default function PatientHistoryClient() {
         return 'Moderates Risiko'
       case 'high':
         return 'Erhöhtes Risiko'
+      case 'pending':
+        return 'Wird ermittelt'
       default:
         return 'Nicht klassifiziert'
     }
@@ -154,6 +156,8 @@ export default function PatientHistoryClient() {
         return 'bg-amber-100 text-amber-800 border-amber-200'
       case 'high':
         return 'bg-red-100 text-red-800 border-red-200'
+      case 'pending':
+        return 'bg-slate-100 text-slate-600 border-slate-200'
       default:
         return 'bg-slate-100 text-slate-700 border-slate-200'
     }
