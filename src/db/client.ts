@@ -1,4 +1,4 @@
-import { Pool, PoolConfig, QueryConfig, QueryResult } from 'pg';
+import { Pool, PoolConfig, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
@@ -21,7 +21,10 @@ pool.on('error', (err) => {
   console.error('Unexpected idle client error', err);
 });
 
-export async function query<T = unknown>(text: string | QueryConfig, params?: unknown[]): Promise<QueryResult<T>> {
+export async function query<T extends QueryResultRow = QueryResultRow>(
+  text: string | QueryConfig,
+  params?: unknown[]
+): Promise<QueryResult<T>> {
   return pool.query(text, params);
 }
 
