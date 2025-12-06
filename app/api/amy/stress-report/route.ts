@@ -163,6 +163,20 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .select('id, patient_id')
+      .eq('id', assessmentId)
+      .single();
+
+    if (assessmentError || !assessment) {
+      console.error('[stress-report] Assessment nicht gefunden:', assessmentError);
+      return NextResponse.json(
+        { error: 'Assessment nicht gefunden.' },
+        { status: 404 }
+      );
+    }
+
     const { data: answers, error: answersError } = await supabase
       .from('assessment_answers')
       .select('question_id, answer_value')
@@ -251,6 +265,22 @@ export async function POST(req: Request) {
       reportRow = inserted;
     }
 
+    try {
+      await upsertPatientMeasure({
+        patientId: assessment.patient_id,
+        reportId: reportRow.id,
+        stressScore: stressScore ?? reportRow.score_numeric ?? null,
+        sleepScore: sleepScore ?? reportRow.sleep_score ?? null,
+        riskLevel: riskLevel ?? reportRow.risk_level ?? null,
+      });
+    } catch (measureError) {
+      console.error('[stress-report] Fehler beim Aktualisieren von patient_measures:', measureError);
+      return NextResponse.json(
+        { error: 'Fehler beim Speichern der Messdaten.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       report: reportRow,
       scores: {
@@ -269,5 +299,56 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
+  }
+}
+
+async function upsertPatientMeasure(params: {
+  patientId: string
+  reportId: string
+  stressScore: number | null
+  sleepScore: number | null
+  riskLevel: RiskLevel | null
+}) {
+  if (!supabase) {
+    throw new Error('Supabase client not initialised');
+  }
+
+  const normalizedRisk = params.riskLevel ?? 'pending';
+
+  const payload = {
+    patient_id: params.patientId,
+    report_id: params.reportId,
+    stress_score: params.stressScore,
+    sleep_score: params.sleepScore,
+    risk_level: normalizedRisk,
+  };
+
+  const { data: existing, error: selectError } = await supabase
+    .from('patient_measures')
+    .select('id')
+    .eq('report_id', params.reportId)
+    .maybeSingle();
+
+  if (selectError) {
+    throw selectError;
+  }
+
+  if (existing) {
+    const { error: updateError } = await supabase
+      .from('patient_measures')
+      .update(payload)
+      .eq('id', existing.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from('patient_measures')
+      .insert(payload);
+
+    if (insertError) {
+      throw insertError;
+    }
   }
 }

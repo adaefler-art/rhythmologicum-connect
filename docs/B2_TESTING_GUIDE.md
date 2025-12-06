@@ -2,230 +2,163 @@
 
 ## Prerequisites
 
-1. Ensure the database migration is applied:
-   - Open Supabase Dashboard
-   - Navigate to SQL Editor
-   - Copy and execute the content of `supabase/migrations/20241204210000_create_patient_measures_table.sql`
-
-2. Start the development server:
+1. Apply both migrations in Supabase:
+   - `supabase/migrations/20241204210000_create_patient_measures_table.sql`
+   - `supabase/migrations/20241209103000_update_patient_measures_schema.sql`
+2. Start the dev server:
    ```bash
    npm run dev
    ```
 
 ## Test Scenarios
 
-### Test 1: First-Time Save (Happy Path)
+### Test 1: Stress-Check erzeugt Messung
 
-**Steps:**
-1. Navigate to http://localhost:3000/patient/stress-check
-2. Fill out all questionnaire fields
-3. Click "Antworten speichern & weiter"
-4. You'll be redirected to the result page
+**Steps**
+1. Öffne `http://localhost:3000/patient/stress-check`
+2. Fragebogen ausfüllen und absenden
+3. Warte auf Weiterleitung zur Ergebnis-Seite (Aufruf von `/api/amy/stress-report`)
 
-**Expected Results:**
-- Console log: `Patient measure saved: { ... isNew: true }`
-- Check Supabase `patient_measures` table: New entry exists for this assessment_id
-- Result page displays without errors
+**Expected**
+- In `patient_measures` existiert ein neuer Eintrag mit `report_id`, `stress_score`, `sleep_score`, `risk_level`
+- `risk_level` entspricht der Einschätzung oder steht auf `pending`, falls keine Bewertung möglich war
 
-**Verification Query:**
+**SQL Check**
 ```sql
-SELECT * FROM patient_measures 
-ORDER BY created_at DESC 
+SELECT id, patient_id, stress_score, sleep_score, risk_level, report_id, created_at
+FROM patient_measures
+ORDER BY created_at DESC
 LIMIT 1;
 ```
 
-### Test 2: Idempotency - Page Reload
+### Test 2: Idempotenz pro Report
 
-**Steps:**
-1. On the result page from Test 1, press F5 to reload
-2. Check the browser console
+**Steps**
+1. Ermittle die `assessmentId` der aktuellen Session (Query-Parameter auf der Ergebnis-Seite)
+2. Rufe `/api/amy/stress-report` erneut auf:
+   ```javascript
+   fetch('/api/amy/stress-report', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ assessmentId })
+   }).then(r => r.json()).then(console.log)
+   ```
 
-**Expected Results:**
-- Console log: `Patient measure saved: { ... isNew: false }`
-- The `patient_measures` table still has only ONE entry for this assessment_id
-- Result page displays without errors
+**Expected**
+- Es bleibt bei genau EINEM `patient_measures` Datensatz für diesen Report
+- `created_at` bleibt unverändert, Scores können sich aktualisieren
 
-**Verification Query:**
+**SQL Check**
 ```sql
--- Should return count = 1
-SELECT assessment_id, COUNT(*) as count
+SELECT report_id, COUNT(*)
 FROM patient_measures
-WHERE assessment_id = '<your-assessment-id>'
-GROUP BY assessment_id;
+GROUP BY report_id
+HAVING COUNT(*) > 1;
+-- Ergebnis: 0 Zeilen
 ```
 
-### Test 3: Race Condition Handling
+### Test 3: Scores & Risiko werden aktualisiert
 
-**Steps:**
-1. On the result page, open browser DevTools Console
-2. Get the current assessment ID:
-   ```javascript
-   const assessmentId = new URLSearchParams(window.location.search).get('assessmentId')
-   console.log(assessmentId)
-   ```
-3. Send multiple parallel requests:
-   ```javascript
-   Promise.all([
-     fetch('/api/patient-measures/save', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ assessmentId })
-     }),
-     fetch('/api/patient-measures/save', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ assessmentId })
-     }),
-     fetch('/api/patient-measures/save', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ assessmentId })
-     })
-   ]).then(responses => Promise.all(responses.map(r => r.json())))
-     .then(results => {
-       console.log('Results:', results)
-       const newCount = results.filter(r => r.isNew).length
-       const existingCount = results.filter(r => !r.isNew).length
-       console.log(`New: ${newCount}, Existing: ${existingCount}`)
-     })
-   ```
+**Steps**
+1. Wiederhole Test 1, beantworte Fragen extrem unterschiedlich
+2. Vergleiche `stress_score`/`sleep_score` & `risk_level` mit den Werten im Report (`reports`-Tabelle)
 
-**Expected Results:**
-- All 3 requests return status 200
-- One has `isNew: true`, two have `isNew: false` (or all have `isNew: false` if entry existed)
-- Console output shows: "New: 0-1, Existing: 2-3"
-- Database still has only ONE entry for this assessment_id
+**SQL Check**
+```sql
+SELECT
+  pm.id,
+  pm.stress_score,
+  pm.sleep_score,
+  pm.risk_level,
+  r.score_numeric,
+  r.sleep_score AS report_sleep,
+  r.risk_level AS report_risk
+FROM patient_measures pm
+JOIN reports r ON r.id = pm.report_id
+ORDER BY pm.created_at DESC
+LIMIT 5;
+```
 
-### Test 4: Error Handling - Invalid Assessment ID
+**Expected**
+- `patient_measures` spiegelt die Werte aus `reports`
+- Bei fehlendem Report-Wert bleibt das Feld `null`
 
-**Steps:**
-1. In browser console, execute:
-   ```javascript
-   fetch('/api/patient-measures/save', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ assessmentId: 'invalid-uuid-12345' })
-   })
-     .then(r => r.json())
-     .then(console.log)
-   ```
+### Test 4: Export liefert neues Format
 
-**Expected Results:**
-- Status: 404
-- Response body: `{ error: "Assessment nicht gefunden." }`
-- No entry created in database
+**Steps**
+1. Als Patient eingeloggt die Historie öffnen (`/patient/history`)
+2. „Als JSON exportieren" klicken oder API direkt abrufen
 
-### Test 5: Error Handling - Missing Assessment ID
+**Expected**
+- Response enthält `measured_at`, `stress_score`, `sleep_score`, `risk_level`, `report_id`, `report_assessment_id`
+- Struktur entspricht `docs/JSON_EXPORT.md`
 
-**Steps:**
-1. In browser console, execute:
-   ```javascript
-   fetch('/api/patient-measures/save', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({})
-   })
-     .then(r => r.json())
-     .then(console.log)
-   ```
+### Test 5: Historie zeigt Messwerte an
 
-**Expected Results:**
-- Status: 400
-- Response body: `{ error: "assessmentId fehlt im Request-Body." }`
-- No entry created in database
+**Steps**
+1. Öffne `/patient/history`
+2. Prüfe, dass Timeline-Einträge Score-Badges & Risiko anzeigen
 
-### Test 6: Verify No Duplicates Exist
-
-**Steps:**
-1. After completing all tests above, run this query in Supabase:
-   ```sql
-   SELECT assessment_id, COUNT(*) as count
-   FROM patient_measures
-   GROUP BY assessment_id
-   HAVING COUNT(*) > 1;
-   ```
-
-**Expected Results:**
-- Query returns 0 rows (no duplicates)
-
-### Test 7: Verify Cascade Delete
-
-**Steps:**
-1. Create a test assessment and measurement
-2. Get the assessment_id from the database
-3. Delete the assessment:
-   ```sql
-   DELETE FROM assessments WHERE id = '<test-assessment-id>';
-   ```
-4. Check patient_measures:
-   ```sql
-   SELECT * FROM patient_measures WHERE assessment_id = '<test-assessment-id>';
-   ```
-
-**Expected Results:**
-- The patient_measures entry is automatically deleted (CASCADE)
-- Query returns 0 rows
+**Expected**
+- Stress/Sleep-Badges zeigen Werte aus `patient_measures`
+- Datum entspricht `created_at` des Eintrags
 
 ## Database Verification Queries
 
-### View all measurements with details
-```sql
-SELECT 
-  pm.id,
-  pm.assessment_id,
-  pm.patient_id,
-  pm.measurement_type,
-  pm.status,
-  pm.completed_at,
-  a.funnel as assessment_funnel,
-  a.created_at as assessment_created
-FROM patient_measures pm
-LEFT JOIN assessments a ON a.id = pm.assessment_id
-ORDER BY pm.completed_at DESC;
-```
-
-### Check for duplicate assessments
-```sql
-SELECT assessment_id, COUNT(*) as count
-FROM patient_measures
-GROUP BY assessment_id
-HAVING COUNT(*) > 1;
-```
-
-### Verify unique constraint exists
+### Alle Messungen mit Report-Bezug
 ```sql
 SELECT
-    conname as constraint_name,
-    contype as constraint_type,
-    pg_get_constraintdef(oid) as definition
-FROM pg_constraint
-WHERE conrelid = 'patient_measures'::regclass;
+  pm.id,
+  pm.patient_id,
+  pm.created_at,
+  pm.stress_score,
+  pm.sleep_score,
+  pm.risk_level,
+  pm.report_id,
+  r.assessment_id,
+  r.report_text_short
+FROM patient_measures pm
+LEFT JOIN reports r ON r.id = pm.report_id
+ORDER BY pm.created_at DESC;
+```
+
+### Wertebereiche prüfen
+```sql
+SELECT *
+FROM patient_measures
+WHERE stress_score < 0 OR stress_score > 100
+   OR sleep_score < 0 OR sleep_score > 100;
+```
+
+### Patienten-Historie nach Profil filtern
+```sql
+SELECT pm.*
+FROM patient_measures pm
+JOIN patient_profiles pp ON pp.id = pm.patient_id
+WHERE pp.user_id = '<auth-user-id>'
+ORDER BY pm.created_at DESC;
 ```
 
 ## Acceptance Criteria Verification
 
-✅ **Eine abgeschlossene Messung wird genau einmal gespeichert**
-- Verified by Test 1 and Test 6
+✅ **Messung wird automatisch gespeichert** – Test 1
 
-✅ **Idempotente Logik: Wiederholtes Auslösen derselben Assessment-ID führt nicht zu Duplikaten**
-- Verified by Test 2 and Test 3
+✅ **Idempotenz pro Report** – Test 2 (kein doppelter Datensatz)
 
-✅ **Fehler beim Speichern werden geloggt und ans Frontend gemeldet**
-- Verified by Test 4 and Test 5
-- Check browser console for error logs
-- Check server logs for detailed error information
+✅ **Scores/Risiko verfügbar** – Test 3 und 5
+
+✅ **Export liefert konsistentes JSON** – Test 4
 
 ## Clean Up
 
-After testing, you can clean up test data:
 ```sql
--- Delete all test measurements
+-- Messungen entfernen
 DELETE FROM patient_measures;
 
--- Or delete specific test assessment (which cascades to patient_measures)
-DELETE FROM assessments WHERE id = '<test-assessment-id>';
+-- Optional zugehörige Reports löschen
+DELETE FROM reports;
 ```
 
 ---
 
-**Note:** All tests assume the database migration has been applied and the server is running with proper Supabase credentials configured.
+Alle Tests setzen voraus, dass Supabase-Umgebungsvariablen lokal korrekt gesetzt sind und der Stress-Check mit einem Patient:innen-Account durchgeführt wird.

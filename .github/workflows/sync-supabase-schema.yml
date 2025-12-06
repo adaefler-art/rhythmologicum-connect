@@ -1,0 +1,37 @@
+name: Sync Supabase schema (auto-PR)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # täglich um 02:00 UTC; anpassen nach Bedarf
+  workflow_dispatch:
+
+jobs:
+  sync-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client git
+
+      - name: Pull and normalize Supabase schema
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          ./scripts/pull-supabase-schema.sh
+
+      - name: Create pull request if schema changed
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore(schema): update canonical schema from Supabase'
+          title: 'chore(schema): update canonical schema from Supabase'
+          body: |
+            This is an automated PR that updates schema/schema.sql from the live Supabase database.
+            If changes are unexpected, review the migration history and database changes.
+          base: main
+          branch: auto/update-schema-from-supabase
+          delete-branch: true

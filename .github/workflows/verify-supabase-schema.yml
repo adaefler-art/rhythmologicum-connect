@@ -1,0 +1,33 @@
+name: Verify Supabase schema
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verify-supabase-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump and normalize Supabase schema
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          TMP="$(mktemp)"
+          pg_dump --schema-only --no-owner --no-privileges --dbname="$SUPABASE_DB_URL" > "$TMP"
+          sed -E '/^SET search_path/d' "$TMP" | sed -E '/^-- Dumped by pg_dump/d' | sed '/^$/N;/^\n$/D' > "${TMP}.norm"
+
+          echo "Comparing remote schema with committed schema/schema.sql"
+          if ! diff -u schema/schema.sql "${TMP}.norm"; then
+            echo "ERROR: Supabase schema differs from committed schema/schema.sql"
+            exit 1
+          fi
+          rm -f "$TMP" "${TMP}.norm"
+
+      - name: Success
+        run: echo "Supabase schema matches committed schema/schema.sql"

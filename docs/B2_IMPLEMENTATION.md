@@ -2,215 +2,91 @@
 
 ## Zusammenfassung
 
-Implementierung der automatischen Speicherung von Messungen beim Abschluss eines Assessments mit idempotenter Logik.
+Die Speicherung von Messungen erfolgt jetzt vollständig innerhalb des `/api/amy/stress-report` Flows. Sobald ein Report erstellt oder aktualisiert wird, entsteht (oder aktualisiert sich) automatisch ein `patient_measures` Datensatz mit Scores und Risiko-Level – ohne separaten Save-Endpoint.
 
 ## Implementierte Änderungen
 
-### 1. Datenbank-Migration: `patient_measures` Tabelle
+### 1. Schema-Refresh für `patient_measures`
 
-**Datei:** `supabase/migrations/20241204210000_create_patient_measures_table.sql`
+**Dateien:**
+- `supabase/migrations/20241204210000_create_patient_measures_table.sql`
+- `supabase/migrations/20241209103000_update_patient_measures_schema.sql`
 
-Erstellt eine neue Tabelle zur Verfolgung abgeschlossener Messungen:
+Der ursprüngliche Table-Stub wurde durch eine Migration ergänzt, die das Schema an die produktive Realität anpasst:
 
-- `id`: UUID Primary Key
-- `assessment_id`: UUID UNIQUE (verhindert Duplikate)
-- `patient_id`: UUID (für Abfragen nach Patient)
-- `measurement_type`: TEXT (z.B. 'stress', 'sleep')
-- `status`: TEXT ('completed', 'in_progress', 'failed')
-- `completed_at`: TIMESTAMPTZ
-- `created_at`, `updated_at`: TIMESTAMPTZ mit Auto-Update Trigger
+- `patient_id` verweist auf `patient_profiles`
+- `report_id` verknüpft Messungen mit Reports (Idempotenz pro Report)
+- `stress_score` und `sleep_score` speichern normalisierte Werte (0–100)
+- `risk_level` kennt `low | moderate | high | pending`
+- `created_at` markiert den Messzeitpunkt
+- Trigger & Columns für `assessment_id`/`measurement_type`/`status` wurden entfernt
 
-**Wichtig:** Der UNIQUE Constraint auf `assessment_id` ist der Kern der Idempotenz-Logik.
+### 2. Stress-Report Endpoint übernimmt Persistenz
 
-### 2. API-Endpunkt: `/api/patient-measures/save`
+**Datei:** `app/api/amy/stress-report/route.ts`
 
-**Datei:** `app/api/patient-measures/save/route.ts`
-
-Neue POST-API mit folgender Logik:
-
-```typescript
-1. Prüfen ob Messung bereits existiert (SELECT mit assessment_id)
-   → Wenn ja: Existierenden Eintrag zurückgeben (isNew: false)
-   
-2. Assessment-Daten laden (patient_id, funnel)
-   → Wenn nicht gefunden: 404 Error
-   
-3. Neuen Eintrag erstellen (INSERT)
-   → Bei Unique Constraint Violation (Code 23505):
-     - Race Condition behandeln
-     - Existierenden Eintrag erneut laden und zurückgeben
-   → Bei anderen Fehlern: 500 Error mit Logging
-```
-
-**Error Handling:**
-- Alle Fehler werden in die Console geloggt
-- Sinnvolle Fehlermeldungen für verschiedene Szenarien
-- Race Conditions werden abgefangen
+- Liest Assessment + Antworten, berechnet Scores und generiert (oder aktualisiert) den AMY-Report
+- Nutzt `upsertPatientMeasure(...)`, um anhand `report_id` genau einen Messdatensatz pro Report zu halten
+- Persistiert `stress_score`, `sleep_score`, `risk_level` sofort – auch wenn das LLM einen Fallback liefert
+- Setzt `risk_level = 'pending'`, falls noch keine Einstufung möglich ist
 
 ### 3. Frontend-Integration
 
-**Datei:** `app/patient/stress-check/result/StressResultClient.tsx`
+**Dateien:**
+- `app/patient/stress-check/result/StressResultClient.tsx`
+- `app/patient/history/PatientHistoryClient.tsx`
 
-Automatischer Aufruf beim Laden der Ergebnis-Seite:
+Änderungen:
+- Ergebnis-Client ruft nur noch `/api/amy/stress-report` auf – kein separater Save-Call
+- History-Ansicht konsumiert die neuen Felder (`stress_score`, `sleep_score`, `risk_level`, `report_id`, `created_at`)
 
-```typescript
-1. Patient-Messung speichern (/api/patient-measures/save)
-   → Fehler werden geloggt, blockieren aber nicht die UX
-   
-2. Stress-Report generieren (/api/amy/stress-report)
-   → Wie bisher
-```
+### 4. Export & Doku
 
-**Design-Entscheidung:** 
-- Fehler beim Speichern der Messung werden nur geloggt
-- Die UX wird nicht blockiert, falls das Speichern fehlschlägt
-- Report-Generierung läuft trotzdem
+**Dateien:**
+- `app/api/patient-measures/export/route.ts`
+- `docs/JSON_EXPORT.md`
+- `supabase/README.md`
 
-### 4. Dokumentation
-
-**Datei:** `supabase/README.md`
-
-Erweitert um:
-- Schema der `patient_measures` Tabelle
-- Verwendungsbeispiele
-- Erklärung der Idempotenz-Logik
+Der Export liefert jetzt genau die Werte aus `patient_measures` plus optionale Report-Metadaten. Dokumentation beschreibt das neue Format und die Idempotenz über `report_id`.
 
 ## Akzeptanzkriterien - Erfüllung
 
-✅ **Eine abgeschlossene Messung wird genau einmal gespeichert**
-- UNIQUE Constraint auf `assessment_id` verhindert Duplikate auf DB-Ebene
+✅ **Messung wird genau einmal gespeichert**
+- `report_id` fungiert als natürliche Idempotenz, der Endpoint upsertet statt zu insertieren
 
-✅ **Idempotente Logik**
-- API prüft vor INSERT, ob bereits ein Eintrag existiert
-- Bei Duplicate Key Error (23505) wird existierender Eintrag zurückgegeben
-- Race Conditions werden behandelt
+✅ **Scores + Risiko werden persistiert**
+- `patient_measures` enthält die normalisierten Werte und das finale Risiko-Level (oder `pending`)
 
-✅ **Fehler werden geloggt und ans Frontend gemeldet**
-- Alle Fehler werden mit `console.error()` geloggt
-- API gibt strukturierte JSON-Fehler zurück
-- Frontend loggt Fehler in Console (blockiert aber nicht die UX)
+✅ **Fehlerhandling**
+- Stress-Report Endpoint loggt Fehler zentral; Fallback-Text stellt Response sicher
+- Misslungene `patient_measures` Updates führen zu 500, damit Monitoring greift
 
 ## Testen
 
-### Voraussetzungen
+- `npm run dev` starten
+- Beide Migrationen in Supabase anwenden (`20241204...` + `20241209...`)
+- Anschließend die Schritte aus `docs/B2_TESTING_GUIDE.md` befolgen (Stress-Check durchspielen, doppelte Aufrufe beobachten, Export prüfen)
 
-1. Migration anwenden:
-   ```bash
-   # Im Supabase Dashboard SQL ausführen:
-   # Inhalt von supabase/migrations/20241204210000_create_patient_measures_table.sql
-   ```
+## Sicherheit & Betrieb
 
-### Test-Szenarien
-
-#### 1. Normaler Flow - Erstes Speichern
-
-```
-1. Fragebogen ausfüllen und abschicken
-2. Zur Ergebnis-Seite weitergeleitet werden
-3. In Console prüfen: "Patient measure saved: { ... isNew: true }"
-4. In Supabase prüfen: Eintrag in patient_measures vorhanden
-```
-
-#### 2. Idempotenz - Seite neu laden
-
-```
-1. Ergebnis-Seite neu laden (F5)
-2. In Console prüfen: "Patient measure saved: { ... isNew: false }"
-3. In Supabase prüfen: Immer noch nur 1 Eintrag für diese assessment_id
-```
-
-#### 3. Race Condition - Parallel Requests
-
-```javascript
-// In Browser Console auf Ergebnis-Seite:
-const assessmentId = new URLSearchParams(window.location.search).get('assessmentId')
-
-// Mehrere Requests parallel senden
-Promise.all([
-  fetch('/api/patient-measures/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assessmentId })
-  }),
-  fetch('/api/patient-measures/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assessmentId })
-  }),
-  fetch('/api/patient-measures/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assessmentId })
-  })
-]).then(responses => Promise.all(responses.map(r => r.json())))
-  .then(console.log)
-
-// Erwartet: Alle 3 Responses erfolgreich
-// Einer hat isNew: true, zwei haben isNew: false
-// In Supabase: Nur 1 Eintrag
-```
-
-#### 4. Fehlerfall - Ungültige Assessment-ID
-
-```javascript
-fetch('/api/patient-measures/save', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ assessmentId: 'invalid-uuid' })
-}).then(r => r.json()).then(console.log)
-
-// Erwartet: 404 mit "Assessment nicht gefunden"
-```
-
-### Manuelle DB-Prüfung
-
-```sql
--- Alle Messungen anzeigen
-SELECT * FROM patient_measures 
-ORDER BY completed_at DESC;
-
--- Messungen mit Assessment-Details
-SELECT 
-  pm.*,
-  a.funnel,
-  a.created_at as assessment_created
-FROM patient_measures pm
-JOIN assessments a ON a.id = pm.assessment_id
-ORDER BY pm.completed_at DESC;
-
--- Prüfen ob Duplikate existieren (sollte leer sein)
-SELECT assessment_id, COUNT(*) as count
-FROM patient_measures
-GROUP BY assessment_id
-HAVING COUNT(*) > 1;
-```
-
-## Sicherheit
-
-- ✅ Keine SQL-Injection (Supabase Client verwendet Prepared Statements)
-- ✅ UNIQUE Constraint verhindert Duplikate auf DB-Ebene
-- ✅ Foreign Key Constraint zu `assessments` mit CASCADE
-- ✅ Alle Fehler werden geloggt, sensible Daten nicht exponiert
-- ✅ Service Role Key wird nur serverseitig verwendet
-
-## Offene Punkte
-
-1. **Migration muss angewendet werden:** SQL-Datei im Supabase Dashboard ausführen
-2. **RLS Policies:** Row Level Security für `patient_measures` Tabelle konfigurieren
-3. **Monitoring:** Produktions-Logs überwachen für Fehler beim Speichern
+- Supabase Service Role bleibt serverseitig
+- Kein separater Endpoint mehr → kleinere Angriffsfläche
+- RLS-Policies für `patient_measures` weiterhin offen (TODO)
 
 ## Dateien
 
 | Datei | Zweck |
 |-------|-------|
-| `supabase/migrations/20241204210000_create_patient_measures_table.sql` | DB-Migration |
-| `app/api/patient-measures/save/route.ts` | Save-API Endpunkt |
-| `app/patient/stress-check/result/StressResultClient.tsx` | Frontend Integration |
-| `supabase/README.md` | Dokumentation |
+| `supabase/migrations/20241204210000_create_patient_measures_table.sql` | Initiales Table-Schema |
+| `supabase/migrations/20241209103000_update_patient_measures_schema.sql` | Schema-Refresh (Scores/Risiko) |
+| `app/api/amy/stress-report/route.ts` | Persistenz & Report-Generierung |
+| `app/patient/stress-check/result/StressResultClient.tsx` | Trigger für Report-Erstellung |
+| `app/patient/history/PatientHistoryClient.tsx` | Anzeige der neuen Messwerte |
+| `app/api/patient-measures/export/route.ts` | JSON-Export mit Report-Anreicherung |
 | `docs/B2_IMPLEMENTATION.md` | Diese Datei |
 
 ---
 
 **Erstellt am:** 2024-12-04  
-**Issue:** B2 Save-Logic für neue Messungen  
-**Status:** Implementiert, Tests ausstehend
+**Letztes Update:** 2024-12-09  
+**Status:** Implementiert
