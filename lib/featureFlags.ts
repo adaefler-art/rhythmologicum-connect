@@ -21,7 +21,7 @@ export type FeatureFlags = {
  * Supports: 'true', '1', 'yes' (case-insensitive) = true
  * Everything else or undefined = uses default value
  */
-function parseEnvBoolean(value: string | undefined, defaultValue: boolean): boolean {
+export function parseEnvBoolean(value: string | undefined, defaultValue: boolean): boolean {
   if (value === undefined) {
     return defaultValue
   }

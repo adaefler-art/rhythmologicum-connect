@@ -125,11 +125,8 @@ export default function LoginPage() {
         if (featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
           router.push('/clinician')
         } else {
-          // If clinician dashboard is disabled, show error and redirect to patient flow
-          setError('Das Kliniker-Dashboard ist derzeit nicht verfügbar. Sie werden zum Patienten-Bereich weitergeleitet.')
-          setTimeout(() => {
-            router.push('/patient/stress-check')
-          }, 2000)
+          // If clinician dashboard is disabled, redirect to patient flow immediately
+          router.push('/patient/stress-check')
         }
       } else {
         // For patients: ensure patient_profile exists

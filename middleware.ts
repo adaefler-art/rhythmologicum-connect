@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-
-// Parse environment variable to boolean
-function parseEnvBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined) {
-    return defaultValue
-  }
-  const normalized = value.toLowerCase().trim()
-  return normalized === 'true' || normalized === '1' || normalized === 'yes'
-}
+import { parseEnvBoolean } from '@/lib/featureFlags'
 
 // Check if clinician dashboard feature is enabled
 function isClinicianDashboardEnabled(): boolean {
