@@ -16,7 +16,7 @@ type PatientMeasure = {
     id: string
     report_text_short: string
     created_at: string
-  }[] | null
+  } | null
 }
 
 type PatientProfile = {
@@ -73,8 +73,8 @@ export default function PatientDetailPage() {
         if (measuresResult.error) throw measuresResult.error
 
         setPatient(profileResult.data)
-        // Type assertion needed for Supabase joined query result
-        setMeasures((measuresResult.data ?? []) as PatientMeasure[])
+        // Type assertion for Supabase joined query (one-to-one relationship)
+        setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
         const errorMessage =
@@ -214,44 +214,41 @@ export default function PatientDetailPage() {
             <h2 className="text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
             <div className="space-y-4">
               {measures
-                .filter((m) => m.reports && m.reports.length > 0 && m.reports[0]?.report_text_short)
-                .map((measure) => {
-                  const report = measure.reports![0]
-                  return (
-                    <div
-                      key={measure.id}
-                      className={`border-l-4 pl-4 py-2 ${
-                        measure.risk_level === 'high'
-                          ? 'border-red-400'
-                          : measure.risk_level === 'moderate'
-                          ? 'border-amber-400'
-                          : 'border-emerald-400'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <span className="text-xs text-slate-500">
-                            {formatDate(measure.created_at)}
-                          </span>
-                          <span
-                            className={`ml-3 text-xs font-medium ${getRiskColor(
-                              measure.risk_level
-                            )}`}
-                          >
-                            {getRiskLabel(measure.risk_level)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
-                          {measure.sleep_score ?? '—'}
-                        </div>
+                .filter((m) => m.reports?.report_text_short)
+                .map((measure) => (
+                  <div
+                    key={measure.id}
+                    className={`border-l-4 pl-4 py-2 ${
+                      measure.risk_level === 'high'
+                        ? 'border-red-400'
+                        : measure.risk_level === 'moderate'
+                        ? 'border-amber-400'
+                        : 'border-emerald-400'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <span className="text-xs text-slate-500">
+                          {formatDate(measure.created_at)}
+                        </span>
+                        <span
+                          className={`ml-3 text-xs font-medium ${getRiskColor(
+                            measure.risk_level
+                          )}`}
+                        >
+                          {getRiskLabel(measure.risk_level)}
+                        </span>
                       </div>
-                      <p className="text-sm text-slate-700 whitespace-pre-line">
-                        {report.report_text_short}
-                      </p>
+                      <div className="text-xs text-slate-500">
+                        Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
+                        {measure.sleep_score ?? '—'}
+                      </div>
                     </div>
-                  )
-                })}
+                    <p className="text-sm text-slate-700 whitespace-pre-line">
+                      {measure.reports!.report_text_short}
+                    </p>
+                  </div>
+                ))}
             </div>
           </div>
 
