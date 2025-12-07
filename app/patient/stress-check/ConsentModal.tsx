@@ -2,15 +2,13 @@
 
 import { useState } from 'react'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
-import { supabase } from '@/lib/supabaseClient'
 
 interface ConsentModalProps {
-  userId: string
   onConsent: () => void
   onDecline: () => void
 }
 
-export default function ConsentModal({ userId, onConsent, onDecline }: ConsentModalProps) {
+export default function ConsentModal({ onConsent, onDecline }: ConsentModalProps) {
   const [accepted, setAccepted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,14 +23,21 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
     setError(null)
 
     try {
-      const { error: consentError } = await supabase.from('user_consents').insert({
-        user_id: userId,
-        consent_version: CONSENT_VERSION,
-        user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : null,
+      // Use API endpoint instead of direct Supabase access for better security
+      // The server will capture IP address and user agent server-side
+      const response = await fetch('/api/consent/record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          consentVersion: CONSENT_VERSION,
+        }),
       })
 
-      if (consentError) {
-        throw consentError
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Fehler beim Speichern der Zustimmung.')
       }
 
       onConsent()

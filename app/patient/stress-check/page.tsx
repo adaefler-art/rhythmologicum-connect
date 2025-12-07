@@ -91,22 +91,30 @@ export default function StressCheckPage() {
 
       setUserId(user.id)
 
-      const { data: consentData, error: consentError } = await supabase
-        .from('user_consents')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('consent_version', CONSENT_VERSION)
-        .maybeSingle()
-
-      if (consentError) {
+      // Check consent status via API endpoint
+      try {
+        const response = await fetch(`/api/consent/status?version=${CONSENT_VERSION}`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          
+          if (!data.hasConsent) {
+            setShowConsentModal(true)
+            setHasConsent(false)
+          } else {
+            setHasConsent(true)
+          }
+        } else {
+          console.error('Error checking consent status:', await response.text())
+          // Default to showing consent modal if check fails
+          setShowConsentModal(true)
+          setHasConsent(false)
+        }
+      } catch (consentError) {
         console.error('Error checking consent:', consentError)
-      }
-
-      if (!consentData) {
+        // Default to showing consent modal if check fails
         setShowConsentModal(true)
         setHasConsent(false)
-      } else {
-        setHasConsent(true)
       }
 
       setInitialLoading(false)
@@ -239,10 +247,9 @@ export default function StressCheckPage() {
     )
   }
 
-  if (showConsentModal && userId) {
+  if (showConsentModal) {
     return (
       <ConsentModal
-        userId={userId}
         onConsent={handleConsentAccepted}
         onDecline={handleConsentDeclined}
       />
