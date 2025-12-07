@@ -1,76 +1,272 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
-type ReportRow = {
+type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
+
+type PatientMeasure = {
   id: string
+  patient_id: string
   created_at: string
-  score_numeric: number
-  risk_level: 'low' | 'moderate' | 'high' | null
-  assessment_id: string
-  assessments: {
+  stress_score: number | null
+  risk_level: RiskLevel
+  report_id: string | null
+  patient_profiles: {
     id: string
-    patient_id: string
-    patient_profiles: {
-      id: string
-      full_name: string | null
-      user_id: string
-    }[]
-  }[]
+    full_name: string | null
+    user_id: string
+  } | null
 }
 
+type PatientOverview = {
+  patient_id: string
+  patient_name: string
+  latest_stress_score: number | null
+  latest_risk_level: RiskLevel
+  latest_measurement_time: string
+  measurement_count: number
+  report_id: string | null
+}
+
+type SortField = 'name' | 'risk' | 'date' | 'score'
+type SortDirection = 'asc' | 'desc'
+
 export default function ClinicianOverviewPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [reports, setReports] = useState<ReportRow[]>([])
+  const [measures, setMeasures] = useState<PatientMeasure[]>([])
+  const [sortField, setSortField] = useState<SortField>('risk')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   useEffect(() => {
-    const loadReports = async () => {
+    const loadPatientData = async () => {
       try {
         setLoading(true)
         setError(null)
 
         const { data, error } = await supabase
-          .from('reports')
+          .from('patient_measures')
           .select(
             `
             id,
+            patient_id,
             created_at,
-            score_numeric,
+            stress_score,
             risk_level,
-            assessment_id,
-            assessments (
+            report_id,
+            patient_profiles!fk_patient_measures_patient (
               id,
-              patient_id,
-              patient_profiles (
-                id,
-                full_name,
-                user_id
-              )
+              full_name,
+              user_id
             )
           `
           )
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        setReports((data ?? []) as unknown as ReportRow[])
-      } catch (e: any) {
+        setMeasures((data ?? []) as unknown as PatientMeasure[])
+      } catch (e: unknown) {
         console.error(e)
-        setError(e.message ?? 'Fehler beim Laden der Reports.')
+        const errorMessage = e instanceof Error ? e.message : 'Fehler beim Laden der Patientendaten.'
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
     }
 
-    loadReports()
+    loadPatientData()
   }, [])
+
+  // Group measures by patient and get the latest for each
+  const patientOverviews = useMemo<PatientOverview[]>(() => {
+    const patientMap = new Map<string, PatientMeasure[]>()
+    
+    // Group by patient_id
+    measures.forEach((measure) => {
+      if (!patientMap.has(measure.patient_id)) {
+        patientMap.set(measure.patient_id, [])
+      }
+      patientMap.get(measure.patient_id)!.push(measure)
+    })
+
+    // Create overview for each patient
+    const overviews: PatientOverview[] = []
+    patientMap.forEach((patientMeasures, patientId) => {
+      // Measures are already sorted by created_at desc from the query
+      const latestMeasure = patientMeasures[0]
+      
+      overviews.push({
+        patient_id: patientId,
+        patient_name:
+          latestMeasure.patient_profiles?.full_name ??
+          latestMeasure.patient_profiles?.user_id ??
+          'Unbekannt',
+        latest_stress_score: latestMeasure.stress_score,
+        latest_risk_level: latestMeasure.risk_level,
+        latest_measurement_time: latestMeasure.created_at,
+        measurement_count: patientMeasures.length,
+        report_id: latestMeasure.report_id,
+      })
+    })
+
+    return overviews
+  }, [measures])
+
+  // Sort the patient overviews
+  const sortedPatients = useMemo(() => {
+    const sorted = [...patientOverviews]
+
+    const riskOrder: Record<string, number> = {
+      high: 3,
+      moderate: 2,
+      low: 1,
+      pending: 0,
+    }
+
+    sorted.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortField) {
+        case 'name':
+          comparison = a.patient_name.localeCompare(b.patient_name)
+          break
+        case 'risk': {
+          const aRisk = riskOrder[a.latest_risk_level ?? ''] ?? -1
+          const bRisk = riskOrder[b.latest_risk_level ?? ''] ?? -1
+          comparison = aRisk - bRisk
+          break
+        }
+        case 'date':
+          comparison =
+            new Date(a.latest_measurement_time).getTime() -
+            new Date(b.latest_measurement_time).getTime()
+          break
+        case 'score':
+          comparison = (a.latest_stress_score ?? 0) - (b.latest_stress_score ?? 0)
+          break
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+    return sorted
+  }, [patientOverviews, sortField, sortDirection])
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection(field === 'risk' ? 'desc' : 'asc')
+    }
+  }
+
+  const getRiskLabel = (risk: RiskLevel): string => {
+    switch (risk) {
+      case 'high':
+        return 'Hoch'
+      case 'moderate':
+        return 'Mittel'
+      case 'low':
+        return 'Niedrig'
+      case 'pending':
+        return 'Ausstehend'
+      default:
+        return 'Unbekannt'
+    }
+  }
+
+  const getRiskBadgeClass = (risk: RiskLevel): string => {
+    switch (risk) {
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'moderate':
+        return 'bg-amber-100 text-amber-800 border-amber-200'
+      case 'low':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'pending':
+        return 'bg-slate-100 text-slate-600 border-slate-200'
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200'
+    }
+  }
+
+  const formatDateTime = (isoString: string): string => {
+    try {
+      return new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(isoString))
+    } catch {
+      return 'Datum unbekannt'
+    }
+  }
+
+  const handlePatientClick = (reportId: string | null) => {
+    if (reportId) {
+      router.push(`/clinician/report/${reportId}`)
+    }
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return (
+        <svg
+          className="w-4 h-4 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
+        </svg>
+      )
+    }
+    return sortDirection === 'asc' ? (
+      <svg
+        className="w-4 h-4 text-sky-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M5 15l7-7 7 7"
+        />
+      </svg>
+    ) : (
+      <svg
+        className="w-4 h-4 text-sky-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    )
+  }
 
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p>Reports werden geladen…</p>
+        <p className="text-slate-600">Patientenübersicht wird geladen…</p>
       </main>
     )
   }
@@ -82,7 +278,7 @@ export default function ClinicianOverviewPage() {
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded bg-black text-white text-sm"
+            className="px-4 py-2 rounded bg-sky-600 text-white text-sm hover:bg-sky-700 transition"
           >
             Neu laden
           </button>
@@ -92,61 +288,116 @@ export default function ClinicianOverviewPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Clinician View</h1>
-      <p className="text-gray-600 mb-6">
-        Interne Übersicht über die zuletzt durchgeführten Stress-&-Resilienz-Assessments.
-      </p>
+    <main className="min-h-screen p-6 max-w-6xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Patientenübersicht</h1>
+        <p className="text-slate-600">
+          Übersicht aller Pilotpatient:innen mit ihrer jeweils letzten Messung.
+        </p>
+      </div>
 
-      {reports.length === 0 ? (
-        <p className="text-gray-500">Noch keine Ergebnisse vorhanden.</p>
+      {sortedPatients.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+          <div className="mx-auto max-w-md">
+            <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
+              📋
+            </p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Noch keine Messungen vorhanden
+            </h2>
+            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+              Es wurden bisher noch keine Patientenmessungen erfasst. Sobald
+              Patient:innen ihre ersten Assessments durchführen, werden sie hier
+              angezeigt.
+            </p>
+          </div>
+        </div>
       ) : (
-        <div className="overflow-x-auto border rounded-xl">
+        <div className="overflow-x-auto border rounded-xl bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-slate-100">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left px-4 py-2 border-b">Datum</th>
-                <th className="text-left px-4 py-2 border-b">Patient</th>
-                <th className="text-left px-4 py-2 border-b">Score</th>
-                <th className="text-left px-4 py-2 border-b">Level</th>
-                <th className="text-center px-4 py-2 border-b">Details</th>
+                <th
+                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Patient:in</span>
+                    <SortIcon field="name" />
+                  </div>
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  onClick={() => handleSort('score')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>StressScore</span>
+                    <SortIcon field="score" />
+                  </div>
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  onClick={() => handleSort('risk')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>RiskLevel</span>
+                    <SortIcon field="risk" />
+                  </div>
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  onClick={() => handleSort('date')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>Letzte Messung</span>
+                    <SortIcon field="date" />
+                  </div>
+                </th>
+                <th className="text-left px-4 py-3 font-semibold text-slate-700">
+                  Messungen
+                </th>
               </tr>
             </thead>
             <tbody>
-              {reports.map((r) => {
-                const patientProfile = (r.assessments as any)?.patient_profiles
-                const patientName =
-                  patientProfile?.full_name ??
-                  patientProfile?.user_id ??
-                  'Unbekannt'
-                const date = new Date(r.created_at).toLocaleString()
-
-                const levelLabel =
-                  r.risk_level === 'high'
-                    ? 'Hoch'
-                    : r.risk_level === 'moderate'
-                    ? 'Mittel'
-                    : 'Niedrig'
-
-                return (
-                  <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 border-b whitespace-nowrap">
-                      {date}
-                    </td>
-                    <td className="px-4 py-2 border-b">{patientName}</td>
-                    <td className="px-4 py-2 border-b">{r.score_numeric}</td>
-                    <td className="px-4 py-2 border-b">{levelLabel}</td>
-                    <td className="px-4 py-2 border-b text-center">
-                      <Link
-                        href={`/clinician/report/${r.id}`}
-                        className="text-sky-600 underline"
-                      >
-                        ansehen
-                      </Link>
-                    </td>
-                  </tr>
-                )
-              })}
+              {sortedPatients.map((patient, index) => (
+                <tr
+                  key={patient.patient_id}
+                  className={`hover:bg-slate-50 transition cursor-pointer ${
+                    index !== sortedPatients.length - 1 ? 'border-b border-slate-100' : ''
+                  }`}
+                  onClick={() => handlePatientClick(patient.report_id)}
+                >
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-slate-900">
+                      {patient.patient_name}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {patient.latest_stress_score !== null ? (
+                      <span className="text-slate-900 font-semibold">
+                        {Math.round(patient.latest_stress_score)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getRiskBadgeClass(
+                        patient.latest_risk_level
+                      )}`}
+                    >
+                      {getRiskLabel(patient.latest_risk_level)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                    {formatDateTime(patient.latest_measurement_time)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {patient.measurement_count}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
