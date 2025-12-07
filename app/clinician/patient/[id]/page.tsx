@@ -44,21 +44,13 @@ export default function PatientDetailPage() {
         setLoading(true)
         setError(null)
 
-        // Load patient profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('patient_profiles')
-          .select('*')
-          .eq('id', patientId)
-          .single()
-
-        if (profileError) throw profileError
-        setPatient(profileData)
-
-        // Load all measures with reports
-        const { data: measuresData, error: measuresError } = await supabase
-          .from('patient_measures')
-          .select(
-            `
+        // Load patient profile and measures in parallel for better performance
+        const [profileResult, measuresResult] = await Promise.all([
+          supabase.from('patient_profiles').select('*').eq('id', patientId).single(),
+          supabase
+            .from('patient_measures')
+            .select(
+              `
             id,
             patient_id,
             stress_score,
@@ -72,12 +64,16 @@ export default function PatientDetailPage() {
               created_at
             )
           `
-          )
-          .eq('patient_id', patientId)
-          .order('created_at', { ascending: false })
+            )
+            .eq('patient_id', patientId)
+            .order('created_at', { ascending: false }),
+        ])
 
-        if (measuresError) throw measuresError
-        setMeasures((measuresData ?? []) as unknown as PatientMeasure[])
+        if (profileResult.error) throw profileResult.error
+        if (measuresResult.error) throw measuresResult.error
+
+        setPatient(profileResult.data)
+        setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
         const errorMessage =
