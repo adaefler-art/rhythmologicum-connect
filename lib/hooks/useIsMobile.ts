@@ -22,14 +22,17 @@ import { useState, useEffect } from 'react'
  * ```
  */
 export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => {
+    // Initialize state with media query check (SSR-safe)
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(max-width: 639px)').matches
+    }
+    return false
+  })
 
   useEffect(() => {
     // Media query for mobile detection (<640px)
     const mediaQuery = window.matchMedia('(max-width: 639px)')
-    
-    // Set initial value
-    setIsMobile(mediaQuery.matches)
     
     // Handler for media query changes
     const handleChange = (event: MediaQueryListEvent) => {
