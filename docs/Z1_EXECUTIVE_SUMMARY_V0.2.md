@@ -2,7 +2,7 @@
 
 **Für: Thomas & Pilotpraxis**  
 **Version: 0.2.1**  
-**Datum: Dezember 2024**  
+**Datum: Dezember 2025**  
 **Status: Pilot-Version**
 
 ---
