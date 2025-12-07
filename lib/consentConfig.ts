@@ -11,12 +11,12 @@ export const CONSENT_TEXT = {
     {
       heading: 'Willkommen bei Rhythmologicum Connect',
       content:
-        'Bevor Sie mit dem Stress- & Resilienz-Check beginnen, lesen und akzeptieren Sie bitte die folgenden Hinweise.',
+        'Bevor Sie mit dem Stress- & Resilienz-Check beginnen, lesen und akzeptieren Sie bitte die folgenden Hinweise. Ausführliche Informationen finden Sie in unserer Datenschutzerklärung.',
     },
     {
       heading: 'Datenerhebung und -verwendung',
       content:
-        'Wir verarbeiten Ihre personenbezogenen Daten (E-Mail, Antworten) ausschließlich zur Durchführung Ihrer Analyse. Eine Weitergabe an Dritte erfolgt nicht.',
+        'Wir verarbeiten Ihre personenbezogenen Daten (E-Mail, Antworten) ausschließlich zur Durchführung Ihrer Analyse. Eine Weitergabe an Dritte erfolgt nicht. Die Daten werden sicher auf Supabase-Servern in der EU gespeichert.',
     },
     {
       heading: 'Freiwilligkeit',
@@ -26,7 +26,7 @@ export const CONSENT_TEXT = {
     {
       heading: 'Datensicherheit',
       content:
-        'Ihre Daten werden auf sicheren Servern gespeichert und durch aktuelle Sicherheitsmaßnahmen geschützt.',
+        'Ihre Daten werden auf sicheren Servern gespeichert und durch aktuelle Sicherheitsmaßnahmen geschützt. Row-Level Security (RLS) stellt sicher, dass nur Sie auf Ihre Daten zugreifen können.',
     },
     {
       heading: 'Ihre Rechte',
@@ -43,4 +43,5 @@ export const CONSENT_TEXT = {
   errors: {
     consentDeclined: 'Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.',
   },
+  privacyPolicyUrl: '/datenschutz',
 }

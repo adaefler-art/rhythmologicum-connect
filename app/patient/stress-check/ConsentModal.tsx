@@ -56,6 +56,16 @@ export default function ConsentModal({ onConsent, onDecline }: ConsentModalProps
         <div className="px-6 py-5 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">{CONSENT_TEXT.title}</h2>
           <p className="text-xs text-slate-500 mt-1">Version {CONSENT_VERSION}</p>
+          {CONSENT_TEXT.privacyPolicyUrl && (
+            <a
+              href={CONSENT_TEXT.privacyPolicyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-xs text-sky-600 hover:text-sky-700 font-medium"
+            >
+              → Vollständige Datenschutzerklärung lesen
+            </a>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">

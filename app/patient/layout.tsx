@@ -55,9 +55,17 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-500">
-            Rhythmologicum Connect – frühe Testversion, nicht für den klinischen Einsatz.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+            <p className="text-[11px] text-slate-500">
+              Rhythmologicum Connect – frühe Testversion, nicht für den klinischen Einsatz.
+            </p>
+            <Link
+              href="/datenschutz"
+              className="text-[11px] text-sky-600 hover:text-sky-700 font-medium"
+            >
+              Datenschutz
+            </Link>
+          </div>
           <p className="text-[11px] text-slate-400">
             © {new Date().getFullYear()} Rhythmologicum
           </p>
