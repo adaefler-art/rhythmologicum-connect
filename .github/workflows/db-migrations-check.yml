@@ -5,7 +5,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'prisma/**'
-      - 'schema.sql'
+      - 'schema/schema.sql'
       - '.github/**'
       - 'src/**'
 
@@ -39,6 +39,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce migration immutability
+        run: npm run lint:migrations -- --base-ref origin/${{ github.base_ref }}
 
       - name: Install psql client
         run: |
@@ -70,13 +75,13 @@ jobs:
           pg_dump -s --no-owner --no-privileges -h $PGHOST -U $PGUSER $PGDATABASE > generated_schema.sql
           echo "Generated schema written to generated_schema.sql"
 
-      - name: Compare generated schema with repo schema.sql
+      - name: Compare generated schema with repo schema/schema.sql
         run: |
-          if [ ! -f schema.sql ]; then
-            echo "schema.sql not found in repo — please maintain a canonical schema.sql via 'pg_dump -s' after migrations'"
+          if [ ! -f schema/schema.sql ]; then
+            echo "schema/schema.sql not found in repo — please maintain the canonical schema via 'pg_dump -s' after migrations"
             exit 1
           fi
-          diff -u <(sed '/^--/d' generated_schema.sql | sed '/^$/d') <(sed '/^--/d' schema.sql | sed '/^$/d') || (echo "Schema drift detected: generated schema differs from schema.sql" && exit 1)
+          diff -u <(sed '/^--/d' generated_schema.sql | sed '/^$/d') <(sed '/^--/d' schema/schema.sql | sed '/^$/d') || (echo "Schema drift detected: generated schema differs from schema/schema.sql" && exit 1)
 
       - name: Run DB‑dependent tests (optional)
         if: always()

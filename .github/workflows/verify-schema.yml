@@ -1,15 +1,5 @@
 name: Verify DB schema
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_roles WHERE rolname = 'authenticated'
-    ) THEN
-        CREATE ROLE authenticated;
-    END IF;
-END
-$$;
-
 on:
   pull_request:
     branches: [ main, master ]
@@ -38,6 +28,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Enforce migration immutability
+        run: npm run lint:migrations -- --base-ref origin/${{ github.base_ref }}
       - name: Wait for Postgres
         run: |
           for i in {1..20}; do
