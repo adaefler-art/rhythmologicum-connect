@@ -155,6 +155,22 @@ export default function StressCheckPage() {
       return
     }
 
+    // Check for unanswered questions and provide specific feedback
+    if (!allAnswered) {
+      const unansweredQuestions = QUESTIONS.filter(q => answers[q.id] === undefined)
+      const questionNumbers = unansweredQuestions.map(q => QUESTIONS.indexOf(q) + 1).join(', ')
+      setError(
+        `Bitte beantworten Sie noch alle Fragen. Fehlend: Frage ${questionNumbers}`
+      )
+      // Scroll to first unanswered question
+      const firstUnanswered = unansweredQuestions[0]
+      if (firstUnanswered) {
+        const element = document.getElementById(`question-${firstUnanswered.id}`)
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+      return
+    }
+
     setSubmitting(true)
     setError(null)
 
@@ -288,19 +304,20 @@ export default function StressCheckPage() {
         </header>
 
         {/* Fortschritt */}
-        <div className="mb-6 flex flex-col gap-2">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>
-              Beantwortet: <strong>{answeredCount}</strong> von{' '}
-              <strong>{totalQuestions}</strong> Fragen
+        <div className="mb-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-sm md:text-base text-slate-700">
+            <span className="font-medium">
+              Frage {answeredCount} von {totalQuestions}
             </span>
             {!allAnswered && (
-              <span>Sie können den Test abschließen, wenn alles ausgefüllt ist.</span>
+              <span className="text-xs md:text-sm text-slate-500">
+                Bitte alle Fragen beantworten
+              </span>
             )}
           </div>
-          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="h-2 bg-sky-500 transition-all"
+              className="h-3 bg-sky-500 transition-all"
               style={{
                 width: `${(answeredCount / totalQuestions) * 100}%`,
               }}
@@ -347,24 +364,38 @@ export default function StressCheckPage() {
         </div>
 
         {error && (
-          <p className="mt-6 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-            {error}
-          </p>
+          <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
+            <span className="text-xl flex-shrink-0">❌</span>
+            <p className="leading-relaxed">{error}</p>
+          </div>
         )}
 
-        <div className="mt-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <p className="text-xs text-slate-500 max-w-sm">
-            Nach dem Abschicken werden Ihre Antworten anonymisiert ausgewertet.
-            Anschließend sehen Sie Ihren persönlichen Stress- und Schlaf-Report.
-          </p>
+        <div className="mt-8 flex flex-col gap-4">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!allAnswered || submitting}
-            className="inline-flex justify-center items-center px-4 py-2.5 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+            className="w-full inline-flex justify-center items-center px-6 py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-sky-600 transition-all"
+            style={{ minHeight: '56px' }}
           >
-            {submitting ? 'Bitte warten…' : 'Antworten speichern & weiter'}
+            {submitting ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Bitte warten…
+              </>
+            ) : (
+              <>
+                {allAnswered ? '✓ ' : ''}Antworten speichern & weiter
+              </>
+            )}
           </button>
+          <p className="text-xs md:text-sm text-slate-500 text-center leading-relaxed px-4">
+            Nach dem Abschicken werden Ihre Antworten anonymisiert ausgewertet.
+            Anschließend sehen Sie Ihren persönlichen Stress- und Schlaf-Report.
+          </p>
         </div>
       </div>
     </main>
@@ -379,12 +410,34 @@ type QuestionCardProps = {
 }
 
 function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
+  const isAnswered = value !== undefined
+  
   return (
-    <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">
-      <p className="text-sm font-medium text-slate-900 mb-3">
-        <span className="text-slate-400 mr-1">{index}.</span>
-        {question.text}
-      </p>
+    <div 
+      id={`question-${question.id}`}
+      className={`border-2 rounded-xl p-5 md:p-6 transition-all ${
+        isAnswered 
+          ? 'border-sky-200 bg-sky-50/30' 
+          : 'border-slate-200 bg-white'
+      }`}
+    >
+      <div className="flex items-start gap-3 mb-4">
+        <span className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          isAnswered 
+            ? 'bg-sky-600 text-white' 
+            : 'bg-slate-200 text-slate-600'
+        }`}>
+          {index}
+        </span>
+        <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1">
+          {question.text}
+        </p>
+      </div>
+      {!isAnswered && (
+        <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+          ⚠️ Bitte wählen Sie eine Antwort aus
+        </p>
+      )}
       <div className="flex flex-wrap gap-2 md:gap-3">
         {SCALE.map((option) => {
           const id = `${question.id}-${option.value}`
@@ -393,23 +446,25 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
             <label
               key={option.value}
               htmlFor={id}
-              className={`flex items-center gap-2 text-xs md:text-sm px-3 py-2 rounded-full border cursor-pointer transition ${
+              className={`flex-1 min-w-[120px] flex flex-col items-center gap-1 px-4 py-3.5 md:py-4 rounded-xl border-2 cursor-pointer transition-all ${
                 checked
-                  ? 'bg-sky-600 text-white border-sky-600'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-sky-400 hover:bg-sky-50'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
+                  : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm'
               }`}
+              style={{ minHeight: '56px' }}
             >
               <input
                 id={id}
                 type="radio"
-                className="hidden"
+                className="sr-only"
                 name={question.id}
                 value={option.value}
                 checked={checked}
                 onChange={() => onChange(question.id, option.value)}
+                aria-label={`${option.label} (Wert ${option.value})`}
               />
-              <span className="font-semibold">{option.value}</span>
-              <span className="hidden sm:inline">– {option.label}</span>
+              <span className="text-2xl md:text-3xl font-bold">{option.value}</span>
+              <span className="text-xs md:text-sm font-medium">{option.label}</span>
             </label>
           )
         })}
