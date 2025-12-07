@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { CONSENT_VERSION } from '@/lib/consentConfig'
+import ConsentModal from './ConsentModal'
 
 type Question = {
   id: string
@@ -68,6 +70,8 @@ export default function StressCheckPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
+  const [showConsentModal, setShowConsentModal] = useState(false)
+  const [hasConsent, setHasConsent] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -86,6 +90,28 @@ export default function StressCheckPage() {
       }
 
       setUserId(user.id)
+
+      // Check if user has consented to current version
+      const { data: consentData, error: consentError } = await supabase
+        .from('user_consents')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('consent_version', CONSENT_VERSION)
+        .maybeSingle()
+
+      if (consentError) {
+        console.error('Error checking consent:', consentError)
+      }
+
+      if (!consentData) {
+        // No consent for current version - show modal
+        setShowConsentModal(true)
+        setHasConsent(false)
+      } else {
+        // Has consent
+        setHasConsent(true)
+      }
+
       setInitialLoading(false)
     }
 
@@ -97,6 +123,16 @@ export default function StressCheckPage() {
       ...prev,
       [qId]: value,
     }))
+  }
+
+  const handleConsentAccepted = () => {
+    setShowConsentModal(false)
+    setHasConsent(true)
+  }
+
+  const handleConsentDeclined = () => {
+    // User declined consent - redirect to login with message
+    router.push('/?error=consent_declined&message=Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.')
   }
 
   const handleSubmit = async () => {
@@ -198,6 +234,26 @@ export default function StressCheckPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-50">
         <p className="text-sm text-slate-600">Bitte warten…</p>
+      </main>
+    )
+  }
+
+  // Show consent modal if user hasn't consented yet
+  if (showConsentModal && userId) {
+    return (
+      <ConsentModal
+        userId={userId}
+        onConsent={handleConsentAccepted}
+        onDecline={handleConsentDeclined}
+      />
+    )
+  }
+
+  // Don't show questionnaire if no consent
+  if (!hasConsent) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-600">Laden…</p>
       </main>
     )
   }
