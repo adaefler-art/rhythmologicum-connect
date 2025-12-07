@@ -1,5 +1,214 @@
 # Zusammenfassung der Änderungen
 
+## E3 - Deployment auf Vercel inkl. ENV-Dokumentation (2025-12-07)
+
+### Was wurde implementiert?
+
+Diese Implementierung erfüllt alle Anforderungen aus Issue E3 für stabiles Vercel-Deployment der v0.2 mit vollständiger Umgebungsvariablen-Dokumentation.
+
+### Hauptänderungen
+
+#### 1. Umgebungsvariablen-Template (`.env.example`)
+
+**Neu erstellt:** Vollständiges Template mit allen erforderlichen und optionalen Variablen
+
+**Enthält:**
+- Alle 3 erforderlichen Supabase-Variablen
+- Optionale Anthropic API-Konfiguration
+- Alle 3 Feature Flags mit Standardwerten
+- Inline-Dokumentation für jede Variable
+- Sicherheitshinweise
+- Quick-Start-Anleitung
+- Vercel-spezifische Hinweise
+
+**Verwendung:**
+```bash
+cp .env.example .env.local
+# Werte eintragen und loslegen
+```
+
+#### 2. Comprehensive Deployment Guide (Deutsch)
+
+**Datei:** `docs/DEPLOYMENT_GUIDE.md` (23 KB)
+
+**Inhalt:**
+- **Voraussetzungen:** Software, Accounts, Repository-Zugriff
+- **Umgebungsvariablen:** Detaillierte Erklärung aller 8 Variablen
+  - Wo zu finden (mit Screenshots-Anweisungen)
+  - Sicherheitseinstufung (öffentlich vs. geheim)
+  - Verwendungszweck
+  - Fallback-Verhalten
+- **Vercel Deployment:** Step-by-step Anleitung
+  - Erstmaliges Setup
+  - Umgebungsvariablen konfigurieren
+  - Deployment starten
+- **Umgebungs-spezifische Konfiguration:**
+  - Production (main branch)
+  - Preview (Pull Requests)
+  - Development (lokal)
+- **Smoke-Tests:** Vollständige Test-Suite (T1-T10)
+  - Homepage laden
+  - Patient-Registrierung/-Login
+  - Stress-Assessment durchführen
+  - AMY-Berichte prüfen
+  - Kliniker-Dashboard testen
+  - Diagramme verifizieren
+- **Troubleshooting:** Häufige Probleme und Lösungen
+- **Checkliste für Thomas:** Deployment-Checkliste zum Abhaken
+
+#### 3. Environment Variables Quick Reference (Englisch)
+
+**Datei:** `docs/ENV_VARIABLES.md` (8 KB)
+
+**Inhalt:**
+- Schnellreferenz für alle Variablen
+- Usage Matrix (Client/Server/API/Middleware)
+- Sicherheitsrichtlinien
+- Troubleshooting-Tipps
+- Environment-spezifische Setups
+
+#### 4. Vercel-Konfiguration
+
+**Datei:** `vercel.json`
+
+**Konfiguration:**
+- Framework: Next.js
+- Region: Frankfurt (fra1)
+- Security Headers:
+  - X-Content-Type-Options: nosniff
+  - X-Frame-Options: DENY
+  - X-XSS-Protection: 1; mode=block
+  - Referrer-Policy: strict-origin-when-cross-origin
+- Function Timeout: 30 Sekunden für API-Routes
+- Environment Variable Referenzen
+
+#### 5. README.md Update
+
+**Aktualisiert:**
+- Environment Variables Sektion erweitert
+- Quick Setup mit `.env.example`
+- Deployment-Sektion komplett überarbeitet:
+  - Quick Deploy Button
+  - Manual Deployment Anleitung
+  - Post-Deployment Smoke Tests
+  - Links zu allen Dokumentationen
+
+#### 6. .gitignore Anpassung
+
+**Geändert:** `.env.example` ist jetzt committable
+```
+.env.*
+!.env.example  # NEU: Explizit erlaubt
+```
+
+### Umgebungsvariablen-Übersicht
+
+#### Erforderlich (3)
+1. **NEXT_PUBLIC_SUPABASE_URL** - Supabase Projekt-URL (öffentlich)
+2. **NEXT_PUBLIC_SUPABASE_ANON_KEY** - Anonymous Key (öffentlich, RLS-geschützt)
+3. **SUPABASE_SERVICE_ROLE_KEY** - Service Key (geheim, Server-only)
+
+#### Optional (2)
+4. **ANTHROPIC_API_KEY** - Für AMY AI (geheim, fallback zu generischem Text)
+5. **ANTHROPIC_MODEL** - Claude-Modell (Standard: claude-sonnet-4-5-20250929)
+
+#### Feature Flags (3, alle optional, Standard: `true`)
+6. **NEXT_PUBLIC_FEATURE_AMY_ENABLED** - AMY AI aktivieren/deaktivieren
+7. **NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED** - Kliniker-Dashboard
+8. **NEXT_PUBLIC_FEATURE_CHARTS_ENABLED** - Diagramme in Kliniker-Ansicht
+
+### Smoke-Test Suite
+
+**10 Tests definiert:**
+- ✅ T1: Homepage lädt
+- ✅ T2: Patient-Registrierung
+- ✅ T3: Patient-Login
+- ✅ T4: Stress-Assessment
+- ✅ T5: Ergebnisse anzeigen
+- ✅ T6: AMY-Bericht (wenn aktiviert)
+- ✅ T7: Kliniker-Login
+- ✅ T8: Patienten-Liste
+- ✅ T9: Patienten-Details
+- ✅ T10: Diagramme (wenn aktiviert)
+
+**Checkliste-Template:** Zum Kopieren für jedes Deployment
+
+### Build-Verifizierung
+
+**Getestet:**
+- ✅ Build funktioniert mit allen ENV-Variablen
+- ✅ Keine Build-Fehler
+- ✅ Alle 14 Routes kompilieren korrekt
+- ✅ Middleware funktioniert
+- ✅ API-Routes laden ohne Fehler
+
+### Sicherheits-Dokumentation
+
+**Klargestellt:**
+- Öffentliche vs. geheime Variablen
+- Wann RLS greift (anon key)
+- Wann RLS bypassed wird (service role key)
+- Rotation-Strategie bei Schlüssel-Exposition
+- Best Practices für Umgebungs-Trennung
+
+### Akzeptanzkriterien - Status
+
+- ✅ **Alle ENV-Variablen korrekt dokumentiert**
+  - `.env.example` mit allen 8 Variablen
+  - Detaillierte Dokumentation in Deutsch und Englisch
+  
+- ✅ **Deploy-Anleitung ohne Fehlermeldungen möglich**
+  - Step-by-step Guide in `DEPLOYMENT_GUIDE.md`
+  - Troubleshooting für häufige Probleme
+  - Build erfolgreich mit ENV-Variablen getestet
+  
+- ✅ **Dokumentation für Thomas & interne Nutzung**
+  - Deployment-Checkliste zum Abhaken
+  - Smoke-Test Procedures
+  - Quick Reference Guides
+  
+- ✅ **Smoke-Test dokumentiert**
+  - 10 Test-Cases definiert
+  - Erwartete Ergebnisse dokumentiert
+  - Copy-paste Checkliste bereitgestellt
+
+### Migration & Deployment
+
+**Lokale Nutzung:**
+```bash
+cp .env.example .env.local
+# Werte eintragen
+npm run dev
+```
+
+**Vercel Setup:**
+1. Repository importieren
+2. Environment Variables setzen (siehe Deployment Guide)
+3. Deploy
+4. Smoke Tests durchführen
+
+### Verbesserungen für Zukunft
+
+**Mögliche Erweiterungen:**
+- Automated smoke tests (E2E mit Playwright)
+- Health-Check Endpoint
+- Environment validation script
+- Vercel deployment hooks
+
+### Dateien
+
+**Neu:**
+- `.env.example` - Template für Umgebungsvariablen
+- `docs/DEPLOYMENT_GUIDE.md` - Deployment-Anleitung (Deutsch)
+- `docs/ENV_VARIABLES.md` - Quick Reference (Englisch)
+- `vercel.json` - Vercel-Konfiguration
+
+**Geändert:**
+- `README.md` - Deployment-Sektion erweitert
+- `.gitignore` - .env.example erlaubt
+
+---
+
 ## D4 - Row Level Security (RLS) vollständig aktivieren (2025-12-07)
 
 ### Was wurde implementiert?
