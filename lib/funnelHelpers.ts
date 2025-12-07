@@ -3,13 +3,15 @@ import type {
   FunnelStep,
   Question,
   FunnelStepQuestion,
+  FunnelStepWithQuestions,
+  FunnelWithSteps,
   ActiveQuestion,
 } from './types/funnel'
 
 /**
  * Fetches a funnel with all its steps and questions
  */
-export async function getFunnelWithQuestions(funnelId: string) {
+export async function getFunnelWithQuestions(funnelId: string): Promise<FunnelWithSteps> {
   // Fetch funnel
   const { data: funnel, error: funnelError } = await supabase
     .from('funnels')
@@ -30,7 +32,7 @@ export async function getFunnelWithQuestions(funnelId: string) {
   if (stepsError) throw stepsError
 
   // For each step, fetch associated questions
-  const stepsWithQuestions = await Promise.all(
+  const stepsWithQuestions: FunnelStepWithQuestions[] = await Promise.all(
     (steps || []).map(async (step: FunnelStep) => {
       // Fetch funnel_step_questions join table
       const { data: stepQuestions, error: stepQuestionsError } = await supabase
@@ -55,13 +57,17 @@ export async function getFunnelWithQuestions(funnelId: string) {
       if (questionsError) throw questionsError
 
       // Combine questions with their funnel_step_questions metadata
-      const questionsWithMeta = (stepQuestions || []).map((sq) => {
-        const question = (questions || []).find((q) => q.id === sq.question_id)
-        return {
-          ...question,
-          funnel_step_question: sq,
-        }
-      })
+      const questionsWithMeta = (stepQuestions || [])
+        .map((sq) => {
+          const question = (questions || []).find((q) => q.id === sq.question_id)
+          if (!question) return null
+
+          return {
+            ...question,
+            funnel_step_questions: [sq],
+          }
+        })
+        .filter(Boolean) as FunnelStepWithQuestions['questions']
 
       return {
         ...step,
@@ -73,7 +79,7 @@ export async function getFunnelWithQuestions(funnelId: string) {
   return {
     ...funnel,
     funnel_steps: stepsWithQuestions,
-  }
+  } as FunnelWithSteps
 }
 
 /**
@@ -95,13 +101,18 @@ export async function getActiveQuestion(
     funnelStepQuestion: FunnelStepQuestion
   }> = []
 
-  funnelData.funnel_steps.forEach((step, stepIndex) => {
+  funnelData.funnel_steps.forEach((step: FunnelStepWithQuestions, stepIndex) => {
     step.questions.forEach((q, questionIndexInStep) => {
+      const [funnelStepQuestion] = q.funnel_step_questions || []
+      if (!funnelStepQuestion) {
+        return
+      }
+
       allQuestions.push({
         question: q as Question,
         stepIndex,
         questionIndexInStep,
-        funnelStepQuestion: q.funnel_step_question as FunnelStepQuestion,
+        funnelStepQuestion,
       })
     })
   })
