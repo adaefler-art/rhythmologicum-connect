@@ -11,7 +11,6 @@ type PatientMeasure = {
   patient_id: string
   created_at: string
   stress_score: number | null
-  sleep_score: number | null
   risk_level: RiskLevel
   report_id: string | null
   patient_profiles: {
@@ -56,7 +55,6 @@ export default function ClinicianOverviewPage() {
             patient_id,
             created_at,
             stress_score,
-            sleep_score,
             risk_level,
             report_id,
             patient_profiles!fk_patient_measures_patient (
@@ -97,11 +95,8 @@ export default function ClinicianOverviewPage() {
     // Create overview for each patient
     const overviews: PatientOverview[] = []
     patientMap.forEach((patientMeasures, patientId) => {
-      // Sort by date to get the latest
-      const sortedMeasures = patientMeasures.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-      const latestMeasure = sortedMeasures[0]
+      // Measures are already sorted by created_at desc from the query
+      const latestMeasure = patientMeasures[0]
       
       overviews.push({
         patient_id: patientId,
@@ -129,7 +124,6 @@ export default function ClinicianOverviewPage() {
       moderate: 2,
       low: 1,
       pending: 0,
-      null: -1,
     }
 
     sorted.sort((a, b) => {
@@ -140,8 +134,8 @@ export default function ClinicianOverviewPage() {
           comparison = a.patient_name.localeCompare(b.patient_name)
           break
         case 'risk': {
-          const aRisk = riskOrder[a.latest_risk_level ?? 'null']
-          const bRisk = riskOrder[b.latest_risk_level ?? 'null']
+          const aRisk = riskOrder[a.latest_risk_level ?? ''] ?? -1
+          const bRisk = riskOrder[b.latest_risk_level ?? ''] ?? -1
           comparison = aRisk - bRisk
           break
         }
