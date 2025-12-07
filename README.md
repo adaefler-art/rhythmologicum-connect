@@ -217,4 +217,7 @@ After deployment, perform these smoke tests:
 6. ✅ Clinician can login and view patients
 7. ✅ Charts display (if enabled)
 
+**📋 For comprehensive end-to-end testing:**
+- **[E4 Smoke Test Guide](docs/E4_SMOKE_TEST.md)** - Complete checklist for pilot practice with all critical flows
+
 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
