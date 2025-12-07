@@ -10,50 +10,8 @@ type Question = {
   id: string
   text: string
   group: 'stress' | 'sleep'
+  helpText?: string | null
 }
-
-const QUESTIONS: Question[] = [
-  {
-    id: 'stress_q1',
-    text: 'Wie häufig fühlen Sie sich im Alltag gestresst?',
-    group: 'stress',
-  },
-  {
-    id: 'stress_q2',
-    text: 'Fühlen Sie sich häufig überfordert?',
-    group: 'stress',
-  },
-  {
-    id: 'stress_q3',
-    text: 'Wie oft hatten Sie das Gefühl, keine Kontrolle zu haben?',
-    group: 'stress',
-  },
-  {
-    id: 'stress_q4',
-    text: 'Wie häufig reagieren Sie angespannt oder gereizt?',
-    group: 'stress',
-  },
-  {
-    id: 'sleep_q1',
-    text: 'Wie gut schlafen Sie typischerweise ein?',
-    group: 'sleep',
-  },
-  {
-    id: 'sleep_q2',
-    text: 'Wie oft wachen Sie nachts auf?',
-    group: 'sleep',
-  },
-  {
-    id: 'sleep_q3',
-    text: 'Wie erholt fühlen Sie sich morgens beim Aufstehen?',
-    group: 'sleep',
-  },
-  {
-    id: 'sleep_q4',
-    text: 'Wie oft verspüren Sie Erschöpfung am Tag?',
-    group: 'sleep',
-  },
-]
 
 const SCALE = [
   { value: 0, label: 'Nie' },
@@ -72,6 +30,85 @@ export default function StressCheckPage() {
   const [error, setError] = useState<string | null>(null)
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [hasConsent, setHasConsent] = useState(false)
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [questionsLoading, setQuestionsLoading] = useState(true)
+
+  // Load questions from database
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        // Get the stress funnel
+        const { data: funnel, error: funnelError } = await supabase
+          .from('funnels')
+          .select('id')
+          .eq('slug', 'stress')
+          .eq('is_active', true)
+          .single()
+
+        if (funnelError) throw funnelError
+        if (!funnel) throw new Error('Stress funnel not found')
+
+        // Get funnel steps
+        const { data: steps, error: stepsError } = await supabase
+          .from('funnel_steps')
+          .select('id, order_index')
+          .eq('funnel_id', funnel.id)
+          .order('order_index', { ascending: true })
+
+        if (stepsError) throw stepsError
+        if (!steps || steps.length === 0) {
+          throw new Error('No steps found for stress funnel')
+        }
+
+        // Get all questions for these steps ordered by step and question order
+        const sortedQuestions: Question[] = []
+        
+        for (const step of steps) {
+          const group = step.order_index === 1 ? 'stress' : 'sleep'
+          
+          const { data: stepQuestions, error: stepQuestionsError } = await supabase
+            .from('funnel_step_questions')
+            .select(`
+              order_index,
+              questions (
+                key,
+                label,
+                help_text
+              )
+            `)
+            .eq('funnel_step_id', step.id)
+            .order('order_index', { ascending: true })
+
+          if (stepQuestionsError) throw stepQuestionsError
+
+          const questionsInStep = (stepQuestions || []).map((sq: {
+            order_index: number
+            questions: {
+              key: string
+              label: string
+              help_text: string | null
+            }
+          }) => ({
+            id: sq.questions.key,
+            text: sq.questions.label,
+            helpText: sq.questions.help_text,
+            group: group as 'stress' | 'sleep',
+          }))
+          
+          sortedQuestions.push(...questionsInStep)
+        }
+
+        setQuestions(sortedQuestions)
+      } catch (err) {
+        console.error('Error loading questions:', err)
+        setError('Fehler beim Laden der Fragen. Bitte laden Sie die Seite neu.')
+      } finally {
+        setQuestionsLoading(false)
+      }
+    }
+
+    loadQuestions()
+  }, [])
 
   useEffect(() => {
     const handleConsentCheckFailure = () => {
@@ -157,8 +194,8 @@ export default function StressCheckPage() {
 
     // Check for unanswered questions and provide specific feedback
     if (!allAnswered) {
-      const unansweredQuestions = QUESTIONS.filter(q => answers[q.id] === undefined)
-      const questionNumbers = unansweredQuestions.map(q => QUESTIONS.indexOf(q) + 1).join(', ')
+      const unansweredQuestions = questions.filter(q => answers[q.id] === undefined)
+      const questionNumbers = unansweredQuestions.map(q => questions.indexOf(q) + 1).join(', ')
       setError(
         `Bitte beantworten Sie noch alle Fragen. Fehlend: Frage ${questionNumbers}`
       )
@@ -253,11 +290,11 @@ export default function StressCheckPage() {
     }
   }
 
-  const totalQuestions = QUESTIONS.length
+  const totalQuestions = questions.length
   const answeredCount = Object.keys(answers).length
   const allAnswered = answeredCount === totalQuestions
 
-  if (initialLoading) {
+  if (initialLoading || questionsLoading) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
@@ -282,8 +319,8 @@ export default function StressCheckPage() {
     )
   }
 
-  const stressQuestions = QUESTIONS.filter((q) => q.group === 'stress')
-  const sleepQuestions = QUESTIONS.filter((q) => q.group === 'sleep')
+  const stressQuestions = questions.filter((q) => q.group === 'stress')
+  const sleepQuestions = questions.filter((q) => q.group === 'sleep')
 
   return (
     <main className="bg-slate-50 px-4 py-10">
@@ -433,6 +470,14 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
           {question.text}
         </p>
       </div>
+      {question.helpText && (
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
+          <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
+            <span className="text-lg flex-shrink-0">💡</span>
+            <span>{question.helpText}</span>
+          </p>
+        </div>
+      )}
       {!isAnswered && (
         <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
           ⚠️ Bitte wählen Sie eine Antwort aus
