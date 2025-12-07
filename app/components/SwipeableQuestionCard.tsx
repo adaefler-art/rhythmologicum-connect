@@ -1,11 +1,20 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, PanInfo, AnimatePresence } from 'framer-motion'
 import MobileQuestionCard, { type MobileQuestionCardProps } from './MobileQuestionCard'
 
 export type SwipeableQuestionCardProps = MobileQuestionCardProps & {
   enableSwipe?: boolean
+}
+
+/**
+ * Helper function to check if a question has been answered
+ */
+function isAnswered(value: number | string | undefined): boolean {
+  if (value === undefined || value === null) return false
+  if (typeof value === 'string' && value.trim() === '') return false
+  return true
 }
 
 /**
@@ -29,6 +38,15 @@ export default function SwipeableQuestionCard({
   const [isAnimating, setIsAnimating] = useState(false)
   const [direction, setDirection] = useState<'left' | 'right' | null>(null)
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cleanup timeout on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Swipe threshold and velocity settings
   const SWIPE_THRESHOLD = 100 // pixels
@@ -74,8 +92,7 @@ export default function SwipeableQuestionCard({
     // Swipe left (next question)
     else if (swipeDistance < 0 && !isLast && onNext) {
       // Only allow swipe to next if question is answered
-      const isAnswered = props.value !== undefined && props.value !== null
-      if (!isAnswered) {
+      if (!isAnswered(props.value)) {
         // Snap back - question not answered
         return
       }
