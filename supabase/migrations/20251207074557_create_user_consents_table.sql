@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.user_consents (
     consented_at timestamp with time zone DEFAULT now() NOT NULL,
     ip_address text,
     user_agent text,
-    
+
     -- Ensure one consent per user per version (allow re-consent if needed)
     UNIQUE(user_id, consent_version)
 );
@@ -35,4 +35,3 @@ CREATE POLICY "Users can insert own consents"
     WITH CHECK (auth.uid() = user_id);
 
 -- Comment on table
-COMMENT ON TABLE public.user_consents IS 'Stores user consent records with version tracking for GDPR compliance';
