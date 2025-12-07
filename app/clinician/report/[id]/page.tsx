@@ -96,7 +96,7 @@ export default function ClinicianReportDetailPage() {
           </p>
           <button
             onClick={() => router.push('/clinician')}
-            className="px-4 py-2 rounded bg-black text-white text-sm"
+            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
           >
             Zurück
           </button>
@@ -113,65 +113,65 @@ export default function ClinicianReportDetailPage() {
       : 'Niedriges Stressniveau'
 
   return (
-    <main className="min-h-screen p-6 max-w-3xl mx-auto">
+    <main className="min-h-screen p-4 sm:p-6 max-w-3xl mx-auto">
       <button
         onClick={() => router.push('/clinician')}
-        className="mb-4 text-sm text-sky-600 underline"
+        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
       >
         ← Zur Übersicht
       </button>
 
-      <h1 className="text-3xl font-bold mb-4">Report – Stress & Resilienz</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 md:mb-6">Report – Stress & Resilienz</h1>
 
       {/* Meta-Daten */}
-      <div className="mb-6 space-y-2">
+      <div className="mb-6 space-y-3 md:space-y-4">
         <div>
-          <p className="text-sm text-slate-500">Datum</p>
-          <p className="font-medium">
+          <p className="text-sm md:text-base text-slate-500">Datum</p>
+          <p className="font-medium text-sm md:text-base">
             {new Date(report.created_at).toLocaleString()}
           </p>
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Patient</p>
-          <p className="font-medium">
+          <p className="text-sm md:text-base text-slate-500">Patient</p>
+          <p className="font-medium text-sm md:text-base">
             {patient?.full_name ?? patient?.id ?? 'Unbekannt'}
           </p>
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Stress-Score</p>
-          <p className="text-xl font-bold">{report.score_numeric ?? 'N/A'}</p>
+          <p className="text-sm md:text-base text-slate-500">Stress-Score</p>
+          <p className="text-xl md:text-2xl font-bold">{report.score_numeric ?? 'N/A'}</p>
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Schlaf-Score</p>
-          <p className="text-xl font-bold">{report.sleep_score ?? 'N/A'}</p>
+          <p className="text-sm md:text-base text-slate-500">Schlaf-Score</p>
+          <p className="text-xl md:text-2xl font-bold">{report.sleep_score ?? 'N/A'}</p>
         </div>
 
         <div>
-          <p className="text-sm text-slate-500">Stress-Level</p>
-          <p className="font-medium">{riskLabel}</p>
+          <p className="text-sm md:text-base text-slate-500">Stress-Level</p>
+          <p className="font-medium text-sm md:text-base">{riskLabel}</p>
         </div>
       </div>
 
       {/* AMY-Text */}
-      <div className="border rounded-xl p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-2">Kurzbericht (AMY)</h2>
-        <p className="whitespace-pre-line text-gray-800">
+      <div className="border rounded-xl p-4 md:p-6 mb-6">
+        <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Kurzbericht (AMY)</h2>
+        <p className="whitespace-pre-line text-gray-800 text-sm md:text-base">
           {report.report_text_short}
         </p>
       </div>
 
       {/* Antworten */}
-      <div className="border rounded-xl p-4">
-        <h2 className="text-xl font-semibold mb-2">Antworten (Rohdaten)</h2>
+      <div className="border rounded-xl p-4 md:p-6">
+        <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Antworten (Rohdaten)</h2>
         {answers.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm md:text-base text-slate-500">
             Keine Antworten gefunden.
           </p>
         ) : (
-          <ul className="list-disc pl-4 space-y-1 text-sm text-slate-700">
+          <ul className="list-disc pl-5 space-y-1 text-sm md:text-base text-slate-700">
             {answers.map((a) => (
               <li key={a.question_id}>
                 <strong>{a.question_id}:</strong> {a.answer_value}
