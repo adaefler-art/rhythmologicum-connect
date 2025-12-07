@@ -208,10 +208,8 @@ export default function ClinicianOverviewPage() {
     }
   }
 
-  const handlePatientClick = (reportId: string | null) => {
-    if (reportId) {
-      router.push(`/clinician/report/${reportId}`)
-    }
+  const handlePatientClick = (patientId: string) => {
+    router.push(`/clinician/patient/${patientId}`)
   }
 
   const SortIcon = ({ field }: { field: SortField }) => {
@@ -365,7 +363,7 @@ export default function ClinicianOverviewPage() {
                   className={`hover:bg-slate-50 transition cursor-pointer ${
                     index !== sortedPatients.length - 1 ? 'border-b border-slate-100' : ''
                   }`}
-                  onClick={() => handlePatientClick(patient.report_id)}
+                  onClick={() => handlePatientClick(patient.patient_id)}
                 >
                   <td className="px-4 py-3">
                     <span className="font-medium text-slate-900">
