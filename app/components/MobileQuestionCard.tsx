@@ -149,10 +149,9 @@ export default function MobileQuestionCard({
                           value={option.value}
                           checked={checked}
                           onChange={() => onChange(question.id, option.value)}
-                          aria-label={`${option.label} (Wert ${option.value})`}
                           disabled={isLoading}
                         />
-                        <span className="text-2xl font-bold">{option.value}</span>
+                        <span className="text-2xl font-bold" aria-hidden="true">{option.value}</span>
                         <span className="text-sm font-medium text-center">{option.label}</span>
                       </label>
                     )

@@ -141,9 +141,6 @@ export default function FunnelDemoPage() {
           <p className="text-slate-600 mb-6">
             Diese Demo ist für mobile Geräte optimiert. Bitte verkleinern Sie Ihr Browserfenster auf unter 640px Breite oder öffnen Sie die Seite auf einem mobilen Gerät.
           </p>
-          <p className="text-sm text-slate-500">
-            Aktuelle Breite: {typeof window !== 'undefined' ? window.innerWidth : 0}px
-          </p>
         </div>
       </main>
     )
