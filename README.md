@@ -61,6 +61,7 @@ WHERE email = 'doctor@example.com';
 
 **📚 Detailed documentation:**
 - [Clinician Authentication Setup](docs/CLINICIAN_AUTH.md) - Complete setup guide
+- [Clinician Dashboard Quick Guide](docs/Z3_CLINICIAN_DASHBOARD_GUIDE.md) - User guide for clinicians (German)
 - [Authentication Flow](docs/AUTH_FLOW.md) - Detailed flow diagrams
 - [Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md) - Technical overview
 
