@@ -2826,6 +2826,19 @@ CREATE TABLE public.reports (
 );
 
 --
+-- Name: user_consents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_consents (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    consent_version text NOT NULL,
+    consented_at timestamp with time zone DEFAULT now() NOT NULL,
+    ip_address text,
+    user_agent text
+);
+
+--
 -- Name: messages; Type: TABLE; Schema: realtime; Owner: -
 --
 
@@ -3272,6 +3285,20 @@ ALTER TABLE ONLY public.reports
     ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
 
 --
+-- Name: user_consents user_consents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_consents
+    ADD CONSTRAINT user_consents_pkey PRIMARY KEY (id);
+
+--
+-- Name: user_consents user_consents_user_id_consent_version_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_consents
+    ADD CONSTRAINT user_consents_user_id_consent_version_key UNIQUE (user_id, consent_version);
+
+--
 -- Name: patient_profiles unique_user_profile; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3677,6 +3704,18 @@ CREATE INDEX idx_patient_measures_patient_id ON public.patient_measures USING bt
 CREATE INDEX idx_patient_measures_report_id ON public.patient_measures USING btree (report_id);
 
 --
+-- Name: idx_user_consents_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_user_consents_user_id ON public.user_consents USING btree (user_id);
+
+--
+-- Name: idx_user_consents_consented_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_user_consents_consented_at ON public.user_consents USING btree (consented_at DESC);
+
+--
 -- Name: ix_realtime_subscription_entity; Type: INDEX; Schema: realtime; Owner: -
 --
 
@@ -3963,6 +4002,13 @@ ALTER TABLE ONLY public.reports
     ADD CONSTRAINT reports_assessment_id_fkey FOREIGN KEY (assessment_id) REFERENCES public.assessments(id) ON DELETE CASCADE;
 
 --
+-- Name: user_consents user_consents_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_consents
+    ADD CONSTRAINT user_consents_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+--
 -- Name: objects objects_bucketId_fkey; Type: FK CONSTRAINT; Schema: storage; Owner: -
 --
 
@@ -4111,6 +4157,24 @@ CREATE POLICY "allow-all-assessment-answers" ON public.assessment_answers USING 
 --
 
 ALTER TABLE public.assessment_answers ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: user_consents; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: user_consents Users can view own consents; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can view own consents" ON public.user_consents FOR SELECT USING ((auth.uid() = user_id));
+
+--
+-- Name: user_consents Users can insert own consents; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can insert own consents" ON public.user_consents FOR INSERT WITH CHECK ((auth.uid() = user_id));
 
 --
 -- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: -
