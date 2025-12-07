@@ -24,17 +24,26 @@ BEGIN
   END IF;
 END $$ LANGUAGE plpgsql;
 
+-- Add FK only if auth.users exists to avoid failing migrations when the auth schema is absent (e.g., CI/test DB)
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'patient_profiles_user_id_fkey'
-      AND table_schema = 'public'
-      AND table_name = 'patient_profiles'
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_namespace n
+    JOIN pg_catalog.pg_class c ON c.relnamespace = n.oid
+    WHERE n.nspname = 'auth'
+      AND c.relname = 'users'
   ) THEN
-    ALTER TABLE patient_profiles
-      ADD CONSTRAINT patient_profiles_user_id_fkey
-      FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.table_constraints
+      WHERE constraint_name = 'patient_profiles_user_id_fkey'
+        AND table_schema = 'public'
+        AND table_name = 'patient_profiles'
+    ) THEN
+      ALTER TABLE patient_profiles
+        ADD CONSTRAINT patient_profiles_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    END IF;
   END IF;
 END $$ LANGUAGE plpgsql;
 
