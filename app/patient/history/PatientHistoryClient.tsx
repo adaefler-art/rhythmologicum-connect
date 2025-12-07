@@ -325,44 +325,57 @@ export default function PatientHistoryClient() {
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
       {/* Header */}
       <section>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
-              Ihr Verlauf
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Ihre bisherigen Stress- und Schlaf-Messungen im Überblick
-            </p>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+                Ihr Verlauf
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Ihre bisherigen Stress- und Schlaf-Messungen im Überblick
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportJSON}
+              disabled={isExporting}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {isExporting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                  Exportiere...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Als JSON exportieren
+                </>
+              )}
+            </button>
           </div>
+          
+          {/* New Check CTA */}
           <button
             type="button"
-            onClick={handleExportJSON}
-            disabled={isExporting}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            onClick={() => router.push('/patient/stress-check')}
+            className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition"
+            aria-label="Neue Messung durchführen"
           >
-            {isExporting ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                Exportiere...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Als JSON exportieren
-              </>
-            )}
+            <span className="text-base" aria-hidden="true">✓</span>
+            Neue Messung durchführen
           </button>
         </div>
       </section>
@@ -519,17 +532,6 @@ export default function PatientHistoryClient() {
             )
           })}
         </div>
-      </section>
-
-      {/* Action Button */}
-      <section className="flex justify-center pt-4">
-        <button
-          type="button"
-          onClick={() => router.push('/patient/stress-check')}
-          className="inline-flex items-center rounded-lg bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition"
-        >
-          Neue Messung durchführen
-        </button>
       </section>
     </div>
   )

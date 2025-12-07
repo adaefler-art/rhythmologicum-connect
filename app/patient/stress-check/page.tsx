@@ -259,7 +259,7 @@ export default function StressCheckPage() {
 
   if (initialLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+      <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
       </main>
     )
@@ -276,7 +276,7 @@ export default function StressCheckPage() {
 
   if (!hasConsent) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+      <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Laden…</p>
       </main>
     )
@@ -286,7 +286,7 @@ export default function StressCheckPage() {
   const sleepQuestions = QUESTIONS.filter((q) => q.group === 'sleep')
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <main className="bg-slate-50 px-4 py-10">
       <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
         {/* Header / Einleitung */}
         <header className="mb-6">
