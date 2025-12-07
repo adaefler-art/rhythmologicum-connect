@@ -374,6 +374,7 @@ Praktische Erprobung im klinischen Alltag, um fundierte Entscheidungen für v0.3
 
 **Weiterführende Dokumentation:**
 - 📖 [Vollständige README](../README.md)
+- ✅ [Pilot Readiness Checklist](Z2_PILOT_READINESS_CHECKLIST.md) - Kompletter Leitfaden zur Pilot-Vorbereitung
 - 🔐 [Clinician Auth Setup](CLINICIAN_AUTH.md)
 - 🧪 [Smoke Test Guide](E4_SMOKE_TEST.md)
 - 🚀 [Deployment Guide](DEPLOYMENT_GUIDE.md)

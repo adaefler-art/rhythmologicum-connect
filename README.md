@@ -219,5 +219,6 @@ After deployment, perform these smoke tests:
 
 **📋 For comprehensive end-to-end testing:**
 - **[E4 Smoke Test Guide](docs/E4_SMOKE_TEST.md)** - Complete checklist for pilot practice with all critical flows
+- **[Z2 Pilot Readiness Checklist](docs/Z2_PILOT_READINESS_CHECKLIST.md)** - Complete guide for preparing and launching the remote pilot (German, non-technical friendly)
 
 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
