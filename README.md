@@ -73,18 +73,38 @@ Unauthorized access attempts are logged and users are redirected with clear erro
 
 ## Environment Variables
 
-Required environment variables:
+### Quick Setup
+
+1. Copy the example file:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Fill in your values in `.env.local`
+
+### Required Variables
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-Optional environment variables for AI features:
+Get these from your Supabase project: **Settings → API**
+
+⚠️ **Important:** Keep `SUPABASE_SERVICE_ROLE_KEY` secret! This key has full database access.
+
+### Optional Variables
 
 ```bash
+# For AMY AI features (recommended)
 ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Specify Anthropic model (optional, has default)
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
 ```
+
+**📚 Complete documentation:** See [`.env.example`](.env.example) for all variables and detailed descriptions.
 
 ### Feature Flags
 
@@ -134,6 +154,67 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Quick Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/adaefler-art/rhythmologicum-connect)
+
+### Manual Deployment
+
+1. **Prerequisites:**
+   - Vercel account connected to GitHub
+   - Supabase project with database schema deployed
+   - (Optional) Anthropic API key for AMY AI features
+
+2. **Import Project:**
+   - Go to [vercel.com/new](https://vercel.com/new)
+   - Select `adaefler-art/rhythmologicum-connect`
+   - Framework preset: **Next.js** (auto-detected)
+
+3. **Configure Environment Variables:**
+   
+   In Vercel Dashboard → Settings → Environment Variables, add:
+
+   **Required (Production & Preview):**
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+
+   **Recommended:**
+   - `ANTHROPIC_API_KEY` (for AMY AI features)
+
+4. **Deploy:**
+   ```bash
+   git push origin main
+   ```
+
+5. **Verify:**
+   - Run smoke tests (see deployment guide)
+   - Check all core features are working
+
+### Documentation
+
+- **📖 [Complete Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Comprehensive German deployment documentation with:
+  - Step-by-step Vercel setup
+  - Environment variable explanations
+  - Environment-specific configurations
+  - Smoke test procedures
+  - Troubleshooting guide
+  - Deployment checklist
+
+- **📋 [.env.example](.env.example)** - Template for all environment variables
+
+- **🏗️ [vercel.json](vercel.json)** - Vercel configuration with security headers
+
+### Post-Deployment
+
+After deployment, perform these smoke tests:
+
+1. ✅ Homepage loads
+2. ✅ Patient registration works
+3. ✅ Patient can complete stress assessment
+4. ✅ Results display correctly
+5. ✅ AMY report generated (if enabled)
+6. ✅ Clinician can login and view patients
+7. ✅ Charts display (if enabled)
+
+See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
