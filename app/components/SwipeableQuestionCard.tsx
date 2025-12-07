@@ -2,23 +2,23 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, PanInfo, AnimatePresence } from 'framer-motion'
-import type { Variants, Transition } from 'framer-motion'
+import type { Variants, Transition, TargetAndTransition } from 'framer-motion'
 import MobileQuestionCard, { type MobileQuestionCardProps } from './MobileQuestionCard'
 
 type SwipeDirection = 'left' | 'right' | null
 
-const SPRING_TRANSITION: Transition = {
+const SPRING_TRANSITION = {
   type: 'spring',
   stiffness: 300,
   damping: 30,
-}
+} satisfies Transition
 
-const FADE_TRANSITION: Transition = {
+const FADE_TRANSITION = {
   duration: 0.2,
-}
+} satisfies Transition
 
 const SWIPE_VARIANTS: Variants = {
-  enter: (direction: SwipeDirection) => ({
+  enter: (direction: SwipeDirection): TargetAndTransition => ({
     x: direction === 'left' ? '100%' : direction === 'right' ? '-100%' : 0,
     opacity: 0,
   }),
@@ -30,7 +30,7 @@ const SWIPE_VARIANTS: Variants = {
       opacity: FADE_TRANSITION,
     },
   },
-  exit: (direction: SwipeDirection) => ({
+  exit: (direction: SwipeDirection): TargetAndTransition => ({
     x: direction === 'left' ? '-100%' : direction === 'right' ? '100%' : 0,
     opacity: 0,
     transition: {
