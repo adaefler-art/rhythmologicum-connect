@@ -147,7 +147,7 @@ export default function PatientDetailPage() {
           <p className="text-red-500 mb-4">{error ?? 'Patient nicht gefunden.'}</p>
           <button
             onClick={() => router.push('/clinician')}
-            className="px-4 py-2 rounded bg-sky-600 text-white text-sm hover:bg-sky-700 transition"
+            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
           >
             Zurück zur Übersicht
           </button>
@@ -157,19 +157,19 @@ export default function PatientDetailPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-6xl mx-auto">
+    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <button
           onClick={() => router.push('/clinician')}
-          className="mb-4 text-sm text-sky-600 hover:text-sky-700 hover:underline transition"
+          className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
         >
           ← Zurück zur Übersicht
         </button>
-        <h1 className="text-3xl font-bold mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">
           {patient.full_name ?? 'Patient:in'}
         </h1>
-        <div className="text-sm text-slate-600 space-x-4">
+        <div className="text-sm md:text-base text-slate-600 flex flex-wrap gap-3 md:gap-4">
           {patient.birth_year && <span>Jahrgang: {patient.birth_year}</span>}
           {patient.sex && <span>Geschlecht: {patient.sex}</span>}
           <span>{measures.length} Messung{measures.length !== 1 ? 'en' : ''}</span>
@@ -195,30 +195,30 @@ export default function PatientDetailPage() {
       ) : (
         <div className="space-y-6">
           {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Stress Score Chart */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-semibold mb-4">Stress-Verlauf</h2>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+              <h2 className="text-base md:text-lg font-semibold mb-4">Stress-Verlauf</h2>
               <StressChart measures={measures} />
             </div>
 
             {/* Sleep Score Chart */}
-            <div className="rounded-xl border border-slate-200 bg-white p-6">
-              <h2 className="text-lg font-semibold mb-4">Schlaf-Verlauf</h2>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+              <h2 className="text-base md:text-lg font-semibold mb-4">Schlaf-Verlauf</h2>
               <SleepChart measures={measures} />
             </div>
           </div>
 
           {/* AMY Reports Timeline */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+            <h2 className="text-base md:text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
             <div className="space-y-4">
               {measures
                 .filter((m) => m.reports?.report_text_short)
                 .map((measure) => (
                   <div
                     key={measure.id}
-                    className={`border-l-4 pl-4 py-2 ${
+                    className={`border-l-4 pl-4 py-3 ${
                       measure.risk_level === 'high'
                         ? 'border-red-400'
                         : measure.risk_level === 'moderate'
@@ -226,25 +226,25 @@ export default function PatientDetailPage() {
                         : 'border-emerald-400'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <span className="text-xs text-slate-500">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs md:text-sm text-slate-500">
                           {formatDate(measure.created_at)}
                         </span>
                         <span
-                          className={`ml-3 text-xs font-medium ${getRiskColor(
+                          className={`text-xs md:text-sm font-medium ${getRiskColor(
                             measure.risk_level
                           )}`}
                         >
                           {getRiskLabel(measure.risk_level)}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs md:text-sm text-slate-500">
                         Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
                         {measure.sleep_score ?? '—'}
                       </div>
                     </div>
-                    <p className="text-sm text-slate-700 whitespace-pre-line">
+                    <p className="text-sm md:text-base text-slate-700 whitespace-pre-line">
                       {measure.reports!.report_text_short}
                     </p>
                   </div>
@@ -253,18 +253,18 @@ export default function PatientDetailPage() {
           </div>
 
           {/* Raw Data Section */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Rohdaten (JSON)</h2>
+              <h2 className="text-base md:text-lg font-semibold">Rohdaten (JSON)</h2>
               <button
                 onClick={() => setShowRawData(!showRawData)}
-                className="text-sm text-sky-600 hover:text-sky-700 transition"
+                className="px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 transition touch-manipulation"
               >
                 {showRawData ? 'Verbergen' : 'Anzeigen'}
               </button>
             </div>
             {showRawData && (
-              <pre className="bg-slate-50 rounded p-4 overflow-x-auto text-xs text-slate-800">
+              <pre className="bg-slate-50 rounded p-4 overflow-x-auto text-xs md:text-sm text-slate-800">
                 {JSON.stringify({ patient, measures }, null, 2)}
               </pre>
             )}

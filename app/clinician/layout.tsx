@@ -81,23 +81,23 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
       <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
+              <p className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-sky-600">
                 Rhythmologicum Connect
               </p>
-              <p className="text-sm font-medium text-slate-900">
+              <p className="text-sm md:text-base font-medium text-slate-900">
                 Clinician Dashboard
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-slate-600">
+            <div className="flex items-center gap-3 md:gap-4">
+              <span className="text-xs sm:text-sm text-slate-600 hidden sm:inline">
                 {user?.email}
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-3 py-1.5 text-xs font-medium rounded-md text-slate-600 hover:bg-slate-100 transition"
+                className="px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 transition touch-manipulation"
               >
                 Abmelden
               </button>
@@ -111,11 +111,11 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-[11px] sm:text-xs text-slate-500 text-center sm:text-left">
             Rhythmologicum Connect – Clinician View – Frühe Testversion, nicht für den klinischen Einsatz.
           </p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] sm:text-xs text-slate-400">
             © {new Date().getFullYear()} Rhythmologicum
           </p>
         </div>

@@ -276,7 +276,7 @@ export default function ClinicianOverviewPage() {
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded bg-sky-600 text-white text-sm hover:bg-sky-700 transition"
+            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
           >
             Neu laden
           </button>
@@ -286,10 +286,10 @@ export default function ClinicianOverviewPage() {
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-6xl mx-auto">
+    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Patientenübersicht</h1>
-        <p className="text-slate-600">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Patientenübersicht</h1>
+        <p className="text-sm sm:text-base text-slate-600">
           Übersicht aller Pilotpatient:innen mit ihrer jeweils letzten Messung.
         </p>
       </div>
@@ -312,11 +312,11 @@ export default function ClinicianOverviewPage() {
         </div>
       ) : (
         <div className="overflow-x-auto border rounded-xl bg-white shadow-sm">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm md:text-base">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th
-                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function ClinicianOverviewPage() {
                   </div>
                 </th>
                 <th
-                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                   onClick={() => handleSort('score')}
                 >
                   <div className="flex items-center gap-2">
@@ -334,7 +334,7 @@ export default function ClinicianOverviewPage() {
                   </div>
                 </th>
                 <th
-                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                   onClick={() => handleSort('risk')}
                 >
                   <div className="flex items-center gap-2">
@@ -343,7 +343,7 @@ export default function ClinicianOverviewPage() {
                   </div>
                 </th>
                 <th
-                  className="text-left px-4 py-3 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition"
+                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                   onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ export default function ClinicianOverviewPage() {
                     <SortIcon field="date" />
                   </div>
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-700">
+                <th className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700">
                   Messungen
                 </th>
               </tr>
@@ -360,17 +360,17 @@ export default function ClinicianOverviewPage() {
               {sortedPatients.map((patient, index) => (
                 <tr
                   key={patient.patient_id}
-                  className={`hover:bg-slate-50 transition cursor-pointer ${
+                  className={`hover:bg-slate-50 transition cursor-pointer touch-manipulation ${
                     index !== sortedPatients.length - 1 ? 'border-b border-slate-100' : ''
                   }`}
                   onClick={() => handlePatientClick(patient.patient_id)}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 md:px-6 py-4 md:py-5">
                     <span className="font-medium text-slate-900">
                       {patient.patient_name}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 md:px-6 py-4 md:py-5">
                     {patient.latest_stress_score !== null ? (
                       <span className="text-slate-900 font-semibold">
                         {Math.round(patient.latest_stress_score)}
@@ -379,19 +379,19 @@ export default function ClinicianOverviewPage() {
                       <span className="text-slate-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 md:px-6 py-4 md:py-5">
                     <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getRiskBadgeClass(
+                      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs md:text-sm font-medium ${getRiskBadgeClass(
                         patient.latest_risk_level
                       )}`}
                     >
                       {getRiskLabel(patient.latest_risk_level)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                  <td className="px-4 md:px-6 py-4 md:py-5 text-slate-700 whitespace-nowrap">
                     {formatDateTime(patient.latest_measurement_time)}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 md:px-6 py-4 md:py-5 text-slate-600">
                     {patient.measurement_count}
                   </td>
                 </tr>
