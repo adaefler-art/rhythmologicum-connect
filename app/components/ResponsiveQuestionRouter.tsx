@@ -45,20 +45,18 @@ export type ResponsiveQuestionRouterProps = MobileQuestionCardProps & {
  * />
  * ```
  */
-export default function ResponsiveQuestionRouter({
-  enableSwipe = false,
-  ...props
-}: ResponsiveQuestionRouterProps) {
+export default function ResponsiveQuestionRouter(props: ResponsiveQuestionRouterProps) {
   const isMobile = useIsMobile()
+  const { enableSwipe = false, ...questionProps } = props
 
   // Mobile view: use SwipeableQuestionCard if swipe is enabled
   if (isMobile) {
     if (enableSwipe) {
-      return <SwipeableQuestionCard {...props} enableSwipe />
+      return <SwipeableQuestionCard {...questionProps} enableSwipe={enableSwipe} />
     }
-    return <MobileQuestionCard {...props} />
+    return <MobileQuestionCard {...questionProps} />
   }
 
   // Desktop view
-  return <DesktopQuestionCard {...props} />
+  return <DesktopQuestionCard {...questionProps} />
 }
