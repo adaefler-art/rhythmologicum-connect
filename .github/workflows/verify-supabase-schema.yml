@@ -10,10 +10,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check Supabase secret availability
+        id: secret-check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Supabase secret not available in this context (likely a fork/untrusted PR). Skipping workflow."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install PostgreSQL client
+        if: steps.secret-check.outputs.skip == 'false'
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Dump and normalize Supabase schema
+        if: steps.secret-check.outputs.skip == 'false'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
@@ -30,4 +44,9 @@ jobs:
           rm -f "$TMP" "${TMP}.norm"
 
       - name: Success
+        if: steps.secret-check.outputs.skip == 'false'
         run: echo "Supabase schema matches committed schema/schema.sql"
+
+      - name: Secret unavailable info
+        if: steps.secret-check.outputs.skip == 'true'
+        run: echo "verify-supabase-schema skipped: SUPABASE_DB_URL secret is inaccessible in this workflow context."

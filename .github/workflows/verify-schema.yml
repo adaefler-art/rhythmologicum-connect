@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      MIGRATIONS_DIR: supabase/migrations
     services:
       postgres:
         image: postgres:15
