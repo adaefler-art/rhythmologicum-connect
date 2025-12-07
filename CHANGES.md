@@ -1,4 +1,136 @@
-# Zusammenfassung der Änderungen - A3 Speicherung von AMY-Reports in Supabase
+# Zusammenfassung der Änderungen
+
+## D4 - Row Level Security (RLS) vollständig aktivieren (2025-12-07)
+
+### Was wurde implementiert?
+
+Diese Implementierung erfüllt alle Anforderungen aus Issue D4 zur vollständigen Aktivierung von Row Level Security (RLS).
+
+### Hauptänderungen
+
+#### 1. RLS-Richtlinien für alle Tabellen aktiviert
+
+**Betroffene Tabellen:**
+- `patient_profiles` - Patientenprofile
+- `assessments` - Bewertungen/Assessments
+- `assessment_answers` - Antworten auf Assessment-Fragen
+- `reports` - AMY-generierte Berichte
+- `patient_measures` - Aggregierte Patientenmessungen
+
+**Zuvor:** Nur `assessment_answers` und `user_consents` hatten RLS
+**Jetzt:** Alle öffentlichen Tabellen sind durch RLS geschützt
+
+#### 2. Hilfsfunktionen für RLS-Prüfungen
+
+**Neu erstellte Funktionen:**
+
+```sql
+-- Prüft, ob aktueller Benutzer Arzt/Ärztin ist
+public.is_clinician() → boolean
+
+-- Gibt patient_profile.id für aktuellen Benutzer zurück
+public.get_my_patient_profile_id() → uuid
+
+-- Protokolliert RLS-Verstöße
+public.log_rls_violation(table_name, operation, attempted_id)
+```
+
+#### 3. Richtlinien-Struktur
+
+**Für Patient:innen:**
+- ✅ Können nur ihre eigenen Daten sehen (SELECT)
+- ✅ Können nur ihre eigenen Daten erstellen (INSERT)
+- ✅ Können nur ihre eigenen Daten ändern (UPDATE)
+- ❌ Können keine Daten anderer Patient:innen sehen oder ändern
+
+**Für Ärzt:innen/Kliniker:innen:**
+- ✅ Können alle Pilotpatienten-Daten sehen (SELECT)
+- ❌ Können keine fremden Daten ändern (Lesezugriff only)
+
+**Für Backend/Service:**
+- ✅ Kann Reports und Measures für AMY API erstellen/ändern
+- ⚙️ Verwendet Service Role Key (umgeht RLS)
+
+#### 4. Test-Szenarien
+
+**Implementierte Tests in `20251207094100_rls_tests.sql`:**
+1. Patient:in kann nur eigenes Profil sehen
+2. Ärzt:in kann alle Profile sehen
+3. Patient:in kann nur eigene Assessments sehen
+4. Cross-Patient-Zugriff schlägt fehl (should-fail)
+5. Nicht authentifizierte Zugriffe werden blockiert
+6. Hilfsfunktionen funktionieren korrekt
+
+#### 5. Sicherheits-Monitoring
+
+**RLS-Verstöße werden protokolliert:**
+```
+RLS_VIOLATION: user=<uuid> table=<name> operation=<op> id=<uuid> timestamp=<time>
+```
+
+**Zugriff auf Logs:**
+- Supabase Dashboard → Logs → Filter "RLS_VIOLATION"
+- PostgreSQL Warnings werden geloggt
+
+### Dateien
+
+**Migrationen:**
+- `supabase/migrations/20251207094000_enable_comprehensive_rls.sql` (9.2 KB)
+  - Aktiviert RLS auf allen Tabellen
+  - Erstellt Hilfsfunktionen
+  - Definiert alle Richtlinien
+
+- `supabase/migrations/20251207094100_rls_tests.sql` (8.1 KB)
+  - 12 Testszenarien
+  - Should-fail Tests
+  - Optionale Test-Ergebnis-Tabelle
+
+**Dokumentation:**
+- `docs/D4_RLS_IMPLEMENTATION.md` (12 KB)
+  - Vollständige Implementierungsanleitung
+  - Richtlinien-Übersicht
+  - Testverfahren
+  - Fehlerbehebung
+
+### Auswirkungen auf Anwendung
+
+**Keine Code-Änderungen erforderlich:**
+- ✅ RLS ist transparent für bestehenden Code
+- ✅ Abfragen werden automatisch gefiltert
+- ✅ API-Routen funktionieren weiterhin
+- ✅ Client-Komponenten unverändert
+
+**Automatische Filterung:**
+```typescript
+// Patient greift auf eigene Daten zu
+const { data } = await supabase
+  .from('patient_measures')
+  .select('*')  // Automatisch auf eigene Daten gefiltert
+
+// Ärzt:in greift auf alle Daten zu
+const { data } = await supabase
+  .from('patient_measures')
+  .select('*')  // Gibt alle Patienten zurück (wenn Clinician-Rolle)
+```
+
+### Sicherheitsvorteile
+
+1. **Datenschutz:** Patient:innen können keine fremden Daten einsehen
+2. **DSGVO-Konformität:** Zugriffskontrollen auf Datenbankebene
+3. **Audit-Trail:** RLS-Verstöße werden protokolliert
+4. **Defense-in-Depth:** Zusätzliche Sicherheitsebene neben App-Code
+5. **Fehlervermeidung:** Verhindert versehentliche Daten-Leaks
+
+### Akzeptanzkriterien ✅
+
+- ✅ Patient sieht nur eigene Reports & Measures
+- ✅ Clinician sieht alle Pilotpatienten, aber keine "Fremddaten"
+- ✅ Tests für verbotene Zugriffe (should-fail) implementiert
+- ✅ Logging bei RLS-Verstößen
+
+---
+
+## A3 - Speicherung von AMY-Reports in Supabase (vorherige Änderung)
 
 ## Was wurde geändert?
 
