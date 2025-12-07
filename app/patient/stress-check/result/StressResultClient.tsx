@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import { featureFlags } from '@/lib/featureFlags'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | null
 
@@ -314,42 +315,44 @@ export default function StressResultClient() {
       </section>
 
       {/* AMY Text / Fallback */}
-      <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="text-base font-semibold text-slate-800">Deine persönliche Einordnung</h2>
-          {hasReportText && (
-            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-              von AMY
-            </span>
+      {featureFlags.AMY_ENABLED && (
+        <section className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-800">Deine persönliche Einordnung</h2>
+            {hasReportText && (
+              <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                von AMY
+              </span>
+            )}
+          </div>
+          <p className="text-base leading-7 text-slate-700 whitespace-pre-line">
+            {primaryText}
+          </p>
+          {!hasReportText && hasReport && (
+            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+              <p className="text-sm font-medium text-blue-900">
+                <span aria-label="Hinweis">💡</span> Die detaillierte KI-gestützte Auswertung folgt in Kürze
+              </p>
+              <p className="mt-1 text-sm text-blue-800">
+                Deine Daten sind bereits ausgewertet. Eine noch genauere, personalisierte Einordnung durch unsere KI-Assistentin AMY wird gerade erstellt.
+              </p>
+            </div>
           )}
-        </div>
-        <p className="text-base leading-7 text-slate-700 whitespace-pre-line">
-          {primaryText}
-        </p>
-        {!hasReportText && hasReport && (
-          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-            <p className="text-sm font-medium text-blue-900">
-              <span aria-label="Hinweis">💡</span> Die detaillierte KI-gestützte Auswertung folgt in Kürze
-            </p>
-            <p className="mt-1 text-sm text-blue-800">
-              Deine Daten sind bereits ausgewertet. Eine noch genauere, personalisierte Einordnung durch unsere KI-Assistentin AMY wird gerade erstellt.
-            </p>
-          </div>
-        )}
-        {!hasReport && (
-          <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
-            <p className="text-sm font-medium text-amber-900">
-              <span aria-label="Wartezeit">⏳</span> Auswertung läuft gerade
-            </p>
-            <p className="mt-1 text-sm text-amber-800">
-              Deine Antworten werden analysiert. Das dauert normalerweise nur wenige Sekunden. Bitte lade die Seite in einem Moment neu.
-            </p>
-            <p className="mt-2 text-xs text-amber-700">
-              Falls die Auswertung länger als 2 Minuten dauert, kannst du dich gerne an deine behandelnde Praxis wenden.
-            </p>
-          </div>
-        )}
-      </section>
+          {!hasReport && (
+            <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-medium text-amber-900">
+                <span aria-label="Wartezeit">⏳</span> Auswertung läuft gerade
+              </p>
+              <p className="mt-1 text-sm text-amber-800">
+                Deine Antworten werden analysiert. Das dauert normalerweise nur wenige Sekunden. Bitte lade die Seite in einem Moment neu.
+              </p>
+              <p className="mt-2 text-xs text-amber-700">
+                Falls die Auswertung länger als 2 Minuten dauert, kannst du dich gerne an deine behandelnde Praxis wenden.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
     </main>
   )
 }

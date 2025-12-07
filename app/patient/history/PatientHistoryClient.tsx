@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { featureFlags } from '@/lib/featureFlags'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -483,7 +484,7 @@ export default function PatientHistoryClient() {
                 </div>
 
                 {/* AMY Text */}
-                {amyText && (
+                {featureFlags.AMY_ENABLED && amyText && (
                   <div className="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3">
                     <div className="mb-2 flex items-center gap-2">
                       <h4 className="text-xs font-semibold text-blue-900">
@@ -499,7 +500,7 @@ export default function PatientHistoryClient() {
                   </div>
                 )}
 
-                {hasReport && !amyText && (
+                {featureFlags.AMY_ENABLED && hasReport && !amyText && (
                   <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                     <p className="text-xs text-slate-600">
                       Für diese Messung liegt noch kein AMY-Text vor.
@@ -507,7 +508,7 @@ export default function PatientHistoryClient() {
                   </div>
                 )}
 
-                {!hasReport && (
+                {featureFlags.AMY_ENABLED && !hasReport && (
                   <div className="rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
                     <p className="text-xs text-amber-800">
                       Die Auswertung für diese Messung wird noch erstellt.

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { featureFlags } from '@/lib/featureFlags'
 
 type Mode = 'login' | 'signup'
 
@@ -120,8 +121,16 @@ export default function LoginPage() {
       const role = user.app_metadata?.role || user.user_metadata?.role
 
       if (role === 'clinician') {
-        // Redirect clinicians to clinician dashboard
-        router.push('/clinician')
+        // Check if clinician dashboard is enabled
+        if (featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          router.push('/clinician')
+        } else {
+          // If clinician dashboard is disabled, show error and redirect to patient flow
+          setError('Das Kliniker-Dashboard ist derzeit nicht verfügbar. Sie werden zum Patienten-Bereich weitergeleitet.')
+          setTimeout(() => {
+            router.push('/patient/stress-check')
+          }, 2000)
+        }
       } else {
         // For patients: ensure patient_profile exists
         const { error: profileError } = await supabase
