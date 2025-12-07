@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// PostgreSQL error codes
+const PG_ERROR_UNIQUE_VIOLATION = '23505'
+
 /**
  * POST /api/consent/record
  * Records a user's consent to a specific version of terms.
@@ -59,9 +62,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get client IP address for audit trail
+    // Note: x-forwarded-for can be spoofed; this is for audit purposes only
+    // In production, consider using a trusted proxy or additional validation
     const forwardedFor = request.headers.get('x-forwarded-for')
     const realIp = request.headers.get('x-real-ip')
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || null
+    // Take the first IP from x-forwarded-for (client IP before proxies)
+    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || null
 
     // Get user agent
     const userAgent = request.headers.get('user-agent') || null
@@ -80,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       // Check if this is a duplicate consent (unique constraint violation)
-      if (error.code === '23505') {
+      if (error.code === PG_ERROR_UNIQUE_VIOLATION) {
         console.log(
           `Consent already recorded for user ${user.id}, version ${consentVersion}`,
         )

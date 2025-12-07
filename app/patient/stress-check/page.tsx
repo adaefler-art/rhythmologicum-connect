@@ -74,6 +74,12 @@ export default function StressCheckPage() {
   const [hasConsent, setHasConsent] = useState(false)
 
   useEffect(() => {
+    const handleConsentCheckFailure = () => {
+      // Default to showing consent modal if check fails (fail-safe)
+      setShowConsentModal(true)
+      setHasConsent(false)
+    }
+
     const checkAuth = async () => {
       const {
         data: { user },
@@ -106,15 +112,11 @@ export default function StressCheckPage() {
           }
         } else {
           console.error('Error checking consent status:', await response.text())
-          // Default to showing consent modal if check fails
-          setShowConsentModal(true)
-          setHasConsent(false)
+          handleConsentCheckFailure()
         }
       } catch (consentError) {
         console.error('Error checking consent:', consentError)
-        // Default to showing consent modal if check fails
-        setShowConsentModal(true)
-        setHasConsent(false)
+        handleConsentCheckFailure()
       }
 
       setInitialLoading(false)
