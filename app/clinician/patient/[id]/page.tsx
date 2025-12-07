@@ -16,7 +16,7 @@ type PatientMeasure = {
     id: string
     report_text_short: string
     created_at: string
-  } | null
+  }[] | null
 }
 
 type PatientProfile = {
@@ -73,7 +73,8 @@ export default function PatientDetailPage() {
         if (measuresResult.error) throw measuresResult.error
 
         setPatient(profileResult.data)
-        setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
+        // Type assertion needed for Supabase joined query result
+        setMeasures((measuresResult.data ?? []) as PatientMeasure[])
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
         const errorMessage =
@@ -213,41 +214,44 @@ export default function PatientDetailPage() {
             <h2 className="text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
             <div className="space-y-4">
               {measures
-                .filter((m) => m.reports?.report_text_short)
-                .map((measure) => (
-                  <div
-                    key={measure.id}
-                    className={`border-l-4 pl-4 py-2 ${
-                      measure.risk_level === 'high'
-                        ? 'border-red-400'
-                        : measure.risk_level === 'moderate'
-                        ? 'border-amber-400'
-                        : 'border-emerald-400'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <span className="text-xs text-slate-500">
-                          {formatDate(measure.created_at)}
-                        </span>
-                        <span
-                          className={`ml-3 text-xs font-medium ${getRiskColor(
-                            measure.risk_level
-                          )}`}
-                        >
-                          {getRiskLabel(measure.risk_level)}
-                        </span>
+                .filter((m) => m.reports && m.reports.length > 0 && m.reports[0]?.report_text_short)
+                .map((measure) => {
+                  const report = measure.reports![0]
+                  return (
+                    <div
+                      key={measure.id}
+                      className={`border-l-4 pl-4 py-2 ${
+                        measure.risk_level === 'high'
+                          ? 'border-red-400'
+                          : measure.risk_level === 'moderate'
+                          ? 'border-amber-400'
+                          : 'border-emerald-400'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <span className="text-xs text-slate-500">
+                            {formatDate(measure.created_at)}
+                          </span>
+                          <span
+                            className={`ml-3 text-xs font-medium ${getRiskColor(
+                              measure.risk_level
+                            )}`}
+                          >
+                            {getRiskLabel(measure.risk_level)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
+                          {measure.sleep_score ?? '—'}
+                        </div>
                       </div>
-                      <div className="text-xs text-slate-500">
-                        Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
-                        {measure.sleep_score ?? '—'}
-                      </div>
+                      <p className="text-sm text-slate-700 whitespace-pre-line">
+                        {report.report_text_short}
+                      </p>
                     </div>
-                    <p className="text-sm text-slate-700 whitespace-pre-line">
-                      {measure.reports?.report_text_short}
-                    </p>
-                  </div>
-                ))}
+                  )
+                })}
             </div>
           </div>
 
@@ -274,20 +278,25 @@ export default function PatientDetailPage() {
   )
 }
 
-// Simple line chart component for stress scores
-function StressChart({ measures }: { measures: PatientMeasure[] }) {
-  const dataPoints = measures
-    .filter((m) => m.stress_score !== null)
-    .reverse() // Show chronologically
-    .map((m) => ({
-      value: m.stress_score!,
-      date: new Date(m.created_at),
-    }))
+// Reusable line chart component
+type DataPoint = {
+  value: number
+  date: Date
+}
 
+function LineChart({
+  dataPoints,
+  color,
+  emptyMessage,
+}: {
+  dataPoints: DataPoint[]
+  color: string
+  emptyMessage: string
+}) {
   if (dataPoints.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-sm text-slate-400">
-        Keine Stress-Daten vorhanden
+        {emptyMessage}
       </div>
     )
   }
@@ -297,10 +306,16 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
   const chartHeight = 160
   const chartWidth = 100 // percentage
 
+  const calculateY = (value: number) =>
+    chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight
+
+  const calculateX = (index: number) =>
+    (index / Math.max(dataPoints.length - 1, 1)) * chartWidth
+
   const points = dataPoints
     .map((point, index) => {
-      const x = (index / Math.max(dataPoints.length - 1, 1)) * chartWidth
-      const y = chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight
+      const x = calculateX(index)
+      const y = calculateY(point.value)
       return `${x},${y}`
     })
     .join(' ')
@@ -314,7 +329,7 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
       >
         {/* Grid lines */}
         {[0, 25, 50, 75, 100].map((val) => {
-          const y = chartHeight - ((val - minValue) / (maxValue - minValue)) * chartHeight
+          const y = calculateY(val)
           return (
             <line
               key={val}
@@ -332,7 +347,7 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
         <polyline
           points={points}
           fill="none"
-          stroke="#0ea5e9"
+          stroke={color}
           strokeWidth="2"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -340,11 +355,9 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
 
         {/* Points */}
         {dataPoints.map((point, index) => {
-          const x = (index / Math.max(dataPoints.length - 1, 1)) * chartWidth
-          const y = chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight
-          return (
-            <circle key={index} cx={x} cy={y} r="2" fill="#0ea5e9" />
-          )
+          const x = calculateX(index)
+          const y = calculateY(point.value)
+          return <circle key={index} cx={x} cy={y} r="2" fill={color} />
         })}
       </svg>
       <div className="flex justify-between text-xs text-slate-500 mt-2">
@@ -355,83 +368,42 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
   )
 }
 
-// Simple line chart component for sleep scores
+// Stress chart wrapper
+function StressChart({ measures }: { measures: PatientMeasure[] }) {
+  // Convert measures to oldest-first for chronological chart display
+  const dataPoints = measures
+    .filter((m) => m.stress_score !== null)
+    .reverse()
+    .map((m) => ({
+      value: m.stress_score!,
+      date: new Date(m.created_at),
+    }))
+
+  return (
+    <LineChart
+      dataPoints={dataPoints}
+      color="#0ea5e9"
+      emptyMessage="Keine Stress-Daten vorhanden"
+    />
+  )
+}
+
+// Sleep chart wrapper
 function SleepChart({ measures }: { measures: PatientMeasure[] }) {
+  // Convert measures to oldest-first for chronological chart display
   const dataPoints = measures
     .filter((m) => m.sleep_score !== null)
-    .reverse() // Show chronologically
+    .reverse()
     .map((m) => ({
       value: m.sleep_score!,
       date: new Date(m.created_at),
     }))
 
-  if (dataPoints.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-slate-400">
-        Keine Schlaf-Daten vorhanden
-      </div>
-    )
-  }
-
-  const maxValue = 100
-  const minValue = 0
-  const chartHeight = 160
-  const chartWidth = 100 // percentage
-
-  const points = dataPoints
-    .map((point, index) => {
-      const x = (index / Math.max(dataPoints.length - 1, 1)) * chartWidth
-      const y = chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight
-      return `${x},${y}`
-    })
-    .join(' ')
-
   return (
-    <div className="relative">
-      <svg
-        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-        className="w-full h-48"
-        preserveAspectRatio="none"
-      >
-        {/* Grid lines */}
-        {[0, 25, 50, 75, 100].map((val) => {
-          const y = chartHeight - ((val - minValue) / (maxValue - minValue)) * chartHeight
-          return (
-            <line
-              key={val}
-              x1="0"
-              y1={y}
-              x2={chartWidth}
-              y2={y}
-              stroke="#e2e8f0"
-              strokeWidth="0.5"
-            />
-          )
-        })}
-
-        {/* Line */}
-        <polyline
-          points={points}
-          fill="none"
-          stroke="#8b5cf6"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {/* Points */}
-        {dataPoints.map((point, index) => {
-          const x = (index / Math.max(dataPoints.length - 1, 1)) * chartWidth
-          const y = chartHeight - ((point.value - minValue) / (maxValue - minValue)) * chartHeight
-          return (
-            <circle key={index} cx={x} cy={y} r="2" fill="#8b5cf6" />
-          )
-        })}
-      </svg>
-      <div className="flex justify-between text-xs text-slate-500 mt-2">
-        <span>0</span>
-        <span>100</span>
-      </div>
-    </div>
+    <LineChart
+      dataPoints={dataPoints}
+      color="#8b5cf6"
+      emptyMessage="Keine Schlaf-Daten vorhanden"
+    />
   )
 }
