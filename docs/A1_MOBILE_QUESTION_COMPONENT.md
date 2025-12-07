@@ -202,7 +202,7 @@ A demo implementation is available at `/patient/funnel-demo` that shows:
 
 - [ ] Support for multi-select questions
 - [ ] Support for conditional/branching logic
-- [ ] Swipe gestures for navigation
+- [x] Swipe gestures for navigation (✅ Implemented in A2)
 - [ ] Offline answer caching
 - [ ] Answer validation rules
 - [ ] Accessibility improvements (WCAG AAA)
@@ -221,3 +221,4 @@ A demo implementation is available at `/patient/funnel-demo` that shows:
 - Database schema: `/schema/schema.sql`
 - Funnel tables migration: `/supabase/migrations/01_create_funnel_tables.sql`
 - Assessment tables: `/supabase/migrations/20241203110000_init_patient_profiles_and_assessments.sql`
+- **Swipe Navigation (A2)**: `/docs/A2_SWIPE_NAVIGATION.md` - Swipe gesture implementation
