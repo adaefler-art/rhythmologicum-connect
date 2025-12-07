@@ -52,7 +52,7 @@ export default function ResponsiveQuestionRouter(props: ResponsiveQuestionRouter
   // Mobile view: use SwipeableQuestionCard if swipe is enabled
   if (isMobile) {
     if (enableSwipe) {
-      return <SwipeableQuestionCard {...questionProps} enableSwipe={enableSwipe} />
+      return <SwipeableQuestionCard {...questionProps} enableSwipe={true} />
     }
     return <MobileQuestionCard {...questionProps} />
   }
