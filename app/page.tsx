@@ -41,6 +41,19 @@ export default function LoginPage() {
       .catch((err) => console.error('Failed to load version info:', err))
   }, [])
 
+  // Check for error/message query parameters from middleware redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorParam = params.get('error')
+    const messageParam = params.get('message')
+    
+    if (errorParam && messageParam) {
+      setError(messageParam)
+      // Clean up URL
+      window.history.replaceState({}, '', '/')
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -89,20 +102,28 @@ export default function LoginPage() {
       if (userError) throw userError
       if (!user) throw new Error('Kein Benutzerprofil gefunden.')
 
-      // patient_profile sicherstellen
-      const { error: profileError } = await supabase
-        .from('patient_profiles')
-        .upsert(
-          {
-            user_id: user.id,
-            full_name: user.email ?? trimmedEmail,
-          },
-          { onConflict: 'user_id' }
-        )
+      // Check user role to determine redirect
+      const role = user.app_metadata?.role || user.user_metadata?.role
 
-      if (profileError) throw profileError
+      if (role === 'clinician') {
+        // Redirect clinicians to clinician dashboard
+        router.push('/clinician')
+      } else {
+        // For patients: ensure patient_profile exists
+        const { error: profileError } = await supabase
+          .from('patient_profiles')
+          .upsert(
+            {
+              user_id: user.id,
+              full_name: user.email ?? trimmedEmail,
+            },
+            { onConflict: 'user_id' }
+          )
 
-      router.push('/patient/stress-check')
+        if (profileError) throw profileError
+
+        router.push('/patient/stress-check')
+      }
     } catch (err: any) {
       console.error(err)
       const message =
