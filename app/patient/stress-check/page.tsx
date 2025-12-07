@@ -438,7 +438,7 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
           ⚠️ Bitte wählen Sie eine Antwort aus
         </p>
       )}
-      <div className="flex flex-wrap gap-2 md:gap-3">
+      <div className="flex flex-wrap gap-2">
         {SCALE.map((option) => {
           const id = `${question.id}-${option.value}`
           const checked = value === option.value
@@ -446,12 +446,11 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
             <label
               key={option.value}
               htmlFor={id}
-              className={`flex-1 min-w-[120px] flex flex-col items-center gap-1 px-4 py-3.5 md:py-4 rounded-xl border-2 cursor-pointer transition-all ${
+              className={`flex-1 min-w-[90px] sm:min-w-[100px] flex flex-col items-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all ${
                 checked
                   ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
                   : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm'
               }`}
-              style={{ minHeight: '56px' }}
             >
               <input
                 id={id}
@@ -463,8 +462,8 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
                 onChange={() => onChange(question.id, option.value)}
                 aria-label={`${option.label} (Wert ${option.value})`}
               />
-              <span className="text-2xl md:text-3xl font-bold">{option.value}</span>
-              <span className="text-xs md:text-sm font-medium">{option.label}</span>
+              <span className="text-xl sm:text-2xl font-bold">{option.value}</span>
+              <span className="text-xs sm:text-sm font-medium">{option.label}</span>
             </label>
           )
         })}
