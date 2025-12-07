@@ -354,6 +354,26 @@ export default function StressResultClient() {
           )}
         </section>
       )}
+
+      {/* Navigation Actions */}
+      <section className="flex flex-col gap-3 pt-4">
+        <button
+          type="button"
+          onClick={() => router.push('/patient/history')}
+          className="w-full inline-flex justify-center items-center px-6 py-4 rounded-xl bg-sky-600 text-white text-base font-semibold shadow-md hover:bg-sky-700 transition-all"
+        >
+          📊 Meinen Verlauf ansehen
+        </button>
+        <div className="flex justify-center gap-4 text-sm">
+          <button
+            type="button"
+            onClick={() => router.push('/patient/stress-check')}
+            className="text-slate-600 hover:text-slate-900 underline transition"
+          >
+            Zurück zum Fragebogen
+          </button>
+        </div>
+      </section>
     </main>
   )
 }
