@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import MobileQuestionCard from '@/app/components/MobileQuestionCard'
+import SwipeableQuestionCard from '@/app/components/SwipeableQuestionCard'
 import type { Funnel, Question } from '@/lib/types/funnel'
 
 // Demo data matching the database schema
@@ -147,7 +147,7 @@ export default function FunnelDemoPage() {
   }
 
   return (
-    <MobileQuestionCard
+    <SwipeableQuestionCard
       funnel={DEMO_FUNNEL}
       question={currentQuestion}
       currentQuestionIndex={currentIndex}
@@ -161,6 +161,7 @@ export default function FunnelDemoPage() {
       isRequired={true}
       error={error}
       isLoading={isLoading}
+      enableSwipe={true}
     />
   )
 }
