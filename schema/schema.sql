@@ -241,16 +241,45 @@ CREATE TYPE realtime.equality_op AS ENUM (
     'lte',
     'gt',
     'gte',
-    'in'
-);
-
 --
 -- Name: user_defined_filter; Type: TYPE; Schema: realtime; Owner: -
 --
 
-CREATE TYPE realtime.user_defined_filter AS (
-	column_name text,
-	op realtime.equality_op,
+    --
+    -- Name: assessments assessments_funnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.assessments
+        ADD CONSTRAINT assessments_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id);
+
+    --
+    -- Name: content_pages content_pages_funnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.content_pages
+        ADD CONSTRAINT content_pages_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id);
+
+    --
+    -- Name: funnel_step_questions funnel_step_questions_funnel_step_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_step_questions
+        ADD CONSTRAINT funnel_step_questions_funnel_step_id_fkey FOREIGN KEY (funnel_step_id) REFERENCES public.funnel_steps(id) ON DELETE CASCADE;
+
+    --
+    -- Name: funnel_step_questions funnel_step_questions_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_step_questions
+        ADD CONSTRAINT funnel_step_questions_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id) ON DELETE CASCADE;
+
+    --
+    -- Name: funnel_steps funnel_steps_funnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_steps
+        ADD CONSTRAINT funnel_steps_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id) ON DELETE CASCADE;
+
 	value text
 );
 
@@ -2755,16 +2784,94 @@ COMMENT ON TABLE auth.users IS 'Auth: Stores user login data within a secure sch
 COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when the account comes from SSO. These accounts can have duplicate emails.';
 
 --
--- Name: assessment_answers; Type: TABLE; Schema: public; Owner: -
---
+ -- Name: content_pages; Type: TABLE; Schema: public; Owner: -
+ --
 
-CREATE TABLE public.assessment_answers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    assessment_id uuid NOT NULL,
-    question_id text NOT NULL,
-    answer_value integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+ CREATE TABLE public.content_pages (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     slug text NOT NULL,
+     title text NOT NULL,
+     excerpt text,
+     body_markdown text NOT NULL,
+     status text DEFAULT 'draft'::text NOT NULL,
+     layout text DEFAULT 'default'::text,
+     funnel_id uuid,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
+ -- Name: funnels; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.funnels (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     slug text NOT NULL,
+     title text NOT NULL,
+     subtitle text,
+     description text,
+     is_active boolean DEFAULT true NOT NULL,
+     default_theme text,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
+ -- Name: funnel_step_questions; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.funnel_step_questions (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     funnel_step_id uuid NOT NULL,
+     question_id uuid NOT NULL,
+     order_index integer NOT NULL,
+     is_required boolean DEFAULT true NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
+ -- Name: funnel_steps; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.funnel_steps (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     funnel_id uuid NOT NULL,
+     order_index integer NOT NULL,
+     title text NOT NULL,
+     description text,
+     type text NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
+ -- Name: questions; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.questions (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     key text NOT NULL,
+     label text NOT NULL,
+     help_text text,
+     question_type text NOT NULL,
+     min_value integer,
+     max_value integer,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
+ -- Name: assessment_answers; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.assessment_answers (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     assessment_id uuid NOT NULL,
+     question_id text NOT NULL,
+     answer_value integer NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL
+ );
 
 --
 -- Name: assessments; Type: TABLE; Schema: public; Owner: -
@@ -2775,7 +2882,8 @@ CREATE TABLE public.assessments (
     patient_id uuid NOT NULL,
     funnel text NOT NULL,
     started_at timestamp with time zone DEFAULT now() NOT NULL,
-    completed_at timestamp with time zone
+    completed_at timestamp with time zone,
+    funnel_id uuid
 );
 
 --
@@ -3264,11 +3372,67 @@ ALTER TABLE ONLY public.assessments
     ADD CONSTRAINT assessments_pkey PRIMARY KEY (id);
 
 --
+-- Name: content_pages content_pages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_pages
+    ADD CONSTRAINT content_pages_pkey PRIMARY KEY (id);
+
+--
+-- Name: content_pages content_pages_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_pages
+    ADD CONSTRAINT content_pages_slug_key UNIQUE (slug);
+
+--
+-- Name: funnel_step_questions funnel_step_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funnel_step_questions
+    ADD CONSTRAINT funnel_step_questions_pkey PRIMARY KEY (id);
+
+--
+-- Name: funnel_steps funnel_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funnel_steps
+    ADD CONSTRAINT funnel_steps_pkey PRIMARY KEY (id);
+
+--
+-- Name: funnels funnels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funnels
+    ADD CONSTRAINT funnels_pkey PRIMARY KEY (id);
+
+--
+-- Name: funnels funnels_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funnels
+    ADD CONSTRAINT funnels_slug_key UNIQUE (slug);
+
+--
 -- Name: patient_measures patient_measures_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.patient_measures
     ADD CONSTRAINT patient_measures_pkey PRIMARY KEY (id);
+
+--
+-- Name: questions questions_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_key_key UNIQUE (key);
+
+--
+-- Name: questions questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_pkey PRIMARY KEY (id);
 
 --
 -- Name: patient_profiles patient_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
@@ -3702,6 +3866,54 @@ CREATE INDEX idx_patient_measures_patient_id ON public.patient_measures USING bt
 --
 
 CREATE INDEX idx_patient_measures_report_id ON public.patient_measures USING btree (report_id);
+
+--
+-- Name: assessments_funnel_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX assessments_funnel_id_idx ON public.assessments USING btree (funnel_id);
+
+--
+-- Name: content_pages_slug_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX content_pages_slug_idx ON public.content_pages USING btree (slug);
+
+--
+-- Name: content_pages_status_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status);
+
+--
+-- Name: funnel_step_questions_funnel_step_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_step_questions_funnel_step_id_idx ON public.funnel_step_questions USING btree (funnel_step_id);
+
+--
+-- Name: funnel_step_questions_order_index_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_step_questions_order_index_idx ON public.funnel_step_questions USING btree (order_index);
+
+--
+-- Name: funnel_step_questions_question_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_step_questions_question_id_idx ON public.funnel_step_questions USING btree (question_id);
+
+--
+-- Name: funnel_steps_funnel_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_steps_funnel_id_idx ON public.funnel_steps USING btree (funnel_id);
+
+--
+-- Name: funnel_steps_order_index_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_steps_order_index_idx ON public.funnel_steps USING btree (order_index);
 
 --
 -- Name: idx_user_consents_user_id; Type: INDEX; Schema: public; Owner: -
