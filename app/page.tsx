@@ -23,6 +23,20 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null) // neu: Erfolgsmeldungen
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
 
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      await fetch('/api/auth/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event, session }),
+      })
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
   // Fetch version info on component mount
   useEffect(() => {
     fetch('/version.json')
