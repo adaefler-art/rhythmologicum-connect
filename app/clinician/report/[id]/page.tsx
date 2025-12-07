@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { featureFlags } from '@/lib/featureFlags'
 
 type AnswerRow = {
   question_id: string
@@ -156,12 +157,14 @@ export default function ClinicianReportDetailPage() {
       </div>
 
       {/* AMY-Text */}
-      <div className="border rounded-xl p-4 md:p-6 mb-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Kurzbericht (AMY)</h2>
-        <p className="whitespace-pre-line text-gray-800 text-sm md:text-base">
-          {report.report_text_short}
-        </p>
-      </div>
+      {featureFlags.AMY_ENABLED && (
+        <div className="border rounded-xl p-4 md:p-6 mb-6">
+          <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Kurzbericht (AMY)</h2>
+          <p className="whitespace-pre-line text-gray-800 text-sm md:text-base">
+            {report.report_text_short}
+          </p>
+        </div>
+      )}
 
       {/* Antworten */}
       <div className="border rounded-xl p-4 md:p-6">

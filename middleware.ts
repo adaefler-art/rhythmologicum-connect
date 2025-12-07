@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { parseEnvBoolean } from '@/lib/featureFlags'
+
+// Check if clinician dashboard feature is enabled
+function isClinicianDashboardEnabled(): boolean {
+  return parseEnvBoolean(
+    process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
+    true
+  )
+}
 
 // Log unauthorized access attempts
 async function logUnauthorizedAccess(path: string, userId?: string, reason?: string) {
@@ -18,6 +27,19 @@ export async function middleware(request: NextRequest) {
   // Only protect /clinician routes
   if (!pathname.startsWith('/clinician')) {
     return NextResponse.next()
+  }
+
+  // Check if clinician dashboard feature is enabled
+  if (!isClinicianDashboardEnabled()) {
+    console.log('[AUTH] Clinician dashboard feature is disabled')
+    
+    const redirectUrl = new URL('/', request.url)
+    redirectUrl.searchParams.set('error', 'feature_disabled')
+    redirectUrl.searchParams.set(
+      'message',
+      'Das Kliniker-Dashboard ist derzeit nicht verfügbar.'
+    )
+    return NextResponse.redirect(redirectUrl)
   }
 
   let supabaseResponse = NextResponse.next({

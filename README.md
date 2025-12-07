@@ -80,6 +80,49 @@ NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
+Optional environment variables for AI features:
+
+```bash
+ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+
+### Feature Flags
+
+The application supports feature flags to enable/disable specific functionality. All feature flags are optional and default to `true` (enabled) for backward compatibility.
+
+**Available Feature Flags:**
+
+| Environment Variable | Default | Description |
+|---------------------|---------|-------------|
+| `NEXT_PUBLIC_FEATURE_AMY_ENABLED` | `true` | Enable/disable AMY AI assistant for personalized stress assessments |
+| `NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED` | `true` | Enable/disable the clinician dashboard and all related features |
+| `NEXT_PUBLIC_FEATURE_CHARTS_ENABLED` | `true` | Enable/disable charts in clinician patient detail views |
+
+**Setting Feature Flags:**
+
+Create a `.env.local` file in the project root:
+
+```bash
+# Disable AMY AI assistant
+NEXT_PUBLIC_FEATURE_AMY_ENABLED=false
+
+# Disable clinician dashboard
+NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED=false
+
+# Disable charts
+NEXT_PUBLIC_FEATURE_CHARTS_ENABLED=false
+```
+
+**Accepted Values:**
+- Enable: `true`, `1`, `yes` (case-insensitive)
+- Disable: `false`, `0`, `no`, or any other value (case-insensitive)
+
+**Behavior When Features Are Disabled:**
+
+- **AMY_ENABLED=false**: AMY AI text sections are hidden from patient results and history. The API falls back to generic stress assessments without AI personalization.
+- **CLINICIAN_DASHBOARD_ENABLED=false**: The `/clinician` routes are blocked at the middleware level. Clinician users are redirected to the patient portal with an appropriate message.
+- **CHARTS_ENABLED=false**: Chart visualizations are hidden from the clinician patient detail page, but other patient data remains accessible.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

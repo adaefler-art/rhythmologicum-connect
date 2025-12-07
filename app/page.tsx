@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { featureFlags } from '@/lib/featureFlags'
 
 type Mode = 'login' | 'signup'
 
@@ -120,8 +121,13 @@ export default function LoginPage() {
       const role = user.app_metadata?.role || user.user_metadata?.role
 
       if (role === 'clinician') {
-        // Redirect clinicians to clinician dashboard
-        router.push('/clinician')
+        // Check if clinician dashboard is enabled
+        if (featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          router.push('/clinician')
+        } else {
+          // If clinician dashboard is disabled, redirect to patient flow immediately
+          router.push('/patient/stress-check')
+        }
       } else {
         // For patients: ensure patient_profile exists
         const { error: profileError } = await supabase

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
+import { featureFlags } from '@/lib/featureFlags';
 
 // Supabase-ENV robust auslesen
 const supabaseUrl =
@@ -107,6 +108,12 @@ async function createAmySummary(params: {
   answers: AnswerRow[];
 }) {
   const { stressScore, sleepScore, riskLevel, answers } = params;
+
+  // Feature flag disabled → Fallback-Text
+  if (!featureFlags.AMY_ENABLED) {
+    console.log('[stress-report/createAmySummary] AMY feature disabled, using fallback text');
+    return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
+  }
 
   // Kein Anthropic-Key → Fallback-Text
   if (!anthropic) {

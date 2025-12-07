@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { featureFlags } from '@/lib/featureFlags'
 
 type PatientMeasure = {
   id: string
@@ -195,62 +196,66 @@ export default function PatientDetailPage() {
       ) : (
         <div className="space-y-6">
           {/* Charts Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Stress Score Chart */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
-              <h2 className="text-base md:text-lg font-semibold mb-4">Stress-Verlauf</h2>
-              <StressChart measures={measures} />
-            </div>
+          {featureFlags.CHARTS_ENABLED && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Stress Score Chart */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+                <h2 className="text-base md:text-lg font-semibold mb-4">Stress-Verlauf</h2>
+                <StressChart measures={measures} />
+              </div>
 
-            {/* Sleep Score Chart */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
-              <h2 className="text-base md:text-lg font-semibold mb-4">Schlaf-Verlauf</h2>
-              <SleepChart measures={measures} />
+              {/* Sleep Score Chart */}
+              <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+                <h2 className="text-base md:text-lg font-semibold mb-4">Schlaf-Verlauf</h2>
+                <SleepChart measures={measures} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* AMY Reports Timeline */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
-            <h2 className="text-base md:text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
-            <div className="space-y-4">
-              {measures
-                .filter((m) => m.reports?.report_text_short)
-                .map((measure) => (
-                  <div
-                    key={measure.id}
-                    className={`border-l-4 pl-4 py-3 ${
-                      measure.risk_level === 'high'
-                        ? 'border-red-400'
-                        : measure.risk_level === 'moderate'
-                        ? 'border-amber-400'
-                        : 'border-emerald-400'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs md:text-sm text-slate-500">
-                          {formatDate(measure.created_at)}
-                        </span>
-                        <span
-                          className={`text-xs md:text-sm font-medium ${getRiskColor(
-                            measure.risk_level
-                          )}`}
-                        >
-                          {getRiskLabel(measure.risk_level)}
-                        </span>
+          {featureFlags.AMY_ENABLED && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+              <h2 className="text-base md:text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
+              <div className="space-y-4">
+                {measures
+                  .filter((m) => m.reports?.report_text_short)
+                  .map((measure) => (
+                    <div
+                      key={measure.id}
+                      className={`border-l-4 pl-4 py-3 ${
+                        measure.risk_level === 'high'
+                          ? 'border-red-400'
+                          : measure.risk_level === 'moderate'
+                          ? 'border-amber-400'
+                          : 'border-emerald-400'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs md:text-sm text-slate-500">
+                            {formatDate(measure.created_at)}
+                          </span>
+                          <span
+                            className={`text-xs md:text-sm font-medium ${getRiskColor(
+                              measure.risk_level
+                            )}`}
+                          >
+                            {getRiskLabel(measure.risk_level)}
+                          </span>
+                        </div>
+                        <div className="text-xs md:text-sm text-slate-500">
+                          Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
+                          {measure.sleep_score ?? '—'}
+                        </div>
                       </div>
-                      <div className="text-xs md:text-sm text-slate-500">
-                        Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
-                        {measure.sleep_score ?? '—'}
-                      </div>
+                      <p className="text-sm md:text-base text-slate-700 whitespace-pre-line">
+                        {measure.reports!.report_text_short}
+                      </p>
                     </div>
-                    <p className="text-sm md:text-base text-slate-700 whitespace-pre-line">
-                      {measure.reports!.report_text_short}
-                    </p>
-                  </div>
-                ))}
+                  ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Raw Data Section */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
