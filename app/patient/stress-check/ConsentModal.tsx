@@ -25,7 +25,6 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
     setError(null)
 
     try {
-      // Store consent in database
       const { error: consentError } = await supabase.from('user_consents').insert({
         user_id: userId,
         consent_version: CONSENT_VERSION,
@@ -36,13 +35,11 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
         throw consentError
       }
 
-      // Call success callback
       onConsent()
     } catch (err) {
       console.error('Error storing consent:', err)
-      const errorMessage =
-        err instanceof Error ? err.message : 'Fehler beim Speichern der Zustimmung.'
-      setError(errorMessage)
+      const message = err instanceof Error ? err.message : 'Fehler beim Speichern der Zustimmung.'
+      setError(message)
     } finally {
       setSubmitting(false)
     }
@@ -51,37 +48,30 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-w-2xl w-full max-h-[90vh] bg-white rounded-2xl shadow-xl flex flex-col">
-        {/* Header */}
         <div className="px-6 py-5 border-b border-slate-200">
           <h2 className="text-xl font-semibold text-slate-900">{CONSENT_TEXT.title}</h2>
           <p className="text-xs text-slate-500 mt-1">Version {CONSENT_VERSION}</p>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="space-y-5">
             {CONSENT_TEXT.sections.map((section, index) => (
               <div key={index}>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">
-                  {section.heading}
-                </h3>
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">{section.heading}</h3>
                 <p className="text-sm text-slate-600 leading-relaxed">{section.content}</p>
               </div>
             ))}
           </div>
 
-          {/* Acceptance Checkbox */}
           <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
+                onChange={(event) => setAccepted(event.target.checked)}
                 className="mt-0.5 h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
               />
-              <span className="text-sm text-slate-700 leading-relaxed">
-                {CONSENT_TEXT.checkboxText}
-              </span>
+              <span className="text-sm text-slate-700 leading-relaxed">{CONSENT_TEXT.checkboxText}</span>
             </label>
           </div>
 
@@ -92,7 +82,6 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
           <button
             type="button"

@@ -1,46 +1,46 @@
 /**
- * Consent Configuration
- * 
- * This file contains the current consent version and text.
- * When updating the consent text, increment the version number to trigger re-consent.
+ * Consent configuration with versioned text blocks.
+ * Update the version whenever the consent copy changes to re-request approvals.
  */
 
 export const CONSENT_VERSION = '1.0.0'
 
 export const CONSENT_TEXT = {
   title: 'Nutzungsbedingungen & Datenschutz',
-  
   sections: [
     {
       heading: 'Willkommen bei Rhythmologicum Connect',
-      content: 'Bevor Sie mit dem Stress- & Resilienz-Check beginnen, bitten wir Sie, die folgenden Nutzungsbedingungen und Datenschutzhinweise zu lesen und zu akzeptieren.'
+      content:
+        'Bevor Sie mit dem Stress- & Resilienz-Check beginnen, lesen und akzeptieren Sie bitte die folgenden Hinweise.',
     },
     {
       heading: 'Datenerhebung und -verwendung',
-      content: 'Wir erheben und verarbeiten Ihre personenbezogenen Daten (E-Mail-Adresse, Antworten auf Fragebögen) ausschließlich zum Zweck der Durchführung Ihrer persönlichen Stress- und Resilienz-Analyse. Die Daten werden vertraulich behandelt und nicht an Dritte weitergegeben.'
+      content:
+        'Wir verarbeiten Ihre personenbezogenen Daten (E-Mail, Antworten) ausschließlich zur Durchführung Ihrer Analyse. Eine Weitergabe an Dritte erfolgt nicht.',
     },
     {
       heading: 'Freiwilligkeit',
-      content: 'Die Teilnahme am Stress-Check und die Angabe Ihrer Daten erfolgen freiwillig. Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen.'
+      content:
+        'Die Teilnahme ist freiwillig. Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen.',
     },
     {
       heading: 'Datensicherheit',
-      content: 'Ihre Daten werden auf sicheren Servern gespeichert und durch moderne Verschlüsselungstechnologien geschützt. Wir treffen angemessene technische und organisatorische Maßnahmen zum Schutz Ihrer personenbezogenen Daten.'
+      content:
+        'Ihre Daten werden auf sicheren Servern gespeichert und durch aktuelle Sicherheitsmaßnahmen geschützt.',
     },
     {
       heading: 'Ihre Rechte',
-      content: 'Sie haben das Recht auf Auskunft über Ihre gespeicherten Daten, deren Berichtigung, Löschung oder Einschränkung der Verarbeitung. Bei Fragen zum Datenschutz kontaktieren Sie uns bitte.'
-    }
+      content:
+        'Sie haben das Recht auf Auskunft, Berichtigung, Löschung sowie Einschränkung der Verarbeitung Ihrer Daten.',
+    },
   ],
-  
-  checkboxText: 'Ich habe die Nutzungsbedingungen und Datenschutzhinweise gelesen und akzeptiere diese.',
-  
+  checkboxText:
+    'Ich habe die Nutzungsbedingungen und Datenschutzhinweise gelesen und akzeptiere diese.',
   buttons: {
     accept: 'Akzeptieren & fortfahren',
-    decline: 'Ablehnen'
+    decline: 'Ablehnen',
   },
-
   errors: {
-    consentDeclined: 'Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.'
-  }
+    consentDeclined: 'Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.',
+  },
 }

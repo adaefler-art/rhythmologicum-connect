@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
-import { CONSENT_VERSION } from '@/lib/consentConfig'
 import ConsentModal from './ConsentModal'
 
 type Question = {
@@ -91,7 +91,6 @@ export default function StressCheckPage() {
 
       setUserId(user.id)
 
-      // Check if user has consented to current version
       const { data: consentData, error: consentError } = await supabase
         .from('user_consents')
         .select('id')
@@ -104,11 +103,9 @@ export default function StressCheckPage() {
       }
 
       if (!consentData) {
-        // No consent for current version - show modal
         setShowConsentModal(true)
         setHasConsent(false)
       } else {
-        // Has consent
         setHasConsent(true)
       }
 
@@ -118,21 +115,24 @@ export default function StressCheckPage() {
     checkAuth()
   }, [router])
 
-  const handleSetAnswer = (qId: string, value: number) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [qId]: value,
-    }))
-  }
-
   const handleConsentAccepted = () => {
     setShowConsentModal(false)
     setHasConsent(true)
   }
 
   const handleConsentDeclined = () => {
-    // User declined consent - redirect to login with message
-    router.push(`/?error=consent_declined&message=${encodeURIComponent(CONSENT_TEXT.errors.consentDeclined)}`)
+    router.push(
+      `/?error=consent_declined&message=${encodeURIComponent(
+        CONSENT_TEXT.errors.consentDeclined,
+      )}`,
+    )
+  }
+
+  const handleSetAnswer = (qId: string, value: number) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [qId]: value,
+    }))
   }
 
   const handleSubmit = async () => {
@@ -215,12 +215,13 @@ export default function StressCheckPage() {
 
       // 5) Weiterleiten zur Result-Seite
       router.push(`/patient/stress-check/result?assessmentId=${assessmentId}`)
-    } catch (err: any) {
+    } catch (err) {
       console.error('Fehler in handleSubmit:', err)
-      setError(
-        err?.message ??
-          'Beim Speichern der Antworten ist ein Fehler aufgetreten.'
-      )
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Beim Speichern der Antworten ist ein Fehler aufgetreten.'
+      setError(message)
     } finally {
       setSubmitting(false)
     }
@@ -238,7 +239,6 @@ export default function StressCheckPage() {
     )
   }
 
-  // Show consent modal if user hasn't consented yet
   if (showConsentModal && userId) {
     return (
       <ConsentModal
@@ -249,7 +249,6 @@ export default function StressCheckPage() {
     )
   }
 
-  // Don't show questionnaire if no consent
   if (!hasConsent) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-50">

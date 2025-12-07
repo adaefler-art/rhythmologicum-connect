@@ -4159,12 +4159,6 @@ CREATE POLICY "allow-all-assessment-answers" ON public.assessment_answers USING 
 ALTER TABLE public.assessment_answers ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: user_consents; Type: ROW SECURITY; Schema: public; Owner: -
---
-
-ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
-
---
 -- Name: user_consents Users can view own consents; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -4175,6 +4169,12 @@ CREATE POLICY "Users can view own consents" ON public.user_consents FOR SELECT U
 --
 
 CREATE POLICY "Users can insert own consents" ON public.user_consents FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+--
+-- Name: user_consents; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: -

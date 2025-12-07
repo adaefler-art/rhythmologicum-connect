@@ -1,38 +1,33 @@
--- Create table for storing user consents
--- This table tracks user consent to the terms of use for the application
-
+-- Create table for storing user consent history
 CREATE TABLE IF NOT EXISTS public.user_consents (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     consent_version text NOT NULL,
-    consented_at timestamp with time zone DEFAULT now() NOT NULL,
+    consented_at timestamptz DEFAULT now() NOT NULL,
     ip_address text,
     user_agent text,
-    
-    -- Ensure one consent per user per version (allow re-consent if needed)
     UNIQUE(user_id, consent_version)
 );
 
--- Add index for quick lookups by user_id
-CREATE INDEX idx_user_consents_user_id ON public.user_consents(user_id);
+-- Indexes for frequent lookups
+CREATE INDEX IF NOT EXISTS idx_user_consents_user_id ON public.user_consents(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_consents_consented_at ON public.user_consents(consented_at DESC);
 
--- Add index for checking latest consent
-CREATE INDEX idx_user_consents_consented_at ON public.user_consents(consented_at DESC);
-
--- Enable RLS
+-- Enable Row-Level Security so users only touch their own consents
 ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
 
--- RLS Policy: Users can only read their own consents
+DROP POLICY IF EXISTS "Users can view own consents" ON public.user_consents;
+
 CREATE POLICY "Users can view own consents"
     ON public.user_consents
     FOR SELECT
     USING (auth.uid() = user_id);
 
--- RLS Policy: Users can insert their own consents
+DROP POLICY IF EXISTS "Users can insert own consents" ON public.user_consents;
+
 CREATE POLICY "Users can insert own consents"
     ON public.user_consents
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
--- Comment on table
-COMMENT ON TABLE public.user_consents IS 'Stores user consent records with version tracking for GDPR compliance';
+COMMENT ON TABLE public.user_consents IS 'Versioned consent records for Nutzungsbedingungen approvals.'
