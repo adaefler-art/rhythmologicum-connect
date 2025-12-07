@@ -265,6 +265,16 @@ export default function LoginPage() {
           Durchführung Ihrer Stress- & Resilienz-Analyse genutzt.
         </p>
 
+        {/* Datenschutz Link */}
+        <div className="mt-3 text-center">
+          <a
+            href="/datenschutz"
+            className="text-xs text-sky-600 hover:text-sky-700 font-medium"
+          >
+            Datenschutz & Datennutzung
+          </a>
+        </div>
+
         {/* Version Info */}
         {versionInfo && (
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
