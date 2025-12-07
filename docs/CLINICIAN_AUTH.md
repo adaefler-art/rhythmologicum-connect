@@ -143,6 +143,18 @@ The implementation works on both desktop and mobile:
 2. Verify Supabase environment variables are set correctly
 3. Check if third-party cookies are blocked
 
+## Row Level Security (RLS)
+
+As of D4 implementation (2025-12-07), comprehensive Row Level Security policies are in place:
+
+- **Patients**: Can only access their own data across all tables
+- **Clinicians**: Can view all pilot patient data (read-only access)
+- **Database-level security**: RLS policies enforce access control at the database level
+
+See detailed documentation:
+- [D4_RLS_IMPLEMENTATION.md](./D4_RLS_IMPLEMENTATION.md) - Complete RLS implementation
+- [RLS_TESTING_GUIDE.md](./RLS_TESTING_GUIDE.md) - How to test RLS policies
+
 ## Related Files
 - `middleware.ts` - Route protection
 - `app/clinician/layout.tsx` - Protected layout
@@ -151,3 +163,4 @@ The implementation works on both desktop and mobile:
 - `lib/supabaseServer.ts` - Server-side auth utilities
 - `lib/supabaseClient.ts` - Client-side Supabase client
 - `supabase/migrations/20251206174500_add_clinician_role_support.sql` - Database migration
+- `supabase/migrations/20251207094000_enable_comprehensive_rls.sql` - RLS policies (D4)
