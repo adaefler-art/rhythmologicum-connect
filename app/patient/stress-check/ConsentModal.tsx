@@ -29,7 +29,6 @@ export default function ConsentModal({ userId, onConsent, onDecline }: ConsentMo
       const { error: consentError } = await supabase.from('user_consents').insert({
         user_id: userId,
         consent_version: CONSENT_VERSION,
-        ip_address: null, // Could be fetched from a server-side API if needed
         user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : null,
       })
 

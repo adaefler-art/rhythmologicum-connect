@@ -132,7 +132,7 @@ export default function StressCheckPage() {
 
   const handleConsentDeclined = () => {
     // User declined consent - redirect to login with message
-    router.push('/?error=consent_declined&message=Sie müssen die Nutzungsbedingungen akzeptieren, um fortzufahren.')
+    router.push(`/?error=consent_declined&message=${encodeURIComponent(CONSENT_TEXT.errors.consentDeclined)}`)
   }
 
   const handleSubmit = async () => {
