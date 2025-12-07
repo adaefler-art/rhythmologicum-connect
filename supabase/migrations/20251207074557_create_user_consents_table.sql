@@ -115,7 +115,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
--- Clinicians can view all consents for their patients
+-- Clinicians can view all consents (for audit and compliance purposes)
 DO $$
 BEGIN
     IF NOT EXISTS (

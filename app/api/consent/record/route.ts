@@ -6,6 +6,18 @@ import { cookies } from 'next/headers'
 const PG_ERROR_UNIQUE_VIOLATION = '23505'
 
 /**
+ * Validates if a string is a valid IPv4 or IPv6 address
+ */
+function isValidIpAddress(ip: string): boolean {
+  // IPv4 regex
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
+  // IPv6 regex (simplified)
+  const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
+  
+  return ipv4Pattern.test(ip) || ipv6Pattern.test(ip)
+}
+
+/**
  * POST /api/consent/record
  * Records a user's consent to a specific version of terms.
  * 
@@ -67,7 +79,9 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for')
     const realIp = request.headers.get('x-real-ip')
     // Take the first IP from x-forwarded-for (client IP before proxies)
-    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || null
+    const rawIp = forwardedFor?.split(',')[0]?.trim() || realIp
+    // Validate IP address format before storing
+    const ipAddress = rawIp && isValidIpAddress(rawIp) ? rawIp : null
 
     // Get user agent
     const userAgent = request.headers.get('user-agent') || null
