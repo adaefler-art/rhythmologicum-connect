@@ -48,6 +48,11 @@ function average(values: number[]): number | null {
 }
 
 function computeScores(answers: AnswerRow[]) {
+  const startTime = Date.now();
+  console.log('[stress-report/computeScores] Starting score calculation', {
+    totalAnswers: answers.length,
+  });
+
   const stressVals = answers
     .filter((a) => a.question_id && STRESS_KEYS.includes(a.question_id))
     .map((a) => a.answer_value)
@@ -57,6 +62,11 @@ function computeScores(answers: AnswerRow[]) {
     .filter((a) => a.question_id && SLEEP_KEYS.includes(a.question_id))
     .map((a) => a.answer_value)
     .filter((v): v is number => typeof v === 'number');
+
+  console.log('[stress-report/computeScores] Collected values', {
+    stressValues: stressVals.length,
+    sleepValues: sleepVals.length,
+  });
 
   const stressAvg = average(stressVals);
   const sleepAvg = average(sleepVals);
@@ -79,6 +89,14 @@ function computeScores(answers: AnswerRow[]) {
     else riskLevel = 'high';
   }
 
+  const duration = Date.now() - startTime;
+  console.log('[stress-report/computeScores] Score calculation completed', {
+    duration: `${duration}ms`,
+    stressScore,
+    sleepScore,
+    riskLevel,
+  });
+
   return { stressScore, sleepScore, riskLevel };
 }
 
@@ -92,11 +110,20 @@ async function createAmySummary(params: {
 
   // Kein Anthropic-Key → Fallback-Text
   if (!anthropic) {
-    console.warn('[stress-report] Anthropic not configured, using fallback text');
+    console.warn('[stress-report/createAmySummary] Anthropic not configured, using fallback text');
     return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
   }
 
   const answersJson = JSON.stringify(answers, null, 2);
+  const startTime = Date.now();
+
+  console.log('[stress-report/createAmySummary] Starting AMY request', {
+    model: MODEL,
+    stressScore,
+    sleepScore,
+    riskLevel,
+    answersCount: answers.length,
+  });
 
   try {
     const response = await anthropic.messages.create({
@@ -129,19 +156,62 @@ async function createAmySummary(params: {
       ],
     });
 
+    const duration = Date.now() - startTime;
     const textParts = response.content
       .filter((c) => c.type === 'text')
       .map((c) => ('text' in c ? c.text : ''));
 
-    return textParts.join('\n').trim();
+    const reportText = textParts.join('\n').trim();
+
+    console.log('[stress-report/createAmySummary] AMY request completed successfully', {
+      duration: `${duration}ms`,
+      model: MODEL,
+      responseLength: reportText.length,
+      contentBlocks: response.content.length,
+    });
+
+    return reportText;
   } catch (error) {
+    const duration = Date.now() - startTime;
+    
+    // Determine error type for better diagnostics
+    let errorType = 'unknown';
+    let errorMessage = String(error);
+    
+    if (error && typeof error === 'object') {
+      const err = error as { status?: number; type?: string; message?: string };
+      
+      if (err.status === 429) {
+        errorType = 'rate_limit';
+      } else if (err.status === 408 || errorMessage.includes('timeout')) {
+        errorType = 'timeout';
+      } else if (err.type === 'invalid_request_error' || errorMessage.includes('JSON')) {
+        errorType = 'json_parsing';
+      } else if (err.status && err.status >= 500) {
+        errorType = 'api_error';
+      }
+      
+      if (err.message) {
+        errorMessage = err.message;
+      }
+    }
+
+    console.error('[stress-report/createAmySummary] AMY request failed', {
+      duration: `${duration}ms`,
+      errorType,
+      errorMessage,
+      model: MODEL,
+    });
+
     // LLM-Fehler → Fallback-Text verwenden
-    console.error('[stress-report] LLM error, using fallback text:', error);
     return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
   }
 }
 
 export async function POST(req: Request) {
+  const requestStartTime = Date.now();
+  console.log('[stress-report] POST request received');
+
   try {
     if (!supabase) {
       console.error(
@@ -153,15 +223,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json().catch(() => null);
+    const body = await req.json().catch((parseError) => {
+      console.error('[stress-report] JSON parsing error', {
+        error: String(parseError),
+      });
+      return null;
+    });
     const assessmentId = body?.assessmentId as string | undefined;
 
     if (!assessmentId) {
+      console.warn('[stress-report] Missing assessmentId in request');
       return NextResponse.json(
         { error: 'assessmentId fehlt im Request-Body.' },
         { status: 400 }
       );
     }
+
+    console.log('[stress-report] Processing assessment', {
+      assessmentId,
+    });
 
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
@@ -281,6 +361,16 @@ export async function POST(req: Request) {
       );
     }
 
+    const totalDuration = Date.now() - requestStartTime;
+    console.log('[stress-report] Request completed successfully', {
+      duration: `${totalDuration}ms`,
+      assessmentId,
+      reportId: reportRow.id,
+      stressScore,
+      sleepScore,
+      riskLevel,
+    });
+
     return NextResponse.json({
       report: reportRow,
       scores: {
@@ -290,8 +380,12 @@ export async function POST(req: Request) {
       },
     });
   } catch (err: unknown) {
-    console.error('[stress-report] Unerwarteter Fehler:', err);
+    const totalDuration = Date.now() - requestStartTime;
     const error = err as { message?: string };
+    console.error('[stress-report] Unerwarteter Fehler', {
+      duration: `${totalDuration}ms`,
+      error: error?.message ?? String(err),
+    });
     return NextResponse.json(
       {
         error: 'Interner Fehler bei der Erstellung des Reports.',
