@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { featureFlags } from '@/lib/featureFlags'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | null
@@ -42,69 +42,70 @@ export default function StressResultClient() {
   const assessmentId = typeof rawParam === 'string' && rawParam.length > 0 ? rawParam : null
 
   const [state, setState] = useState<FetchState>({ status: 'idle' })
+  const [retryCounter, setRetryCounter] = useState(0)
 
-  const fetchData = useCallback(async () => {
-    if (!assessmentId) {
-      setState({
-        status: 'error',
-        message:
-          'Wir konnten keinen gültigen Link zu deinem Report finden. Bitte öffne den Link direkt aus deiner E-Mail oder wiederhole den Fragebogen.',
-      })
-      return
-    }
-
-    try {
-      setState({ status: 'loading' })
-
-      // 1. Fetch stress report (creates/updates Supabase records internally)
-      const res = await fetch('/api/amy/stress-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ assessmentId }),
-      })
-
-      const text = await res.text()
-      let json: ApiResponse | null = null
-
-      try {
-        json = text ? (JSON.parse(text) as ApiResponse) : null
-      } catch (e) {
-        console.error('Stress report: Antwort ist kein valides JSON', e, text)
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!assessmentId) {
+        setState({
+          status: 'error',
+          message:
+            'Wir konnten keinen gültigen Link zu deinem Report finden. Bitte öffne den Link direkt aus deiner E-Mail oder wiederhole den Fragebogen.',
+        })
+        return
       }
 
-      if (!res.ok || !json) {
-        console.error('Stress report: API-Fehler', res.status, json ?? text)
+      try {
+        setState({ status: 'loading' })
+
+        // 1. Fetch stress report (creates/updates Supabase records internally)
+        const res = await fetch('/api/amy/stress-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ assessmentId }),
+        })
+
+        const text = await res.text()
+        let json: ApiResponse | null = null
+
+        try {
+          json = text ? (JSON.parse(text) as ApiResponse) : null
+        } catch (e) {
+          console.error('Stress report: Antwort ist kein valides JSON', e, text)
+        }
+
+        if (!res.ok || !json) {
+          console.error('Stress report: API-Fehler', res.status, json ?? text)
+          setState({
+            status: 'error',
+            message:
+              'Die automatische Auswertung ist aktuell nicht verfügbar. Dein Fragebogen ist sicher gespeichert – bitte versuche es gleich noch einmal oder später erneut.',
+          })
+          return
+        }
+
+        setState({
+          status: 'success',
+          report: json.report,
+          scores: json.scores,
+        })
+      } catch (err) {
+        console.error('Stress report: Fetch-Fehler', err)
         setState({
           status: 'error',
           message:
             'Die automatische Auswertung ist aktuell nicht verfügbar. Dein Fragebogen ist sicher gespeichert – bitte versuche es gleich noch einmal oder später erneut.',
         })
-        return
       }
-
-      setState({
-        status: 'success',
-        report: json.report,
-        scores: json.scores,
-      })
-    } catch (err) {
-      console.error('Stress report: Fetch-Fehler', err)
-      setState({
-        status: 'error',
-        message:
-          'Die automatische Auswertung ist aktuell nicht verfügbar. Dein Fragebogen ist sicher gespeichert – bitte versuche es gleich noch einmal oder später erneut.',
-      })
     }
-  }, [assessmentId])
 
-  useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [assessmentId, retryCounter])
 
   const handleRetry = () => {
-    fetchData()
+    setRetryCounter((prev) => prev + 1)
   }
 
   // Hilfsfunktionen UI
