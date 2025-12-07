@@ -95,8 +95,14 @@ export async function getActiveQuestion(
     funnelStepQuestion: FunnelStepQuestion
   }> = []
 
-  funnelData.funnel_steps.forEach((step, stepIndex) => {
-    step.questions.forEach((q, questionIndexInStep) => {
+  interface StepWithQuestions {
+    questions: Array<{
+      funnel_step_question: FunnelStepQuestion
+    } & Question>
+  }
+
+  funnelData.funnel_steps.forEach((step: StepWithQuestions, stepIndex: number) => {
+    step.questions.forEach((q: { funnel_step_question: FunnelStepQuestion } & Question, questionIndexInStep: number) => {
       allQuestions.push({
         question: q as Question,
         stepIndex,
