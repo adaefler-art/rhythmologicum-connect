@@ -372,8 +372,9 @@ export default function PatientHistoryClient() {
             type="button"
             onClick={() => router.push('/patient/stress-check')}
             className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition"
+            aria-label="Neue Messung durchführen"
           >
-            <span className="text-base">✓</span>
+            <span className="text-base" aria-hidden="true">✓</span>
             Neue Messung durchführen
           </button>
         </div>

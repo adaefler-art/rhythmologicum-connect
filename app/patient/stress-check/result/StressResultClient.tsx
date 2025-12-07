@@ -361,8 +361,10 @@ export default function StressResultClient() {
           type="button"
           onClick={() => router.push('/patient/history')}
           className="w-full inline-flex justify-center items-center px-6 py-4 rounded-xl bg-sky-600 text-white text-base font-semibold shadow-md hover:bg-sky-700 transition-all"
+          aria-label="Meinen Verlauf ansehen"
         >
-          📊 Meinen Verlauf ansehen
+          <span aria-hidden="true">📊</span>
+          <span className="ml-2">Meinen Verlauf ansehen</span>
         </button>
         <div className="flex justify-center gap-4 text-sm">
           <button

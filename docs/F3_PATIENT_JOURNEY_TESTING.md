@@ -191,19 +191,23 @@ Expected: Empty result (each report has max 1 measure)
 ## Known Issues / Edge Cases
 
 ### Consent Modal
-- ConsentModal component renders full-screen, bypassing layout
-- This is intentional design - user must consent before seeing layout
-- Not considered a bug
+- **What:** ConsentModal is a data privacy consent component that users must accept before using the app
+- **Behavior:** Renders full-screen, bypassing the standard patient layout
+- **Why:** Intentional design - user must provide explicit consent before seeing any patient data or UI
+- **Status:** Not considered a bug - this is by design for legal/privacy compliance
 
 ### Loading States
-- Brief flash of loading state is normal
-- Supabase auth check takes ~100-500ms
-- Could be improved with skeleton screens (future enhancement)
+- **What:** Brief loading indicators while authentication and data are being fetched
+- **Behavior:** Brief flash of loading state (typically 100-500ms)
+- **Why:** Supabase authentication check and session validation require network calls
+- **Future:** Could be improved with skeleton screens for better perceived performance
 
-### Error Recovery
-- If AMY service fails, report creation may be delayed
-- User can retry by refreshing result page
-- History will show "pending" status until report completes
+### Error Recovery (AMY Service)
+- **What:** AMY is the AI assistant that generates personalized stress assessment reports
+- **Behavior:** If AMY service fails, report creation may be delayed; status shows "pending"
+- **Why:** External API call to Anthropic Claude may timeout or be unavailable
+- **Recovery:** User can retry by refreshing the result page; questionnaire data is safely stored
+- **Status:** History will show "pending" status until report generation completes successfully
 
 ## Performance Expectations
 
