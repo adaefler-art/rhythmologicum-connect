@@ -4,6 +4,8 @@
 **Zielgruppe:** Ärzt:innen und klinisches Personal  
 **Letzte Aktualisierung:** Dezember 2024
 
+> **📸 Screenshots:** Diese Anleitung beschreibt alle Funktionen detailliert. Für visuelle Beispiele können Screenshots mit anonymisierten Testdaten erstellt und in einem separaten Ordner `docs/screenshots/` abgelegt werden. Empfohlene Screenshots: Dashboard-Übersicht, Patienten-Detailansicht, Verlaufsdiagramme, AMY-Berichte.
+
 ---
 
 ## 📊 Dashboard-Übersicht
@@ -39,6 +41,26 @@ Die Hauptansicht zeigt eine **sortierbare Tabelle** mit allen Patient:innen:
 ### Navigation
 - **Klick auf eine Patientenzeile** → Detailansicht des Patienten
 
+### Visuelle Elemente
+
+**Dashboard-Layout:**
+- **Kopfzeile:** "Patientenübersicht" mit Beschreibung
+- **Sortier-Icons:** Pfeile in den Spaltenköpfen zeigen Sortierrichtung
+- **Farbcodierung der RiskLevels:**
+  - 🟢 Grün = Niedriges Risiko (heller Hintergrund, grüner Text)
+  - 🟡 Gelb = Mittleres Risiko (heller Hintergrund, gelber/amber Text)
+  - 🔴 Rot = Hohes Risiko (heller Hintergrund, roter Text)
+- **Hover-Effekt:** Zeilen werden beim Überfahren hervorgehoben
+- **Responsive Design:** Tabelle scrollbar auf kleineren Bildschirmen
+
+**Leere Ansicht:**
+Wenn noch keine Patient:innen erfasst sind, erscheint:
+- 📋 Symbol
+- "Noch keine Messungen vorhanden"
+- Erklärungstext
+
+> **Hinweis zu Screenshots:** Visuelle Beispiele des Dashboards können über den Screenshot-Modus des Browsers erstellt werden. Für Schulungszwecke empfiehlt sich die Erstellung von Beispiel-Screenshots mit anonymisierten Daten.
+
 ---
 
 ## 👤 Patienten-Detailansicht
@@ -68,6 +90,13 @@ Die Hauptansicht zeigt eine **sortierbare Tabelle** mit allen Patient:innen:
 - **Aufwärtstrend:** Verbesserung der Werte
 - **Abwärtstrend:** Verschlechterung der Werte
 - **Schwankungen:** Mögliche situative Faktoren
+
+**Visuelle Darstellung:**
+- **SVG-basierte Diagramme:** Einfache Liniendiagramme ohne externe Bibliotheken
+- **Datenpunkte:** Kleine Kreise markieren jeden Messwert
+- **Gitterlinien:** Horizontale Linien bei 0, 25, 50, 75, 100 zur Orientierung
+- **Responsive:** Diagramme passen sich der Bildschirmgröße an
+- **Leere Ansicht:** "Keine Stress-/Schlaf-Daten vorhanden" wenn keine Messungen
 
 ### 2. AMY-Berichte Timeline
 
@@ -103,6 +132,13 @@ zu achten...
 - ❌ Keine Therapieempfehlung
 - ❌ Ersetzt keine ärztliche Beurteilung
 - ✅ Orientierungshilfe für Patient:in und Kliniker:in
+
+**Visuelle Darstellung:**
+- **Farbiger linker Rand:** 4px breite Linie in Risiko-Farbe (grün/gelb/rot)
+- **Chronologische Sortierung:** Neueste Berichte zuerst
+- **Kompaktes Layout:** Zeitstempel und Scores in einer Zeile
+- **Whitespace-Formatierung:** Mehrzeilige AMY-Texte bleiben lesbar
+- **Leere Ansicht:** Nur Berichte mit AMY-Text werden angezeigt
 
 ### 3. Rohdaten (JSON)
 
