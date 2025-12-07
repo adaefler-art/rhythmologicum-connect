@@ -10,7 +10,18 @@ type Question = {
   id: string
   text: string
   group: 'stress' | 'sleep'
-  helpText?: string | null
+  helpText: string | null
+}
+
+type StepQuestionPayload = {
+  key: string
+  label: string
+  help_text: string | null
+}
+
+type StepQuestionRow = {
+  order_index: number
+  questions: StepQuestionPayload | StepQuestionPayload[] | null
 }
 
 const SCALE = [
@@ -81,19 +92,28 @@ export default function StressCheckPage() {
 
           if (stepQuestionsError) throw stepQuestionsError
 
-          const questionsInStep = (stepQuestions || []).map((sq: {
-            order_index: number
-            questions: {
-              key: string
-              label: string
-              help_text: string | null
-            }
-          }) => ({
-            id: sq.questions.key,
-            text: sq.questions.label,
-            helpText: sq.questions.help_text,
-            group: group as 'stress' | 'sleep',
-          }))
+          const normalizedQuestions = ((stepQuestions || []) as StepQuestionRow[])
+            .map((sq) => {
+              const questionRecord = Array.isArray(sq.questions)
+                ? sq.questions[0]
+                : sq.questions
+
+              if (!questionRecord) {
+                return null
+              }
+
+              const questionGroup: Question['group'] = group
+
+              return {
+                id: questionRecord.key,
+                text: questionRecord.label,
+                helpText: questionRecord.help_text,
+                group: questionGroup,
+              }
+            })
+            .filter((item): item is Question => Boolean(item))
+
+          const questionsInStep = normalizedQuestions
           
           sortedQuestions.push(...questionsInStep)
         }
