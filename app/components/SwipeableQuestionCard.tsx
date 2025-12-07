@@ -2,7 +2,43 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { motion, PanInfo, AnimatePresence } from 'framer-motion'
+import type { Variants, Transition, TargetAndTransition } from 'framer-motion'
 import MobileQuestionCard, { type MobileQuestionCardProps } from './MobileQuestionCard'
+
+type SwipeDirection = 'left' | 'right' | null
+
+const SPRING_TRANSITION = {
+  type: 'spring',
+  stiffness: 300,
+  damping: 30,
+} satisfies Transition
+
+const FADE_TRANSITION = {
+  duration: 0.2,
+} satisfies Transition
+
+const SWIPE_VARIANTS: Variants = {
+  enter: (direction: SwipeDirection): TargetAndTransition => ({
+    x: direction === 'left' ? '100%' : direction === 'right' ? '-100%' : 0,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      x: SPRING_TRANSITION,
+      opacity: FADE_TRANSITION,
+    },
+  },
+  exit: (direction: SwipeDirection): TargetAndTransition => ({
+    x: direction === 'left' ? '-100%' : direction === 'right' ? '100%' : 0,
+    opacity: 0,
+    transition: {
+      x: SPRING_TRANSITION,
+      opacity: FADE_TRANSITION,
+    },
+  }),
+}
 
 export type SwipeableQuestionCardProps = MobileQuestionCardProps & {
   enableSwipe?: boolean
@@ -36,7 +72,7 @@ export default function SwipeableQuestionCard({
   ...props
 }: SwipeableQuestionCardProps) {
   const [isAnimating, setIsAnimating] = useState(false)
-  const [direction, setDirection] = useState<'left' | 'right' | null>(null)
+  const [direction, setDirection] = useState<SwipeDirection>(null)
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cleanup timeout on unmount to prevent memory leaks
@@ -150,28 +186,7 @@ export default function SwipeableQuestionCard({
   }
 
   // Animation variants
-  const variants = {
-    enter: (direction: 'left' | 'right' | null) => ({
-      x: direction === 'left' ? '100%' : direction === 'right' ? '-100%' : 0,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
-      },
-    },
-    exit: (direction: 'left' | 'right' | null) => ({
-      x: direction === 'left' ? '-100%' : direction === 'right' ? '100%' : 0,
-      opacity: 0,
-      transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
-      },
-    }),
-  }
+  const variants = SWIPE_VARIANTS
 
   // Drag constraints
   const dragConstraints = {
