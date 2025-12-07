@@ -216,7 +216,7 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white text-slate-900"
             />
           </div>
 
@@ -232,7 +232,7 @@ export default function LoginPage() {
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white text-slate-900"
             />
             <p className="mt-1 text-xs text-slate-400">Mindestens 6 Zeichen.</p>
           </div>
