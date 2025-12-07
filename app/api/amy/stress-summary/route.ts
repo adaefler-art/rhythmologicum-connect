@@ -164,10 +164,35 @@ async function generateSummary(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(
-      `[stress-summary] LLM request failed after ${duration}ms, using fallback text:`,
-      error
-    );
+    
+    // Determine error type for better diagnostics
+    let errorType = 'unknown';
+    let errorMessage = String(error);
+    
+    if (error && typeof error === 'object') {
+      const err = error as { status?: number; type?: string; message?: string };
+      
+      if (err.status === 429) {
+        errorType = 'rate_limit';
+      } else if (err.status === 408 || errorMessage.includes('timeout')) {
+        errorType = 'timeout';
+      } else if (err.type === 'invalid_request_error' || errorMessage.includes('JSON')) {
+        errorType = 'json_parsing';
+      } else if (err.status && err.status >= 500) {
+        errorType = 'api_error';
+      }
+      
+      if (err.message) {
+        errorMessage = err.message;
+      }
+    }
+
+    console.error('[stress-summary] LLM request failed', {
+      duration: `${duration}ms`,
+      errorType,
+      errorMessage,
+      model: MODEL,
+    });
 
     // LLM-Fehler → Fallback-Text verwenden
     return {
@@ -209,6 +234,7 @@ function extractRecommendations(text: string): string[] {
  */
 export async function POST(req: Request) {
   const requestStartTime = Date.now();
+  console.log('[stress-summary] POST request received');
 
   try {
     // Parse request body
@@ -243,18 +269,22 @@ export async function POST(req: Request) {
     const summary = await generateSummary(validation.data!);
     
     const totalDuration = Date.now() - requestStartTime;
-    console.log(
-      `[stress-summary] Request completed successfully in ${totalDuration}ms`
-    );
+    console.log('[stress-summary] Request completed successfully', {
+      duration: `${totalDuration}ms`,
+      stressScore: validation.data?.stressScore,
+      sleepScore: validation.data?.sleepScore,
+      riskLevel: validation.data?.riskLevel,
+      responseLength: summary.report_text_short.length,
+    });
 
     return NextResponse.json<StressSummaryResponse>(summary);
   } catch (err) {
     const duration = Date.now() - requestStartTime;
     const error = err as { message?: string };
-    console.error(
-      `[stress-summary] Unexpected error after ${duration}ms:`,
-      err
-    );
+    console.error('[stress-summary] Unexpected error', {
+      duration: `${duration}ms`,
+      error: error?.message ?? String(err),
+    });
 
     return NextResponse.json<ErrorResponse>(
       {
