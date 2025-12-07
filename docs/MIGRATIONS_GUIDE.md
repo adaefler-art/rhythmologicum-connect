@@ -32,7 +32,7 @@ Always replace the placeholder comments with the actual business context and kee
 ## 4. Continuous integration
 
 - `npm run lint:migrations -- --base-ref origin/main` is executed in CI to guarantee that PRs only add migrations.
-- `verify-schema.yml` and `db-migrations-check.yml` both run the guard before applying migrations.
+- `db-migrations-check.yml` runs the guard before applying migrations.
 - `verify-supabase-schema.yml` compares the deployed database against the committed `schema/schema.sql`.
 
 Following these steps keeps the Supabase history linear and reproducible for every environment.
