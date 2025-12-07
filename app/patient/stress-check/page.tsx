@@ -446,7 +446,7 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
             <label
               key={option.value}
               htmlFor={id}
-              className={`flex-1 min-w-[80px] sm:min-w-[90px] flex flex-col items-center gap-0.5 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+              className={`flex-1 min-w-[90px] sm:min-w-[100px] flex flex-col items-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all ${
                 checked
                   ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
                   : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm'
@@ -462,8 +462,8 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
                 onChange={() => onChange(question.id, option.value)}
                 aria-label={`${option.label} (Wert ${option.value})`}
               />
-              <span className="text-lg sm:text-xl font-bold">{option.value}</span>
-              <span className="text-xs font-medium">{option.label}</span>
+              <span className="text-xl sm:text-2xl font-bold">{option.value}</span>
+              <span className="text-xs sm:text-sm font-medium">{option.label}</span>
             </label>
           )
         })}
