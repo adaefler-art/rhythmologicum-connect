@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 # Script: apply SQL migrations in lexicographic order against $DATABASE_URL
-# Expects: psql installed and DATABASE_URL set, migrations/ directory with *.sql files
+# Expects: psql installed and DATABASE_URL set, migrations directory with *.sql files
 set -euo pipefail
 
-MIGRATIONS_DIR="${MIGRATIONS_DIR:-migrations}"
+DEFAULT_SUPABASE_DIR="supabase/migrations"
+FALLBACK_DIR="migrations"
+
+if [ -z "${MIGRATIONS_DIR:-}" ]; then
+  if [ -d "$DEFAULT_SUPABASE_DIR" ]; then
+    MIGRATIONS_DIR="$DEFAULT_SUPABASE_DIR"
+  elif [ -d "$FALLBACK_DIR" ]; then
+    MIGRATIONS_DIR="$FALLBACK_DIR"
+  else
+    echo "No migrations directory found (checked '$DEFAULT_SUPABASE_DIR' and '$FALLBACK_DIR')."
+    exit 1
+  fi
+fi
 
 if [ ! -d "$MIGRATIONS_DIR" ]; then
   echo "Migrations directory '$MIGRATIONS_DIR' not found"
