@@ -5,12 +5,14 @@ import type { Question, Funnel } from '@/lib/types/funnel'
 import ScaleAnswerButtons from './ScaleAnswerButtons'
 import BinaryAnswerButtons from './BinaryAnswerButtons'
 import SingleChoiceAnswerButtons from './SingleChoiceAnswerButtons'
+import SaveIndicator from './SaveIndicator'
 import {
   getQuestionOptions,
   getBinaryQuestionConfig,
   hasQuestionOptions,
   isBinaryQuestion,
 } from '@/lib/questionOptions'
+import { useAssessmentAnswer } from '@/lib/hooks/useAssessmentAnswer'
 
 export type MobileQuestionCardProps = {
   funnel: Funnel
@@ -26,6 +28,8 @@ export type MobileQuestionCardProps = {
   isRequired?: boolean
   error?: string | null
   isLoading?: boolean
+  assessmentId?: string // Optional: Enable save-on-tap if provided
+  enableSaveOnTap?: boolean // Optional: Explicitly enable/disable save-on-tap
 }
 
 export default function MobileQuestionCard({
@@ -42,11 +46,35 @@ export default function MobileQuestionCard({
   isRequired = true,
   error = null,
   isLoading = false,
+  assessmentId,
+  enableSaveOnTap = true,
 }: MobileQuestionCardProps) {
   const [isFocused, setIsFocused] = useState(false)
   const isAnswered = value !== undefined && value !== null
 
+  // Initialize save-on-tap hook
+  const { saveAnswer, saveState, lastError, retry } = useAssessmentAnswer()
+  
+  // Determine if save-on-tap should be active
+  const isSaveOnTapActive = enableSaveOnTap && assessmentId !== undefined
+
   const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100
+
+  // Handle answer change with save-on-tap
+  const handleAnswerChange = async (questionId: string, newValue: number | string) => {
+    // Always call the onChange callback to update local state
+    // Note: questionId here is question.id (UUID) for React state management
+    onChange(questionId, newValue)
+
+    // If save-on-tap is enabled and we have an assessmentId, save to backend
+    if (isSaveOnTapActive && typeof newValue === 'number') {
+      await saveAnswer({
+        assessmentId: assessmentId!,
+        questionId: question.key, // Use question.key (e.g., "stress_frequency") as question_id in DB
+        answerValue: newValue,
+      })
+    }
+  }
 
   // Determine question rendering strategy
   const renderAnswerSection = () => {
@@ -58,8 +86,8 @@ export default function MobileQuestionCard({
           <BinaryAnswerButtons
             questionId={question.id}
             value={value}
-            onChange={(val) => onChange(question.id, val as number | string)}
-            disabled={isLoading}
+            onChange={(val) => handleAnswerChange(question.id, val as number | string)}
+            disabled={isLoading || saveState === 'saving'}
             {...config}
           />
         )
@@ -75,8 +103,8 @@ export default function MobileQuestionCard({
             questionId={question.id}
             options={options}
             value={value as string | number}
-            onChange={(val) => onChange(question.id, val as number | string)}
-            disabled={isLoading}
+            onChange={(val) => handleAnswerChange(question.id, val as number | string)}
+            disabled={isLoading || saveState === 'saving'}
             layout={options.length > 4 ? 'grid' : 'vertical'}
           />
         )
@@ -94,8 +122,8 @@ export default function MobileQuestionCard({
           minValue={minValue}
           maxValue={maxValue}
           value={value as number}
-          onChange={(val) => onChange(question.id, val)}
-          disabled={isLoading}
+          onChange={(val) => handleAnswerChange(question.id, val)}
+          disabled={isLoading || saveState === 'saving'}
         />
       )
     }
@@ -105,10 +133,10 @@ export default function MobileQuestionCard({
       return (
         <textarea
           value={(value as string) || ''}
-          onChange={(e) => onChange(question.id, e.target.value)}
+          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
           className="w-full min-h-[120px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-base leading-relaxed"
           placeholder="Ihre Antwort..."
-          disabled={isLoading}
+          disabled={isLoading || saveState === 'saving'}
           style={{ fontSize: '16px' }}
         />
       )
@@ -189,6 +217,17 @@ export default function MobileQuestionCard({
             {/* Answer Options */}
             <div className="px-6 pb-6">
               {renderAnswerSection()}
+              
+              {/* Save Indicator - Only shown when save-on-tap is active */}
+              {isSaveOnTapActive && (
+                <div className="mt-3">
+                  <SaveIndicator 
+                    saveState={saveState} 
+                    error={lastError} 
+                    onRetry={retry} 
+                  />
+                </div>
+              )}
             </div>
 
             {/* Error Message */}

@@ -3365,6 +3365,13 @@ ALTER TABLE ONLY public.assessment_answers
     ADD CONSTRAINT assessment_answers_pkey PRIMARY KEY (id);
 
 --
+-- Name: assessment_answers assessment_answers_assessment_question_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.assessment_answers
+    ADD CONSTRAINT assessment_answers_assessment_question_unique UNIQUE (assessment_id, question_id);
+
+--
 -- Name: assessments assessments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3848,6 +3855,12 @@ CREATE INDEX users_instance_id_idx ON auth.users USING btree (instance_id);
 --
 
 CREATE INDEX users_is_anonymous_idx ON auth.users USING btree (is_anonymous);
+
+--
+-- Name: idx_assessment_answers_lookup; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_assessment_answers_lookup ON public.assessment_answers USING btree (assessment_id, question_id);
 
 --
 -- Name: idx_patient_measures_created_at; Type: INDEX; Schema: public; Owner: -
