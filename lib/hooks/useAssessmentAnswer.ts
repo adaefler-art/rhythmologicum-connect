@@ -52,7 +52,7 @@ export function useAssessmentAnswer(): UseAssessmentAnswerReturn {
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [lastError, setLastError] = useState<string | null>(null)
   const lastSaveOptions = useRef<SaveAnswerOptions | null>(null)
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const debounceTimerRef = useRef<number | null>(null)
 
   const performSave = useCallback(async (options: SaveAnswerOptions): Promise<SaveAnswerResult> => {
     setSaveState('saving')

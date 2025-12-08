@@ -63,13 +63,14 @@ export default function MobileQuestionCard({
   // Handle answer change with save-on-tap
   const handleAnswerChange = async (questionId: string, newValue: number | string) => {
     // Always call the onChange callback to update local state
+    // Note: questionId here is question.id (UUID) for React state management
     onChange(questionId, newValue)
 
     // If save-on-tap is enabled and we have an assessmentId, save to backend
     if (isSaveOnTapActive && typeof newValue === 'number') {
       await saveAnswer({
         assessmentId: assessmentId!,
-        questionId: question.key, // Use question.key as question_id
+        questionId: question.key, // Use question.key (e.g., "stress_frequency") as question_id in DB
         answerValue: newValue,
       })
     }

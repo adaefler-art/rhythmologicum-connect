@@ -12,10 +12,13 @@ import { cookies } from 'next/headers'
  * 
  * Request Body:
  * {
- *   assessmentId: string (UUID),
- *   questionId: string,
- *   answerValue: number (integer)
+ *   assessmentId: string (UUID of the assessment),
+ *   questionId: string (question.key from questions table, e.g., "stress_frequency"),
+ *   answerValue: number (integer value of the answer)
  * }
+ * 
+ * Note: questionId should be the question.key (semantic identifier), not question.id (UUID)
+ * This maps to the assessment_answers.question_id column which is of type text.
  * 
  * Response:
  * {
