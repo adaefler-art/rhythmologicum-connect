@@ -76,3 +76,72 @@ export type ActiveQuestion = {
   totalQuestions: number
   funnelStepQuestion: FunnelStepQuestion
 }
+
+// ============================================================
+// B1: Structured Funnel Definition Types
+// ============================================================
+
+// Question with metadata for UI rendering
+export type QuestionDefinition = {
+  id: string
+  key: string
+  label: string
+  helpText: string | null
+  questionType: string
+  minValue: number | null
+  maxValue: number | null
+  isRequired: boolean
+  orderIndex: number
+}
+
+// Base step interface
+export interface BaseStepDefinition {
+  id: string
+  orderIndex: number
+  title: string
+  description: string | null
+  type: string
+}
+
+// Question step with questions
+export interface QuestionStepDefinition extends BaseStepDefinition {
+  type: 'question_step' | 'form'
+  questions: QuestionDefinition[]
+}
+
+// Info step (no questions, just content)
+export interface InfoStepDefinition extends BaseStepDefinition {
+  type: 'info_step' | 'info'
+  content?: string
+}
+
+// Other step types
+export interface OtherStepDefinition extends BaseStepDefinition {
+  type: 'summary' | 'other'
+}
+
+// Union type for all step types
+export type StepDefinition = QuestionStepDefinition | InfoStepDefinition | OtherStepDefinition
+
+// Complete funnel definition for UI consumption
+export type FunnelDefinition = {
+  id: string
+  slug: string
+  title: string
+  subtitle: string | null
+  description: string | null
+  theme: string | null
+  steps: StepDefinition[]
+  totalSteps: number
+  totalQuestions: number
+  isActive: boolean
+}
+
+// Helper type guard functions
+export function isQuestionStep(step: StepDefinition): step is QuestionStepDefinition {
+  return step.type === 'question_step' || step.type === 'form'
+}
+
+export function isInfoStep(step: StepDefinition): step is InfoStepDefinition {
+  return step.type === 'info_step' || step.type === 'info'
+}
