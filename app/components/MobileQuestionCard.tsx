@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Question, Funnel } from '@/lib/types/funnel'
 import ScaleAnswerButtons from './ScaleAnswerButtons'
 import BinaryAnswerButtons from './BinaryAnswerButtons'
