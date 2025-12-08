@@ -2,6 +2,17 @@
 
 import { useState } from 'react'
 import type { Question, Funnel } from '@/lib/types/funnel'
+import ScaleAnswerButtons from './ScaleAnswerButtons'
+import BinaryAnswerButtons from './BinaryAnswerButtons'
+import SingleChoiceAnswerButtons from './SingleChoiceAnswerButtons'
+import SaveIndicator from './SaveIndicator'
+import {
+  getQuestionOptions,
+  getBinaryQuestionConfig,
+  hasQuestionOptions,
+  isBinaryQuestion,
+} from '@/lib/questionOptions'
+import { useAssessmentAnswer } from '@/lib/hooks/useAssessmentAnswer'
 
 export type MobileQuestionCardProps = {
   funnel: Funnel
@@ -17,15 +28,9 @@ export type MobileQuestionCardProps = {
   isRequired?: boolean
   error?: string | null
   isLoading?: boolean
+  assessmentId?: string // Optional: Enable save-on-tap if provided
+  enableSaveOnTap?: boolean // Optional: Explicitly enable/disable save-on-tap
 }
-
-const SCALE_OPTIONS = [
-  { value: 0, label: 'Nie' },
-  { value: 1, label: 'Selten' },
-  { value: 2, label: 'Manchmal' },
-  { value: 3, label: 'Oft' },
-  { value: 4, label: 'Sehr häufig' },
-]
 
 export default function MobileQuestionCard({
   funnel,
@@ -41,25 +46,111 @@ export default function MobileQuestionCard({
   isRequired = true,
   error = null,
   isLoading = false,
+  assessmentId,
+  enableSaveOnTap = true,
 }: MobileQuestionCardProps) {
   const [isFocused, setIsFocused] = useState(false)
   const isAnswered = value !== undefined && value !== null
 
+  // Initialize save-on-tap hook
+  const { saveAnswer, saveState, lastError, retry } = useAssessmentAnswer()
+  
+  // Determine if save-on-tap should be active
+  const isSaveOnTapActive = enableSaveOnTap && assessmentId !== undefined
+
   const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100
 
-  // Determine scale options based on question type
-  const getScaleOptions = () => {
-    if (question.question_type === 'scale' && question.min_value !== null && question.max_value !== null) {
-      const options = []
-      for (let i = question.min_value; i <= question.max_value; i++) {
-        options.push({ value: i, label: i.toString() })
-      }
-      return options
+  // Handle answer change with save-on-tap
+  const handleAnswerChange = async (questionId: string, newValue: number | string) => {
+    // Always call the onChange callback to update local state
+    // Note: questionId here is question.id (UUID) for React state management
+    onChange(questionId, newValue)
+
+    // If save-on-tap is enabled and we have an assessmentId, save to backend
+    if (isSaveOnTapActive && typeof newValue === 'number') {
+      await saveAnswer({
+        assessmentId: assessmentId!,
+        questionId: question.key, // Use question.key (e.g., "stress_frequency") as question_id in DB
+        answerValue: newValue,
+      })
     }
-    return SCALE_OPTIONS
   }
 
-  const scaleOptions = getScaleOptions()
+  // Determine question rendering strategy
+  const renderAnswerSection = () => {
+    // Binary questions (Yes/No, True/False, etc.)
+    if (isBinaryQuestion(question.key)) {
+      const config = getBinaryQuestionConfig(question.key)
+      if (config) {
+        return (
+          <BinaryAnswerButtons
+            questionId={question.id}
+            value={value}
+            onChange={(val) => handleAnswerChange(question.id, val as number | string)}
+            disabled={isLoading || saveState === 'saving'}
+            {...config}
+          />
+        )
+      }
+    }
+
+    // Single-choice questions with predefined options
+    if (hasQuestionOptions(question.key)) {
+      const options = getQuestionOptions(question.key)
+      if (options) {
+        return (
+          <SingleChoiceAnswerButtons
+            questionId={question.id}
+            options={options}
+            value={value as string | number}
+            onChange={(val) => handleAnswerChange(question.id, val as number | string)}
+            disabled={isLoading || saveState === 'saving'}
+            layout={options.length > 4 ? 'grid' : 'vertical'}
+          />
+        )
+      }
+    }
+
+    // Scale questions (using min_value and max_value from database)
+    if (question.question_type === 'scale') {
+      const minValue = question.min_value ?? 0
+      const maxValue = question.max_value ?? 4
+      
+      return (
+        <ScaleAnswerButtons
+          questionId={question.id}
+          minValue={minValue}
+          maxValue={maxValue}
+          value={value as number}
+          onChange={(val) => handleAnswerChange(question.id, val)}
+          disabled={isLoading || saveState === 'saving'}
+        />
+      )
+    }
+
+    // Text questions (textarea)
+    if (question.question_type === 'text') {
+      return (
+        <textarea
+          value={(value as string) || ''}
+          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+          className="w-full min-h-[120px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-base leading-relaxed"
+          placeholder="Ihre Antwort..."
+          disabled={isLoading || saveState === 'saving'}
+          style={{ fontSize: '16px' }}
+        />
+      )
+    }
+
+    // Fallback: unsupported question type
+    return (
+      <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <p className="text-amber-800">
+          Dieser Fragetyp wird noch nicht unterstützt: {question.question_type}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
@@ -125,49 +216,17 @@ export default function MobileQuestionCard({
 
             {/* Answer Options */}
             <div className="px-6 pb-6">
-              {question.question_type === 'scale' && (
-                <div className="flex flex-wrap gap-2">
-                  {scaleOptions.map((option) => {
-                    const optionId = `${question.id}-${option.value}`
-                    const checked = value === option.value
-                    return (
-                      <label
-                        key={option.value}
-                        htmlFor={optionId}
-                        className={`flex-1 min-w-[70px] flex flex-col items-center gap-1 px-3 py-4 rounded-xl border-2 cursor-pointer transition-all ${
-                          checked
-                            ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
-                            : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 active:scale-95'
-                        }`}
-                        style={{ minHeight: '44px' }}
-                      >
-                        <input
-                          id={optionId}
-                          type="radio"
-                          className="sr-only"
-                          name={question.id}
-                          value={option.value}
-                          checked={checked}
-                          onChange={() => onChange(question.id, option.value)}
-                          disabled={isLoading}
-                        />
-                        <span className="text-2xl font-bold" aria-hidden="true">{option.value}</span>
-                        <span className="text-sm font-medium text-center">{option.label}</span>
-                      </label>
-                    )
-                  })}
+              {renderAnswerSection()}
+              
+              {/* Save Indicator - Only shown when save-on-tap is active */}
+              {isSaveOnTapActive && (
+                <div className="mt-3">
+                  <SaveIndicator 
+                    saveState={saveState} 
+                    error={lastError} 
+                    onRetry={retry} 
+                  />
                 </div>
-              )}
-
-              {question.question_type === 'text' && (
-                <textarea
-                  value={(value as string) || ''}
-                  onChange={(e) => onChange(question.id, e.target.value)}
-                  className="w-full min-h-[120px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-base leading-relaxed"
-                  placeholder="Ihre Antwort..."
-                  disabled={isLoading}
-                  style={{ fontSize: '16px' }}
-                />
               )}
             </div>
 

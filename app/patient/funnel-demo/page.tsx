@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import SwipeableQuestionCard from '@/app/components/SwipeableQuestionCard'
+import ResponsiveQuestionRouter from '@/app/components/ResponsiveQuestionRouter'
 import type { Funnel, Question } from '@/lib/types/funnel'
 
 // Demo data matching the database schema
@@ -71,17 +71,6 @@ export default function FunnelDemoPage() {
   const [answers, setAnswers] = useState<Record<string, number | string>>({})
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    // Check if viewport is mobile (<640px)
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   const currentQuestion = DEMO_QUESTIONS[currentIndex]
   const totalQuestions = DEMO_QUESTIONS.length
@@ -130,24 +119,8 @@ export default function FunnelDemoPage() {
     router.push('/patient')
   }
 
-  // Desktop fallback view
-  if (!isMobile) {
-    return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">
-            Mobile Question Component Demo
-          </h1>
-          <p className="text-slate-600 mb-6">
-            Diese Demo ist für mobile Geräte optimiert. Bitte verkleinern Sie Ihr Browserfenster auf unter 640px Breite oder öffnen Sie die Seite auf einem mobilen Gerät.
-          </p>
-        </div>
-      </main>
-    )
-  }
-
   return (
-    <SwipeableQuestionCard
+    <ResponsiveQuestionRouter
       funnel={DEMO_FUNNEL}
       question={currentQuestion}
       currentQuestionIndex={currentIndex}
