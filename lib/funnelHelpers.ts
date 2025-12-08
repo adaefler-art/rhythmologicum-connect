@@ -204,7 +204,19 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
 
         const questionIds = (stepQuestions || []).map((sq) => sq.question_id)
         
-        let questions: any[] = []
+        type QuestionDef = {
+          id: string
+          key: string
+          label: string
+          helpText: string | null
+          questionType: string
+          minValue: number | null
+          maxValue: number | null
+          isRequired: boolean
+          orderIndex: number
+        }
+        
+        let questions: QuestionDef[] = []
         
         if (questionIds.length > 0) {
           const { data: questionsData, error: questionsError } = await supabase
