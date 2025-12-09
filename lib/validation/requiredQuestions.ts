@@ -256,7 +256,8 @@ export async function validateRequiredQuestionsExtended(
     throw new Error('Failed to fetch assessment answers')
   }
 
-  // Create a map of answers: question_key -> answer_value
+  // Create a map of answers: question.key -> answer_value
+  // Note: assessment_answers.question_id stores question.key (string), not question.id (UUID)
   const answers: Record<string, number> = {}
   answeredQuestions?.forEach((answer) => {
     answers[answer.question_id] = answer.answer_value
