@@ -510,7 +510,8 @@ function StressCheckPageContent() {
   }
 
   if (!assessmentStatus || !assessmentStatus.currentStep) {
-    // Zeige Fehler dauerhaft, blockiere weitere UI
+    // Zeige Fehler dauerhaft, blockiere weitere UI (KEIN Redirect mehr möglich)
+    window.stop?.() // Bricht evtl. laufende Weiterleitungen ab (nur im Browser)
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20 min-h-screen">
         <div className="max-w-md w-full text-center space-y-4">
