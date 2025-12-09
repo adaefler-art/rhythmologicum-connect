@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
@@ -64,6 +64,7 @@ function StressCheckPageContent() {
   const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState(false)
   const [statusAttempted, setStatusAttempted] = useState(false)
+  const lastGoodStatusRef = useRef<AssessmentStatus | null>(null)
 
   // Check if user explicitly wants to start a new assessment
   const forceNew = searchParams.get('new') === 'true'
@@ -264,6 +265,7 @@ function StressCheckPageContent() {
       // If we got here, statusData is a valid AssessmentStatus
       console.info('Assessment status accepted', statusData)
       setAssessmentStatus(statusData as AssessmentStatus)
+      lastGoodStatusRef.current = statusData as AssessmentStatus
 
       // Load existing answers to populate the UI
       const { data: existingAnswers, error: answersError } = await supabase
@@ -527,9 +529,10 @@ function StressCheckPageContent() {
 
   // B6 AK3: Navigate to previous step
   const handlePreviousStep = () => {
-    if (!funnel || !assessmentStatus) return
+    const status = assessmentStatus ?? lastGoodStatusRef.current
+    if (!funnel || !status) return
 
-    const currentStepIndex = assessmentStatus.currentStep.stepIndex
+    const currentStepIndex = status.currentStep.stepIndex
     if (currentStepIndex > 0) {
       // Find previous step by stepIndex
       const previousStep = funnel.steps.find(
@@ -539,7 +542,7 @@ function StressCheckPageContent() {
       if (previousStep) {
         // Update assessment status to reflect the previous step
         setAssessmentStatus({
-          ...assessmentStatus,
+          ...(status as AssessmentStatus),
           currentStep: {
             stepId: previousStep.id,
             title: previousStep.title,
@@ -548,6 +551,16 @@ function StressCheckPageContent() {
             orderIndex: previousStep.orderIndex,
           },
         })
+        lastGoodStatusRef.current = {
+          ...(status as AssessmentStatus),
+          currentStep: {
+            stepId: previousStep.id,
+            title: previousStep.title,
+            type: previousStep.type,
+            stepIndex: currentStepIndex - 1,
+            orderIndex: previousStep.orderIndex,
+          },
+        }
         setError(null)
         setValidationErrors([])
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -644,9 +657,12 @@ function StressCheckPageContent() {
     )
   }
 
-  if (!assessmentStatus || !assessmentStatus.currentStep) {
+  const effectiveStatus = assessmentStatus ?? lastGoodStatusRef.current
+
+  if (!effectiveStatus || !effectiveStatus.currentStep) {
     console.warn('Invalid assessment status render path', {
       assessmentStatus,
+      effectiveStatus,
       initialLoading,
       statusLoading,
       statusAttempted,
@@ -676,7 +692,7 @@ function StressCheckPageContent() {
   }
 
   // B6 AK2: Render step based on API data
-  const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
+  const currentStep = funnel.steps.find((s) => s.id === effectiveStatus.currentStep.stepId)
   if (!currentStep) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
@@ -685,8 +701,8 @@ function StressCheckPageContent() {
     )
   }
 
-  const isFirstStep = assessmentStatus.currentStep.stepIndex === 0
-  const isLastStep = assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
+  const isFirstStep = effectiveStatus.currentStep.stepIndex === 0
+  const isLastStep = effectiveStatus.currentStep.stepIndex === effectiveStatus.totalSteps - 1
 
   // Calculate progress based on answered questions
   const totalQuestions = funnel.totalQuestions
@@ -702,7 +718,7 @@ function StressCheckPageContent() {
             {funnel.title}
           </p>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-2">
-            Schritt {assessmentStatus.currentStep.stepIndex + 1} von {assessmentStatus.totalSteps}: {currentStep.title}
+            Schritt {effectiveStatus.currentStep.stepIndex + 1} von {effectiveStatus.totalSteps}: {currentStep.title}
           </h1>
           {currentStep.description && (
             <p className="text-sm text-slate-600 leading-relaxed">
