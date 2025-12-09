@@ -78,7 +78,6 @@ export async function getCurrentStep(
   }
 
   const answeredQuestionIds = new Set((answers || []).map((a) => a.question_id))
-  const answeredQuestionKeys = new Set((answers || []).map((a) => a.question_id))
 
   // 3. Get all funnel steps with their questions
   const { data: steps, error: stepsError } = await supabase
@@ -132,8 +131,9 @@ export async function getCurrentStep(
       })
 
     const answeredRequired = requiredQuestions.filter(
-      (rq) => answeredQuestionIds.has(rq.id) || (rq.key && answeredQuestionKeys.has(rq.key)),
+      (rq) => answeredQuestionIds.has(rq.id) || (rq.key && answeredQuestionIds.has(rq.key)),
     )
+    const answeredRequiredIds = answeredRequired.map((rq) => rq.id)
 
     // If this step has questions and not all required are answered, this is the current step
     if (requiredQuestions.length > 0 && answeredRequired.length < requiredQuestions.length) {
@@ -145,7 +145,7 @@ export async function getCurrentStep(
         type: step.type,
         hasQuestions: true,
         requiredQuestions: requiredQuestions.map((rq) => rq.id),
-        answeredQuestions: answeredRequired,
+        answeredQuestions: answeredRequiredIds,
       }
     }
   }
