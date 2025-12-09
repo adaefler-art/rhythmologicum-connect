@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
 import ConsentModal from './ConsentModal'
@@ -41,6 +41,7 @@ const SCALE = [
 
 export default function StressCheckPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [initialLoading, setInitialLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -51,6 +52,9 @@ export default function StressCheckPage() {
   const [hasConsent, setHasConsent] = useState(false)
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
+
+  // Check if user explicitly wants to start a new assessment
+  const forceNew = searchParams.get('new') === 'true'
 
   // Load funnel definition from API
   useEffect(() => {
@@ -99,15 +103,17 @@ export default function StressCheckPage() {
 
       let currentAssessmentId: string | null = null
 
-      // If there's a completed assessment, redirect to result
+      // If there's a completed assessment and user didn't explicitly request a new one, redirect to result
       if (existingAssessments && existingAssessments.length > 0) {
         const latest = existingAssessments[0]
-        if (latest.status === 'completed') {
+        if (latest.status === 'completed' && !forceNew) {
           router.push(`/patient/stress-check/result?assessmentId=${latest.id}`)
           return
         }
-        // Use existing in-progress assessment
-        currentAssessmentId = latest.id
+        // Use existing in-progress assessment (but not completed ones when forceNew is true)
+        if (latest.status === 'in_progress') {
+          currentAssessmentId = latest.id
+        }
       }
 
       // Start new assessment if none exists
@@ -232,7 +238,7 @@ export default function StressCheckPage() {
       bootstrapAssessment()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasConsent, userId, funnel])
+  }, [hasConsent, userId, funnel, forceNew])
 
   const handleConsentAccepted = () => {
     setShowConsentModal(false)
