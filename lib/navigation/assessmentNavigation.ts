@@ -40,22 +40,30 @@ export type StepInfo = {
  * 
  * @param supabase - Supabase client instance
  * @param assessmentId - UUID of the assessment
+ * @param cachedFunnelId - Optional funnel_id to avoid re-fetching assessment
  * @returns Current step information or null if assessment not found
  */
 export async function getCurrentStep(
   supabase: SupabaseClient,
   assessmentId: string,
+  cachedFunnelId?: string,
 ): Promise<StepInfo | null> {
-  // 1. Get assessment with funnel_id
-  const { data: assessment, error: assessmentError } = await supabase
-    .from('assessments')
-    .select('id, funnel_id')
-    .eq('id', assessmentId)
-    .single()
+  // 1. Get assessment with funnel_id (unless cached)
+  let funnelId = cachedFunnelId
 
-  if (assessmentError || !assessment || !assessment.funnel_id) {
-    console.error('Assessment not found or has no funnel_id:', assessmentError)
-    return null
+  if (!funnelId) {
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .select('id, funnel_id')
+      .eq('id', assessmentId)
+      .single()
+
+    if (assessmentError || !assessment || !assessment.funnel_id) {
+      console.error('Assessment not found or has no funnel_id:', assessmentError)
+      return null
+    }
+
+    funnelId = assessment.funnel_id
   }
 
   // 2. Get all answered questions for this assessment
@@ -75,7 +83,7 @@ export async function getCurrentStep(
   const { data: steps, error: stepsError } = await supabase
     .from('funnel_steps')
     .select('id, order_index, title, type')
-    .eq('funnel_id', assessment.funnel_id)
+    .eq('funnel_id', funnelId)
     .order('order_index', { ascending: true })
 
   if (stepsError || !steps) {
@@ -83,23 +91,37 @@ export async function getCurrentStep(
     return null
   }
 
-  // 4. For each step, get required questions
+  // 4. Fetch all step questions in one query to avoid N+1 problem
+  const stepIds = steps.map((s) => s.id)
+  const { data: allStepQuestions, error: allStepQuestionsError } = await supabase
+    .from('funnel_step_questions')
+    .select('funnel_step_id, question_id, is_required')
+    .in('funnel_step_id', stepIds)
+    .order('order_index', { ascending: true })
+
+  if (allStepQuestionsError) {
+    console.error('Error fetching step questions:', allStepQuestionsError)
+    return null
+  }
+
+  // Group questions by step ID
+  const questionsByStep = new Map<string, Array<{ question_id: string; is_required: boolean }>>()
+  ;(allStepQuestions || []).forEach((sq) => {
+    if (!questionsByStep.has(sq.funnel_step_id)) {
+      questionsByStep.set(sq.funnel_step_id, [])
+    }
+    questionsByStep.get(sq.funnel_step_id)!.push({
+      question_id: sq.question_id,
+      is_required: sq.is_required,
+    })
+  })
+
+  // 5. For each step, check if all required questions are answered
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i]
+    const stepQuestions = questionsByStep.get(step.id) || []
 
-    // Get questions for this step
-    const { data: stepQuestions, error: stepQuestionsError } = await supabase
-      .from('funnel_step_questions')
-      .select('question_id, is_required')
-      .eq('funnel_step_id', step.id)
-      .order('order_index', { ascending: true })
-
-    if (stepQuestionsError) {
-      console.error('Error fetching step questions:', stepQuestionsError)
-      continue
-    }
-
-    const requiredQuestions = (stepQuestions || [])
+    const requiredQuestions = stepQuestions
       .filter((sq) => sq.is_required)
       .map((sq) => sq.question_id)
 
@@ -205,15 +227,17 @@ export async function getNavigationState(
  * 
  * @param supabase - Supabase client instance
  * @param assessmentId - UUID of the assessment
+ * @param currentStep - Optional cached current step to avoid recalculation
  * @returns Next step ID or null
  */
 export async function getNextStepId(
   supabase: SupabaseClient,
   assessmentId: string,
+  currentStep?: StepInfo,
 ): Promise<string | null> {
-  const currentStep = await getCurrentStep(supabase, assessmentId)
+  const stepInfo = currentStep || (await getCurrentStep(supabase, assessmentId))
 
-  if (!currentStep) {
+  if (!stepInfo) {
     return null
   }
 
@@ -233,7 +257,7 @@ export async function getNextStepId(
     .from('funnel_steps')
     .select('id')
     .eq('funnel_id', assessment.funnel_id)
-    .gt('order_index', currentStep.orderIndex)
+    .gt('order_index', stepInfo.orderIndex)
     .order('order_index', { ascending: true })
     .limit(1)
     .single()
@@ -247,19 +271,21 @@ export async function getNextStepId(
  * 
  * @param supabase - Supabase client instance
  * @param assessmentId - UUID of the assessment
+ * @param currentStep - Optional cached current step to avoid recalculation
  * @returns Previous step ID or null
  */
 export async function getPreviousStepId(
   supabase: SupabaseClient,
   assessmentId: string,
+  currentStep?: StepInfo,
 ): Promise<string | null> {
-  const currentStep = await getCurrentStep(supabase, assessmentId)
+  const stepInfo = currentStep || (await getCurrentStep(supabase, assessmentId))
 
-  if (!currentStep) {
+  if (!stepInfo) {
     return null
   }
 
-  if (currentStep.stepIndex === 0) {
+  if (stepInfo.stepIndex === 0) {
     return null
   }
 
@@ -279,7 +305,7 @@ export async function getPreviousStepId(
     .from('funnel_steps')
     .select('id')
     .eq('funnel_id', assessment.funnel_id)
-    .lt('order_index', currentStep.orderIndex)
+    .lt('order_index', stepInfo.orderIndex)
     .order('order_index', { ascending: false })
     .limit(1)
     .single()

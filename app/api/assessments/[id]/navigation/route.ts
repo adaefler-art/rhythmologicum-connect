@@ -136,11 +136,24 @@ export async function GET(
     // Get navigation state - measure performance
     const startTime = Date.now()
     
-    // Run queries in parallel for better performance
+    // Get current step first (shared computation)
+    const currentStep = await getCurrentStep(supabase, assessmentId)
+    
+    if (!currentStep) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Navigationsstatus konnte nicht ermittelt werden.',
+        },
+        { status: 500 },
+      )
+    }
+
+    // Run remaining queries in parallel, passing cached currentStep
     const [navState, nextStepId, prevStepId] = await Promise.all([
       getNavigationState(supabase, assessmentId),
-      getNextStepId(supabase, assessmentId),
-      getPreviousStepId(supabase, assessmentId),
+      getNextStepId(supabase, assessmentId, currentStep),
+      getPreviousStepId(supabase, assessmentId, currentStep),
     ])
     
     const duration = Date.now() - startTime
@@ -167,7 +180,7 @@ export async function GET(
         navigation: {
           ...navState,
           nextStepId,
-          previousStepId,
+          previousStepId: prevStepId,
         },
         performanceMs: duration,
       },
