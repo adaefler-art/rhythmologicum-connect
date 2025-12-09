@@ -297,7 +297,7 @@ export default function StressCheckPage() {
 
     try {
       const response = await fetch(
-        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}/validate`,
+        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}`,
         {
           method: 'POST',
           credentials: 'include',
