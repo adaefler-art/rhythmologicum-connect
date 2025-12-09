@@ -103,7 +103,10 @@ export default function StressCheckPage() {
 
       let currentAssessmentId: string | null = null
 
-      // If there's a completed assessment and user didn't explicitly request a new one, redirect to result
+      // Handle existing assessments:
+      // - If completed AND !forceNew: redirect to result (show existing results)
+      // - If completed AND forceNew: create new assessment (start fresh)
+      // - If in_progress: resume existing assessment
       if (existingAssessments && existingAssessments.length > 0) {
         const latest = existingAssessments[0]
         if (latest.status === 'completed' && !forceNew) {
