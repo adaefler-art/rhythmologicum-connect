@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { getNavigationState, getNextStepId, getPreviousStepId } from '@/lib/navigation/assessmentNavigation'
+import { getCurrentStep, getNavigationState, getNextStepId, getPreviousStepId } from '@/lib/navigation/assessmentNavigation'
 
 /**
  * API Route: Get Navigation State for Assessment
