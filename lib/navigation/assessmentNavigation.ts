@@ -123,16 +123,23 @@ export async function getCurrentStep(
 
     const requiredQuestions = stepQuestions
       .filter((sq) => sq.is_required)
-      .map((sq: { question_id: string; is_required: boolean; questions?: { key?: string } | { key?: string }[] | null }) => {
-        const qKey = Array.isArray(sq.questions)
-          ? sq.questions?.[0]?.key
-          : sq.questions?.key
-        return { id: sq.question_id, key: qKey }
-      })
+      .map(
+        (
+          sq: {
+            question_id: string
+            is_required: boolean
+            questions?: { key?: string } | { key?: string }[] | null
+          },
+        ) => {
+          const qKey = Array.isArray(sq.questions)
+            ? sq.questions?.[0]?.key
+            : sq.questions?.key
+          const keyOrId = qKey || sq.question_id
+          return { id: sq.question_id, key: keyOrId }
+        },
+      )
 
-    const answeredRequired = requiredQuestions.filter(
-      (rq) => answeredQuestionIds.has(rq.id) || (rq.key && answeredQuestionIds.has(rq.key)),
-    )
+    const answeredRequired = requiredQuestions.filter((rq) => answeredQuestionIds.has(rq.key))
     const answeredRequiredIds = answeredRequired.map((rq) => rq.id)
 
     // If this step has questions and not all required are answered, this is the current step
