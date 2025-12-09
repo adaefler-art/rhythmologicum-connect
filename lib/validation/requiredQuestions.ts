@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { evaluateRule, describeRule } from './ruleEngine'
+import type {
+  QuestionRule,
+  MissingQuestionWithReason,
+  ValidationResultExtended,
+} from './ruleTypes'
 
+// Legacy types for backward compatibility
 export type ValidationResult = {
   isValid: boolean
   missingQuestions: MissingQuestion[]
@@ -12,6 +19,9 @@ export type MissingQuestion = {
   questionLabel: string
   orderIndex: number
 }
+
+// Re-export extended types
+export type { MissingQuestionWithReason, ValidationResultExtended }
 
 /**
  * Validates that all required questions for a given funnel step have been answered
@@ -173,5 +183,151 @@ export async function validateAllRequiredQuestions(
   return {
     isValid: allMissingQuestions.length === 0,
     missingQuestions: allMissingQuestions,
+  }
+}
+
+/**
+ * Extended validation with B4 dynamic rule support.
+ * Validates required questions AND evaluates conditional rules.
+ *
+ * @param assessmentId - The UUID of the assessment
+ * @param stepId - The UUID of the funnel step to validate
+ * @returns ValidationResultExtended with reason field for each missing question
+ */
+export async function validateRequiredQuestionsExtended(
+  assessmentId: string,
+  stepId: string,
+): Promise<ValidationResultExtended> {
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        },
+      },
+    },
+  )
+
+  // Get all questions for this step (both required and optional)
+  const { data: stepQuestions, error: questionsError } = await supabase
+    .from('funnel_step_questions')
+    .select(
+      `
+      order_index,
+      is_required,
+      questions (
+        id,
+        key,
+        label
+      )
+    `,
+    )
+    .eq('funnel_step_id', stepId)
+    .order('order_index', { ascending: true })
+
+  if (questionsError) {
+    console.error('Error fetching questions:', questionsError)
+    throw new Error('Failed to fetch questions')
+  }
+
+  if (!stepQuestions || stepQuestions.length === 0) {
+    return {
+      isValid: true,
+      missingQuestions: [],
+    }
+  }
+
+  // Get all answered questions for this assessment
+  const { data: answeredQuestions, error: answersError } = await supabase
+    .from('assessment_answers')
+    .select('question_id, answer_value')
+    .eq('assessment_id', assessmentId)
+
+  if (answersError) {
+    console.error('Error fetching assessment answers:', answersError)
+    throw new Error('Failed to fetch assessment answers')
+  }
+
+  // Create a map of answers: question_key -> answer_value
+  const answers: Record<string, number> = {}
+  answeredQuestions?.forEach((answer) => {
+    answers[answer.question_id] = answer.answer_value
+  })
+
+  // Load all active rules for this step
+  const { data: rules, error: rulesError } = await supabase
+    .from('funnel_question_rules')
+    .select('*')
+    .eq('funnel_step_id', stepId)
+    .eq('is_active', true)
+    .order('priority', { ascending: false })
+
+  if (rulesError) {
+    console.error('Error fetching rules:', rulesError)
+    // Continue without rules - backward compatibility
+  }
+
+  const activeRules: QuestionRule[] = (rules as QuestionRule[]) || []
+
+  // Track missing questions with reason
+  const missingQuestions: MissingQuestionWithReason[] = []
+
+  for (const item of stepQuestions) {
+    const question = Array.isArray(item.questions) ? item.questions[0] : item.questions
+
+    if (!question) continue
+
+    const isAnswered = answers[question.key] !== undefined
+    const isBaseRequired = item.is_required
+
+    // Check base requirement (B2 logic)
+    if (isBaseRequired && !isAnswered) {
+      missingQuestions.push({
+        questionId: question.id,
+        questionKey: question.key,
+        questionLabel: question.label,
+        orderIndex: item.order_index,
+        reason: 'required',
+      })
+      continue
+    }
+
+    // Check conditional rules (B4 logic)
+    // Find applicable conditional_required rules for this question
+    const conditionalRules = activeRules.filter(
+      (rule) => rule.question_id === question.id && rule.rule_type === 'conditional_required',
+    )
+
+    for (const rule of conditionalRules) {
+      // Evaluate if the rule condition is met
+      const ruleApplies = evaluateRule(rule.rule_payload, answers)
+
+      if (ruleApplies && !isAnswered) {
+        // Rule condition is met, but question is not answered
+        missingQuestions.push({
+          questionId: question.id,
+          questionKey: question.key,
+          questionLabel: question.label,
+          orderIndex: item.order_index,
+          reason: 'conditional_required',
+          ruleId: rule.id,
+          ruleDescription: describeRule(rule.rule_payload),
+        })
+        break // Only report once per question
+      }
+    }
+  }
+
+  return {
+    isValid: missingQuestions.length === 0,
+    missingQuestions,
   }
 }

@@ -4,6 +4,8 @@
 
 Die B2 Answer Validation v2 Implementation ermöglicht es, Pflichtfragen basierend auf dem `funnel_step_questions.is_required` Feld zu validieren. Benutzer können Steps mit unbeantworteten Pflichtfragen nicht abschließen.
 
+**Hinweis**: Diese Implementierung wurde durch B4 Dynamic Validation Rules erweitert, welches zusätzliche konditionale Validierungslogik ermöglicht. Siehe `/docs/B4_DYNAMIC_VALIDATION_RULES.md` für Details zu dynamischen, regelbasierten Pflichtfeldern.
+
 ## Implementierte Komponenten
 
 ### 1. Validation Logic (`lib/validation/requiredQuestions.ts`)

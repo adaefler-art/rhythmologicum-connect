@@ -13,6 +13,8 @@ type ValidationError = {
   questionKey: string
   questionLabel: string
   orderIndex: number
+  reason?: 'required' | 'conditional_required'
+  ruleDescription?: string
 }
 
 const SCALE = [
@@ -205,6 +207,7 @@ export default function StressCheckPage() {
         body: JSON.stringify({
           assessmentId,
           stepId: currentStep.id,
+          extended: true, // Use B4 extended validation
         }),
       })
 
@@ -217,9 +220,28 @@ export default function StressCheckPage() {
 
       if (!data.isValid) {
         setValidationErrors(data.missingQuestions || [])
-        setError(
-          `Bitte beantworten Sie alle Pflichtfragen in diesem Schritt (${data.missingQuestions?.length || 0} fehlend).`,
-        )
+
+        // Count different types of missing questions
+        const requiredCount = data.missingQuestions?.filter(
+          (q: ValidationError) => q.reason === 'required',
+        ).length || 0
+        const conditionalCount = data.missingQuestions?.filter(
+          (q: ValidationError) => q.reason === 'conditional_required',
+        ).length || 0
+
+        // Generate appropriate error message
+        let errorMessage = 'Bitte beantworten Sie '
+        if (requiredCount > 0 && conditionalCount > 0) {
+          errorMessage += `alle ${requiredCount + conditionalCount} Pflichtfragen in diesem Schritt.`
+        } else if (requiredCount > 0) {
+          errorMessage += `alle ${requiredCount} Pflichtfragen in diesem Schritt.`
+        } else if (conditionalCount > 0) {
+          errorMessage += `die ${conditionalCount} zusätzlich erforderlichen Fragen (abhängig von Ihren vorherigen Antworten).`
+        } else {
+          errorMessage += 'die fehlenden Fragen.'
+        }
+
+        setError(errorMessage)
 
         // Scroll to first missing question
         if (data.missingQuestions && data.missingQuestions.length > 0) {
@@ -378,16 +400,20 @@ export default function StressCheckPage() {
         {/* Questions for current step */}
         {isQuestionStep(currentStep) && (
           <div className="space-y-4">
-            {currentStep.questions.map((question, index) => (
-              <QuestionCard
-                key={question.id}
-                index={index + 1}
-                question={question}
-                value={answers[question.key]}
-                onChange={handleAnswerChange}
-                hasError={validationErrors.some((err) => err.questionId === question.id)}
-              />
-            ))}
+            {currentStep.questions.map((question, index) => {
+              const validationError = validationErrors.find((err) => err.questionId === question.id)
+              return (
+                <QuestionCard
+                  key={question.id}
+                  index={index + 1}
+                  question={question}
+                  value={answers[question.key]}
+                  onChange={handleAnswerChange}
+                  hasError={!!validationError}
+                  validationError={validationError}
+                />
+              )
+            })}
           </div>
         )}
 
@@ -467,10 +493,22 @@ type QuestionCardProps = {
   value?: number
   onChange: (key: string, value: number) => void
   hasError?: boolean
+  validationError?: ValidationError
 }
 
-function QuestionCard({ index, question, value, onChange, hasError }: QuestionCardProps) {
+function QuestionCard({
+  index,
+  question,
+  value,
+  onChange,
+  hasError,
+  validationError,
+}: QuestionCardProps) {
   const isAnswered = value !== undefined
+
+  // Determine the type of error message to show
+  const isConditionalRequired = validationError?.reason === 'conditional_required'
+  const isBaseRequired = validationError?.reason === 'required'
 
   return (
     <div
@@ -500,9 +538,14 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
             <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1 flex-1">
               {question.label}
             </p>
-            {!question.isRequired && (
+            {!question.isRequired && !isConditionalRequired && (
               <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md whitespace-nowrap">
                 Optional
+              </span>
+            )}
+            {isConditionalRequired && (
+              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md whitespace-nowrap">
+                Pflicht (abhängig)
               </span>
             )}
           </div>
@@ -516,9 +559,14 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
           </p>
         </div>
       )}
-      {hasError && (
+      {hasError && isBaseRequired && (
         <p className="text-xs md:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 ml-11">
           ⚠️ Diese Pflichtfrage muss beantwortet werden
+        </p>
+      )}
+      {hasError && isConditionalRequired && validationError?.ruleDescription && (
+        <p className="text-xs md:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 ml-11">
+          ⚠️ Diese Frage muss beantwortet werden, weil {validationError.ruleDescription}
         </p>
       )}
       {!isAnswered && !hasError && question.isRequired && (

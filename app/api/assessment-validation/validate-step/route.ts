@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { validateRequiredQuestions } from '@/lib/validation/requiredQuestions'
+import {
+  validateRequiredQuestions,
+  validateRequiredQuestionsExtended,
+} from '@/lib/validation/requiredQuestions'
 
 /**
  * API Route: Validate Step Required Questions
@@ -11,13 +14,16 @@ import { validateRequiredQuestions } from '@/lib/validation/requiredQuestions'
  * Validates that all required questions for a specific funnel step
  * have been answered in the assessment.
  *
+ * Supports both B2 (basic required) and B4 (conditional required) validation.
+ *
  * Request Body:
  * {
  *   assessmentId: string (UUID of the assessment),
- *   stepId: string (UUID of the funnel step to validate)
+ *   stepId: string (UUID of the funnel step to validate),
+ *   extended?: boolean (if true, uses B4 extended validation with reasons)
  * }
  *
- * Response:
+ * Response (when extended=false or omitted):
  * {
  *   success: boolean,
  *   isValid: boolean,
@@ -29,18 +35,35 @@ import { validateRequiredQuestions } from '@/lib/validation/requiredQuestions'
  *   }>,
  *   error?: string
  * }
+ *
+ * Response (when extended=true):
+ * {
+ *   success: boolean,
+ *   isValid: boolean,
+ *   missingQuestions?: Array<{
+ *     questionId: string,
+ *     questionKey: string,
+ *     questionLabel: string,
+ *     orderIndex: number,
+ *     reason: 'required' | 'conditional_required',
+ *     ruleId?: string,
+ *     ruleDescription?: string
+ *   }>,
+ *   error?: string
+ * }
  */
 
 type RequestBody = {
   assessmentId: string
   stepId: string
+  extended?: boolean
 }
 
 export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: RequestBody = await request.json()
-    const { assessmentId, stepId } = body
+    const { assessmentId, stepId, extended = false } = body
 
     // Validate required fields
     if (!assessmentId || !stepId) {
@@ -138,8 +161,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Perform validation
-    const validationResult = await validateRequiredQuestions(assessmentId, stepId)
+    // Perform validation - use extended if requested
+    let validationResult
+
+    if (extended) {
+      validationResult = await validateRequiredQuestionsExtended(assessmentId, stepId)
+    } else {
+      // Use legacy validation for backward compatibility
+      const legacyResult = await validateRequiredQuestions(assessmentId, stepId)
+      validationResult = {
+        isValid: legacyResult.isValid,
+        missingQuestions: legacyResult.missingQuestions.map((q) => ({
+          ...q,
+          reason: 'required' as const,
+        })),
+      }
+    }
 
     // Success response
     return NextResponse.json(
