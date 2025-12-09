@@ -513,8 +513,40 @@ function StressCheckPageContent() {
       }
 
       // If there's a next step, reload status to get updated current step
-      if (validationResult.nextStep) {
-        console.info('Next step: nextStep received, reloading status')
+      if (validationResult.nextStep && typeof validationResult.nextStep === 'object') {
+        const next = validationResult.nextStep as Partial<AssessmentStatus['currentStep']>
+        console.info('Next step: nextStep received, applying locally', next)
+
+        if (next.stepId) {
+          const nextStepIndex =
+            typeof next.stepIndex === 'number'
+              ? next.stepIndex
+              : assessmentStatus.currentStep.stepIndex + 1
+
+          const updatedStatus: AssessmentStatus = {
+            ...assessmentStatus,
+            status: 'in_progress',
+            currentStep: {
+              stepId: next.stepId,
+              title: next.title ?? assessmentStatus.currentStep.title,
+              type: next.type ?? assessmentStatus.currentStep.type,
+              stepIndex: nextStepIndex,
+              orderIndex: next.orderIndex ?? nextStepIndex + 1,
+            },
+            completedSteps: Math.max(
+              assessmentStatus.completedSteps,
+              assessmentStatus.currentStep.stepIndex + 1,
+            ),
+          }
+
+          setAssessmentStatus(updatedStatus)
+          lastGoodStatusRef.current = updatedStatus
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          setSubmitting(false)
+          return
+        }
+
+        console.warn('Next step: nextStep missing stepId; falling back to reload', next)
         await loadAssessmentStatus(assessmentStatus.assessmentId)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
