@@ -274,6 +274,20 @@ CREATE TYPE realtime.equality_op AS ENUM (
         ADD CONSTRAINT funnel_step_questions_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id) ON DELETE CASCADE;
 
     --
+    -- Name: funnel_question_rules funnel_question_rules_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_question_rules
+        ADD CONSTRAINT funnel_question_rules_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id) ON DELETE CASCADE;
+
+    --
+    -- Name: funnel_question_rules funnel_question_rules_funnel_step_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_question_rules
+        ADD CONSTRAINT funnel_question_rules_funnel_step_id_fkey FOREIGN KEY (funnel_step_id) REFERENCES public.funnel_steps(id) ON DELETE CASCADE;
+
+    --
     -- Name: funnel_steps funnel_steps_funnel_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
     --
 
@@ -2831,6 +2845,23 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
  );
 
  --
+ -- Name: funnel_question_rules; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.funnel_question_rules (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     question_id uuid NOT NULL,
+     funnel_step_id uuid NOT NULL,
+     rule_type text NOT NULL,
+     rule_payload jsonb NOT NULL,
+     priority integer DEFAULT 0 NOT NULL,
+     is_active boolean DEFAULT true NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+     CONSTRAINT valid_rule_type CHECK (rule_type IN ('conditional_required', 'conditional_visible'))
+ );
+
+ --
  -- Name: funnel_steps; Type: TABLE; Schema: public; Owner: -
  --
 
@@ -3400,6 +3431,13 @@ ALTER TABLE ONLY public.funnel_step_questions
     ADD CONSTRAINT funnel_step_questions_pkey PRIMARY KEY (id);
 
 --
+-- Name: funnel_question_rules funnel_question_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.funnel_question_rules
+    ADD CONSTRAINT funnel_question_rules_pkey PRIMARY KEY (id);
+
+--
 -- Name: funnel_steps funnel_steps_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3897,6 +3935,30 @@ CREATE INDEX content_pages_slug_idx ON public.content_pages USING btree (slug);
 --
 
 CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status);
+
+--
+-- Name: idx_funnel_question_rules_question_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_funnel_question_rules_question_id ON public.funnel_question_rules USING btree (question_id);
+
+--
+-- Name: idx_funnel_question_rules_funnel_step_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_funnel_question_rules_funnel_step_id ON public.funnel_question_rules USING btree (funnel_step_id);
+
+--
+-- Name: idx_funnel_question_rules_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_funnel_question_rules_type ON public.funnel_question_rules USING btree (rule_type);
+
+--
+-- Name: idx_funnel_question_rules_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_funnel_question_rules_active ON public.funnel_question_rules USING btree (is_active) WHERE is_active = true;
 
 --
 -- Name: funnel_step_questions_funnel_step_id_idx; Type: INDEX; Schema: public; Owner: -
