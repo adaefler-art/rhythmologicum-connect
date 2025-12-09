@@ -426,8 +426,18 @@ function isRecoverablePatientMeasureError(error: PostgrestError | null): boolean
   return (
     message.includes('does not exist') ||
     message.includes('undefined table') ||
-    message.includes('undefined column')
+    message.includes('undefined column') ||
+    isLegacyAssessmentIdConstraint(error)
   )
+}
+
+function isLegacyAssessmentIdConstraint(error: PostgrestError): boolean {
+  if (error.code !== '23502') {
+    return false
+  }
+
+  const details = `${error.message ?? ''} ${error.details ?? ''}`.toLowerCase()
+  return details.includes('assessment_id')
 }
 
 function handleRecoverablePatientMeasureError(step: 'select' | 'insert' | 'update', error: PostgrestError) {
