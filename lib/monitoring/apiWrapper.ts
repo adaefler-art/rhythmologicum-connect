@@ -108,12 +108,16 @@ export function withMonitoring<T = any>(
 /**
  * Placeholder for future metrics collection service
  * 
+ * TODO: Implement actual metrics collection when ready.
  * This can be implemented later to send metrics to:
  * - Prometheus
  * - DataDog
  * - CloudWatch
  * - Custom metrics dashboard
+ * 
+ * @param metrics - The metrics to send
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function sendMetrics(metrics: ApiMetrics): Promise<void> {
   // Future implementation:
   // - Batch metrics collection

@@ -43,10 +43,13 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: any
   }
 
   if (error) {
+    // Extract specific error properties to avoid spreading issues
     entry.error = {
-      message: error.message,
+      message: error.message || String(error),
       stack: error.stack,
-      ...error,
+      name: error.name,
+      // Include any additional error properties
+      ...(typeof error === 'object' && error !== null ? { ...error } : {}),
     }
   }
 
