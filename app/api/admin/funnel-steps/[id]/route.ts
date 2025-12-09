@@ -4,10 +4,10 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * B7 API Endpoint: Update step order_index
+ * B7 API Endpoint: Update step order_index or content fields
  * PATCH /api/admin/funnel-steps/[id]
  * 
- * Body: { order_index: number }
+ * Body: { order_index?: number, title?: string, description?: string }
  */
 export async function PATCH(
   request: NextRequest,
@@ -49,9 +49,33 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Validate request body
-    if (typeof body.order_index !== 'number') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    // Build update object with only provided fields
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (typeof body.order_index === 'number') {
+      if (body.order_index < 0) {
+        return NextResponse.json({ error: 'Order index must be non-negative' }, { status: 400 })
+      }
+      updateData.order_index = body.order_index
+    }
+    if (typeof body.title === 'string') {
+      const trimmedTitle = body.title.trim()
+      if (trimmedTitle.length === 0) {
+        return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+      }
+      if (trimmedTitle.length > 255) {
+        return NextResponse.json({ error: 'Title too long (max 255 characters)' }, { status: 400 })
+      }
+      updateData.title = trimmedTitle
+    }
+    if (typeof body.description === 'string') {
+      const trimmedDescription = body.description.trim()
+      if (trimmedDescription.length > 2000) {
+        return NextResponse.json({ error: 'Description too long (max 2000 characters)' }, { status: 400 })
+      }
+      updateData.description = trimmedDescription || null
     }
 
     // Use service role for admin operations
@@ -67,13 +91,10 @@ export async function PATCH(
       auth: { persistSession: false },
     })
 
-    // Update step order_index
+    // Update step
     const { data, error } = await adminClient
       .from('funnel_steps')
-      .update({ 
-        order_index: body.order_index,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

@@ -121,8 +121,13 @@ export default function FunnelListPage() {
                     <p className="text-sm text-slate-600 mb-2">{funnel.subtitle}</p>
                   )}
 
-                  <div className="flex items-center gap-4 text-xs text-slate-500">
-                    <span>Slug: {funnel.slug}</span>
+                  {funnel.description && (
+                    <p className="text-sm text-slate-500 mb-2">{funnel.description}</p>
+                  )}
+
+                  <div className="flex items-center gap-4 text-xs text-slate-400">
+                    <span>ID: {funnel.slug}</span>
+                    <span>•</span>
                     <span>
                       Erstellt: {new Date(funnel.created_at).toLocaleDateString('de-DE')}
                     </span>
