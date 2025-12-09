@@ -207,24 +207,38 @@ export async function POST(
     }
 
     // Validation passed - determine next step using B3 navigation
-    // Get current step for next step calculation
-    const currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
-    const nextStepId = await getNextStepId(supabase, assessmentId, currentStep!)
+    // First, recalculate the current step (after this validation the runtime
+    // may have advanced to the next unanswered step already).
+    const navigationStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
 
     let nextStep = null
-    if (nextStepId) {
-      const { data: nextStepData } = await supabase
-        .from('funnel_steps')
-        .select('id, order_index, title, type')
-        .eq('id', nextStepId)
-        .single()
 
-      if (nextStepData) {
-        nextStep = {
-          stepId: nextStepData.id,
-          title: nextStepData.title,
-          type: nextStepData.type,
-          orderIndex: nextStepData.order_index,
+    if (navigationStep && navigationStep.stepId !== stepId) {
+      // The runtime already moved to the next unanswered step; return it directly
+      nextStep = {
+        stepId: navigationStep.stepId,
+        title: navigationStep.title,
+        type: navigationStep.type,
+        orderIndex: navigationStep.orderIndex,
+      }
+    } else if (navigationStep) {
+      // Fall back to explicit next-step lookup (e.g., optional steps or summary)
+      const nextStepId = await getNextStepId(supabase, assessmentId, navigationStep)
+
+      if (nextStepId) {
+        const { data: nextStepData } = await supabase
+          .from('funnel_steps')
+          .select('id, order_index, title, type')
+          .eq('id', nextStepId)
+          .single()
+
+        if (nextStepData) {
+          nextStep = {
+            stepId: nextStepData.id,
+            title: nextStepData.title,
+            type: nextStepData.type,
+            orderIndex: nextStepData.order_index,
+          }
         }
       }
     }
