@@ -1,6 +1,6 @@
 // app/api/amy/stress-report/route.ts
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type PostgrestError } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 import { featureFlags } from '@/lib/featureFlags';
@@ -353,13 +353,20 @@ export async function POST(req: Request) {
     }
 
     try {
-      await upsertPatientMeasure({
+      const measureResult = await upsertPatientMeasure({
         patientId: assessment.patient_id,
         reportId: reportRow.id,
         stressScore: stressScore ?? reportRow.score_numeric ?? null,
         sleepScore: sleepScore ?? reportRow.sleep_score ?? null,
         riskLevel: riskLevel ?? reportRow.risk_level ?? null,
       });
+      if (!measureResult.persisted) {
+        console.warn('[stress-report] Continuing without patient_measures persistence (recoverable)', {
+          assessmentId,
+          reportId: reportRow.id,
+          step: measureResult.step,
+        })
+      }
     } catch (measureError) {
       console.error('[stress-report] Fehler beim Aktualisieren von patient_measures:', measureError);
       return NextResponse.json(
@@ -403,13 +410,45 @@ export async function POST(req: Request) {
   }
 }
 
+type UpsertPatientMeasureResult =
+  | { persisted: true }
+  | { persisted: false; reason: 'recoverable_error'; step: 'select' | 'insert' | 'update' }
+
+const RECOVERABLE_PATIENT_MEASURE_CODES = new Set(['42P01', '42703'])
+
+function isRecoverablePatientMeasureError(error: PostgrestError | null): boolean {
+  if (!error) return false
+  if (error.code && RECOVERABLE_PATIENT_MEASURE_CODES.has(error.code)) {
+    return true
+  }
+
+  const message = error.message?.toLowerCase() ?? ''
+  return (
+    message.includes('does not exist') ||
+    message.includes('undefined table') ||
+    message.includes('undefined column')
+  )
+}
+
+function handleRecoverablePatientMeasureError(step: 'select' | 'insert' | 'update', error: PostgrestError) {
+  console.warn('[stress-report] patient_measures persistence skipped due to recoverable error', {
+    step,
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  })
+
+  return { persisted: false as const, reason: 'recoverable_error' as const, step }
+}
+
 async function upsertPatientMeasure(params: {
   patientId: string
   reportId: string
   stressScore: number | null
   sleepScore: number | null
   riskLevel: RiskLevel | null
-}) {
+}): Promise<UpsertPatientMeasureResult> {
   if (!supabase) {
     throw new Error('Supabase client not initialised');
   }
@@ -431,6 +470,9 @@ async function upsertPatientMeasure(params: {
     .maybeSingle();
 
   if (selectError) {
+    if (isRecoverablePatientMeasureError(selectError)) {
+      return handleRecoverablePatientMeasureError('select', selectError)
+    }
     throw selectError;
   }
 
@@ -441,6 +483,9 @@ async function upsertPatientMeasure(params: {
       .eq('id', existing.id);
 
     if (updateError) {
+      if (isRecoverablePatientMeasureError(updateError)) {
+        return handleRecoverablePatientMeasureError('update', updateError)
+      }
       throw updateError;
     }
   } else {
@@ -449,7 +494,12 @@ async function upsertPatientMeasure(params: {
       .insert(payload);
 
     if (insertError) {
+      if (isRecoverablePatientMeasureError(insertError)) {
+        return handleRecoverablePatientMeasureError('insert', insertError)
+      }
       throw insertError;
     }
   }
+
+  return { persisted: true }
 }
