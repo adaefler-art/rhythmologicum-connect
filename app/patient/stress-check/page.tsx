@@ -225,29 +225,44 @@ function StressCheckPageContent() {
 
       // Extract data from B8 standardized response format
       const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
+      console.info('Assessment status raw payload', { statusJson, statusData })
       
       // Validate AssessmentStatus structure
       if (!statusData || typeof statusData !== 'object') {
+        console.warn('Assessment status invalid: no object', { statusData })
         throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
       }
 
       if (!statusData.assessmentId || typeof statusData.assessmentId !== 'string') {
+        console.warn('Assessment status invalid: assessmentId missing or not string', {
+          assessmentId: statusData.assessmentId,
+        })
         throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
       }
 
       if (!statusData.currentStep || typeof statusData.currentStep !== 'object') {
+        console.warn('Assessment status invalid: currentStep missing/object check failed', {
+          currentStep: statusData.currentStep,
+        })
         throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
       }
 
       if (!statusData.currentStep.stepId || typeof statusData.currentStep.stepIndex !== 'number') {
+        console.warn('Assessment status invalid: currentStep stepId/stepIndex check failed', {
+          currentStep: statusData.currentStep,
+        })
         throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
       }
 
       if (typeof statusData.totalSteps !== 'number') {
+        console.warn('Assessment status invalid: totalSteps not number', {
+          totalSteps: statusData.totalSteps,
+        })
         throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
       }
 
       // If we got here, statusData is a valid AssessmentStatus
+      console.info('Assessment status accepted', statusData)
       setAssessmentStatus(statusData as AssessmentStatus)
 
       // Load existing answers to populate the UI
