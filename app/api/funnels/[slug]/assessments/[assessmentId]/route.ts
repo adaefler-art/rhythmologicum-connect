@@ -102,11 +102,15 @@ export async function GET(
       .select('id, patient_id, funnel, funnel_id, status, started_at, completed_at')
       .eq('id', assessmentId)
       .eq('funnel', slug)
-      .single()
+      .maybeSingle()
 
-    if (assessmentError || !assessment) {
+    if (assessmentError) {
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, assessmentError)
-      return notFoundResponse('Assessment')
+      return internalErrorResponse('Fehler beim Laden des Assessments.')
+    }
+
+    if (!assessment) {
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
     }
 
     // Verify ownership

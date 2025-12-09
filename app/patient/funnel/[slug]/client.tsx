@@ -145,9 +145,21 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
   const loadAssessmentStatus = async (assessmentId: string) => {
     try {
-      const response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
-        credentials: 'include',
-      })
+      // Validate assessmentId before making the request
+      if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
+        throw new Error('Ungültige Assessment-ID.')
+      }
+
+      let response: Response
+      try {
+        response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
+          credentials: 'include',
+        })
+      } catch (fetchErr) {
+        // Network error or fetch failed
+        console.error('Network error during fetch:', fetchErr)
+        throw new Error('Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
+      }
 
       if (!response.ok) {
         // Try to extract error message from response
@@ -418,20 +430,35 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
   // Error state
   if (!loading && error && !assessmentStatus) {
+    const handleRetry = () => {
+      setError(null)
+      setLoading(true)
+      // Reload the page to restart the assessment bootstrap process
+      window.location.reload()
+    }
+
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
         <div className="max-w-md bg-white border-2 border-red-200 rounded-xl p-6">
           <div className="flex items-start gap-3">
             <span className="text-2xl">❌</span>
-            <div>
+            <div className="flex-1">
               <h3 className="text-lg font-semibold text-red-900 mb-1">Fehler</h3>
-              <p className="text-red-700">{error}</p>
-              <button
-                onClick={() => router.push('/patient')}
-                className="mt-4 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-              >
-                Zurück zur Übersicht
-              </button>
+              <p className="text-red-700 mb-4">{error}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleRetry}
+                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors font-medium"
+                >
+                  Neu versuchen
+                </button>
+                <button
+                  onClick={() => router.push('/patient')}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                >
+                  Zurück zur Übersicht
+                </button>
+              </div>
             </div>
           </div>
         </div>
