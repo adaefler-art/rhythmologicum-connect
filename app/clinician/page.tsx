@@ -288,7 +288,7 @@ export default function ClinicianOverviewPage() {
   return (
     <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Patientenübersicht</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Patientenübersicht</h1>
         <p className="text-sm sm:text-base text-slate-600">
           Übersicht aller Pilotpatient:innen mit ihrer jeweils letzten Messung.
         </p>

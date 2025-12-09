@@ -147,10 +147,10 @@ export async function GET(
 }
 
 /**
- * B7 API Endpoint: Update funnel is_active status
+ * B7 API Endpoint: Update funnel is_active status or content fields
  * PATCH /api/admin/funnels/[id]
  * 
- * Body: { is_active: boolean }
+ * Body: { is_active?: boolean, title?: string, subtitle?: string, description?: string }
  */
 export async function PATCH(
   request: NextRequest,
@@ -192,9 +192,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Validate request body
-    if (typeof body.is_active !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    // Build update object with only provided fields
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (typeof body.is_active === 'boolean') {
+      updateData.is_active = body.is_active
+    }
+    if (typeof body.title === 'string') {
+      updateData.title = body.title
+    }
+    if (typeof body.subtitle === 'string') {
+      updateData.subtitle = body.subtitle
+    }
+    if (typeof body.description === 'string') {
+      updateData.description = body.description
     }
 
     // Use service role for admin operations
@@ -213,10 +226,7 @@ export async function PATCH(
     // Update funnel
     const { data, error } = await adminClient
       .from('funnels')
-      .update({ 
-        is_active: body.is_active,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

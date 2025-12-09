@@ -4,10 +4,10 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * B7 API Endpoint: Update step order_index
+ * B7 API Endpoint: Update step order_index or content fields
  * PATCH /api/admin/funnel-steps/[id]
  * 
- * Body: { order_index: number }
+ * Body: { order_index?: number, title?: string, description?: string }
  */
 export async function PATCH(
   request: NextRequest,
@@ -49,9 +49,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Validate request body
-    if (typeof body.order_index !== 'number') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    // Build update object with only provided fields
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (typeof body.order_index === 'number') {
+      updateData.order_index = body.order_index
+    }
+    if (typeof body.title === 'string') {
+      updateData.title = body.title
+    }
+    if (typeof body.description === 'string') {
+      updateData.description = body.description
     }
 
     // Use service role for admin operations
@@ -67,13 +77,10 @@ export async function PATCH(
       auth: { persistSession: false },
     })
 
-    // Update step order_index
+    // Update step
     const { data, error } = await adminClient
       .from('funnel_steps')
-      .update({ 
-        order_index: body.order_index,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()
