@@ -38,6 +38,30 @@ type Funnel = {
   updated_at: string
 }
 
+// Translation helpers
+const translateQuestionType = (type: string): string => {
+  const translations: Record<string, string> = {
+    slider: 'Schieberegler',
+    text: 'Text',
+    select: 'Auswahl',
+    textarea: 'Textfeld',
+    radio: 'Optionsfeld',
+    checkbox: 'Kontrollkästchen',
+  }
+  return translations[type] || type
+}
+
+const translateStepType = (type: string): string => {
+  const translations: Record<string, string> = {
+    question_step: 'Fragen',
+    form: 'Formular',
+    info_step: 'Information',
+    info: 'Information',
+    summary: 'Zusammenfassung',
+  }
+  return translations[type] || type
+}
+
 export default function FunnelDetailPage() {
   const params = useParams()
   const funnelId = params.id as string
@@ -462,7 +486,7 @@ export default function FunnelDetailPage() {
                         Schritt {step.order_index + 1}
                       </span>
                       <span className="text-xs text-slate-400">
-                        (Typ: {step.type === 'question_step' ? 'Fragen' : step.type})
+                        (Typ: {translateStepType(step.type)})
                       </span>
                     </div>
                     <h3 className="text-lg font-semibold text-slate-900">{step.title}</h3>
@@ -520,13 +544,7 @@ export default function FunnelDetailPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-semibold text-slate-500">Typ:</span>
                           <span className="text-xs text-slate-500">
-                            {question.question_type === 'slider'
-                              ? 'Schieberegler'
-                              : question.question_type === 'text'
-                                ? 'Text'
-                                : question.question_type === 'select'
-                                  ? 'Auswahl'
-                                  : question.question_type}
+                            {translateQuestionType(question.question_type)}
                           </span>
                         </div>
                         <p className="text-sm font-medium text-slate-900 mb-1">
