@@ -26,9 +26,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install PostgreSQL client
+      # Wichtig: explizit postgresql-client-17 installieren und in den PATH hängen
+      - name: Install PostgreSQL 17 client
         if: steps.secret-check.outputs.skip == 'false'
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client git
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17 git
+          # sicherstellen, dass die 17er-Binaries zuerst im PATH liegen
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          pg_dump --version
 
       - name: Pull and normalize Supabase schema
         if: steps.secret-check.outputs.skip == 'false'

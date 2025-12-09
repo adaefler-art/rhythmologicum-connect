@@ -22,9 +22,14 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install PostgreSQL client
+      # Statt "postgresql-client" jetzt explizit 17 installieren
+      - name: Install PostgreSQL 17 client
         if: steps.secret-check.outputs.skip == 'false'
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          pg_dump --version
 
       - name: Dump and normalize Supabase schema
         if: steps.secret-check.outputs.skip == 'false'
