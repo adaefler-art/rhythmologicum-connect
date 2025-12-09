@@ -368,11 +368,9 @@ export async function POST(req: Request) {
         })
       }
     } catch (measureError) {
-      console.error('[stress-report] Fehler beim Aktualisieren von patient_measures:', measureError);
-      return NextResponse.json(
-        { error: 'Fehler beim Speichern der Messdaten.' },
-        { status: 500 }
-      );
+      console.error('[stress-report] Fehler beim Aktualisieren von patient_measures (non-blocking):', measureError);
+      // Do not fail the report creation if patient_measures is temporarily unavailable or schema-mismatched
+      console.warn('[stress-report] Skipping patient_measures persistence and continuing response')
     }
 
     const totalDuration = Date.now() - requestStartTime;
