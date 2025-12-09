@@ -52,6 +52,7 @@ export type Assessment = {
   funnel_id: string | null
   started_at: string
   completed_at: string | null
+  status: 'in_progress' | 'completed'
 }
 
 // Extended types with joined data

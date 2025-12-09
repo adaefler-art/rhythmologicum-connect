@@ -17,6 +17,7 @@ CREATE TABLE public.assessments (
   started_at timestamp with time zone NOT NULL DEFAULT now(),
   completed_at timestamp with time zone,
   funnel_id uuid,
+  status text NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
   CONSTRAINT assessments_pkey PRIMARY KEY (id),
   CONSTRAINT assessments_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES public.patient_profiles(id),
   CONSTRAINT assessments_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id)
