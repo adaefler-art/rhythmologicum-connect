@@ -11,6 +11,7 @@ import {
   hasQuestionOptions,
   isBinaryQuestion,
 } from '@/lib/questionOptions'
+import { componentTokens, motion, typography } from '@/lib/design-tokens'
 
 export type DesktopQuestionCardProps = {
   funnel: Funnel
@@ -56,6 +57,11 @@ export default function DesktopQuestionCard({
   const isAnswered = value !== undefined && value !== null
 
   const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100
+  
+  // Use design tokens for consistent styling
+  const cardTokens = componentTokens.desktopQuestionCard
+  const navTokens = componentTokens.navigationButton
+  const progressTokens = componentTokens.progressBar
 
   // Determine question rendering strategy
   const renderAnswerSection = () => {
@@ -115,7 +121,13 @@ export default function DesktopQuestionCard({
         <textarea
           value={(value as string) || ''}
           onChange={(e) => onChange(question.id, e.target.value)}
-          className="w-full min-h-[120px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-base leading-relaxed"
+          className="w-full min-h-[120px] border-2 border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none leading-relaxed"
+          style={{
+            padding: cardTokens.padding,
+            borderRadius: cardTokens.borderRadius,
+            fontSize: typography.fontSize.base,
+            transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
+          }}
           placeholder="Ihre Antwort..."
           disabled={isLoading}
         />
@@ -124,7 +136,13 @@ export default function DesktopQuestionCard({
 
     // Fallback: unsupported question type
     return (
-      <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-xl">
+      <div 
+        className="text-center bg-amber-50 border border-amber-200"
+        style={{
+          padding: cardTokens.padding,
+          borderRadius: cardTokens.borderRadius,
+        }}
+      >
         <p className="text-amber-800">
           Dieser Fragetyp wird noch nicht unterstützt: {question.question_type}
         </p>
@@ -135,42 +153,68 @@ export default function DesktopQuestionCard({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-5 shadow-sm">
+      <header 
+        className="bg-white border-b border-slate-200 shadow-sm"
+        style={{ padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}` }}
+      >
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
+          <p className="font-medium uppercase tracking-wide text-sky-600 mb-1" style={{ fontSize: typography.fontSize.xs }}>
             {funnel.subtitle || 'Fragebogen'}
           </p>
-          <h1 className="text-2xl font-semibold text-slate-900 leading-tight">
+          <h1 className="font-semibold text-slate-900 leading-tight" style={{ fontSize: typography.fontSize['2xl'] }}>
             {funnel.title}
           </h1>
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
+      <div 
+        className="bg-white border-b border-slate-200"
+        style={{ padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}` }}
+      >
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between text-sm text-slate-700 mb-2">
+          <div className="flex items-center justify-between text-slate-700 mb-2" style={{ fontSize: typography.fontSize.sm }}>
             <span className="font-medium">
               Frage {currentQuestionIndex + 1} von {totalQuestions}
             </span>
-            <span className="text-xs text-slate-500">{Math.round(progressPercent)}%</span>
+            <span className="text-slate-500" style={{ fontSize: typography.fontSize.xs }}>{Math.round(progressPercent)}%</span>
           </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div 
+            className="w-full bg-slate-200 overflow-hidden"
+            style={{ 
+              height: progressTokens.height,
+              borderRadius: progressTokens.borderRadius,
+            }}
+          >
             <div
-              className="h-2 bg-sky-500 transition-all duration-300 ease-out rounded-full"
-              style={{ width: `${progressPercent}%` }}
+              className="bg-sky-500"
+              style={{ 
+                width: `${progressPercent}%`,
+                height: progressTokens.height,
+                borderRadius: progressTokens.borderRadius,
+                transition: progressTokens.transition,
+              }}
             />
           </div>
         </div>
       </div>
 
       {/* Question Card - Desktop Layout */}
-      <main className="flex-1 flex items-start justify-center px-6 py-10">
+      <main 
+        className="flex-1 flex items-start justify-center"
+        style={{ padding: `${cardTokens.padding} ${cardTokens.headerPaddingX}` }}
+      >
         <div className="w-full max-w-5xl">
           <div
-            className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-200 p-8 ${
+            className={`bg-white border-2 ${
               isFocused ? 'border-sky-400 shadow-xl' : 'border-slate-200'
             } ${isAnswered ? 'border-sky-200 bg-sky-50/30' : ''}`}
+            style={{
+              borderRadius: cardTokens.borderRadius,
+              boxShadow: cardTokens.shadow,
+              padding: cardTokens.padding,
+              transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           >
@@ -178,28 +222,52 @@ export default function DesktopQuestionCard({
             <div className="mb-6">
               <div className="flex items-start gap-4 mb-4">
                 <span
-                  className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full text-base font-bold ${
+                  className={`flex-shrink-0 flex items-center justify-center rounded-full font-bold ${
                     isAnswered ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'
                   }`}
+                  style={{
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    fontSize: typography.fontSize.base,
+                  }}
                 >
                   {currentQuestionIndex + 1}
                 </span>
-                <h2 className="text-2xl font-semibold text-slate-900 leading-relaxed pt-1">
+                <h2 className="font-semibold text-slate-900 leading-relaxed pt-1" style={{ fontSize: typography.fontSize['2xl'] }}>
                   {question.label}
                 </h2>
               </div>
 
               {question.help_text && (
-                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 ml-14">
-                  <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-                    <span className="text-lg flex-shrink-0">💡</span>
+                <div 
+                  className="bg-sky-50 border border-sky-200 ml-14"
+                  style={{
+                    borderRadius: componentTokens.infoBox.borderRadius,
+                    padding: componentTokens.infoBox.padding,
+                  }}
+                >
+                  <p 
+                    className="text-sky-900 leading-relaxed flex items-start gap-2"
+                    style={{
+                      fontSize: componentTokens.infoBox.fontSize,
+                      lineHeight: componentTokens.infoBox.lineHeight,
+                    }}
+                  >
+                    <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
                     <span>{question.help_text}</span>
                   </p>
                 </div>
               )}
 
               {isRequired && !isAnswered && (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mt-4 ml-14">
+                <p 
+                  className="text-amber-700 bg-amber-50 border border-amber-200 mt-4 ml-14"
+                  style={{
+                    fontSize: typography.fontSize.sm,
+                    borderRadius: componentTokens.infoBox.borderRadius,
+                    padding: `${componentTokens.infoBox.padding}`,
+                  }}
+                >
                   ⚠️ Bitte wählen Sie eine Antwort aus
                 </p>
               )}
@@ -212,8 +280,15 @@ export default function DesktopQuestionCard({
 
             {/* Error Message */}
             {error && (
-              <div className="mt-6 ml-14 text-sm text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
-                <span className="text-xl flex-shrink-0">❌</span>
+              <div 
+                className="mt-6 ml-14 text-red-700 bg-red-50 border-2 border-red-200 flex items-start gap-3"
+                style={{
+                  fontSize: typography.fontSize.sm,
+                  borderRadius: cardTokens.borderRadius,
+                  padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}`,
+                }}
+              >
+                <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
                 <p className="leading-relaxed">{error}</p>
               </div>
             )}
@@ -225,7 +300,12 @@ export default function DesktopQuestionCard({
                   type="button"
                   onClick={onPrevious}
                   disabled={isLoading}
-                  className="px-8 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    padding: `${cardTokens.headerPaddingY} ${navTokens.paddingX}`,
+                    borderRadius: navTokens.borderRadius,
+                    transition: navTokens.transition,
+                  }}
                 >
                   ← Zurück
                 </button>
@@ -235,7 +315,13 @@ export default function DesktopQuestionCard({
                   type="button"
                   onClick={onNext}
                   disabled={!isAnswered || isLoading}
-                  className="flex-1 px-8 py-3 rounded-xl bg-sky-600 text-white font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  className="flex-1 bg-sky-600 text-white font-semibold hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    padding: `${cardTokens.headerPaddingY} ${navTokens.paddingX}`,
+                    borderRadius: navTokens.borderRadius,
+                    boxShadow: navTokens.shadow,
+                    transition: navTokens.transition,
+                  }}
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
