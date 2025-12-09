@@ -104,6 +104,27 @@ export async function getCurrentStep(
     return null
   }
 
+  const questionIds = Array.from(new Set((allStepQuestions || []).map((sq) => sq.question_id)))
+  const questionKeyById = new Map<string, string>()
+
+  if (questionIds.length > 0) {
+    const { data: questionKeyRows, error: questionKeyError } = await supabase
+      .from('questions')
+      .select('id, key')
+      .in('id', questionIds)
+
+    if (questionKeyError) {
+      console.error('Error fetching question keys:', questionKeyError)
+      return null
+    }
+
+    ;(questionKeyRows || []).forEach((q) => {
+      if (q.id && q.key) {
+        questionKeyById.set(q.id, q.key)
+      }
+    })
+  }
+
   // Group questions by step ID
   const questionsByStep = new Map<string, Array<{ question_id: string; is_required: boolean }>>()
   ;(allStepQuestions || []).forEach((sq) => {
@@ -131,10 +152,11 @@ export async function getCurrentStep(
             questions?: { key?: string } | { key?: string }[] | null
           },
         ) => {
+          const keyFromLookup = questionKeyById.get(sq.question_id)
           const qKey = Array.isArray(sq.questions)
             ? sq.questions?.[0]?.key
             : sq.questions?.key
-          const keyOrId = qKey || sq.question_id
+          const keyOrId = keyFromLookup || qKey || sq.question_id
           return { id: sq.question_id, key: keyOrId }
         },
       )
