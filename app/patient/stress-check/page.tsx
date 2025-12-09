@@ -200,9 +200,10 @@ function StressCheckPageContent() {
       })
 
       const statusJson = await response.json()
-      const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
+      
+      // Debug: Log response before processing
       setDebugInfo(JSON.stringify({
-        endpoint: 'status',
+        endpoint: 'assessment-status',
         ok: response.ok,
         status: response.status,
         body: statusJson,
@@ -213,10 +214,31 @@ function StressCheckPageContent() {
         throw new Error(message)
       }
 
-      if (!statusData || !statusData.currentStep) {
-        throw new Error('Ungültige Antwort vom Server erhalten.')
+      // Extract data from B8 standardized response format
+      const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
+      
+      // Validate AssessmentStatus structure
+      if (!statusData || typeof statusData !== 'object') {
+        throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
       }
 
+      if (!statusData.assessmentId || typeof statusData.assessmentId !== 'string') {
+        throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
+      }
+
+      if (!statusData.currentStep || typeof statusData.currentStep !== 'object') {
+        throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
+      }
+
+      if (!statusData.currentStep.stepId || typeof statusData.currentStep.stepIndex !== 'number') {
+        throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
+      }
+
+      if (typeof statusData.totalSteps !== 'number') {
+        throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
+      }
+
+      // If we got here, statusData is a valid AssessmentStatus
       setAssessmentStatus(statusData as AssessmentStatus)
 
       // Load existing answers to populate the UI
@@ -238,7 +260,7 @@ function StressCheckPageContent() {
       console.error('Error loading assessment status:', err)
       setError('Fehler beim Laden des Assessment-Status. Bitte laden Sie die Seite neu.')
       setDebugInfo(JSON.stringify({
-        endpoint: 'status',
+        endpoint: 'assessment-status',
         error: err instanceof Error ? err.message : String(err),
       }))
       setInitialLoading(false)
@@ -438,17 +460,34 @@ function StressCheckPageContent() {
   const handleNextStep = async () => {
     if (!funnel || !assessmentStatus) return
 
-    // Validate current step before proceeding
-    const validationResult = await validateCurrentStep()
-    if (!validationResult.isValid) return
+    setSubmitting(true)
+    setError(null)
 
-    // If there's a next step, reload status to get updated current step
-    if (validationResult.nextStep) {
-      await loadAssessmentStatus(assessmentStatus.assessmentId)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      // No next step - this is the last step, proceed to completion
-      await handleComplete()
+    try {
+      // Validate current step before proceeding
+      const validationResult = await validateCurrentStep()
+      if (!validationResult.isValid) {
+        setSubmitting(false)
+        return
+      }
+
+      // If there's a next step, reload status to get updated current step
+      if (validationResult.nextStep) {
+        await loadAssessmentStatus(assessmentStatus.assessmentId)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        // No next step - this is the last step, proceed to completion
+        await handleComplete()
+      }
+    } catch (err) {
+      console.error('Error in handleNextStep:', err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Fehler beim Laden des nächsten Schritts. Bitte versuchen Sie es erneut.'
+      )
+    } finally {
+      setSubmitting(false)
     }
   }
 

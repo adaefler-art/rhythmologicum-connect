@@ -171,6 +171,28 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
 
       const { data } = await response.json()
+      
+      // Validate AssessmentStatus structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
+      }
+
+      if (!data.assessmentId || typeof data.assessmentId !== 'string') {
+        throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
+      }
+
+      if (!data.currentStep || typeof data.currentStep !== 'object') {
+        throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
+      }
+
+      if (!data.currentStep.stepId || typeof data.currentStep.stepIndex !== 'number') {
+        throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
+      }
+
+      if (typeof data.totalSteps !== 'number') {
+        throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
+      }
+
       setAssessmentStatus(data)
 
       // Load existing answers
