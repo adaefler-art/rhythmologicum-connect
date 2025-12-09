@@ -24,42 +24,41 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const [funnelTitle, setFunnelTitle] = useState<string>('')
 
   useEffect(() => {
-    loadResult()
-  }, [assessmentId])
+    const loadResultData = async () => {
+      try {
+        // Load assessment
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('assessments')
+          .select('id, funnel, completed_at, status')
+          .eq('id', assessmentId)
+          .single()
 
-  const loadResult = async () => {
-    try {
-      // Load assessment
-      const { data: assessmentData, error: assessmentError } = await supabase
-        .from('assessments')
-        .select('id, funnel, completed_at, status')
-        .eq('id', assessmentId)
-        .single()
+        if (assessmentError || !assessmentData) {
+          throw new Error('Assessment konnte nicht geladen werden.')
+        }
 
-      if (assessmentError || !assessmentData) {
-        throw new Error('Assessment konnte nicht geladen werden.')
+        setAssessment(assessmentData)
+
+        // Load funnel info
+        const { data: funnelData } = await supabase
+          .from('funnels')
+          .select('title')
+          .eq('slug', slug)
+          .single()
+
+        if (funnelData) {
+          setFunnelTitle(funnelData.title)
+        }
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Error loading result:', err)
+        setError(err instanceof Error ? err.message : 'Fehler beim Laden der Ergebnisse.')
+        setLoading(false)
       }
-
-      setAssessment(assessmentData)
-
-      // Load funnel info
-      const { data: funnelData } = await supabase
-        .from('funnels')
-        .select('title')
-        .eq('slug', slug)
-        .single()
-
-      if (funnelData) {
-        setFunnelTitle(funnelData.title)
-      }
-
-      setLoading(false)
-    } catch (err) {
-      console.error('Error loading result:', err)
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Ergebnisse.')
-      setLoading(false)
     }
-  }
+    loadResultData()
+  }, [assessmentId, slug])
 
   if (loading) {
     return (

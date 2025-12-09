@@ -8,9 +8,8 @@ type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default async function FunnelPage({ params, searchParams }: PageProps) {
+export default async function FunnelPage({ params }: PageProps) {
   const { slug } = await params
-  const search = await searchParams
 
   // Create Supabase server client
   const cookieStore = await cookies()

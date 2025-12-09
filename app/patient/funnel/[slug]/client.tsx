@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import type { FunnelDefinition, QuestionDefinition, StepDefinition } from '@/lib/types/funnel'
+import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import { isQuestionStep } from '@/lib/types/funnel'
 
 type AssessmentStatus = {
@@ -51,97 +51,97 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
   // Load funnel definition
   useEffect(() => {
-    loadFunnel()
+    const loadFunnelData = async () => {
+      try {
+        const response = await fetch(`/api/funnels/${slug}/definition`)
+        if (!response.ok) {
+          throw new Error('Funnel konnte nicht geladen werden.')
+        }
+        const data: FunnelDefinition = await response.json()
+        setFunnel(data)
+      } catch (err) {
+        console.error('Error loading funnel:', err)
+        setError('Fehler beim Laden des Funnels. Bitte versuchen Sie es erneut.')
+        setLoading(false)
+      }
+    }
+    loadFunnelData()
   }, [slug])
 
   // Bootstrap assessment once funnel is loaded
   useEffect(() => {
+    const initAssessment = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Get user and patient profile
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('patient_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+
+        if (profileError || !profileData) {
+          throw new Error('Benutzerprofil konnte nicht geladen werden.')
+        }
+
+        // Check for existing in_progress assessment
+        const { data: existingAssessments } = await supabase
+          .from('assessments')
+          .select('id, status, completed_at')
+          .eq('patient_id', profileData.id)
+          .eq('funnel', slug)
+          .order('started_at', { ascending: false })
+          .limit(1)
+
+        // If completed assessment exists, redirect to result
+        if (existingAssessments && existingAssessments.length > 0) {
+          const latest = existingAssessments[0]
+          if (latest.status === 'completed' && latest.completed_at) {
+            router.push(`/patient/funnel/${slug}/result?assessmentId=${latest.id}`)
+            return
+          }
+
+          // Resume existing in_progress assessment
+          if (latest.status === 'in_progress') {
+            await loadAssessmentStatus(latest.id)
+            return
+          }
+        }
+
+        // Start new assessment via API
+        const response = await fetch(`/api/funnels/${slug}/assessments`, {
+          method: 'POST',
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          throw new Error('Assessment konnte nicht gestartet werden.')
+        }
+
+        const { data } = await response.json()
+        await loadAssessmentStatus(data.assessmentId)
+      } catch (err) {
+        console.error('Error bootstrapping assessment:', err)
+        setError(err instanceof Error ? err.message : 'Fehler beim Starten des Assessments.')
+        setLoading(false)
+      }
+    }
+
     if (funnel) {
-      bootstrapAssessment()
+      initAssessment()
     }
-  }, [funnel])
-
-  const loadFunnel = async () => {
-    try {
-      const response = await fetch(`/api/funnels/${slug}/definition`)
-      if (!response.ok) {
-        throw new Error('Funnel konnte nicht geladen werden.')
-      }
-      const data: FunnelDefinition = await response.json()
-      setFunnel(data)
-    } catch (err) {
-      console.error('Error loading funnel:', err)
-      setError('Fehler beim Laden des Funnels. Bitte versuchen Sie es erneut.')
-      setLoading(false)
-    }
-  }
-
-  const bootstrapAssessment = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Get user and patient profile
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('patient_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profileError || !profileData) {
-        throw new Error('Benutzerprofil konnte nicht geladen werden.')
-      }
-
-      // Check for existing in_progress assessment
-      const { data: existingAssessments } = await supabase
-        .from('assessments')
-        .select('id, status, completed_at')
-        .eq('patient_id', profileData.id)
-        .eq('funnel', slug)
-        .order('started_at', { ascending: false })
-        .limit(1)
-
-      // If completed assessment exists, redirect to result
-      if (existingAssessments && existingAssessments.length > 0) {
-        const latest = existingAssessments[0]
-        if (latest.status === 'completed' && latest.completed_at) {
-          router.push(`/patient/funnel/${slug}/result?assessmentId=${latest.id}`)
-          return
-        }
-
-        // Resume existing in_progress assessment
-        if (latest.status === 'in_progress') {
-          await loadAssessmentStatus(latest.id)
-          return
-        }
-      }
-
-      // Start new assessment via API
-      const response = await fetch(`/api/funnels/${slug}/assessments`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Assessment konnte nicht gestartet werden.')
-      }
-
-      const { data } = await response.json()
-      await loadAssessmentStatus(data.assessmentId)
-    } catch (err) {
-      console.error('Error bootstrapping assessment:', err)
-      setError(err instanceof Error ? err.message : 'Fehler beim Starten des Assessments.')
-      setLoading(false)
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funnel, slug])
 
   const loadAssessmentStatus = async (assessmentId: string) => {
     try {
