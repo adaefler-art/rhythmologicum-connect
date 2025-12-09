@@ -2,6 +2,13 @@
 
 import { componentTokens, typography, motion, colors } from '@/lib/design-tokens'
 
+// Step indicator opacity values for different states
+const STEP_OPACITY = {
+  completed: 1,
+  current: 0.8,
+  pending: 0.3,
+} as const
+
 export type MobileProgressProps = {
   /** Current step index (0-based) */
   currentStep: number
@@ -92,7 +99,11 @@ export default function MobileProgress({
                   height: progressTokens.height,
                   borderRadius: progressTokens.borderRadius,
                   backgroundColor: isPending ? colors.neutral[200] : color,
-                  opacity: isCompleted ? 1 : isCurrent ? 0.8 : 0.3,
+                  opacity: isCompleted
+                    ? STEP_OPACITY.completed
+                    : isCurrent
+                      ? STEP_OPACITY.current
+                      : STEP_OPACITY.pending,
                   transition: progressTokens.transition,
                 }}
                 aria-label={`Schritt ${i + 1}${isCompleted ? ' abgeschlossen' : isCurrent ? ' aktuell' : ''}`}

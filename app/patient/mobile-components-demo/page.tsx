@@ -9,9 +9,11 @@
  * - MobileSectionTitle
  */
 
-import MobileCard from '@/app/components/MobileCard'
-import MobileProgress from '@/app/components/MobileProgress'
-import MobileSectionTitle from '@/app/components/MobileSectionTitle'
+import {
+  MobileCard,
+  MobileProgress,
+  MobileSectionTitle,
+} from '@/app/components/mobile'
 import { colors } from '@/lib/design-tokens'
 
 export default function MobileComponentsDemo() {
