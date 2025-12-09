@@ -169,8 +169,14 @@ function StressCheckPageContent() {
         throw new Error('Fehler beim Laden des Assessment-Status.')
       }
 
-      const statusData: AssessmentStatus = await response.json()
-      setAssessmentStatus(statusData)
+      const statusJson = await response.json()
+      const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
+
+      if (!statusData || !statusData.currentStep) {
+        throw new Error('Ungültige Antwort vom Server erhalten.')
+      }
+
+      setAssessmentStatus(statusData as AssessmentStatus)
 
       // Load existing answers to populate the UI
       const { data: existingAnswers, error: answersError } = await supabase
@@ -323,24 +329,29 @@ function StressCheckPageContent() {
         },
       )
 
-      const data = await response.json()
+      const json = await response.json()
 
-      if (!data.success) {
-        setError(data.error || 'Validierung fehlgeschlagen')
+      if (!response.ok || !json?.success) {
+        const message = json?.error?.message || 'Validierung fehlgeschlagen'
+        setError(message)
         return { isValid: false }
       }
 
-      if (!data.ok) {
-        setValidationErrors(data.missingQuestions || [])
+      const payload = (json.data ?? json) as {
+        isValid?: boolean
+        missingQuestions?: ValidationError[]
+        nextStep?: unknown
+      }
+
+      if (!payload?.isValid) {
+        const missingQuestions = payload?.missingQuestions ?? []
+        setValidationErrors(missingQuestions)
 
         // Count different types of missing questions
-        const requiredCount =
-          data.missingQuestions?.filter((q: ValidationError) => q.reason === 'required').length ||
-          0
-        const conditionalCount =
-          data.missingQuestions?.filter(
-            (q: ValidationError) => q.reason === 'conditional_required',
-          ).length || 0
+        const requiredCount = missingQuestions.filter((q) => q.reason === 'required').length
+        const conditionalCount = missingQuestions.filter(
+          (q) => q.reason === 'conditional_required',
+        ).length
 
         // Generate appropriate error message
         let errorMessage = 'Bitte beantworten Sie '
@@ -357,8 +368,8 @@ function StressCheckPageContent() {
         setError(errorMessage)
 
         // Scroll to first missing question
-        if (data.missingQuestions && data.missingQuestions.length > 0) {
-          const firstMissing = data.missingQuestions[0]
+        if (missingQuestions.length > 0) {
+          const firstMissing = missingQuestions[0]
           setTimeout(() => {
             const element = document.getElementById(`question-${firstMissing.questionId}`)
             element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -370,7 +381,7 @@ function StressCheckPageContent() {
 
       setValidationErrors([])
       setError(null)
-      return { isValid: true, nextStep: data.nextStep }
+      return { isValid: true, nextStep: payload.nextStep }
     } catch (err) {
       console.error('Error validating step:', err)
       setError('Fehler bei der Validierung. Bitte versuchen Sie es erneut.')
@@ -446,22 +457,28 @@ function StressCheckPageContent() {
         },
       )
 
-      const data = await response.json()
+      const json = await response.json()
 
-      if (!data.success || !data.ok) {
-        // Validation failed - show missing questions
-        if (data.missingQuestions && data.missingQuestions.length > 0) {
-          setValidationErrors(data.missingQuestions)
-          setError(data.error || 'Nicht alle Pflichtfragen wurden beantwortet.')
+      if (!response.ok || !json?.success) {
+        const missingQuestions: ValidationError[] =
+          json?.error?.details?.missingQuestions || json?.missingQuestions || []
+
+        if (missingQuestions.length > 0) {
+          setValidationErrors(missingQuestions)
+          setError(json?.error?.message || 'Nicht alle Pflichtfragen wurden beantwortet.')
         } else {
-          setError(data.error || 'Fehler beim Abschließen des Assessments.')
+          setError(json?.error?.message || 'Fehler beim Abschließen des Assessments.')
         }
+
         setSubmitting(false)
         return
       }
 
+      const payload = (json.data ?? json) as { assessmentId?: string }
+
       // Success - redirect to result page
-      router.push(`/patient/stress-check/result?assessmentId=${assessmentStatus.assessmentId}`)
+      const resultAssessmentId = payload.assessmentId || assessmentStatus.assessmentId
+      router.push(`/patient/stress-check/result?assessmentId=${resultAssessmentId}`)
     } catch (err) {
       console.error('Fehler in handleComplete:', err)
       const message =
@@ -474,10 +491,28 @@ function StressCheckPageContent() {
     }
   }
 
-  if (initialLoading || !funnel || !assessmentStatus) {
+
+  // Defensive: If assessmentStatus or currentStep is missing, show error
+  if (initialLoading) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
+      </main>
+    )
+  }
+
+  if (!funnel) {
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20">
+        <p className="text-sm text-red-600">Fehler: Fragen konnten nicht geladen werden.</p>
+      </main>
+    )
+  }
+
+  if (!assessmentStatus || !assessmentStatus.currentStep) {
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20">
+        <p className="text-sm text-red-600">Fehler: Assessment-Status ungültig. Bitte Seite neu laden oder Support kontaktieren.</p>
       </main>
     )
   }
