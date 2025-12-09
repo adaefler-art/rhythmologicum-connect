@@ -62,6 +62,7 @@ function StressCheckPageContent() {
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
   const [debugInfo, setDebugInfo] = useState<string | null>(null)
+  const [statusLoading, setStatusLoading] = useState(false)
 
   // Check if user explicitly wants to start a new assessment
   const forceNew = searchParams.get('new') === 'true'
@@ -104,6 +105,7 @@ function StressCheckPageContent() {
 
   // B6 AK1: Bootstrap assessment - check for existing or start new
   const bootstrapAssessment = async () => {
+    setStatusLoading(true)
     try {
       // Check for existing in-progress assessment
       const { data: profileData, error: profileError } = await supabase
@@ -189,11 +191,13 @@ function StressCheckPageContent() {
         }),
       )
       setInitialLoading(false)
+      setStatusLoading(false)
     }
   }
 
   // B6 AK1: Load assessment status from Runtime API
   const loadAssessmentStatus = async (assessmentId: string) => {
+    setStatusLoading(true)
     try {
       const response = await fetch(`/api/funnels/stress/assessments/${assessmentId}`, {
         credentials: 'include',
@@ -264,6 +268,8 @@ function StressCheckPageContent() {
         error: err instanceof Error ? err.message : String(err),
       }))
       setInitialLoading(false)
+    } finally {
+      setStatusLoading(false)
     }
   }
 
@@ -577,7 +583,7 @@ function StressCheckPageContent() {
 
 
   // Defensive: If assessmentStatus or currentStep is missing, show error
-  if (initialLoading) {
+  if (initialLoading || statusLoading) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
@@ -593,7 +599,30 @@ function StressCheckPageContent() {
     )
   }
 
+  if (showConsentModal) {
+    return (
+      <ConsentModal
+        onConsent={handleConsentAccepted}
+        onDecline={handleConsentDeclined}
+      />
+    )
+  }
+
+  if (!hasConsent) {
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20">
+        <p className="text-sm text-slate-600">Laden…</p>
+      </main>
+    )
+  }
+
   if (!assessmentStatus || !assessmentStatus.currentStep) {
+    console.warn('Invalid assessment status render path', {
+      assessmentStatus,
+      initialLoading,
+      statusLoading,
+      debugInfo,
+    })
     // Zeige Fehler dauerhaft, blockiere weitere UI (KEIN Redirect mehr möglich)
     window.stop?.() // Bricht evtl. laufende Weiterleitungen ab (nur im Browser)
     return (
@@ -613,23 +642,6 @@ function StressCheckPageContent() {
             </pre>
           )}
         </div>
-      </main>
-    )
-  }
-
-  if (showConsentModal) {
-    return (
-      <ConsentModal
-        onConsent={handleConsentAccepted}
-        onDecline={handleConsentDeclined}
-      />
-    )
-  }
-
-  if (!hasConsent) {
-    return (
-      <main className="flex items-center justify-center bg-slate-50 py-20">
-        <p className="text-sm text-slate-600">Laden…</p>
       </main>
     )
   }
