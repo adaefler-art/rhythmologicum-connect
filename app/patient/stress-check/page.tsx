@@ -551,7 +551,7 @@ function StressCheckPageContent() {
             Sollte das Problem bestehen, bitte an die Praxis wenden.
           </p>
           {debugEnabled && debugInfo && (
-            <pre className="text-left text-[11px] bg-slate-900 text-slate-100 p-3 rounded-lg overflow-auto max-h-60">
+            <pre className="text-left text-[11px] bg-slate-900 text-slate-100 p-3 rounded-lg overflow-auto max-h-60 whitespace-pre-wrap break-words">
               {debugInfo}
             </pre>
           )}
@@ -717,7 +717,20 @@ function StressCheckPageContent() {
           </p>
         )}
       </div>
+      {debugEnabled && debugInfo && <DebugPanel debugInfo={debugInfo} />}
     </main>
+  )
+}
+
+function DebugPanel({ debugInfo }: { debugInfo: string }) {
+  return (
+    <div className="fixed bottom-4 right-4 max-w-md w-[360px] bg-slate-900 text-slate-100 rounded-xl shadow-2xl border border-slate-700 p-3 text-xs leading-snug z-50">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-semibold text-slate-100">Debug</span>
+        <span className="text-[10px] text-slate-400">?debug=1</span>
+      </div>
+      <pre className="whitespace-pre-wrap break-words max-h-60 overflow-auto">{debugInfo}</pre>
+    </div>
   )
 }
 
