@@ -9,14 +9,29 @@ jobs:
   sync-schema:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Supabase secret availability
+        id: secret-check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Supabase secret not available in this context. Skipping sync."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.secret-check.outputs.skip == 'false'
         with:
           fetch-depth: 0
 
       - name: Install PostgreSQL client
+        if: steps.secret-check.outputs.skip == 'false'
         run: sudo apt-get update && sudo apt-get install -y postgresql-client git
 
       - name: Pull and normalize Supabase schema
+        if: steps.secret-check.outputs.skip == 'false'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
@@ -24,6 +39,7 @@ jobs:
           ./scripts/pull-supabase-schema.sh
 
       - name: Create pull request if schema changed
+        if: steps.secret-check.outputs.skip == 'false'
         uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,3 +51,7 @@ jobs:
           base: main
           branch: auto/update-schema-from-supabase
           delete-branch: true
+
+      - name: Secret unavailable info
+        if: steps.secret-check.outputs.skip == 'true'
+        run: echo "sync-supabase-schema skipped: SUPABASE_DB_URL secret is inaccessible in this workflow context."

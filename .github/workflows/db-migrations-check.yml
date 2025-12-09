@@ -57,6 +57,15 @@ jobs:
             sleep 1
           done
 
+      - name: Bootstrap Supabase compatibility layer
+        run: |
+          set -euo pipefail
+          if [ -f "supabase/ci-bootstrap.sql" ]; then
+            psql "host=$PGHOST port=$PGPORT user=$PGUSER password=$PGPASSWORD dbname=$PGDATABASE" -f supabase/ci-bootstrap.sql
+          else
+            echo "supabase/ci-bootstrap.sql missing - skipping stub bootstrap"
+          fi
+
       - name: Apply migrations (ordered)
         run: |
           set -euo pipefail
