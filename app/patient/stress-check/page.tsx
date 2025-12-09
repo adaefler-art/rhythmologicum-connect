@@ -50,6 +50,7 @@ export default function StressCheckPage() {
 function StressCheckPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const debugEnabled = searchParams.get('debug') === '1'
   const [initialLoading, setInitialLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -60,6 +61,7 @@ function StressCheckPageContent() {
   const [hasConsent, setHasConsent] = useState(false)
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string | null>(null)
 
   // Check if user explicitly wants to start a new assessment
   const forceNew = searchParams.get('new') === 'true'
@@ -138,6 +140,15 @@ function StressCheckPageContent() {
         const startAssessmentId =
           startData?.assessmentId ?? startData?.data?.assessmentId ?? null
 
+        setDebugInfo(
+          JSON.stringify({
+            endpoint: 'create',
+            ok: startResponse.ok,
+            status: startResponse.status,
+            body: startData,
+          }),
+        )
+
         if (!startAssessmentId) {
           throw new Error('Keine Assessment-ID vom Server erhalten.')
         }
@@ -154,6 +165,12 @@ function StressCheckPageContent() {
     } catch (err) {
       console.error('Error bootstrapping assessment:', err)
       setError('Fehler beim Laden des Assessments. Bitte laden Sie die Seite neu.')
+      setDebugInfo(
+        JSON.stringify({
+          endpoint: 'bootstrap',
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      )
       setInitialLoading(false)
     }
   }
@@ -171,6 +188,12 @@ function StressCheckPageContent() {
 
       const statusJson = await response.json()
       const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
+      setDebugInfo(JSON.stringify({
+        endpoint: 'status',
+        ok: response.ok,
+        status: response.status,
+        body: statusJson,
+      }))
 
       if (!statusData || !statusData.currentStep) {
         throw new Error('Ungültige Antwort vom Server erhalten.')
@@ -196,6 +219,10 @@ function StressCheckPageContent() {
     } catch (err) {
       console.error('Error loading assessment status:', err)
       setError('Fehler beim Laden des Assessment-Status. Bitte laden Sie die Seite neu.')
+      setDebugInfo(JSON.stringify({
+        endpoint: 'status',
+        error: err instanceof Error ? err.message : String(err),
+      }))
       setInitialLoading(false)
     }
   }
@@ -523,6 +550,11 @@ function StressCheckPageContent() {
             Es wurden keine gültigen Daten vom Server empfangen.<br />
             Sollte das Problem bestehen, bitte an die Praxis wenden.
           </p>
+          {debugEnabled && debugInfo && (
+            <pre className="text-left text-[11px] bg-slate-900 text-slate-100 p-3 rounded-lg overflow-auto max-h-60">
+              {debugInfo}
+            </pre>
+          )}
         </div>
       </main>
     )
