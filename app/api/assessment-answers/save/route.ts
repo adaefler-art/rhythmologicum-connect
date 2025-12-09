@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import {
+  successResponse,
+  missingFieldsResponse,
+  invalidInputResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  forbiddenResponse,
+  assessmentCompletedResponse,
+  internalErrorResponse,
+} from '@/lib/api/responses'
+import {
+  logUnauthorized,
+  logForbidden,
+  logDatabaseError,
+} from '@/lib/logging/logger'
 
 /**
  * API Route: Save Assessment Answer (Save-on-Tap)
  * 
  * POST /api/assessment-answers/save
+ * 
+ * Legacy endpoint - kept for backwards compatibility.
+ * New clients should use: POST /api/funnels/{slug}/assessments/{id}/answers/save
  * 
  * Saves or updates a single answer for a question in an assessment.
  * Uses UPSERT logic to prevent duplicate answers for the same question.
@@ -20,11 +38,11 @@ import { cookies } from 'next/headers'
  * Note: questionId should be the question.key (semantic identifier), not question.id (UUID)
  * This maps to the assessment_answers.question_id column which is of type text.
  * 
- * Response:
+ * Response (B8 standardized):
  * {
  *   success: boolean,
  *   data?: { id: string, assessment_id: string, question_id: string, answer_value: number },
- *   error?: string
+ *   error?: { code: string, message: string }
  * }
  */
 
@@ -35,31 +53,26 @@ type RequestBody = {
 }
 
 export async function POST(request: NextRequest) {
+  let assessmentId: string | undefined
+  let questionId: string | undefined
+
   try {
     // Parse request body
     const body: RequestBody = await request.json()
-    const { assessmentId, questionId, answerValue } = body
+    assessmentId = body.assessmentId
+    questionId = body.questionId
+    const { answerValue } = body
 
     // Validate required fields
     if (!assessmentId || !questionId || answerValue === undefined || answerValue === null) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Fehlende Pflichtfelder. Bitte geben Sie assessmentId, questionId und answerValue an.',
-        },
-        { status: 400 },
+      return missingFieldsResponse(
+        'Fehlende Pflichtfelder. Bitte geben Sie assessmentId, questionId und answerValue an.',
       )
     }
 
     // Validate answerValue is an integer
     if (!Number.isInteger(answerValue)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Der Wert answerValue muss eine ganze Zahl sein.',
-        },
-        { status: 400 },
-      )
+      return invalidInputResponse('Der Wert answerValue muss eine ganze Zahl sein.')
     }
 
     // Create Supabase server client with cookies
@@ -88,14 +101,11 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
-        },
-        { status: 401 },
-      )
+      logUnauthorized({
+        endpoint: '/api/assessment-answers/save',
+        assessmentId,
+      })
+      return unauthorizedResponse()
     }
 
     // Verify the assessment belongs to this user
@@ -107,14 +117,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !patientProfile) {
-      console.error('Patient profile lookup error:', profileError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Benutzerprofil nicht gefunden.',
+          userId: user.id,
+          endpoint: '/api/assessment-answers/save',
         },
-        { status: 404 },
+        profileError,
       )
+      return notFoundResponse('Benutzerprofil')
     }
 
     // Verify assessment ownership
@@ -125,38 +135,32 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (assessmentError) {
-      console.error('Assessment lookup error:', assessmentError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Assessment nicht gefunden.',
+          userId: user.id,
+          assessmentId,
+          endpoint: '/api/assessment-answers/save',
         },
-        { status: 404 },
+        assessmentError,
       )
+      return notFoundResponse('Assessment')
     }
 
     if (assessment.patient_id !== patientProfile.id) {
-      console.warn(
-        `Unauthorized assessment access attempt by user ${user.id} for assessment ${assessmentId}`,
-      )
-      return NextResponse.json(
+      logForbidden(
         {
-          success: false,
-          error: 'Sie haben keine Berechtigung, dieses Assessment zu bearbeiten.',
+          userId: user.id,
+          assessmentId,
+          endpoint: '/api/assessment-answers/save',
         },
-        { status: 403 },
+        'Assessment does not belong to user',
       )
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment zu bearbeiten.')
     }
 
     // B5: Prevent saving to completed assessments
     if (assessment.status === 'completed') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Dieses Assessment wurde bereits abgeschlossen und kann nicht mehr bearbeitet werden.',
-        },
-        { status: 400 },
-      )
+      return assessmentCompletedResponse()
     }
 
     // Perform upsert operation
@@ -178,38 +182,38 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (upsertError) {
-      console.error('Upsert error:', upsertError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.',
+          userId: user.id,
+          assessmentId,
+          questionId,
+          endpoint: '/api/assessment-answers/save',
         },
-        { status: 500 },
+        upsertError,
       )
+      return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
     }
 
-    // Success response
-    return NextResponse.json(
+    // Success response with standardized format
+    return successResponse(
       {
-        success: true,
-        data: {
-          id: data.id,
-          assessment_id: data.assessment_id,
-          question_id: data.question_id,
-          answer_value: data.answer_value,
-        },
+        id: data.id,
+        assessment_id: data.assessment_id,
+        question_id: data.question_id,
+        answer_value: data.answer_value,
       },
-      { status: 200 },
+      200,
     )
   } catch (error) {
     // Catch-all error handler
-    console.error('Unexpected error in save assessment answer API:', error)
-    return NextResponse.json(
+    logDatabaseError(
       {
-        success: false,
-        error: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+        assessmentId,
+        questionId,
+        endpoint: '/api/assessment-answers/save',
       },
-      { status: 500 },
+      error,
     )
+    return internalErrorResponse('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.')
   }
 }
