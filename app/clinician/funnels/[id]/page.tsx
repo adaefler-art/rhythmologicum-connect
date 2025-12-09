@@ -175,9 +175,9 @@ export default function FunnelDetailPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: title,
-          subtitle: subtitle,
-          description: description,
+          title,
+          subtitle,
+          description,
         }),
       })
 
@@ -235,8 +235,8 @@ export default function FunnelDetailPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: title,
-          description: description,
+          title,
+          description,
         }),
       })
 
