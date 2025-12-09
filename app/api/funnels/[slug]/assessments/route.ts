@@ -36,13 +36,10 @@ import {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> },
+  context: { params: Promise<{ slug: string }> },
 ) {
-  let slug: string | undefined
-
   try {
-    const paramsResolved = await params
-    slug = paramsResolved.slug
+    const { slug } = await context.params
 
     // Validate slug parameter
     if (!slug) {
@@ -177,7 +174,7 @@ export async function POST(
   } catch (error) {
     logDatabaseError(
       {
-        endpoint: `/api/funnels/${slug}/assessments`,
+        endpoint: 'POST /api/funnels/[slug]/assessments',
       },
       error,
     )
