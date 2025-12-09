@@ -124,7 +124,12 @@ export async function getCurrentStep(
 
     const requiredQuestions = stepQuestions
       .filter((sq) => sq.is_required)
-      .map((sq) => ({ id: sq.question_id, key: Array.isArray(sq.questions) ? sq.questions?.[0]?.key : sq.questions?.key }))
+      .map((sq: { question_id: string; is_required: boolean; questions?: { key?: string } | { key?: string }[] | null }) => {
+        const qKey = Array.isArray(sq.questions)
+          ? sq.questions?.[0]?.key
+          : sq.questions?.key
+        return { id: sq.question_id, key: qKey }
+      })
 
     const answeredRequired = requiredQuestions.filter(
       (rq) => answeredQuestionIds.has(rq.id) || (rq.key && answeredQuestionKeys.has(rq.key)),
