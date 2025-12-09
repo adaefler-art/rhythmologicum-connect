@@ -14,6 +14,8 @@ import {
   logUnauthorized,
   logForbidden,
   logDatabaseError,
+  logInfo,
+  logWarn,
 } from '@/lib/logging/logger'
 
 /**
@@ -118,8 +120,17 @@ export async function GET(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
     }
 
-    // Get funnel info (self-heal legacy rows missing funnel_id)
+    // Handle legacy assessments missing funnel_id
+    // Legacy assessments were created before the funnel_id foreign key was added.
+    // They only have a text-based 'funnel' field (slug). We attempt to backfill
+    // the funnel_id by looking up the funnel by slug.
     if (!assessment.funnel_id) {
+      logInfo('Legacy assessment detected (missing funnel_id), attempting backfill', {
+        assessmentId,
+        slug,
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+      })
+
       const { data: funnelRow, error: funnelLookupError } = await supabase
         .from('funnels')
         .select('id')
@@ -127,18 +138,53 @@ export async function GET(
         .single()
 
       if (funnelLookupError || !funnelRow?.id) {
-        return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+        // Funnel doesn't exist in the database - this is a data integrity issue
+        logDatabaseError(
+          {
+            userId: user.id,
+            assessmentId,
+            slug,
+            endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+          },
+          funnelLookupError || new Error(`Funnel with slug '${slug}' not found in database`),
+        )
+        return notFoundResponse(
+          'Funnel',
+          `Der Funnel '${slug}' konnte nicht gefunden werden. Möglicherweise wurde er gelöscht oder umbenannt.`,
+        )
       }
 
+      // Attempt to backfill the funnel_id
       const { error: repairError } = await supabase
         .from('assessments')
         .update({ funnel_id: funnelRow.id })
         .eq('id', assessment.id)
 
       if (repairError) {
-        return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+        // Log the error but continue - we can still use the funnel_id we just looked up
+        logDatabaseError(
+          {
+            userId: user.id,
+            assessmentId,
+            slug,
+            endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+          },
+          repairError,
+        )
+        logWarn('Failed to backfill funnel_id for legacy assessment, proceeding with in-memory value', {
+          assessmentId,
+          slug,
+          funnelId: funnelRow.id,
+        })
+      } else {
+        logInfo('Successfully backfilled funnel_id for legacy assessment', {
+          assessmentId,
+          slug,
+          funnelId: funnelRow.id,
+        })
       }
 
+      // Use the looked-up funnel_id for this request
       assessment.funnel_id = funnelRow.id
     }
 
