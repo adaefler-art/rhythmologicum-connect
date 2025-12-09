@@ -130,22 +130,53 @@ ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.funnel_step_questions ENABLE ROW LEVEL SECURITY;
 
 -- Create permissive policies for authenticated users to read funnel data
-CREATE POLICY IF NOT EXISTS "Allow authenticated users to read funnels"
-  ON public.funnels FOR SELECT
-  TO authenticated
-  USING (is_active = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'funnels'
+      AND policyname = 'Allow authenticated users to read funnels'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read funnels"
+      ON public.funnels FOR SELECT
+      TO authenticated
+      USING (is_active = true);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Allow authenticated users to read funnel_steps"
-  ON public.funnel_steps FOR SELECT
-  TO authenticated
-  USING (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'funnel_steps'
+      AND policyname = 'Allow authenticated users to read funnel_steps'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read funnel_steps"
+      ON public.funnel_steps FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Allow authenticated users to read questions"
-  ON public.questions FOR SELECT
-  TO authenticated
-  USING (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'questions'
+      AND policyname = 'Allow authenticated users to read questions'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read questions"
+      ON public.questions FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
 
-CREATE POLICY IF NOT EXISTS "Allow authenticated users to read funnel_step_questions"
-  ON public.funnel_step_questions FOR SELECT
-  TO authenticated
-  USING (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'funnel_step_questions'
+      AND policyname = 'Allow authenticated users to read funnel_step_questions'
+  ) THEN
+    CREATE POLICY "Allow authenticated users to read funnel_step_questions"
+      ON public.funnel_step_questions FOR SELECT
+      TO authenticated
+      USING (true);
+  END IF;
+END $$;
