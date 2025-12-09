@@ -135,7 +135,14 @@ function StressCheckPageContent() {
         }
 
         const startData = await startResponse.json()
-        currentAssessmentId = startData.assessmentId
+        const startAssessmentId =
+          startData?.assessmentId ?? startData?.data?.assessmentId ?? null
+
+        if (!startAssessmentId) {
+          throw new Error('Keine Assessment-ID vom Server erhalten.')
+        }
+
+        currentAssessmentId = startAssessmentId
       }
 
       // Load assessment status
