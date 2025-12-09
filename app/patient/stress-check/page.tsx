@@ -63,6 +63,7 @@ function StressCheckPageContent() {
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
   const [debugInfo, setDebugInfo] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState(false)
+  const [statusAttempted, setStatusAttempted] = useState(false)
 
   // Check if user explicitly wants to start a new assessment
   const forceNew = searchParams.get('new') === 'true'
@@ -106,6 +107,7 @@ function StressCheckPageContent() {
   // B6 AK1: Bootstrap assessment - check for existing or start new
   const bootstrapAssessment = async () => {
     setStatusLoading(true)
+    console.info('Bootstrap assessment start', { hasConsent, userId, funnelLoaded: !!funnel })
     try {
       // Check for existing in-progress assessment
       const { data: profileData, error: profileError } = await supabase
@@ -177,6 +179,7 @@ function StressCheckPageContent() {
 
       // Load assessment status
       if (currentAssessmentId) {
+        setStatusAttempted(true)
         await loadAssessmentStatus(currentAssessmentId)
       } else {
         throw new Error('Keine Assessment-ID verfügbar.')
@@ -198,6 +201,8 @@ function StressCheckPageContent() {
   // B6 AK1: Load assessment status from Runtime API
   const loadAssessmentStatus = async (assessmentId: string) => {
     setStatusLoading(true)
+    setStatusAttempted(true)
+    console.info('Load assessment status', { assessmentId })
     try {
       const response = await fetch(`/api/funnels/stress/assessments/${assessmentId}`, {
         credentials: 'include',
@@ -326,6 +331,14 @@ function StressCheckPageContent() {
 
   // B6 AK1: Bootstrap assessment after consent is confirmed
   useEffect(() => {
+    console.info('Bootstrap effect check', {
+      hasConsent,
+      userId,
+      funnelLoaded: !!funnel,
+      hasAssessmentStatus: !!assessmentStatus,
+      forceNew,
+    })
+
     if (hasConsent && userId && funnel && !assessmentStatus) {
       bootstrapAssessment()
     }
@@ -583,7 +596,7 @@ function StressCheckPageContent() {
 
 
   // Defensive: If assessmentStatus or currentStep is missing, show error
-  if (initialLoading || statusLoading) {
+  if (initialLoading || statusLoading || !statusAttempted) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
@@ -621,6 +634,7 @@ function StressCheckPageContent() {
       assessmentStatus,
       initialLoading,
       statusLoading,
+      statusAttempted,
       debugInfo,
     })
     // Zeige Fehler dauerhaft, blockiere weitere UI (KEIN Redirect mehr möglich)
