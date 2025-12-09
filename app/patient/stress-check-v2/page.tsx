@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
-import ConsentModal from './ConsentModal'
+import ConsentModal from '../stress-check/ConsentModal'
 import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import { isQuestionStep } from '@/lib/types/funnel'
 
@@ -23,7 +23,7 @@ const SCALE = [
   { value: 4, label: 'Sehr häufig' },
 ]
 
-export default function StressCheckPage() {
+export default function StressCheckV2Page() {
   const router = useRouter()
   const [initialLoading, setInitialLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -58,7 +58,6 @@ export default function StressCheckPage() {
 
   useEffect(() => {
     const handleConsentCheckFailure = () => {
-      // Default to showing consent modal if check fails (fail-safe)
       setShowConsentModal(true)
       setHasConsent(false)
     }
@@ -80,13 +79,12 @@ export default function StressCheckPage() {
 
       setUserId(user.id)
 
-      // Check consent status via API endpoint
       try {
         const response = await fetch(`/api/consent/status?version=${CONSENT_VERSION}`)
-        
+
         if (response.ok) {
           const data = await response.json()
-          
+
           if (!data.hasConsent) {
             setShowConsentModal(true)
             setHasConsent(false)
@@ -315,10 +313,7 @@ export default function StressCheckPage() {
 
   if (showConsentModal) {
     return (
-      <ConsentModal
-        onConsent={handleConsentAccepted}
-        onDecline={handleConsentDeclined}
-      />
+      <ConsentModal onConsent={handleConsentAccepted} onDecline={handleConsentDeclined} />
     )
   }
 
