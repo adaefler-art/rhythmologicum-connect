@@ -52,15 +52,10 @@ import {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string; assessmentId: string }> },
+  context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  let slug: string | undefined
-  let assessmentId: string | undefined
-
   try {
-    const paramsResolved = await params
-    slug = paramsResolved.slug
-    assessmentId = paramsResolved.assessmentId
+    const { slug, assessmentId } = await context.params
 
     // Validate parameters
     if (!slug || !assessmentId) {
@@ -213,8 +208,7 @@ export async function POST(
   } catch (error) {
     logDatabaseError(
       {
-        assessmentId,
-        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+        endpoint: 'POST /api/funnels/[slug]/assessments/[assessmentId]/complete',
       },
       error,
     )

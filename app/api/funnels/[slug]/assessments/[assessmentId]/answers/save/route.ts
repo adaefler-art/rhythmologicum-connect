@@ -56,22 +56,15 @@ type RequestBody = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string; assessmentId: string }> },
+  context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  let slug: string | undefined
-  let assessmentId: string | undefined
-  let stepId: string | undefined
-  let questionId: string | undefined
-
   try {
-    const paramsResolved = await params
-    slug = paramsResolved.slug
-    assessmentId = paramsResolved.assessmentId
+    const { slug, assessmentId } = await context.params
 
     // Parse request body
     const body: RequestBody = await request.json()
-    stepId = body.stepId
-    questionId = body.questionId
+    const stepId = body.stepId
+    const questionId = body.questionId
     const { answerValue } = body
 
     // Validate required fields
@@ -263,10 +256,7 @@ export async function POST(
     // Catch-all error handler
     logDatabaseError(
       {
-        assessmentId,
-        stepId,
-        questionId,
-        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+        endpoint: 'POST /api/funnels/[slug]/assessments/[assessmentId]/answers/save',
       },
       error,
     )
