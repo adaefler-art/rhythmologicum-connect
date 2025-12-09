@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     // Verify assessment ownership
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id')
+      .select('id, patient_id, status')
       .eq('id', assessmentId)
       .single()
 
@@ -145,6 +145,17 @@ export async function POST(request: NextRequest) {
           error: 'Sie haben keine Berechtigung, dieses Assessment zu bearbeiten.',
         },
         { status: 403 },
+      )
+    }
+
+    // B5: Prevent saving to completed assessments
+    if (assessment.status === 'completed') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dieses Assessment wurde bereits abgeschlossen und kann nicht mehr bearbeitet werden.',
+        },
+        { status: 400 },
       )
     }
 
