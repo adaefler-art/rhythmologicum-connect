@@ -201,13 +201,28 @@ export async function PATCH(
       updateData.is_active = body.is_active
     }
     if (typeof body.title === 'string') {
-      updateData.title = body.title
+      const trimmedTitle = body.title.trim()
+      if (trimmedTitle.length === 0) {
+        return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+      }
+      if (trimmedTitle.length > 255) {
+        return NextResponse.json({ error: 'Title too long (max 255 characters)' }, { status: 400 })
+      }
+      updateData.title = trimmedTitle
     }
     if (typeof body.subtitle === 'string') {
-      updateData.subtitle = body.subtitle
+      const trimmedSubtitle = body.subtitle.trim()
+      if (trimmedSubtitle.length > 500) {
+        return NextResponse.json({ error: 'Subtitle too long (max 500 characters)' }, { status: 400 })
+      }
+      updateData.subtitle = trimmedSubtitle || null
     }
     if (typeof body.description === 'string') {
-      updateData.description = body.description
+      const trimmedDescription = body.description.trim()
+      if (trimmedDescription.length > 2000) {
+        return NextResponse.json({ error: 'Description too long (max 2000 characters)' }, { status: 400 })
+      }
+      updateData.description = trimmedDescription || null
     }
 
     // Use service role for admin operations

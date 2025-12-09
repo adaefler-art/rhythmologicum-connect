@@ -55,8 +55,8 @@ const translateStepType = (type: string): string => {
   const translations: Record<string, string> = {
     question_step: 'Fragen',
     form: 'Formular',
-    info_step: 'Information',
-    info: 'Information',
+    info_step: 'Informationsschritt',
+    info: 'Info',
     summary: 'Zusammenfassung',
   }
   return translations[type] || type
@@ -146,20 +146,44 @@ export default function FunnelDetailPage() {
   const saveFunnelEdit = async () => {
     if (!funnel) return
 
+    // Client-side validation
+    const title = editedFunnel.title?.trim() || ''
+    if (title.length === 0) {
+      alert('Titel darf nicht leer sein')
+      return
+    }
+    if (title.length > 255) {
+      alert('Titel ist zu lang (maximal 255 Zeichen)')
+      return
+    }
+
+    const subtitle = editedFunnel.subtitle?.trim() || ''
+    if (subtitle.length > 500) {
+      alert('Untertitel ist zu lang (maximal 500 Zeichen)')
+      return
+    }
+
+    const description = editedFunnel.description?.trim() || ''
+    if (description.length > 2000) {
+      alert('Beschreibung ist zu lang (maximal 2000 Zeichen)')
+      return
+    }
+
     try {
       setSaving(true)
       const response = await fetch(`/api/admin/funnels/${funnelId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: editedFunnel.title,
-          subtitle: editedFunnel.subtitle,
-          description: editedFunnel.description,
+          title: title,
+          subtitle: subtitle,
+          description: description,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update funnel')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update funnel')
       }
 
       const data = await response.json()
@@ -168,7 +192,7 @@ export default function FunnelDetailPage() {
       setEditedFunnel({})
     } catch (err) {
       console.error('Error updating funnel:', err)
-      alert('Fehler beim Speichern der Änderungen')
+      alert(`Fehler beim Speichern: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
     } finally {
       setSaving(false)
     }
@@ -188,19 +212,37 @@ export default function FunnelDetailPage() {
   }
 
   const saveStepEdit = async (stepId: string) => {
+    // Client-side validation
+    const title = editedStep.title?.trim() || ''
+    if (title.length === 0) {
+      alert('Schritt-Titel darf nicht leer sein')
+      return
+    }
+    if (title.length > 255) {
+      alert('Schritt-Titel ist zu lang (maximal 255 Zeichen)')
+      return
+    }
+
+    const description = editedStep.description?.trim() || ''
+    if (description.length > 2000) {
+      alert('Schritt-Beschreibung ist zu lang (maximal 2000 Zeichen)')
+      return
+    }
+
     try {
       setSaving(true)
       const response = await fetch(`/api/admin/funnel-steps/${stepId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: editedStep.title,
-          description: editedStep.description,
+          title: title,
+          description: description,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update step')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update step')
       }
 
       await loadFunnelDetails()
@@ -208,7 +250,7 @@ export default function FunnelDetailPage() {
       setEditedStep({})
     } catch (err) {
       console.error('Error updating step:', err)
-      alert('Fehler beim Speichern der Änderungen')
+      alert(`Fehler beim Speichern: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
     } finally {
       setSaving(false)
     }

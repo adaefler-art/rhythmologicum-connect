@@ -55,13 +55,27 @@ export async function PATCH(
     }
 
     if (typeof body.order_index === 'number') {
+      if (body.order_index < 0) {
+        return NextResponse.json({ error: 'Order index must be non-negative' }, { status: 400 })
+      }
       updateData.order_index = body.order_index
     }
     if (typeof body.title === 'string') {
-      updateData.title = body.title
+      const trimmedTitle = body.title.trim()
+      if (trimmedTitle.length === 0) {
+        return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+      }
+      if (trimmedTitle.length > 255) {
+        return NextResponse.json({ error: 'Title too long (max 255 characters)' }, { status: 400 })
+      }
+      updateData.title = trimmedTitle
     }
     if (typeof body.description === 'string') {
-      updateData.description = body.description
+      const trimmedDescription = body.description.trim()
+      if (trimmedDescription.length > 2000) {
+        return NextResponse.json({ error: 'Description too long (max 2000 characters)' }, { status: 400 })
+      }
+      updateData.description = trimmedDescription || null
     }
 
     // Use service role for admin operations
