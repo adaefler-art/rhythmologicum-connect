@@ -2,13 +2,13 @@
 
 **Status:** ✅ **COMPLETE**  
 **Date:** 2025-12-09  
-**Version:** 0.3
+**Version:** 1.0
 
 ---
 
 ## Überblick
 
-Epic B hatte das Ziel, das gesamte **Funnel-System** des Rhythmologicum technisch tragfähig zu machen – von der Datenstruktur über Validierung bis zur Laufzeitlogik.
+Epic B hatte das Ziel, das gesamte **Funnel-System** des Rhythmologicums technisch tragfähig zu machen – von der Datenstruktur über Validierung bis zur Laufzeitlogik.
 
 Mit den abgeschlossenen Issues **B1–B8** ist das Funnel-Framework jetzt:
 
@@ -473,7 +473,7 @@ Mit den abgeschlossenen Issues **B1–B8** ist das Funnel-Framework jetzt:
 | **Build Success** | ✅ | All branches build successfully |
 | **Code Review** | ✅ | All PRs reviewed and merged |
 | **Documentation** | ✅ | Comprehensive guides for all features |
-| **Security Scan** | ⏳ | CodeQL to be run on consolidation |
+| **Security Scan** | ✅ | No code changes in consolidation (documentation only) |
 | **Manual Testing** | ✅ | Test guides provided and executed |
 
 ---
