@@ -550,7 +550,22 @@ function StressCheckPageContent() {
         await loadAssessmentStatus(assessmentStatus.assessmentId)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        console.info('Next step: no nextStep, calling complete')
+        console.info('Next step: no nextStep; reloading status before completion')
+        await loadAssessmentStatus(assessmentStatus.assessmentId)
+
+        // After reload, check if we actually advanced; if not, proceed to completion
+        const refreshedStatus = lastGoodStatusRef.current
+        if (
+          refreshedStatus &&
+          refreshedStatus.currentStep.stepId !== assessmentStatus.currentStep.stepId
+        ) {
+          console.info('Next step: status reload provided a new step, skipping completion')
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          setSubmitting(false)
+          return
+        }
+
+        console.info('Next step: still no nextStep after reload, calling complete')
         // No next step - this is the last step, proceed to completion
         await handleComplete()
       }
