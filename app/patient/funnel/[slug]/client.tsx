@@ -150,7 +150,24 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Assessment-Status konnte nicht geladen werden.')
+        // Try to extract error message from response
+        let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error?.message) {
+            errorMessage = errorData.error.message
+          }
+        } catch {
+          // If JSON parsing fails, use default message
+        }
+        
+        if (response.status === 404) {
+          throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
+        } else if (response.status >= 500) {
+          throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
+        } else {
+          throw new Error(errorMessage)
+        }
       }
 
       const { data } = await response.json()
@@ -162,8 +179,10 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       setLoading(false)
     } catch (err) {
       console.error('Error loading assessment status:', err)
-      setError('Fehler beim Laden des Assessment-Status.')
+      const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
+      setError(errorMsg)
       setLoading(false)
+      throw err // Re-throw so caller knows it failed
     }
   }
 
@@ -236,7 +255,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
     try {
       const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
-      if (!currentStep) return
+      if (!currentStep) {
+        setError('Aktueller Schritt konnte nicht gefunden werden.')
+        setSubmitting(false)
+        return
+      }
 
       // Validate current step
       const response = await fetch(
@@ -248,7 +271,17 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       )
 
       if (!response.ok) {
-        throw new Error('Validierung fehlgeschlagen.')
+        // Try to extract error message from response
+        let errorMessage = 'Validierung fehlgeschlagen.'
+        try {
+          const errorData = await response.json()
+          if (errorData.error?.message) {
+            errorMessage = errorData.error.message
+          }
+        } catch {
+          // If JSON parsing fails, use default message
+        }
+        throw new Error(errorMessage)
       }
 
       const { data } = await response.json()
@@ -276,15 +309,23 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       // Validation passed
       if (data.nextStep) {
         // Reload status to get updated current step
-        await loadAssessmentStatus(assessmentStatus.assessmentId)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        try {
+          await loadAssessmentStatus(assessmentStatus.assessmentId)
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        } catch (loadErr) {
+          // Error already handled by loadAssessmentStatus (error state set)
+          // Just prevent the finally block from clearing submitting state prematurely
+          console.error('Failed to load next step status:', loadErr)
+          // Don't set submitting to false here - let finally handle it
+        }
       } else {
         // Last step - complete assessment
         await handleComplete()
       }
     } catch (err) {
       console.error('Error navigating to next step:', err)
-      setError('Fehler bei der Navigation. Bitte versuchen Sie es erneut.')
+      const errorMsg = err instanceof Error ? err.message : 'Fehler bei der Navigation. Bitte versuchen Sie es erneut.'
+      setError(errorMsg)
     } finally {
       setSubmitting(false)
     }
