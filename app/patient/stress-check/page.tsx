@@ -5,25 +5,14 @@ import { useRouter } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
 import ConsentModal from './ConsentModal'
+import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
+import { isQuestionStep } from '@/lib/types/funnel'
 
-type Question = {
-  id: string
-  text: string
-  group: 'stress' | 'sleep'
-  helpText: string | null
-  isRequired: boolean
-}
-
-type StepQuestionPayload = {
-  key: string
-  label: string
-  help_text: string | null
-}
-
-type StepQuestionRow = {
-  order_index: number
-  is_required: boolean
-  questions: StepQuestionPayload | StepQuestionPayload[] | null
+type ValidationError = {
+  questionId: string
+  questionKey: string
+  questionLabel: string
+  orderIndex: number
 }
 
 const SCALE = [
@@ -41,97 +30,30 @@ export default function StressCheckPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [hasConsent, setHasConsent] = useState(false)
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [questionsLoading, setQuestionsLoading] = useState(true)
+  const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [assessmentId, setAssessmentId] = useState<string | null>(null)
 
-  // Load questions from database
+  // Load funnel definition from API
   useEffect(() => {
-    const loadQuestions = async () => {
+    const loadFunnel = async () => {
       try {
-        // Get the stress funnel
-        const { data: funnel, error: funnelError } = await supabase
-          .from('funnels')
-          .select('id')
-          .eq('slug', 'stress')
-          .eq('is_active', true)
-          .single()
-
-        if (funnelError) throw funnelError
-        if (!funnel) throw new Error('Stress funnel not found')
-
-        // Get funnel steps
-        const { data: steps, error: stepsError } = await supabase
-          .from('funnel_steps')
-          .select('id, order_index')
-          .eq('funnel_id', funnel.id)
-          .order('order_index', { ascending: true })
-
-        if (stepsError) throw stepsError
-        if (!steps || steps.length === 0) {
-          throw new Error('No steps found for stress funnel')
+        const response = await fetch('/api/funnels/stress/definition')
+        if (!response.ok) {
+          throw new Error('Failed to load funnel definition')
         }
-
-        // Get all questions for these steps ordered by step and question order
-        const sortedQuestions: Question[] = []
-        
-        for (const step of steps) {
-          const group = step.order_index === 1 ? 'stress' : 'sleep'
-          
-          const { data: stepQuestions, error: stepQuestionsError } = await supabase
-            .from('funnel_step_questions')
-            .select(`
-              order_index,
-              is_required,
-              questions (
-                key,
-                label,
-                help_text
-              )
-            `)
-            .eq('funnel_step_id', step.id)
-            .order('order_index', { ascending: true })
-
-          if (stepQuestionsError) throw stepQuestionsError
-
-          const normalizedQuestions = ((stepQuestions || []) as StepQuestionRow[])
-            .map((sq) => {
-              const questionRecord = Array.isArray(sq.questions)
-                ? sq.questions[0]
-                : sq.questions
-
-              if (!questionRecord) {
-                return null
-              }
-
-              const questionGroup: Question['group'] = group
-
-              return {
-                id: questionRecord.key,
-                text: questionRecord.label,
-                helpText: questionRecord.help_text,
-                group: questionGroup,
-                isRequired: sq.is_required,
-              }
-            })
-            .filter((item): item is Question => Boolean(item))
-
-          const questionsInStep = normalizedQuestions
-          
-          sortedQuestions.push(...questionsInStep)
-        }
-
-        setQuestions(sortedQuestions)
+        const data: FunnelDefinition = await response.json()
+        setFunnel(data)
       } catch (err) {
-        console.error('Error loading questions:', err)
+        console.error('Error loading funnel:', err)
         setError('Fehler beim Laden der Fragen. Bitte laden Sie die Seite neu.')
-      } finally {
-        setQuestionsLoading(false)
       }
     }
 
-    loadQuestions()
+    loadFunnel()
   }, [])
 
   useEffect(() => {
@@ -204,64 +126,24 @@ export default function StressCheckPage() {
       ...prev,
       [qId]: value,
     }))
+    setValidationErrors((prev) => prev.filter((err) => err.questionId !== qId))
+    setError(null)
   }
 
-  const handleSubmit = async () => {
-    if (!userId) {
-      console.error('Kein userId in handleSubmit')
-      setError(
-        'Es gab ein Problem mit der Anmeldung. Bitte melden Sie sich erneut an.'
-      )
-      router.push('/login')
-      return
-    }
-
-    // Check for unanswered required questions and provide specific feedback
-    if (!allAnswered) {
-      const unansweredQuestions = questions.filter(q => answers[q.id] === undefined)
-      const requiredUnanswered = unansweredQuestions.filter(q => q.isRequired)
-      
-      // If there are required questions unanswered, block submission
-      if (requiredUnanswered.length > 0) {
-        const questionNumbers = requiredUnanswered.map(q => questions.indexOf(q) + 1).join(', ')
-        setError(
-          `Bitte beantworten Sie alle Pflichtfragen. Fehlend: Frage ${questionNumbers}`
-        )
-        // Scroll to first unanswered required question
-        const firstUnanswered = requiredUnanswered[0]
-        if (firstUnanswered) {
-          const element = document.getElementById(`question-${firstUnanswered.id}`)
-          element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-        return
-      }
-      
-      // Optional questions unanswered - allow but warn
-      const questionNumbers = unansweredQuestions.map(q => questions.indexOf(q) + 1).join(', ')
-      console.log(`Optional questions unanswered: ${questionNumbers}`)
-    }
-
-    setSubmitting(true)
-    setError(null)
+  // Create assessment on first answer if not exists
+  const createAssessmentIfNeeded = async () => {
+    if (assessmentId || !userId) return assessmentId
 
     try {
-      // 1) Patient-Profile holen
       const { data: profileData, error: profileError } = await supabase
         .from('patient_profiles')
         .select('id')
         .eq('user_id', userId)
         .single()
 
-      console.log('patient_profiles Result:', { profileData, profileError })
+      if (profileError) throw profileError
+      if (!profileData) throw new Error('Kein Patientenprofil gefunden.')
 
-      if (profileError) {
-        throw profileError
-      }
-      if (!profileData) {
-        throw new Error('Kein Patientenprofil gefunden.')
-      }
-
-      // 2) Assessment anlegen
       const { data: assessmentData, error: assessmentError } = await supabase
         .from('assessments')
         .insert({
@@ -271,45 +153,145 @@ export default function StressCheckPage() {
         .select('id')
         .single()
 
-      console.log('assessments Insert Result:', {
-        assessmentData,
-        assessmentError,
-      })
+      if (assessmentError) throw assessmentError
+      if (!assessmentData) throw new Error('Assessment konnte nicht angelegt werden.')
 
-      if (assessmentError) {
-        throw assessmentError
-      }
-      if (!assessmentData) {
-        throw new Error('Assessment konnte nicht angelegt werden.')
-      }
+      setAssessmentId(assessmentData.id)
+      return assessmentData.id
+    } catch (err) {
+      console.error('Error creating assessment:', err)
+      throw err
+    }
+  }
 
-      const assessmentId = assessmentData.id
+  // Save answer to database
+  const saveAnswer = async (questionKey: string, value: number) => {
+    try {
+      const currentAssessmentId = await createAssessmentIfNeeded()
+      if (!currentAssessmentId) return
 
-      // 3) Antworten vorbereiten
-      const answerRows = Object.entries(answers).map(([qId, value]) => ({
-        assessment_id: assessmentId,
-        question_id: qId,
-        answer_value: value,
-      }))
-
-      console.log('Antworten, die gespeichert werden sollen:', answerRows)
-
-      // 4) Antworten speichern
-      const { data: insertedAnswers, error: answersError } = await supabase
+      const { error: answerError } = await supabase
         .from('assessment_answers')
-        .insert(answerRows)
-        .select('*')
+        .upsert({
+          assessment_id: currentAssessmentId,
+          question_id: questionKey,
+          answer_value: value,
+        })
 
-      console.log('assessment_answers Insert Result:', {
-        insertedAnswers,
-        answersError,
+      if (answerError) throw answerError
+    } catch (err) {
+      console.error('Error saving answer:', err)
+      setError('Fehler beim Speichern der Antwort.')
+    }
+  }
+
+  // Handle answer change with auto-save
+  const handleAnswerChange = async (questionKey: string, value: number) => {
+    handleSetAnswer(questionKey, value)
+    await saveAnswer(questionKey, value)
+  }
+
+  // Validate current step before navigation
+  const validateCurrentStep = async (): Promise<boolean> => {
+    if (!funnel || !assessmentId) return false
+
+    const currentStep = funnel.steps[currentStepIndex]
+    if (!isQuestionStep(currentStep)) return true
+
+    try {
+      const response = await fetch('/api/assessment-validation/validate-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assessmentId,
+          stepId: currentStep.id,
+        }),
       })
 
-      if (answersError) {
-        throw answersError
+      const data = await response.json()
+
+      if (!data.success) {
+        setError(data.error || 'Validierung fehlgeschlagen')
+        return false
       }
 
-      // 5) Weiterleiten zur Result-Seite
+      if (!data.isValid) {
+        setValidationErrors(data.missingQuestions || [])
+        setError(
+          `Bitte beantworten Sie alle Pflichtfragen in diesem Schritt (${data.missingQuestions?.length || 0} fehlend).`,
+        )
+
+        // Scroll to first missing question
+        if (data.missingQuestions && data.missingQuestions.length > 0) {
+          const firstMissing = data.missingQuestions[0]
+          setTimeout(() => {
+            const element = document.getElementById(`question-${firstMissing.questionId}`)
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 100)
+        }
+
+        return false
+      }
+
+      setValidationErrors([])
+      setError(null)
+      return true
+    } catch (err) {
+      console.error('Error validating step:', err)
+      setError('Fehler bei der Validierung. Bitte versuchen Sie es erneut.')
+      return false
+    }
+  }
+
+  // Navigate to next step
+  const handleNextStep = async () => {
+    if (!funnel) return
+
+    // Validate current step before proceeding
+    const isValid = await validateCurrentStep()
+    if (!isValid) return
+
+    // Move to next step
+    if (currentStepIndex < funnel.steps.length - 1) {
+      setCurrentStepIndex(currentStepIndex + 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      // Last step - submit
+      await handleSubmit()
+    }
+  }
+
+  // Navigate to previous step
+  const handlePreviousStep = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(currentStepIndex - 1)
+      setError(null)
+      setValidationErrors([])
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!userId || !assessmentId) {
+      console.error('Kein userId oder assessmentId in handleSubmit')
+      setError('Es gab ein Problem mit der Anmeldung. Bitte melden Sie sich erneut an.')
+      router.push('/login')
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      // Mark assessment as completed
+      const { error: updateError } = await supabase
+        .from('assessments')
+        .update({ completed_at: new Date().toISOString() })
+        .eq('id', assessmentId)
+
+      if (updateError) throw updateError
+
+      // Redirect to result page
       router.push(`/patient/stress-check/result?assessmentId=${assessmentId}`)
     } catch (err) {
       console.error('Fehler in handleSubmit:', err)
@@ -323,14 +305,7 @@ export default function StressCheckPage() {
     }
   }
 
-  const totalQuestions = questions.length
-  const requiredQuestions = questions.filter(q => q.isRequired)
-  const answeredCount = Object.keys(answers).length
-  const requiredAnsweredCount = requiredQuestions.filter(q => answers[q.id] !== undefined).length
-  const allAnswered = answeredCount === totalQuestions
-  const allRequiredAnswered = requiredAnsweredCount === requiredQuestions.length
-
-  if (initialLoading || questionsLoading) {
+  if (initialLoading || !funnel) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
@@ -355,87 +330,68 @@ export default function StressCheckPage() {
     )
   }
 
-  const stressQuestions = questions.filter((q) => q.group === 'stress')
-  const sleepQuestions = questions.filter((q) => q.group === 'sleep')
+  const currentStep = funnel.steps[currentStepIndex]
+  const isFirstStep = currentStepIndex === 0
+  const isLastStep = currentStepIndex === funnel.steps.length - 1
+
+  // Calculate progress
+  const totalQuestions = funnel.totalQuestions
+  const answeredCount = Object.keys(answers).length
+  const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
   return (
     <main className="bg-slate-50 px-4 py-10">
       <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
-        {/* Header / Einleitung */}
+        {/* Header */}
         <header className="mb-6">
           <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
-            Stress &amp; Resilienz
+            {funnel.title}
           </p>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-2">
-            Ihr persönlicher Stress- &amp; Schlaf-Check
+            Schritt {currentStepIndex + 1} von {funnel.totalSteps}: {currentStep.title}
           </h1>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Bitte beantworten Sie die folgenden Fragen so gut es geht nach Ihrem
-            Gefühl der letzten Wochen. Es gibt keine richtigen oder falschen
-            Antworten – wichtig ist nur, dass es zu Ihnen passt.
-          </p>
+          {currentStep.description && (
+            <p className="text-sm text-slate-600 leading-relaxed">
+              {currentStep.description}
+            </p>
+          )}
         </header>
 
-        {/* Fortschritt */}
+        {/* Progress */}
         <div className="mb-6 flex flex-col gap-3">
           <div className="flex items-center justify-between text-sm md:text-base text-slate-700">
             <span className="font-medium">
-              Frage {answeredCount} von {totalQuestions}
+              Frage {answeredCount} von {totalQuestions} beantwortet
             </span>
-            {!allRequiredAnswered && (
-              <span className="text-xs md:text-sm text-amber-600">
-                Pflichtfragen: {requiredAnsweredCount}/{requiredQuestions.length}
-              </span>
-            )}
+            <span className="text-xs md:text-sm text-slate-500">
+              {Math.round(progressPercent)}% abgeschlossen
+            </span>
           </div>
           <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-3 bg-sky-500 transition-all"
-              style={{
-                width: `${(answeredCount / totalQuestions) * 100}%`,
-              }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Stress-Block */}
-          <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">
-              1. Bereich: Umgang mit Stress
-            </h2>
-            <div className="space-y-4">
-              {stressQuestions.map((q, index) => (
-                <QuestionCard
-                  key={q.id}
-                  index={index + 1}
-                  question={q}
-                  value={answers[q.id]}
-                  onChange={handleSetAnswer}
-                />
-              ))}
-            </div>
-          </section>
+        {/* Questions for current step */}
+        {isQuestionStep(currentStep) && (
+          <div className="space-y-4">
+            {currentStep.questions.map((question, index) => (
+              <QuestionCard
+                key={question.id}
+                index={index + 1}
+                question={question}
+                value={answers[question.key]}
+                onChange={handleAnswerChange}
+                hasError={validationErrors.some((err) => err.questionId === question.id)}
+              />
+            ))}
+          </div>
+        )}
 
-          {/* Schlaf-Block */}
-          <section>
-            <h2 className="text-sm font-semibold text-slate-800 mb-3">
-              2. Bereich: Schlaf &amp; Erholung
-            </h2>
-            <div className="space-y-4">
-              {sleepQuestions.map((q, index) => (
-                <QuestionCard
-                  key={q.id}
-                  index={index + 1 + stressQuestions.length}
-                  question={q}
-                  value={answers[q.id]}
-                  onChange={handleSetAnswer}
-                />
-              ))}
-            </div>
-          </section>
-        </div>
-
+        {/* Error message */}
         {error && (
           <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
             <span className="text-xl flex-shrink-0">❌</span>
@@ -443,33 +399,63 @@ export default function StressCheckPage() {
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-4">
+        {/* Navigation buttons */}
+        <div className="mt-8 flex gap-4">
+          {!isFirstStep && (
+            <button
+              type="button"
+              onClick={handlePreviousStep}
+              disabled={submitting}
+              className="flex-1 inline-flex justify-center items-center px-6 py-4 md:py-5 rounded-xl bg-slate-200 text-slate-700 text-base md:text-lg font-semibold hover:bg-slate-300 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              ← Zurück
+            </button>
+          )}
           <button
             type="button"
-            onClick={handleSubmit}
-            disabled={!allRequiredAnswered || submitting}
-            className="w-full inline-flex justify-center items-center px-6 py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-sky-600 transition-all"
+            onClick={handleNextStep}
+            disabled={submitting}
+            className="flex-1 inline-flex justify-center items-center px-6 py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-sky-600 transition-all"
             style={{ minHeight: '56px' }}
           >
             {submitting ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Bitte warten…
               </>
+            ) : isLastStep ? (
+              '✓ Antworten speichern & weiter'
             ) : (
-              <>
-                {allRequiredAnswered ? '✓ ' : ''}Antworten speichern & weiter
-              </>
+              'Weiter →'
             )}
           </button>
-          <p className="text-xs md:text-sm text-slate-500 text-center leading-relaxed px-4">
-            Nach dem Abschicken werden Ihre Antworten anonymisiert ausgewertet.
-            Anschließend sehen Sie Ihren persönlichen Stress- und Schlaf-Report.
-          </p>
         </div>
+
+        {isLastStep && (
+          <p className="mt-4 text-xs md:text-sm text-slate-500 text-center leading-relaxed px-4">
+            Nach dem Abschicken werden Ihre Antworten anonymisiert ausgewertet. Anschließend
+            sehen Sie Ihren persönlichen Stress- und Schlaf-Report.
+          </p>
+        )}
       </div>
     </main>
   )
@@ -477,35 +463,42 @@ export default function StressCheckPage() {
 
 type QuestionCardProps = {
   index: number
-  question: Question
+  question: QuestionDefinition
   value?: number
-  onChange: (id: string, value: number) => void
+  onChange: (key: string, value: number) => void
+  hasError?: boolean
 }
 
-function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
+function QuestionCard({ index, question, value, onChange, hasError }: QuestionCardProps) {
   const isAnswered = value !== undefined
-  
+
   return (
-    <div 
+    <div
       id={`question-${question.id}`}
       className={`border-2 rounded-xl p-5 md:p-6 transition-all ${
-        isAnswered 
-          ? 'border-sky-200 bg-sky-50/30' 
-          : 'border-slate-200 bg-white'
+        hasError
+          ? 'border-red-300 bg-red-50/30'
+          : isAnswered
+            ? 'border-sky-200 bg-sky-50/30'
+            : 'border-slate-200 bg-white'
       }`}
     >
       <div className="flex items-start gap-3 mb-4">
-        <span className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-          isAnswered 
-            ? 'bg-sky-600 text-white' 
-            : 'bg-slate-200 text-slate-600'
-        }`}>
+        <span
+          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+            hasError
+              ? 'bg-red-600 text-white'
+              : isAnswered
+                ? 'bg-sky-600 text-white'
+                : 'bg-slate-200 text-slate-600'
+          }`}
+        >
           {index}
         </span>
         <div className="flex-1">
           <div className="flex items-start gap-2">
             <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1 flex-1">
-              {question.text}
+              {question.label}
             </p>
             {!question.isRequired && (
               <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md whitespace-nowrap">
@@ -523,8 +516,13 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
           </p>
         </div>
       )}
-      {!isAnswered && question.isRequired && (
-        <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+      {hasError && (
+        <p className="text-xs md:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 ml-11">
+          ⚠️ Diese Pflichtfrage muss beantwortet werden
+        </p>
+      )}
+      {!isAnswered && !hasError && question.isRequired && (
+        <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 ml-11">
           ⚠️ Bitte wählen Sie eine Antwort aus
         </p>
       )}
@@ -549,7 +547,7 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
                 name={question.id}
                 value={option.value}
                 checked={checked}
-                onChange={() => onChange(question.id, option.value)}
+                onChange={() => onChange(question.key, option.value)}
                 aria-label={`${option.label} (Wert ${option.value})`}
               />
               <span className="text-xl sm:text-2xl font-bold">{option.value}</span>
