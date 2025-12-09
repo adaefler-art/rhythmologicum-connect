@@ -71,14 +71,31 @@ function StressCheckPageContent() {
     const loadFunnel = async () => {
       try {
         const response = await fetch('/api/funnels/stress/definition')
+        const data: FunnelDefinition = await response.json()
+
+        setDebugInfo(
+          JSON.stringify({
+            endpoint: 'funnel-definition',
+            ok: response.ok,
+            status: response.status,
+            steps: data?.steps?.map((s) => ({ id: s.id, type: s.type, orderIndex: s.orderIndex })),
+            totalSteps: data?.totalSteps,
+          }),
+        )
+
         if (!response.ok) {
           throw new Error('Failed to load funnel definition')
         }
-        const data: FunnelDefinition = await response.json()
         setFunnel(data)
       } catch (err) {
         console.error('Error loading funnel:', err)
         setError('Fehler beim Laden der Fragen. Bitte laden Sie die Seite neu.')
+        setDebugInfo(
+          JSON.stringify({
+            endpoint: 'funnel-definition',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
       }
     }
 
