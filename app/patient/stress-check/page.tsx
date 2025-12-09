@@ -199,10 +199,6 @@ function StressCheckPageContent() {
         credentials: 'include',
       })
 
-      if (!response.ok) {
-        throw new Error('Fehler beim Laden des Assessment-Status.')
-      }
-
       const statusJson = await response.json()
       const statusData = (statusJson?.data ?? statusJson) as Partial<AssessmentStatus>
       setDebugInfo(JSON.stringify({
@@ -211,6 +207,11 @@ function StressCheckPageContent() {
         status: response.status,
         body: statusJson,
       }))
+
+      if (!response.ok) {
+        const message = statusJson?.error?.message || 'Fehler beim Laden des Assessment-Status.'
+        throw new Error(message)
+      }
 
       if (!statusData || !statusData.currentStep) {
         throw new Error('Ungültige Antwort vom Server erhalten.')
