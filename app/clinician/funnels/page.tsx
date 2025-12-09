@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
 
 type Funnel = {
   id: string
@@ -16,7 +17,6 @@ type Funnel = {
 }
 
 export default function FunnelListPage() {
-  const router = useRouter()
   const [funnels, setFunnels] = useState<Funnel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

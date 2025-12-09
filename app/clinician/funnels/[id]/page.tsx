@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
 
 type Question = {
   id: string
@@ -38,7 +40,6 @@ type Funnel = {
 
 export default function FunnelDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const funnelId = params.id as string
 
   const [funnel, setFunnel] = useState<Funnel | null>(null)
@@ -47,11 +48,7 @@ export default function FunnelDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    loadFunnelDetails()
-  }, [funnelId])
-
-  const loadFunnelDetails = async () => {
+  const loadFunnelDetails = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -71,7 +68,11 @@ export default function FunnelDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [funnelId])
+
+  useEffect(() => {
+    loadFunnelDetails()
+  }, [loadFunnelDetails])
 
   const toggleFunnelActive = async () => {
     if (!funnel) return
