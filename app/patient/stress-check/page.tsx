@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
@@ -40,6 +40,14 @@ const SCALE = [
 ]
 
 export default function StressCheckPage() {
+  return (
+    <Suspense fallback={<StressCheckLoadingFallback />}>
+      <StressCheckPageContent />
+    </Suspense>
+  )
+}
+
+function StressCheckPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [initialLoading, setInitialLoading] = useState(true)
@@ -298,7 +306,7 @@ export default function StressCheckPage() {
   }
 
   // B6 AK3: Validate current step using Runtime API
-  const validateCurrentStep = async (): Promise<{ isValid: boolean; nextStep?: any }> => {
+  const validateCurrentStep = async (): Promise<{ isValid: boolean; nextStep?: unknown }> => {
     if (!funnel || !assessmentStatus) return { isValid: false }
 
     const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
@@ -566,7 +574,7 @@ export default function StressCheckPage() {
         {/* Error message */}
         {error && (
           <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
-            <span className="text-xl flex-shrink-0">❌</span>
+            <span className="text-xl shrink-0">❌</span>
             <p className="leading-relaxed">{error}</p>
           </div>
         )}
@@ -633,6 +641,22 @@ export default function StressCheckPage() {
   )
 }
 
+function StressCheckLoadingFallback() {
+  return (
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
+      <div className="max-w-md w-full text-center space-y-4">
+        <div className="mx-auto h-12 w-12 rounded-full border-4 border-slate-200 border-t-sky-500 animate-spin" />
+        <p className="text-base md:text-lg text-slate-600 font-medium">
+          Lade deinen Stress-Check …
+        </p>
+        <p className="text-sm text-slate-500">
+          Einen kleinen Moment bitte. Wir bereiten deine Fragen vor.
+        </p>
+      </div>
+    </main>
+  )
+}
+
 type QuestionCardProps = {
   index: number
   question: QuestionDefinition
@@ -669,7 +693,7 @@ function QuestionCard({
     >
       <div className="flex items-start gap-3 mb-4">
         <span
-          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
             hasError
               ? 'bg-red-600 text-white'
               : isAnswered
@@ -700,7 +724,7 @@ function QuestionCard({
       {question.helpText && (
         <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
           <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-            <span className="text-lg flex-shrink-0">💡</span>
+            <span className="text-lg shrink-0">💡</span>
             <span>{question.helpText}</span>
           </p>
         </div>

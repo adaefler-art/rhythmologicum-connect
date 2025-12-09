@@ -49,4 +49,5 @@ jobs:
 
       - name: Secret unavailable info
         if: steps.secret-check.outputs.skip == 'true'
-        run: echo "verify-supabase-schema skipped: SUPABASE_DB_URL secret is inaccessible in this workflow context."
+        run: |
+          echo "verify-supabase-schema skipped: SUPABASE_DB_URL secret is inaccessible in this workflow context."
