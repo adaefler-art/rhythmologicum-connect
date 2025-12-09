@@ -1,5 +1,180 @@
 # Zusammenfassung der Änderungen
 
+## C1 - Global Design Tokens (2025-12-09)
+
+### Was wurde implementiert?
+
+Diese Implementierung führt ein **globales Design-Token-System** für Rhythmologicum Connect ein. Das System bietet zentrale Verwaltung aller Design-Werte (Spacing, Typography, Motion) und bereitet die Infrastruktur für Theme-Unterstützung basierend auf `funnels.default_theme` vor.
+
+### Hauptänderungen
+
+#### 1. Design Token System (`lib/design-tokens.ts`)
+
+**Neue Datei:** 9KB TypeScript mit vollständigen Typdefinitionen
+
+**Token-Kategorien:**
+- **Spacing:** 7 Abstufungen (xs bis 3xl) für konsistente Abstände
+- **Typography:** 8 Font-Größen, 4 Line-Heights, 4 Font-Weights
+- **Radii:** 6 Border-Radius Stufen plus `full` für Kreise
+- **Shadows:** 6 Box-Shadow Definitionen für verschiedene Elevationen
+- **Motion:** 5 Durations, 8 Easing-Funktionen, 3 Framer Motion Spring-Configs
+- **Colors:** Theme-bereite Farbpaletten (Primary, Neutral, Semantic, Background)
+- **Component Tokens:** Vorkonfigurierte Presets für gängige UI-Muster
+
+**Highlights:**
+- ✅ Vollständig typsicher (TypeScript)
+- ✅ Autocomplete-Unterstützung in IDE
+- ✅ Theme-Infrastruktur für `funnels.default_theme`
+- ✅ `getThemeColors()` Funktion für zukünftige Theme-Varianten
+
+#### 2. CSS Custom Properties (`app/globals.css`)
+
+**Erweitert:** Globale CSS-Variablen für alle wichtigen Tokens
+
+```css
+--spacing-xs bis --spacing-3xl
+--font-size-xs bis --font-size-4xl
+--radius-sm bis --radius-2xl
+--duration-fast bis --duration-slow
+--easing-smooth, --easing-snappy
+--color-primary-*, --color-neutral-*
+```
+
+**Nutzen:** Tokens sowohl in TypeScript als auch in reinem CSS verfügbar
+
+#### 3. Migrierte Komponenten
+
+**MobileQuestionCard** (`app/components/MobileQuestionCard.tsx`)
+- 50+ hardcodierte Werte durch Tokens ersetzt
+- Header, Content, Navigation, Progress Bar nutzen Tokens
+- Motion-Tokens für alle Transitionen
+
+**DesktopQuestionCard** (`app/components/DesktopQuestionCard.tsx`)
+- Gleiche Token-Struktur wie Mobile
+- Desktop-spezifische Werte über `componentTokens.desktopQuestionCard`
+
+**MobileAnswerButton** (`app/components/MobileAnswerButton.tsx`)
+- Touch-optimierte Größen via `componentTokens.answerButton`
+- Framer Motion Springs via `motionTokens.spring.default`
+
+#### 4. Umfassende Dokumentation
+
+**`docs/C1_DESIGN_TOKENS.md`** (16KB)
+- Vollständige Token-Referenz mit Beispielen
+- Verwendungsanleitung für alle Token-Kategorien
+- Best Practices und Migration Guide
+- Theme-Support Roadmap
+- Maintenance-Hinweise
+
+**`docs/C1_IMPLEMENTATION_SUMMARY.md`** (12KB, Deutsch)
+- Implementierungs-Zusammenfassung
+- Vorher/Nachher Code-Beispiele
+- Akzeptanzkriterien-Status
+- Lessons Learned
+- Zukünftige Erweiterungen
+
+### Vorteile
+
+#### 1. Zentralisierte Verwaltung
+- **Ein Änderungspunkt:** Alle Design-Werte in `lib/design-tokens.ts`
+- **Keine Magic Numbers:** Alle Werte benannt und dokumentiert
+- **Globale Anpassungen:** z.B. alle Card-Abstände durch einen Token-Wert ändern
+
+#### 2. Type Safety & Developer Experience
+- **TypeScript Autocomplete:** Alle Tokens haben Typdefinitionen
+- **Compile-Zeit Fehler:** Ungültige Token-Werte werden sofort erkannt
+- **IDE Support:** IntelliSense für alle Token-Werte
+
+#### 3. Konsistenz
+- **Standardisierte Abstände:** Keine zufälligen `px-3`, `px-4`, `px-5` mehr
+- **Einheitliche Animationen:** Alle Transitionen verwenden gleiche Timing
+- **Component Tokens:** Wiederverwendbare Presets für gängige Muster
+
+#### 4. Theme-Bereitschaft
+- **Infrastruktur vorhanden:** `getThemeColors()` für Theme-Varianten
+- **DB-Integration:** Unterstützt `funnels.default_theme` Feld
+- **Einfache Erweiterung:** Neue Themes durch Color-Paletten hinzufügen
+
+### Code-Statistiken
+
+- **Neue Zeilen:** ~950 (Tokens, Docs, Migrationen)
+- **Ersetzte Magic Numbers:** 50+ hardcodierte Werte
+- **Migrierte Komponenten:** 3 Haupt-Funnel-Komponenten
+- **Dokumentation:** 28KB (English + Deutsch)
+- **Token-Kategorien:** 7 vollständige Kategorien
+
+### Akzeptanzkriterien - Status
+
+- ✅ **Token-Übersicht dokumentiert**
+- ✅ **Zentrale Anpassung möglich** via `lib/design-tokens.ts`
+- ✅ **Funnel-UI nutzt Tokens** (MobileQuestionCard, DesktopQuestionCard, MobileAnswerButton)
+- ✅ **Separates Parameter-File** für Design-Werte
+- ✅ **Keine Magic Numbers** in migrierten Komponenten
+- ✅ **Theme-Unterstützung vorbereitet** für `funnels.default_theme`
+
+### Qualitätssicherung
+
+- ✅ **TypeScript Compilation:** Fehlerfrei
+- ✅ **ESLint:** Alle Warnungen behoben
+- ✅ **Type Safety:** Vollständige Typdefinitionen
+- ✅ **Prettier:** Code formatiert nach Projektstandards
+- ✅ **Rückwärtskompatibilität:** 100%, keine Breaking Changes
+- ✅ **Visuelle Konsistenz:** Alle Werte 1:1 übernommen
+
+### Zukünftige Erweiterungen (Roadmap)
+
+**Phase 2 (Geplant):**
+- Theme-Varianten Implementierung (Stress vs. Sleep)
+- Dynamisches Theme-Laden basierend auf `funnel.default_theme`
+- Theme Preview im Clinician Dashboard
+- Migration weiterer Komponenten
+
+**Phase 3 (Zukunft):**
+- Custom Theme Builder UI
+- Export/Import Theme-Konfigurationen
+- A11y-fokussierte Theme-Varianten
+- Dark Mode Support
+
+### Lessons Learned
+
+**Was gut funktionierte:**
+1. TypeScript Types ermöglichen sicheres Refactoring
+2. Component Tokens beschleunigen Migration
+3. Inline Styles erlauben direkte Token-Verwendung
+4. Frühe Dokumentation hilft bei konsistenter Implementierung
+
+**Herausforderungen:**
+1. Balance zwischen zu vielen und zu wenigen Tokens finden
+2. Alle Magic Numbers ohne Visual Regressions identifizieren
+3. Tailwind CSS 4 CSS-in-JS Ansatz berücksichtigen
+
+### Dateien
+
+**Neu:**
+- `lib/design-tokens.ts` - Haupt-Token-Definitionen
+- `docs/C1_DESIGN_TOKENS.md` - Englische Dokumentation
+- `docs/C1_IMPLEMENTATION_SUMMARY.md` - Deutsche Zusammenfassung
+
+**Geändert:**
+- `app/globals.css` - CSS Custom Properties
+- `app/components/MobileQuestionCard.tsx` - Tokens verwendet
+- `app/components/DesktopQuestionCard.tsx` - Tokens verwendet
+- `app/components/MobileAnswerButton.tsx` - Tokens verwendet
+
+### Testing
+
+**Manuelle Tests empfohlen:**
+1. Dev Server starten: `npm run dev`
+2. Funnel-UI auf verschiedenen Bildschirmgrößen testen
+3. Answer Buttons, Navigation, Animationen prüfen
+4. Token-Wert ändern und globale Auswirkung verifizieren
+
+**Automatisierte Tests:**
+- ✅ TypeScript: `npx tsc --noEmit`
+- ✅ ESLint: `npx eslint app/components/ lib/design-tokens.ts`
+
+---
+
 ## B9 - Epic B — Abschluss & Final Consolidation (2025-12-09)
 
 ### Was wurde implementiert?
