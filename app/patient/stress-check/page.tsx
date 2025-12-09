@@ -510,9 +510,19 @@ function StressCheckPageContent() {
   }
 
   if (!assessmentStatus || !assessmentStatus.currentStep) {
+    // Zeige Fehler dauerhaft, blockiere weitere UI
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20">
-        <p className="text-sm text-red-600">Fehler: Assessment-Status ungültig. Bitte Seite neu laden oder Support kontaktieren.</p>
+      <main className="flex items-center justify-center bg-slate-50 py-20 min-h-screen">
+        <div className="max-w-md w-full text-center space-y-4">
+          <div className="mx-auto h-12 w-12 rounded-full border-4 border-red-200 border-t-red-500 animate-pulse" />
+          <p className="text-base md:text-lg text-red-600 font-medium">
+            Fehler: Assessment-Status ungültig.<br />Bitte Seite neu laden oder Support kontaktieren.
+          </p>
+          <p className="text-sm text-slate-500">
+            Es wurden keine gültigen Daten vom Server empfangen.<br />
+            Sollte das Problem bestehen, bitte an die Praxis wenden.
+          </p>
+        </div>
       </main>
     )
   }
