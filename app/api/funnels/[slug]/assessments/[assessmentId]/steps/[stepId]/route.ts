@@ -174,6 +174,11 @@ export async function POST(
     )
 
     if (!stepValidation.valid) {
+      console.warn('ensureStepIsCurrent failed', {
+        assessmentId,
+        requestedStepId: stepId,
+        error: stepValidation.error,
+      })
       if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
         return forbiddenResponse(stepValidation.error!.message)
       }

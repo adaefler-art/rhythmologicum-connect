@@ -140,6 +140,14 @@ export async function getCurrentStep(
       )
 
     const answeredRequired = requiredQuestions.filter((rq) => answeredQuestionIds.has(rq.key))
+    const debugRequired = requiredQuestions.map((rq) => rq.key)
+    const debugAnswered = Array.from(answeredQuestionIds)
+    console.info('getCurrentStep debug', {
+      stepId: step.id,
+      required: debugRequired,
+      answered: debugAnswered,
+      answeredRequired: answeredRequired.map((rq) => rq.key),
+    })
     const answeredRequiredIds = answeredRequired.map((rq) => rq.id)
 
     // If this step has questions and not all required are answered, this is the current step
