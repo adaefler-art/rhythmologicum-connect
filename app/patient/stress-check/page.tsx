@@ -112,17 +112,12 @@ function StressCheckPageContent() {
       let currentAssessmentId: string | null = null
 
       // Handle existing assessments:
-      // - If completed AND !forceNew: redirect to result (show existing results)
-      // - If completed AND forceNew: create new assessment (start fresh)
-      // - If in_progress: resume existing assessment
+      // - Completed assessments always trigger a fresh start (results are available via Verlauf)
+      // - In-progress assessments are resumed unless the user explicitly requested a new start
       if (existingAssessments && existingAssessments.length > 0) {
         const latest = existingAssessments[0]
-        if (latest.status === 'completed' && !forceNew) {
-          router.push(`/patient/stress-check/result?assessmentId=${latest.id}`)
-          return
-        }
-        // Use existing in-progress assessment (but not completed ones when forceNew is true)
-        if (latest.status === 'in_progress') {
+        // Use existing in-progress assessment (but not when forceNew is true)
+        if (latest.status === 'in_progress' && !forceNew) {
           currentAssessmentId = latest.id
         }
       }
