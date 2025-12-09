@@ -2,20 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
+import {
+  successResponse,
+  missingFieldsResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  invalidInputResponse,
+  internalErrorResponse,
+} from '@/lib/api/responses'
+import {
+  logUnauthorized,
+  logDatabaseError,
+} from '@/lib/logging/logger'
 
 /**
- * B5: Start a new assessment for a funnel
+ * B5/B8: Start a new assessment for a funnel
  * 
  * POST /api/funnels/[slug]/assessments
  * 
  * Creates a new assessment for the authenticated patient and returns
  * the assessment ID and first step information.
  * 
- * Response:
+ * Response (B8 standardized):
  * {
- *   assessmentId: string,
- *   status: 'in_progress',
- *   currentStep: { stepId, title, type, ... }
+ *   success: true,
+ *   data: {
+ *     assessmentId: string,
+ *     status: 'in_progress',
+ *     currentStep: { stepId, title, type, ... }
+ *   }
  * }
  */
 
@@ -23,18 +38,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  let slug: string | undefined
+
   try {
-    const { slug } = await params
+    const paramsResolved = await params
+    slug = paramsResolved.slug
 
     // Validate slug parameter
     if (!slug) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-Slug fehlt.',
-        },
-        { status: 400 },
-      )
+      return missingFieldsResponse('Funnel-Slug fehlt.')
     }
 
     // Create Supabase server client
@@ -63,14 +75,10 @@ export async function POST(
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
-        },
-        { status: 401 },
-      )
+      logUnauthorized({
+        endpoint: `/api/funnels/${slug}/assessments`,
+      })
+      return unauthorizedResponse()
     }
 
     // Get patient profile
@@ -81,14 +89,14 @@ export async function POST(
       .single()
 
     if (profileError || !patientProfile) {
-      console.error('Patient profile lookup error:', profileError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Benutzerprofil nicht gefunden.',
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments`,
         },
-        { status: 404 },
+        profileError,
       )
+      return notFoundResponse('Benutzerprofil')
     }
 
     // Load funnel by slug and verify it's active
@@ -99,24 +107,18 @@ export async function POST(
       .single()
 
     if (funnelError || !funnel) {
-      console.error('Funnel lookup error:', funnelError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Funnel nicht gefunden.',
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments`,
         },
-        { status: 404 },
+        funnelError,
       )
+      return notFoundResponse('Funnel')
     }
 
     if (!funnel.is_active) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Dieser Funnel ist nicht aktiv.',
-        },
-        { status: 400 },
-      )
+      return invalidInputResponse('Dieser Funnel ist nicht aktiv.')
     }
 
     // Create new assessment with status = in_progress
@@ -132,34 +134,34 @@ export async function POST(
       .single()
 
     if (assessmentError || !assessment) {
-      console.error('Assessment creation error:', assessmentError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Fehler beim Erstellen des Assessments.',
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments`,
         },
-        { status: 500 },
+        assessmentError,
       )
+      return internalErrorResponse('Fehler beim Erstellen des Assessments.')
     }
 
     // Determine first step using B3 navigation logic
     const currentStep = await getCurrentStep(supabase, assessment.id, funnel.id)
 
     if (!currentStep) {
-      console.error('Failed to determine first step for assessment:', assessment.id)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Fehler beim Ermitteln des ersten Schritts.',
+          userId: user.id,
+          assessmentId: assessment.id,
+          endpoint: `/api/funnels/${slug}/assessments`,
         },
-        { status: 500 },
+        new Error('Failed to determine first step'),
       )
+      return internalErrorResponse('Fehler beim Ermitteln des ersten Schritts.')
     }
 
     // Return success response
-    return NextResponse.json(
+    return successResponse(
       {
-        success: true,
         assessmentId: assessment.id,
         status: assessment.status,
         currentStep: {
@@ -170,16 +172,15 @@ export async function POST(
           stepIndex: currentStep.stepIndex,
         },
       },
-      { status: 201 },
+      201,
     )
   } catch (error) {
-    console.error('Unexpected error in create assessment API:', error)
-    return NextResponse.json(
+    logDatabaseError(
       {
-        success: false,
-        error: 'Ein unerwarteter Fehler ist aufgetreten.',
+        endpoint: `/api/funnels/${slug}/assessments`,
       },
-      { status: 500 },
+      error,
     )
+    return internalErrorResponse()
   }
 }

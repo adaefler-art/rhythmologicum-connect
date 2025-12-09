@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
+import {
+  successResponse,
+  missingFieldsResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+} from '@/lib/api/responses'
+import {
+  logUnauthorized,
+  logForbidden,
+  logDatabaseError,
+} from '@/lib/logging/logger'
 
 /**
- * B5: Get assessment status and current step
+ * B5/B8: Get assessment status and current step
  * 
  * GET /api/funnels/[slug]/assessments/[assessmentId]
  * 
@@ -14,14 +27,16 @@ import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
  * - Number of completed steps
  * - Total steps in funnel
  * 
- * Response:
+ * Response (B8 standardized):
  * {
  *   success: true,
- *   assessmentId: string,
- *   status: 'in_progress' | 'completed',
- *   currentStep: { stepId, title, type, stepIndex, orderIndex },
- *   completedSteps: number,
- *   totalSteps: number
+ *   data: {
+ *     assessmentId: string,
+ *     status: 'in_progress' | 'completed',
+ *     currentStep: { stepId, title, type, stepIndex, orderIndex },
+ *     completedSteps: number,
+ *     totalSteps: number
+ *   }
  * }
  */
 
@@ -29,18 +44,17 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
+  let slug: string | undefined
+  let assessmentId: string | undefined
+
   try {
-    const { slug, assessmentId } = await params
+    const paramsResolved = await params
+    slug = paramsResolved.slug
+    assessmentId = paramsResolved.assessmentId
 
     // Validate parameters
     if (!slug || !assessmentId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-Slug oder Assessment-ID fehlt.',
-        },
-        { status: 400 },
-      )
+      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
     }
 
     // Create Supabase server client
@@ -69,14 +83,8 @@ export async function GET(
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
-        },
-        { status: 401 },
-      )
+      logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`, assessmentId })
+      return unauthorizedResponse()
     }
 
     // Get patient profile
@@ -87,14 +95,8 @@ export async function GET(
       .single()
 
     if (profileError || !patientProfile) {
-      console.error('Patient profile lookup error:', profileError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Benutzerprofil nicht gefunden.',
-        },
-        { status: 404 },
-      )
+      logDatabaseError({ userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, profileError)
+      return notFoundResponse('Benutzerprofil')
     }
 
     // Load assessment and verify ownership
@@ -106,39 +108,19 @@ export async function GET(
       .single()
 
     if (assessmentError || !assessment) {
-      console.error('Assessment lookup error:', assessmentError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Assessment nicht gefunden.',
-        },
-        { status: 404 },
-      )
+      logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, assessmentError)
+      return notFoundResponse('Assessment')
     }
 
     // Verify ownership
     if (assessment.patient_id !== patientProfile.id) {
-      console.warn(
-        `Unauthorized assessment access attempt by user ${user.id} for assessment ${assessmentId}`,
-      )
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Sie haben keine Berechtigung, dieses Assessment anzusehen.',
-        },
-        { status: 403 },
-      )
+      logForbidden({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, 'Assessment does not belong to user')
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
     }
 
     // Get funnel info
     if (!assessment.funnel_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-ID fehlt im Assessment.',
-        },
-        { status: 500 },
-      )
+      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
     }
 
     // Get total steps count
@@ -149,14 +131,8 @@ export async function GET(
       .order('order_index', { ascending: true })
 
     if (stepsError || !steps) {
-      console.error('Steps lookup error:', stepsError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Fehler beim Laden der Schritte.',
-        },
-        { status: 500 },
-      )
+      logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, stepsError)
+      return internalErrorResponse('Fehler beim Laden der Schritte.')
     }
 
     const totalSteps = steps.length
@@ -165,45 +141,29 @@ export async function GET(
     const currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
 
     if (!currentStep) {
-      console.error('Failed to determine current step for assessment:', assessmentId)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Fehler beim Ermitteln des aktuellen Schritts.',
-        },
-        { status: 500 },
-      )
+      logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, new Error('Failed to determine current step'))
+      return internalErrorResponse('Fehler beim Ermitteln des aktuellen Schritts.')
     }
 
     // Count completed steps (steps before current step where all required questions are answered)
     const completedSteps = currentStep.stepIndex
 
     // Return success response
-    return NextResponse.json(
-      {
-        success: true,
-        assessmentId: assessment.id,
-        status: assessment.status,
-        currentStep: {
-          stepId: currentStep.stepId,
-          title: currentStep.title,
-          type: currentStep.type,
-          stepIndex: currentStep.stepIndex,
-          orderIndex: currentStep.orderIndex,
-        },
-        completedSteps,
-        totalSteps,
+    return successResponse({
+      assessmentId: assessment.id,
+      status: assessment.status,
+      currentStep: {
+        stepId: currentStep.stepId,
+        title: currentStep.title,
+        type: currentStep.type,
+        stepIndex: currentStep.stepIndex,
+        orderIndex: currentStep.orderIndex,
       },
-      { status: 200 },
-    )
+      completedSteps,
+      totalSteps,
+    })
   } catch (error) {
-    console.error('Unexpected error in get assessment status API:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Ein unerwarteter Fehler ist aufgetreten.',
-      },
-      { status: 500 },
-    )
+    logDatabaseError({ assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, error)
+    return internalErrorResponse()
   }
 }

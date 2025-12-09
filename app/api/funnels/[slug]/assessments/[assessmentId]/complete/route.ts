@@ -2,9 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { validateAllRequiredQuestions } from '@/lib/validation/requiredQuestions'
+import {
+  successResponse,
+  missingFieldsResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  forbiddenResponse,
+  validationErrorResponse,
+  internalErrorResponse,
+} from '@/lib/api/responses'
+import {
+  logUnauthorized,
+  logForbidden,
+  logValidationFailure,
+  logDatabaseError,
+} from '@/lib/logging/logger'
 
 /**
- * B5: Complete an assessment
+ * B5/B8: Complete an assessment
  * 
  * POST /api/funnels/[slug]/assessments/[assessmentId]/complete
  * 
@@ -12,20 +27,26 @@ import { validateAllRequiredQuestions } from '@/lib/validation/requiredQuestions
  * If all required questions are answered, sets assessment status to 'completed'
  * and records the completion timestamp.
  * 
- * Response (success):
+ * Response (B8 standardized):
+ * Success:
  * {
  *   success: true,
- *   ok: true,
- *   assessmentId: string,
- *   status: 'completed'
+ *   data: {
+ *     assessmentId: string,
+ *     status: 'completed'
+ *   }
  * }
  * 
- * Response (incomplete):
+ * Validation failed:
  * {
- *   success: true,
- *   ok: false,
- *   missingQuestions: [{ questionId, questionKey, questionLabel, orderIndex }],
- *   error: 'Nicht alle Pflichtfragen wurden beantwortet.'
+ *   success: false,
+ *   error: {
+ *     code: 'VALIDATION_FAILED',
+ *     message: 'Nicht alle Pflichtfragen wurden beantwortet.',
+ *     details: {
+ *       missingQuestions: [{ questionId, questionKey, questionLabel, orderIndex }]
+ *     }
+ *   }
  * }
  */
 
@@ -33,18 +54,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
+  let slug: string | undefined
+  let assessmentId: string | undefined
+
   try {
-    const { slug, assessmentId } = await params
+    const paramsResolved = await params
+    slug = paramsResolved.slug
+    assessmentId = paramsResolved.assessmentId
 
     // Validate parameters
     if (!slug || !assessmentId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-Slug oder Assessment-ID fehlt.',
-        },
-        { status: 400 },
-      )
+      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
     }
 
     // Create Supabase server client
@@ -73,14 +93,11 @@ export async function POST(
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
-        },
-        { status: 401 },
-      )
+      logUnauthorized({
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+        assessmentId,
+      })
+      return unauthorizedResponse()
     }
 
     // Get patient profile
@@ -91,14 +108,14 @@ export async function POST(
       .single()
 
     if (profileError || !patientProfile) {
-      console.error('Patient profile lookup error:', profileError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Benutzerprofil nicht gefunden.',
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
-        { status: 404 },
+        profileError,
       )
+      return notFoundResponse('Benutzerprofil')
     }
 
     // Load assessment and verify ownership
@@ -110,69 +127,61 @@ export async function POST(
       .single()
 
     if (assessmentError || !assessment) {
-      console.error('Assessment lookup error:', assessmentError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Assessment nicht gefunden.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
-        { status: 404 },
+        assessmentError,
       )
+      return notFoundResponse('Assessment')
     }
 
     // Verify ownership
     if (assessment.patient_id !== patientProfile.id) {
-      console.warn(
-        `Unauthorized assessment access attempt by user ${user.id} for assessment ${assessmentId}`,
-      )
-      return NextResponse.json(
+      logForbidden(
         {
-          success: false,
-          error: 'Sie haben keine Berechtigung, dieses Assessment abzuschließen.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
-        { status: 403 },
+        'Assessment does not belong to user',
       )
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment abzuschließen.')
     }
 
     // Check if already completed
     if (assessment.status === 'completed') {
-      return NextResponse.json(
-        {
-          success: true,
-          ok: true,
-          assessmentId: assessment.id,
-          status: 'completed',
-          message: 'Assessment wurde bereits abgeschlossen.',
-        },
-        { status: 200 },
-      )
+      return successResponse({
+        assessmentId: assessment.id,
+        status: 'completed',
+        message: 'Assessment wurde bereits abgeschlossen.',
+      })
     }
 
     // Verify funnel_id exists
     if (!assessment.funnel_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-ID fehlt im Assessment.',
-        },
-        { status: 500 },
-      )
+      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
     }
 
     // Perform full validation across all funnel steps
     const validationResult = await validateAllRequiredQuestions(assessmentId, assessment.funnel_id)
 
-    // If validation failed, return missing questions with 400 status
+    // If validation failed, return missing questions
     if (!validationResult.isValid) {
-      return NextResponse.json(
+      logValidationFailure(
         {
-          success: true,
-          ok: false,
-          missingQuestions: validationResult.missingQuestions,
-          error: 'Nicht alle Pflichtfragen wurden beantwortet.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
-        { status: 400 },
+        validationResult.missingQuestions,
       )
+
+      return validationErrorResponse('Nicht alle Pflichtfragen wurden beantwortet.', {
+        missingQuestions: validationResult.missingQuestions,
+      })
     }
 
     // All questions answered - mark assessment as completed
@@ -185,34 +194,30 @@ export async function POST(
       .eq('id', assessmentId)
 
     if (updateError) {
-      console.error('Error updating assessment status:', updateError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Fehler beim Abschließen des Assessments.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
-        { status: 500 },
+        updateError,
       )
+      return internalErrorResponse('Fehler beim Abschließen des Assessments.')
     }
 
     // Success response
-    return NextResponse.json(
-      {
-        success: true,
-        ok: true,
-        assessmentId: assessment.id,
-        status: 'completed',
-      },
-      { status: 200 },
-    )
+    return successResponse({
+      assessmentId: assessment.id,
+      status: 'completed',
+    })
   } catch (error) {
-    console.error('Unexpected error in complete assessment API:', error)
-    return NextResponse.json(
+    logDatabaseError(
       {
-        success: false,
-        error: 'Ein unerwarteter Fehler ist aufgetreten.',
+        assessmentId,
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
       },
-      { status: 500 },
+      error,
     )
+    return internalErrorResponse()
   }
 }
