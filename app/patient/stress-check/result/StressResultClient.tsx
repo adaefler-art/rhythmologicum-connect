@@ -369,10 +369,10 @@ export default function StressResultClient() {
         <div className="flex justify-center gap-4 text-sm">
           <button
             type="button"
-            onClick={() => router.push('/patient/stress-check')}
+            onClick={() => router.push('/patient/stress-check?new=true')}
             className="text-slate-600 hover:text-slate-900 underline transition"
           >
-            Zurück zum Fragebogen
+            Neuen Fragebogen starten
           </button>
         </div>
       </section>
