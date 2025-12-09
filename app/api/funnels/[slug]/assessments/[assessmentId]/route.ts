@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
@@ -118,9 +118,28 @@ export async function GET(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
     }
 
-    // Get funnel info
+    // Get funnel info (self-heal legacy rows missing funnel_id)
     if (!assessment.funnel_id) {
-      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+      const { data: funnelRow, error: funnelLookupError } = await supabase
+        .from('funnels')
+        .select('id')
+        .eq('slug', slug)
+        .single()
+
+      if (funnelLookupError || !funnelRow?.id) {
+        return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+      }
+
+      const { error: repairError } = await supabase
+        .from('assessments')
+        .update({ funnel_id: funnelRow.id })
+        .eq('id', assessment.id)
+
+      if (repairError) {
+        return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+      }
+
+      assessment.funnel_id = funnelRow.id
     }
 
     // Get total steps count

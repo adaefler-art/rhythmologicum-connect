@@ -290,3 +290,89 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 - **Update relevant documentation** when adding features
 - Follow the **existing patterns** in the codebase for consistency
 - Be mindful of **Supabase schema** when making database changes
+
+## Funnel Architecture & Runtime (Epic B)
+
+### Datenmodell
+
+Die Stress- und Resilienz-Assessment-Funnels sind vollständig datengetrieben und liegen in folgenden Tabellen:
+
+- `funnels`
+- `funnel_steps`
+- `funnel_step_questions`
+- `questions`
+- `assessments`
+- `assessment_answers`
+
+Grundsatz:  
+**Funnel-Definition gehört in die Datenbank, nicht ins Frontend.**  
+Forms werden aus der FunnelDefinition geladen, nicht hart codiert.
+
+### Funnel Runtime Backend
+
+Es gibt eine eigene Funnel Runtime, die den Lebenszyklus einer Assessment-Session steuert:
+
+- **Assessment starten**  
+  `POST /api/funnels/{slug}/assessments`
+- **Assessment-Status + aktueller Step holen**  
+  `GET /api/funnels/{slug}/assessments/{assessmentId}`
+- **Step validieren**  
+  `POST /api/funnels/{slug}/assessments/{assessmentId}/steps/{stepId}/validate`
+- **Antworten speichern**  
+  `POST /api/assessment-answers/save`
+- **Assessment abschließen**  
+  `POST /api/funnels/{slug}/assessments/{assessmentId}/complete`
+
+Wichtige Invarianten:
+
+- Nur authentifizierte Nutzer:innen mit passender Ownership dürfen ein Assessment lesen/schreiben.
+- Steps dürfen nicht übersprungen werden (Step-Skipping-Prevention).
+- Completed-Assessments sind read-only.
+- Required-Validierung basiert ausschließlich auf `funnel_step_questions.is_required` + vorhandener Validation-Logik.
+
+### Frontend-Integration der Funnel Runtime
+
+Bei allen Funnel-Flows (insbesondere Stress-Funnel):
+
+- **currentStep** immer aus der Runtime holen, nicht als „Quelle der Wahrheit“ im lokalen React-State halten.
+- Nach einem Reload:
+  - `GET /assessments/{id}` verwenden, um den aktuellen Step wiederherzustellen.
+- Navigation:
+  - `validate` vor „Weiter“ aufrufen.
+  - Nur `nextStep` aus der API verwenden, keine eigene Berechnung im Client.
+- Antworten:
+  - Über den Save-Endpoint schreiben (oder zentralen Server-Handler), nicht direkt per Supabase-Client ins DB-Table, außer ein Issue verlangt explizit etwas anderes.
+
+### Clinician Funnel Management (B7)
+
+Es existiert (oder wird aufgebaut) eine Pflegeseite unter `/clinician/funnels`:
+
+- Funnel-Übersicht:
+  - Name, Slug, Aktiv-Status, Anzahl Steps
+- Funnel-Details:
+  - Steps inkl. `order_index`
+  - Fragen je Step inkl. `is_required`
+
+Bearbeitungsfunktionen:
+
+- `is_active` pro Funnel toggeln
+- `is_required` pro Frage toggeln
+- Step-Reihenfolge ändern (order_index)
+
+Regeln für Copilot:
+
+- Zugriff nur für Rollen `clinician` oder `admin` (Server-seitig prüfen).
+- Schreiboperationen immer über sichere Server-Handler/Server Actions durchführen.
+- Änderungen an Funnel-Konfiguration wirken sich auf aktive/potentielle Assessments aus → vorsichtig sein, keine „magischen“ Auto-Mutationen an Schema/Definition bauen.
+
+### API Response-Konvention für Funnel-Endpunkte
+
+Wenn neue Endpunkte rund um Funnels/Runtime angelegt oder bestehende angepasst werden:
+
+- Möglichst einheitliches Schema verwenden, z. B.:
+  ```ts
+  type ApiResponse<T> = {
+    success: boolean
+    data?: T
+    error?: { code: string; message: string }
+  }

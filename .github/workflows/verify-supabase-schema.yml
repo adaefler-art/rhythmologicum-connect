@@ -1,58 +1,33 @@
 name: Verify Supabase schema
 
 on:
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch:
+  push:
+    paths:
+      - schema.sql
 
 jobs:
   verify-supabase-schema:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Check Supabase secret availability
-        id: secret-check
+      - name: Install PostgreSQL client
+        uses: ankane/setup-postgresql@v1
+        with:
+          client: true
+
+      - name: Verify Supabase schema matches schema.sql
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          if [ -z "$SUPABASE_DB_URL" ]; then
-            echo "Supabase secret not available in this context (likely a fork/untrusted PR). Skipping workflow."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+          pg_dump "$SUPABASE_DB_URL" \
+            -s --no-owner --no-privileges \
+            > current-schema.sql
 
-      # Statt "postgresql-client" jetzt explizit 17 installieren
-      - name: Install PostgreSQL 17 client
-        if: steps.secret-check.outputs.skip == 'false'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
-          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
-          pg_dump --version
-
-      - name: Dump and normalize Supabase schema
-        if: steps.secret-check.outputs.skip == 'false'
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          set -euo pipefail
-          TMP="$(mktemp)"
-          pg_dump --schema-only --no-owner --no-privileges --dbname="$SUPABASE_DB_URL" > "$TMP"
-          sed -E '/^SET search_path/d' "$TMP" | sed -E '/^-- Dumped by pg_dump/d' | sed '/^$/N;/^\n$/D' > "${TMP}.norm"
-
-          echo "Comparing remote schema with committed schema/schema.sql"
-          if ! diff -u schema/schema.sql "${TMP}.norm"; then
-            echo "ERROR: Supabase schema differs from committed schema/schema.sql"
+          diff -u schema.sql current-schema.sql || (
+            echo "❌ DB schema differs from schema.sql"
             exit 1
-          fi
-          rm -f "$TMP" "${TMP}.norm"
-
-      - name: Success
-        if: steps.secret-check.outputs.skip == 'false'
-        run: echo "Supabase schema matches committed schema/schema.sql"
-
-      - name: Secret unavailable info
-        if: steps.secret-check.outputs.skip == 'true'
-        run: |
-          echo "verify-supabase-schema skipped: SUPABASE_DB_URL secret is inaccessible in this workflow context."
+          )
