@@ -500,8 +500,13 @@ function StressCheckPageContent() {
     setError(null)
 
     try {
+      console.info('Next step: validate current step', {
+        assessmentId: assessmentStatus.assessmentId,
+        currentStep: assessmentStatus.currentStep,
+      })
       // Validate current step before proceeding
       const validationResult = await validateCurrentStep()
+      console.info('Next step: validation result', validationResult)
       if (!validationResult.isValid) {
         setSubmitting(false)
         return
@@ -509,9 +514,11 @@ function StressCheckPageContent() {
 
       // If there's a next step, reload status to get updated current step
       if (validationResult.nextStep) {
+        console.info('Next step: nextStep received, reloading status')
         await loadAssessmentStatus(assessmentStatus.assessmentId)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
+        console.info('Next step: no nextStep, calling complete')
         // No next step - this is the last step, proceed to completion
         await handleComplete()
       }
