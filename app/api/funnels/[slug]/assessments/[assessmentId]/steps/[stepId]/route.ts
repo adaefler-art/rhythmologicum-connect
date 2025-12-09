@@ -3,9 +3,27 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { validateRequiredQuestions } from '@/lib/validation/requiredQuestions'
 import { getNextStepId, getCurrentStep } from '@/lib/navigation/assessmentNavigation'
+import {
+  successResponse,
+  missingFieldsResponse,
+  unauthorizedResponse,
+  notFoundResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+} from '@/lib/api/responses'
+import {
+  ensureStepIsCurrent,
+  ensureStepBelongsToFunnel,
+} from '@/lib/validation/stepValidation'
+import {
+  logUnauthorized,
+  logForbidden,
+  logValidationFailure,
+  logDatabaseError,
+} from '@/lib/logging/logger'
 
 /**
- * B5: Validate a step and determine next step
+ * B5/B8: Validate a step and determine next step
  * 
  * POST /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/validate
  * 
@@ -13,19 +31,24 @@ import { getNextStepId, getCurrentStep } from '@/lib/navigation/assessmentNaviga
  * If validation passes, returns the next step ID.
  * Prevents step-skipping by ensuring current step is complete before navigating forward.
  * 
- * Response (success):
+ * Response (B8 standardized):
+ * Success with validation passed:
  * {
  *   success: true,
- *   ok: true,
- *   missingQuestions: [],
- *   nextStep: { stepId, title, ... } | null
+ *   data: {
+ *     isValid: true,
+ *     missingQuestions: [],
+ *     nextStep: { stepId, title, ... } | null
+ *   }
  * }
  * 
- * Response (validation failed):
+ * Success with validation failed:
  * {
  *   success: true,
- *   ok: false,
- *   missingQuestions: [{ questionId, questionKey, questionLabel, orderIndex }]
+ *   data: {
+ *     isValid: false,
+ *     missingQuestions: [{ questionId, questionKey, questionLabel, orderIndex }]
+ *   }
  * }
  */
 
@@ -35,18 +58,19 @@ export async function POST(
     params,
   }: { params: Promise<{ slug: string; assessmentId: string; stepId: string }> },
 ) {
+  let slug: string | undefined
+  let assessmentId: string | undefined
+  let stepId: string | undefined
+
   try {
-    const { slug, assessmentId, stepId } = await params
+    const paramsResolved = await params
+    slug = paramsResolved.slug
+    assessmentId = paramsResolved.assessmentId
+    stepId = paramsResolved.stepId
 
     // Validate parameters
     if (!slug || !assessmentId || !stepId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Fehlende Parameter.',
-        },
-        { status: 400 },
-      )
+      return missingFieldsResponse('Fehlende Parameter.')
     }
 
     // Create Supabase server client
@@ -75,14 +99,11 @@ export async function POST(
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      console.error('Authentication error:', authError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
-        },
-        { status: 401 },
-      )
+      logUnauthorized({
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
+        assessmentId,
+      })
+      return unauthorizedResponse()
     }
 
     // Get patient profile
@@ -93,14 +114,14 @@ export async function POST(
       .single()
 
     if (profileError || !patientProfile) {
-      console.error('Patient profile lookup error:', profileError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Benutzerprofil nicht gefunden.',
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
         },
-        { status: 404 },
+        profileError,
       )
+      return notFoundResponse('Benutzerprofil')
     }
 
     // Load assessment and verify ownership
@@ -112,92 +133,60 @@ export async function POST(
       .single()
 
     if (assessmentError || !assessment) {
-      console.error('Assessment lookup error:', assessmentError)
-      return NextResponse.json(
+      logDatabaseError(
         {
-          success: false,
-          error: 'Assessment nicht gefunden.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
         },
-        { status: 404 },
+        assessmentError,
       )
+      return notFoundResponse('Assessment')
     }
 
     // Verify ownership
     if (assessment.patient_id !== patientProfile.id) {
-      console.warn(
-        `Unauthorized assessment access attempt by user ${user.id} for assessment ${assessmentId}`,
-      )
-      return NextResponse.json(
+      logForbidden(
         {
-          success: false,
-          error: 'Sie haben keine Berechtigung, dieses Assessment zu validieren.',
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
         },
-        { status: 403 },
+        'Assessment does not belong to user',
       )
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment zu validieren.')
     }
 
     // Verify step belongs to funnel
     if (!assessment.funnel_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Funnel-ID fehlt im Assessment.',
-        },
-        { status: 500 },
-      )
+      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
     }
 
-    const { data: step, error: stepError } = await supabase
-      .from('funnel_steps')
-      .select('id, funnel_id, order_index, title, type')
-      .eq('id', stepId)
-      .single()
+    // Use centralized step-funnel validation
+    const stepBelongsValidation = await ensureStepBelongsToFunnel(
+      supabase,
+      stepId,
+      assessment.funnel_id,
+    )
 
-    if (stepError || !step) {
-      console.error('Step lookup error:', stepError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Schritt nicht gefunden.',
-        },
-        { status: 404 },
-      )
+    if (!stepBelongsValidation.valid) {
+      return forbiddenResponse(stepBelongsValidation.error!.message)
     }
 
-    if (step.funnel_id !== assessment.funnel_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Dieser Schritt gehört nicht zum Funnel des Assessments.',
-        },
-        { status: 400 },
-      )
-    }
+    // Use centralized step-skipping prevention
+    const stepValidation = await ensureStepIsCurrent(
+      supabase,
+      assessmentId,
+      stepId,
+      assessment.funnel_id,
+      user.id,
+    )
 
-    // Prevent step-skipping: verify this step is the current or a previous step
-    const currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
-
-    if (!currentStep) {
-      console.error('Failed to determine current step for assessment:', assessmentId)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Fehler beim Ermitteln des aktuellen Schritts.',
-        },
-        { status: 500 },
-      )
-    }
-
-    // Allow validation of current step or previous steps (for going back)
-    // But don't allow skipping ahead
-    if (step.order_index > currentStep.orderIndex) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Sie können nicht zu einem zukünftigen Schritt springen.',
-        },
-        { status: 403 },
-      )
+    if (!stepValidation.valid) {
+      if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
+        return forbiddenResponse(stepValidation.error!.message)
+      }
+      return internalErrorResponse(stepValidation.error!.message)
     }
 
     // Validate required questions using B2 logic
@@ -205,18 +194,26 @@ export async function POST(
 
     // If validation failed, return missing questions
     if (!validationResult.isValid) {
-      return NextResponse.json(
+      logValidationFailure(
         {
-          success: true,
-          ok: false,
-          missingQuestions: validationResult.missingQuestions,
+          userId: user.id,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
         },
-        { status: 200 },
+        validationResult.missingQuestions,
       )
+
+      return successResponse({
+        isValid: false,
+        missingQuestions: validationResult.missingQuestions,
+      })
     }
 
     // Validation passed - determine next step using B3 navigation
-    const nextStepId = await getNextStepId(supabase, assessmentId, currentStep)
+    // Get current step for next step calculation
+    const currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
+    const nextStepId = await getNextStepId(supabase, assessmentId, currentStep!)
 
     let nextStep = null
     if (nextStepId) {
@@ -236,24 +233,21 @@ export async function POST(
       }
     }
 
-    // Success response
-    return NextResponse.json(
-      {
-        success: true,
-        ok: true,
-        missingQuestions: [],
-        nextStep,
-      },
-      { status: 200 },
-    )
+    // Success response with standardized format
+    return successResponse({
+      isValid: true,
+      missingQuestions: [],
+      nextStep,
+    })
   } catch (error) {
-    console.error('Unexpected error in validate step API:', error)
-    return NextResponse.json(
+    logDatabaseError(
       {
-        success: false,
-        error: 'Ein unerwarteter Fehler ist aufgetreten.',
+        assessmentId,
+        stepId,
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
       },
-      { status: 500 },
+      error,
     )
+    return internalErrorResponse()
   }
 }

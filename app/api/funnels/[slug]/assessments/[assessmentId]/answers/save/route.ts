@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import {
@@ -12,31 +12,33 @@ import {
   internalErrorResponse,
 } from '@/lib/api/responses'
 import {
+  ensureStepIsCurrent,
+  ensureStepBelongsToFunnel,
+  ensureQuestionBelongsToStep,
+} from '@/lib/validation/stepValidation'
+import {
   logUnauthorized,
   logForbidden,
   logDatabaseError,
 } from '@/lib/logging/logger'
 
 /**
- * API Route: Save Assessment Answer (Save-on-Tap)
+ * B8: Save Assessment Answer (Save-on-Tap) - Funnel-based endpoint
  * 
- * POST /api/assessment-answers/save
+ * POST /api/funnels/[slug]/assessments/[assessmentId]/answers/save
  * 
- * Legacy endpoint - kept for backwards compatibility.
- * New clients should use: POST /api/funnels/{slug}/assessments/{id}/answers/save
- * 
- * Saves or updates a single answer for a question in an assessment.
- * Uses UPSERT logic to prevent duplicate answers for the same question.
+ * Enhanced version of the save endpoint with full funnel integration:
+ * - Validates question belongs to step
+ * - Validates step belongs to funnel
+ * - Prevents step-skipping
+ * - Prevents saving to completed assessments
  * 
  * Request Body:
  * {
- *   assessmentId: string (UUID of the assessment),
+ *   stepId: string (UUID of the current step),
  *   questionId: string (question.key from questions table, e.g., "stress_frequency"),
  *   answerValue: number (integer value of the answer)
  * }
- * 
- * Note: questionId should be the question.key (semantic identifier), not question.id (UUID)
- * This maps to the assessment_answers.question_id column which is of type text.
  * 
  * Response (B8 standardized):
  * {
@@ -47,26 +49,35 @@ import {
  */
 
 type RequestBody = {
-  assessmentId: string
+  stepId: string
   questionId: string
   answerValue: number
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string; assessmentId: string }> },
+) {
+  let slug: string | undefined
   let assessmentId: string | undefined
+  let stepId: string | undefined
   let questionId: string | undefined
 
   try {
+    const paramsResolved = await params
+    slug = paramsResolved.slug
+    assessmentId = paramsResolved.assessmentId
+
     // Parse request body
     const body: RequestBody = await request.json()
-    assessmentId = body.assessmentId
+    stepId = body.stepId
     questionId = body.questionId
     const { answerValue } = body
 
     // Validate required fields
-    if (!assessmentId || !questionId || answerValue === undefined || answerValue === null) {
+    if (!assessmentId || !stepId || !questionId || answerValue === undefined || answerValue === null) {
       return missingFieldsResponse(
-        'Fehlende Pflichtfelder. Bitte geben Sie assessmentId, questionId und answerValue an.',
+        'Fehlende Pflichtfelder. Bitte geben Sie stepId, questionId und answerValue an.',
       )
     }
 
@@ -102,14 +113,13 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       logUnauthorized({
-        endpoint: '/api/assessment-answers/save',
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         assessmentId,
       })
       return unauthorizedResponse()
     }
 
-    // Verify the assessment belongs to this user
-    // First get the patient_profile for this user
+    // Get patient profile
     const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
@@ -120,26 +130,27 @@ export async function POST(request: NextRequest) {
       logDatabaseError(
         {
           userId: user.id,
-          endpoint: '/api/assessment-answers/save',
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         profileError,
       )
       return notFoundResponse('Benutzerprofil')
     }
 
-    // Verify assessment ownership
+    // Verify assessment ownership and load assessment data
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id, status')
+      .select('id, patient_id, status, funnel, funnel_id')
       .eq('id', assessmentId)
+      .eq('funnel', slug)
       .single()
 
-    if (assessmentError) {
+    if (assessmentError || !assessment) {
       logDatabaseError(
         {
           userId: user.id,
           assessmentId,
-          endpoint: '/api/assessment-answers/save',
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         assessmentError,
       )
@@ -151,7 +162,7 @@ export async function POST(request: NextRequest) {
         {
           userId: user.id,
           assessmentId,
-          endpoint: '/api/assessment-answers/save',
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         'Assessment does not belong to user',
       )
@@ -161,6 +172,49 @@ export async function POST(request: NextRequest) {
     // B5: Prevent saving to completed assessments
     if (assessment.status === 'completed') {
       return assessmentCompletedResponse()
+    }
+
+    // Verify funnel_id exists
+    if (!assessment.funnel_id) {
+      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+    }
+
+    // B8: Verify step belongs to funnel
+    const stepBelongsValidation = await ensureStepBelongsToFunnel(
+      supabase,
+      stepId,
+      assessment.funnel_id,
+    )
+
+    if (!stepBelongsValidation.valid) {
+      return forbiddenResponse(stepBelongsValidation.error!.message)
+    }
+
+    // B8: Verify question belongs to step
+    const questionBelongsValidation = await ensureQuestionBelongsToStep(
+      supabase,
+      questionId,
+      stepId,
+    )
+
+    if (!questionBelongsValidation.valid) {
+      return invalidInputResponse(questionBelongsValidation.error!.message)
+    }
+
+    // B8: Prevent step-skipping
+    const stepValidation = await ensureStepIsCurrent(
+      supabase,
+      assessmentId,
+      stepId,
+      assessment.funnel_id,
+      user.id,
+    )
+
+    if (!stepValidation.valid) {
+      if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
+        return forbiddenResponse(stepValidation.error!.message)
+      }
+      return internalErrorResponse(stepValidation.error!.message)
     }
 
     // Perform upsert operation
@@ -186,8 +240,9 @@ export async function POST(request: NextRequest) {
         {
           userId: user.id,
           assessmentId,
+          stepId,
           questionId,
-          endpoint: '/api/assessment-answers/save',
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         upsertError,
       )
@@ -209,8 +264,9 @@ export async function POST(request: NextRequest) {
     logDatabaseError(
       {
         assessmentId,
+        stepId,
         questionId,
-        endpoint: '/api/assessment-answers/save',
+        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
       },
       error,
     )

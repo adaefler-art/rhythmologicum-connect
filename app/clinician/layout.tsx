@@ -107,6 +107,26 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      {/* Navigation */}
+      <nav className="border-b border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex gap-1">
+            <Link
+              href="/clinician"
+              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/clinician/funnels"
+              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
+            >
+              Funnels
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Main Content */}
       <main className="flex-1">{children}</main>
 

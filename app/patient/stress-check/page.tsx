@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CONSENT_TEXT, CONSENT_VERSION } from '@/lib/consentConfig'
 import { supabase } from '@/lib/supabaseClient'
 import ConsentModal from './ConsentModal'
@@ -17,6 +17,20 @@ type ValidationError = {
   ruleDescription?: string
 }
 
+type AssessmentStatus = {
+  assessmentId: string
+  status: 'in_progress' | 'completed'
+  currentStep: {
+    stepId: string
+    title: string
+    type: string
+    stepIndex: number
+    orderIndex: number
+  }
+  completedSteps: number
+  totalSteps: number
+}
+
 const SCALE = [
   { value: 0, label: 'Nie' },
   { value: 1, label: 'Selten' },
@@ -27,6 +41,7 @@ const SCALE = [
 
 export default function StressCheckPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [initialLoading, setInitialLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -36,8 +51,10 @@ export default function StressCheckPage() {
   const [showConsentModal, setShowConsentModal] = useState(false)
   const [hasConsent, setHasConsent] = useState(false)
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
-  const [assessmentId, setAssessmentId] = useState<string | null>(null)
+  const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
+
+  // Check if user explicitly wants to start a new assessment
+  const forceNew = searchParams.get('new') === 'true'
 
   // Load funnel definition from API
   useEffect(() => {
@@ -58,9 +75,117 @@ export default function StressCheckPage() {
     loadFunnel()
   }, [])
 
+  // B6 AK1: Bootstrap assessment - check for existing or start new
+  const bootstrapAssessment = async () => {
+    try {
+      // Check for existing in-progress assessment
+      const { data: profileData, error: profileError } = await supabase
+        .from('patient_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single()
+
+      if (profileError || !profileData) {
+        throw new Error('Patientenprofil nicht gefunden.')
+      }
+
+      const { data: existingAssessments, error: existingError } = await supabase
+        .from('assessments')
+        .select('id, status')
+        .eq('patient_id', profileData.id)
+        .eq('funnel', 'stress')
+        .order('started_at', { ascending: false })
+        .limit(1)
+
+      if (existingError) {
+        throw existingError
+      }
+
+      let currentAssessmentId: string | null = null
+
+      // Handle existing assessments:
+      // - If completed AND !forceNew: redirect to result (show existing results)
+      // - If completed AND forceNew: create new assessment (start fresh)
+      // - If in_progress: resume existing assessment
+      if (existingAssessments && existingAssessments.length > 0) {
+        const latest = existingAssessments[0]
+        if (latest.status === 'completed' && !forceNew) {
+          router.push(`/patient/stress-check/result?assessmentId=${latest.id}`)
+          return
+        }
+        // Use existing in-progress assessment (but not completed ones when forceNew is true)
+        if (latest.status === 'in_progress') {
+          currentAssessmentId = latest.id
+        }
+      }
+
+      // Start new assessment if none exists
+      if (!currentAssessmentId) {
+        const startResponse = await fetch('/api/funnels/stress/assessments', {
+          method: 'POST',
+          credentials: 'include',
+        })
+
+        if (!startResponse.ok) {
+          const errorData = await startResponse.json()
+          throw new Error(errorData.error || 'Fehler beim Starten des Assessments.')
+        }
+
+        const startData = await startResponse.json()
+        currentAssessmentId = startData.assessmentId
+      }
+
+      // Load assessment status
+      if (currentAssessmentId) {
+        await loadAssessmentStatus(currentAssessmentId)
+      } else {
+        throw new Error('Keine Assessment-ID verfügbar.')
+      }
+    } catch (err) {
+      console.error('Error bootstrapping assessment:', err)
+      setError('Fehler beim Laden des Assessments. Bitte laden Sie die Seite neu.')
+      setInitialLoading(false)
+    }
+  }
+
+  // B6 AK1: Load assessment status from Runtime API
+  const loadAssessmentStatus = async (assessmentId: string) => {
+    try {
+      const response = await fetch(`/api/funnels/stress/assessments/${assessmentId}`, {
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Laden des Assessment-Status.')
+      }
+
+      const statusData: AssessmentStatus = await response.json()
+      setAssessmentStatus(statusData)
+
+      // Load existing answers to populate the UI
+      const { data: existingAnswers, error: answersError } = await supabase
+        .from('assessment_answers')
+        .select('question_id, answer_value')
+        .eq('assessment_id', assessmentId)
+
+      if (!answersError && existingAnswers) {
+        const answersMap: Record<string, number> = {}
+        existingAnswers.forEach((a) => {
+          answersMap[a.question_id] = a.answer_value
+        })
+        setAnswers(answersMap)
+      }
+
+      setInitialLoading(false)
+    } catch (err) {
+      console.error('Error loading assessment status:', err)
+      setError('Fehler beim Laden des Assessment-Status. Bitte laden Sie die Seite neu.')
+      setInitialLoading(false)
+    }
+  }
+
   useEffect(() => {
     const handleConsentCheckFailure = () => {
-      // Default to showing consent modal if check fails (fail-safe)
       setShowConsentModal(true)
       setHasConsent(false)
     }
@@ -85,10 +210,10 @@ export default function StressCheckPage() {
       // Check consent status via API endpoint
       try {
         const response = await fetch(`/api/consent/status?version=${CONSENT_VERSION}`)
-        
+
         if (response.ok) {
           const data = await response.json()
-          
+
           if (!data.hasConsent) {
             setShowConsentModal(true)
             setHasConsent(false)
@@ -109,6 +234,14 @@ export default function StressCheckPage() {
 
     checkAuth()
   }, [router])
+
+  // B6 AK1: Bootstrap assessment after consent is confirmed
+  useEffect(() => {
+    if (hasConsent && userId && funnel && !assessmentStatus) {
+      bootstrapAssessment()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasConsent, userId, funnel, forceNew])
 
   const handleConsentAccepted = () => {
     setShowConsentModal(false)
@@ -132,58 +265,29 @@ export default function StressCheckPage() {
     setError(null)
   }
 
-  // Create assessment on first answer if not exists
-  const createAssessmentIfNeeded = async () => {
-    if (assessmentId || !userId) return assessmentId
-
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('patient_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-
-      if (profileError) throw profileError
-      if (!profileData) throw new Error('Kein Patientenprofil gefunden.')
-
-      const { data: assessmentData, error: assessmentError } = await supabase
-        .from('assessments')
-        .insert({
-          patient_id: profileData.id,
-          funnel: 'stress',
-        })
-        .select('id')
-        .single()
-
-      if (assessmentError) throw assessmentError
-      if (!assessmentData) throw new Error('Assessment konnte nicht angelegt werden.')
-
-      setAssessmentId(assessmentData.id)
-      return assessmentData.id
-    } catch (err) {
-      console.error('Error creating assessment:', err)
-      throw err
-    }
-  }
-
-  // Save answer to database
+  // B6 AK4: Save answer using Runtime API endpoint
   const saveAnswer = async (questionKey: string, value: number) => {
+    if (!assessmentStatus) return
+
     try {
-      const currentAssessmentId = await createAssessmentIfNeeded()
-      if (!currentAssessmentId) return
+      const response = await fetch('/api/assessment-answers/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          assessmentId: assessmentStatus.assessmentId,
+          questionId: questionKey,
+          answerValue: value,
+        }),
+      })
 
-      const { error: answerError } = await supabase
-        .from('assessment_answers')
-        .upsert({
-          assessment_id: currentAssessmentId,
-          question_id: questionKey,
-          answer_value: value,
-        })
-
-      if (answerError) throw answerError
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Fehler beim Speichern der Antwort.')
+      }
     } catch (err) {
       console.error('Error saving answer:', err)
-      setError('Fehler beim Speichern der Antwort.')
+      setError('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
     }
   }
 
@@ -193,41 +297,40 @@ export default function StressCheckPage() {
     await saveAnswer(questionKey, value)
   }
 
-  // Validate current step before navigation
-  const validateCurrentStep = async (): Promise<boolean> => {
-    if (!funnel || !assessmentId) return false
+  // B6 AK3: Validate current step using Runtime API
+  const validateCurrentStep = async (): Promise<{ isValid: boolean; nextStep?: any }> => {
+    if (!funnel || !assessmentStatus) return { isValid: false }
 
-    const currentStep = funnel.steps[currentStepIndex]
-    if (!isQuestionStep(currentStep)) return true
+    const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
+    if (!currentStep || !isQuestionStep(currentStep)) return { isValid: true }
 
     try {
-      const response = await fetch('/api/assessment-validation/validate-step', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assessmentId,
-          stepId: currentStep.id,
-          extended: true, // Use B4 extended validation
-        }),
-      })
+      const response = await fetch(
+        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      )
 
       const data = await response.json()
 
       if (!data.success) {
         setError(data.error || 'Validierung fehlgeschlagen')
-        return false
+        return { isValid: false }
       }
 
-      if (!data.isValid) {
+      if (!data.ok) {
         setValidationErrors(data.missingQuestions || [])
 
         // Count different types of missing questions
-        const requiredCount = data.missingQuestions?.filter(
-          (q: ValidationError) => q.reason === 'required',
-        ).length || 0
-        const conditionalCount = data.missingQuestions?.filter(
-          (q: ValidationError) => q.reason === 'conditional_required',
-        ).length || 0
+        const requiredCount =
+          data.missingQuestions?.filter((q: ValidationError) => q.reason === 'required').length ||
+          0
+        const conditionalCount =
+          data.missingQuestions?.filter(
+            (q: ValidationError) => q.reason === 'conditional_required',
+          ).length || 0
 
         // Generate appropriate error message
         let errorMessage = 'Bitte beantworten Sie '
@@ -252,52 +355,72 @@ export default function StressCheckPage() {
           }, 100)
         }
 
-        return false
+        return { isValid: false }
       }
 
       setValidationErrors([])
       setError(null)
-      return true
+      return { isValid: true, nextStep: data.nextStep }
     } catch (err) {
       console.error('Error validating step:', err)
       setError('Fehler bei der Validierung. Bitte versuchen Sie es erneut.')
-      return false
+      return { isValid: false }
     }
   }
 
-  // Navigate to next step
+  // B6 AK3: Navigate to next step using Runtime API
   const handleNextStep = async () => {
-    if (!funnel) return
+    if (!funnel || !assessmentStatus) return
 
     // Validate current step before proceeding
-    const isValid = await validateCurrentStep()
-    if (!isValid) return
+    const validationResult = await validateCurrentStep()
+    if (!validationResult.isValid) return
 
-    // Move to next step
-    if (currentStepIndex < funnel.steps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1)
+    // If there's a next step, reload status to get updated current step
+    if (validationResult.nextStep) {
+      await loadAssessmentStatus(assessmentStatus.assessmentId)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
-      // Last step - submit
-      await handleSubmit()
+      // No next step - this is the last step, proceed to completion
+      await handleComplete()
     }
   }
 
-  // Navigate to previous step
+  // B6 AK3: Navigate to previous step
   const handlePreviousStep = () => {
+    if (!funnel || !assessmentStatus) return
+
+    const currentStepIndex = assessmentStatus.currentStep.stepIndex
     if (currentStepIndex > 0) {
-      setCurrentStepIndex(currentStepIndex - 1)
-      setError(null)
-      setValidationErrors([])
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      // Find previous step by stepIndex
+      const previousStep = funnel.steps.find(
+        (s) => s.orderIndex === funnel.steps[currentStepIndex - 1]?.orderIndex,
+      )
+
+      if (previousStep) {
+        // Update assessment status to reflect the previous step
+        setAssessmentStatus({
+          ...assessmentStatus,
+          currentStep: {
+            stepId: previousStep.id,
+            title: previousStep.title,
+            type: previousStep.type,
+            stepIndex: currentStepIndex - 1,
+            orderIndex: previousStep.orderIndex,
+          },
+        })
+        setError(null)
+        setValidationErrors([])
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     }
   }
 
-  const handleSubmit = async () => {
-    if (!userId || !assessmentId) {
-      console.error('Kein userId oder assessmentId in handleSubmit')
-      setError('Es gab ein Problem mit der Anmeldung. Bitte melden Sie sich erneut an.')
-      router.push('/login')
+  // B6 AK5: Complete assessment using Runtime API
+  const handleComplete = async () => {
+    if (!assessmentStatus) {
+      console.error('Kein Assessment-Status in handleComplete')
+      setError('Es gab ein Problem. Bitte laden Sie die Seite neu.')
       return
     }
 
@@ -305,29 +428,43 @@ export default function StressCheckPage() {
     setError(null)
 
     try {
-      // Mark assessment as completed
-      const { error: updateError } = await supabase
-        .from('assessments')
-        .update({ completed_at: new Date().toISOString() })
-        .eq('id', assessmentId)
+      const response = await fetch(
+        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/complete`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      )
 
-      if (updateError) throw updateError
+      const data = await response.json()
 
-      // Redirect to result page
-      router.push(`/patient/stress-check/result?assessmentId=${assessmentId}`)
+      if (!data.success || !data.ok) {
+        // Validation failed - show missing questions
+        if (data.missingQuestions && data.missingQuestions.length > 0) {
+          setValidationErrors(data.missingQuestions)
+          setError(data.error || 'Nicht alle Pflichtfragen wurden beantwortet.')
+        } else {
+          setError(data.error || 'Fehler beim Abschließen des Assessments.')
+        }
+        setSubmitting(false)
+        return
+      }
+
+      // Success - redirect to result page
+      router.push(`/patient/stress-check/result?assessmentId=${assessmentStatus.assessmentId}`)
     } catch (err) {
-      console.error('Fehler in handleSubmit:', err)
+      console.error('Fehler in handleComplete:', err)
       const message =
         err instanceof Error
           ? err.message
-          : 'Beim Speichern der Antworten ist ein Fehler aufgetreten.'
+          : 'Beim Abschließen des Assessments ist ein Fehler aufgetreten.'
       setError(message)
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (initialLoading || !funnel) {
+  if (initialLoading || !funnel || !assessmentStatus) {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20">
         <p className="text-sm text-slate-600">Bitte warten…</p>
@@ -352,11 +489,20 @@ export default function StressCheckPage() {
     )
   }
 
-  const currentStep = funnel.steps[currentStepIndex]
-  const isFirstStep = currentStepIndex === 0
-  const isLastStep = currentStepIndex === funnel.steps.length - 1
+  // B6 AK2: Render step based on API data
+  const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
+  if (!currentStep) {
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20">
+        <p className="text-sm text-red-600">Fehler: Aktueller Schritt nicht gefunden.</p>
+      </main>
+    )
+  }
 
-  // Calculate progress
+  const isFirstStep = assessmentStatus.currentStep.stepIndex === 0
+  const isLastStep = assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
+
+  // Calculate progress based on answered questions
   const totalQuestions = funnel.totalQuestions
   const answeredCount = Object.keys(answers).length
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
@@ -370,7 +516,7 @@ export default function StressCheckPage() {
             {funnel.title}
           </p>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-2">
-            Schritt {currentStepIndex + 1} von {funnel.totalSteps}: {currentStep.title}
+            Schritt {assessmentStatus.currentStep.stepIndex + 1} von {assessmentStatus.totalSteps}: {currentStep.title}
           </h1>
           {currentStep.description && (
             <p className="text-sm text-slate-600 leading-relaxed">

@@ -1,0 +1,75 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
+
+/**
+ * B7 API Endpoint: List all funnels for admin/clinician management
+ * GET /api/admin/funnels
+ * 
+ * Returns all funnels with basic metadata for overview page
+ */
+export async function GET() {
+  try {
+    // Check authentication and authorization
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const role = user.app_metadata?.role || user.user_metadata?.role
+    if (role !== 'clinician') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Use service role for admin operations
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    })
+
+    // Fetch all funnels
+    const { data: funnels, error: funnelsError } = await adminClient
+      .from('funnels')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (funnelsError) {
+      console.error('Error fetching funnels:', funnelsError)
+      return NextResponse.json({ error: 'Failed to fetch funnels' }, { status: 500 })
+    }
+
+    return NextResponse.json({ funnels: funnels || [] })
+  } catch (error) {
+    console.error('Error in GET /api/admin/funnels:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
