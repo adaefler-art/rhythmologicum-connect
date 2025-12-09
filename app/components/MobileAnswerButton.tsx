@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { componentTokens, motion as motionTokens } from '@/lib/design-tokens'
 
 export type MobileAnswerButtonProps = {
   value: number | string
@@ -33,9 +34,12 @@ export default function MobileAnswerButton({
   variant = 'scale',
 }: MobileAnswerButtonProps) {
   const buttonId = `${name}-${value}`
+  
+  // Use design tokens for consistent styling
+  const tokens = componentTokens.answerButton
 
   // Base styles shared across all variants
-  const baseStyles = 'flex flex-col items-center gap-1 px-3 py-4 rounded-xl border-2 cursor-pointer transition-all'
+  const baseStyles = 'flex flex-col items-center gap-1 border-2 cursor-pointer'
   
   // Checked state styles
   const checkedStyles = 'bg-sky-600 text-white border-sky-600 shadow-md'
@@ -50,17 +54,19 @@ export default function MobileAnswerButton({
     <motion.label
       htmlFor={buttonId}
       className={`${baseStyles} ${checked ? checkedStyles : uncheckedStyles} ${disabled ? disabledStyles : ''}`}
-      style={{ minHeight: '44px', minWidth: '44px' }}
-      // Micro-animations on tap
+      style={{ 
+        minHeight: tokens.minHeight,
+        minWidth: tokens.minWidth,
+        padding: `${tokens.paddingY} ${tokens.paddingX}`,
+        borderRadius: tokens.borderRadius,
+        transition: tokens.transition,
+      }}
+      // Micro-animations on tap - using design tokens
       whileTap={!disabled && !checked ? { scale: 0.95 } : undefined}
       initial={{ scale: 1 }}
       animate={{ 
         scale: checked ? 1.05 : 1,
-        transition: { 
-          type: 'spring', 
-          stiffness: 300, 
-          damping: 20 
-        }
+        transition: motionTokens.spring.default
       }}
     >
       <input

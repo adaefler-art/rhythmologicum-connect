@@ -13,6 +13,7 @@ import {
   isBinaryQuestion,
 } from '@/lib/questionOptions'
 import { useAssessmentAnswer } from '@/lib/hooks/useAssessmentAnswer'
+import { componentTokens, motion, typography } from '@/lib/design-tokens'
 
 export type MobileQuestionCardProps = {
   funnel: Funnel
@@ -59,6 +60,11 @@ export default function MobileQuestionCard({
   const isSaveOnTapActive = enableSaveOnTap && assessmentId !== undefined
 
   const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100
+  
+  // Use design tokens for consistent styling
+  const cardTokens = componentTokens.mobileQuestionCard
+  const navTokens = componentTokens.navigationButton
+  const progressTokens = componentTokens.progressBar
 
   // Handle answer change with save-on-tap
   const handleAnswerChange = async (questionId: string, newValue: number | string) => {
@@ -134,17 +140,28 @@ export default function MobileQuestionCard({
         <textarea
           value={(value as string) || ''}
           onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-          className="w-full min-h-[120px] px-4 py-3 border-2 border-slate-300 rounded-xl focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all text-base leading-relaxed"
+          className="w-full min-h-[120px] border-2 border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none leading-relaxed"
+          style={{
+            padding: cardTokens.padding,
+            borderRadius: cardTokens.borderRadius,
+            fontSize: typography.fontSize.base,
+            transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
+          }}
           placeholder="Ihre Antwort..."
           disabled={isLoading || saveState === 'saving'}
-          style={{ fontSize: '16px' }}
         />
       )
     }
 
     // Fallback: unsupported question type
     return (
-      <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-xl">
+      <div 
+        className="text-center bg-amber-50 border border-amber-200"
+        style={{
+          padding: cardTokens.padding,
+          borderRadius: cardTokens.borderRadius,
+        }}
+      >
         <p className="text-amber-800">
           Dieser Fragetyp wird noch nicht unterstützt: {question.question_type}
         </p>
@@ -155,67 +172,111 @@ export default function MobileQuestionCard({
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-4 shadow-sm">
+      <header 
+        className="bg-white border-b border-slate-200 shadow-sm"
+        style={{ padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}` }}
+      >
         <div className="max-w-2xl mx-auto">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
+          <p className="font-medium uppercase tracking-wide text-sky-600 mb-1" style={{ fontSize: typography.fontSize.xs }}>
             {funnel.subtitle || 'Fragebogen'}
           </p>
-          <h1 className="text-lg font-semibold text-slate-900 leading-tight">
+          <h1 className="font-semibold text-slate-900 leading-tight" style={{ fontSize: typography.fontSize.lg }}>
             {funnel.title}
           </h1>
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3">
+      <div 
+        className="bg-white border-b border-slate-200"
+        style={{ padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}` }}
+      >
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between text-sm text-slate-700 mb-2">
+          <div className="flex items-center justify-between text-slate-700 mb-2" style={{ fontSize: typography.fontSize.sm }}>
             <span className="font-medium">
               Frage {currentQuestionIndex + 1} von {totalQuestions}
             </span>
-            <span className="text-xs text-slate-500">{Math.round(progressPercent)}%</span>
+            <span className="text-slate-500" style={{ fontSize: typography.fontSize.xs }}>{Math.round(progressPercent)}%</span>
           </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div 
+            className="w-full bg-slate-200 overflow-hidden"
+            style={{ 
+              height: progressTokens.height,
+              borderRadius: progressTokens.borderRadius,
+            }}
+          >
             <div
-              className="h-2 bg-sky-500 transition-all duration-300 ease-out rounded-full"
-              style={{ width: `${progressPercent}%` }}
+              className="bg-sky-500"
+              style={{ 
+                width: `${progressPercent}%`,
+                height: progressTokens.height,
+                borderRadius: progressTokens.borderRadius,
+                transition: progressTokens.transition,
+              }}
             />
           </div>
         </div>
       </div>
 
       {/* Question Card - Scrollable Content */}
-      <main className="flex-1 overflow-y-auto px-4 py-6">
+      <main 
+        className="flex-1 overflow-y-auto"
+        style={{ padding: `${cardTokens.contentPaddingY} ${cardTokens.contentPaddingX}` }}
+      >
         <div className="max-w-2xl mx-auto">
           <div
-            className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-200 ${
+            className={`bg-white border-2 ${
               isFocused ? 'border-sky-400 shadow-xl' : 'border-slate-200'
             } ${isAnswered ? 'border-sky-200 bg-sky-50/30' : ''}`}
+            style={{
+              borderRadius: cardTokens.borderRadius,
+              boxShadow: cardTokens.shadow,
+              transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           >
             {/* Question Text */}
-            <div className="p-6 pb-4">
-              <h2 className="text-xl font-semibold text-slate-900 leading-relaxed mb-3">
+            <div style={{ padding: `${cardTokens.contentPaddingY} ${cardTokens.contentPaddingX}`, paddingBottom: cardTokens.headerPaddingY }}>
+              <h2 className="font-semibold text-slate-900 leading-relaxed mb-3" style={{ fontSize: typography.fontSize.xl }}>
                 {question.label}
               </h2>
               {question.help_text && (
-                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-                    <span className="text-lg flex-shrink-0">💡</span>
+                <div 
+                  className="bg-sky-50 border border-sky-200 mb-4"
+                  style={{ 
+                    borderRadius: componentTokens.infoBox.borderRadius,
+                    padding: componentTokens.infoBox.padding,
+                  }}
+                >
+                  <p 
+                    className="text-sky-900 leading-relaxed flex items-start gap-2"
+                    style={{ 
+                      fontSize: componentTokens.infoBox.fontSize,
+                      lineHeight: componentTokens.infoBox.lineHeight,
+                    }}
+                  >
+                    <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
                     <span>{question.help_text}</span>
                   </p>
                 </div>
               )}
               {isRequired && !isAnswered && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                <p 
+                  className="text-amber-700 bg-amber-50 border border-amber-200 mb-3"
+                  style={{
+                    fontSize: typography.fontSize.xs,
+                    borderRadius: componentTokens.infoBox.borderRadius,
+                    padding: `${typography.fontSize.xs} ${cardTokens.headerPaddingX}`,
+                  }}
+                >
                   ⚠️ Bitte wählen Sie eine Antwort aus
                 </p>
               )}
             </div>
 
             {/* Answer Options */}
-            <div className="px-6 pb-6">
+            <div style={{ padding: `0 ${cardTokens.contentPaddingX} ${cardTokens.contentPaddingY}` }}>
               {renderAnswerSection()}
               
               {/* Save Indicator - Only shown when save-on-tap is active */}
@@ -232,8 +293,16 @@ export default function MobileQuestionCard({
 
             {/* Error Message */}
             {error && (
-              <div className="mx-6 mb-6 text-sm text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
-                <span className="text-xl flex-shrink-0">❌</span>
+              <div 
+                className="text-red-700 bg-red-50 border-2 border-red-200 flex items-start gap-3"
+                style={{
+                  margin: `0 ${cardTokens.contentPaddingX} ${cardTokens.contentPaddingY}`,
+                  fontSize: typography.fontSize.sm,
+                  borderRadius: cardTokens.borderRadius,
+                  padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}`,
+                }}
+              >
+                <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
                 <p className="leading-relaxed">{error}</p>
               </div>
             )}
@@ -242,15 +311,23 @@ export default function MobileQuestionCard({
       </main>
 
       {/* Navigation Footer */}
-      <footer className="bg-white border-t border-slate-200 px-4 py-4 shadow-lg">
+      <footer 
+        className="bg-white border-t border-slate-200 shadow-lg"
+        style={{ padding: cardTokens.headerPaddingY + ' ' + cardTokens.headerPaddingX }}
+      >
         <div className="max-w-2xl mx-auto flex gap-3">
           {!isFirst && onPrevious && (
             <button
               type="button"
               onClick={onPrevious}
               disabled={isLoading}
-              className="px-6 py-4 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
-              style={{ minHeight: '56px' }}
+              className="bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              style={{
+                padding: `${navTokens.paddingY} ${navTokens.paddingX}`,
+                borderRadius: navTokens.borderRadius,
+                minHeight: navTokens.minHeight,
+                transition: navTokens.transition,
+              }}
             >
               ← Zurück
             </button>
@@ -260,8 +337,14 @@ export default function MobileQuestionCard({
               type="button"
               onClick={onNext}
               disabled={!isAnswered || isLoading}
-              className="flex-1 px-6 py-4 rounded-xl bg-sky-600 text-white font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-95"
-              style={{ minHeight: '56px' }}
+              className="flex-1 bg-sky-600 text-white font-semibold hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
+              style={{
+                padding: `${navTokens.paddingY} ${navTokens.paddingX}`,
+                borderRadius: navTokens.borderRadius,
+                minHeight: navTokens.minHeight,
+                boxShadow: navTokens.shadow,
+                transition: navTokens.transition,
+              }}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
