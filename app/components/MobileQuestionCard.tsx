@@ -6,6 +6,7 @@ import ScaleAnswerButtons from './ScaleAnswerButtons'
 import BinaryAnswerButtons from './BinaryAnswerButtons'
 import SingleChoiceAnswerButtons from './SingleChoiceAnswerButtons'
 import SaveIndicator from './SaveIndicator'
+import MobileProgress from './MobileProgress'
 import {
   getQuestionOptions,
   getBinaryQuestionConfig,
@@ -58,13 +59,10 @@ export default function MobileQuestionCard({
   
   // Determine if save-on-tap should be active
   const isSaveOnTapActive = enableSaveOnTap && assessmentId !== undefined
-
-  const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100
   
   // Use design tokens for consistent styling
   const cardTokens = componentTokens.mobileQuestionCard
   const navTokens = componentTokens.navigationButton
-  const progressTokens = componentTokens.progressBar
 
   // Handle answer change with save-on-tap
   const handleAnswerChange = async (questionId: string, newValue: number | string) => {
@@ -192,29 +190,10 @@ export default function MobileQuestionCard({
         style={{ padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}` }}
       >
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between text-slate-700 mb-2" style={{ fontSize: typography.fontSize.sm }}>
-            <span className="font-medium">
-              Frage {currentQuestionIndex + 1} von {totalQuestions}
-            </span>
-            <span className="text-slate-500" style={{ fontSize: typography.fontSize.xs }}>{Math.round(progressPercent)}%</span>
-          </div>
-          <div 
-            className="w-full bg-slate-200 overflow-hidden"
-            style={{ 
-              height: progressTokens.height,
-              borderRadius: progressTokens.borderRadius,
-            }}
-          >
-            <div
-              className="bg-sky-500"
-              style={{ 
-                width: `${progressPercent}%`,
-                height: progressTokens.height,
-                borderRadius: progressTokens.borderRadius,
-                transition: progressTokens.transition,
-              }}
-            />
-          </div>
+          <MobileProgress 
+            currentStep={currentQuestionIndex} 
+            totalSteps={totalQuestions} 
+          />
         </div>
       </div>
 

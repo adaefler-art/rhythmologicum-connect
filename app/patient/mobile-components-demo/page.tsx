@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Mobile UI Components Demo Page
  * 
