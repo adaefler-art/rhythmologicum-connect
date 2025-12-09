@@ -287,9 +287,11 @@ export type ThemeVariant = 'default' | 'stress' | 'sleep' | 'custom'
  * const themeColors = getThemeColors(funnel.default_theme)
  * // Use themeColors.primary[500] for primary color
  */
-export function getThemeColors(variant: ThemeVariant = 'default') {
+export function getThemeColors(variant?: ThemeVariant) {
   // Future enhancement: Load different color schemes based on variant
   // For now, return default colors (stress theme)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _unusedVariant = variant
   return colors
 }
 
