@@ -11,6 +11,7 @@ type Question = {
   text: string
   group: 'stress' | 'sleep'
   helpText: string | null
+  isRequired: boolean
 }
 
 type StepQuestionPayload = {
@@ -21,6 +22,7 @@ type StepQuestionPayload = {
 
 type StepQuestionRow = {
   order_index: number
+  is_required: boolean
   questions: StepQuestionPayload | StepQuestionPayload[] | null
 }
 
@@ -81,6 +83,7 @@ export default function StressCheckPage() {
             .from('funnel_step_questions')
             .select(`
               order_index,
+              is_required,
               questions (
                 key,
                 label,
@@ -109,6 +112,7 @@ export default function StressCheckPage() {
                 text: questionRecord.label,
                 helpText: questionRecord.help_text,
                 group: questionGroup,
+                isRequired: sq.is_required,
               }
             })
             .filter((item): item is Question => Boolean(item))
@@ -212,20 +216,29 @@ export default function StressCheckPage() {
       return
     }
 
-    // Check for unanswered questions and provide specific feedback
+    // Check for unanswered required questions and provide specific feedback
     if (!allAnswered) {
       const unansweredQuestions = questions.filter(q => answers[q.id] === undefined)
-      const questionNumbers = unansweredQuestions.map(q => questions.indexOf(q) + 1).join(', ')
-      setError(
-        `Bitte beantworten Sie noch alle Fragen. Fehlend: Frage ${questionNumbers}`
-      )
-      // Scroll to first unanswered question
-      const firstUnanswered = unansweredQuestions[0]
-      if (firstUnanswered) {
-        const element = document.getElementById(`question-${firstUnanswered.id}`)
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const requiredUnanswered = unansweredQuestions.filter(q => q.isRequired)
+      
+      // If there are required questions unanswered, block submission
+      if (requiredUnanswered.length > 0) {
+        const questionNumbers = requiredUnanswered.map(q => questions.indexOf(q) + 1).join(', ')
+        setError(
+          `Bitte beantworten Sie alle Pflichtfragen. Fehlend: Frage ${questionNumbers}`
+        )
+        // Scroll to first unanswered required question
+        const firstUnanswered = requiredUnanswered[0]
+        if (firstUnanswered) {
+          const element = document.getElementById(`question-${firstUnanswered.id}`)
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+        return
       }
-      return
+      
+      // Optional questions unanswered - allow but warn
+      const questionNumbers = unansweredQuestions.map(q => questions.indexOf(q) + 1).join(', ')
+      console.log(`Optional questions unanswered: ${questionNumbers}`)
     }
 
     setSubmitting(true)
@@ -311,8 +324,11 @@ export default function StressCheckPage() {
   }
 
   const totalQuestions = questions.length
+  const requiredQuestions = questions.filter(q => q.isRequired)
   const answeredCount = Object.keys(answers).length
+  const requiredAnsweredCount = requiredQuestions.filter(q => answers[q.id] !== undefined).length
   const allAnswered = answeredCount === totalQuestions
+  const allRequiredAnswered = requiredAnsweredCount === requiredQuestions.length
 
   if (initialLoading || questionsLoading) {
     return (
@@ -366,9 +382,9 @@ export default function StressCheckPage() {
             <span className="font-medium">
               Frage {answeredCount} von {totalQuestions}
             </span>
-            {!allAnswered && (
-              <span className="text-xs md:text-sm text-slate-500">
-                Bitte alle Fragen beantworten
+            {!allRequiredAnswered && (
+              <span className="text-xs md:text-sm text-amber-600">
+                Pflichtfragen: {requiredAnsweredCount}/{requiredQuestions.length}
               </span>
             )}
           </div>
@@ -431,7 +447,7 @@ export default function StressCheckPage() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!allAnswered || submitting}
+            disabled={!allRequiredAnswered || submitting}
             className="w-full inline-flex justify-center items-center px-6 py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-sky-600 transition-all"
             style={{ minHeight: '56px' }}
           >
@@ -445,7 +461,7 @@ export default function StressCheckPage() {
               </>
             ) : (
               <>
-                {allAnswered ? '✓ ' : ''}Antworten speichern & weiter
+                {allRequiredAnswered ? '✓ ' : ''}Antworten speichern & weiter
               </>
             )}
           </button>
@@ -486,9 +502,18 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
         }`}>
           {index}
         </span>
-        <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1">
-          {question.text}
-        </p>
+        <div className="flex-1">
+          <div className="flex items-start gap-2">
+            <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1 flex-1">
+              {question.text}
+            </p>
+            {!question.isRequired && (
+              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md whitespace-nowrap">
+                Optional
+              </span>
+            )}
+          </div>
+        </div>
       </div>
       {question.helpText && (
         <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
@@ -498,7 +523,7 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps) {
           </p>
         </div>
       )}
-      {!isAnswered && (
+      {!isAnswered && question.isRequired && (
         <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
           ⚠️ Bitte wählen Sie eine Antwort aus
         </p>
