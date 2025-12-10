@@ -71,7 +71,11 @@ export async function proxy(request: NextRequest) {
 
   const role = user.app_metadata?.role || user.user_metadata?.role
 
-  if (role !== 'clinician') {
+  // Allow access for clinician and admin roles
+  // Currently, clinicians have admin access to /admin/* routes
+  const hasAccess = role === 'clinician' || role === 'admin'
+  
+  if (!hasAccess) {
     await logUnauthorizedAccess(pathname, user.id, 'insufficient_permissions')
 
     const redirectUrl = new URL('/', request.url)

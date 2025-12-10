@@ -45,7 +45,9 @@ export async function PATCH(
     }
 
     const role = user.app_metadata?.role || user.user_metadata?.role
-    if (role !== 'clinician') {
+    // Allow access for clinician and admin roles
+    const hasAccess = role === 'clinician' || role === 'admin'
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -132,7 +134,9 @@ export async function DELETE(
     }
 
     const role = user.app_metadata?.role || user.user_metadata?.role
-    if (role !== 'clinician') {
+    // Allow access for clinician and admin roles
+    const hasAccess = role === 'clinician' || role === 'admin'
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

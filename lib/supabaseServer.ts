@@ -44,3 +44,13 @@ export async function hasClinicianRole(): Promise<boolean> {
   const role = user.app_metadata?.role || user.user_metadata?.role
   return role === 'clinician'
 }
+
+export async function hasAdminOrClinicianRole(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+  
+  // Check in app_metadata and user_metadata
+  const role = user.app_metadata?.role || user.user_metadata?.role
+  // In this system, clinicians have admin access
+  return role === 'clinician' || role === 'admin'
+}
