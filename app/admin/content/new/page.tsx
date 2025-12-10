@@ -8,7 +8,7 @@ export default function NewContentPage() {
   const router = useRouter()
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
+    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
           Neue Content-Page erstellen

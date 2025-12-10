@@ -82,7 +82,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
       <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 md:py-5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-sky-600">
@@ -109,7 +109,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Navigation */}
       <nav className="border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex gap-1">
             <Link
               href="/clinician"
@@ -138,7 +138,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <p className="text-[11px] sm:text-xs text-slate-500 text-center sm:text-left">
               Rhythmologicum Connect – Admin View – Frühe Testversion, nicht für den klinischen Einsatz.

@@ -13,9 +13,17 @@ export async function GET() {
   try {
     // Check authentication and authorization
     const cookieStore = await cookies()
+    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
+      console.error('Supabase URL or anon key not configured')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+    
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      publicSupabaseUrl,
+      publicSupabaseAnonKey,
       {
         cookies: {
           getAll() {
