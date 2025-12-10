@@ -13,13 +13,14 @@ export type ContentPage = {
   title: string
   excerpt: string | null
   body_markdown: string
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'archived'
   layout: string | null
   category: string | null
   priority: number
   funnel_id: string | null
   created_at: string
   updated_at: string
+  deleted_at: string | null
 }
 
 export type ContentPageWithFunnel = ContentPage & {

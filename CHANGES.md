@@ -1,5 +1,80 @@
 # Zusammenfassung der Änderungen
 
+## F4 - Status Workflow: Draft / Published / Archived (2025-12-10)
+
+### Was wurde implementiert?
+
+Diese Implementierung erweitert die Content-Verwaltung um einen vollständigen **Status-Workflow** mit drei Zuständen (Draft, Published, Archived) sowie optionalem **Soft-Delete** für Content-Pages.
+
+### Hauptänderungen
+
+#### 1. Status-Feld Erweiterung
+
+**Neue Status-Werte:**
+- **draft**: Entwürfe in Bearbeitung (nicht für Patienten sichtbar)
+- **published**: Veröffentlichter Content (für Patienten sichtbar)
+- **archived**: Archivierter Content (nicht für Patienten sichtbar)
+
+**Validierung:** Status wird in allen API-Endpunkten validiert und nur gültige Werte akzeptiert.
+
+#### 2. Soft-Delete Funktion
+
+**Neue Spalte:** `content_pages.deleted_at` (timestamptz, nullable)
+- `NULL`: Content ist aktiv
+- Gesetzt: Content ist soft-deleted und wird standardmäßig aus allen Queries ausgeschlossen
+- Ermöglicht Wiederherstellung ohne Datenverlust
+
+**Performance-Optimierung:** Partial Index auf `deleted_at` für effiziente Queries
+
+#### 3. Zugriffskontrolle
+
+**Patienten:**
+- Sehen nur Content mit `status='published'` UND `deleted_at IS NULL`
+- Implementiert in `/api/content-pages/[slug]` und `/api/funnels/[slug]/content-pages`
+
+**Admins/Clinicians:**
+- Sehen alle Status (draft, published, archived)
+- Soft-deleted Content standardmäßig ausgeblendet
+- Implementiert in `/api/admin/content-pages/*`
+
+#### 4. Typ-Definitionen
+
+**Aktualisiert:** `lib/types/content.ts`
+```typescript
+status: 'draft' | 'published' | 'archived'
+deleted_at: string | null
+```
+
+#### 5. UI-Unterstützung
+
+**Admin Dashboard** bereits vorbereitet:
+- Status-Badges für alle drei Zustände mit passender Farbgebung
+- Filter nach Status funktionsfähig
+- Deutsche Bezeichnungen: "Entwurf", "Veröffentlicht", "Archiviert"
+
+### Migration
+
+**Datei:** `supabase/migrations/20251210180353_add_archived_status_and_soft_delete.sql`
+- Fügt `deleted_at` Spalte hinzu
+- Erstellt optimierte Indizes für Status und Soft-Delete Queries
+- Aktualisiert Kommentare und Dokumentation
+
+### Dokumentation
+
+**Neu:** `docs/F4_STATUS_WORKFLOW.md`
+- Vollständige Implementierungs-Dokumentation
+- Testing-Checkliste
+- SQL-Beispielcommands
+- API-Änderungs-Übersicht
+
+### Nutzen
+
+✅ **Content-Lifecycle-Management:** Vollständiger Workflow von Entwurf bis Archivierung  
+✅ **Datenschutz:** Nur veröffentlichter Content für Patienten sichtbar  
+✅ **Flexibilität:** Soft-Delete ermöglicht Wiederherstellung  
+✅ **Performance:** Optimierte Indizes für häufige Queries  
+✅ **Type-Safety:** Vollständig typsichere Status-Werte
+
 ## C1 - Global Design Tokens (2025-12-09)
 
 ### Was wurde implementiert?

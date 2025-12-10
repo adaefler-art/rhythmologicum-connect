@@ -2820,7 +2820,8 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
      created_at timestamp with time zone DEFAULT now() NOT NULL,
      updated_at timestamp with time zone DEFAULT now() NOT NULL,
      category text,
-     priority integer DEFAULT 0 NOT NULL
+     priority integer DEFAULT 0 NOT NULL,
+     deleted_at timestamp with time zone
  );
 
  --
@@ -3964,7 +3965,13 @@ CREATE INDEX content_pages_slug_idx ON public.content_pages USING btree (slug);
 -- Name: content_pages_status_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status);
+CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status) WHERE (deleted_at IS NULL);
+
+--
+-- Name: idx_content_pages_deleted_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_pages_deleted_at ON public.content_pages USING btree (deleted_at) WHERE (deleted_at IS NOT NULL);
 
 --
 -- Name: idx_content_pages_priority; Type: INDEX; Schema: public; Owner: -

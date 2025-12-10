@@ -36,7 +36,7 @@ export async function GET(
       auth: { persistSession: false },
     })
 
-    // Fetch content page by slug, only if published
+    // Fetch content page by slug, only if published and not deleted
     const { data: contentPage, error: pageError } = await supabase
       .from('content_pages')
       .select(`
@@ -49,6 +49,7 @@ export async function GET(
       `)
       .eq('slug', slug)
       .eq('status', 'published')
+      .is('deleted_at', null)
       .single()
 
     if (pageError || !contentPage) {

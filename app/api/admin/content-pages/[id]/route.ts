@@ -75,6 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         funnel_id,
         updated_at,
         created_at,
+        deleted_at,
         funnels (
           id,
           title,
@@ -159,6 +160,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!title || !slug || !body_markdown || !status) {
       return NextResponse.json(
         { error: 'Missing required fields: title, slug, body_markdown, status' },
+        { status: 400 },
+      )
+    }
+
+    // Validate status value
+    const validStatuses = ['draft', 'published', 'archived']
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status. Must be one of: draft, published, archived' },
         { status: 400 },
       )
     }
