@@ -76,8 +76,8 @@ export default function AdminContentDashboard() {
   // Get unique values for filters
   const uniqueFunnels = useMemo(() => {
     const funnels = contentPages
-      .filter((page) => page.funnels)
-      .map((page) => page.funnels!)
+      .map((page) => page.funnels)
+      .filter((funnel): funnel is Funnel => funnel !== null)
     const uniqueMap = new Map(funnels.map((f) => [f.id, f]))
     return Array.from(uniqueMap.values())
   }, [contentPages])
