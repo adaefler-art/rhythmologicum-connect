@@ -260,6 +260,13 @@ CREATE TYPE realtime.equality_op AS ENUM (
         ADD CONSTRAINT content_pages_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id);
 
     --
+    -- Name: content_page_sections content_page_sections_content_page_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.content_page_sections
+        ADD CONSTRAINT content_page_sections_content_page_id_fkey FOREIGN KEY (content_page_id) REFERENCES public.content_pages(id) ON DELETE CASCADE;
+
+    --
     -- Name: funnel_step_questions funnel_step_questions_funnel_step_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
     --
 
@@ -2815,6 +2822,20 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
  );
 
  --
+ -- Name: content_page_sections; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.content_page_sections (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     content_page_id uuid NOT NULL,
+     title text NOT NULL,
+     body_markdown text NOT NULL,
+     order_index integer DEFAULT 0 NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL
+ );
+
+ --
  -- Name: funnels; Type: TABLE; Schema: public; Owner: -
  --
 
@@ -3424,6 +3445,13 @@ ALTER TABLE ONLY public.content_pages
     ADD CONSTRAINT content_pages_slug_key UNIQUE (slug);
 
 --
+-- Name: content_page_sections content_page_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_page_sections
+    ADD CONSTRAINT content_page_sections_pkey PRIMARY KEY (id);
+
+--
 -- Name: funnel_step_questions funnel_step_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3935,6 +3963,18 @@ CREATE INDEX content_pages_slug_idx ON public.content_pages USING btree (slug);
 --
 
 CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status);
+
+--
+-- Name: idx_content_page_sections_page_id_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_page_sections_page_id_order ON public.content_page_sections USING btree (content_page_id, order_index);
+
+--
+-- Name: idx_content_page_sections_unique_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_content_page_sections_unique_order ON public.content_page_sections USING btree (content_page_id, order_index);
 
 --
 -- Name: idx_funnel_question_rules_question_id; Type: INDEX; Schema: public; Owner: -

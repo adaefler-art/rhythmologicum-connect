@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import type { ContentPageWithFunnel } from '@/lib/types/content'
+import type { ContentPageWithFunnelAndSections } from '@/lib/types/content'
 
 /**
  * D1 API Endpoint: Get Content Page by Slug
@@ -56,7 +56,14 @@ export async function GET(
       return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }
 
-    return NextResponse.json(contentPage as ContentPageWithFunnel)
+    // Fetch sections for this content page
+    const { data: sections } = await supabase
+      .from('content_page_sections')
+      .select('*')
+      .eq('content_page_id', contentPage.id)
+      .order('order_index', { ascending: true })
+
+    return NextResponse.json({ ...contentPage, sections: sections || [] } as ContentPageWithFunnelAndSections)
   } catch (error) {
     console.error('Error loading content page:', error)
     return NextResponse.json(

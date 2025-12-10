@@ -4,113 +4,15 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * F2 API Endpoint: Get single content page by ID for editing
- * GET /api/admin/content-pages/[id]
+ * F3 API Endpoint: Update a section
+ * PATCH /api/admin/content-pages/[id]/sections/[sectionId]
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; sectionId: string }> },
+) {
   try {
-    const { id } = await params
-
-    // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    if (role !== 'clinician') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
-    // Fetch single content page with funnel data
-    const { data: contentPage, error: pageError } = await adminClient
-      .from('content_pages')
-      .select(
-        `
-        id,
-        slug,
-        title,
-        excerpt,
-        body_markdown,
-        status,
-        layout,
-        category,
-        priority,
-        funnel_id,
-        updated_at,
-        created_at,
-        funnels (
-          id,
-          title,
-          slug
-        )
-      `,
-      )
-      .eq('id', id)
-      .single()
-
-    if (pageError) {
-      console.error('Error fetching content page:', pageError)
-      return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
-    }
-
-    // Fetch sections for this content page
-    const { data: sections } = await adminClient
-      .from('content_page_sections')
-      .select('*')
-      .eq('content_page_id', id)
-      .order('order_index', { ascending: true })
-
-    return NextResponse.json({ contentPage: { ...contentPage, sections: sections || [] } })
-  } catch (error) {
-    console.error('Error in GET /api/admin/content-pages/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-/**
- * F2 API Endpoint: Update content page
- * PATCH /api/admin/content-pages/[id]
- */
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params
+    const { id, sectionId } = await params
     const body = await request.json()
 
     // Check authentication and authorization
@@ -160,69 +62,156 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       auth: { persistSession: false },
     })
 
-    // Validate required fields
-    const { title, slug, body_markdown, status } = body
-
-    if (!title || !slug || !body_markdown || !status) {
-      return NextResponse.json(
-        { error: 'Missing required fields: title, slug, body_markdown, status' },
-        { status: 400 },
-      )
-    }
-
-    // Validate slug format (lowercase, alphanumeric, hyphens only)
-    const slugRegex = /^[a-z0-9-]+$/
-    if (!slugRegex.test(slug)) {
-      return NextResponse.json(
-        { error: 'Slug must contain only lowercase letters, numbers, and hyphens' },
-        { status: 400 },
-      )
-    }
-
-    // Check if slug is already used by another page
-    const { data: existingPage } = await adminClient
-      .from('content_pages')
-      .select('id')
-      .eq('slug', slug)
-      .neq('id', id)
+    // Verify the section belongs to the content page
+    const { data: section, error: sectionError } = await adminClient
+      .from('content_page_sections')
+      .select('id, content_page_id')
+      .eq('id', sectionId)
+      .eq('content_page_id', id)
       .single()
 
-    if (existingPage) {
-      return NextResponse.json({ error: 'Slug is already in use by another page' }, { status: 409 })
+    if (sectionError || !section) {
+      return NextResponse.json({ error: 'Section not found' }, { status: 404 })
     }
 
     // Prepare update data
     const updateData: Record<string, unknown> = {
-      title,
-      slug,
-      body_markdown,
-      status,
       updated_at: new Date().toISOString(),
     }
 
-    // Add optional fields if provided
-    if (body.excerpt !== undefined) updateData.excerpt = body.excerpt || null
-    if (body.category !== undefined) updateData.category = body.category || null
-    if (body.priority !== undefined) updateData.priority = body.priority
-    if (body.funnel_id !== undefined) updateData.funnel_id = body.funnel_id || null
-    if (body.layout !== undefined) updateData.layout = body.layout || null
+    if (body.title !== undefined) updateData.title = body.title
+    if (body.body_markdown !== undefined) updateData.body_markdown = body.body_markdown
 
-    // Update content page
-    const { data: updatedPage, error: updateError } = await adminClient
-      .from('content_pages')
+    // Update the section
+    const { data: updatedSection, error: updateError } = await adminClient
+      .from('content_page_sections')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', sectionId)
       .select()
       .single()
 
     if (updateError) {
-      console.error('Error updating content page:', updateError)
-      return NextResponse.json({ error: 'Failed to update content page' }, { status: 500 })
+      console.error('Error updating section:', updateError)
+      return NextResponse.json({ error: 'Failed to update section' }, { status: 500 })
     }
 
-    return NextResponse.json({ contentPage: updatedPage })
+    return NextResponse.json({ section: updatedSection })
   } catch (error) {
-    console.error('Error in PATCH /api/admin/content-pages/[id]:', error)
+    console.error('Error in PATCH /api/admin/content-pages/[id]/sections/[sectionId]:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * F3 API Endpoint: Delete a section
+ * DELETE /api/admin/content-pages/[id]/sections/[sectionId]
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; sectionId: string }> },
+) {
+  try {
+    const { id, sectionId } = await params
+
+    // Check authentication and authorization
+    const cookieStore = await cookies()
+    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
+      console.error('Supabase URL or anon key not configured')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
+      },
+    })
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const role = user.app_metadata?.role || user.user_metadata?.role
+    if (role !== 'clinician') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Use service role for admin operations
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    })
+
+    // Verify the section belongs to the content page and get its order_index
+    const { data: section, error: sectionError } = await adminClient
+      .from('content_page_sections')
+      .select('id, content_page_id, order_index')
+      .eq('id', sectionId)
+      .eq('content_page_id', id)
+      .single()
+
+    if (sectionError || !section) {
+      return NextResponse.json({ error: 'Section not found' }, { status: 404 })
+    }
+
+    // Delete the section
+    const { error: deleteError } = await adminClient
+      .from('content_page_sections')
+      .delete()
+      .eq('id', sectionId)
+
+    if (deleteError) {
+      console.error('Error deleting section:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete section' }, { status: 500 })
+    }
+
+    // Reorder remaining sections (decrement order_index for all sections after deleted one)
+    const { error: reorderError } = await adminClient.rpc('reorder_sections_after_delete', {
+      p_content_page_id: id,
+      p_deleted_order_index: section.order_index,
+    })
+
+    // If the RPC doesn't exist, we'll manually update
+    if (reorderError) {
+      // Fallback: manually update order_index
+      const { data: remainingSections } = await adminClient
+        .from('content_page_sections')
+        .select('id, order_index')
+        .eq('content_page_id', id)
+        .gt('order_index', section.order_index)
+        .order('order_index', { ascending: true })
+
+      if (remainingSections) {
+        for (const remainingSection of remainingSections) {
+          await adminClient
+            .from('content_page_sections')
+            .update({ order_index: remainingSection.order_index - 1 })
+            .eq('id', remainingSection.id)
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in DELETE /api/admin/content-pages/[id]/sections/[sectionId]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

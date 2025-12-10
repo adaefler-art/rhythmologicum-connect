@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
-import type { ContentPageWithFunnel } from '@/lib/types/content'
+import type { ContentPageWithFunnelAndSections } from '@/lib/types/content'
 
 type ContentPageClientProps = {
   funnelSlug: string
@@ -14,7 +14,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [contentPage, setContentPage] = useState<ContentPageWithFunnel | null>(null)
+  const [contentPage, setContentPage] = useState<ContentPageWithFunnelAndSections | null>(null)
 
   useEffect(() => {
     const loadContentPage = async () => {
@@ -33,7 +33,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           return
         }
 
-        const data: ContentPageWithFunnel = await response.json()
+        const data: ContentPageWithFunnelAndSections = await response.json()
         setContentPage(data)
         setLoading(false)
       } catch (err) {
@@ -135,6 +135,25 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           <div className="px-6 sm:px-8 py-8 sm:py-12">
             <MarkdownRenderer content={contentPage.body_markdown} />
           </div>
+
+          {/* F3: Render Sections */}
+          {contentPage.sections && contentPage.sections.length > 0 && (
+            <div className="border-t border-slate-200">
+              {contentPage.sections.map((section, index) => (
+                <div
+                  key={section.id}
+                  className={`px-6 sm:px-8 py-8 sm:py-12 ${
+                    index > 0 ? 'border-t border-slate-200' : ''
+                  }`}
+                >
+                  <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
+                    {section.title}
+                  </h2>
+                  <MarkdownRenderer content={section.body_markdown} />
+                </div>
+              ))}
+            </div>
+          )}
         </article>
 
         {/* Back to Funnel Button */}

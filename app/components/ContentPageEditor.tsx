@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MarkdownRenderer from './MarkdownRenderer'
+import type { ContentPageSection } from '@/lib/types/content'
 
 type Funnel = {
   id: string
@@ -21,6 +22,7 @@ export type ContentPageEditorData = {
   priority: number
   funnel_id: string | null
   layout: string | null
+  sections?: ContentPageSection[]
 }
 
 type ContentPageEditorProps = {
@@ -30,13 +32,14 @@ type ContentPageEditorProps = {
 }
 
 /**
- * F2: Content Page Editor Component
+ * F2/F3: Content Page Editor Component
  *
  * Provides a full-featured editor for creating/editing content pages with:
  * - All required fields (title, slug, funnel, category, status, priority)
  * - Markdown editor with live preview
  * - Save as Draft and Publish actions
  * - Slug validation
+ * - Section management (F3): add, edit, delete, reorder sections
  */
 export default function ContentPageEditor({ initialData, mode, pageId }: ContentPageEditorProps) {
   const router = useRouter()
@@ -55,6 +58,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [priority, setPriority] = useState(initialData?.priority || 0)
   const [funnelId, setFunnelId] = useState<string>(initialData?.funnel_id || '')
   const [layout, setLayout] = useState(initialData?.layout || 'default')
+
+  // F3: Sections state
+  const [sections, setSections] = useState<ContentPageSection[]>(initialData?.sections || [])
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
 
   // UI state
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -101,6 +108,101 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       setSlugError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
     } else {
       setSlugError(null)
+    }
+  }
+
+  // F3: Section management functions
+  const handleAddSection = async () => {
+    if (!pageId) {
+      setError('Seite muss zuerst gespeichert werden, bevor Sections hinzugefügt werden können')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Neue Section',
+          body_markdown: 'Section-Inhalt hier...',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Erstellen der Section')
+      }
+
+      const { section } = await response.json()
+      setSections([...sections, section])
+    } catch (e) {
+      console.error('Error adding section:', e)
+      setError('Fehler beim Hinzufügen der Section')
+    }
+  }
+
+  const handleUpdateSection = async (sectionId: string, title: string, body_markdown: string) => {
+    if (!pageId) return
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections/${sectionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body_markdown }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Aktualisieren der Section')
+      }
+
+      const { section } = await response.json()
+      setSections(sections.map((s) => (s.id === sectionId ? section : s)))
+      setEditingSectionId(null)
+    } catch (e) {
+      console.error('Error updating section:', e)
+      setError('Fehler beim Aktualisieren der Section')
+    }
+  }
+
+  const handleDeleteSection = async (sectionId: string) => {
+    if (!pageId) return
+    if (!confirm('Möchten Sie diese Section wirklich löschen?')) return
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections/${sectionId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Fehler beim Löschen der Section')
+      }
+
+      setSections(sections.filter((s) => s.id !== sectionId))
+    } catch (e) {
+      console.error('Error deleting section:', e)
+      setError('Fehler beim Löschen der Section')
+    }
+  }
+
+  const handleMoveSection = async (sectionId: string, direction: 'up' | 'down') => {
+    if (!pageId) return
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sectionId, direction }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Fehler beim Verschieben der Section')
+      }
+
+      const { sections: updatedSections } = await response.json()
+      setSections(updatedSections)
+    } catch (e) {
+      console.error('Error moving section:', e)
+      setError(e instanceof Error ? e.message : 'Fehler beim Verschieben der Section')
     }
   }
 
@@ -366,6 +468,157 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           </div>
         </div>
 
+        {/* F3: Sections Management */}
+        {mode === 'edit' && pageId && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Sections ({sections.length})
+              </h2>
+              <button
+                type="button"
+                onClick={handleAddSection}
+                className="px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition"
+              >
+                + Section hinzufügen
+              </button>
+            </div>
+
+            {sections.length === 0 ? (
+              <p className="text-slate-500 text-sm">
+                Keine Sections vorhanden. Klicken Sie auf &quot;Section hinzufügen&quot;, um eine
+                neue Section zu erstellen.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <div
+                    key={section.id}
+                    className="border border-slate-200 rounded-lg p-4 bg-slate-50"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium text-slate-900">
+                        Section {index + 1}: {section.title}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        {/* Move Up */}
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSection(section.id, 'up')}
+                          disabled={index === 0}
+                          className="p-1.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                          title="Nach oben"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 15l7-7 7 7"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Move Down */}
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSection(section.id, 'down')}
+                          disabled={index === sections.length - 1}
+                          className="p-1.5 text-slate-600 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                          title="Nach unten"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Edit */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingSectionId(
+                              editingSectionId === section.id ? null : section.id,
+                            )
+                          }
+                          className="p-1.5 text-sky-600 hover:text-sky-700 transition"
+                          title="Bearbeiten"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSection(section.id)}
+                          className="p-1.5 text-red-600 hover:text-red-700 transition"
+                          title="Löschen"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {editingSectionId === section.id && (
+                      <SectionEditor
+                        section={section}
+                        onSave={(title, bodyMarkdown) =>
+                          handleUpdateSection(section.id, title, bodyMarkdown)
+                        }
+                        onCancel={() => setEditingSectionId(null)}
+                      />
+                    )}
+
+                    {editingSectionId !== section.id && (
+                      <div className="text-sm text-slate-600 line-clamp-2">
+                        {section.body_markdown}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-end bg-white rounded-xl border border-slate-200 p-6">
           <button
@@ -395,6 +648,94 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             {saving ? 'Speichere...' : 'Veröffentlichen'}
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * F3: Section Editor Component
+ * Inline editor for content page sections
+ */
+function SectionEditor({
+  section,
+  onSave,
+  onCancel,
+}: {
+  section: ContentPageSection
+  onSave: (title: string, bodyMarkdown: string) => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(section.title)
+  const [bodyMarkdown, setBodyMarkdown] = useState(section.body_markdown)
+  const [showPreview, setShowPreview] = useState(false)
+
+  const handleSave = () => {
+    if (!title.trim() || !bodyMarkdown.trim()) {
+      alert('Titel und Inhalt sind erforderlich')
+      return
+    }
+    onSave(title, bodyMarkdown)
+  }
+
+  return (
+    <div className="space-y-4 mt-4">
+      {/* Title */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Titel</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          placeholder="Section-Titel"
+        />
+      </div>
+
+      {/* Markdown Content */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-slate-700">Inhalt (Markdown)</label>
+          <button
+            type="button"
+            onClick={() => setShowPreview(!showPreview)}
+            className="text-xs text-sky-600 hover:text-sky-700"
+          >
+            {showPreview ? 'Editor anzeigen' : 'Vorschau anzeigen'}
+          </button>
+        </div>
+
+        {!showPreview ? (
+          <textarea
+            value={bodyMarkdown}
+            onChange={(e) => setBodyMarkdown(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+            rows={10}
+            placeholder="Section-Inhalt in Markdown..."
+          />
+        ) : (
+          <div className="border border-slate-300 rounded-md p-4 bg-white min-h-[200px]">
+            <MarkdownRenderer content={bodyMarkdown} />
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50 transition"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="px-4 py-2 text-sm bg-sky-600 text-white rounded-md hover:bg-sky-700 transition"
+        >
+          Speichern
+        </button>
       </div>
     </div>
   )
