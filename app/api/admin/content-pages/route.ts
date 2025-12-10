@@ -190,11 +190,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Add optional fields if provided
-    if (body.excerpt) insertData.excerpt = body.excerpt
-    if (body.category) insertData.category = body.category
+    if (body.excerpt !== undefined) insertData.excerpt = body.excerpt || null
+    if (body.category !== undefined) insertData.category = body.category || null
     if (body.priority !== undefined) insertData.priority = body.priority
-    if (body.funnel_id) insertData.funnel_id = body.funnel_id
-    if (body.layout) insertData.layout = body.layout
+    if (body.funnel_id !== undefined) insertData.funnel_id = body.funnel_id || null
+    if (body.layout !== undefined) insertData.layout = body.layout || null
 
     // Create content page
     const { data: newPage, error: insertError } = await adminClient

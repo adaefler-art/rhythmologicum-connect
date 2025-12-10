@@ -194,11 +194,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Add optional fields if provided
-    if (body.excerpt !== undefined) updateData.excerpt = body.excerpt
-    if (body.category !== undefined) updateData.category = body.category
+    if (body.excerpt !== undefined) updateData.excerpt = body.excerpt || null
+    if (body.category !== undefined) updateData.category = body.category || null
     if (body.priority !== undefined) updateData.priority = body.priority
-    if (body.funnel_id !== undefined) updateData.funnel_id = body.funnel_id
-    if (body.layout !== undefined) updateData.layout = body.layout
+    if (body.funnel_id !== undefined) updateData.funnel_id = body.funnel_id || null
+    if (body.layout !== undefined) updateData.layout = body.layout || null
 
     // Update content page
     const { data: updatedPage, error: updateError } = await adminClient
