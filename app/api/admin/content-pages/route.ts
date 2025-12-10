@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
@@ -45,21 +44,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
-    // Fetch all content pages with funnel data (excluding soft-deleted)
-    const { data: contentPages, error: contentPagesError } = await adminClient
+    // Fetch all content pages with funnel data using the authenticated client
+    const { data: contentPages, error: contentPagesError } = await supabase
       .from('content_pages')
       .select(
         `
@@ -140,19 +126,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
     // Validate required fields
     const { title, slug, body_markdown, status } = body
 
@@ -182,11 +155,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if slug is already used
-    const { data: existingPage } = await adminClient
+    const { data: existingPage, error: existingPageError } = await supabase
       .from('content_pages')
       .select('id')
       .eq('slug', slug)
       .single()
+
+    if (existingPageError && existingPageError.code !== 'PGRST116') {
+      console.error('Error checking existing slug:', existingPageError)
+      return NextResponse.json({ error: 'Failed to validate slug' }, { status: 500 })
+    }
 
     if (existingPage) {
       return NextResponse.json({ error: 'Slug is already in use' }, { status: 409 })
@@ -208,7 +186,7 @@ export async function POST(request: NextRequest) {
     if (body.layout !== undefined) insertData.layout = body.layout || null
 
     // Create content page
-    const { data: newPage, error: insertError } = await adminClient
+    const { data: newPage, error: insertError } = await supabase
       .from('content_pages')
       .insert(insertData)
       .select()
