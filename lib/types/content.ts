@@ -1,0 +1,22 @@
+// Content page type definitions based on database schema
+
+export type ContentPage = {
+  id: string
+  slug: string
+  title: string
+  excerpt: string | null
+  body_markdown: string
+  status: 'draft' | 'published'
+  layout: string | null
+  funnel_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ContentPageWithFunnel = ContentPage & {
+  funnel?: {
+    id: string
+    slug: string
+    title: string
+  }
+}
