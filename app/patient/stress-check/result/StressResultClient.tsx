@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { featureFlags } from '@/lib/featureFlags'
+import MarkdownRenderer from '@/app/components/MarkdownRenderer'
+import type { ContentPage } from '@/lib/types/content'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | null
 
@@ -43,6 +45,30 @@ export default function StressResultClient() {
 
   const [state, setState] = useState<FetchState>({ status: 'idle' })
   const [retryCounter, setRetryCounter] = useState(0)
+  const [contentPages, setContentPages] = useState<ContentPage[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+
+  // F8: Load dynamic content pages for result category
+  useEffect(() => {
+    const loadContentPages = async () => {
+      try {
+        setContentLoading(true)
+        // Load result-category content pages for stress funnel
+        const response = await fetch(
+          '/api/content-resolver?funnel=stress-assessment&category=result',
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setContentPages(Array.isArray(data) ? data : data.pages || [])
+        }
+      } catch (error) {
+        console.error('Error loading content pages:', error)
+      } finally {
+        setContentLoading(false)
+      }
+    }
+    loadContentPages()
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -352,6 +378,24 @@ export default function StressResultClient() {
               </p>
             </div>
           )}
+        </section>
+      )}
+
+      {/* F8: Dynamic Content Blocks from Database */}
+      {!contentLoading && contentPages.length > 0 && (
+        <section className="space-y-4">
+          {contentPages.map((page) => (
+            <div
+              key={page.id}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm"
+            >
+              <h2 className="text-lg font-semibold text-slate-800 mb-3">{page.title}</h2>
+              {page.excerpt && (
+                <p className="text-sm text-slate-600 mb-3 italic">{page.excerpt}</p>
+              )}
+              <MarkdownRenderer content={page.body_markdown} />
+            </div>
+          ))}
         </section>
       )}
 

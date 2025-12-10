@@ -27,12 +27,13 @@ The application features a complete, production-ready funnel system for patient 
 
 **📖 Complete documentation:** [Epic B Consolidation](docs/EPIC_B_CONSOLIDATION.md)
 
-### Content Pages (Epic D)
+### Content Pages (Epic D & F)
 
 Editorial content system for contextual information within funnels:
 
 - ✅ **Content Rendering** (D1) - Markdown content pages with professional typography
 - ✅ **Funnel Integration** (D2) - Context-aware display using slug-based categorization
+- ✅ **Dynamic Result Blocks** (F8) - Database-driven content on result pages
 - 📄 **Intro Pages** (`intro-*`) - Shown before/during assessment
 - 📄 **Info Pages** (`info-*`) - Additional information available throughout
 - 📄 **Result Pages** (`result-*`) - Next steps and interpretation after completion
@@ -40,6 +41,8 @@ Editorial content system for contextual information within funnels:
 **📖 Documentation:** 
 - [D1: Content Pages](docs/D1_CONTENT_PAGES.md) - Content rendering system
 - [D2: Content Integration](docs/D2_CONTENT_INTEGRATION.md) - Editor guide for funnel context
+- [F8: Dynamic Result Blocks](docs/F8_IMPLEMENTATION_SUMMARY.md) - Result page content system
+- [F8: Quick Start](docs/F8_QUICKSTART.md) - How to add result content blocks
 
 ### User Roles
 
