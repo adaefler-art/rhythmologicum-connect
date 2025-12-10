@@ -30,7 +30,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       const role = user.app_metadata?.role || user.user_metadata?.role
       
-      if (role !== 'clinician') {
+      // Allow access for clinician and admin roles
+      const hasAccess = role === 'clinician' || role === 'admin'
+      if (!hasAccess) {
         router.push(ACCESS_DENIED_REDIRECT)
         return
       }
@@ -50,7 +52,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           const role = session.user.app_metadata?.role || session.user.user_metadata?.role
-          if (role !== 'clinician') {
+          // Allow access for clinician and admin roles
+          const hasAccess = role === 'clinician' || role === 'admin'
+          if (!hasAccess) {
             router.push(ACCESS_DENIED_REDIRECT)
           } else {
             setUser(session.user)
