@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import type { ContentPage } from '@/lib/types/content'
+import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
 
 type ResultClientProps = {
   slug: string
@@ -22,6 +24,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const [error, setError] = useState<string | null>(null)
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
   const [funnelTitle, setFunnelTitle] = useState<string>('')
+  const [contentPages, setContentPages] = useState<ContentPage[]>([])
 
   useEffect(() => {
     const loadResultData = async () => {
@@ -48,6 +51,18 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
 
         if (funnelData) {
           setFunnelTitle(funnelData.title)
+        }
+
+        // Load content pages
+        try {
+          const response = await fetch(`/api/funnels/${slug}/content-pages`)
+          if (response.ok) {
+            const pages: ContentPage[] = await response.json()
+            setContentPages(pages)
+          }
+        } catch (err) {
+          console.error('Error loading content pages:', err)
+          // Non-critical error
         }
 
         setLoading(false)
@@ -89,6 +104,10 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
       </main>
     )
   }
+
+  const resultPages = getResultPages(contentPages)
+  const infoPages = getInfoPages(contentPages)
+  const showContentLinks = resultPages.length > 0 || infoPages.length > 0
 
   return (
     <main className="bg-slate-50 px-4 py-10">
@@ -151,6 +170,47 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
               </div>
             </div>
           </div>
+
+          {/* Content Page Links */}
+          {showContentLinks && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <span className="text-xl flex-shrink-0">📚</span>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-green-900 mb-2">
+                    Mehr erfahren
+                  </h3>
+                  <p className="text-sm text-green-800 mb-3">
+                    Lesen Sie mehr über Stress, Resilienz und wie Sie Ihre Ergebnisse interpretieren können:
+                  </p>
+                  <div className="space-y-2">
+                    {resultPages.map((page) => (
+                      <a
+                        key={page.id}
+                        href={`/patient/funnel/${slug}/content/${page.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
+                      >
+                        📄 {page.title}
+                      </a>
+                    ))}
+                    {infoPages.map((page) => (
+                      <a
+                        key={page.id}
+                        href={`/patient/funnel/${slug}/content/${page.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
+                      >
+                        📄 {page.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
