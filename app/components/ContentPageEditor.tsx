@@ -56,9 +56,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [priority, setPriority] = useState(initialData?.priority || 0)
   const [funnelId, setFunnelId] = useState<string>(initialData?.funnel_id || '')
   const [layout] = useState(initialData?.layout || 'default')
-  const [status, setStatus] = useState<'draft' | 'published'>(
-    (initialData?.status as 'draft' | 'published') || 'draft',
-  )
+  const status: 'draft' | 'published' = (initialData?.status as 'draft' | 'published') || 'draft'
 
   // F3: Sections state
   const [sections, setSections] = useState<ContentPageSection[]>([])
