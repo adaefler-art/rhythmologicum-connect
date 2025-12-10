@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import { isQuestionStep } from '@/lib/types/funnel'
+import type { ContentPage } from '@/lib/types/content'
+import { getIntroPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
 
 type AssessmentStatus = {
   assessmentId: string
@@ -48,6 +50,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [contentPages, setContentPages] = useState<ContentPage[]>([])
 
   // Load funnel definition
   useEffect(() => {
@@ -66,6 +69,23 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
     }
     loadFunnelData()
+  }, [slug])
+
+  // Load content pages for this funnel
+  useEffect(() => {
+    const loadContentPages = async () => {
+      try {
+        const response = await fetch(`/api/funnels/${slug}/content-pages`)
+        if (response.ok) {
+          const pages: ContentPage[] = await response.json()
+          setContentPages(pages)
+        }
+      } catch (err) {
+        console.error('Error loading content pages:', err)
+        // Non-critical error, don't block the funnel
+      }
+    }
+    loadContentPages()
   }, [slug])
 
   // Bootstrap assessment once funnel is loaded
@@ -481,6 +501,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   const isFirstStep = assessmentStatus.currentStep.stepIndex === 0
   const isLastStep = assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
 
+  // Get relevant content pages
+  const introPages = getIntroPages(contentPages)
+  const infoPages = getInfoPages(contentPages)
+  const showContentLinks = introPages.length > 0 || infoPages.length > 0
+
   // Calculate progress
   const totalQuestions = funnel.totalQuestions
   const answeredCount = Object.keys(answers).length
@@ -502,6 +527,56 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
             <p className="text-sm text-slate-600 leading-relaxed">{currentStep.description}</p>
           )}
         </header>
+
+        {/* Content Page Links */}
+        {showContentLinks && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">ℹ️</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                  Weitere Informationen
+                </h3>
+                <div className="space-y-2">
+                  {introPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${slug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                    >
+                      📄 {page.title}
+                      {page.excerpt && (
+                        <span className="text-xs text-blue-600 ml-1">
+                          — {page.excerpt.substring(0, 60)}
+                          {page.excerpt.length > 60 ? '...' : ''}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                  {infoPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${slug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                    >
+                      📄 {page.title}
+                      {page.excerpt && (
+                        <span className="text-xs text-blue-600 ml-1">
+                          — {page.excerpt.substring(0, 60)}
+                          {page.excerpt.length > 60 ? '...' : ''}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress */}
         <div className="mb-6 flex flex-col gap-3">
