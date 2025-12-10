@@ -8,6 +8,8 @@ export type ContentPage = {
   body_markdown: string
   status: 'draft' | 'published'
   layout: string | null
+  category: string | null
+  priority: number
   funnel_id: string | null
   created_at: string
   updated_at: string

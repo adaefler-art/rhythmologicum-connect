@@ -4,13 +4,13 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * F1 API Endpoint: List all content pages for admin management
- * GET /api/admin/content-pages
- *
- * Returns all content pages with funnel metadata for the admin dashboard
+ * F2 API Endpoint: Get single content page by ID for editing
+ * GET /api/admin/content-pages/[id]
  */
-export async function GET() {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+
     // Check authentication and authorization
     const cookieStore = await cookies()
     const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -58,14 +58,16 @@ export async function GET() {
       auth: { persistSession: false },
     })
 
-    // Fetch all content pages with funnel data
-    const { data: contentPages, error: contentPagesError } = await adminClient
+    // Fetch single content page with funnel data
+    const { data: contentPage, error: pageError } = await adminClient
       .from('content_pages')
       .select(
         `
         id,
         slug,
         title,
+        excerpt,
+        body_markdown,
         status,
         layout,
         category,
@@ -80,28 +82,28 @@ export async function GET() {
         )
       `,
       )
-      .order('updated_at', { ascending: false })
+      .eq('id', id)
+      .single()
 
-    if (contentPagesError) {
-      console.error('Error fetching content pages:', contentPagesError)
-      return NextResponse.json({ error: 'Failed to fetch content pages' }, { status: 500 })
+    if (pageError) {
+      console.error('Error fetching content page:', pageError)
+      return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ contentPages: contentPages || [] })
+    return NextResponse.json({ contentPage })
   } catch (error) {
-    console.error('Error in GET /api/admin/content-pages:', error)
+    console.error('Error in GET /api/admin/content-pages/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
- * F2 API Endpoint: Create new content page
- * POST /api/admin/content-pages
- *
- * Creates a new content page with the provided data
+ * F2 API Endpoint: Update content page
+ * PATCH /api/admin/content-pages/[id]
  */
-export async function POST(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     // Check authentication and authorization
@@ -170,47 +172,50 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if slug is already used
+    // Check if slug is already used by another page
     const { data: existingPage } = await adminClient
       .from('content_pages')
       .select('id')
       .eq('slug', slug)
+      .neq('id', id)
       .single()
 
     if (existingPage) {
-      return NextResponse.json({ error: 'Slug is already in use' }, { status: 409 })
+      return NextResponse.json({ error: 'Slug is already in use by another page' }, { status: 409 })
     }
 
-    // Prepare insert data
-    const insertData: Record<string, unknown> = {
+    // Prepare update data
+    const updateData: Record<string, unknown> = {
       title,
       slug,
       body_markdown,
       status,
+      updated_at: new Date().toISOString(),
     }
 
     // Add optional fields if provided
-    if (body.excerpt !== undefined) insertData.excerpt = body.excerpt || null
-    if (body.category !== undefined) insertData.category = body.category || null
-    if (body.priority !== undefined) insertData.priority = body.priority
-    if (body.funnel_id !== undefined) insertData.funnel_id = body.funnel_id || null
-    if (body.layout !== undefined) insertData.layout = body.layout || null
+    if (body.excerpt !== undefined) updateData.excerpt = body.excerpt || null
+    if (body.category !== undefined) updateData.category = body.category || null
+    if (body.priority !== undefined) updateData.priority = body.priority
+    if (body.funnel_id !== undefined) updateData.funnel_id = body.funnel_id || null
+    if (body.layout !== undefined) updateData.layout = body.layout || null
 
-    // Create content page
-    const { data: newPage, error: insertError } = await adminClient
+    // Update content page
+    const { data: updatedPage, error: updateError } = await adminClient
       .from('content_pages')
-      .insert(insertData)
+      .update(updateData)
+      .eq('id', id)
       .select()
       .single()
 
-    if (insertError) {
-      console.error('Error creating content page:', insertError)
-      return NextResponse.json({ error: 'Failed to create content page' }, { status: 500 })
+    if (updateError) {
+      console.error('Error updating content page:', updateError)
+      return NextResponse.json({ error: 'Failed to update content page' }, { status: 500 })
     }
 
-    return NextResponse.json({ contentPage: newPage }, { status: 201 })
+    return NextResponse.json({ contentPage: updatedPage })
   } catch (error) {
-    console.error('Error in POST /api/admin/content-pages:', error)
+    console.error('Error in PATCH /api/admin/content-pages/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
