@@ -2,17 +2,11 @@
 
 import { useState } from 'react'
 import MarkdownRenderer from './MarkdownRenderer'
-
-export type Section = {
-  id: string
-  title: string
-  body_markdown: string
-  order_index: number
-}
+import type { ContentPageSection } from '@/lib/types/content'
 
 type SectionEditorProps = {
-  section: Section
-  onUpdate: (section: Section) => void
+  section: ContentPageSection
+  onUpdate: (section: ContentPageSection) => void
   onDelete: (id: string) => void
   onMoveUp: (id: string) => void
   onMoveDown: (id: string) => void

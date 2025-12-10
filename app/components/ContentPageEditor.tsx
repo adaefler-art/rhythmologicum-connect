@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MarkdownRenderer from './MarkdownRenderer'
-import SectionEditor, { Section } from './SectionEditor'
+import SectionEditor from './SectionEditor'
+import type { ContentPageSection } from '@/lib/types/content'
 
 type Funnel = {
   id: string
@@ -60,8 +61,9 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   )
 
   // F3: Sections state
-  const [sections, setSections] = useState<Section[]>([])
+  const [sections, setSections] = useState<ContentPageSection[]>([])
   const [sectionsLoading, setSectionsLoading] = useState(false)
+  const [modifiedSections, setModifiedSections] = useState<Set<string>>(new Set())
 
   // UI state
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -247,8 +249,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     }
   }
 
-  const handleUpdateSection = (updatedSection: Section) => {
+  const handleUpdateSection = (updatedSection: ContentPageSection) => {
     setSections(sections.map((s) => (s.id === updatedSection.id ? updatedSection : s)))
+    // Mark section as modified
+    setModifiedSections((prev) => new Set(prev).add(updatedSection.id))
   }
 
   const handleDeleteSection = async (sectionId: string) => {
@@ -277,9 +281,16 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     const section = sections[index]
     const prevSection = sections[index - 1]
 
+    // Optimistically update UI
+    const newSections = [...sections]
+    newSections[index] = { ...section, order_index: prevSection.order_index }
+    newSections[index - 1] = { ...prevSection, order_index: section.order_index }
+    newSections.sort((a, b) => a.order_index - b.order_index)
+    setSections(newSections)
+
     try {
       // Swap order_index values
-      await Promise.all([
+      const [res1, res2] = await Promise.all([
         fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -292,15 +303,14 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         }),
       ])
 
-      // Update local state
-      const newSections = [...sections]
-      newSections[index] = { ...section, order_index: prevSection.order_index }
-      newSections[index - 1] = { ...prevSection, order_index: section.order_index }
-      newSections.sort((a, b) => a.order_index - b.order_index)
-      setSections(newSections)
+      if (!res1.ok || !res2.ok) {
+        throw new Error('Failed to update order')
+      }
     } catch (e) {
       console.error('Error moving section up:', e)
       setError('Fehler beim Verschieben der Section')
+      // Rollback optimistic update
+      setSections(sections)
     }
   }
 
@@ -311,9 +321,16 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     const section = sections[index]
     const nextSection = sections[index + 1]
 
+    // Optimistically update UI
+    const newSections = [...sections]
+    newSections[index] = { ...section, order_index: nextSection.order_index }
+    newSections[index + 1] = { ...nextSection, order_index: section.order_index }
+    newSections.sort((a, b) => a.order_index - b.order_index)
+    setSections(newSections)
+
     try {
       // Swap order_index values
-      await Promise.all([
+      const [res1, res2] = await Promise.all([
         fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -326,35 +343,38 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         }),
       ])
 
-      // Update local state
-      const newSections = [...sections]
-      newSections[index] = { ...section, order_index: nextSection.order_index }
-      newSections[index + 1] = { ...nextSection, order_index: section.order_index }
-      newSections.sort((a, b) => a.order_index - b.order_index)
-      setSections(newSections)
+      if (!res1.ok || !res2.ok) {
+        throw new Error('Failed to update order')
+      }
     } catch (e) {
       console.error('Error moving section down:', e)
       setError('Fehler beim Verschieben der Section')
+      // Rollback optimistic update
+      setSections(sections)
     }
   }
 
   const handleSaveSectionsContent = async () => {
-    if (!pageId) return
+    if (!pageId || modifiedSections.size === 0) return
 
     try {
-      // Save all modified sections
+      // Save only modified sections
       await Promise.all(
-        sections.map((section) =>
-          fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: section.title,
-              body_markdown: section.body_markdown,
+        sections
+          .filter((section) => modifiedSections.has(section.id))
+          .map((section) =>
+            fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: section.title,
+                body_markdown: section.body_markdown,
+              }),
             }),
-          }),
-        ),
+          ),
       )
+      // Clear modified sections after successful save
+      setModifiedSections(new Set())
     } catch (e) {
       console.error('Error saving sections:', e)
       throw new Error('Fehler beim Speichern der Sections')

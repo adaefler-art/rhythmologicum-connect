@@ -150,7 +150,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq('content_page_id', id)
       .order('order_index', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
 
     const nextOrderIndex = maxOrderData ? maxOrderData.order_index + 1 : 0
 
