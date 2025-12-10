@@ -111,7 +111,7 @@ const mockContentPages = [
 ]
 
 console.log('🧪 Testing D2 Content Page Categorization\n')
-console.log('=' .repeat(60))
+console.log('='.repeat(60))
 
 // Test individual categorization
 console.log('\n📋 Individual Page Categories:\n')

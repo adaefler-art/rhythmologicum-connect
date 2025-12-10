@@ -3,7 +3,7 @@ import type { ContentPage } from '@/lib/types/content'
 /**
  * Content page categories based on slug naming conventions
  */
-export type ContentPageCategory = 'intro' | 'info' | 'outro' | 'result' | 'other'
+export type ContentPageCategory = 'intro' | 'info' | 'result' | 'other'
 
 /**
  * Categorizes a content page based on its slug
