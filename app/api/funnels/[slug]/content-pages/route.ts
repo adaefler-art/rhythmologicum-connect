@@ -48,12 +48,13 @@ export async function GET(
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
     }
 
-    // 2. Fetch published content pages for this funnel
+    // 2. Fetch published content pages for this funnel (excluding soft-deleted)
     const { data: contentPages, error: pagesError } = await supabase
       .from('content_pages')
       .select('*')
       .eq('funnel_id', funnel.id)
       .eq('status', 'published')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (pagesError) {

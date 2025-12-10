@@ -58,7 +58,7 @@ export async function GET() {
       auth: { persistSession: false },
     })
 
-    // Fetch all content pages with funnel data
+    // Fetch all content pages with funnel data (excluding soft-deleted)
     const { data: contentPages, error: contentPagesError } = await adminClient
       .from('content_pages')
       .select(
@@ -73,6 +73,7 @@ export async function GET() {
         funnel_id,
         updated_at,
         created_at,
+        deleted_at,
         funnels (
           id,
           title,
@@ -80,6 +81,7 @@ export async function GET() {
         )
       `,
       )
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
 
     if (contentPagesError) {
@@ -157,6 +159,15 @@ export async function POST(request: NextRequest) {
     if (!title || !slug || !body_markdown || !status) {
       return NextResponse.json(
         { error: 'Missing required fields: title, slug, body_markdown, status' },
+        { status: 400 },
+      )
+    }
+
+    // Validate status value
+    const validStatuses = ['draft', 'published', 'archived']
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status. Must be one of: draft, published, archived' },
         { status: 400 },
       )
     }
