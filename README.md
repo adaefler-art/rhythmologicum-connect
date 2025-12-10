@@ -27,6 +27,20 @@ The application features a complete, production-ready funnel system for patient 
 
 **📖 Complete documentation:** [Epic B Consolidation](docs/EPIC_B_CONSOLIDATION.md)
 
+### Content Pages (Epic D)
+
+Editorial content system for contextual information within funnels:
+
+- ✅ **Content Rendering** (D1) - Markdown content pages with professional typography
+- ✅ **Funnel Integration** (D2) - Context-aware display using slug-based categorization
+- 📄 **Intro Pages** (`intro-*`) - Shown before/during assessment
+- 📄 **Info Pages** (`info-*`) - Additional information available throughout
+- 📄 **Result Pages** (`result-*`) - Next steps and interpretation after completion
+
+**📖 Documentation:** 
+- [D1: Content Pages](docs/D1_CONTENT_PAGES.md) - Content rendering system
+- [D2: Content Integration](docs/D2_CONTENT_INTEGRATION.md) - Editor guide for funnel context
+
 ### User Roles
 
 - **Patient**: Access to personal stress assessment and history
