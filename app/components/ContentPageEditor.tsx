@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MarkdownRenderer from './MarkdownRenderer'
+import SectionEditor from './SectionEditor'
+import type { ContentPageSection } from '@/lib/types/content'
 
 type Funnel = {
   id: string
@@ -30,11 +32,12 @@ type ContentPageEditorProps = {
 }
 
 /**
- * F2: Content Page Editor Component
+ * F2/F3: Content Page Editor Component
  *
  * Provides a full-featured editor for creating/editing content pages with:
  * - All required fields (title, slug, funnel, category, status, priority)
  * - Markdown editor with live preview
+ * - F3: Section management (add, delete, reorder)
  * - Save as Draft and Publish actions
  * - Slug validation
  */
@@ -53,6 +56,14 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [priority, setPriority] = useState(initialData?.priority || 0)
   const [funnelId, setFunnelId] = useState<string>(initialData?.funnel_id || '')
   const [layout] = useState(initialData?.layout || 'default')
+  const [status, setStatus] = useState<'draft' | 'published'>(
+    (initialData?.status as 'draft' | 'published') || 'draft',
+  )
+
+  // F3: Sections state
+  const [sections, setSections] = useState<ContentPageSection[]>([])
+  const [sectionsLoading, setSectionsLoading] = useState(false)
+  const [modifiedSections, setModifiedSections] = useState<Set<string>>(new Set())
 
   // UI state
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -73,6 +84,27 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     }
     void loadFunnels()
   }, [])
+
+  // F3: Load sections for existing pages
+  useEffect(() => {
+    const loadSections = async () => {
+      if (mode === 'edit' && pageId) {
+        setSectionsLoading(true)
+        try {
+          const response = await fetch(`/api/admin/content-pages/${pageId}/sections`)
+          if (response.ok) {
+            const data = await response.json()
+            setSections(data.sections || [])
+          }
+        } catch (e) {
+          console.error('Failed to load sections:', e)
+        } finally {
+          setSectionsLoading(false)
+        }
+      }
+    }
+    void loadSections()
+  }, [mode, pageId])
 
   // Auto-generate slug from title
   const generateSlug = (text: string): string => {
@@ -169,6 +201,11 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         return
       }
 
+      // F3: Save sections if in edit mode
+      if (mode === 'edit' && pageId) {
+        await handleSaveSectionsContent()
+      }
+
       // Success - redirect to content dashboard
       router.push('/admin/content')
     } catch (e) {
@@ -181,6 +218,167 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
   const handleCancel = () => {
     router.push('/admin/content')
+  }
+
+  // F3: Section management functions
+  const handleAddSection = async () => {
+    if (!pageId) {
+      setError('Page muss zuerst gespeichert werden, bevor Sections hinzugefügt werden können')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Neue Section',
+          body_markdown: '# Neue Section\n\nInhalt hier...',
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSections([...sections, data.section])
+      } else {
+        setError('Fehler beim Hinzufügen der Section')
+      }
+    } catch (e) {
+      console.error('Error adding section:', e)
+      setError('Netzwerkfehler beim Hinzufügen der Section')
+    }
+  }
+
+  const handleUpdateSection = (updatedSection: ContentPageSection) => {
+    setSections(sections.map((s) => (s.id === updatedSection.id ? updatedSection : s)))
+    // Mark section as modified
+    setModifiedSections((prev) => new Set(prev).add(updatedSection.id))
+  }
+
+  const handleDeleteSection = async (sectionId: string) => {
+    if (!pageId) return
+
+    try {
+      const response = await fetch(`/api/admin/content-pages/${pageId}/sections/${sectionId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setSections(sections.filter((s) => s.id !== sectionId))
+      } else {
+        setError('Fehler beim Löschen der Section')
+      }
+    } catch (e) {
+      console.error('Error deleting section:', e)
+      setError('Netzwerkfehler beim Löschen der Section')
+    }
+  }
+
+  const handleMoveSectionUp = async (sectionId: string) => {
+    const index = sections.findIndex((s) => s.id === sectionId)
+    if (index <= 0) return
+
+    const section = sections[index]
+    const prevSection = sections[index - 1]
+
+    // Optimistically update UI
+    const newSections = [...sections]
+    newSections[index] = { ...section, order_index: prevSection.order_index }
+    newSections[index - 1] = { ...prevSection, order_index: section.order_index }
+    newSections.sort((a, b) => a.order_index - b.order_index)
+    setSections(newSections)
+
+    try {
+      // Swap order_index values
+      const [res1, res2] = await Promise.all([
+        fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_index: prevSection.order_index }),
+        }),
+        fetch(`/api/admin/content-pages/${pageId}/sections/${prevSection.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_index: section.order_index }),
+        }),
+      ])
+
+      if (!res1.ok || !res2.ok) {
+        throw new Error('Failed to update order')
+      }
+    } catch (e) {
+      console.error('Error moving section up:', e)
+      setError('Fehler beim Verschieben der Section')
+      // Rollback optimistic update
+      setSections(sections)
+    }
+  }
+
+  const handleMoveSectionDown = async (sectionId: string) => {
+    const index = sections.findIndex((s) => s.id === sectionId)
+    if (index < 0 || index >= sections.length - 1) return
+
+    const section = sections[index]
+    const nextSection = sections[index + 1]
+
+    // Optimistically update UI
+    const newSections = [...sections]
+    newSections[index] = { ...section, order_index: nextSection.order_index }
+    newSections[index + 1] = { ...nextSection, order_index: section.order_index }
+    newSections.sort((a, b) => a.order_index - b.order_index)
+    setSections(newSections)
+
+    try {
+      // Swap order_index values
+      const [res1, res2] = await Promise.all([
+        fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_index: nextSection.order_index }),
+        }),
+        fetch(`/api/admin/content-pages/${pageId}/sections/${nextSection.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_index: section.order_index }),
+        }),
+      ])
+
+      if (!res1.ok || !res2.ok) {
+        throw new Error('Failed to update order')
+      }
+    } catch (e) {
+      console.error('Error moving section down:', e)
+      setError('Fehler beim Verschieben der Section')
+      // Rollback optimistic update
+      setSections(sections)
+    }
+  }
+
+  const handleSaveSectionsContent = async () => {
+    if (!pageId || modifiedSections.size === 0) return
+
+    try {
+      // Save only modified sections
+      await Promise.all(
+        sections
+          .filter((section) => modifiedSections.has(section.id))
+          .map((section) =>
+            fetch(`/api/admin/content-pages/${pageId}/sections/${section.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: section.title,
+                body_markdown: section.body_markdown,
+              }),
+            }),
+          ),
+      )
+      // Clear modified sections after successful save
+      setModifiedSections(new Set())
+    } catch (e) {
+      console.error('Error saving sections:', e)
+      throw new Error('Fehler beim Speichern der Sections')
+    }
   }
 
   return (
@@ -363,6 +561,48 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             )}
           </div>
         </div>
+
+        {/* F3: Sections Management - Only show for edit mode */}
+        {mode === 'edit' && pageId && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Sections ({sections.length})
+              </h2>
+              <button
+                type="button"
+                onClick={handleAddSection}
+                className="px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition"
+              >
+                + Section hinzufügen
+              </button>
+            </div>
+
+            {sectionsLoading ? (
+              <p className="text-slate-600 text-sm">Sections werden geladen...</p>
+            ) : sections.length === 0 ? (
+              <p className="text-slate-500 text-sm">
+                Keine Sections vorhanden. Klicken Sie auf &quot;Section hinzufügen&quot; um eine
+                neue Section zu erstellen.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <SectionEditor
+                    key={section.id}
+                    section={section}
+                    onUpdate={handleUpdateSection}
+                    onDelete={handleDeleteSection}
+                    onMoveUp={handleMoveSectionUp}
+                    onMoveDown={handleMoveSectionDown}
+                    canMoveUp={index > 0}
+                    canMoveDown={index < sections.length - 1}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-end bg-white rounded-xl border border-slate-200 p-6">

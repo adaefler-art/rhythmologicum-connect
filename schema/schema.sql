@@ -260,6 +260,13 @@ CREATE TYPE realtime.equality_op AS ENUM (
         ADD CONSTRAINT content_pages_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id);
 
     --
+    -- Name: content_page_sections content_page_sections_content_page_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.content_page_sections
+        ADD CONSTRAINT content_page_sections_content_page_id_fkey FOREIGN KEY (content_page_id) REFERENCES public.content_pages(id) ON DELETE CASCADE;
+
+    --
     -- Name: funnel_step_questions funnel_step_questions_funnel_step_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
     --
 
@@ -2811,6 +2818,22 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
      layout text DEFAULT 'default'::text,
      funnel_id uuid,
      created_at timestamp with time zone DEFAULT now() NOT NULL,
+     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+     category text,
+     priority integer DEFAULT 0 NOT NULL
+ );
+
+ --
+ -- Name: content_page_sections; Type: TABLE; Schema: public; Owner: -
+ --
+
+ CREATE TABLE public.content_page_sections (
+     id uuid DEFAULT gen_random_uuid() NOT NULL,
+     content_page_id uuid NOT NULL,
+     title text NOT NULL,
+     body_markdown text NOT NULL,
+     order_index integer DEFAULT 0 NOT NULL,
+     created_at timestamp with time zone DEFAULT now() NOT NULL,
      updated_at timestamp with time zone DEFAULT now() NOT NULL
  );
 
@@ -3424,6 +3447,13 @@ ALTER TABLE ONLY public.content_pages
     ADD CONSTRAINT content_pages_slug_key UNIQUE (slug);
 
 --
+-- Name: content_page_sections content_page_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_page_sections
+    ADD CONSTRAINT content_page_sections_pkey PRIMARY KEY (id);
+
+--
 -- Name: funnel_step_questions funnel_step_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3935,6 +3965,24 @@ CREATE INDEX content_pages_slug_idx ON public.content_pages USING btree (slug);
 --
 
 CREATE INDEX content_pages_status_idx ON public.content_pages USING btree (status);
+
+--
+-- Name: idx_content_pages_priority; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_pages_priority ON public.content_pages USING btree (priority);
+
+--
+-- Name: idx_content_page_sections_page_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_page_sections_page_id ON public.content_page_sections USING btree (content_page_id);
+
+--
+-- Name: idx_content_page_sections_order; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_page_sections_order ON public.content_page_sections USING btree (content_page_id, order_index);
 
 --
 -- Name: idx_funnel_question_rules_question_id; Type: INDEX; Schema: public; Owner: -
@@ -4462,6 +4510,20 @@ CREATE POLICY "Users can insert own consents" ON public.user_consents FOR INSERT
 --
 
 ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: content_page_sections; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.content_page_sections ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: allow_all_read_sections; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "allow_all_read_sections" ON public.content_page_sections
+  FOR SELECT
+  USING (true);
 
 --
 -- Name: messages; Type: ROW SECURITY; Schema: realtime; Owner: -
