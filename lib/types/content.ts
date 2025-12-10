@@ -21,6 +21,8 @@ export type ContentPage = {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  seo_title: string | null
+  seo_description: string | null
 }
 
 export type ContentPageWithFunnel = ContentPage & {

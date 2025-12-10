@@ -2821,7 +2821,9 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
      updated_at timestamp with time zone DEFAULT now() NOT NULL,
      category text,
      priority integer DEFAULT 0 NOT NULL,
-     deleted_at timestamp with time zone
+     deleted_at timestamp with time zone,
+     seo_title text,
+     seo_description text
  );
 
  --
