@@ -17,6 +17,8 @@ type ContentPage = {
   title: string
   status: string
   layout: string
+  category: string | null
+  priority: number
   funnel_id: string | null
   updated_at: string
   created_at: string

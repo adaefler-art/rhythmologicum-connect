@@ -1,35 +1,58 @@
 'use client'
 
-import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
 
 export const dynamic = 'force-dynamic'
 
 export default function EditContentPage() {
-  const router = useRouter()
   const params = useParams()
+  const router = useRouter()
   const pageId = params?.id as string
 
-  return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
-          Content-Page bearbeiten
-        </h1>
-        <p className="text-sm sm:text-base text-slate-600">
-          Page ID: <span className="font-mono text-xs">{pageId}</span>
-        </p>
-      </div>
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pageData, setPageData] = useState<Partial<ContentPageEditorData> | null>(null)
 
-      <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-        <div className="mx-auto max-w-md">
-          <p className="text-4xl mb-4" aria-label="Bald verfügbar Symbol">
-            🚧
-          </p>
-          <h2 className="text-lg font-semibold text-slate-900">Editor in Entwicklung</h2>
-          <p className="mt-2 text-sm text-slate-600 leading-relaxed mb-6">
-            Die Editor-Funktionalität für Content-Pages wird in einem zukünftigen Update
-            hinzugefügt.
-          </p>
+  useEffect(() => {
+    const loadPage = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/admin/content-pages/${pageId}`)
+        
+        if (!response.ok) {
+          throw new Error('Fehler beim Laden der Content-Page')
+        }
+
+        const data = await response.json()
+        setPageData(data.contentPage)
+      } catch (e) {
+        console.error(e)
+        setError(e instanceof Error ? e.message : 'Fehler beim Laden')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (pageId) {
+      loadPage()
+    }
+  }, [pageId])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-600">Content-Page wird geladen...</p>
+      </main>
+    )
+  }
+
+  if (error || !pageData) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md text-center">
+          <p className="text-red-500 mb-4">{error || 'Content-Page nicht gefunden'}</p>
           <button
             onClick={() => router.push('/admin/content')}
             className="px-6 py-3 min-h-[44px] rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation"
@@ -37,7 +60,9 @@ export default function EditContentPage() {
             Zurück zur Übersicht
           </button>
         </div>
-      </div>
-    </main>
-  )
+      </main>
+    )
+  }
+
+  return <ContentPageEditor mode="edit" pageId={pageId} initialData={pageData} />
 }
