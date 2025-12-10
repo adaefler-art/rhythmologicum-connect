@@ -1,0 +1,560 @@
+'use client'
+
+import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Funnel = {
+  id: string
+  title: string
+  slug: string
+}
+
+type ContentPage = {
+  id: string
+  slug: string
+  title: string
+  status: string
+  layout: string
+  funnel_id: string | null
+  updated_at: string
+  created_at: string
+  funnels: Funnel | null
+}
+
+type SortField = 'title' | 'slug' | 'funnel' | 'layout' | 'status' | 'updated_at'
+type SortDirection = 'asc' | 'desc'
+
+const ITEMS_PER_PAGE = 10
+
+export default function AdminContentDashboard() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [contentPages, setContentPages] = useState<ContentPage[]>([])
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterFunnel, setFilterFunnel] = useState<string>('all')
+  const [filterLayout, setFilterLayout] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  // Sort states
+  const [sortField, setSortField] = useState<SortField>('updated_at')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+
+  useEffect(() => {
+    const loadContentPages = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await fetch('/api/admin/content-pages')
+        
+        if (!response.ok) {
+          throw new Error('Fehler beim Laden der Content-Pages')
+        }
+
+        const data = await response.json()
+        setContentPages(data.contentPages || [])
+      } catch (e: unknown) {
+        console.error(e)
+        const errorMessage = e instanceof Error ? e.message : 'Fehler beim Laden der Content-Pages.'
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadContentPages()
+  }, [])
+
+  // Get unique values for filters
+  const uniqueFunnels = useMemo(() => {
+    const funnels = contentPages
+      .filter((page) => page.funnels)
+      .map((page) => page.funnels!)
+    const uniqueMap = new Map(funnels.map((f) => [f.id, f]))
+    return Array.from(uniqueMap.values())
+  }, [contentPages])
+
+  const uniqueLayouts = useMemo(() => {
+    return Array.from(new Set(contentPages.map((page) => page.layout).filter(Boolean)))
+  }, [contentPages])
+
+  const uniqueStatuses = useMemo(() => {
+    return Array.from(new Set(contentPages.map((page) => page.status).filter(Boolean)))
+  }, [contentPages])
+
+  // Filter and search content pages
+  const filteredPages = useMemo(() => {
+    let filtered = [...contentPages]
+
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (page) =>
+          page.title.toLowerCase().includes(search) || page.slug.toLowerCase().includes(search)
+      )
+    }
+
+    // Apply funnel filter
+    if (filterFunnel !== 'all') {
+      filtered = filtered.filter((page) => page.funnel_id === filterFunnel)
+    }
+
+    // Apply layout filter
+    if (filterLayout !== 'all') {
+      filtered = filtered.filter((page) => page.layout === filterLayout)
+    }
+
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter((page) => page.status === filterStatus)
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0
+
+      switch (sortField) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title)
+          break
+        case 'slug':
+          comparison = a.slug.localeCompare(b.slug)
+          break
+        case 'funnel':
+          comparison = (a.funnels?.title || '').localeCompare(b.funnels?.title || '')
+          break
+        case 'layout':
+          comparison = (a.layout || '').localeCompare(b.layout || '')
+          break
+        case 'status':
+          comparison = a.status.localeCompare(b.status)
+          break
+        case 'updated_at':
+          comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+          break
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+    return filtered
+  }, [contentPages, searchTerm, filterFunnel, filterLayout, filterStatus, sortField, sortDirection])
+
+  // Paginate filtered results
+  const totalPages = Math.ceil(filteredPages.length / ITEMS_PER_PAGE)
+  const paginatedPages = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredPages.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredPages, currentPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterFunnel, filterLayout, filterStatus])
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const handlePageClick = (pageId: string) => {
+    // Placeholder for editor navigation
+    router.push(`/admin/content/${pageId}`)
+  }
+
+  const handleNewPage = () => {
+    // Placeholder for creating new page
+    router.push('/admin/content/new')
+  }
+
+  const formatDateTime = (isoString: string): string => {
+    try {
+      return new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(isoString))
+    } catch {
+      return 'Datum unbekannt'
+    }
+  }
+
+  const getStatusBadgeClass = (status: string): string => {
+    switch (status) {
+      case 'published':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'draft':
+        return 'bg-slate-100 text-slate-600 border-slate-200'
+      case 'archived':
+        return 'bg-amber-100 text-amber-800 border-amber-200'
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200'
+    }
+  }
+
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'published':
+        return 'Veröffentlicht'
+      case 'draft':
+        return 'Entwurf'
+      case 'archived':
+        return 'Archiviert'
+      default:
+        return status
+    }
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return (
+        <svg
+          className="w-4 h-4 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
+        </svg>
+      )
+    }
+    return sortDirection === 'asc' ? (
+      <svg
+        className="w-4 h-4 text-sky-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg
+        className="w-4 h-4 text-sky-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    )
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-600">Content-Pages werden geladen…</p>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="max-w-md text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
+          >
+            Neu laden
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+              Content Dashboard
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600">
+              Verwaltung aller Content-Pages mit Filter- und Suchfunktionen
+            </p>
+          </div>
+          <button
+            onClick={handleNewPage}
+            className="px-6 py-3 min-h-[44px] rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation flex items-center gap-2"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Neue Seite anlegen
+          </button>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div>
+              <label htmlFor="search" className="block text-sm font-medium text-slate-700 mb-2">
+                Suche
+              </label>
+              <input
+                id="search"
+                type="text"
+                placeholder="Titel oder Slug suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+            </div>
+
+            {/* Funnel Filter */}
+            <div>
+              <label htmlFor="funnel" className="block text-sm font-medium text-slate-700 mb-2">
+                Funnel
+              </label>
+              <select
+                id="funnel"
+                value={filterFunnel}
+                onChange={(e) => setFilterFunnel(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                <option value="all">Alle Funnels</option>
+                {uniqueFunnels.map((funnel) => (
+                  <option key={funnel.id} value={funnel.id}>
+                    {funnel.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Layout/Category Filter */}
+            <div>
+              <label htmlFor="layout" className="block text-sm font-medium text-slate-700 mb-2">
+                Kategorie
+              </label>
+              <select
+                id="layout"
+                value={filterLayout}
+                onChange={(e) => setFilterLayout(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                <option value="all">Alle Kategorien</option>
+                {uniqueLayouts.map((layout) => (
+                  <option key={layout} value={layout}>
+                    {layout}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
+                Status
+              </label>
+              <select
+                id="status"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              >
+                <option value="all">Alle Status</option>
+                {uniqueStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {getStatusLabel(status)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      <div className="mb-4 text-sm text-slate-600">
+        {filteredPages.length === contentPages.length ? (
+          <span>
+            {filteredPages.length} {filteredPages.length === 1 ? 'Seite' : 'Seiten'} gesamt
+          </span>
+        ) : (
+          <span>
+            {filteredPages.length} von {contentPages.length}{' '}
+            {contentPages.length === 1 ? 'Seite' : 'Seiten'} (gefiltert)
+          </span>
+        )}
+      </div>
+
+      {filteredPages.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+          <div className="mx-auto max-w-md">
+            <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
+              📄
+            </p>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {contentPages.length === 0 ? 'Noch keine Seiten vorhanden' : 'Keine Ergebnisse'}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+              {contentPages.length === 0
+                ? 'Erstellen Sie Ihre erste Content-Page.'
+                : 'Keine Seiten entsprechen Ihren Filterkriterien.'}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="overflow-x-auto border rounded-xl bg-white shadow-sm mb-4">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('title')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Titel</span>
+                      <SortIcon field="title" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('slug')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Slug</span>
+                      <SortIcon field="slug" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('funnel')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Funnel</span>
+                      <SortIcon field="funnel" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('layout')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Kategorie</span>
+                      <SortIcon field="layout" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Status</span>
+                      <SortIcon field="status" />
+                    </div>
+                  </th>
+                  <th
+                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    onClick={() => handleSort('updated_at')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Aktualisiert</span>
+                      <SortIcon field="updated_at" />
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedPages.map((page, index) => (
+                  <tr
+                    key={page.id}
+                    className={`hover:bg-slate-50 transition cursor-pointer touch-manipulation ${
+                      index !== paginatedPages.length - 1 ? 'border-b border-slate-100' : ''
+                    }`}
+                    onClick={() => handlePageClick(page.id)}
+                  >
+                    <td className="px-4 py-4">
+                      <span className="font-medium text-slate-900">{page.title}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-slate-600 font-mono text-xs">{page.slug}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      {page.funnels ? (
+                        <span className="text-slate-700">{page.funnels.title}</span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-slate-700">{page.layout || '—'}</span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium ${getStatusBadgeClass(
+                          page.status
+                        )}`}
+                      >
+                        {getStatusLabel(page.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-700 whitespace-nowrap">
+                      {formatDateTime(page.updated_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 min-h-[44px] rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+              >
+                Zurück
+              </button>
+              <span className="text-sm text-slate-600">
+                Seite {currentPage} von {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 min-h-[44px] rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+              >
+                Weiter
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </main>
+  )
+}

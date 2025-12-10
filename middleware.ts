@@ -24,8 +24,8 @@ async function logUnauthorizedAccess(path: string, userId?: string, reason?: str
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Only protect /clinician routes
-  if (!pathname.startsWith('/clinician')) {
+  // Only protect /clinician and /admin routes
+  if (!pathname.startsWith('/clinician') && !pathname.startsWith('/admin')) {
     return NextResponse.next()
   }
 
@@ -104,5 +104,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/clinician/:path*'],
+  matcher: ['/clinician/:path*', '/admin/:path*'],
 }
