@@ -209,7 +209,7 @@ Wir empfehlen eine erste Baseline-Messung, dann monatliche Follow-ups zur Verlau
 Ja, Sie können einen detaillierten Report als PDF exportieren.
 
 **Wie genau ist das Assessment?**  
-Die verwendeten Instrumente haben eine hohe Reliabilität (Cronbach''s α > 0.80) und wurden in zahlreichen Studien validiert.
+Die verwendeten Instrumente haben eine hohe Reliabilität (Cronbach's α > 0.80) und wurden in zahlreichen Studien validiert.
 
 ---
 

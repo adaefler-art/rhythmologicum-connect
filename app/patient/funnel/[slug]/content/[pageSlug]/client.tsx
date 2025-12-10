@@ -139,7 +139,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
         {contentPage.funnel && (
           <div className="mt-8 text-center">
             <button
-              onClick={() => router.push(`/patient/funnel/${contentPage.funnel!.slug}`)}
+              onClick={() => router.push(`/patient/funnel/${contentPage.funnel.slug}`)}
               className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors shadow-md"
             >
               <svg
