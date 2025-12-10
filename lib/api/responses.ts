@@ -28,7 +28,7 @@ export function errorResponse(
   code: ErrorCode,
   message: string,
   status: number,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): NextResponse<ErrorResponse> {
   const error: ApiError = {
     code,
@@ -77,21 +77,21 @@ export function notFoundResponse(
 
 export function validationErrorResponse(
   message: string,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.VALIDATION_FAILED, message, 400, details)
 }
 
 export function missingFieldsResponse(
   message = 'Fehlende Pflichtfelder.',
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.MISSING_REQUIRED_FIELDS, message, 400, details)
 }
 
 export function invalidInputResponse(
   message: string,
-  details?: Record<string, any>,
+  details?: Record<string, unknown>,
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.INVALID_INPUT, message, 400, details)
 }

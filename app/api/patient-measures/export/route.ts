@@ -2,6 +2,26 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+type PatientMeasure = {
+  id: string
+  patient_id: string
+  created_at: string
+  report_id: string | null
+  stress_score: number | null
+  sleep_score: number | null
+  risk_level: string | null
+}
+
+type ReportRecord = {
+  id: string
+  created_at: string
+  assessment_id: string | null
+  score_numeric: number | null
+  sleep_score: number | null
+  risk_level: string | null
+  report_text_short: string | null
+}
+
 const supabaseUrl =
   process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey =
@@ -78,17 +98,10 @@ export async function GET(req: Request) {
     // 3. Fetch patient measures with related reports
     const { data: measures, error: measuresError } = await supabase
       .from('patient_measures')
-      .select(
-        `
-        id,
-        patient_id,
-        created_at,
-        report_id,
-        stress_score,
-        sleep_score,
-        risk_level
-      `
-      )
+      .select<
+        'id, patient_id, created_at, report_id, stress_score, sleep_score, risk_level',
+        PatientMeasure
+      >('id, patient_id, created_at, report_id, stress_score, sleep_score, risk_level')
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false })
 
@@ -114,13 +127,15 @@ export async function GET(req: Request) {
     }
 
     // 4. Fetch reports referenced by the measures
-    const reportIds = measures.map((m) => m.report_id).filter(Boolean)
-    let reports: any[] | undefined = undefined
+    const reportIds = measures
+      .map((m) => m.report_id)
+      .filter((id): id is string => Boolean(id))
+    let reports: ReportRecord[] = []
     if (reportIds.length > 0) {
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
-        .select('*')
-        .in('id', reportIds as string[])
+        .select<'*', ReportRecord>('*')
+        .in('id', reportIds)
 
       if (reportsError) {
         console.error(

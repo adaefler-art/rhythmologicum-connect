@@ -117,8 +117,14 @@ export function useAssessmentNavigation(
 
   // Auto-load on mount and when assessmentId changes
   useEffect(() => {
-    if (autoLoad && assessmentId) {
-      loadNavigation()
+    if (!autoLoad || !assessmentId) return
+
+    const timer = window.setTimeout(() => {
+      void loadNavigation()
+    }, 0)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [autoLoad, assessmentId, loadNavigation])
 

@@ -266,7 +266,7 @@ export default function AnswerButtonsDemoPage() {
               select the appropriate variant based on:
             </p>
             <ul className="space-y-1 text-sm text-slate-700 ml-4">
-              <li><strong>question.question_type</strong> - 'scale', 'binary', 'choice', or 'text'</li>
+              <li><strong>question.question_type</strong> - &apos;scale&apos;, &apos;binary&apos;, &apos;choice&apos;, or &apos;text&apos;</li>
               <li><strong>question.min_value / max_value</strong> - For dynamic scale ranges</li>
               <li><strong>question.key</strong> - For mapping to predefined choice options</li>
             </ul>

@@ -17,7 +17,7 @@ export type LogContext = {
   stepId?: string
   questionId?: string
   endpoint?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 type LogEntry = {
@@ -25,13 +25,18 @@ type LogEntry = {
   level: LogLevel
   message: string
   context?: LogContext
-  error?: any
+  error?: {
+    message: string
+    stack?: string
+    name?: string
+    [key: string]: unknown
+  }
 }
 
 /**
  * Core logging function with structured output
  */
-function log(level: LogLevel, message: string, context?: LogContext, error?: any): void {
+function log(level: LogLevel, message: string, context?: LogContext, error?: unknown): void {
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,
@@ -43,14 +48,18 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: any
   }
 
   if (error) {
-    // Extract specific error properties to avoid spreading issues
-    entry.error = {
-      message: error.message || String(error),
-      stack: error.stack,
-      name: error.name,
-      // Include any additional error properties
-      ...(typeof error === 'object' && error !== null ? { ...error } : {}),
-    }
+    const normalizedError =
+      error instanceof Error
+        ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          }
+        : {
+            message: typeof error === 'string' ? error : JSON.stringify(error),
+          }
+
+    entry.error = normalizedError
   }
 
   // Output as JSON for structured logging
@@ -88,7 +97,7 @@ export function logWarn(message: string, context?: LogContext): void {
 /**
  * Log error-level message
  */
-export function logError(message: string, context?: LogContext, error?: any): void {
+export function logError(message: string, context?: LogContext, error?: unknown): void {
   log(LogLevel.ERROR, message, context, error)
 }
 
@@ -131,7 +140,7 @@ export function logValidationFailure(
   })
 }
 
-export function logDatabaseError(context: LogContext, error: any): void {
+export function logDatabaseError(context: LogContext, error: unknown): void {
   logError('Database error', context, error)
 }
 

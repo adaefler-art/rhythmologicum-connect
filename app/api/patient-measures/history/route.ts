@@ -2,6 +2,26 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+type PatientMeasure = {
+  id: string
+  patient_id: string
+  report_id: string | null
+  stress_score: number | null
+  sleep_score: number | null
+  risk_level: string | null
+  created_at: string
+}
+
+type ReportRecord = {
+  id: string
+  created_at: string
+  assessment_id: string | null
+  score_numeric: number | null
+  sleep_score: number | null
+  risk_level: string | null
+  report_text_short: string | null
+}
+
 const supabaseUrl =
   process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey =
@@ -55,16 +75,11 @@ export async function GET(req: Request) {
     // patient_measures in your schema has report_id (FK), not assessment_id.
     const { data: measures, error: measuresError } = await supabase
       .from('patient_measures')
-      .select(
-        `
-        id,
-        patient_id,
-        report_id,
-        stress_score,
-        sleep_score,
-        risk_level,
-        created_at
-      `
+      .select<
+        'id, patient_id, report_id, stress_score, sleep_score, risk_level, created_at',
+        PatientMeasure
+      >(
+        'id, patient_id, report_id, stress_score, sleep_score, risk_level, created_at'
       )
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false })
@@ -88,12 +103,14 @@ export async function GET(req: Request) {
     }
 
     // Wenn patient_measures.report_id verwendet wird, hole die Reports über deren id
-    const reportIds = measures.map((m: any) => m.report_id).filter(Boolean)
-    let reports: any[] | undefined = undefined
+    const reportIds = measures
+      .map((m) => m.report_id)
+      .filter((id): id is string => Boolean(id))
+    let reports: ReportRecord[] = []
     if (reportIds.length > 0) {
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
-        .select('*')
+        .select<'*', ReportRecord>('*')
         .in('id', reportIds)
 
       if (reportsError) {
@@ -108,8 +125,8 @@ export async function GET(req: Request) {
     }
 
     // Combine measures with their reports (match by report_id -> reports.id)
-    const measuresWithReports = measures.map((measure: any) => {
-      const report = reports?.find((r: any) => r.id === measure.report_id) || null
+    const measuresWithReports = measures.map((measure) => {
+      const report = reports.find((r) => r.id === measure.report_id) || null
       return {
         ...measure,
         report,

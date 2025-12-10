@@ -3,12 +3,7 @@
  * Evaluates conditional validation rules based on assessment answers
  */
 
-import type {
-  RuleCondition,
-  RulePayload,
-  RuleOperator,
-  RuleLogic,
-} from './ruleTypes'
+import type { RuleCondition, RulePayload } from './ruleTypes'
 
 /**
  * Evaluates a single condition against an answer value

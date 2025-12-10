@@ -144,11 +144,12 @@ export default function LoginPage() {
 
         router.push('/patient/stress-check')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err)
+      const error = err as { message?: string; error_description?: string }
       const message =
-        err?.message ??
-        err?.error_description ??
+        error?.message ??
+        error?.error_description ??
         'Es ist ein unerwarteter Fehler aufgetreten.'
       setError(message)
     } finally {

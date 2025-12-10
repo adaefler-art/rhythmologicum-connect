@@ -1,7 +1,7 @@
 'use client'
 
 import { type ReactNode } from 'react'
-import { typography, spacing } from '@/lib/design-tokens'
+import { typography } from '@/lib/design-tokens'
 
 export type MobileSectionTitleProps = {
   children: ReactNode

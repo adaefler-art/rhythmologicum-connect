@@ -30,11 +30,14 @@ export type ApiMetrics = {
  * @param endpointName - Name of the endpoint for logging
  * @returns Wrapped handler with instrumentation
  */
-export function withMonitoring<T = any>(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse<T>>,
+export function withMonitoring<T = unknown>(
+  handler: (request: NextRequest, context?: Record<string, unknown>) => Promise<NextResponse<T>>,
   endpointName: string,
 ) {
-  return async (request: NextRequest, context?: any): Promise<NextResponse<T>> => {
+  return async (
+    request: NextRequest,
+    context: Record<string, unknown> = {},
+  ): Promise<NextResponse<T>> => {
     const startTime = Date.now()
     const method = request.method
 
@@ -135,7 +138,7 @@ async function sendMetrics(metrics: ApiMetrics): Promise<void> {
 /**
  * Helper to extract user context from request for monitoring
  */
-export function extractRequestContext(request: NextRequest): Record<string, any> {
+export function extractRequestContext(request: NextRequest): Record<string, unknown> {
   return {
     url: request.url,
     method: request.method,

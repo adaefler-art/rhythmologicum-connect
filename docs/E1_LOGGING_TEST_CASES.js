@@ -13,6 +13,7 @@ function testComputeScoresLogging() {
   console.log('=== Test Case 1: computeScores Logging ===\n');
   
   // Mock answers
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mockAnswers = [
     { question_id: 'stress_q1', answer_value: 3 },
     { question_id: 'stress_q2', answer_value: 4 },

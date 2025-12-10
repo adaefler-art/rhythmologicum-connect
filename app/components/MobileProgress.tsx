@@ -1,6 +1,6 @@
 'use client'
 
-import { componentTokens, typography, motion, colors } from '@/lib/design-tokens'
+import { componentTokens, typography, colors } from '@/lib/design-tokens'
 
 // Step indicator opacity values for different states
 const STEP_OPACITY = {

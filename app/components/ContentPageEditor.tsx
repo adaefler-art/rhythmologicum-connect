@@ -40,7 +40,6 @@ type ContentPageEditorProps = {
  */
 export default function ContentPageEditor({ initialData, mode, pageId }: ContentPageEditorProps) {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [funnels, setFunnels] = useState<Funnel[]>([])
@@ -50,11 +49,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [slug, setSlug] = useState(initialData?.slug || '')
   const [excerpt, setExcerpt] = useState(initialData?.excerpt || '')
   const [bodyMarkdown, setBodyMarkdown] = useState(initialData?.body_markdown || '')
-  const [status, setStatus] = useState<'draft' | 'published'>(initialData?.status || 'draft')
   const [category, setCategory] = useState(initialData?.category || '')
   const [priority, setPriority] = useState(initialData?.priority || 0)
   const [funnelId, setFunnelId] = useState<string>(initialData?.funnel_id || '')
-  const [layout, setLayout] = useState(initialData?.layout || 'default')
+  const [layout] = useState(initialData?.layout || 'default')
 
   // UI state
   const [slugError, setSlugError] = useState<string | null>(null)
@@ -73,7 +71,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         console.error('Failed to load funnels:', e)
       }
     }
-    loadFunnels()
+    void loadFunnels()
   }, [])
 
   // Auto-generate slug from title

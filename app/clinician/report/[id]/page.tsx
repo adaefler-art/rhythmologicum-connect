@@ -10,6 +10,26 @@ type AnswerRow = {
   answer_value: number
 }
 
+type Report = {
+  id: string
+  assessment_id: string
+  created_at: string
+  score_numeric: number | null
+  sleep_score: number | null
+  risk_level: 'low' | 'moderate' | 'high' | null
+  report_text_short: string | null
+}
+
+type Assessment = {
+  id: string
+  patient_id: string
+}
+
+type PatientProfile = {
+  id: string
+  full_name: string | null
+}
+
 export default function ClinicianReportDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -18,9 +38,8 @@ export default function ClinicianReportDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [report, setReport] = useState<any>(null)
-  const [assessment, setAssessment] = useState<any>(null)
-  const [patient, setPatient] = useState<any>(null)
+  const [report, setReport] = useState<Report | null>(null)
+  const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [answers, setAnswers] = useState<AnswerRow[]>([])
 
   useEffect(() => {
@@ -32,7 +51,7 @@ export default function ClinicianReportDetailPage() {
         // 1) Report laden
         const { data: reportData, error: reportError } = await supabase
           .from('reports')
-          .select('*')
+          .select<'*', Report>('*')
           .eq('id', reportId)
           .single()
 
@@ -42,17 +61,16 @@ export default function ClinicianReportDetailPage() {
         // 2) Assessment laden
         const { data: assessmentData, error: assessmentError } = await supabase
           .from('assessments')
-          .select('*')
+          .select<'*', Assessment>('*')
           .eq('id', reportData.assessment_id)
           .single()
 
         if (assessmentError) throw assessmentError
-        setAssessment(assessmentData)
 
         // 3) Patient laden
         const { data: patientData, error: patientError } = await supabase
           .from('patient_profiles')
-          .select('*')
+          .select<'*', PatientProfile>('*')
           .eq('id', assessmentData.patient_id)
           .single()
 
@@ -67,9 +85,10 @@ export default function ClinicianReportDetailPage() {
 
         if (answersError) throw answersError
         setAnswers((answersData ?? []) as AnswerRow[])
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Unbekannter Fehler'
         console.error('Fehler beim Laden der Report-Details:', e)
-        setError(e.message ?? 'Unbekannter Fehler')
+        setError(message)
       } finally {
         setLoading(false)
       }

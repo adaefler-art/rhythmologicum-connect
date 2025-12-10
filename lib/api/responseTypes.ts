@@ -45,13 +45,13 @@ export enum ErrorCode {
 export type ApiError = {
   code: ErrorCode
   message: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 }
 
 /**
  * Standard API response structure
  */
-export type ApiResponse<T = any> = {
+export type ApiResponse<T = unknown> = {
   success: boolean
   data?: T
   error?: ApiError
