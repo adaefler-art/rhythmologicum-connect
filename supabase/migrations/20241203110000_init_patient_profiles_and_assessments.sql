@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS assessments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id UUID NOT NULL,
   funnel TEXT NOT NULL,
+  funnel_id UUID REFERENCES public.funnels(id),
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ
 );
@@ -66,6 +67,26 @@ BEGIN
     ALTER TABLE assessments
       ADD CONSTRAINT assessments_patient_id_fkey
       FOREIGN KEY (patient_id) REFERENCES patient_profiles(id) ON DELETE CASCADE;
+  END IF;
+END $$ LANGUAGE plpgsql;
+
+-- Add index for funnel_id lookups if column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'assessments'
+      AND column_name = 'funnel_id'
+  ) THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND tablename = 'assessments'
+        AND indexname = 'assessments_funnel_id_idx'
+    ) THEN
+      CREATE INDEX assessments_funnel_id_idx ON assessments (funnel_id);
+    END IF;
   END IF;
 END $$ LANGUAGE plpgsql;
 
