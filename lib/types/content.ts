@@ -1,5 +1,12 @@
 // Content page type definitions based on database schema
 
+export type ContentPageSection = {
+  id: string
+  title: string
+  body_markdown: string
+  order_index: number
+}
+
 export type ContentPage = {
   id: string
   slug: string
@@ -21,4 +28,5 @@ export type ContentPageWithFunnel = ContentPage & {
     slug: string
     title: string
   }
+  sections?: ContentPageSection[]
 }

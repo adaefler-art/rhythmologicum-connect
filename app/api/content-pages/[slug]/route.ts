@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 
 /**
- * D1 API Endpoint: Get Content Page by Slug
+ * D1/F3 API Endpoint: Get Content Page by Slug
  * 
- * Fetches a single published content page by its slug.
+ * Fetches a single published content page by its slug, including sections.
  * Only pages with status='published' are returned.
  */
 export async function GET(
@@ -56,7 +56,19 @@ export async function GET(
       return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }
 
-    return NextResponse.json(contentPage as ContentPageWithFunnel)
+    // F3: Fetch sections for this content page
+    const { data: sections } = await supabase
+      .from('content_page_sections')
+      .select('id, title, body_markdown, order_index')
+      .eq('content_page_id', contentPage.id)
+      .order('order_index', { ascending: true })
+
+    const result = {
+      ...contentPage,
+      sections: sections || [],
+    }
+
+    return NextResponse.json(result as ContentPageWithFunnel)
   } catch (error) {
     console.error('Error loading content page:', error)
     return NextResponse.json(
