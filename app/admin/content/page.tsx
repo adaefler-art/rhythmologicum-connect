@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 type Funnel = {
   id: string
   title: string
