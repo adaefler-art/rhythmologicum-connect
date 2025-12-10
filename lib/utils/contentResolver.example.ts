@@ -146,28 +146,36 @@ export async function exampleIncludeDrafts() {
 /**
  * Example 8: React Server Component integration
  * Use case: Fetch content in Next.js server components
+ * 
+ * Note: This is pseudo-code. For actual React components, create a .tsx file.
+ * 
+ * // In your component file (.tsx):
+ * export async function FunnelIntroServerComponent({ funnelSlug }: { funnelSlug: string }) {
+ *   const result = await getContentPage({
+ *     funnel: funnelSlug,
+ *     category: 'intro',
+ *   })
+ * 
+ *   if (!result.page) {
+ *     return <div>No intro content available</div>
+ *   }
+ * 
+ *   return (
+ *     <div className="intro-section">
+ *       <h2>{result.page.title}</h2>
+ *       <p>{result.page.excerpt}</p>
+ *       <div dangerouslySetInnerHTML={{ __html: result.page.body_markdown }} />
+ *     </div>
+ *   )
+ * }
  */
-export async function FunnelIntroServerComponent({
-  funnelSlug,
-}: {
-  funnelSlug: string
-}) {
+export async function exampleServerComponentFetch(funnelSlug: string) {
   const result = await getContentPage({
     funnel: funnelSlug,
     category: 'intro',
   })
 
-  if (!result.page) {
-    return <div>No intro content available</div>
-  }
-
-  return (
-    <div className="intro-section">
-      <h2>{result.page.title}</h2>
-      <p>{result.page.excerpt}</p>
-      <div dangerouslySetInnerHTML={{ __html: result.page.body_markdown }} />
-    </div>
-  )
+  return result.page
 }
 
 /**

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
 
 /**
@@ -66,7 +66,8 @@ function isUUID(value: string): boolean {
 /**
  * Resolve funnel slug or UUID to funnel ID
  */
-async function resolveFunnelId(supabase: ReturnType<typeof createClient>, funnelIdentifier: string): Promise<string | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveFunnelId(supabase: SupabaseClient<any>, funnelIdentifier: string): Promise<string | null> {
   try {
     // If it's already a UUID, return it
     if (isUUID(funnelIdentifier)) {
@@ -84,7 +85,7 @@ async function resolveFunnelId(supabase: ReturnType<typeof createClient>, funnel
       return null
     }
 
-    return funnel.id
+    return (funnel as { id: string }).id
   } catch (error) {
     console.error('Error resolving funnel ID:', error)
     return null
