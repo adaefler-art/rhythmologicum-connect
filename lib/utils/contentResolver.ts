@@ -64,6 +64,13 @@ function isUUID(value: string): boolean {
 }
 
 /**
+ * Type for funnel query result
+ */
+type FunnelQueryResult = {
+  id: string
+}
+
+/**
  * Resolve funnel slug or UUID to funnel ID
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +92,7 @@ async function resolveFunnelId(supabase: SupabaseClient<any>, funnelIdentifier: 
       return null
     }
 
-    return (funnel as { id: string }).id
+    return (funnel as FunnelQueryResult).id
   } catch (error) {
     console.error('Error resolving funnel ID:', error)
     return null
@@ -157,6 +164,8 @@ export async function getContentPage(
     }
 
     // Strategy 1: Exact match (funnel + category + slug)
+    // Note: If slug is provided without category, it falls through to Strategy 2/3
+    // where slug matching happens implicitly if the page exists
     if (category && slug) {
       const { data, error } = await query
         .eq('category', category)
@@ -178,10 +187,11 @@ export async function getContentPage(
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1)
+        .maybeSingle()
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return {
-          page: data[0] as ContentPage,
+          page: data as ContentPage,
           strategy: 'category-default',
         }
       }
@@ -192,10 +202,11 @@ export async function getContentPage(
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1)
+      .maybeSingle()
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       return {
-        page: data[0] as ContentPage,
+        page: data as ContentPage,
         strategy: 'funnel-default',
       }
     }

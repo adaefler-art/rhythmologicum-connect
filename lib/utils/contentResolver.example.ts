@@ -181,6 +181,9 @@ export async function exampleServerComponentFetch(funnelSlug: string) {
 /**
  * Example 9: Client-side fetch with caching
  * Use case: Load content on demand with React cache
+ * 
+ * Note: React cache import is used here for this specific example.
+ * In a real application, this would be in a separate file.
  */
 import { cache } from 'react'
 
