@@ -1,0 +1,59 @@
+name: Update canonical schema on merge
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Exit if triggered by the bot
+        if: "github.actor == 'github-actions[bot]'"
+        run: |
+          echo "Run triggered by github-actions[bot]; exiting to avoid loop."
+          exit 0
+
+      - name: Install pg client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump schema
+        env:
+          PG_CONN: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$PG_CONN" ]; then
+            echo "SUPABASE_DB_URL secret is not set. Aborting."
+            exit 1
+          fi
+          pg_dump --dbname="$PG_CONN" -s --no-owner --no-privileges -f schema_new.sql
+
+      - name: Normalize schemas and diff
+        run: |
+          sed '/^--/d' schema_new.sql | sed '/^$/d' > /tmp/gen.sql
+          if [ -f schema/schema.sql ]; then
+            sed '/^--/d' schema/schema.sql | sed '/^$/d' > /tmp/old.sql
+          else
+            touch /tmp/old.sql
+          fi
+
+          if ! diff -u /tmp/old.sql /tmp/gen.sql > /tmp/schema.diff; then
+            echo "schema differs, updating schema/schema.sql"
+            mkdir -p schema
+            mv schema_new.sql schema/schema.sql
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add schema/schema.sql
+            git commit -m "ci: update canonical schema after merge" || echo "no changes to commit"
+            git push origin HEAD:main
+          else
+            echo "No schema changes detected"
+          fi
