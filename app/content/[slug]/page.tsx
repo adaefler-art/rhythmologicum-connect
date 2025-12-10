@@ -26,17 +26,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     // Fetch content page to get SEO metadata
-    const response = await fetch(
-      `${apiUrl}?slug=eq.${encodeURIComponent(slug)}&status=eq.published&select=title,excerpt,seo_title,seo_description`,
-      {
-        headers: {
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
-        },
-        // Revalidate every hour
-        next: { revalidate: 3600 },
+    // Build query URL using URLSearchParams for safety
+    const queryUrl = new URL(apiUrl)
+    queryUrl.searchParams.set('slug', `eq.${slug}`)
+    queryUrl.searchParams.set('status', 'eq.published')
+    queryUrl.searchParams.set('select', 'title,excerpt,seo_title,seo_description')
+
+    const response = await fetch(queryUrl.toString(), {
+      headers: {
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
       },
-    )
+      // Revalidate every hour
+      next: { revalidate: 3600 },
+    })
 
     if (!response.ok || response.status === 404) {
       return {
@@ -56,12 +59,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
 
     // Use SEO fields if available, otherwise fallback to title/excerpt
-    const title = page.seo_title || page.title || 'Rhythmologicum Connect'
+    // If seo_title is set, use it as-is (may already include branding)
+    // Otherwise, append branding to title
+    const title = page.seo_title
+      ? page.seo_title
+      : page.title
+        ? `${page.title} | Rhythmologicum Connect`
+        : 'Rhythmologicum Connect'
     const description =
       page.seo_description || page.excerpt || 'Stress- & Resilienz-Assessment Plattform'
 
     return {
-      title: `${title} | Rhythmologicum Connect`,
+      title,
       description,
     }
   } catch (error) {
@@ -81,20 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ContentPage({ params }: PageProps) {
   const { slug } = await params
 
-  // Pre-fetch to check if page exists (for 404 handling)
-  try {
-    const response = await fetch(`/api/content-pages/${slug}`, {
-      // Use absolute URL in server component
-      next: { revalidate: 3600 },
-    })
-
-    if (!response.ok && response.status === 404) {
-      notFound()
-    }
-  } catch (error) {
-    // If we can't check, let the client component handle it
-    console.error('Error pre-fetching content page:', error)
-  }
-
+  // Let the client component handle the API call and 404 logic
+  // Server-side pre-fetching would require absolute URLs which are environment-dependent
   return <ContentPageClient slug={slug} />
 }

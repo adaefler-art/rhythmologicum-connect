@@ -1,12 +1,9 @@
 -- F7: Add SEO fields to content_pages table
 -- These fields are optional and allow customizing SEO metadata separately from the main content
 
--- Add seo_title column (optional, overrides title for SEO)
+-- Add both SEO columns in a single ALTER TABLE statement for efficiency
 ALTER TABLE public.content_pages
-ADD COLUMN IF NOT EXISTS seo_title text;
-
--- Add seo_description column (optional, overrides excerpt for SEO)
-ALTER TABLE public.content_pages
+ADD COLUMN IF NOT EXISTS seo_title text,
 ADD COLUMN IF NOT EXISTS seo_description text;
 
 -- Add comments to document the purpose

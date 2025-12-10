@@ -25,7 +25,8 @@ export default function ContentPageClient({ slug }: ContentPageClientProps) {
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/content-pages/${slug}`)
+        // Encode slug for URL safety
+        const response = await fetch(`/api/content-pages/${encodeURIComponent(slug)}`)
         
         if (!response.ok) {
           if (response.status === 404) {
