@@ -87,6 +87,42 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .single()
 
     if (pageError) {
+      if (pageError.code === '42703') {
+        console.warn('deleted_at column missing, retrying content page fetch without soft-delete field')
+        const { data: fallbackPage, error: fallbackError } = await adminClient
+          .from('content_pages')
+          .select(
+            `
+            id,
+            slug,
+            title,
+            excerpt,
+            body_markdown,
+            status,
+            layout,
+            category,
+            priority,
+            funnel_id,
+            updated_at,
+            created_at,
+            funnels (
+              id,
+              title,
+              slug
+            )
+          `,
+          )
+          .eq('id', id)
+          .single()
+
+        if (fallbackError || !fallbackPage) {
+          console.error('Error fetching content page (fallback):', fallbackError)
+          return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
+        }
+
+        return NextResponse.json({ contentPage: fallbackPage })
+      }
+
       console.error('Error fetching content page:', pageError)
       return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }

@@ -53,6 +53,41 @@ export async function GET(
       .single()
 
     if (pageError || !contentPage) {
+      if (pageError?.code === '42703') {
+        console.warn('deleted_at column missing, retrying content page fetch without soft-delete filter')
+        const { data: fallbackPage, error: fallbackError } = await supabase
+          .from('content_pages')
+          .select(`
+            *,
+            funnel:funnels (
+              id,
+              slug,
+              title
+            )
+          `)
+          .eq('slug', slug)
+          .eq('status', 'published')
+          .single()
+
+        if (fallbackError || !fallbackPage) {
+          console.error('Error fetching content page (fallback):', fallbackError)
+          return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
+        }
+
+        const { data: sections } = await supabase
+          .from('content_page_sections')
+          .select('id, title, body_markdown, order_index')
+          .eq('content_page_id', fallbackPage.id)
+          .order('order_index', { ascending: true })
+
+        const result = {
+          ...fallbackPage,
+          sections: sections || [],
+        }
+
+        return NextResponse.json(result as ContentPageWithFunnel)
+      }
+
       console.error('Error fetching content page:', pageError)
       return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }

@@ -71,6 +71,39 @@ export async function GET() {
       .order('updated_at', { ascending: false })
 
     if (contentPagesError) {
+      if (contentPagesError.code === '42703') {
+        console.warn('deleted_at column missing, retrying without soft-delete filter')
+        const { data: fallbackPages, error: fallbackError } = await supabase
+          .from('content_pages')
+          .select(
+            `
+            id,
+            slug,
+            title,
+            status,
+            layout,
+            category,
+            priority,
+            funnel_id,
+            updated_at,
+            created_at,
+            funnels (
+              id,
+              title,
+              slug
+            )
+          `,
+          )
+          .order('updated_at', { ascending: false })
+
+        if (fallbackError) {
+          console.error('Error fetching content pages (fallback):', fallbackError)
+          return NextResponse.json({ error: 'Failed to fetch content pages' }, { status: 500 })
+        }
+
+        return NextResponse.json({ contentPages: fallbackPages || [] })
+      }
+
       console.error('Error fetching content pages:', contentPagesError)
       return NextResponse.json({ error: 'Failed to fetch content pages' }, { status: 500 })
     }
