@@ -31,7 +31,7 @@ type ContentPageEditorProps = {
 
 /**
  * F2: Content Page Editor Component
- * 
+ *
  * Provides a full-featured editor for creating/editing content pages with:
  * - All required fields (title, slug, funnel, category, status, priority)
  * - Markdown editor with live preview
@@ -95,7 +95,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const handleSlugChange = (value: string) => {
     const newSlug = value.toLowerCase().replace(/[^a-z0-9-]/g, '')
     setSlug(newSlug)
-    
+
     // Validate slug format
     if (newSlug && !/^[a-z0-9-]+$/.test(newSlug)) {
       setSlugError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
@@ -147,9 +147,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         layout: layout || null,
       }
 
-      const url = mode === 'edit' && pageId
-        ? `/api/admin/content-pages/${pageId}`
-        : '/api/admin/content-pages'
+      const url =
+        mode === 'edit' && pageId
+          ? `/api/admin/content-pages/${pageId}`
+          : '/api/admin/content-pages'
 
       const method = mode === 'edit' ? 'PATCH' : 'POST'
 
@@ -191,9 +192,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
           {mode === 'create' ? 'Neue Content-Page erstellen' : 'Content-Page bearbeiten'}
         </h1>
-        <p className="text-sm sm:text-base text-slate-600">
-          Markdown-Editor mit Live-Vorschau
-        </p>
+        <p className="text-sm sm:text-base text-slate-600">Markdown-Editor mit Live-Vorschau</p>
       </div>
 
       {/* Error Display */}
@@ -208,7 +207,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         {/* Metadata Section */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Metadaten</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Title */}
             <div className="md:col-span-2">
@@ -242,9 +241,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 placeholder="seiten-url"
                 required
               />
-              {slugError && (
-                <p className="mt-1 text-xs text-red-600">{slugError}</p>
-              )}
+              {slugError && <p className="mt-1 text-xs text-red-600">{slugError}</p>}
               <p className="mt-1 text-xs text-slate-500">
                 Nur Kleinbuchstaben, Zahlen und Bindestriche
               </p>
@@ -298,9 +295,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 min="0"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                Höhere Werte = höhere Priorität
-              </p>
+              <p className="mt-1 text-xs text-slate-500">Höhere Werte = höhere Priorität</p>
             </div>
 
             {/* Excerpt */}
@@ -356,7 +351,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Live-Vorschau
                 </label>
-                <div className="border border-slate-300 rounded-md p-4 bg-slate-50 overflow-auto" style={{ height: '500px' }}>
+                <div
+                  className="border border-slate-300 rounded-md p-4 bg-slate-50 overflow-auto"
+                  style={{ height: '500px' }}
+                >
                   {bodyMarkdown ? (
                     <MarkdownRenderer content={bodyMarkdown} />
                   ) : (
@@ -378,7 +376,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           >
             Abbrechen
           </button>
-          
+
           <button
             type="button"
             onClick={() => handleSave(false)}
@@ -387,7 +385,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           >
             {saving ? 'Speichere...' : 'Als Entwurf speichern'}
           </button>
-          
+
           <button
             type="button"
             onClick={() => handleSave(true)}

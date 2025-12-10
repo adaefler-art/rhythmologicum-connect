@@ -6,7 +6,7 @@ import { createServerClient } from '@supabase/ssr'
 /**
  * F1 API Endpoint: List all content pages for admin management
  * GET /api/admin/content-pages
- * 
+ *
  * Returns all content pages with funnel metadata for the admin dashboard
  */
 export async function GET() {
@@ -15,28 +15,22 @@ export async function GET() {
     const cookieStore = await cookies()
     const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
       console.error('Supabase URL or anon key not configured')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
-    
-    const supabase = createServerClient(
-      publicSupabaseUrl,
-      publicSupabaseAnonKey,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
+
+    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
+      },
+    })
 
     const {
       data: { user },
@@ -67,7 +61,8 @@ export async function GET() {
     // Fetch all content pages with funnel data
     const { data: contentPages, error: contentPagesError } = await adminClient
       .from('content_pages')
-      .select(`
+      .select(
+        `
         id,
         slug,
         title,
@@ -83,7 +78,8 @@ export async function GET() {
           title,
           slug
         )
-      `)
+      `,
+      )
       .order('updated_at', { ascending: false })
 
     if (contentPagesError) {
@@ -101,7 +97,7 @@ export async function GET() {
 /**
  * F2 API Endpoint: Create new content page
  * POST /api/admin/content-pages
- * 
+ *
  * Creates a new content page with the provided data
  */
 export async function POST(request: NextRequest) {
@@ -112,28 +108,22 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies()
     const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
       console.error('Supabase URL or anon key not configured')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
-    
-    const supabase = createServerClient(
-      publicSupabaseUrl,
-      publicSupabaseAnonKey,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
+
+    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
+      },
+    })
 
     const {
       data: { user },
@@ -167,7 +157,7 @@ export async function POST(request: NextRequest) {
     if (!title || !slug || !body_markdown || !status) {
       return NextResponse.json(
         { error: 'Missing required fields: title, slug, body_markdown, status' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -176,7 +166,7 @@ export async function POST(request: NextRequest) {
     if (!slugRegex.test(slug)) {
       return NextResponse.json(
         { error: 'Slug must contain only lowercase letters, numbers, and hyphens' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -188,10 +178,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingPage) {
-      return NextResponse.json(
-        { error: 'Slug is already in use' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Slug is already in use' }, { status: 409 })
     }
 
     // Prepare insert data

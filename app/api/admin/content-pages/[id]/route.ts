@@ -7,10 +7,7 @@ import { createServerClient } from '@supabase/ssr'
  * F2 API Endpoint: Get single content page by ID for editing
  * GET /api/admin/content-pages/[id]
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
 
@@ -30,9 +27,7 @@ export async function GET(
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
         },
       },
     })
@@ -85,7 +80,7 @@ export async function GET(
           title,
           slug
         )
-      `
+      `,
       )
       .eq('id', id)
       .single()
@@ -106,10 +101,7 @@ export async function GET(
  * F2 API Endpoint: Update content page
  * PATCH /api/admin/content-pages/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const body = await request.json()
@@ -130,9 +122,7 @@ export async function PATCH(
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
         },
       },
     })
@@ -169,7 +159,7 @@ export async function PATCH(
     if (!title || !slug || !body_markdown || !status) {
       return NextResponse.json(
         { error: 'Missing required fields: title, slug, body_markdown, status' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -178,7 +168,7 @@ export async function PATCH(
     if (!slugRegex.test(slug)) {
       return NextResponse.json(
         { error: 'Slug must contain only lowercase letters, numbers, and hyphens' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 

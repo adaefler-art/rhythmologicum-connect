@@ -20,7 +20,7 @@ export default function EditContentPage() {
       try {
         setLoading(true)
         const response = await fetch(`/api/admin/content-pages/${pageId}`)
-        
+
         if (!response.ok) {
           throw new Error('Fehler beim Laden der Content-Page')
         }

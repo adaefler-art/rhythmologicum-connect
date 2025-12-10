@@ -4,4 +4,4 @@
   "tabWidth": 2,
   "trailingComma": "all",
   "printWidth": 100
-}npm install --save-dev supabase
+}
