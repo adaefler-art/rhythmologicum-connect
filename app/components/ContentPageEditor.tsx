@@ -608,7 +608,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                     )}
 
                     {editingSectionId !== section.id && (
-                      <div className="text-sm text-slate-600 line-clamp-2">
+                      <div className="text-sm text-slate-600 overflow-hidden" style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
                         {section.body_markdown}
                       </div>
                     )}
