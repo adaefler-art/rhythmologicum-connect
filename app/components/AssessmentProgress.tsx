@@ -18,19 +18,24 @@ export default function AssessmentProgress({
   progressPercent,
 }: AssessmentProgressProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3">
-      <div className="flex items-center justify-between text-sm md:text-base text-slate-700">
+    <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:gap-3">
+      <div className="flex items-center justify-between text-xs sm:text-sm md:text-base text-slate-700">
         <span className="font-medium">
-          Frage {answeredCount} von {totalQuestions} beantwortet
+          {answeredCount} / {totalQuestions} Fragen
         </span>
-        <span className="text-xs md:text-sm text-slate-500">
-          {Math.round(progressPercent)}% abgeschlossen
+        <span className="text-xs sm:text-sm text-slate-500 font-medium">
+          {Math.round(progressPercent)}%
         </span>
       </div>
-      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+      <div className="w-full h-2 sm:h-3 bg-slate-100 rounded-full overflow-hidden">
         <div
-          className="h-3 bg-sky-500 transition-all"
+          className="h-full bg-gradient-to-r from-sky-500 to-sky-600 transition-all duration-300 ease-out rounded-full"
           style={{ width: `${progressPercent}%` }}
+          role="progressbar"
+          aria-valuenow={progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${answeredCount} von ${totalQuestions} Fragen beantwortet`}
         />
       </div>
     </div>

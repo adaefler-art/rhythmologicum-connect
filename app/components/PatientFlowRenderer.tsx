@@ -77,18 +77,18 @@ export default function PatientFlowRenderer({
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
   return (
-    <main className="bg-slate-50 px-4 py-10">
-      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
+      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
         {/* Recovery Banner */}
         {showRecoveryBanner && answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-xl shrink-0">✅</span>
+          <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <span className="text-lg sm:text-xl shrink-0">✅</span>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-green-900 mb-1">
+                <h3 className="text-xs sm:text-sm font-semibold text-green-900 mb-1">
                   Fortschritt wiederhergestellt
                 </h3>
-                <p className="text-sm text-green-700">
+                <p className="text-xs sm:text-sm text-green-700">
                   Sie setzen Ihre Umfrage fort. Ihre bisherigen {answeredCount} Antworten wurden
                   wiederhergestellt.
                 </p>
@@ -98,16 +98,16 @@ export default function PatientFlowRenderer({
         )}
 
         {/* Header */}
-        <header className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
+        <header className="mb-4 sm:mb-6">
+          <p className="text-xs sm:text-sm font-medium uppercase tracking-wide text-sky-600 mb-2">
             {funnel.title}
           </p>
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 mb-2">
+          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-slate-900 mb-2 leading-tight">
             Schritt {assessmentStatus.currentStep.stepIndex + 1} von {assessmentStatus.totalSteps}:{' '}
             {currentStep.title}
           </h1>
           {currentStep.description && (
-            <p className="text-sm text-slate-600 leading-relaxed">{currentStep.description}</p>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{currentStep.description}</p>
           )}
         </header>
 
@@ -136,8 +136,8 @@ export default function PatientFlowRenderer({
 
         {/* Error Message */}
         {error && (
-          <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
-            <span className="text-xl shrink-0">❌</span>
+          <div className="mt-4 sm:mt-6 text-xs sm:text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 flex items-start gap-2 sm:gap-3">
+            <span className="text-lg sm:text-xl shrink-0">❌</span>
             <p className="leading-relaxed">{error}</p>
           </div>
         )}
@@ -153,7 +153,7 @@ export default function PatientFlowRenderer({
 
         {/* Last Step Helper Text */}
         {isLastStep && (
-          <p className="mt-4 text-xs md:text-sm text-slate-500 text-center leading-relaxed px-4">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-slate-500 text-center leading-relaxed px-2 sm:px-4">
             Nach dem Abschicken werden Ihre Antworten ausgewertet. Anschließend sehen Sie Ihre
             Ergebnisse.
           </p>

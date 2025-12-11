@@ -92,36 +92,65 @@ export default function IntroPageClient({ funnelSlug }: IntroPageClientProps) {
   }
 
   return (
-    <main className="bg-slate-50 px-4 py-10">
-      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
+      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
         {/* Header */}
-        <header className="mb-6 border-b border-slate-200 pb-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
+        <header className="mb-6 border-b border-slate-200 pb-4 sm:pb-6">
+          <p className="text-xs sm:text-sm font-medium uppercase tracking-wide text-sky-600 mb-2">
             {funnelTitle}
           </p>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-3 leading-tight">
             {introPage.title}
           </h1>
           {introPage.excerpt && (
-            <p className="text-sm md:text-base text-slate-600 leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               {introPage.excerpt}
             </p>
           )}
         </header>
 
+        {/* Duration and Data Privacy Info Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* Duration Estimate */}
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl sm:text-2xl shrink-0">⏱️</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-sky-900 mb-1">Dauer</h3>
+                <p className="text-xs sm:text-sm text-sky-800 leading-relaxed">
+                  Ca. 5-10 Minuten
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Privacy */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl sm:text-2xl shrink-0">🔒</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-green-900 mb-1">Ihre Daten</h3>
+                <p className="text-xs sm:text-sm text-green-800 leading-relaxed">
+                  Sicher gespeichert und vertraulich
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Content */}
-        <article className="prose prose-slate max-w-none mb-8">
+        <article className="prose prose-slate prose-sm sm:prose-base max-w-none mb-6 sm:mb-8">
           <div
-            className="markdown-content"
+            className="markdown-content text-sm sm:text-base"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(introPage.body_markdown) }}
           />
         </article>
 
         {/* Action Button */}
-        <div className="flex justify-center pt-6 border-t border-slate-200">
+        <div className="flex justify-center pt-4 sm:pt-6 border-t border-slate-200">
           <button
             onClick={handleStartAssessment}
-            className="px-8 py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 transition-all"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 md:py-5 rounded-xl bg-sky-600 text-white text-base md:text-lg font-semibold shadow-md hover:bg-sky-700 active:bg-sky-800 transition-all touch-manipulation"
             style={{ minHeight: '56px' }}
           >
             Assessment starten →
@@ -129,11 +158,11 @@ export default function IntroPageClient({ funnelSlug }: IntroPageClientProps) {
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 bg-sky-50 border border-sky-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-              <span className="text-xl shrink-0">ℹ️</span>
+        <div className="mt-4 sm:mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <span className="text-lg sm:text-xl shrink-0">ℹ️</span>
             <div className="flex-1">
-              <p className="text-sm text-blue-900 leading-relaxed">
+              <p className="text-xs sm:text-sm text-blue-900 leading-relaxed">
                 Nehmen Sie sich Zeit, um diese Informationen zu lesen. Wenn Sie bereit sind, klicken
                 Sie auf &quot;Assessment starten&quot;, um fortzufahren.
               </p>

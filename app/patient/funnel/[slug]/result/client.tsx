@@ -122,30 +122,42 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const showContentLinks = resultPages.length > 0 || infoPages.length > 0
 
   return (
-    <main className="bg-slate-50 px-4 py-10">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
       <div className="max-w-3xl mx-auto">
         {/* Success Header */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8 mb-6">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-              <span className="text-3xl">✓</span>
+            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mb-3 sm:mb-4">
+              <span className="text-2xl sm:text-3xl">✓</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-2 leading-tight">
               Assessment abgeschlossen!
             </h1>
-            <p className="text-slate-600">{funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert.</p>
+            <p className="text-sm sm:text-base text-slate-600">{funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert.</p>
+          </div>
+
+          {/* Main Outcome Box - Prominent display */}
+          <div className="bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200 rounded-xl p-4 sm:p-6 mb-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-sky-600 text-white rounded-full mb-3 sm:mb-4">
+                <span className="text-xl sm:text-2xl font-bold">✓</span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                Ihre Antworten wurden gespeichert
+              </h2>
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Vielen Dank für Ihre Zeit. Ihre Angaben helfen dabei, ein besseres Verständnis 
+                Ihrer Situation zu entwickeln.
+              </p>
+            </div>
           </div>
 
           {/* Assessment Info */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <dt className="text-sm font-medium text-slate-600">Assessment-ID</dt>
-                <dd className="text-sm font-mono text-slate-900 break-all">{assessment.id}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-slate-600">Abgeschlossen am</dt>
-                <dd className="text-sm text-slate-900">
+                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Abgeschlossen am</dt>
+                <dd className="text-xs sm:text-sm text-slate-900">
                   {new Intl.DateTimeFormat('de-DE', {
                     dateStyle: 'medium',
                     timeStyle: 'short',
@@ -153,45 +165,55 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-slate-600">Funnel</dt>
-                <dd className="text-sm text-slate-900">{funnelTitle || canonicalSlug}</dd>
+                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Assessment-Typ</dt>
+                <dd className="text-xs sm:text-sm text-slate-900">{funnelTitle || canonicalSlug}</dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-slate-600">Status</dt>
+              <div className="sm:col-span-2">
+                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Status</dt>
                 <dd>
                   <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
-                    Abgeschlossen
+                    ✓ Abgeschlossen
                   </span>
                 </dd>
               </div>
             </dl>
           </div>
 
-          {/* Next Steps Info */}
-          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">ℹ️</span>
-              <div>
-                <h3 className="text-sm font-semibold text-blue-900 mb-1">Nächste Schritte</h3>
-                <p className="text-sm text-blue-800">
-                  Ihre Antworten wurden gespeichert und können von Ihrem Arzt eingesehen werden.
-                  Weitere Auswertungen und Berichte werden in Kürze verfügbar sein.
-                </p>
+          {/* Next Steps Info - More prominent */}
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <span className="text-lg sm:text-xl flex-shrink-0">💡</span>
+              <div className="flex-1">
+                <h3 className="text-sm sm:text-base font-semibold text-blue-900 mb-2">Was passiert jetzt?</h3>
+                <ul className="text-xs sm:text-sm text-blue-800 space-y-2 leading-relaxed">
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-600 font-bold shrink-0">1.</span>
+                    <span>Ihre Antworten werden sicher gespeichert und können von Ihrem Behandlungsteam eingesehen werden.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-600 font-bold shrink-0">2.</span>
+                    <span>Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-sky-600 font-bold shrink-0">3.</span>
+                    <span>Weitere Auswertungen und personalisierte Empfehlungen werden in Kürze verfügbar sein.</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
 
-          {/* Content Page Links */}
+          {/* Content Page Links - Recommendations Section */}
           {showContentLinks && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <span className="text-xl flex-shrink-0">📚</span>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <span className="text-lg sm:text-xl flex-shrink-0">📚</span>
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-green-900 mb-2">
-                    Mehr erfahren
+                  <h3 className="text-sm sm:text-base font-semibold text-green-900 mb-2">
+                    Empfohlene Ressourcen
                   </h3>
-                  <p className="text-sm text-green-800 mb-3">
-                    Lesen Sie mehr über Stress, Resilienz und wie Sie Ihre Ergebnisse interpretieren können:
+                  <p className="text-xs sm:text-sm text-green-800 mb-3 leading-relaxed">
+                    Erfahren Sie mehr über Stress, Resilienz und praktische Strategien zur Selbstfürsorge:
                   </p>
                   <div className="space-y-2">
                     {resultPages.map((page) => (
@@ -200,7 +222,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
                         href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
+                        className="block text-xs sm:text-sm text-green-700 hover:text-green-900 hover:underline font-medium p-2 hover:bg-green-100 rounded transition-colors"
                       >
                         📄 {page.title}
                       </a>
@@ -211,7 +233,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
                         href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
+                        className="block text-xs sm:text-sm text-green-700 hover:text-green-900 hover:underline font-medium p-2 hover:bg-green-100 rounded transition-colors"
                       >
                         📄 {page.title}
                       </a>
@@ -226,26 +248,37 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => router.push('/patient')}
-              className="flex-1 px-6 py-3 bg-sky-600 text-white rounded-lg font-semibold hover:bg-sky-700 transition-colors"
+              className="w-full sm:flex-1 px-5 sm:px-6 py-3 sm:py-4 bg-sky-600 text-white rounded-xl text-sm sm:text-base font-semibold hover:bg-sky-700 active:bg-sky-800 transition-colors shadow-md touch-manipulation"
+              style={{ minHeight: '56px' }}
             >
               Zur Übersicht
             </button>
             <button
               onClick={() => router.push('/patient/history')}
-              className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
+              className="w-full sm:flex-1 px-5 sm:px-6 py-3 sm:py-4 bg-slate-200 text-slate-700 rounded-xl text-sm sm:text-base font-semibold hover:bg-slate-300 active:bg-slate-400 transition-colors touch-manipulation"
+              style={{ minHeight: '56px' }}
             >
               Meine Assessments
             </button>
           </div>
         </div>
 
-        {/* Additional Info Card */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Ihre Daten</h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Alle Ihre Antworten wurden sicher gespeichert. Sie können jederzeit auf Ihre früheren
-            Assessments in der Historie zugreifen.
-          </p>
+        {/* Privacy & Data Security Card */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="text-xl sm:text-2xl shrink-0">🔒</span>
+            <div className="flex-1">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-2">Ihre Daten sind sicher</h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3">
+                Alle Ihre Antworten wurden verschlüsselt gespeichert und unterliegen strengen Datenschutzrichtlinien. 
+                Nur autorisiertes medizinisches Personal hat Zugriff auf Ihre Daten.
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Sie können jederzeit auf Ihre früheren Assessments in der Historie zugreifen oder 
+                ein neues Assessment durchführen.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </main>

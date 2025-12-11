@@ -73,7 +73,7 @@ const QuestionCard = memo(function QuestionCard({
   return (
     <div
       id={`question-${question.id}`}
-      className={`border-2 rounded-xl p-5 md:p-6 transition-all ${
+      className={`border-2 rounded-xl p-4 sm:p-5 md:p-6 transition-all ${
         hasError
           ? 'border-red-300 bg-red-50/30'
           : isAnswered
@@ -81,9 +81,9 @@ const QuestionCard = memo(function QuestionCard({
             : 'border-slate-200 bg-white'
       }`}
     >
-      <div className="flex items-start gap-3 mb-4">
+      <div className="flex items-start gap-2 sm:gap-3 mb-4">
         <span
-          className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          className={`shrink-0 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs sm:text-sm font-bold ${
             hasError
               ? 'bg-red-600 text-white'
               : isAnswered
@@ -93,13 +93,13 @@ const QuestionCard = memo(function QuestionCard({
         >
           {index}
         </span>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2">
-            <p className="text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-1 flex-1">
+            <p className="text-sm sm:text-base md:text-lg font-medium text-slate-900 leading-relaxed pt-0.5 flex-1">
               {question.label}
             </p>
             {!question.isRequired && (
-              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md whitespace-nowrap">
+              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 sm:py-1 rounded-md whitespace-nowrap">
                 Optional
               </span>
             )}
@@ -107,24 +107,24 @@ const QuestionCard = memo(function QuestionCard({
         </div>
       </div>
       {question.helpText && (
-        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
-          <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-            <span className="text-lg shrink-0">💡</span>
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 ml-0 sm:ml-11">
+          <p className="text-xs sm:text-sm text-sky-900 leading-relaxed flex items-start gap-2">
+            <span className="text-base sm:text-lg shrink-0">💡</span>
             <span>{question.helpText}</span>
           </p>
         </div>
       )}
       {hasError && (
-        <p className="text-xs md:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 ml-11">
+        <p className="text-xs sm:text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 ml-0 sm:ml-11">
           ⚠️ Diese Pflichtfrage muss beantwortet werden
         </p>
       )}
       {!isAnswered && !hasError && question.isRequired && (
-        <p className="text-xs md:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 ml-11">
+        <p className="text-xs sm:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 ml-0 sm:ml-11">
           ⚠️ Bitte wählen Sie eine Antwort aus
         </p>
       )}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 sm:gap-2.5">
         {SCALE.map((option) => {
           const id = `${question.id}-${option.value}`
           const checked = value === option.value
@@ -132,11 +132,12 @@ const QuestionCard = memo(function QuestionCard({
             <label
               key={option.value}
               htmlFor={id}
-              className={`flex-1 min-w-[90px] sm:min-w-[100px] flex flex-col items-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all ${
+              className={`flex-1 min-w-[70px] sm:min-w-[90px] md:min-w-[100px] flex flex-col items-center justify-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all touch-manipulation ${
                 checked
                   ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
-                  : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm'
+                  : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm active:scale-95'
               }`}
+              style={{ minHeight: '44px', minWidth: '44px' }}
             >
               <input
                 id={id}
@@ -148,8 +149,8 @@ const QuestionCard = memo(function QuestionCard({
                 onChange={() => handleChange(option.value)}
                 aria-label={`${option.label} (Wert ${option.value})`}
               />
-              <span className="text-xl sm:text-2xl font-bold">{option.value}</span>
-              <span className="text-xs sm:text-sm font-medium">{option.label}</span>
+              <span className="text-lg sm:text-xl md:text-2xl font-bold">{option.value}</span>
+              <span className="text-xs sm:text-sm font-medium text-center leading-tight">{option.label}</span>
             </label>
           )
         })}
