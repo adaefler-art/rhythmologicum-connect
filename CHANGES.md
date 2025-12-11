@@ -1,5 +1,36 @@
 # Zusammenfassung der Änderungen
 
+## V0.4 - Legacy Route Cleanup (2025-12-11)
+
+### Was wurde bereinigt?
+
+Alle Legacy-Redirect-Routen wurden entfernt, sodass nur noch der offizielle Patient Flow V2 (`/patient/funnel/stress-assessment`) erreichbar ist.
+
+### Entfernte Routen
+
+**Unter `/patient/`:**
+- `/patient/stress-check` ❌
+- `/patient/stress-check-v2` ❌
+- `/patient/stess-check` ❌ (Tippfehler)
+
+**Auf Root-Ebene:**
+- `/stress-check` ❌
+- `/stress-check-v2` ❌
+- `/stess-check` ❌ (Tippfehler)
+
+Diese Routen waren vorher Redirects zum neuen Flow, wurden aber entfernt, um Verwirrung zu vermeiden. Alle Navigationselemente und Buttons verweisen jetzt direkt auf `/patient/funnel/stress-assessment`.
+
+### Aktualisierte Dateien
+
+- `app/patient/history/PatientHistoryClient.tsx` - Alle Buttons auf neuen Flow aktualisiert
+- `app/patient/_legacy/README.md` - Dokumentation der entfernten Routen
+- `app/api/funnels/[slug]/definition/route.ts` - Kommentare zu Backward Compatibility
+- `app/api/funnels/[slug]/content-pages/route.ts` - Kommentare zu Backward Compatibility
+
+**Hinweis:** API-Endpunkte behalten Slug-Translation (`stress-check` → `stress-assessment`) für Backward Compatibility mit bestehenden Datenbank-Einträgen.
+
+---
+
 ## V0.4-E2 - Patient Flow V2 (2025-12-11)
 
 ### Was wurde implementiert?

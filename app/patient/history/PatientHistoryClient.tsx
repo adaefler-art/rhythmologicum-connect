@@ -265,7 +265,7 @@ export default function PatientHistoryClient() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/patient/stress-check')}
+              onClick={() => router.push('/patient/funnel/stress-assessment')}
               className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Zum Fragebogen
@@ -304,7 +304,7 @@ export default function PatientHistoryClient() {
             </p>
             <button
               type="button"
-              onClick={() => router.push('/patient/stress-check')}
+              onClick={() => router.push('/patient/funnel/stress-assessment')}
               className="mt-6 inline-flex items-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition"
             >
               Zum Fragebogen
@@ -370,7 +370,7 @@ export default function PatientHistoryClient() {
           {/* New Check CTA */}
           <button
             type="button"
-            onClick={() => router.push('/patient/stress-check')}
+            onClick={() => router.push('/patient/funnel/stress-assessment')}
             className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition"
             aria-label="Neue Messung durchführen"
           >

@@ -14,6 +14,10 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
+    
+    // Backward compatibility: Legacy slug redirects to canonical slug
+    // Kept for existing database records and external links only
+    // Note: User-facing routes have been removed
     const effectiveSlug =
       slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
         ? 'stress-assessment'
