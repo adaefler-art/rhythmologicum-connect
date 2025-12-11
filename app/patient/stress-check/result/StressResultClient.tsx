@@ -347,7 +347,7 @@ export default function StressResultClient() {
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-base font-semibold text-slate-800">Deine persönliche Einordnung</h2>
             {hasReportText && (
-              <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              <span className="inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
                 von AMY
               </span>
             )}
@@ -356,7 +356,7 @@ export default function StressResultClient() {
             {primaryText}
           </p>
           {!hasReportText && hasReport && (
-            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+            <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 px-4 py-3">
               <p className="text-sm font-medium text-blue-900">
                 <span aria-label="Hinweis">💡</span> Die detaillierte KI-gestützte Auswertung folgt in Kürze
               </p>

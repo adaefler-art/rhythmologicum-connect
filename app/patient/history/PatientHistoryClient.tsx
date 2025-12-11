@@ -498,16 +498,16 @@ export default function PatientHistoryClient() {
 
                 {/* AMY Text */}
                 {featureFlags.AMY_ENABLED && amyText && (
-                  <div className="rounded-lg border border-blue-100 bg-blue-50/50 px-4 py-3">
+                  <div className="rounded-lg border border-sky-100 bg-sky-50/50 px-4 py-3">
                     <div className="mb-2 flex items-center gap-2">
-                      <h4 className="text-xs font-semibold text-blue-900">
+                      <h4 className="text-xs font-semibold text-sky-900">
                         Einordnung von AMY
                       </h4>
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                      <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
                         KI-Assistenz
                       </span>
                     </div>
-                    <p className="text-sm leading-6 text-blue-900 whitespace-pre-line">
+                    <p className="text-sm leading-6 text-sky-900 whitespace-pre-line">
                       {amyText}
                     </p>
                   </div>

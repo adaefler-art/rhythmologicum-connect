@@ -158,7 +158,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
           </div>
 
           {/* Next Steps Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
               <span className="text-xl flex-shrink-0">ℹ️</span>
               <div>

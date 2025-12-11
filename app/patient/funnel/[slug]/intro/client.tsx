@@ -129,7 +129,7 @@ export default function IntroPageClient({ funnelSlug }: IntroPageClientProps) {
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mt-6 bg-sky-50 border border-sky-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <span className="text-xl flex-shrink-0">ℹ️</span>
             <div className="flex-1">

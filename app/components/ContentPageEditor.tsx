@@ -413,7 +413,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 type="text"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="Seitentitel eingeben..."
                 required
               />
@@ -429,7 +429,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 type="text"
                 value={slug}
                 onChange={(e) => handleSlugChange(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono ${
+                className={`w-full px-3 py-2 bg-white text-slate-900 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono ${
                   slugError ? 'border-red-300' : 'border-slate-300'
                 }`}
                 placeholder="seiten-url"
@@ -451,7 +451,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="z.B. Info, Tutorial, FAQ"
               />
             </div>
@@ -465,7 +465,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 id="funnel"
                 value={funnelId}
                 onChange={(e) => setFunnelId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <option value="">Kein Funnel</option>
                 {funnels.map((funnel) => (
@@ -486,7 +486,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 type="number"
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 min="0"
               />
               <p className="mt-1 text-xs text-slate-500">Höhere Werte = höhere Priorität</p>
@@ -501,7 +501,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 id="excerpt"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 rows={2}
                 placeholder="Kurze Beschreibung für Übersichten..."
               />
@@ -532,7 +532,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                 id="markdown"
                 value={bodyMarkdown}
                 onChange={(e) => setBodyMarkdown(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
                 rows={20}
                 placeholder="# Überschrift&#10;&#10;Ihr Markdown-Inhalt..."
                 required

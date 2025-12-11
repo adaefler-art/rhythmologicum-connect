@@ -214,7 +214,7 @@ export default function FunnelDefinitionDemo() {
                                     </p>
                                   )}
                                   <div className="flex flex-wrap gap-2 text-xs">
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-mono">
+                                    <span className="px-2 py-0.5 bg-sky-100 text-sky-800 rounded font-mono">
                                       key: {question.key}
                                     </span>
                                     <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
@@ -244,7 +244,7 @@ export default function FunnelDefinitionDemo() {
                     {/* Info content (if info step) */}
                     {'content' in step && step.content && (
                       <div className="ml-16">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
                           <p className="text-sm text-blue-900">{step.content}</p>
                         </div>
                       </div>
