@@ -1,24 +1,59 @@
-name: Create v0.4 Issues
+// create_v0_4_issues.js (CommonJS Version)
+//
+// 1) npm install @octokit/rest
+// 2) export GITHUB_TOKEN=ghp_...
+// 3) node create_v0_4_issues.js
 
-on:
-  workflow_dispatch:
+const fs = require("fs");
+const { Octokit } = require("@octokit/rest");
 
-jobs:
-  create_v0_4_issues:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+});
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+const OWNER = "adaefler-art";
+const REPO = "rhythmologicum-connect";
 
-      - name: Install dependencies
-        run: npm install @octokit/rest
+async function createIssues() {
+  const raw = fs.readFileSync("./v0_4_issues.json", "utf8");
+  const data = JSON.parse(raw);
 
-      - name: Create v0.4 issues
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node create_v0_4_issues.js
+  for (const epic of data.epics) {
+    console.log(`Creating epic: ${epic.title}`);
+    const epicIssue = await octokit.rest.issues.create({
+      owner: OWNER,
+      repo: REPO,
+      title: epic.title,
+      body: epic.body,
+      labels: epic.labels
+    });
+
+    const epicNumber = epicIssue.data.number;
+
+    if (epic.issues && epic.issues.length > 0) {
+      for (const issue of epic.issues) {
+        console.log(`  Creating child issue: ${issue.title}`);
+        const childBody = `${issue.body}\n\nParent Epic: #${epicNumber}`;
+        const child = await octokit.rest.issues.create({
+          owner: OWNER,
+          repo: REPO,
+          title: issue.title,
+          body: childBody,
+          labels: issue.labels || []
+        });
+
+        await octokit.rest.issues.addLabels({
+          owner: OWNER,
+          repo: REPO,
+          issue_number: child.data.number,
+          labels: ["child"]
+        });
+      }
+    }
+  }
+}
+
+createIssues().catch((err) => {
+  console.error("Error creating issues:", err);
+  process.exit(1);
+});
