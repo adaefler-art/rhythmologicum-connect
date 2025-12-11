@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
@@ -355,7 +355,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     }
   }
 
-  const handleAnswerChange = async (questionKey: string, value: number, retryAttempt: number = 0) => {
+  const handleAnswerChange = useCallback(async (questionKey: string, value: number, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
 
     const maxRetries = 2
@@ -415,9 +415,48 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       // Show warning but don't block user - answer is saved locally
       console.warn('⚠️ Answer saved locally but not synced to server. Will retry on next action.')
     }
-  }
+  }, [assessmentStatus, funnel, slug])
 
-  const handleNextStep = async () => {
+  const handleComplete = useCallback(async () => {
+    if (!assessmentStatus) return
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const response = await fetch(
+        `/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/complete`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        if (errorData.error?.details?.missingQuestions) {
+          setValidationErrors(errorData.error.details.missingQuestions)
+          setError('Nicht alle Pflichtfragen wurden beantwortet.')
+          setSubmitting(false)
+          return
+        }
+        throw new Error('Fehler beim Abschließen des Assessments.')
+      }
+
+      // Redirect to result page
+      router.push(`/patient/funnel/${slug}/result?assessmentId=${assessmentStatus.assessmentId}`)
+    } catch (err) {
+      console.error('Error completing assessment:', err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Fehler beim Abschließen des Assessments. Bitte versuchen Sie es erneut.',
+      )
+      setSubmitting(false)
+    }
+  }, [assessmentStatus, slug, router])
+
+  const handleNextStep = useCallback(async () => {
     if (!assessmentStatus || !funnel) return
 
     setSubmitting(true)
@@ -500,9 +539,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [assessmentStatus, funnel, slug, loadAssessmentStatus, handleComplete])
 
-  const handlePreviousStep = async () => {
+  const handlePreviousStep = useCallback(async () => {
     if (!assessmentStatus || !funnel) return
 
     // Find previous step by order index
@@ -515,46 +554,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // For now, we'll just show a message since backward navigation
     // might require additional API support
     setError('Zurück-Navigation wird in Kürze unterstützt.')
-  }
-
-  const handleComplete = async () => {
-    if (!assessmentStatus) return
-
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const response = await fetch(
-        `/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/complete`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (errorData.error?.details?.missingQuestions) {
-          setValidationErrors(errorData.error.details.missingQuestions)
-          setError('Nicht alle Pflichtfragen wurden beantwortet.')
-          setSubmitting(false)
-          return
-        }
-        throw new Error('Fehler beim Abschließen des Assessments.')
-      }
-
-      // Redirect to result page
-      router.push(`/patient/funnel/${slug}/result?assessmentId=${assessmentStatus.assessmentId}`)
-    } catch (err) {
-      console.error('Error completing assessment:', err)
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Fehler beim Abschließen des Assessments. Bitte versuchen Sie es erneut.',
-      )
-      setSubmitting(false)
-    }
-  }
+  }, [assessmentStatus, funnel])
 
   // Loading state
   if (loading || !funnel || !assessmentStatus) {
@@ -629,7 +629,37 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     )
   }
 
-  const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
+  // Memoize computed values to prevent unnecessary recalculations
+  const currentStep = useMemo(
+    () => funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId),
+    [funnel.steps, assessmentStatus.currentStep.stepId]
+  )
+
+  const isFirstStep = useMemo(
+    () => assessmentStatus.currentStep.stepIndex === 0,
+    [assessmentStatus.currentStep.stepIndex]
+  )
+  
+  const isLastStep = useMemo(
+    () => assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1,
+    [assessmentStatus.currentStep.stepIndex, assessmentStatus.totalSteps]
+  )
+
+  // Get relevant content pages - memoized
+  const introPages = useMemo(() => getIntroPages(contentPages), [contentPages])
+  const infoPages = useMemo(() => getInfoPages(contentPages), [contentPages])
+  const showContentLinks = useMemo(
+    () => introPages.length > 0 || infoPages.length > 0,
+    [introPages.length, infoPages.length]
+  )
+
+  // Calculate progress - memoized
+  const totalQuestions = funnel.totalQuestions
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
+  const progressPercent = useMemo(
+    () => (totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0),
+    [totalQuestions, answeredCount]
+  )
 
   if (!currentStep) {
     return (
@@ -640,19 +670,6 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       </main>
     )
   }
-
-  const isFirstStep = assessmentStatus.currentStep.stepIndex === 0
-  const isLastStep = assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
-
-  // Get relevant content pages
-  const introPages = getIntroPages(contentPages)
-  const infoPages = getInfoPages(contentPages)
-  const showContentLinks = introPages.length > 0 || infoPages.length > 0
-
-  // Calculate progress
-  const totalQuestions = funnel.totalQuestions
-  const answeredCount = Object.keys(answers).length
-  const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
   return (
     <main className="bg-slate-50 px-4 py-10">
@@ -857,8 +874,14 @@ type QuestionCardProps = {
   hasError?: boolean
 }
 
-function QuestionCard({ index, question, value, onChange, hasError }: QuestionCardProps) {
+const QuestionCard = memo(function QuestionCard({ index, question, value, onChange, hasError }: QuestionCardProps) {
   const isAnswered = value !== undefined
+
+  // Memoize the onChange handler for this specific question
+  const handleChange = useCallback(
+    (val: number) => onChange(question.key, val),
+    [onChange, question.key]
+  )
 
   return (
     <div
@@ -935,7 +958,7 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
                 name={question.id}
                 value={option.value}
                 checked={checked}
-                onChange={() => onChange(question.key, option.value)}
+                onChange={() => handleChange(option.value)}
                 aria-label={`${option.label} (Wert ${option.value})`}
               />
               <span className="text-xl sm:text-2xl font-bold">{option.value}</span>
@@ -946,4 +969,4 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
       </div>
     </div>
   )
-}
+})

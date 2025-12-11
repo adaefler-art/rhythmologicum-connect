@@ -104,7 +104,12 @@ export async function GET(
       sections: sections || [],
     }
 
-    return NextResponse.json(result as ContentPageWithFunnel)
+    // Add cache headers for published content pages (revalidate every 10 minutes)
+    return NextResponse.json(result as ContentPageWithFunnel, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+      },
+    })
   } catch (error) {
     console.error('Error loading content page:', error)
     return NextResponse.json(

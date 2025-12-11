@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import MobileAnswerButton from './MobileAnswerButton'
 
 export type BinaryAnswerButtonsProps = {
@@ -24,6 +25,8 @@ export type BinaryAnswerButtonsProps = {
  * - Touch-optimized with 44x44px minimum targets
  * - Supports boolean, number, or string values
  * 
+ * Performance: Memoized to prevent unnecessary re-renders
+ * 
  * Common use cases:
  * - Yes/No questions
  * - True/False questions
@@ -39,7 +42,7 @@ export type BinaryAnswerButtonsProps = {
  * @param yesValue - Value for affirmative option (default: true)
  * @param noValue - Value for negative option (default: false)
  */
-export default function BinaryAnswerButtons({
+const BinaryAnswerButtons = memo(function BinaryAnswerButtons({
   questionId,
   value,
   onChange,
@@ -75,4 +78,6 @@ export default function BinaryAnswerButtons({
       </div>
     </div>
   )
-}
+})
+
+export default BinaryAnswerButtons

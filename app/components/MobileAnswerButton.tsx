@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { componentTokens, motion as motionTokens } from '@/lib/design-tokens'
 
@@ -22,8 +23,10 @@ export type MobileAnswerButtonProps = {
  * - Visual states: idle, hover, active/pressed, disabled
  * - Micro-animations: scale effect and color transitions
  * - Accessible hidden radio input
+ * 
+ * Performance: Memoized to prevent unnecessary re-renders
  */
-export default function MobileAnswerButton({
+const MobileAnswerButton = memo(function MobileAnswerButton({
   value,
   label,
   sublabel,
@@ -101,4 +104,6 @@ export default function MobileAnswerButton({
       )}
     </motion.label>
   )
-}
+})
+
+export default MobileAnswerButton
