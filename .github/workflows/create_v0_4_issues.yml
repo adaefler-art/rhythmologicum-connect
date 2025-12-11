@@ -1,0 +1,24 @@
+name: Create v0.4 Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_v0_4_issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install @octokit/rest
+
+      - name: Create v0.4 issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node create_v0_4_issues.js
