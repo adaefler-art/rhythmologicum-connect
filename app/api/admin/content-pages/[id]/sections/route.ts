@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
@@ -50,21 +49,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
     // Fetch sections ordered by order_index
-    const { data: sections, error: sectionsError } = await adminClient
+    const { data: sections, error: sectionsError } = await supabase
       .from('content_page_sections')
       .select('id, title, body_markdown, order_index, created_at, updated_at')
       .eq('content_page_id', id)
@@ -127,19 +113,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
     // Validate page ID (UUID format)
     if (!id || !UUID_REGEX.test(id)) {
       console.error('Invalid page ID:', id)
@@ -147,7 +120,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Verify page exists
-    const { data: page, error: pageError } = await adminClient
+    const { data: page, error: pageError } = await supabase
       .from('content_pages')
       .select('id')
       .eq('id', id)
@@ -183,7 +156,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Get max order_index to append new section at the end
-    const { data: maxOrderData } = await adminClient
+    const { data: maxOrderData, error: orderError } = await supabase
       .from('content_page_sections')
       .select('order_index')
       .eq('content_page_id', id)
@@ -191,10 +164,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .limit(1)
       .maybeSingle()
 
+    if (orderError) {
+      console.error('Error fetching section order index:', orderError)
+      return NextResponse.json({ error: 'Failed to determine section order' }, { status: 500 })
+    }
+
     const nextOrderIndex = maxOrderData ? maxOrderData.order_index + 1 : 0
 
     // Create section
-    const { data: newSection, error: insertError } = await adminClient
+    const { data: newSection, error: insertError } = await supabase
       .from('content_page_sections')
       .insert({
         content_page_id: id,
