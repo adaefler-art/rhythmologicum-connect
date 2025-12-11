@@ -80,7 +80,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
     }
     loadFunnelData()
-  }, [slug])
+  }, [loadExistingAnswers, slug])
 
   // Load content pages for this funnel
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
     }
     loadContentPages()
-  }, [slug])
+  }, [loadExistingAnswers, slug])
 
   // Handle page visibility changes for better recovery
   // When user returns to tab, refresh status to ensure consistency
@@ -197,7 +197,8 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
 
-  const loadAssessmentStatus = async (assessmentId: string, retryAttempt: number = 0) => {
+  const loadAssessmentStatus = useCallback(
+    async (assessmentId: string, retryAttempt: number = 0) => {
     const maxRetries = 3
     const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
 
@@ -310,9 +311,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       setLoading(false)
       throw err // Re-throw so caller knows it failed
     }
-  }
+  }, [loadExistingAnswers, slug])
 
-  const loadExistingAnswers = async (assessmentId: string, retryAttempt: number = 0) => {
+  const loadExistingAnswers = useCallback(async (assessmentId: string, retryAttempt: number = 0) => {
     const maxRetries = 2
     const retryDelay = 1000
 
@@ -353,7 +354,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       console.error('Error loading existing answers:', err)
       // Don't throw - we can continue with empty answers
     }
-  }
+  }, [])
 
   const handleAnswerChange = useCallback(async (questionKey: string, value: number, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
@@ -556,8 +557,38 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     setError('Zurück-Navigation wird in Kürze unterstützt.')
   }, [assessmentStatus, funnel])
 
+  // Memoized derived values (must run before any early returns to keep hook order stable)
+  const currentStep = useMemo(() => {
+    if (!funnel || !assessmentStatus) return null
+    return funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId) ?? null
+  }, [assessmentStatus, funnel])
+
+  const isFirstStep = useMemo(() => {
+    if (!assessmentStatus) return false
+    return assessmentStatus.currentStep.stepIndex === 0
+  }, [assessmentStatus])
+  
+  const isLastStep = useMemo(() => {
+    if (!assessmentStatus) return false
+    return assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
+  }, [assessmentStatus])
+
+  const introPages = useMemo(() => getIntroPages(contentPages), [contentPages])
+  const infoPages = useMemo(() => getInfoPages(contentPages), [contentPages])
+  const showContentLinks = useMemo(
+    () => introPages.length > 0 || infoPages.length > 0,
+    [infoPages, introPages]
+  )
+
+  const totalQuestions = funnel?.totalQuestions ?? 0
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
+  const progressPercent = useMemo(
+    () => (totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0),
+    [answeredCount, totalQuestions]
+  )
+
   // Loading state
-  if (loading || !funnel || !assessmentStatus) {
+  if (loading || !funnel || !assessmentStatus || !currentStep) {
     return (
       <main className="flex flex-col items-center justify-center bg-slate-50 py-20 px-4">
         <div className="text-center">
@@ -624,48 +655,6 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    )
-  }
-
-  // Memoize computed values to prevent unnecessary recalculations
-  const currentStep = useMemo(
-    () => funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId),
-    [funnel.steps, assessmentStatus.currentStep.stepId]
-  )
-
-  const isFirstStep = useMemo(
-    () => assessmentStatus.currentStep.stepIndex === 0,
-    [assessmentStatus.currentStep.stepIndex]
-  )
-  
-  const isLastStep = useMemo(
-    () => assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1,
-    [assessmentStatus.currentStep.stepIndex, assessmentStatus.totalSteps]
-  )
-
-  // Get relevant content pages - memoized
-  const introPages = useMemo(() => getIntroPages(contentPages), [contentPages])
-  const infoPages = useMemo(() => getInfoPages(contentPages), [contentPages])
-  const showContentLinks = useMemo(
-    () => introPages.length > 0 || infoPages.length > 0,
-    [introPages.length, infoPages.length]
-  )
-
-  // Calculate progress - memoized
-  const totalQuestions = funnel.totalQuestions
-  const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
-  const progressPercent = useMemo(
-    () => (totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0),
-    [totalQuestions, answeredCount]
-  )
-
-  if (!currentStep) {
-    return (
-      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md bg-white border-2 border-red-200 rounded-xl p-6">
-          <p className="text-red-700">Schritt konnte nicht gefunden werden.</p>
         </div>
       </main>
     )
