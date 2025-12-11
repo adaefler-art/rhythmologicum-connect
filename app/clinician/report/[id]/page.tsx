@@ -116,7 +116,7 @@ export default function ClinicianReportDetailPage() {
           </p>
           <button
             onClick={() => router.push('/clinician')}
-            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
           >
             Zurück
           </button>
@@ -136,7 +136,7 @@ export default function ClinicianReportDetailPage() {
     <main className="min-h-screen p-4 sm:p-6 max-w-3xl mx-auto">
       <button
         onClick={() => router.push('/clinician')}
-        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
+        className="mb-4 px-4 py-2.5 min-h-11 text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
       >
         ← Zur Übersicht
       </button>

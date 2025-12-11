@@ -63,6 +63,172 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     recoveryMessage: null,
   })
 
+  const loadExistingAnswers = useCallback(async (assessmentId: string, retryAttempt: number = 0) => {
+    const maxRetries = 2
+    const retryDelay = 1000
+
+    try {
+      const { data: answersData, error: answersError } = await supabase
+        .from('assessment_answers')
+        .select('question_id, answer_value')
+        .eq('assessment_id', assessmentId)
+
+      if (answersError) {
+        console.error('Error loading answers:', answersError)
+        
+        // Retry on error
+        if (retryAttempt < maxRetries) {
+          console.log(`Retrying answer load in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          return loadExistingAnswers(assessmentId, retryAttempt + 1)
+        }
+        
+        // Don't throw - we can continue with empty answers
+        console.warn('Failed to load existing answers after retries, continuing with empty state')
+        return
+      }
+
+      if (answersData) {
+        const answersMap: Record<string, number> = {}
+        answersData.forEach((answer) => {
+          answersMap[answer.question_id] = answer.answer_value
+        })
+        setAnswers(answersMap)
+        
+        // Log successful resume if we have answers
+        if (Object.keys(answersMap).length > 0) {
+          console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading existing answers:', err)
+      // Don't throw - we can continue with empty answers
+    }
+  }, [])
+
+  const loadAssessmentStatus = useCallback(
+    async (assessmentId: string, retryAttempt: number = 0) => {
+      const maxRetries = 3
+      const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
+
+      try {
+        // Validate assessmentId before making the request
+        if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
+          throw new Error('Ungültige Assessment-ID.')
+        }
+
+        // Show recovery message on retry
+        if (retryAttempt > 0) {
+          setRecovery({
+            isRecovering: true,
+            recoveryAttempt: retryAttempt,
+            recoveryMessage: `Wiederherstellung läuft... (Versuch ${retryAttempt}/${maxRetries})`,
+          })
+        }
+
+        let response: Response
+        try {
+          response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
+            credentials: 'include',
+          })
+        } catch (fetchErr) {
+          // Network error or fetch failed
+          console.error('Network error during fetch:', fetchErr)
+
+          // Retry on network errors
+          if (retryAttempt < maxRetries) {
+            console.log(`Retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+            await new Promise((resolve) => setTimeout(resolve, retryDelay))
+            return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+          }
+
+          throw new Error(
+            'Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.',
+          )
+        }
+
+        if (!response.ok) {
+          // Try to extract error message from response
+          let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
+          try {
+            const errorData = await response.json()
+            if (errorData.error?.message) {
+              errorMessage = errorData.error.message
+            }
+          } catch {
+            // If JSON parsing fails, use default message
+          }
+
+          if (response.status === 404) {
+            throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
+          } else if (response.status >= 500) {
+            // Retry on server errors
+            if (retryAttempt < maxRetries) {
+              console.log(
+                `Server error, retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`,
+              )
+              await new Promise((resolve) => setTimeout(resolve, retryDelay))
+              return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+            }
+            throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
+          } else {
+            throw new Error(errorMessage)
+          }
+        }
+
+        const { data } = await response.json()
+
+        // Validate AssessmentStatus structure
+        if (!data || typeof data !== 'object') {
+          throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
+        }
+
+        if (!data.assessmentId || typeof data.assessmentId !== 'string') {
+          throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
+        }
+
+        if (!data.currentStep || typeof data.currentStep !== 'object') {
+          throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
+        }
+
+        if (!data.currentStep.stepId || typeof data.currentStep.stepIndex !== 'number') {
+          throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
+        }
+
+        if (typeof data.totalSteps !== 'number') {
+          throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
+        }
+
+        setAssessmentStatus(data)
+
+        // Load existing answers with retry
+        await loadExistingAnswers(assessmentId, 0)
+
+        // Clear recovery state on success
+        setRecovery({
+          isRecovering: false,
+          recoveryAttempt: 0,
+          recoveryMessage: null,
+        })
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Error loading assessment status:', err)
+        const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
+        setError(errorMsg)
+        setRecovery({
+          isRecovering: false,
+          recoveryAttempt: 0,
+          recoveryMessage: null,
+        })
+        setLoading(false)
+        throw err // Re-throw so caller knows it failed
+      }
+    },
+    [loadExistingAnswers, slug],
+  )
+
+
   // Load funnel definition
   useEffect(() => {
     const loadFunnelData = async () => {
@@ -196,164 +362,6 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
-
-  const loadAssessmentStatus = async (assessmentId: string, retryAttempt: number = 0) => {
-    const maxRetries = 3
-    const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
-
-    try {
-      // Validate assessmentId before making the request
-      if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
-        throw new Error('Ungültige Assessment-ID.')
-      }
-
-      // Show recovery message on retry
-      if (retryAttempt > 0) {
-        setRecovery({
-          isRecovering: true,
-          recoveryAttempt: retryAttempt,
-          recoveryMessage: `Wiederherstellung läuft... (Versuch ${retryAttempt}/${maxRetries})`,
-        })
-      }
-
-      let response: Response
-      try {
-        response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
-          credentials: 'include',
-        })
-      } catch (fetchErr) {
-        // Network error or fetch failed
-        console.error('Network error during fetch:', fetchErr)
-        
-        // Retry on network errors
-        if (retryAttempt < maxRetries) {
-          console.log(`Retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-          await new Promise((resolve) => setTimeout(resolve, retryDelay))
-          return loadAssessmentStatus(assessmentId, retryAttempt + 1)
-        }
-        
-        throw new Error('Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
-      }
-
-      if (!response.ok) {
-        // Try to extract error message from response
-        let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
-        try {
-          const errorData = await response.json()
-          if (errorData.error?.message) {
-            errorMessage = errorData.error.message
-          }
-        } catch {
-          // If JSON parsing fails, use default message
-        }
-        
-        if (response.status === 404) {
-          throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
-        } else if (response.status >= 500) {
-          // Retry on server errors
-          if (retryAttempt < maxRetries) {
-            console.log(`Server error, retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-            await new Promise((resolve) => setTimeout(resolve, retryDelay))
-            return loadAssessmentStatus(assessmentId, retryAttempt + 1)
-          }
-          throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
-        } else {
-          throw new Error(errorMessage)
-        }
-      }
-
-      const { data } = await response.json()
-      
-      // Validate AssessmentStatus structure
-      if (!data || typeof data !== 'object') {
-        throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
-      }
-
-      if (!data.assessmentId || typeof data.assessmentId !== 'string') {
-        throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
-      }
-
-      if (!data.currentStep || typeof data.currentStep !== 'object') {
-        throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
-      }
-
-      if (!data.currentStep.stepId || typeof data.currentStep.stepIndex !== 'number') {
-        throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
-      }
-
-      if (typeof data.totalSteps !== 'number') {
-        throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
-      }
-
-      setAssessmentStatus(data)
-
-      // Load existing answers with retry
-      await loadExistingAnswers(assessmentId, 0)
-
-      // Clear recovery state on success
-      setRecovery({
-        isRecovering: false,
-        recoveryAttempt: 0,
-        recoveryMessage: null,
-      })
-
-      setLoading(false)
-    } catch (err) {
-      console.error('Error loading assessment status:', err)
-      const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
-      setError(errorMsg)
-      setRecovery({
-        isRecovering: false,
-        recoveryAttempt: 0,
-        recoveryMessage: null,
-      })
-      setLoading(false)
-      throw err // Re-throw so caller knows it failed
-    }
-  }
-
-  const loadExistingAnswers = async (assessmentId: string, retryAttempt: number = 0) => {
-    const maxRetries = 2
-    const retryDelay = 1000
-
-    try {
-      const { data: answersData, error: answersError } = await supabase
-        .from('assessment_answers')
-        .select('question_id, answer_value')
-        .eq('assessment_id', assessmentId)
-
-      if (answersError) {
-        console.error('Error loading answers:', answersError)
-        
-        // Retry on error
-        if (retryAttempt < maxRetries) {
-          console.log(`Retrying answer load in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-          await new Promise((resolve) => setTimeout(resolve, retryDelay))
-          return loadExistingAnswers(assessmentId, retryAttempt + 1)
-        }
-        
-        // Don't throw - we can continue with empty answers
-        console.warn('Failed to load existing answers after retries, continuing with empty state')
-        return
-      }
-
-      if (answersData) {
-        const answersMap: Record<string, number> = {}
-        answersData.forEach((answer) => {
-          answersMap[answer.question_id] = answer.answer_value
-        })
-        setAnswers(answersMap)
-        
-        // Log successful resume if we have answers
-        if (Object.keys(answersMap).length > 0) {
-          console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
-        }
-      }
-    } catch (err) {
-      console.error('Error loading existing answers:', err)
-      // Don't throw - we can continue with empty answers
-    }
-  }
 
   const handleAnswerChange = useCallback(async (questionKey: string, value: number, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
@@ -556,8 +564,38 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     setError('Zurück-Navigation wird in Kürze unterstützt.')
   }, [assessmentStatus, funnel])
 
+  // Memoized derived values (must run before any early returns to keep hook order stable)
+  const currentStep = useMemo(() => {
+    if (!funnel || !assessmentStatus) return null
+    return funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId) ?? null
+  }, [assessmentStatus, funnel])
+
+  const isFirstStep = useMemo(() => {
+    if (!assessmentStatus) return false
+    return assessmentStatus.currentStep.stepIndex === 0
+  }, [assessmentStatus])
+  
+  const isLastStep = useMemo(() => {
+    if (!assessmentStatus) return false
+    return assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1
+  }, [assessmentStatus])
+
+  const introPages = useMemo(() => getIntroPages(contentPages), [contentPages])
+  const infoPages = useMemo(() => getInfoPages(contentPages), [contentPages])
+  const showContentLinks = useMemo(
+    () => introPages.length > 0 || infoPages.length > 0,
+    [infoPages, introPages]
+  )
+
+  const totalQuestions = funnel?.totalQuestions ?? 0
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
+  const progressPercent = useMemo(
+    () => (totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0),
+    [answeredCount, totalQuestions]
+  )
+
   // Loading state
-  if (loading || !funnel || !assessmentStatus) {
+  if (loading || !funnel || !assessmentStatus || !currentStep) {
     return (
       <main className="flex flex-col items-center justify-center bg-slate-50 py-20 px-4">
         <div className="text-center">
@@ -629,48 +667,6 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     )
   }
 
-  // Memoize computed values to prevent unnecessary recalculations
-  const currentStep = useMemo(
-    () => funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId),
-    [funnel.steps, assessmentStatus.currentStep.stepId]
-  )
-
-  const isFirstStep = useMemo(
-    () => assessmentStatus.currentStep.stepIndex === 0,
-    [assessmentStatus.currentStep.stepIndex]
-  )
-  
-  const isLastStep = useMemo(
-    () => assessmentStatus.currentStep.stepIndex === assessmentStatus.totalSteps - 1,
-    [assessmentStatus.currentStep.stepIndex, assessmentStatus.totalSteps]
-  )
-
-  // Get relevant content pages - memoized
-  const introPages = useMemo(() => getIntroPages(contentPages), [contentPages])
-  const infoPages = useMemo(() => getInfoPages(contentPages), [contentPages])
-  const showContentLinks = useMemo(
-    () => introPages.length > 0 || infoPages.length > 0,
-    [introPages.length, infoPages.length]
-  )
-
-  // Calculate progress - memoized
-  const totalQuestions = funnel.totalQuestions
-  const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
-  const progressPercent = useMemo(
-    () => (totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0),
-    [totalQuestions, answeredCount]
-  )
-
-  if (!currentStep) {
-    return (
-      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md bg-white border-2 border-red-200 rounded-xl p-6">
-          <p className="text-red-700">Schritt konnte nicht gefunden werden.</p>
-        </div>
-      </main>
-    )
-  }
-
   return (
     <main className="bg-slate-50 px-4 py-10">
       <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
@@ -678,7 +674,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">✅</span>
+              <span className="text-xl shrink-0">✅</span>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-green-900 mb-1">
                   Fortschritt wiederhergestellt
@@ -709,7 +705,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {showContentLinks && (
           <div className="mb-6 bg-sky-50 border border-sky-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">ℹ️</span>
+              <span className="text-xl shrink-0">ℹ️</span>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-blue-900 mb-2">
                   Weitere Informationen
@@ -799,7 +795,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {/* Error message */}
         {error && (
           <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
-            <span className="text-xl flex-shrink-0">❌</span>
+            <span className="text-xl shrink-0">❌</span>
             <p className="leading-relaxed">{error}</p>
           </div>
         )}
@@ -896,7 +892,7 @@ const QuestionCard = memo(function QuestionCard({ index, question, value, onChan
     >
       <div className="flex items-start gap-3 mb-4">
         <span
-          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
             hasError
               ? 'bg-red-600 text-white'
               : isAnswered
@@ -922,7 +918,7 @@ const QuestionCard = memo(function QuestionCard({ index, question, value, onChan
       {question.helpText && (
         <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
           <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-            <span className="text-lg flex-shrink-0">💡</span>
+            <span className="text-lg shrink-0">💡</span>
             <span>{question.helpText}</span>
           </p>
         </div>

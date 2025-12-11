@@ -50,7 +50,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
           <p className="text-slate-600">Seite wird geladen...</p>
@@ -61,7 +61,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (error || !contentPage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-slate-900 mb-3">Fehler</h1>
@@ -88,7 +88,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
   const targetFunnelSlug = contentPage.funnel?.slug ?? funnelSlug
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
@@ -124,7 +124,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
       <main className={`${layoutClass} mx-auto px-4 py-8 sm:py-12`}>
         <article className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Page Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 sm:px-8 py-8 sm:py-12">
+          <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 sm:px-8 py-8 sm:py-12">
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
               {contentPage.title}
             </h1>
