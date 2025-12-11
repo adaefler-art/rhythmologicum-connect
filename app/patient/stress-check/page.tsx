@@ -39,6 +39,8 @@ const SCALE = [
   { value: 4, label: 'Sehr häufig' },
 ]
 
+const FUNNEL_SLUG = 'stress-assessment'
+
 export default function StressCheckPage() {
   return (
     <Suspense fallback={<StressCheckLoadingFallback />}>
@@ -73,7 +75,7 @@ function StressCheckPageContent() {
   useEffect(() => {
     const loadFunnel = async () => {
       try {
-        const response = await fetch('/api/funnels/stress/definition')
+        const response = await fetch(`/api/funnels/${FUNNEL_SLUG}/definition`)
         const data: FunnelDefinition = await response.json()
 
         setDebugInfo(
@@ -125,7 +127,7 @@ function StressCheckPageContent() {
         .from('assessments')
         .select('id, status')
         .eq('patient_id', profileData.id)
-        .eq('funnel', 'stress')
+        .eq('funnel', FUNNEL_SLUG)
         .order('started_at', { ascending: false })
         .limit(1)
 
@@ -148,7 +150,7 @@ function StressCheckPageContent() {
 
       // Start new assessment if none exists
       if (!currentAssessmentId) {
-        const startResponse = await fetch('/api/funnels/stress/assessments', {
+        const startResponse = await fetch(`/api/funnels/${FUNNEL_SLUG}/assessments`, {
           method: 'POST',
           credentials: 'include',
         })
@@ -205,7 +207,7 @@ function StressCheckPageContent() {
     setStatusAttempted(true)
     console.info('Load assessment status', { assessmentId })
     try {
-      const response = await fetch(`/api/funnels/stress/assessments/${assessmentId}`, {
+      const response = await fetch(`/api/funnels/${FUNNEL_SLUG}/assessments/${assessmentId}`, {
         credentials: 'include',
       })
 
@@ -425,7 +427,7 @@ function StressCheckPageContent() {
 
     try {
       const response = await fetch(
-        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}`,
+        `/api/funnels/${FUNNEL_SLUG}/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}`,
         {
           method: 'POST',
           credentials: 'include',
@@ -635,7 +637,7 @@ function StressCheckPageContent() {
 
     try {
       const response = await fetch(
-        `/api/funnels/stress/assessments/${assessmentStatus.assessmentId}/complete`,
+        `/api/funnels/${FUNNEL_SLUG}/assessments/${assessmentStatus.assessmentId}/complete`,
         {
           method: 'POST',
           credentials: 'include',

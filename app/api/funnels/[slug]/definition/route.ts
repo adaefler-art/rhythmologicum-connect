@@ -26,6 +26,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
+    const effectiveSlug = slug === 'stress' ? 'stress-assessment' : slug
 
     if (!slug) {
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
@@ -52,7 +53,7 @@ export async function GET(
     const { data: funnel, error: funnelError } = await supabase
       .from('funnels')
       .select('*')
-      .eq('slug', slug)
+      .eq('slug', effectiveSlug)
       .single()
 
     if (funnelError) {

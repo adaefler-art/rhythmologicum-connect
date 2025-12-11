@@ -23,6 +23,8 @@ const SCALE = [
   { value: 4, label: 'Sehr häufig' },
 ]
 
+const FUNNEL_SLUG = 'stress-assessment'
+
 export default function StressCheckV2Page() {
   const router = useRouter()
   const [initialLoading, setInitialLoading] = useState(true)
@@ -41,7 +43,7 @@ export default function StressCheckV2Page() {
   useEffect(() => {
     const loadFunnel = async () => {
       try {
-        const response = await fetch('/api/funnels/stress/definition')
+        const response = await fetch(`/api/funnels/${FUNNEL_SLUG}/definition`)
         if (!response.ok) {
           throw new Error('Failed to load funnel definition')
         }
@@ -146,7 +148,7 @@ export default function StressCheckV2Page() {
         .from('assessments')
         .insert({
           patient_id: profileData.id,
-          funnel: 'stress',
+          funnel: FUNNEL_SLUG,
         })
         .select('id')
         .single()
