@@ -516,7 +516,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="px-3 py-1.5 text-sm border border-slate-300 rounded-md hover:bg-slate-50 transition"
+              className="h-10 px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50 transition"
             >
               {showPreview ? 'Nur Editor' : 'Vorschau anzeigen'}
             </button>
@@ -570,7 +570,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <button
                 type="button"
                 onClick={handleAddSection}
-                className="px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition"
+                className="h-10 px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition"
               >
                 + Section hinzufügen
               </button>

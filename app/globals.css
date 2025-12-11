@@ -75,3 +75,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure all input fields have black text, not gray */
+input,
+textarea,
+select {
+  color: #000000;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  input,
+  textarea,
+  select {
+    color: #000000; /* Keep black even in dark mode for consistency with design */
+  }
+}

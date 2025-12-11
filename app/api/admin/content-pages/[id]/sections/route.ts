@@ -137,12 +137,45 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       auth: { persistSession: false },
     })
 
+    // Validate page ID (UUID format)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!id || !uuidRegex.test(id)) {
+      console.error('Invalid page ID:', id)
+      return NextResponse.json({ error: 'Invalid page ID format' }, { status: 400 })
+    }
+
+    // Verify page exists
+    const { data: page, error: pageError } = await adminClient
+      .from('content_pages')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (pageError) {
+      console.error('Error checking page existence:', pageError)
+      return NextResponse.json({ error: 'Failed to verify page' }, { status: 500 })
+    }
+
+    if (!page) {
+      console.error('Page not found:', id)
+      return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
+    }
+
     // Validate required fields
     const { title, body_markdown } = body
 
     if (!title || !body_markdown) {
+      console.error('Missing required fields:', { title: !!title, body_markdown: !!body_markdown })
       return NextResponse.json(
         { error: 'Missing required fields: title, body_markdown' },
+        { status: 400 },
+      )
+    }
+
+    if (typeof title !== 'string' || typeof body_markdown !== 'string') {
+      console.error('Invalid field types:', { title: typeof title, body_markdown: typeof body_markdown })
+      return NextResponse.json(
+        { error: 'Invalid field types: title and body_markdown must be strings' },
         { status: 400 },
       )
     }
@@ -171,13 +204,36 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
 
     if (insertError) {
-      console.error('Error creating section:', insertError)
-      return NextResponse.json({ error: 'Failed to create section' }, { status: 500 })
+      console.error('Error creating section:', {
+        error: insertError,
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      })
+      return NextResponse.json(
+        { 
+          error: 'Failed to create section',
+          details: insertError.message,
+          hint: insertError.hint
+        },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ section: newSection }, { status: 201 })
   } catch (error) {
-    console.error('Error in POST /api/admin/content-pages/[id]/sections:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in POST /api/admin/content-pages/[id]/sections:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 }
