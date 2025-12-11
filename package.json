@@ -1,6 +1,6 @@
 {
   "name": "walkingskeleton",
-  "version": "0.3",
+  "version": "0.4-dev",
   "private": true,
   "scripts": {
     "dev": "next dev",
