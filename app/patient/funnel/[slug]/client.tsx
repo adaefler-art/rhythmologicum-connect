@@ -80,7 +80,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
     }
     loadFunnelData()
-  }, [loadExistingAnswers, slug])
+  }, [slug])
 
   // Load content pages for this funnel
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       }
     }
     loadContentPages()
-  }, [loadExistingAnswers, slug])
+  }, [slug])
 
   // Handle page visibility changes for better recovery
   // When user returns to tab, refresh status to ensure consistency
