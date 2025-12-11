@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import MobileAnswerButton from './MobileAnswerButton'
 
 export type ScaleOption = {
@@ -40,6 +41,8 @@ const DEFAULT_SCALE_LABELS: Record<number, string> = {
  * - Touch-optimized with 44x44px minimum targets
  * - Responsive flex layout with wrapping
  * 
+ * Performance: Memoized to prevent re-renders and options are computed with useMemo
+ * 
  * @param questionId - Unique ID for the question (for radio group name)
  * @param minValue - Minimum value from questions.min_value
  * @param maxValue - Maximum value from questions.max_value
@@ -48,7 +51,7 @@ const DEFAULT_SCALE_LABELS: Record<number, string> = {
  * @param disabled - Whether buttons are disabled
  * @param labels - Optional custom labels for scale values
  */
-export default function ScaleAnswerButtons({
+const ScaleAnswerButtons = memo(function ScaleAnswerButtons({
   questionId,
   minValue,
   maxValue,
@@ -57,15 +60,18 @@ export default function ScaleAnswerButtons({
   disabled = false,
   labels,
 }: ScaleAnswerButtonsProps) {
-  // Generate scale options based on min/max values
-  const scaleOptions: ScaleOption[] = []
-  for (let i = minValue; i <= maxValue; i++) {
-    const customLabels = labels || DEFAULT_SCALE_LABELS
-    scaleOptions.push({
-      value: i,
-      label: customLabels[i] || i.toString(),
-    })
-  }
+  // Generate scale options based on min/max values - memoized for performance
+  const scaleOptions = useMemo(() => {
+    const options: ScaleOption[] = []
+    for (let i = minValue; i <= maxValue; i++) {
+      const customLabels = labels || DEFAULT_SCALE_LABELS
+      options.push({
+        value: i,
+        label: customLabels[i] || i.toString(),
+      })
+    }
+    return options
+  }, [minValue, maxValue, labels])
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -84,4 +90,6 @@ export default function ScaleAnswerButtons({
       ))}
     </div>
   )
-}
+})
+
+export default ScaleAnswerButtons

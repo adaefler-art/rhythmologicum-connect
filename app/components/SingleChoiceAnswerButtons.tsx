@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import MobileAnswerButton from './MobileAnswerButton'
 
 export type ChoiceOption = {
@@ -45,8 +46,10 @@ export type SingleChoiceAnswerButtonsProps = {
  * @param onChange - Callback when value changes
  * @param disabled - Whether buttons are disabled
  * @param layout - Layout mode: 'vertical' or 'grid'
+ * 
+ * Performance: Memoized to prevent unnecessary re-renders
  */
-export default function SingleChoiceAnswerButtons({
+const SingleChoiceAnswerButtons = memo(function SingleChoiceAnswerButtons({
   questionId,
   options,
   value,
@@ -77,4 +80,6 @@ export default function SingleChoiceAnswerButtons({
       ))}
     </div>
   )
-}
+})
+
+export default SingleChoiceAnswerButtons

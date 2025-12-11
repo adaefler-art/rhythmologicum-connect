@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { componentTokens, typography, colors } from '@/lib/design-tokens'
 
 // Step indicator opacity values for different states
@@ -51,8 +52,10 @@ export type MobileProgressProps = {
  *   variant="steps"
  *   showStepText={false}
  * />
+ * 
+ * Performance: Memoized to prevent unnecessary re-renders
  */
-export default function MobileProgress({
+const MobileProgress = memo(function MobileProgress({
   currentStep,
   totalSteps,
   className = '',
@@ -63,8 +66,11 @@ export default function MobileProgress({
 }: MobileProgressProps) {
   const progressTokens = componentTokens.progressBar
 
-  // Calculate progress percentage (current step is 0-based, so add 1)
-  const progressPercent = ((currentStep + 1) / totalSteps) * 100
+  // Calculate progress percentage (current step is 0-based, so add 1) - memoized
+  const progressPercent = useMemo(
+    () => ((currentStep + 1) / totalSteps) * 100,
+    [currentStep, totalSteps]
+  )
 
   if (variant === 'steps') {
     // Step indicator variant
@@ -157,4 +163,6 @@ export default function MobileProgress({
       </div>
     </div>
   )
-}
+})
+
+export default MobileProgress

@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
+
+// Lazy load MarkdownRenderer for better initial page load performance
+const MarkdownRenderer = lazy(() => import('@/app/components/MarkdownRenderer'))
 
 type ContentPageClientProps = {
   funnelSlug: string
@@ -133,7 +135,9 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
           {/* Markdown Content */}
           <div className="px-6 sm:px-8 py-8 sm:py-12">
-            <MarkdownRenderer content={contentPage.body_markdown} />
+            <Suspense fallback={<div className="text-center py-8 text-slate-500">Inhalt wird geladen...</div>}>
+              <MarkdownRenderer content={contentPage.body_markdown} />
+            </Suspense>
           </div>
 
           {/* F3: Sections */}
@@ -142,7 +146,9 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
               {contentPage.sections.map((section) => (
                 <div key={section.id} className="px-6 sm:px-8 py-8 sm:py-12 border-b border-slate-100 last:border-b-0">
                   <h2 className="text-2xl font-bold text-slate-900 mb-4">{section.title}</h2>
-                  <MarkdownRenderer content={section.body_markdown} />
+                  <Suspense fallback={<div className="text-center py-4 text-slate-500">Abschnitt wird geladen...</div>}>
+                    <MarkdownRenderer content={section.body_markdown} />
+                  </Suspense>
                 </div>
               ))}
             </div>

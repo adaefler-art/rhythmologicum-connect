@@ -49,10 +49,10 @@ export async function GET(
       auth: { persistSession: false },
     })
 
-    // 1. Fetch funnel by slug
+    // 1. Fetch funnel by slug - selective fields for performance
     const { data: funnel, error: funnelError } = await supabase
       .from('funnels')
-      .select('*')
+      .select('id, slug, title, subtitle, description, default_theme, is_active')
       .eq('slug', effectiveSlug)
       .single()
 
@@ -65,10 +65,10 @@ export async function GET(
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
     }
 
-    // 2. Fetch funnel steps ordered by order_index
+    // 2. Fetch funnel steps ordered by order_index - selective fields for performance
     const { data: steps, error: stepsError } = await supabase
       .from('funnel_steps')
-      .select('*')
+      .select('id, funnel_id, order_index, title, description, type')
       .eq('funnel_id', funnel.id)
       .order('order_index', { ascending: true })
 
@@ -87,10 +87,10 @@ export async function GET(
 
         // For question steps, fetch questions
         if (stepType === 'question_step' || stepType === 'form') {
-          // Fetch funnel_step_questions join table
+          // Fetch funnel_step_questions join table - selective fields
           const { data: stepQuestions, error: stepQuestionsError } = await supabase
             .from('funnel_step_questions')
-            .select('*')
+            .select('question_id, is_required, order_index')
             .eq('funnel_step_id', step.id)
             .order('order_index', { ascending: true })
 
@@ -107,7 +107,7 @@ export async function GET(
           if (questionIds.length > 0) {
             const { data: questionsData, error: questionsError } = await supabase
               .from('questions')
-              .select('*')
+              .select('id, key, label, help_text, question_type, min_value, max_value')
               .in('id', questionIds)
 
             if (questionsError) {
@@ -193,7 +193,12 @@ export async function GET(
       isActive: funnel.is_active,
     }
 
-    return NextResponse.json(funnelDefinition)
+    // Add cache headers for static funnel definitions (revalidate every 5 minutes)
+    return NextResponse.json(funnelDefinition, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
+    })
   } catch (error) {
     console.error('Error building funnel definition:', error)
     return NextResponse.json(
