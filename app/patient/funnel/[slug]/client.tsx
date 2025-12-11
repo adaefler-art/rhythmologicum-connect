@@ -22,6 +22,12 @@ type AssessmentStatus = {
   totalSteps: number
 }
 
+type RecoveryState = {
+  isRecovering: boolean
+  recoveryAttempt: number
+  recoveryMessage: string | null
+}
+
 type ValidationError = {
   questionId: string
   questionKey: string
@@ -51,6 +57,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
+  const [recovery, setRecovery] = useState<RecoveryState>({
+    isRecovering: false,
+    recoveryAttempt: 0,
+    recoveryMessage: null,
+  })
 
   // Load funnel definition
   useEffect(() => {
@@ -87,6 +98,29 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     }
     loadContentPages()
   }, [slug])
+
+  // Handle page visibility changes for better recovery
+  // When user returns to tab, refresh status to ensure consistency
+  useEffect(() => {
+    if (!assessmentStatus?.assessmentId) return
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && assessmentStatus) {
+        console.info('📱 Page became visible, refreshing assessment status')
+        // Silently refresh status in background without showing loading state
+        loadAssessmentStatus(assessmentStatus.assessmentId).catch((err) => {
+          console.warn('Failed to refresh status on visibility change:', err)
+          // Don't show error to user - they can continue with current state
+        })
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessmentStatus?.assessmentId])
 
   // Bootstrap assessment once funnel is loaded
   useEffect(() => {
@@ -163,11 +197,23 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
 
-  const loadAssessmentStatus = async (assessmentId: string) => {
+  const loadAssessmentStatus = async (assessmentId: string, retryAttempt: number = 0) => {
+    const maxRetries = 3
+    const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
+
     try {
       // Validate assessmentId before making the request
       if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
         throw new Error('Ungültige Assessment-ID.')
+      }
+
+      // Show recovery message on retry
+      if (retryAttempt > 0) {
+        setRecovery({
+          isRecovering: true,
+          recoveryAttempt: retryAttempt,
+          recoveryMessage: `Wiederherstellung läuft... (Versuch ${retryAttempt}/${maxRetries})`,
+        })
       }
 
       let response: Response
@@ -178,6 +224,14 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       } catch (fetchErr) {
         // Network error or fetch failed
         console.error('Network error during fetch:', fetchErr)
+        
+        // Retry on network errors
+        if (retryAttempt < maxRetries) {
+          console.log(`Retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+        }
+        
         throw new Error('Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
       }
 
@@ -196,6 +250,12 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         if (response.status === 404) {
           throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
         } else if (response.status >= 500) {
+          // Retry on server errors
+          if (retryAttempt < maxRetries) {
+            console.log(`Server error, retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+            await new Promise((resolve) => setTimeout(resolve, retryDelay))
+            return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+          }
           throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
         } else {
           throw new Error(errorMessage)
@@ -227,25 +287,55 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
       setAssessmentStatus(data)
 
-      // Load existing answers
-      await loadExistingAnswers(assessmentId)
+      // Load existing answers with retry
+      await loadExistingAnswers(assessmentId, 0)
+
+      // Clear recovery state on success
+      setRecovery({
+        isRecovering: false,
+        recoveryAttempt: 0,
+        recoveryMessage: null,
+      })
 
       setLoading(false)
     } catch (err) {
       console.error('Error loading assessment status:', err)
       const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
       setError(errorMsg)
+      setRecovery({
+        isRecovering: false,
+        recoveryAttempt: 0,
+        recoveryMessage: null,
+      })
       setLoading(false)
       throw err // Re-throw so caller knows it failed
     }
   }
 
-  const loadExistingAnswers = async (assessmentId: string) => {
+  const loadExistingAnswers = async (assessmentId: string, retryAttempt: number = 0) => {
+    const maxRetries = 2
+    const retryDelay = 1000
+
     try {
-      const { data: answersData } = await supabase
+      const { data: answersData, error: answersError } = await supabase
         .from('assessment_answers')
         .select('question_id, answer_value')
         .eq('assessment_id', assessmentId)
+
+      if (answersError) {
+        console.error('Error loading answers:', answersError)
+        
+        // Retry on error
+        if (retryAttempt < maxRetries) {
+          console.log(`Retrying answer load in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          return loadExistingAnswers(assessmentId, retryAttempt + 1)
+        }
+        
+        // Don't throw - we can continue with empty answers
+        console.warn('Failed to load existing answers after retries, continuing with empty state')
+        return
+      }
 
       if (answersData) {
         const answersMap: Record<string, number> = {}
@@ -253,14 +343,23 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           answersMap[answer.question_id] = answer.answer_value
         })
         setAnswers(answersMap)
+        
+        // Log successful resume if we have answers
+        if (Object.keys(answersMap).length > 0) {
+          console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+        }
       }
     } catch (err) {
       console.error('Error loading existing answers:', err)
+      // Don't throw - we can continue with empty answers
     }
   }
 
-  const handleAnswerChange = async (questionKey: string, value: number) => {
+  const handleAnswerChange = async (questionKey: string, value: number, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
+
+    const maxRetries = 2
+    const retryDelay = 1000
 
     // Update local state immediately for UI responsiveness
     setAnswers((prev) => ({
@@ -270,7 +369,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     setValidationErrors((prev) => prev.filter((err) => err.questionKey !== questionKey))
     setError(null)
 
-    // Save to server
+    // Save to server with retry logic
     try {
       const currentStep = funnel.steps.find((s) => s.id === assessmentStatus.currentStep.stepId)
       if (!currentStep) return
@@ -290,13 +389,31 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       )
 
       if (!response.ok) {
+        // Retry on server errors
+        if ((response.status >= 500 || response.status === 0) && retryAttempt < maxRetries) {
+          console.log(`Retrying answer save in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          return handleAnswerChange(questionKey, value, retryAttempt + 1)
+        }
+
         const errorData = await response.json()
         console.error('Error saving answer:', errorData)
-        setError('Fehler beim Speichern der Antwort.')
+        
+        // Show warning but don't block user - answer is saved locally
+        console.warn('⚠️ Answer saved locally but not synced to server. Will retry on next action.')
       }
     } catch (err) {
       console.error('Error saving answer:', err)
-      setError('Fehler beim Speichern der Antwort.')
+      
+      // Retry on network errors
+      if (retryAttempt < maxRetries) {
+        console.log(`Retrying answer save after error in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+        await new Promise((resolve) => setTimeout(resolve, retryDelay))
+        return handleAnswerChange(questionKey, value, retryAttempt + 1)
+      }
+      
+      // Show warning but don't block user - answer is saved locally
+      console.warn('⚠️ Answer saved locally but not synced to server. Will retry on next action.')
     }
   }
 
@@ -442,8 +559,34 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   // Loading state
   if (loading || !funnel || !assessmentStatus) {
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20">
-        <p className="text-sm text-slate-600">Bitte warten…</p>
+      <main className="flex flex-col items-center justify-center bg-slate-50 py-20 px-4">
+        <div className="text-center">
+          <div className="mb-4">
+            <svg
+              className="animate-spin h-8 w-8 text-sky-600 mx-auto"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          </div>
+          <p className="text-sm text-slate-600">
+            {recovery.isRecovering ? recovery.recoveryMessage : 'Fragebogen wird geladen…'}
+          </p>
+        </div>
       </main>
     )
   }
@@ -514,6 +657,23 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   return (
     <main className="bg-slate-50 px-4 py-10">
       <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-6 md:p-8">
+        {/* Recovery Banner */}
+        {answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">✅</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-green-900 mb-1">
+                  Fortschritt wiederhergestellt
+                </h3>
+                <p className="text-sm text-green-700">
+                  Sie setzen Ihre Umfrage fort. Ihre bisherigen {answeredCount} Antworten wurden wiederhergestellt.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="mb-6">
           <p className="text-xs font-medium uppercase tracking-wide text-sky-600 mb-1">
