@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { requireAdminOrClinicianRole } from '@/lib/api/authHelpers'
 
 /**
  * F2 API Endpoint: Get single content page by ID for editing
@@ -281,41 +282,9 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    // Allow access for clinician and admin roles
-    const hasAccess = role === 'clinician' || role === 'admin'
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    // Check authentication and authorization using reusable helper
+    const { error: authError } = await requireAdminOrClinicianRole()
+    if (authError) return authError
 
     // Use service role for admin operations
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
