@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "lint:migrations": "bash scripts/check-migrations.sh"
+    "lint:migrations": "bash scripts/check-migrations.sh",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
@@ -26,6 +29,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
@@ -34,9 +40,11 @@
     "eslint-config-next": "16.0.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.2.0",
     "prettier": "^3.7.3",
     "supabase": "^2.63.1",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   }
 }

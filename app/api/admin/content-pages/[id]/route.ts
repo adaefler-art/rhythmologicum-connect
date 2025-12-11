@@ -269,3 +269,81 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+/**
+ * F10 API Endpoint: Delete content page
+ * DELETE /api/admin/content-pages/[id]
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params
+
+    // Check authentication and authorization
+    const cookieStore = await cookies()
+    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
+      console.error('Supabase URL or anon key not configured')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
+      },
+    })
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const role = user.app_metadata?.role || user.user_metadata?.role
+    // Allow access for clinician and admin roles
+    const hasAccess = role === 'clinician' || role === 'admin'
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Use service role for admin operations
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase configuration missing')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    })
+
+    // Delete content page (cascades to sections due to FK constraint)
+    const { error: deleteError } = await adminClient
+      .from('content_pages')
+      .delete()
+      .eq('id', id)
+
+    if (deleteError) {
+      console.error('Error deleting content page:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete content page' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in DELETE /api/admin/content-pages/[id]:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
