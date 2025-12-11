@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Button } from '@/lib/ui'
+import { Button, Badge, Card } from '@/lib/ui'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -180,18 +180,18 @@ export default function ClinicianOverviewPage() {
     }
   }
 
-  const getRiskBadgeClass = (risk: RiskLevel): string => {
+  const getRiskBadgeVariant = (risk: RiskLevel): 'danger' | 'warning' | 'success' | 'secondary' | 'default' => {
     switch (risk) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'danger'
       case 'moderate':
-        return 'bg-amber-100 text-amber-800 border-amber-200'
+        return 'warning'
       case 'low':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        return 'success'
       case 'pending':
-        return 'bg-slate-100 text-slate-600 border-slate-200'
+        return 'secondary'
       default:
-        return 'bg-slate-100 text-slate-700 border-slate-200'
+        return 'default'
     }
   }
 
@@ -283,34 +283,125 @@ export default function ClinicianOverviewPage() {
     )
   }
 
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const totalPatients = patientOverviews.length
+    const highRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'high').length
+    const moderateRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'moderate').length
+    const totalMeasurements = measures.length
+    
+    // Get patients with assessments in last 24 hours
+    const now = new Date()
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const recentCount = measures.filter(m => new Date(m.created_at) > oneDayAgo).length
+    
+    return {
+      totalPatients,
+      highRiskCount,
+      moderateRiskCount,
+      totalMeasurements,
+      recentCount,
+    }
+  }, [patientOverviews, measures])
+
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Patientenübersicht</h1>
+    <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="mb-6 lg:mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
         <p className="text-sm sm:text-base text-slate-600">
           Übersicht aller Pilotpatient:innen mit ihrer jeweils letzten Messung.
         </p>
       </div>
 
-      {sortedPatients.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto max-w-md">
-            <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
-              📋
-            </p>
-            <h2 className="text-lg font-semibold text-slate-900">
-              Noch keine Messungen vorhanden
-            </h2>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-              Es wurden bisher noch keine Patientenmessungen erfasst. Sobald
-              Patient:innen ihre ersten Assessments durchführen, werden sie hier
-              angezeigt.
-            </p>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <Card padding="lg" shadow="md">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Aktive Patient:innen</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
+            </div>
+            <div className="p-3 bg-sky-100 rounded-lg">
+              <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto border rounded-xl bg-white shadow-sm">
-          <table className="w-full text-sm md:text-base">
+        </Card>
+
+        <Card padding="lg" shadow="md">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Messungen (24h)</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.recentCount}</p>
+              {stats.recentCount > 0 && (
+                <Badge variant="info" size="sm" className="mt-2">Heute</Badge>
+              )}
+            </div>
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </div>
+        </Card>
+
+        <Card padding="lg" shadow="md">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Erhöhtes Risiko</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.moderateRiskCount}</p>
+              {stats.moderateRiskCount > 0 && (
+                <Badge variant="warning" size="sm" className="mt-2">Achtung</Badge>
+              )}
+            </div>
+            <div className="p-3 bg-amber-100 rounded-lg">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          </div>
+        </Card>
+
+        <Card padding="lg" shadow="md">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">Hohes Risiko</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount}</p>
+              {stats.highRiskCount > 0 && (
+                <Badge variant="danger" size="sm" className="mt-2">Dringend</Badge>
+              )}
+            </div>
+            <div className="p-3 bg-red-100 rounded-lg">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Patient Table */}
+      <Card padding="none" shadow="md">
+        {sortedPatients.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <div className="mx-auto max-w-md">
+              <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
+                📋
+              </p>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Noch keine Messungen vorhanden
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                Es wurden bisher noch keine Patientenmessungen erfasst. Sobald
+                Patient:innen ihre ersten Assessments durchführen, werden sie hier
+                angezeigt.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm md:text-base">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th
@@ -378,13 +469,9 @@ export default function ClinicianOverviewPage() {
                     )}
                   </td>
                   <td className="px-4 md:px-6 py-4 md:py-5">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs md:text-sm font-medium ${getRiskBadgeClass(
-                        patient.latest_risk_level
-                      )}`}
-                    >
+                    <Badge variant={getRiskBadgeVariant(patient.latest_risk_level)}>
                       {getRiskLabel(patient.latest_risk_level)}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 md:px-6 py-4 md:py-5 text-slate-700 whitespace-nowrap">
                     {formatDateTime(patient.latest_measurement_time)}
@@ -397,7 +484,8 @@ export default function ClinicianOverviewPage() {
             </tbody>
           </table>
         </div>
-      )}
+        )}
+      </Card>
     </main>
   )
 }
