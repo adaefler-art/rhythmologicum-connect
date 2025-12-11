@@ -104,6 +104,64 @@ WHERE email = 'doctor@example.com';
 
 Unauthorized access attempts are logged and users are redirected with clear error messages.
 
+## Database & Migrations
+
+The application uses Supabase (PostgreSQL) with automated migration deployment.
+
+### Automated Migration Deployment
+
+Migrations are automatically applied when changes are merged to the `main` branch:
+
+1. **Push to main** → Migrations in `supabase/migrations/` are automatically deployed
+2. **Manual trigger** → Run the "Apply Supabase migrations" workflow from GitHub Actions
+
+### Required GitHub Secrets
+
+For automated deployment to work, configure these secrets in GitHub repository settings:
+
+- `SUPABASE_ACCESS_TOKEN` - Service role key from Supabase Dashboard → Settings → API
+- `SUPABASE_PROJECT_ID` - Project reference ID from Supabase Dashboard → Project Settings
+
+### Local Development
+
+Apply migrations locally using Supabase CLI:
+
+```bash
+# Link to your project
+supabase link --project-ref YOUR_PROJECT_ID
+
+# Apply all pending migrations
+supabase db push
+
+# Or reset database (destructive - use with caution)
+supabase db reset
+```
+
+### Verify Migrations
+
+**Before deployment:**
+```bash
+./scripts/check-migration-status.sh
+```
+
+**After deployment:**
+```sql
+-- In Supabase Dashboard → SQL Editor, run:
+-- Check funnel exists
+SELECT slug, title FROM public.funnels WHERE slug = 'stress-assessment';
+
+-- Check content pages (should return 10)
+SELECT COUNT(*) FROM public.content_pages 
+WHERE funnel_id = (SELECT id FROM funnels WHERE slug = 'stress-assessment');
+```
+
+For comprehensive verification, use `scripts/verify-migrations.sql` in Supabase SQL Editor.
+
+**📚 Documentation:**
+- [Migration Deployment Guide](docs/DEPLOYMENT_MIGRATIONS.md) - Automated deployment setup
+- [Migrations Guide](docs/MIGRATIONS_GUIDE.md) - Writing new migrations
+- [F11 Seed Pages](docs/F11_SEED_PAGES.md) - Content page seeding
+
 ## Environment Variables
 
 ### Quick Setup
