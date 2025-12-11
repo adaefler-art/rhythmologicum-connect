@@ -405,14 +405,14 @@ export default function FunnelDetailPage() {
                     <button
                       onClick={saveFunnelEdit}
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? 'Speichert…' : 'Speichern'}
                     </button>
                     <button
                       onClick={cancelEditingFunnel}
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Abbrechen
                     </button>
@@ -446,7 +446,7 @@ export default function FunnelDetailPage() {
               {!editingFunnel && (
                 <button
                   onClick={startEditingFunnel}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                  className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
                 >
                   Bearbeiten
                 </button>
@@ -454,7 +454,7 @@ export default function FunnelDetailPage() {
               <button
                 onClick={toggleFunnelActive}
                 disabled={saving}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`h-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   funnel.is_active
                     ? 'bg-green-100 text-green-800 hover:bg-green-200'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -507,14 +507,14 @@ export default function FunnelDetailPage() {
                     <button
                       onClick={() => saveStepEdit(step.id)}
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? 'Speichert…' : 'Speichern'}
                     </button>
                     <button
                       onClick={cancelEditingStep}
                       disabled={saving}
-                      className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Abbrechen
                     </button>
@@ -540,14 +540,14 @@ export default function FunnelDetailPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => startEditingStep(step)}
-                      className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
                     >
                       Bearbeiten
                     </button>
                     <button
                       onClick={() => moveStep(step.id, stepIndex, 'up')}
                       disabled={stepIndex === 0 || saving}
-                      className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       title="Nach oben"
                     >
                       ↑
@@ -555,7 +555,7 @@ export default function FunnelDetailPage() {
                     <button
                       onClick={() => moveStep(step.id, stepIndex, 'down')}
                       disabled={stepIndex === steps.length - 1 || saving}
-                      className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       title="Nach unten"
                     >
                       ↓
