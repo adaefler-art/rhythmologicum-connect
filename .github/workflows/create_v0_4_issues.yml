@@ -1,7 +1,11 @@
-name: Create v0.4 Issues
+name: Create v0.4 Epics and Issues (full)
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   create_v0_4_issues:
@@ -15,10 +19,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install Octokit
         run: npm install @octokit/rest
 
       - name: Create v0.4 issues
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node create_v0_4_issues.js
+        run: node create_v0_4_issues_full.js
