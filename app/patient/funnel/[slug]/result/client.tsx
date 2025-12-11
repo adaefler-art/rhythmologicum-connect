@@ -25,6 +25,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
   const [funnelTitle, setFunnelTitle] = useState<string>('')
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
+  const [canonicalSlug, setCanonicalSlug] = useState(slug)
 
   useEffect(() => {
     const loadResultData = async () => {
@@ -41,12 +42,19 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
         }
 
         setAssessment(assessmentData)
+        setCanonicalSlug(assessmentData.funnel || slug)
+
+        // If assessment is not completed, redirect back to the funnel to continue
+        if (assessmentData.status !== 'completed') {
+          router.push(`/patient/funnel/${assessmentData.funnel || slug}`)
+          return
+        }
 
         // Load funnel info
         const { data: funnelData } = await supabase
           .from('funnels')
           .select('title')
-          .eq('slug', slug)
+          .eq('slug', assessmentData.funnel || slug)
           .single()
 
         if (funnelData) {
@@ -55,7 +63,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
 
         // Load content pages
         try {
-          const response = await fetch(`/api/funnels/${slug}/content-pages`)
+          const response = await fetch(`/api/funnels/${assessmentData.funnel || slug}/content-pages`)
           if (response.ok) {
             const pages: ContentPage[] = await response.json()
             setContentPages(pages)
@@ -144,7 +152,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
               </div>
               <div>
                 <dt className="text-sm font-medium text-slate-600">Funnel</dt>
-                <dd className="text-sm text-slate-900">{funnelTitle || slug}</dd>
+                <dd className="text-sm text-slate-900">{funnelTitle || canonicalSlug}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-slate-600">Status</dt>
@@ -187,7 +195,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
                     {resultPages.map((page) => (
                       <a
                         key={page.id}
-                        href={`/patient/funnel/${slug}/content/${page.slug}`}
+                        href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
@@ -198,7 +206,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
                     {infoPages.map((page) => (
                       <a
                         key={page.id}
-                        href={`/patient/funnel/${slug}/content/${page.slug}`}
+                        href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block text-sm text-green-700 hover:text-green-900 hover:underline font-medium"
