@@ -26,9 +26,9 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
           {/* Navigation */}
           <nav className="flex gap-1">
             <Link
-              href="/patient/stress-check"
+              href="/patient/funnel/stress-assessment"
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
-                pathname === '/patient/stress-check'
+                pathname?.startsWith('/patient/funnel')
                   ? 'bg-sky-100 text-sky-700'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
