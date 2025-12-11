@@ -25,5 +25,5 @@ export default function StressCheckRedirect({
   searchParams?: SearchParams
 }) {
   const query = buildQuery(searchParams)
-  redirect(`/patient/funnel/stress-check${query}`)
+  redirect(`/patient/funnel/stress-assessment${query}`)
 }

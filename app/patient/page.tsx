@@ -19,7 +19,7 @@ function buildQuery(searchParams?: SearchParams): string {
   return query ? `?${query}` : ''
 }
 
-export default function PatientStressCheckRedirect({
+export default function PatientIndexRedirect({
   searchParams,
 }: {
   searchParams?: SearchParams
