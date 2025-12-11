@@ -76,25 +76,75 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ensure all input fields have black text, not gray */
+/* 
+ * Global Form Field Styling
+ * Ensures all form elements have consistent white backgrounds and black text
+ * regardless of system dark mode preferences
+ */
 input,
 textarea,
 select {
-  color: #000000;
+  /* Force white background and black text for all form fields */
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  /* Default border styling */
+  border: 1px solid #cbd5e1; /* slate-300 */
+  border-radius: 0.375rem; /* rounded-md */
+  /* Prevent dark mode from affecting form fields */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
+/* Placeholder text styling - dark gray for good readability */
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af; /* gray-400 */
+  color: #6b7280 !important; /* gray-500 - dark enough to be clearly readable */
+  opacity: 1;
 }
 
-/* Dark mode support - not currently used but prepared for future */
+/* Focus state - clear visual feedback with blue ring */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #0ea5e9; /* sky-500 */
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+/* Disabled state */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #94a3b8 !important; /* slate-400 */
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error state - red border for inputs with error classes */
+input.error,
+textarea.error,
+select.error,
+input[aria-invalid="true"],
+textarea[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: #dc2626 !important; /* red-600 */
+}
+
+/* Override dark mode completely - form fields stay white */
 @media (prefers-color-scheme: dark) {
   input,
   textarea,
   select {
-    color: #f8f9fa; /* Light text for dark backgrounds */
-    background-color: #1e293b; /* Dark input background */
-    border-color: #475569; /* Adjusted border for dark mode */
+    /* Force white background even in dark mode */
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #cbd5e1 !important; /* slate-300 */
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #6b7280 !important; /* gray-500 */
   }
 }
