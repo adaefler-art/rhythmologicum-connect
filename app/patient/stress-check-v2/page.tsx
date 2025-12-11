@@ -75,7 +75,7 @@ export default function StressCheckV2Page() {
       }
 
       if (!user) {
-        router.push('/login')
+        router.push('/?error=authentication_required')
         return
       }
 
@@ -391,7 +391,7 @@ export default function StressCheckV2Page() {
         {/* Error message */}
         {error && (
           <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
-            <span className="text-xl flex-shrink-0">❌</span>
+            <span className="text-xl shrink-0">❌</span>
             <p className="leading-relaxed">{error}</p>
           </div>
         )}
@@ -482,7 +482,7 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
     >
       <div className="flex items-start gap-3 mb-4">
         <span
-          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
             hasError
               ? 'bg-red-600 text-white'
               : isAnswered
@@ -508,7 +508,7 @@ function QuestionCard({ index, question, value, onChange, hasError }: QuestionCa
       {question.helpText && (
         <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
           <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-            <span className="text-lg flex-shrink-0">💡</span>
+            <span className="text-lg shrink-0">💡</span>
             <span>{question.helpText}</span>
           </p>
         </div>
