@@ -27,7 +27,9 @@ export async function GET(
   try {
     const { slug } = await params
     const effectiveSlug =
-      slug === 'stress' || slug === 'stress-check' ? 'stress-assessment' : slug
+      slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
+        ? 'stress-assessment'
+        : slug
 
     if (!slug) {
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
