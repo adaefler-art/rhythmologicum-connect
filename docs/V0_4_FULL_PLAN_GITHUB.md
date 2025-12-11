@@ -158,10 +158,14 @@ flow for the Stress & Resilience assessment.
    - Document screens, transitions, and minimal copy in a simple flow diagram / markdown.
 
    **Acceptance Criteria**
-   - [ ] A simple flow description (screens, transitions) is documented.
-   - [ ] Every screen has a clear purpose and “next step”.
-   - [ ] Mobile behavior is considered from the start (no desktop-only layout tricks).
+   - [x] A simple flow description (screens, transitions) is documented.
+   - [x] Every screen has a clear purpose and “next step”.
+   - [x] Mobile behavior is considered from the start (no desktop-only layout tricks).
 
+
+   **Documentation:**
+   - [PATIENT_FLOW_V2_STRUCTURE.md](PATIENT_FLOW_V2_STRUCTURE.md) - Complete flow description
+   - [PATIENT_FLOW_V2_DIAGRAM.md](PATIENT_FLOW_V2_DIAGRAM.md) - Visual flow diagrams
 2. **Issue: Implement Patient Flow Renderer Component**  
    Labels: `v0.4`, `patient`, `frontend`, `V0.4-E2`  
 

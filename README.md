@@ -28,7 +28,10 @@ The application features a complete, production-ready funnel system for patient 
 - ✅ **Clinician Tools** (B7) - Funnel management interface at `/clinician/funnels`
 - ✅ **Enterprise Quality** (B8) - Harmonized APIs, structured logging, monitoring hooks
 
-**📖 Complete documentation:** [Epic B Consolidation](docs/EPIC_B_CONSOLIDATION.md)
+**📖 Complete documentation:** 
+- [Epic B Consolidation](docs/EPIC_B_CONSOLIDATION.md) - Funnel system architecture
+- [Patient Flow V2 Structure](docs/PATIENT_FLOW_V2_STRUCTURE.md) - Detailed patient journey documentation
+- [Patient Flow V2 Diagrams](docs/PATIENT_FLOW_V2_DIAGRAM.md) - Visual flow diagrams
 
 ### Content Pages (Epic D & F)
 
