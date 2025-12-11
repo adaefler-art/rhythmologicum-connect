@@ -310,6 +310,7 @@ After deployment, perform these smoke tests:
 
 **📋 For comprehensive end-to-end testing:**
 - **[E4 Smoke Test Guide](docs/E4_SMOKE_TEST.md)** - Complete checklist for pilot practice with all critical flows
+- **[E1 Mobile Device Testing](docs/E1_MOBILE_DEVICE_TESTING.md)** - Comprehensive guide for testing mobile UI on iPhone & Android
 - **[Z2 Pilot Readiness Checklist](docs/Z2_PILOT_READINESS_CHECKLIST.md)** - Complete guide for preparing and launching the remote pilot (German, non-technical friendly)
 
 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
