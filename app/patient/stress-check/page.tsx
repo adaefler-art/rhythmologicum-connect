@@ -314,7 +314,7 @@ function StressCheckPageContent() {
       }
 
       if (!user) {
-        router.push('/login')
+        router.push('/?error=authentication_required')
         return
       }
 
@@ -738,7 +738,7 @@ function StressCheckPageContent() {
             Sollte das Problem bestehen, bitte an die Praxis wenden.
           </p>
           {debugEnabled && debugInfo && (
-            <pre className="text-left text-[11px] bg-slate-900 text-slate-100 p-3 rounded-lg overflow-auto max-h-60 whitespace-pre-wrap break-words">
+            <pre className="text-left text-[11px] bg-slate-900 text-slate-100 p-3 rounded-lg overflow-auto max-h-60 whitespace-pre-wrap wrap-break-word">
               {debugInfo}
             </pre>
           )}
@@ -899,7 +899,7 @@ function DebugPanel({ debugInfo }: { debugInfo: string }) {
         <span className="font-semibold text-slate-100">Debug</span>
         <span className="text-[10px] text-slate-400">?debug=1</span>
       </div>
-      <pre className="whitespace-pre-wrap break-words max-h-60 overflow-auto">{debugInfo}</pre>
+      <pre className="whitespace-pre-wrap wrap-break-word max-h-60 overflow-auto">{debugInfo}</pre>
     </div>
   )
 }
