@@ -139,9 +139,14 @@ supabase db reset
 
 ### Verify Migrations
 
-Check if the stress-assessment funnel and content pages are properly deployed:
+**Before deployment:**
+```bash
+./scripts/check-migration-status.sh
+```
 
+**After deployment:**
 ```sql
+-- In Supabase Dashboard → SQL Editor, run:
 -- Check funnel exists
 SELECT slug, title FROM public.funnels WHERE slug = 'stress-assessment';
 
@@ -149,6 +154,8 @@ SELECT slug, title FROM public.funnels WHERE slug = 'stress-assessment';
 SELECT COUNT(*) FROM public.content_pages 
 WHERE funnel_id = (SELECT id FROM funnels WHERE slug = 'stress-assessment');
 ```
+
+For comprehensive verification, use `scripts/verify-migrations.sql` in Supabase SQL Editor.
 
 **📚 Documentation:**
 - [Migration Deployment Guide](docs/DEPLOYMENT_MIGRATIONS.md) - Automated deployment setup

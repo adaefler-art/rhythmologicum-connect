@@ -77,9 +77,30 @@ The original migration created a funnel with slug `stress`, but downstream migra
 
 ## Verification
 
+### Quick Status Check
+
+Before deployment, verify all files are in place:
+
+```bash
+./scripts/check-migration-status.sh
+```
+
+This script checks:
+- ✓ All critical migration files are present
+- ✓ Migration order is correct
+- ✓ GitHub workflow file exists
+- ✓ Documentation is complete
+
 ### Check if Migrations Were Applied
 
-Run this SQL query in Supabase Dashboard → SQL Editor:
+After deployment, run the comprehensive verification script in Supabase Dashboard → SQL Editor:
+
+```bash
+# Copy and paste the contents of this file into SQL Editor
+cat scripts/verify-migrations.sql
+```
+
+Or run this quick SQL query:
 
 ```sql
 -- Check funnel slug
