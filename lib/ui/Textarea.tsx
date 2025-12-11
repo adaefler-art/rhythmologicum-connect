@@ -1,4 +1,4 @@
-import { forwardRef, type TextareaHTMLAttributes } from 'react'
+import { forwardRef, useId, type TextareaHTMLAttributes } from 'react'
 import { radii, spacing } from '@/lib/design-tokens'
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -79,7 +79,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400'
       : 'border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-sky-500'
 
-    const textareaId = props.id || `textarea-${Math.random().toString(36).substring(7)}`
+    const generatedId = useId()
+    const textareaId = props.id || generatedId
 
     return (
       <div className="w-full">

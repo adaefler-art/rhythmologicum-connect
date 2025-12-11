@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -275,12 +276,9 @@ export default function AdminContentDashboard() {
       <main className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
-          >
+          <Button variant="primary" onClick={() => window.location.reload()}>
             Neu laden
-          </button>
+          </Button>
         </div>
       </main>
     )
@@ -298,25 +296,27 @@ export default function AdminContentDashboard() {
               Verwaltung aller Content-Pages mit Filter- und Suchfunktionen
             </p>
           </div>
-          <button
+          <Button
             onClick={handleNewPage}
-            className="px-6 py-3 min-h-[44px] rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation flex items-center gap-2"
+            variant="primary"
+            icon={
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            }
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
             Neue Seite anlegen
-          </button>
+          </Button>
         </div>
 
         {/* Filters and Search */}
@@ -539,23 +539,25 @@ export default function AdminContentDashboard() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
-              <button
+              <Button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 min-h-[44px] rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+                variant="secondary"
+                size="sm"
               >
                 Zurück
-              </button>
+              </Button>
               <span className="text-sm text-slate-600">
                 Seite {currentPage} von {totalPages}
               </span>
-              <button
+              <Button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 min-h-[44px] rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+                variant="secondary"
+                size="sm"
               >
                 Weiter
-              </button>
+              </Button>
             </div>
           )}
         </>

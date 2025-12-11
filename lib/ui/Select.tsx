@@ -1,4 +1,4 @@
-import { forwardRef, type SelectHTMLAttributes } from 'react'
+import { forwardRef, useId, type SelectHTMLAttributes } from 'react'
 import { radii, spacing } from '@/lib/design-tokens'
 
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -88,7 +88,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
       : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
 
-    const selectId = props.id || `select-${Math.random().toString(36).substring(7)}`
+    const generatedId = useId()
+    const selectId = props.id || generatedId
 
     return (
       <div className="w-full">
