@@ -63,6 +63,172 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     recoveryMessage: null,
   })
 
+  const loadExistingAnswers = useCallback(async (assessmentId: string, retryAttempt: number = 0) => {
+    const maxRetries = 2
+    const retryDelay = 1000
+
+    try {
+      const { data: answersData, error: answersError } = await supabase
+        .from('assessment_answers')
+        .select('question_id, answer_value')
+        .eq('assessment_id', assessmentId)
+
+      if (answersError) {
+        console.error('Error loading answers:', answersError)
+        
+        // Retry on error
+        if (retryAttempt < maxRetries) {
+          console.log(`Retrying answer load in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+          await new Promise((resolve) => setTimeout(resolve, retryDelay))
+          return loadExistingAnswers(assessmentId, retryAttempt + 1)
+        }
+        
+        // Don't throw - we can continue with empty answers
+        console.warn('Failed to load existing answers after retries, continuing with empty state')
+        return
+      }
+
+      if (answersData) {
+        const answersMap: Record<string, number> = {}
+        answersData.forEach((answer) => {
+          answersMap[answer.question_id] = answer.answer_value
+        })
+        setAnswers(answersMap)
+        
+        // Log successful resume if we have answers
+        if (Object.keys(answersMap).length > 0) {
+          console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading existing answers:', err)
+      // Don't throw - we can continue with empty answers
+    }
+  }, [])
+
+  const loadAssessmentStatus = useCallback(
+    async (assessmentId: string, retryAttempt: number = 0) => {
+      const maxRetries = 3
+      const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
+
+      try {
+        // Validate assessmentId before making the request
+        if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
+          throw new Error('Ungültige Assessment-ID.')
+        }
+
+        // Show recovery message on retry
+        if (retryAttempt > 0) {
+          setRecovery({
+            isRecovering: true,
+            recoveryAttempt: retryAttempt,
+            recoveryMessage: `Wiederherstellung läuft... (Versuch ${retryAttempt}/${maxRetries})`,
+          })
+        }
+
+        let response: Response
+        try {
+          response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
+            credentials: 'include',
+          })
+        } catch (fetchErr) {
+          // Network error or fetch failed
+          console.error('Network error during fetch:', fetchErr)
+
+          // Retry on network errors
+          if (retryAttempt < maxRetries) {
+            console.log(`Retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
+            await new Promise((resolve) => setTimeout(resolve, retryDelay))
+            return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+          }
+
+          throw new Error(
+            'Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.',
+          )
+        }
+
+        if (!response.ok) {
+          // Try to extract error message from response
+          let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
+          try {
+            const errorData = await response.json()
+            if (errorData.error?.message) {
+              errorMessage = errorData.error.message
+            }
+          } catch {
+            // If JSON parsing fails, use default message
+          }
+
+          if (response.status === 404) {
+            throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
+          } else if (response.status >= 500) {
+            // Retry on server errors
+            if (retryAttempt < maxRetries) {
+              console.log(
+                `Server error, retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`,
+              )
+              await new Promise((resolve) => setTimeout(resolve, retryDelay))
+              return loadAssessmentStatus(assessmentId, retryAttempt + 1)
+            }
+            throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
+          } else {
+            throw new Error(errorMessage)
+          }
+        }
+
+        const { data } = await response.json()
+
+        // Validate AssessmentStatus structure
+        if (!data || typeof data !== 'object') {
+          throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
+        }
+
+        if (!data.assessmentId || typeof data.assessmentId !== 'string') {
+          throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
+        }
+
+        if (!data.currentStep || typeof data.currentStep !== 'object') {
+          throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
+        }
+
+        if (!data.currentStep.stepId || typeof data.currentStep.stepIndex !== 'number') {
+          throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
+        }
+
+        if (typeof data.totalSteps !== 'number') {
+          throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
+        }
+
+        setAssessmentStatus(data)
+
+        // Load existing answers with retry
+        await loadExistingAnswers(assessmentId, 0)
+
+        // Clear recovery state on success
+        setRecovery({
+          isRecovering: false,
+          recoveryAttempt: 0,
+          recoveryMessage: null,
+        })
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Error loading assessment status:', err)
+        const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
+        setError(errorMsg)
+        setRecovery({
+          isRecovering: false,
+          recoveryAttempt: 0,
+          recoveryMessage: null,
+        })
+        setLoading(false)
+        throw err // Re-throw so caller knows it failed
+      }
+    },
+    [loadExistingAnswers, slug],
+  )
+
+
   // Load funnel definition
   useEffect(() => {
     const loadFunnelData = async () => {
@@ -196,165 +362,6 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
-
-  const loadAssessmentStatus = useCallback(
-    async (assessmentId: string, retryAttempt: number = 0) => {
-    const maxRetries = 3
-    const retryDelay = Math.min(1000 * Math.pow(2, retryAttempt), 5000) // Exponential backoff, max 5s
-
-    try {
-      // Validate assessmentId before making the request
-      if (!assessmentId || typeof assessmentId !== 'string' || assessmentId.trim() === '') {
-        throw new Error('Ungültige Assessment-ID.')
-      }
-
-      // Show recovery message on retry
-      if (retryAttempt > 0) {
-        setRecovery({
-          isRecovering: true,
-          recoveryAttempt: retryAttempt,
-          recoveryMessage: `Wiederherstellung läuft... (Versuch ${retryAttempt}/${maxRetries})`,
-        })
-      }
-
-      let response: Response
-      try {
-        response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
-          credentials: 'include',
-        })
-      } catch (fetchErr) {
-        // Network error or fetch failed
-        console.error('Network error during fetch:', fetchErr)
-        
-        // Retry on network errors
-        if (retryAttempt < maxRetries) {
-          console.log(`Retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-          await new Promise((resolve) => setTimeout(resolve, retryDelay))
-          return loadAssessmentStatus(assessmentId, retryAttempt + 1)
-        }
-        
-        throw new Error('Der Fragebogen konnte nicht geladen werden. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
-      }
-
-      if (!response.ok) {
-        // Try to extract error message from response
-        let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
-        try {
-          const errorData = await response.json()
-          if (errorData.error?.message) {
-            errorMessage = errorData.error.message
-          }
-        } catch {
-          // If JSON parsing fails, use default message
-        }
-        
-        if (response.status === 404) {
-          throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
-        } else if (response.status >= 500) {
-          // Retry on server errors
-          if (retryAttempt < maxRetries) {
-            console.log(`Server error, retrying in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-            await new Promise((resolve) => setTimeout(resolve, retryDelay))
-            return loadAssessmentStatus(assessmentId, retryAttempt + 1)
-          }
-          throw new Error('Server-Fehler beim Laden des Assessment-Status. Bitte versuchen Sie es später erneut.')
-        } else {
-          throw new Error(errorMessage)
-        }
-      }
-
-      const { data } = await response.json()
-      
-      // Validate AssessmentStatus structure
-      if (!data || typeof data !== 'object') {
-        throw new Error('Ungültige Antwort vom Server: Keine Daten erhalten.')
-      }
-
-      if (!data.assessmentId || typeof data.assessmentId !== 'string') {
-        throw new Error('Ungültige Antwort vom Server: AssessmentId fehlt.')
-      }
-
-      if (!data.currentStep || typeof data.currentStep !== 'object') {
-        throw new Error('Ungültige Antwort vom Server: CurrentStep fehlt.')
-      }
-
-      if (!data.currentStep.stepId || typeof data.currentStep.stepIndex !== 'number') {
-        throw new Error('Ungültige Antwort vom Server: CurrentStep ist unvollständig.')
-      }
-
-      if (typeof data.totalSteps !== 'number') {
-        throw new Error('Ungültige Antwort vom Server: TotalSteps fehlt.')
-      }
-
-      setAssessmentStatus(data)
-
-      // Load existing answers with retry
-      await loadExistingAnswers(assessmentId, 0)
-
-      // Clear recovery state on success
-      setRecovery({
-        isRecovering: false,
-        recoveryAttempt: 0,
-        recoveryMessage: null,
-      })
-
-      setLoading(false)
-    } catch (err) {
-      console.error('Error loading assessment status:', err)
-      const errorMsg = err instanceof Error ? err.message : 'Fehler beim Laden des Assessment-Status.'
-      setError(errorMsg)
-      setRecovery({
-        isRecovering: false,
-        recoveryAttempt: 0,
-        recoveryMessage: null,
-      })
-      setLoading(false)
-      throw err // Re-throw so caller knows it failed
-    }
-  }, [loadExistingAnswers, slug])
-
-  const loadExistingAnswers = useCallback(async (assessmentId: string, retryAttempt: number = 0) => {
-    const maxRetries = 2
-    const retryDelay = 1000
-
-    try {
-      const { data: answersData, error: answersError } = await supabase
-        .from('assessment_answers')
-        .select('question_id, answer_value')
-        .eq('assessment_id', assessmentId)
-
-      if (answersError) {
-        console.error('Error loading answers:', answersError)
-        
-        // Retry on error
-        if (retryAttempt < maxRetries) {
-          console.log(`Retrying answer load in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
-          await new Promise((resolve) => setTimeout(resolve, retryDelay))
-          return loadExistingAnswers(assessmentId, retryAttempt + 1)
-        }
-        
-        // Don't throw - we can continue with empty answers
-        console.warn('Failed to load existing answers after retries, continuing with empty state')
-        return
-      }
-
-      if (answersData) {
-        const answersMap: Record<string, number> = {}
-        answersData.forEach((answer) => {
-          answersMap[answer.question_id] = answer.answer_value
-        })
-        setAnswers(answersMap)
-        
-        // Log successful resume if we have answers
-        if (Object.keys(answersMap).length > 0) {
-          console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
-        }
-      }
-    } catch (err) {
-      console.error('Error loading existing answers:', err)
-      // Don't throw - we can continue with empty answers
-    }
-  }, [])
 
   const handleAnswerChange = useCallback(async (questionKey: string, value: number, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
