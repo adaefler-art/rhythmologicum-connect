@@ -19,4 +19,5 @@ As of v0.4, the unified patient flow is located at:
 
 ## Notes
 
-These legacy pages may be removed in a future version once we confirm they are no longer needed for reference.
+- These legacy pages may be removed in a future version once we confirm they are no longer needed for reference.
+- **Warning:** Legacy pages may contain outdated routes and references to old implementations. They are preserved only for historical reference and should not be used as the basis for new features.
