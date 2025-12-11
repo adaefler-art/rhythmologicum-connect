@@ -323,19 +323,17 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           .order('started_at', { ascending: false })
           .limit(1)
 
-        // If completed assessment exists, redirect to result
+        // If an in-progress assessment exists, resume it; otherwise start a new one
         if (existingAssessments && existingAssessments.length > 0) {
           const latest = existingAssessments[0]
-          if (latest.status === 'completed' && latest.completed_at) {
-            router.push(`/patient/funnel/${slug}/result?assessmentId=${latest.id}`)
-            return
-          }
 
-          // Resume existing in_progress assessment
           if (latest.status === 'in_progress') {
             await loadAssessmentStatus(latest.id)
             return
           }
+
+          // For completed assessments, always start a fresh assessment instead of redirecting to result
+          // so users can take the test again without manual query params.
         }
 
         // Start new assessment via API
