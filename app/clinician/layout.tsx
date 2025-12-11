@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { AppShell } from '@/lib/ui'
 import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 
@@ -13,6 +13,7 @@ const ACCESS_DENIED_REDIRECT = '/?error=access_denied&message=Keine Berechtigung
 
 export default function ClinicianLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -78,83 +79,34 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
     )
   }
 
+  // Navigation items with active state detection
+  const navItems = [
+    {
+      href: '/clinician',
+      label: 'Dashboard',
+      active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/funnels',
+      label: 'Funnels',
+      active: pathname?.startsWith('/clinician/funnels') ?? false,
+    },
+    {
+      href: '/admin/content',
+      label: 'Content',
+      active: pathname?.startsWith('/admin/content') ?? false,
+    },
+  ]
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-sky-600">
-                Rhythmologicum Connect
-              </p>
-              <p className="text-sm md:text-base font-medium text-slate-900">
-                Clinician Dashboard
-              </p>
-            </div>
-            <div className="flex items-center gap-3 md:gap-4">
-              <span className="text-xs sm:text-sm text-slate-600 hidden sm:inline">
-                {user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 transition touch-manipulation"
-              >
-                Abmelden
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex gap-1">
-            <Link
-              href="/clinician"
-              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/clinician/funnels"
-              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
-            >
-              Funnels
-            </Link>
-            <Link
-              href="/admin/content"
-              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
-            >
-              Content
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-1">{children}</main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-            <p className="text-[11px] sm:text-xs text-slate-500 text-center sm:text-left">
-              Rhythmologicum Connect – Clinician View – Frühe Testversion, nicht für den klinischen Einsatz.
-            </p>
-            <Link
-              href="/datenschutz"
-              className="text-[11px] sm:text-xs text-sky-600 hover:text-sky-700 font-medium"
-            >
-              Datenschutz
-            </Link>
-          </div>
-          <p className="text-[11px] sm:text-xs text-slate-400">
-            © {new Date().getFullYear()} Rhythmologicum
-          </p>
-        </div>
-      </footer>
-    </div>
+    <AppShell
+      appTitle="Rhythmologicum Connect"
+      subtitle="Clinician Dashboard"
+      userEmail={user?.email}
+      onSignOut={handleSignOut}
+      navItems={navItems}
+    >
+      {children}
+    </AppShell>
   )
 }
