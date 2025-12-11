@@ -214,8 +214,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         { 
           error: 'Failed to create section',
-          details: insertError.message,
-          hint: insertError.hint
+          // Only expose generic error message to client
         },
         { status: 500 }
       )
@@ -231,7 +230,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        // Error details logged server-side only
       },
       { status: 500 }
     )
