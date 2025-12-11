@@ -51,3 +51,6 @@ export type { FormFieldProps } from './FormField'
 
 export { Table } from './Table'
 export type { TableProps, TableColumn } from './Table'
+
+export { AppShell } from './AppShell'
+export type { AppShellProps } from './AppShell'
