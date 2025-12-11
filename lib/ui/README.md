@@ -12,6 +12,31 @@ All components use design tokens from `@/lib/design-tokens` for consistent spaci
 
 ## Components
 
+### Badge
+
+A small, colored label component for displaying status, categories, or tags.
+
+**Variants:** `default`, `success`, `warning`, `danger`, `info`, `secondary`
+**Sizes:** `sm`, `md`
+
+**Usage:**
+```tsx
+import { Badge } from '@/lib/ui'
+
+// Status indicators
+<Badge variant="success">Aktiv</Badge>
+<Badge variant="danger">Hohes Risiko</Badge>
+<Badge variant="warning">Erhöht</Badge>
+<Badge variant="info">Neu</Badge>
+<Badge variant="secondary">Ausstehend</Badge>
+
+// Sizes
+<Badge size="sm">Small Badge</Badge>
+<Badge size="md">Medium Badge</Badge>
+```
+
+---
+
 ### Button
 
 A versatile, accessible button component with multiple variants and sizes.

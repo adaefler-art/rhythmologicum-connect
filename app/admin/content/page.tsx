@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/lib/ui'
+import { Button, Badge } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -198,16 +198,16 @@ export default function AdminContentDashboard() {
     }
   }
 
-  const getStatusBadgeClass = (status: string): string => {
+  const getStatusBadgeVariant = (status: string): 'success' | 'secondary' | 'warning' | 'default' => {
     switch (status) {
       case 'published':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        return 'success'
       case 'draft':
-        return 'bg-slate-100 text-slate-600 border-slate-200'
+        return 'secondary'
       case 'archived':
-        return 'bg-amber-100 text-amber-800 border-amber-200'
+        return 'warning'
       default:
-        return 'bg-slate-100 text-slate-700 border-slate-200'
+        return 'default'
     }
   }
 
@@ -519,13 +519,9 @@ export default function AdminContentDashboard() {
                       <span className="text-slate-700">{page.layout || '—'}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span
-                        className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium ${getStatusBadgeClass(
-                          page.status
-                        )}`}
-                      >
+                      <Badge variant={getStatusBadgeVariant(page.status)} size="sm">
                         {getStatusLabel(page.status)}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-4 text-slate-700 whitespace-nowrap">
                       {formatDateTime(page.updated_at)}

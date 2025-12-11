@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Button, Card } from '@/lib/ui'
+import { Button, Card, Badge } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -104,15 +104,9 @@ export default function FunnelListPage() {
                     <h3 className="text-lg font-semibold text-slate-900 truncate">
                       {funnel.title}
                     </h3>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        funnel.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
+                    <Badge variant={funnel.is_active ? 'success' : 'secondary'} size="sm">
                       {funnel.is_active ? 'Aktiv' : 'Inaktiv'}
-                    </span>
+                    </Badge>
                   </div>
 
                   {funnel.subtitle && (

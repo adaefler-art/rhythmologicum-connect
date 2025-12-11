@@ -7,6 +7,7 @@
  * Rhythmologicum Connect design system.
  * 
  * Components:
+ * - Badge: Status and category labels
  * - Button: Primary action component with multiple variants
  * - Card: Content container with header/footer support
  * - Input: Text input with error states
@@ -18,15 +19,19 @@
  * 
  * Usage:
  * ```tsx
- * import { Button, Card, Input, FormField } from '@/lib/ui'
+ * import { Button, Card, Input, FormField, Badge } from '@/lib/ui'
  * 
  * <FormField label="Email" required>
  *   <Input type="email" />
  * </FormField>
  * 
  * <Button variant="primary">Save</Button>
+ * <Badge variant="success">Active</Badge>
  * ```
  */
+
+export { Badge } from './Badge'
+export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge'
 
 export { Button } from './Button'
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button'
