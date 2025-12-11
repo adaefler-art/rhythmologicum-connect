@@ -166,12 +166,12 @@ export default function LoginPage() {
         
         {/* Branding */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center">
-            <span className="text-sky-600 font-semibold text-xl">R</span>
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mt-3">
-            Rhythmologicum Connect
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-sky-600 mb-3">
+            RHYTHM
           </h1>
+          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
+            Rhythmologicum Connect
+          </h2>
           <p className="mt-2 text-sm text-slate-500 leading-relaxed">
             Willkommen! Dieser Bereich dient dem sicheren Zugang zu Ihrem 
             persönlichen Stress- & Resilienz-Programm.
