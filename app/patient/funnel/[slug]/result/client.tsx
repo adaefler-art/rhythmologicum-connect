@@ -1,10 +1,12 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
 import type { ContentPage } from '@/lib/types/content'
 import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
+
+const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
 
 type ResultClientProps = {
   slug: string
@@ -14,8 +16,15 @@ type ResultClientProps = {
 type AssessmentResult = {
   id: string
   funnel: string
-  completed_at: string
+  completedAt: string
   status: string
+  funnelTitle: string | null
+}
+
+type ResultResponse = {
+  success: boolean
+  data?: AssessmentResult
+  error?: { message: string }
 }
 
 export default function ResultClient({ slug, assessmentId }: ResultClientProps) {
@@ -23,65 +32,60 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
-  const [funnelTitle, setFunnelTitle] = useState<string>('')
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
-  const [canonicalSlug, setCanonicalSlug] = useState(slug)
+
+  const canonicalSlug = assessment?.funnel ?? slug
+  const funnelTitle = assessment?.funnelTitle ?? ''
 
   useEffect(() => {
     const loadResultData = async () => {
       try {
-        // Load assessment
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from('assessments')
-          .select('id, funnel, completed_at, status')
-          .eq('id', assessmentId)
-          .single()
+        setLoading(true)
+        setError(null)
 
-        if (assessmentError || !assessmentData) {
-          throw new Error('Assessment konnte nicht geladen werden.')
+        const response = await fetch(
+          `/api/funnels/${slug}/assessments/${assessmentId}/result`,
+          { credentials: 'include' },
+        )
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as ResultResponse | null
+          const message = payload?.error?.message || GENERIC_ERROR
+          throw new Error(message)
         }
 
-        setAssessment(assessmentData)
-        setCanonicalSlug(assessmentData.funnel || slug)
+        const payload = (await response.json()) as ResultResponse
+        if (!payload.success || !payload.data) {
+          throw new Error(payload.error?.message || GENERIC_ERROR)
+        }
 
-        // If assessment is not completed, redirect back to the funnel to continue
-        if (assessmentData.status !== 'completed') {
-          router.push(`/patient/funnel/${assessmentData.funnel || slug}`)
+        if (payload.data.status !== 'completed') {
+          router.replace(`/patient/funnel/${payload.data.funnel}`)
           return
         }
 
-        // Load funnel info
-        const { data: funnelData } = await supabase
-          .from('funnels')
-          .select('title')
-          .eq('slug', assessmentData.funnel || slug)
-          .single()
+        setAssessment(payload.data)
 
-        if (funnelData) {
-          setFunnelTitle(funnelData.title)
-        }
-
-        // Load content pages
         try {
-          const response = await fetch(`/api/funnels/${assessmentData.funnel || slug}/content-pages`)
-          if (response.ok) {
-            const pages: ContentPage[] = await response.json()
+          const pagesRes = await fetch(`/api/funnels/${payload.data.funnel}/content-pages`)
+          if (pagesRes.ok) {
+            const pages: ContentPage[] = await pagesRes.json()
             setContentPages(pages)
           }
         } catch (err) {
           console.error('Error loading content pages:', err)
-          // Non-critical error
         }
 
         setLoading(false)
       } catch (err) {
         console.error('Error loading result:', err)
-        setError(err instanceof Error ? err.message : 'Fehler beim Laden der Ergebnisse.')
+        setError(err instanceof Error ? err.message : GENERIC_ERROR)
         setLoading(false)
       }
     }
+
     loadResultData()
-  }, [assessmentId, slug])
+  }, [assessmentId, slug, router])
 
   if (loading) {
     return (
@@ -129,9 +133,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
               Assessment abgeschlossen!
             </h1>
-            <p className="text-slate-600">
-              {funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert.
-            </p>
+            <p className="text-slate-600">{funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert.</p>
           </div>
 
           {/* Assessment Info */}
@@ -144,10 +146,10 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
               <div>
                 <dt className="text-sm font-medium text-slate-600">Abgeschlossen am</dt>
                 <dd className="text-sm text-slate-900">
-                  {new Date(assessment.completed_at).toLocaleString('de-DE', {
+                  {new Intl.DateTimeFormat('de-DE', {
                     dateStyle: 'medium',
                     timeStyle: 'short',
-                  })}
+                  }).format(new Date(assessment.completedAt))}
                 </dd>
               </div>
               <div>
