@@ -222,7 +222,7 @@ export default function DesktopQuestionCard({
             <div className="mb-6">
               <div className="flex items-start gap-4 mb-4">
                 <span
-                  className={`flex-shrink-0 flex items-center justify-center rounded-full font-bold ${
+                  className={`shrink-0 flex items-center justify-center rounded-full font-bold ${
                     isAnswered ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'
                   }`}
                   style={{
@@ -253,7 +253,7 @@ export default function DesktopQuestionCard({
                       lineHeight: componentTokens.infoBox.lineHeight,
                     }}
                   >
-                    <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
+                    <span className="shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
                     <span>{question.help_text}</span>
                   </p>
                 </div>
@@ -288,7 +288,7 @@ export default function DesktopQuestionCard({
                   padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}`,
                 }}
               >
-                <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
+                <span className="shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
                 <p className="leading-relaxed">{error}</p>
               </div>
             )}

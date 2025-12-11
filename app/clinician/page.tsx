@@ -276,7 +276,7 @@ export default function ClinicianOverviewPage() {
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
           >
             Neu laden
           </button>

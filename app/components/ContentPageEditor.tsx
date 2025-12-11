@@ -609,7 +609,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             type="button"
             onClick={handleCancel}
             disabled={saving}
-            className="px-6 py-3 min-h-[44px] rounded-lg border border-slate-300 text-slate-700 text-sm md:text-base font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg border border-slate-300 text-slate-700 text-sm md:text-base font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             Abbrechen
           </button>
@@ -618,7 +618,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             type="button"
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-6 py-3 min-h-[44px] rounded-lg border border-sky-600 text-sky-600 text-sm md:text-base font-medium hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg border border-sky-600 text-sky-600 text-sm md:text-base font-medium hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             {saving ? 'Speichere...' : 'Als Entwurf speichern'}
           </button>
@@ -627,7 +627,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             type="button"
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="px-6 py-3 min-h-[44px] rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             {saving ? 'Speichere...' : 'Veröffentlichen'}
           </button>

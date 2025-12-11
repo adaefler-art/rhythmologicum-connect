@@ -98,7 +98,7 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
               </span>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2.5 min-h-[44px] text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 transition touch-manipulation"
+                className="px-4 py-2.5 min-h-11 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 transition touch-manipulation"
               >
                 Abmelden
               </button>

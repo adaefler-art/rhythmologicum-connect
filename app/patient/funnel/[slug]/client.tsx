@@ -674,7 +674,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">✅</span>
+              <span className="text-xl shrink-0">✅</span>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-green-900 mb-1">
                   Fortschritt wiederhergestellt
@@ -705,7 +705,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {showContentLinks && (
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <span className="text-xl flex-shrink-0">ℹ️</span>
+              <span className="text-xl shrink-0">ℹ️</span>
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-blue-900 mb-2">
                   Weitere Informationen
@@ -795,7 +795,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         {/* Error message */}
         {error && (
           <div className="mt-6 text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
-            <span className="text-xl flex-shrink-0">❌</span>
+            <span className="text-xl shrink-0">❌</span>
             <p className="leading-relaxed">{error}</p>
           </div>
         )}
@@ -892,7 +892,7 @@ const QuestionCard = memo(function QuestionCard({ index, question, value, onChan
     >
       <div className="flex items-start gap-3 mb-4">
         <span
-          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+          className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
             hasError
               ? 'bg-red-600 text-white'
               : isAnswered
@@ -918,7 +918,7 @@ const QuestionCard = memo(function QuestionCard({ index, question, value, onChan
       {question.helpText && (
         <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 ml-11">
           <p className="text-sm text-sky-900 leading-relaxed flex items-start gap-2">
-            <span className="text-lg flex-shrink-0">💡</span>
+            <span className="text-lg shrink-0">💡</span>
             <span>{question.helpText}</span>
           </p>
         </div>

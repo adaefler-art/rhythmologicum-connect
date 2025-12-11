@@ -168,7 +168,7 @@ export default function MobileQuestionCard({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
+    <div className="min-h-screen bg-linear-to-b from-sky-50 to-white flex flex-col">
       {/* Header */}
       <header 
         className="bg-white border-b border-slate-200 shadow-sm"
@@ -235,7 +235,7 @@ export default function MobileQuestionCard({
                       lineHeight: componentTokens.infoBox.lineHeight,
                     }}
                   >
-                    <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
+                    <span className="shrink-0" style={{ fontSize: typography.fontSize.lg }}>💡</span>
                     <span>{question.help_text}</span>
                   </p>
                 </div>
@@ -281,7 +281,7 @@ export default function MobileQuestionCard({
                   padding: `${cardTokens.headerPaddingY} ${cardTokens.headerPaddingX}`,
                 }}
               >
-                <span className="flex-shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
+                <span className="shrink-0" style={{ fontSize: typography.fontSize.xl }}>❌</span>
                 <p className="leading-relaxed">{error}</p>
               </div>
             )}
