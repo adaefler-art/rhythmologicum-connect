@@ -1,0 +1,35 @@
+{
+  "epics": [
+    {
+      "key": "V0.4-E1",
+      "title": "V0.4-E1 \u2014 Global UI Refresh & Design System",
+      "body": "Epic Goal:\nEstablish a modern, consistent UI and a small design system (tokens + components) used across\nClinician, Admin, and Patient areas.\n\nWhy:\n- Current UI feels outdated and inconsistent.\n- We need a shared design language to accelerate future work.\n\nScope:\n- Design tokens (colors, typography, spacing)\n- Global layout (header, sidebar, content)\n- Core UI components (Buttons, Cards, Tables, Form controls)\n- Minimal dark/light mode decision for v0.4\n",
+      "labels": [
+        "v0.4",
+        "epic"
+      ],
+      "issues": [
+        {
+          "title": "Define v0.4 Design Tokens (Colors, Typography, Spacing)",
+          "body": "Define core design tokens for v0.4 and document them. See planning docs for details.",
+          "labels": [
+            "v0.4",
+            "frontend",
+            "design",
+            "V0.4-E1"
+          ]
+        },
+        {
+          "title": "Implement Global App Layout (Header, Sidebar, Content Shell)",
+          "body": "Implement a global layout component for clinician/admin routes using v0.4 design tokens.",
+          "labels": [
+            "v0.4",
+            "frontend",
+            "layout",
+            "V0.4-E1"
+          ]
+        }
+      ]
+    }
+  ]
+}
