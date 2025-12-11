@@ -9,11 +9,12 @@ A patient stress and resilience assessment platform with role-based access contr
 ### Features
 
 - **Data-Driven Funnel System**: Complete assessment workflow engine with validation and navigation
-- **Patient Portal** (`/patient`): Stress assessment questionnaire and history
+- **Patient Portal** (`/patient/funnel/stress-assessment`): Unified, mobile-friendly stress assessment flow
+- **Patient History** (`/patient/history`): View past assessments and results
 - **Clinician Dashboard** (`/clinician`): Protected dashboard for healthcare providers with funnel management
 - **Role-Based Authentication**: Automatic routing based on user roles
 - **Session Persistence**: Secure cookie-based authentication via Supabase
-- **Responsive Design**: Works on desktop and mobile devices
+- **Responsive Design**: Mobile-first design optimized for all devices
 
 ### Funnel System (Epic B)
 

@@ -1,5 +1,73 @@
 # Zusammenfassung der Änderungen
 
+## V0.4-E2 - Patient Flow V2 (2025-12-11)
+
+### Was wurde implementiert?
+
+Die Patient Experience wurde auf den **Unified Funnel Flow** umgestellt. Alle Legacy-Demo-Seiten wurden archiviert, sodass Patient:innen nur noch einen klaren, modernen Zugang zum Stress & Resilience Assessment haben.
+
+### Hauptänderungen
+
+#### 1. Unified Patient Flow als Standard
+
+**Navigation aktualisiert:**
+- Patient-Layout (`/patient/layout.tsx`) verweist jetzt auf `/patient/funnel/stress-assessment`
+- Login-Redirect (`/page.tsx`) leitet Patient:innen direkt zum Unified Funnel
+- Kein Zugriff mehr auf Legacy-Demo-Seiten über die Navigation
+
+**Vorteile:**
+- ✅ Ein einziger, konsistenter Einstiegspunkt für Patient:innen
+- ✅ Datengetriebener, validerter Flow mit Backend-Runtime
+- ✅ Mobile-freundliches, responsives Design
+- ✅ Automatische Session-Wiederherstellung
+- ✅ Content-Integration (Intro, Info, Result Pages)
+
+#### 2. Legacy-Seiten archiviert
+
+**Verschoben nach `/patient/_legacy/`:**
+- `stress-check/` - Ursprüngliche Stress-Assessment-Implementierung
+- `stress-check-v2/` - Zweite Iteration
+- `funnel-demo/` - Demo-Seite für Funnel-Komponenten
+- `funnel-definition-demo/` - Demo für Funnel-Definitionen
+- `answer-buttons-demo/` - Demo für Antwort-Buttons
+- `mobile-components-demo/` - Demo für Mobile-Komponenten
+
+**Dokumentation:**
+- `_legacy/README.md` erklärt den Zweck des Archivs
+- Seiten sind weiterhin im Code vorhanden, aber nicht mehr über Navigation erreichbar
+
+#### 3. Einheitliches UX-Design
+
+**Der Unified Flow bietet:**
+- Responsive Design (mobile-first)
+- Konsistente Typografie und Spacing
+- Klare Fortschrittsanzeige
+- Validierung mit verständlichen Fehlermeldungen
+- Session-Recovery bei Reload
+- Content-Verlinkung (Intro/Info-Seiten)
+
+### Dateien
+
+**Geändert:**
+- `app/patient/layout.tsx` - Navigation auf `/funnel/stress-assessment`
+- `app/page.tsx` - Login-Redirect auf Unified Funnel
+
+**Verschoben:**
+- Alle Demo-Seiten von `/patient/*` nach `/patient/_legacy/*`
+
+**Neu:**
+- `app/patient/_legacy/README.md` - Dokumentation des Archivs
+
+### Nächste Schritte
+
+Mit dieser Änderung ist die Basis für v0.4 Patient Flow V2 gelegt:
+- ✅ Legacy-Prototypen entfernt
+- ✅ Einheitlicher, moderner Flow aktiv
+- 🔲 Weitere UI-Verbesserungen (E1: Design System)
+- 🔲 Content Flow Engine Integration (E3)
+
+---
+
 ## Z4 - Executive Summary v0.3 (2025-12-11)
 
 ### Was wurde implementiert?
