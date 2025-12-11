@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
+import { Badge, Card, Button } from '@/lib/ui'
 
 type PatientMeasure = {
   id: string
@@ -120,16 +121,16 @@ export default function PatientDetailPage() {
     }
   }
 
-  const getRiskColor = (risk: string): string => {
+  const getRiskBadgeVariant = (risk: string): 'danger' | 'warning' | 'success' | 'secondary' => {
     switch (risk) {
       case 'high':
-        return 'text-red-600'
+        return 'danger'
       case 'moderate':
-        return 'text-amber-600'
+        return 'warning'
       case 'low':
-        return 'text-emerald-600'
+        return 'success'
       default:
-        return 'text-slate-600'
+        return 'secondary'
     }
   }
 
@@ -146,12 +147,9 @@ export default function PatientDetailPage() {
       <main className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error ?? 'Patient nicht gefunden.'}</p>
-          <button
-            onClick={() => router.push('/clinician')}
-            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
-          >
+          <Button variant="primary" onClick={() => router.push('/clinician')}>
             Zurück zur Übersicht
-          </button>
+          </Button>
         </div>
       </main>
     )
@@ -178,8 +176,8 @@ export default function PatientDetailPage() {
       </div>
 
       {measures.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto max-w-md">
+        <Card padding="lg" shadow="md">
+          <div className="text-center">
             <p className="text-6xl mb-4" aria-label="Beruhigendes Symbol">
               🌿
             </p>
@@ -192,29 +190,29 @@ export default function PatientDetailPage() {
               angezeigt.
             </p>
           </div>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-6">
           {/* Charts Section */}
           {featureFlags.CHARTS_ENABLED && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Stress Score Chart */}
-              <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+              <Card padding="lg" shadow="md">
                 <h2 className="text-base md:text-lg font-semibold mb-4">Stress-Verlauf</h2>
                 <StressChart measures={measures} />
-              </div>
+              </Card>
 
               {/* Sleep Score Chart */}
-              <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+              <Card padding="lg" shadow="md">
                 <h2 className="text-base md:text-lg font-semibold mb-4">Schlaf-Verlauf</h2>
                 <SleepChart measures={measures} />
-              </div>
+              </Card>
             </div>
           )}
 
           {/* AMY Reports Timeline */}
           {featureFlags.AMY_ENABLED && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+            <Card padding="lg" shadow="md">
               <h2 className="text-base md:text-lg font-semibold mb-4">AMY-Berichte (Chronologisch)</h2>
               <div className="space-y-4">
                 {measures
@@ -235,13 +233,9 @@ export default function PatientDetailPage() {
                           <span className="text-xs md:text-sm text-slate-500">
                             {formatDate(measure.created_at)}
                           </span>
-                          <span
-                            className={`text-xs md:text-sm font-medium ${getRiskColor(
-                              measure.risk_level
-                            )}`}
-                          >
+                          <Badge variant={getRiskBadgeVariant(measure.risk_level)} size="sm">
                             {getRiskLabel(measure.risk_level)}
-                          </span>
+                          </Badge>
                         </div>
                         <div className="text-xs md:text-sm text-slate-500">
                           Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
@@ -254,26 +248,27 @@ export default function PatientDetailPage() {
                     </div>
                   ))}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Raw Data Section */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-6">
+          <Card padding="lg" shadow="md">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base md:text-lg font-semibold">Rohdaten (JSON)</h2>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowRawData(!showRawData)}
-                className="px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 transition touch-manipulation"
               >
                 {showRawData ? 'Verbergen' : 'Anzeigen'}
-              </button>
+              </Button>
             </div>
             {showRawData && (
               <pre className="bg-slate-50 rounded p-4 overflow-x-auto text-xs md:text-sm text-slate-800">
                 {JSON.stringify({ patient, measures }, null, 2)}
               </pre>
             )}
-          </div>
+          </Card>
         </div>
       )}
     </main>
