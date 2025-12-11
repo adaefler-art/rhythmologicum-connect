@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
+// UUID v4 validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
  * F3 API Endpoint: Get all sections for a content page
  * GET /api/admin/content-pages/[id]/sections
@@ -138,8 +141,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
 
     // Validate page ID (UUID format)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!id || !uuidRegex.test(id)) {
+    if (!id || !UUID_REGEX.test(id)) {
       console.error('Invalid page ID:', id)
       return NextResponse.json({ error: 'Invalid page ID format' }, { status: 400 })
     }

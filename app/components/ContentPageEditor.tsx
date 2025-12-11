@@ -570,7 +570,8 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <button
                 type="button"
                 onClick={handleAddSection}
-                className="h-10 px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition"
+                disabled={saving}
+                className="h-10 px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 + Section hinzufügen
               </button>
