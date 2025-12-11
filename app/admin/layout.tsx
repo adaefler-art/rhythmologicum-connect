@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js'
 
 // Constants for redirect URLs
 const AUTH_REQUIRED_REDIRECT = '/?error=authentication_required&message=Bitte melden Sie sich an.'
-const ACCESS_DENIED_REDIRECT = '/?error=access_denied&message=Keine Berechtigung für den Admin-Bereich.'
+const ACCESS_DENIED_REDIRECT = '/?error=access_denied&message=Keine Berechtigung für den Clinician-Bereich.'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 Rhythmologicum Connect
               </p>
               <p className="text-sm md:text-base font-medium text-slate-900">
-                Admin Dashboard
+                Clinician Dashboard
               </p>
             </div>
             <div className="flex items-center gap-3 md:gap-4">
@@ -119,19 +119,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               href="/clinician"
               className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
             >
-              Clinician Dashboard
-            </Link>
-            <Link
-              href="/admin/content"
-              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
-            >
-              Content
+              Dashboard
             </Link>
             <Link
               href="/clinician/funnels"
               className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
             >
               Funnels
+            </Link>
+            <Link
+              href="/admin/content"
+              className="px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border-b-2 border-transparent hover:border-slate-300"
+            >
+              Content
             </Link>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <p className="text-[11px] sm:text-xs text-slate-500 text-center sm:text-left">
-              Rhythmologicum Connect – Admin View – Frühe Testversion, nicht für den klinischen Einsatz.
+              Rhythmologicum Connect – Clinician View – Frühe Testversion, nicht für den klinischen Einsatz.
             </p>
             <Link
               href="/datenschutz"
