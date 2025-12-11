@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes } from 'react'
+import { forwardRef, useId, type InputHTMLAttributes } from 'react'
 import { radii, spacing } from '@/lib/design-tokens'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -80,7 +80,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400'
       : 'border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-sky-500'
 
-    const inputId = props.id || `input-${Math.random().toString(36).substring(7)}`
+    const generatedId = useId()
+    const inputId = props.id || generatedId
 
     return (
       <div className="w-full">

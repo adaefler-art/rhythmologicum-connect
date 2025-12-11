@@ -54,3 +54,9 @@ export type { TableProps, TableColumn } from './Table'
 
 export { AppShell } from './AppShell'
 export type { AppShellProps } from './AppShell'
+
+export { HelperText } from './HelperText'
+export type { HelperTextProps } from './HelperText'
+
+export { ErrorText } from './ErrorText'
+export type { ErrorTextProps } from './ErrorText'

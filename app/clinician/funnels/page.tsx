@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Button, Card } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,16 +91,13 @@ export default function FunnelListPage() {
 
       {/* Funnel List */}
       {funnels.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-          <p className="text-slate-600">Keine Funnels gefunden.</p>
-        </div>
+        <Card padding="lg">
+          <p className="text-slate-600 text-center">Keine Funnels gefunden.</p>
+        </Card>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-200">
+        <div className="space-y-4">
           {funnels.map((funnel) => (
-            <div
-              key={funnel.id}
-              className="p-6 hover:bg-slate-50 transition-colors"
-            >
+            <Card key={funnel.id} padding="lg" interactive>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
@@ -134,14 +132,13 @@ export default function FunnelListPage() {
                   </div>
                 </div>
 
-                <Link
-                  href={`/clinician/funnels/${funnel.id}`}
-                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors"
-                >
-                  Details
+                <Link href={`/clinician/funnels/${funnel.id}`}>
+                  <Button variant="primary" size="sm">
+                    Details
+                  </Button>
                 </Link>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

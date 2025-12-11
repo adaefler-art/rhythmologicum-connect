@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { Button } from '@/lib/ui'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -274,12 +275,9 @@ export default function ClinicianOverviewPage() {
       <main className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 min-h-[44px] rounded bg-sky-600 text-white text-sm md:text-base hover:bg-sky-700 transition touch-manipulation"
-          >
+          <Button variant="primary" onClick={() => window.location.reload()}>
             Neu laden
-          </button>
+          </Button>
         </div>
       </main>
     )
