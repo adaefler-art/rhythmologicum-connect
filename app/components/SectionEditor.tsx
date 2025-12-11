@@ -55,7 +55,7 @@ export default function SectionEditor({
             type="text"
             value={section.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"
             placeholder="Section-Titel..."
           />
         </div>
@@ -148,7 +148,7 @@ export default function SectionEditor({
             id={`section-markdown-${section.id}`}
             value={section.body_markdown}
             onChange={(e) => handleMarkdownChange(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+            className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
             rows={10}
             placeholder="Markdown-Inhalt für diese Section..."
           />

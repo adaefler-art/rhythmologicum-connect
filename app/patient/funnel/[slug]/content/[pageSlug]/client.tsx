@@ -68,7 +68,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           <p className="text-slate-600 mb-6">{error || 'Seite nicht gefunden'}</p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-sky-600 hover:bg-sky-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
           >
             Zurück
           </button>
@@ -160,7 +160,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           <div className="mt-8 text-center">
             <button
               onClick={() => router.push(`/patient/funnel/${targetFunnelSlug}`)}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors shadow-md"
+              className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-medium px-6 py-3 rounded-lg transition-colors shadow-md"
             >
               <svg
                 className="w-5 h-5"

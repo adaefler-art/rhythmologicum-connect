@@ -26,7 +26,7 @@ export default function NotFound() {
           </button>
           <button
             onClick={() => router.push('/')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-sky-600 hover:bg-sky-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
           >
             Zur Startseite
           </button>

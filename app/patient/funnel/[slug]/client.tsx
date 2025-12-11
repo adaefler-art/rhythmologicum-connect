@@ -707,7 +707,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
         {/* Content Page Links */}
         {showContentLinks && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mb-6 bg-sky-50 border border-sky-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <span className="text-xl flex-shrink-0">ℹ️</span>
               <div className="flex-1">
@@ -791,7 +791,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
         {/* Info step */}
         {!isQuestionStep(currentStep) && 'content' in currentStep && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-6">
             <p className="text-blue-900">{currentStep.content || currentStep.description}</p>
           </div>
         )}

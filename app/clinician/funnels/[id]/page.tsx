@@ -372,7 +372,7 @@ export default function FunnelDetailPage() {
                       onChange={(e) =>
                         setEditedFunnel({ ...editedFunnel, title: e.target.value })
                       }
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div>
@@ -385,7 +385,7 @@ export default function FunnelDetailPage() {
                       onChange={(e) =>
                         setEditedFunnel({ ...editedFunnel, subtitle: e.target.value })
                       }
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div>
@@ -398,7 +398,7 @@ export default function FunnelDetailPage() {
                         setEditedFunnel({ ...editedFunnel, description: e.target.value })
                       }
                       rows={3}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -487,7 +487,7 @@ export default function FunnelDetailPage() {
                       type="text"
                       value={editedStep.title || ''}
                       onChange={(e) => setEditedStep({ ...editedStep, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div>
@@ -500,7 +500,7 @@ export default function FunnelDetailPage() {
                         setEditedStep({ ...editedStep, description: e.target.value })
                       }
                       rows={2}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                   <div className="flex gap-2">
