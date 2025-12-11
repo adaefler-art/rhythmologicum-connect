@@ -4,6 +4,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 A patient stress and resilience assessment platform with role-based access control.
 
+**📊 [Executive Summary v0.3](docs/Z4_EXECUTIVE_SUMMARY_V0.3.md)** - Comprehensive project overview and current status
+
 ### Features
 
 - **Data-Driven Funnel System**: Complete assessment workflow engine with validation and navigation
@@ -92,6 +94,7 @@ WHERE email = 'doctor@example.com';
 ```
 
 **📚 Detailed documentation:**
+- [Executive Summary v0.3](docs/Z4_EXECUTIVE_SUMMARY_V0.3.md) - **Current project status and overview** (German)
 - [Clinician Authentication Setup](docs/CLINICIAN_AUTH.md) - Complete setup guide
 - [Clinician Dashboard Quick Guide](docs/Z3_CLINICIAN_DASHBOARD_GUIDE.md) - User guide for clinicians (German)
 - [Authentication Flow](docs/AUTH_FLOW.md) - Detailed flow diagrams
