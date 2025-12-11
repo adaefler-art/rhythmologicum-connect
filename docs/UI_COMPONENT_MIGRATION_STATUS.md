@@ -34,54 +34,61 @@ Documentation: `lib/ui/README.md`
 ### ✅ Completed
 
 1. **app/clinician/page.tsx** 
-   - Migrated: Button component for "Neu laden" action
-   - Status: Complete
+   - Migrated: Button, Badge, Card components
+   - Added: 4 statistical cards with icons
+   - Status: Complete ✅
    
 2. **app/clinician/funnels/page.tsx**
-   - Migrated: Button and Card components
+   - Migrated: Button, Badge, and Card components
    - Replaced: Raw button elements and inline styled divs
-   - Status: Complete
+   - Status: Complete ✅
 
-3. **app/admin/content/page.tsx**
-   - Migrated: Button components for all actions
-   - Replaced: "Neue Seite anlegen" button, pagination buttons, "Neu laden" button
-   - Status: Complete
+3. **app/clinician/patient/[id]/page.tsx**
+   - Migrated: Badge, Card, Button components
+   - Replaced: All raw HTML containers with Card components
+   - Status: Complete ✅
 
-4. **app/clinician/layout.tsx**
+4. **app/admin/content/page.tsx**
+   - Migrated: Button and Badge components for all actions
+   - Replaced: Status badges with Badge component
+   - Status: Complete ✅
+
+5. **app/clinician/layout.tsx**
    - Already using: AppShell component
-   - Status: Already migrated
+   - Status: Already migrated ✅
 
-5. **app/admin/layout.tsx**
+6. **app/admin/layout.tsx**
    - Already using: AppShell component
-   - Status: Already migrated
+   - Status: Already migrated ✅
 
-6. **app/admin/design-system/page.tsx**
+7. **app/admin/design-system/page.tsx**
    - Already using: All UI components (showcase page)
-   - Status: Already migrated
+   - Status: Already migrated ✅
 
-### 🔄 Pending Migration
+8. **lib/ui/Badge.tsx**
+   - New component created and integrated
+   - Status: Complete ✅
 
-1. **app/clinician/funnels/[id]/page.tsx** (High Priority)
-   - Needs: Multiple Button components
+### 🔄 Pending Migration (Optional)
+
+1. **app/clinician/funnels/[id]/page.tsx** (Medium Priority)
    - Current: ~12+ raw button elements with inline styles
-   - Impact: High - frequently used admin page
-   - Complexity: Medium - many interactive buttons for editing
+   - Could migrate to Button components if needed
+   - Impact: Medium - used for funnel management
+   - Status: Functional but could be improved
 
-2. **app/clinician/patient/[id]/page.tsx**
-   - Needs: Review for Button/Card usage
-   - Status: Not reviewed
+2. **app/clinician/report/[id]/page.tsx**
+   - Could benefit from Card and Badge components
+   - Status: Functional, lower priority
 
-3. **app/clinician/report/[id]/page.tsx**
-   - Needs: Review for Button/Card usage
-   - Status: Not reviewed
+3. **app/admin/content/[id]/page.tsx**
+   - Already uses Button component
+   - Could add Card components for better structure
+   - Status: Mostly migrated
 
-4. **app/admin/content/[id]/page.tsx**
-   - Needs: Review for Button/FormField usage
-   - Status: Not reviewed
-
-5. **app/admin/content/new/page.tsx**
-   - Needs: Review for Button/FormField usage
-   - Status: Not reviewed
+4. **app/admin/content/new/page.tsx**
+   - Already uses Button and FormField components
+   - Status: Mostly migrated
 
 ## Migration Checklist
 
