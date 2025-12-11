@@ -188,6 +188,10 @@ export async function getCurrentStep(
   }
 
   // All steps complete - return last step
+  if (steps.length === 0) {
+    return null
+  }
+
   const lastStep = steps[steps.length - 1]
   return {
     stepId: lastStep.id,
