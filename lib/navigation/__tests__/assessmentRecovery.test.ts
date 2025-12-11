@@ -14,18 +14,30 @@
 import { getCurrentStep } from '../assessmentNavigation'
 import { SupabaseClient } from '@supabase/supabase-js'
 
+// Mock data types
+type MockAssessment = { id: string; funnel_id: string | null }
+type MockAnswer = { question_id: string }
+type MockStep = { id: string; order_index: number; title: string; type: string }
+type MockStepQuestion = {
+  funnel_step_id: string
+  question_id: string
+  is_required: boolean
+  questions: { key: string }
+}
+type MockQuestion = { id: string; key: string }
+
 // Mock Supabase client
 const createMockSupabase = (mockData: {
-  assessment?: any
-  answers?: any[]
-  steps?: any[]
-  stepQuestions?: any[]
-  questions?: any[]
+  assessment?: MockAssessment | null
+  answers?: MockAnswer[]
+  steps?: MockStep[]
+  stepQuestions?: MockStepQuestion[]
+  questions?: MockQuestion[]
 }): SupabaseClient => {
   const mock = {
     from: (table: string) => ({
-      select: (columns: string) => ({
-        eq: (column: string, value: any) => {
+      select: () => ({
+        eq: () => {
           const result = {
             single: async () => {
               if (table === 'assessments') {
@@ -33,8 +45,8 @@ const createMockSupabase = (mockData: {
               }
               return { data: null, error: null }
             },
-            order: (col: string, opts: any) => ({
-              limit: (n: number) => ({
+            order: () => ({
+              limit: () => ({
                 single: async () => ({ data: null, error: null }),
               }),
               data: table === 'funnel_steps' ? mockData.steps : [],
@@ -45,18 +57,18 @@ const createMockSupabase = (mockData: {
           }
           return result
         },
-        in: (column: string, values: any[]) => ({
+        in: () => ({
           data: table === 'questions' ? mockData.questions : [],
           error: null,
-          order: (col: string, opts: any) => ({
+          order: () => ({
             data: mockData.stepQuestions || [],
             error: null,
           }),
         }),
-        order: (col: string, opts: any) => ({
+        order: () => ({
           data: table === 'funnel_steps' ? mockData.steps : [],
           error: null,
-          in: (column: string, values: any[]) => ({
+          in: () => ({
             data: mockData.stepQuestions || [],
             error: null,
           }),

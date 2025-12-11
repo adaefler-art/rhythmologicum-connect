@@ -119,6 +119,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentStatus?.assessmentId])
 
   // Bootstrap assessment once funnel is loaded
