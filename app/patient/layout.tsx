@@ -2,12 +2,51 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+// Mobile breakpoint: <640px (Tailwind's sm breakpoint)
+// This matches the breakpoint used in useIsMobile() hook
+const MOBILE_BREAKPOINT = 640
+
+// Routes that should render their own full-screen mobile UI
+// These routes will not show the patient layout header/footer on mobile
+const FULL_SCREEN_MOBILE_ROUTES = ['/patient/funnel/', '/patient/assessment']
+
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  // Initialize as undefined to prevent hydration mismatch
+  // SSR returns undefined, then client sets actual value after mount
+  // This prevents server/client mismatch that causes React hydration errors
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
 
+  // Detect mobile viewport (<640px)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    
+    // Initial check
+    checkMobile()
+    
+    // Listen for resize
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Routes that render their own full-screen mobile UI with headers
+  const isFullScreenMobileRoute =
+    isMobile === true &&
+    FULL_SCREEN_MOBILE_ROUTES.some((route) => pathname?.startsWith(route))
+
+  // Hide layout header/footer on mobile for full-screen routes
+  // On first render (isMobile === undefined), use default layout to prevent flash
+  if (isFullScreenMobileRoute) {
+    return <div className="min-h-screen">{children}</div>
+  }
+
+  // Default layout with header and footer (desktop or non-fullscreen mobile routes)
   return (
     <div className="min-h-screen bg-muted flex flex-col">
       {/* Header */}
