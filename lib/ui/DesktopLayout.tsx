@@ -92,12 +92,12 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa]">
+    <div className="min-h-screen bg-[#f7f9fa] flex">
       {/* Desktop Sidebar */}
       <aside
         className={`
           fixed left-0 top-0 z-40 h-screen bg-white border-r border-slate-200
-          hidden lg:flex flex-col
+          hidden lg:flex flex-col shrink-0
           transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? 'w-16' : 'w-64'}
         `}
@@ -291,6 +291,7 @@ export function DesktopLayout({
       {/* Main Content Area */}
       <div
         className={`
+          flex-1 min-w-0
           transition-all duration-300 ease-in-out
           lg:${sidebarCollapsed ? 'ml-16' : 'ml-64'}
           min-h-screen
@@ -299,32 +300,15 @@ export function DesktopLayout({
         {/* Topbar */}
         <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-8">
           <div className="flex items-center justify-between w-full">
-            <div className="flex-1 lg:flex-none">
-              {/* Page title will be rendered by individual pages */}
-              <h2 className="text-lg font-semibold text-slate-900">
-                {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
-              </h2>
-            </div>
-            
-            {/* Desktop User Info */}
-            <div className="hidden lg:flex items-center gap-4">
-              {userEmail && (
-                <span className="text-sm text-slate-600">{userEmail}</span>
-              )}
-              {onSignOut && (
-                <button
-                  onClick={onSignOut}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  Abmelden
-                </button>
-              )}
-            </div>
+            {/* Page title will be rendered by individual pages */}
+            <h2 className="text-lg font-semibold text-slate-900">
+              {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
+            </h2>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-8">
+        <main className="p-4 lg:p-8 max-w-full">
           {children}
         </main>
       </div>
