@@ -124,10 +124,10 @@ export default function LoginPage() {
       if (role === 'clinician') {
         // Check if clinician dashboard is enabled
         if (featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
-          router.push('/clinician')
+          router.replace('/clinician')
         } else {
           // If clinician dashboard is disabled, redirect to patient flow immediately
-          router.push('/patient')
+          router.replace('/patient')
         }
       } else {
         // For patients: ensure patient_profile exists
@@ -143,7 +143,7 @@ export default function LoginPage() {
 
         if (profileError) throw profileError
 
-        router.push('/patient')
+        router.replace('/patient')
       }
     } catch (err: unknown) {
       console.error(err)
