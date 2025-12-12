@@ -3,11 +3,15 @@
 import { memo, useCallback } from 'react'
 import type { QuestionStepDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import type { ValidationError } from './PatientFlowRenderer'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import MobileQuestionScreen from './MobileQuestionScreen'
 
 /**
  * QuestionStepRenderer - Renders a step containing questions
  * 
- * Displays all questions in the step with their answer controls
+ * Displays all questions in the step with their answer controls.
+ * On mobile (<640px), uses the new adaptive MobileQuestionScreen layout.
+ * On desktop, uses the traditional card-based layout.
  */
 
 const SCALE = [
@@ -23,6 +27,13 @@ export type QuestionStepRendererProps = {
   answers: Record<string, number>
   validationErrors: ValidationError[]
   onAnswerChange: (questionKey: string, value: number) => void
+  onNextStep?: () => void
+  onPreviousStep?: () => void
+  isFirstStep?: boolean
+  isLastStep?: boolean
+  submitting?: boolean
+  totalQuestions?: number
+  funnelTitle?: string
 }
 
 export default function QuestionStepRenderer({
@@ -30,7 +41,51 @@ export default function QuestionStepRenderer({
   answers,
   validationErrors,
   onAnswerChange,
+  onNextStep,
+  onPreviousStep,
+  isFirstStep,
+  isLastStep,
+  submitting,
+  totalQuestions,
+  funnelTitle,
 }: QuestionStepRendererProps) {
+  const isMobile = useIsMobile()
+
+  // On mobile, use the new adaptive single-question screen
+  if (isMobile && step.questions.length === 1) {
+    const question = step.questions[0]
+    const hasError = validationErrors.some((err) => err.questionId === question.id)
+    const errorMsg = hasError ? 'Diese Pflichtfrage muss beantwortet werden' : null
+
+    // Wrap the onChange handler to convert string to number if needed
+    const handleMobileChange = (questionKey: string, value: number | string) => {
+      // If the value is a string and represents a number, convert it
+      const numValue = typeof value === 'string' ? parseFloat(value) : value
+      if (!isNaN(numValue)) {
+        onAnswerChange(questionKey, numValue)
+      }
+    }
+
+    return (
+      <MobileQuestionScreen
+        question={question}
+        questionIndex={step.orderIndex}
+        totalQuestions={totalQuestions || 1}
+        value={answers[question.key]}
+        onChange={handleMobileChange}
+        onNext={onNextStep}
+        onPrevious={onPreviousStep}
+        isFirst={isFirstStep}
+        isLast={isLastStep}
+        isRequired={question.isRequired}
+        error={errorMsg}
+        isSubmitting={submitting}
+        funnelTitle={funnelTitle}
+      />
+    )
+  }
+
+  // Desktop or multi-question step: use traditional card layout
   return (
     <div className="space-y-4">
       {step.questions.map((question, index) => (
