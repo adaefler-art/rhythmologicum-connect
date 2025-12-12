@@ -30,6 +30,7 @@ export async function GET(
     const { slug } = await params
 
     // Backward compatibility: Legacy slug redirects to canonical slug
+    // Kept for existing database records and external links only
     const effectiveSlug =
       slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
         ? 'stress-assessment'
@@ -242,7 +243,10 @@ export async function GET(
     console.error('Error building funnel definition:', error)
 
     const isDev = process.env.NODE_ENV !== 'production'
-    const payload: any = { error: 'Internal server error', message: 'Funnel konnte nicht geladen werden.' }
+    const payload: { error: string; message: string; details?: string; stack?: string } = {
+      error: 'Internal server error',
+      message: 'Funnel konnte nicht geladen werden.',
+    }
     if (isDev && error instanceof Error) {
       payload.details = error.message
       payload.stack = error.stack
