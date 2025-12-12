@@ -18,6 +18,8 @@ export type ContentPage = {
   category: string | null
   priority: number
   funnel_id: string | null
+  flow_step: string | null
+  order_index: number | null
   created_at: string
   updated_at: string
   deleted_at: string | null
