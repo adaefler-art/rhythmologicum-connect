@@ -69,7 +69,7 @@ export default function ContentPageStepRenderer({
           </div>
         )}
         <Suspense fallback={<div className="animate-pulse">Lädt...</div>}>
-          <MarkdownRenderer content={contentPage.body_markdown} />
+          <MarkdownRenderer content={contentPage.body_markdown || ''} />
         </Suspense>
       </MobileContentPage>
     )
@@ -97,7 +97,7 @@ export default function ContentPageStepRenderer({
         {/* Content */}
         <div className="prose prose-sm max-w-none mb-8">
           <Suspense fallback={<div className="animate-pulse">Lädt...</div>}>
-            <MarkdownRenderer content={contentPage.body_markdown} />
+            <MarkdownRenderer content={contentPage.body_markdown || ''} />
           </Suspense>
         </div>
 

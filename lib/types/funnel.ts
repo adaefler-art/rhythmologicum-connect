@@ -125,7 +125,7 @@ export interface ContentPageStepDefinition extends BaseStepDefinition {
     slug: string
     title: string
     excerpt: string | null
-    body_markdown: string
+    body_markdown?: string
     status: string
   }
 }

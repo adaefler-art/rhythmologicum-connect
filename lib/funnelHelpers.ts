@@ -285,15 +285,33 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           .single()
 
         if (contentPageError) {
-          console.error('Error fetching content page:', contentPageError)
-          return {
-            id: step.id,
-            orderIndex: step.order_index,
-            title: step.title,
-            description: step.description,
-            type: 'content_page' as const,
-            contentPageId,
+          // Check if error is due to missing body_markdown column (migration not run)
+          if (contentPageError.code === '42703') {
+            console.warn('content_pages.body_markdown missing, retrying with minimal fields (run migration)')
+            const { data: fallbackContent, error: fallbackError } = await supabase
+              .from('content_pages')
+              .select('id, slug, title, excerpt, status')
+              .eq('id', contentPageId)
+              .single()
+            
+            if (fallbackError) {
+              console.error('Error fetching content page (fallback):', fallbackError)
+              throw fallbackError
+            }
+            
+            return {
+              id: step.id,
+              orderIndex: step.order_index,
+              title: step.title,
+              description: step.description,
+              type: 'content_page' as const,
+              contentPageId,
+              contentPage: fallbackContent,
+            }
           }
+          
+          console.error('Error fetching content page:', contentPageError)
+          throw contentPageError
         }
 
         return {
@@ -303,7 +321,7 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           description: step.description,
           type: 'content_page' as const,
           contentPageId,
-          contentPage: contentPage || undefined,
+          contentPage: contentPage ?? undefined,
         }
       } else {
         return {
