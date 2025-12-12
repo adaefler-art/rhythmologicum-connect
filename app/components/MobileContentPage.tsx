@@ -160,7 +160,7 @@ export default function MobileContentPage({
               type="button"
               onClick={onCtaClick}
               disabled={isLoading}
-              className="w-full bg-sky-600 text-white font-semibold hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-98 flex items-center justify-center gap-2"
+              className="w-full bg-sky-600 text-white font-semibold hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 flex items-center justify-center gap-2"
               style={{
                 padding: `${navTokens.paddingY} ${navTokens.paddingX}`,
                 borderRadius: navTokens.borderRadius,

@@ -4,6 +4,7 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { MobileContentPage } from '@/app/components/mobile'
+import { spacing, typography } from '@/lib/design-tokens'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 
 // Lazy load MarkdownRenderer for better initial page load performance
@@ -101,8 +102,20 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
       >
         {/* Excerpt */}
         {contentPage.excerpt && (
-          <div className="mb-6 pb-6 border-b border-slate-200">
-            <p className="text-lg text-slate-600 leading-relaxed italic">
+          <div 
+            className="border-b border-slate-200"
+            style={{ 
+              marginBottom: spacing.xl,
+              paddingBottom: spacing.xl,
+            }}
+          >
+            <p 
+              className="text-slate-600 italic"
+              style={{ 
+                fontSize: typography.fontSize.lg,
+                lineHeight: typography.lineHeight.relaxed,
+              }}
+            >
               {contentPage.excerpt}
             </p>
           </div>
@@ -115,10 +128,25 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
         {/* Sections */}
         {contentPage.sections && contentPage.sections.length > 0 && (
-          <div className="mt-8 space-y-8">
-            {contentPage.sections.map((section) => (
-              <div key={section.id} className="pt-8 border-t border-slate-200">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">{section.title}</h2>
+          <div style={{ marginTop: spacing['2xl'] }}>
+            {contentPage.sections.map((section, index) => (
+              <div 
+                key={section.id} 
+                className="border-t border-slate-200"
+                style={{ 
+                  paddingTop: spacing['2xl'],
+                  marginTop: index === 0 ? 0 : spacing['2xl'],
+                }}
+              >
+                <h2 
+                  className="font-bold text-slate-900"
+                  style={{ 
+                    fontSize: typography.fontSize['2xl'],
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  {section.title}
+                </h2>
                 <Suspense fallback={<div className="text-center py-4 text-slate-500">Abschnitt wird geladen...</div>}>
                   <MarkdownRenderer content={section.body_markdown} />
                 </Suspense>
