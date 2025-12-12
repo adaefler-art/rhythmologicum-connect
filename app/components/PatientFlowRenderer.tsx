@@ -6,6 +6,7 @@ import QuestionStepRenderer from './QuestionStepRenderer'
 import InfoStepRenderer from './InfoStepRenderer'
 import AssessmentProgress from './AssessmentProgress'
 import AssessmentNavigationController from './AssessmentNavigationController'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 /**
  * PatientFlowRenderer - Central component for rendering the patient assessment flow
@@ -15,6 +16,9 @@ import AssessmentNavigationController from './AssessmentNavigationController'
  * - Delegate rendering to appropriate node-specific renderer
  * - Display progress indicators
  * - Coordinate navigation between nodes
+ * 
+ * On mobile (<640px) with single-question steps, uses full-screen adaptive layout.
+ * On desktop or multi-question steps, uses traditional card-based layout.
  * 
  * This is a presentational component - state management happens in parent.
  */
@@ -75,7 +79,31 @@ export default function PatientFlowRenderer({
 }: PatientFlowRendererProps) {
   const totalQuestions = funnel.totalQuestions
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
+  const isMobile = useIsMobile()
 
+  // On mobile with single-question step, use full-screen adaptive layout
+  const useMobileFullScreen = isMobile && isQuestionStep(currentStep) && currentStep.questions.length === 1
+
+  if (useMobileFullScreen) {
+    // Mobile full-screen adaptive layout - rendered by QuestionStepRenderer
+    return (
+      <QuestionStepRenderer
+        step={currentStep}
+        answers={answers}
+        validationErrors={validationErrors}
+        onAnswerChange={onAnswerChange}
+        onNextStep={onNextStep}
+        onPreviousStep={onPreviousStep}
+        isFirstStep={isFirstStep}
+        isLastStep={isLastStep}
+        submitting={submitting}
+        totalQuestions={totalQuestions}
+        funnelTitle={funnel.title}
+      />
+    )
+  }
+
+  // Desktop or multi-question step: traditional card-based layout
   return (
     <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
       <div className="w-full max-w-4xl mx-auto rounded-3xl bg-background shadow-lg border border-slate-200/80 p-5 sm:p-7 md:p-9">
@@ -126,6 +154,13 @@ export default function PatientFlowRenderer({
               answers={answers}
               validationErrors={validationErrors}
               onAnswerChange={onAnswerChange}
+              onNextStep={onNextStep}
+              onPreviousStep={onPreviousStep}
+              isFirstStep={isFirstStep}
+              isLastStep={isLastStep}
+              submitting={submitting}
+              totalQuestions={totalQuestions}
+              funnelTitle={funnel.title}
             />
           )}
 
