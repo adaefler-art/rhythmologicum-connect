@@ -7,6 +7,7 @@ import { componentTokens, motion as motionTokens, spacing, typography, colors } 
 import ScaleAnswerButtons from './ScaleAnswerButtons'
 import BinaryAnswerButtons from './BinaryAnswerButtons'
 import SingleChoiceAnswerButtons from './SingleChoiceAnswerButtons'
+import SliderAnswerComponent from './SliderAnswerComponent'
 import {
   getQuestionOptions,
   getBinaryQuestionConfig,
@@ -42,6 +43,7 @@ export type MobileQuestionScreenProps = {
   error?: string | null
   isSubmitting?: boolean
   funnelTitle?: string
+  useSlider?: boolean // Optional: Use slider instead of buttons for scale questions
 }
 
 const MobileQuestionScreen = memo(function MobileQuestionScreen({
@@ -58,6 +60,7 @@ const MobileQuestionScreen = memo(function MobileQuestionScreen({
   error = null,
   isSubmitting = false,
   funnelTitle = 'Fragebogen',
+  useSlider = false,
 }: MobileQuestionScreenProps) {
   const [isFocused, setIsFocused] = useState(false)
   const isAnswered = value !== undefined && value !== null
@@ -114,6 +117,23 @@ const MobileQuestionScreen = memo(function MobileQuestionScreen({
     if (question.questionType === 'scale') {
       const minValue = question.minValue ?? 0
       const maxValue = question.maxValue ?? 4
+
+      // Use slider for wider ranges or when explicitly requested
+      const shouldUseSlider = useSlider || (maxValue - minValue > 10)
+
+      if (shouldUseSlider) {
+        return (
+          <SliderAnswerComponent
+            questionId={question.id}
+            minValue={minValue}
+            maxValue={maxValue}
+            value={value as number}
+            onChange={(val) => handleAnswerChange(val)}
+            disabled={isSubmitting}
+            showValue={true}
+          />
+        )
+      }
 
       return (
         <ScaleAnswerButtons
