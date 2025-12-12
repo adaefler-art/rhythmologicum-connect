@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import FunnelCard from '@/app/components/FunnelCard'
-import { spacing, typography, colors } from '@/lib/design-tokens'
+import { spacing, typography, colors, radii } from '@/lib/design-tokens'
 
 type FunnelData = {
   id: string
@@ -158,7 +158,7 @@ export default function FunnelSelectorClient() {
               className="bg-red-50 border-2 border-red-200 text-center"
               style={{
                 padding: spacing.lg,
-                borderRadius: spacing.lg,
+                borderRadius: radii.lg,
               }}
             >
               <p className="text-red-800 font-semibold mb-2">Fehler</p>
@@ -192,7 +192,7 @@ export default function FunnelSelectorClient() {
               className="bg-slate-50 border-2 border-slate-200 text-center"
               style={{
                 padding: spacing.xl,
-                borderRadius: spacing.lg,
+                borderRadius: radii.lg,
               }}
             >
               <div className="text-6xl mb-4">🔍</div>
