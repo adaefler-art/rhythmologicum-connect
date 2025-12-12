@@ -24,10 +24,10 @@ const nextConfig: NextConfig = {
     } : false,
   },
   
-  // Optimize CSS
-  experimental: {
-    optimizeCss: true,
-  },
+  // Optimize CSS - Disabled due to critters dependency issue in turbopack
+  // experimental: {
+  //   optimizeCss: true,
+  // },
 };
 
 export default nextConfig;

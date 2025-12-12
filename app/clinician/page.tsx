@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Button, Badge, Card } from '@/lib/ui'
+import { Badge, Card, Table } from '@/lib/ui'
+import type { TableColumn } from '@/lib/ui/Table'
+import { Users, ClipboardList, FileCheck, AlertTriangle } from 'lucide-react'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -39,7 +41,7 @@ export default function ClinicianOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
-  const [sortField, setSortField] = useState<SortField>('risk')
+  const [sortField, setSortField] = useState<SortField>('date')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   useEffect(() => {
@@ -180,7 +182,9 @@ export default function ClinicianOverviewPage() {
     }
   }
 
-  const getRiskBadgeVariant = (risk: RiskLevel): 'danger' | 'warning' | 'success' | 'secondary' | 'default' => {
+  const getRiskBadgeVariant = (
+    risk: RiskLevel
+  ): 'danger' | 'warning' | 'success' | 'secondary' | 'default' => {
     switch (risk) {
       case 'high':
         return 'danger'
@@ -209,77 +213,86 @@ export default function ClinicianOverviewPage() {
     }
   }
 
-  const handlePatientClick = (patientId: string) => {
-    router.push(`/clinician/patient/${patientId}`)
+  const handleRowClick = (patient: PatientOverview) => {
+    router.push(`/clinician/patient/${patient.patient_id}`)
   }
 
   // Calculate dashboard statistics (must run on every render to keep hook order stable)
   const stats = useMemo(() => {
     const totalPatients = patientOverviews.length
-    const highRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'high').length
-    const moderateRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'moderate').length
-    const totalMeasurements = measures.length
     const now = new Date()
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    const recentCount = measures.filter(m => new Date(m.created_at) > oneDayAgo).length
+    
+    // High risk in last 24h
+    const highRiskCount24h = measures.filter(
+      (m) => m.risk_level === 'high' && new Date(m.created_at) > oneDayAgo
+    ).length
+    
+    const moderateRiskCount = patientOverviews.filter(
+      (p) => p.latest_risk_level === 'moderate'
+    ).length
+    
+    const totalMeasurements = measures.length
+    const recentCount = measures.filter((m) => new Date(m.created_at) > oneDayAgo).length
+    
+    // Count of unique patients with assessments (active funnels)
+    const openFunnelsCount = new Set(measures.map((m) => m.patient_id)).size
 
     return {
       totalPatients,
-      highRiskCount,
+      highRiskCount24h,
       moderateRiskCount,
       totalMeasurements,
       recentCount,
+      openFunnelsCount,
     }
   }, [patientOverviews, measures])
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return (
-        <svg
-          className="w-4 h-4 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      )
-    }
-    return sortDirection === 'asc' ? (
-      <svg
-        className="w-4 h-4 text-sky-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 15l7-7 7 7"
-        />
-      </svg>
-    ) : (
-      <svg
-        className="w-4 h-4 text-sky-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    )
-  }
+  // Define table columns (memoized for performance)
+  const columns: TableColumn<PatientOverview>[] = useMemo(
+    () => [
+      {
+        header: 'Patient:in',
+        accessor: (row) => <span className="font-medium text-slate-900">{row.patient_name}</span>,
+        sortable: true,
+      },
+      {
+        header: 'StressScore',
+        accessor: (row) =>
+          row.latest_stress_score !== null ? (
+            <span className="text-slate-900 font-semibold">
+              {Math.round(row.latest_stress_score)}
+            </span>
+          ) : (
+            <span className="text-slate-400">—</span>
+          ),
+        sortable: true,
+      },
+      {
+        header: 'RiskLevel',
+        accessor: (row) => (
+          <Badge variant={getRiskBadgeVariant(row.latest_risk_level)}>
+            {getRiskLabel(row.latest_risk_level)}
+          </Badge>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Letzte Messung',
+        accessor: (row) => (
+          <span className="text-slate-700 whitespace-nowrap">
+            {formatDateTime(row.latest_measurement_time)}
+          </span>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Messungen',
+        accessor: (row) => <span className="text-slate-600">{row.measurement_count}</span>,
+      },
+    ],
+    [getRiskBadgeVariant, getRiskLabel, formatDateTime]
+  )
 
   if (loading) {
     return (
@@ -294,196 +307,111 @@ export default function ClinicianOverviewPage() {
       <div className="flex items-center justify-center py-12">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <Button variant="primary" onClick={() => window.location.reload()}>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition"
+          >
             Neu laden
-          </Button>
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
-        <p className="text-sm sm:text-base text-slate-600">
-          Übersicht aller Pilotpatient:innen mit ihrer jeweils letzten Messung.
+    <>
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
+        <p className="text-slate-600">
+          Übersicht aller Patientinnen und Patienten mit aktuellen Assessments
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-        <Card padding="lg" shadow="md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Aktive Patient:innen</p>
-              <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Active Patients */}
+          <Card padding="lg" shadow="md" radius="lg">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">Active Patients</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
             </div>
-            <div className="p-3 bg-sky-100 rounded-lg">
-              <svg className="w-6 h-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card padding="lg" shadow="md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Messungen (24h)</p>
-              <p className="text-3xl font-bold text-slate-900">{stats.recentCount}</p>
-              {stats.recentCount > 0 && (
-                <Badge variant="info" size="sm" className="mt-2">Heute</Badge>
-              )}
+          {/* Open Funnels */}
+          <Card padding="lg" shadow="md" radius="lg">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">Open Funnels</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.openFunnelsCount}</p>
+                {stats.moderateRiskCount > 0 && (
+                  <Badge variant="warning" size="sm" className="mt-2">
+                    {stats.moderateRiskCount} pending
+                  </Badge>
+                )}
+              </div>
+              <div className="p-3 bg-teal-100 rounded-lg">
+                <ClipboardList className="w-5 h-5 text-teal-700" />
+              </div>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card padding="lg" shadow="md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Erhöhtes Risiko</p>
-              <p className="text-3xl font-bold text-slate-900">{stats.moderateRiskCount}</p>
-              {stats.moderateRiskCount > 0 && (
-                <Badge variant="warning" size="sm" className="mt-2">Achtung</Badge>
-              )}
+          {/* Recent Assessments */}
+          <Card padding="lg" shadow="md" radius="lg">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">Recent Assessments</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.recentCount}</p>
+                {stats.recentCount > 0 && (
+                  <Badge variant="info" size="sm" className="mt-2">
+                    Today
+                  </Badge>
+                )}
+              </div>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <FileCheck className="w-5 h-5 text-purple-600" />
+              </div>
             </div>
-            <div className="p-3 bg-amber-100 rounded-lg">
-              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card padding="lg" shadow="md">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">Hohes Risiko</p>
-              <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount}</p>
-              {stats.highRiskCount > 0 && (
-                <Badge variant="danger" size="sm" className="mt-2">Dringend</Badge>
-              )}
+          {/* Red Flags */}
+          <Card padding="lg" shadow="md" radius="lg">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">Red Flags (24h)</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount24h}</p>
+                {stats.highRiskCount24h > 0 && (
+                  <Badge variant="danger" size="sm" className="mt-2">
+                    Urgent
+                  </Badge>
+                )}
+              </div>
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Patient Table */}
-      <Card padding="none" shadow="md">
-        {sortedPatients.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <div className="mx-auto max-w-md">
-              <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
-                📋
-              </p>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Noch keine Messungen vorhanden
-              </h2>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Es wurden bisher noch keine Patientenmessungen erfasst. Sobald
-                Patient:innen ihre ersten Assessments durchführen, werden sie hier
-                angezeigt.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm md:text-base">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th
-                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Patient:in</span>
-                    <SortIcon field="name" />
-                  </div>
-                </th>
-                <th
-                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
-                  onClick={() => handleSort('score')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>StressScore</span>
-                    <SortIcon field="score" />
-                  </div>
-                </th>
-                <th
-                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
-                  onClick={() => handleSort('risk')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>RiskLevel</span>
-                    <SortIcon field="risk" />
-                  </div>
-                </th>
-                <th
-                  className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
-                  onClick={() => handleSort('date')}
-                >
-                  <div className="flex items-center gap-2">
-                    <span>Letzte Messung</span>
-                    <SortIcon field="date" />
-                  </div>
-                </th>
-                <th className="text-left px-4 md:px-6 py-4 md:py-5 font-semibold text-slate-700">
-                  Messungen
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPatients.map((patient, index) => (
-                <tr
-                  key={patient.patient_id}
-                  className={`hover:bg-slate-50 transition cursor-pointer touch-manipulation ${
-                    index !== sortedPatients.length - 1 ? 'border-b border-slate-100' : ''
-                  }`}
-                  onClick={() => handlePatientClick(patient.patient_id)}
-                >
-                  <td className="px-4 md:px-6 py-4 md:py-5">
-                    <span className="font-medium text-slate-900">
-                      {patient.patient_name}
-                    </span>
-                  </td>
-                  <td className="px-4 md:px-6 py-4 md:py-5">
-                    {patient.latest_stress_score !== null ? (
-                      <span className="text-slate-900 font-semibold">
-                        {Math.round(patient.latest_stress_score)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 md:px-6 py-4 md:py-5">
-                    <Badge variant={getRiskBadgeVariant(patient.latest_risk_level)}>
-                      {getRiskLabel(patient.latest_risk_level)}
-                    </Badge>
-                  </td>
-                  <td className="px-4 md:px-6 py-4 md:py-5 text-slate-700 whitespace-nowrap">
-                    {formatDateTime(patient.latest_measurement_time)}
-                  </td>
-                  <td className="px-4 md:px-6 py-4 md:py-5 text-slate-600">
-                    {patient.measurement_count}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          </Card>
         </div>
-        )}
-      </Card>
-    </div>
+
+        {/* Recent Assessments Table */}
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-slate-900">Recent Assessments</h2>
+        </div>
+
+      <Table
+        columns={columns}
+        data={sortedPatients}
+        keyExtractor={(row) => row.patient_id}
+        hoverable
+        bordered
+        onRowClick={handleRowClick}
+        emptyMessage="Noch keine Assessments vorhanden"
+      />
+    </>
   )
 }
