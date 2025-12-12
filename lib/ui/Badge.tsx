@@ -13,7 +13,6 @@
  */
 
 import type { ReactNode } from 'react'
-import { colors } from '@/lib/design-tokens'
 
 export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'secondary'
 export type BadgeSize = 'sm' | 'md'
