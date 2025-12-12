@@ -291,7 +291,7 @@ export default function ClinicianOverviewPage() {
         accessor: (row) => <span className="text-slate-600">{row.measurement_count}</span>,
       },
     ],
-    []
+    [getRiskBadgeVariant, getRiskLabel, formatDateTime]
   )
 
   if (loading) {
