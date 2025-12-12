@@ -76,7 +76,7 @@ export default function MobileWelcomeScreen({
           {subtitle && (
             <div className="mb-4">
               <span 
-                className="inline-block bg-sky-600 text-white font-semibold uppercase tracking-wide"
+                className="inline-block bg-primary-600 text-white font-semibold uppercase tracking-wide"
                 style={{
                   fontSize: typography.fontSize.xs,
                   padding: `${spacing.xs} ${spacing.md}`,
@@ -181,7 +181,7 @@ export default function MobileWelcomeScreen({
                 className="font-semibold text-slate-900 mb-4 flex items-center gap-2"
                 style={{ fontSize: typography.fontSize.lg }}
               >
-                <span className="text-sky-600">✓</span>
+                <span className="text-primary-600">✓</span>
                 Was Sie erwartet
               </h2>
               <ul className="space-y-3">
@@ -191,7 +191,7 @@ export default function MobileWelcomeScreen({
                     className="flex items-start gap-3"
                   >
                     <span 
-                      className="shrink-0 bg-sky-100 text-sky-700 font-semibold flex items-center justify-center"
+                      className="shrink-0 bg-primary-100 text-primary-700 font-semibold flex items-center justify-center"
                       style={{
                         width: '24px',
                         height: '24px',
@@ -218,7 +218,7 @@ export default function MobileWelcomeScreen({
 
           {/* Info Note */}
           <div 
-            className="bg-blue-50 border border-blue-200 mb-6"
+            className="bg-primary-50 border border-primary-200 mb-6"
             style={{ 
               padding: infoTokens.padding,
               borderRadius: infoTokens.borderRadius,
@@ -227,7 +227,7 @@ export default function MobileWelcomeScreen({
             <div className="flex items-start gap-3">
               <span className="text-lg shrink-0">ℹ️</span>
               <p 
-                className="text-blue-900 flex-1"
+                className="text-primary-900 flex-1"
                 style={{ 
                   fontSize: infoTokens.fontSize,
                   lineHeight: infoTokens.lineHeight,

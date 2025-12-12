@@ -645,7 +645,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
               <div className="flex items-start gap-3">
                 <span className="text-xl shrink-0">ℹ️</span>
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                  <h3 className="text-sm font-semibold text-primary-900 mb-2">
                     Weitere Informationen
                   </h3>
                   <div className="space-y-2">
@@ -655,11 +655,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
                         href={`/patient/funnel/${slug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                        className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
                       >
                         📄 {page.title}
                         {page.excerpt && (
-                          <span className="text-xs text-blue-600 ml-1">
+                          <span className="text-xs text-primary-600 ml-1">
                             — {page.excerpt.substring(0, 60)}
                             {page.excerpt.length > 60 ? '...' : ''}
                           </span>
@@ -672,11 +672,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
                         href={`/patient/funnel/${slug}/content/${page.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-sm text-blue-700 hover:text-blue-900 hover:underline"
+                        className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
                       >
                         📄 {page.title}
                         {page.excerpt && (
-                          <span className="text-xs text-blue-600 ml-1">
+                          <span className="text-xs text-primary-600 ml-1">
                             — {page.excerpt.substring(0, 60)}
                             {page.excerpt.length > 60 ? '...' : ''}
                           </span>

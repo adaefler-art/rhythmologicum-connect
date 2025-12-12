@@ -2,6 +2,11 @@
 
 This document tracks the migration of clinician and admin pages to use the shared UI component library from `lib/ui`.
 
+> **✅ Legacy Cleanup Complete (2025-12-12)**  
+> All old UI components from `docs/clinician_dashboard/components/ui/` and `docs/mobile/components/ui/` have been removed.  
+> All legacy demo pages and color references have been cleaned up.  
+> The project now uses exclusively v0.4 design system components and colors.
+
 ## Migration Goal
 
 Replace raw HTML elements and inline styles with shared UI components for:

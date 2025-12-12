@@ -43,11 +43,11 @@ export function InsightCard({
         }
       case 'info':
         return {
-          bg: 'bg-blue-50',
-          border: 'border-blue-200',
-          iconBg: 'bg-blue-100',
-          titleColor: 'text-blue-900',
-          textColor: 'text-blue-800',
+          bg: 'bg-primary-50',
+          border: 'border-primary-200',
+          iconBg: 'bg-primary-100',
+          titleColor: 'text-primary-900',
+          textColor: 'text-primary-800',
         }
       default:
         return {

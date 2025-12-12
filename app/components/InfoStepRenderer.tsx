@@ -17,7 +17,7 @@ export default function InfoStepRenderer({ step }: InfoStepRendererProps) {
 
   return (
     <div className="bg-sky-50 border border-sky-200 rounded-lg p-6">
-      <p className="text-blue-900 leading-relaxed">{content}</p>
+      <p className="text-primary-900 leading-relaxed">{content}</p>
     </div>
   )
 }
