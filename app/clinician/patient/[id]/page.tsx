@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
 import { Badge, Card, Button } from '@/lib/ui'
+import { colors } from '@/lib/design-tokens'
 
 type PatientMeasure = {
   id: string
@@ -334,7 +335,7 @@ function LineChart({
               y1={y}
               x2={chartWidth}
               y2={y}
-              stroke="#e2e8f0"
+              stroke={colors.neutral[200]}
               strokeWidth="0.5"
             />
           )
@@ -379,7 +380,7 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
   return (
     <LineChart
       dataPoints={dataPoints}
-      color="#0ea5e9"
+      color={colors.primary[500]}
       emptyMessage="Keine Stress-Daten vorhanden"
     />
   )
@@ -399,7 +400,7 @@ function SleepChart({ measures }: { measures: PatientMeasure[] }) {
   return (
     <LineChart
       dataPoints={dataPoints}
-      color="#8b5cf6"
+      color={colors.semantic.info}
       emptyMessage="Keine Schlaf-Daten vorhanden"
     />
   )
