@@ -86,9 +86,20 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch steps' }, { status: 500 })
     }
 
-    // For each step, fetch questions
+    // For each step, fetch questions and content pages
     const stepsWithQuestions = await Promise.all(
       (steps || []).map(async (step) => {
+        // Fetch content page if this is a content_page step
+        let contentPage = null
+        if (step.type === 'content_page' && step.content_page_id) {
+          const { data: cpData } = await adminClient
+            .from('content_pages')
+            .select('id, slug, title, excerpt, status')
+            .eq('id', step.content_page_id)
+            .single()
+          contentPage = cpData
+        }
+
         const { data: stepQuestions, error: stepQuestionsError } = await adminClient
           .from('funnel_step_questions')
           .select('*')
@@ -97,13 +108,13 @@ export async function GET(
 
         if (stepQuestionsError) {
           console.error('Error fetching step questions:', stepQuestionsError)
-          return { ...step, questions: [] }
+          return { ...step, questions: [], content_page: contentPage }
         }
 
         const questionIds = (stepQuestions || []).map((sq) => sq.question_id)
 
         if (questionIds.length === 0) {
-          return { ...step, questions: [] }
+          return { ...step, questions: [], content_page: contentPage }
         }
 
         const { data: questions, error: questionsError } = await adminClient
@@ -113,7 +124,7 @@ export async function GET(
 
         if (questionsError) {
           console.error('Error fetching questions:', questionsError)
-          return { ...step, questions: [] }
+          return { ...step, questions: [], content_page: contentPage }
         }
 
         // Combine questions with metadata
@@ -134,6 +145,7 @@ export async function GET(
         return {
           ...step,
           questions: questionsWithMeta,
+          content_page: contentPage,
         }
       })
     )
