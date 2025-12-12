@@ -1,0 +1,689 @@
+{
+  "$schema": "https://github.com/design-tokens/community-group/blob/main/technical-reports/format/README.md",
+  "metadata": {
+    "name": "RHYTHM Design System - iOS Tokens",
+    "version": "0.4.1",
+    "description": "Design tokens for Rhythmologicum Connect iOS/React Native app",
+    "platform": "iOS, React Native, Expo, SwiftUI",
+    "lastUpdated": "2025-12-12",
+    "compatibility": {
+      "reactNative": ">=0.70",
+      "expo": ">=48",
+      "nativewind": ">=2.0",
+      "swiftUI": ">=5.0"
+    }
+  },
+  "colors": {
+    "primary": {
+      "50": {
+        "value": "#f0f9ff",
+        "type": "color",
+        "description": "Lightest primary - backgrounds, highlights"
+      },
+      "100": {
+        "value": "#e0f2fe",
+        "type": "color",
+        "description": "Very light primary - subtle backgrounds"
+      },
+      "200": {
+        "value": "#bae6fd",
+        "type": "color",
+        "description": "Light primary - hover backgrounds"
+      },
+      "300": {
+        "value": "#7dd3fc",
+        "type": "color",
+        "description": "Medium light primary - disabled states"
+      },
+      "400": {
+        "value": "#38bdf8",
+        "type": "color",
+        "description": "Medium primary - secondary actions"
+      },
+      "500": {
+        "value": "#0ea5e9",
+        "type": "color",
+        "description": "Primary brand color - main actions, links"
+      },
+      "600": {
+        "value": "#0284c7",
+        "type": "color",
+        "description": "Primary dark - hover states, pressed"
+      },
+      "700": {
+        "value": "#0369a1",
+        "type": "color",
+        "description": "Darker primary - emphasized elements"
+      },
+      "800": {
+        "value": "#075985",
+        "type": "color",
+        "description": "Very dark primary - high contrast"
+      },
+      "900": {
+        "value": "#0c4a6e",
+        "type": "color",
+        "description": "Darkest primary - maximum contrast"
+      }
+    },
+    "neutral": {
+      "50": {
+        "value": "#f8fafc",
+        "type": "color",
+        "description": "Lightest neutral - page backgrounds"
+      },
+      "100": {
+        "value": "#f1f5f9",
+        "type": "color",
+        "description": "Very light neutral - card backgrounds"
+      },
+      "200": {
+        "value": "#e2e8f0",
+        "type": "color",
+        "description": "Light neutral - borders, dividers"
+      },
+      "300": {
+        "value": "#cbd5e1",
+        "type": "color",
+        "description": "Medium light neutral - borders, disabled"
+      },
+      "400": {
+        "value": "#94a3b8",
+        "type": "color",
+        "description": "Medium neutral - secondary text, disabled"
+      },
+      "500": {
+        "value": "#64748b",
+        "type": "color",
+        "description": "Base neutral - secondary text, icons"
+      },
+      "600": {
+        "value": "#475569",
+        "type": "color",
+        "description": "Medium dark neutral - body text"
+      },
+      "700": {
+        "value": "#334155",
+        "type": "color",
+        "description": "Dark neutral - headings, primary text"
+      },
+      "800": {
+        "value": "#1e293b",
+        "type": "color",
+        "description": "Very dark neutral - emphasized text"
+      },
+      "900": {
+        "value": "#0f172a",
+        "type": "color",
+        "description": "Darkest neutral - maximum contrast text"
+      }
+    },
+    "semantic": {
+      "success": {
+        "value": "#10b981",
+        "type": "color",
+        "description": "Success state - confirmations, positive feedback"
+      },
+      "successLight": {
+        "value": "#d1fae5",
+        "type": "color",
+        "description": "Success background - success messages"
+      },
+      "warning": {
+        "value": "#f59e0b",
+        "type": "color",
+        "description": "Warning state - cautions, alerts"
+      },
+      "warningLight": {
+        "value": "#fef3c7",
+        "type": "color",
+        "description": "Warning background - warning messages"
+      },
+      "error": {
+        "value": "#ef4444",
+        "type": "color",
+        "description": "Error state - errors, destructive actions"
+      },
+      "errorLight": {
+        "value": "#fee2e2",
+        "type": "color",
+        "description": "Error background - error messages"
+      },
+      "info": {
+        "value": "#3b82f6",
+        "type": "color",
+        "description": "Info state - informational messages"
+      },
+      "infoLight": {
+        "value": "#dbeafe",
+        "type": "color",
+        "description": "Info background - info messages"
+      }
+    },
+    "background": {
+      "light": {
+        "value": "#ffffff",
+        "type": "color",
+        "description": "Light mode background"
+      },
+      "lightGradientFrom": {
+        "value": "#f0f9ff",
+        "type": "color",
+        "description": "Light mode gradient start"
+      },
+      "lightGradientTo": {
+        "value": "#ffffff",
+        "type": "color",
+        "description": "Light mode gradient end"
+      },
+      "dark": {
+        "value": "#0a0a0a",
+        "type": "color",
+        "description": "Dark mode background"
+      },
+      "darkGradientFrom": {
+        "value": "#1e293b",
+        "type": "color",
+        "description": "Dark mode gradient start"
+      },
+      "darkGradientTo": {
+        "value": "#0f172a",
+        "type": "color",
+        "description": "Dark mode gradient end"
+      }
+    }
+  },
+  "typography": {
+    "fontSize": {
+      "xs": {
+        "value": 12,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Extra small - captions, small labels"
+      },
+      "sm": {
+        "value": 14,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Small - secondary text, helper text"
+      },
+      "base": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Base - body text, inputs, default size"
+      },
+      "lg": {
+        "value": 18,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Large - emphasized text, large buttons"
+      },
+      "xl": {
+        "value": 20,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Extra large - small headings"
+      },
+      "2xl": {
+        "value": 24,
+        "unit": "px",
+        "type": "dimension",
+        "description": "2x extra large - section headings"
+      },
+      "3xl": {
+        "value": 30,
+        "unit": "px",
+        "type": "dimension",
+        "description": "3x extra large - page titles"
+      },
+      "4xl": {
+        "value": 36,
+        "unit": "px",
+        "type": "dimension",
+        "description": "4x extra large - hero headings"
+      }
+    },
+    "lineHeight": {
+      "tight": {
+        "value": 1.25,
+        "type": "number",
+        "description": "Tight line height - headings"
+      },
+      "normal": {
+        "value": 1.5,
+        "type": "number",
+        "description": "Normal line height - body text"
+      },
+      "relaxed": {
+        "value": 1.625,
+        "type": "number",
+        "description": "Relaxed line height - comfortable reading"
+      },
+      "loose": {
+        "value": 2,
+        "type": "number",
+        "description": "Loose line height - spacious text"
+      }
+    },
+    "fontWeight": {
+      "normal": {
+        "value": 400,
+        "type": "number",
+        "description": "Normal weight - body text"
+      },
+      "medium": {
+        "value": 500,
+        "type": "number",
+        "description": "Medium weight - emphasized text"
+      },
+      "semibold": {
+        "value": 600,
+        "type": "number",
+        "description": "Semibold weight - strong emphasis, buttons"
+      },
+      "bold": {
+        "value": 700,
+        "type": "number",
+        "description": "Bold weight - headings"
+      }
+    }
+  },
+  "spacing": {
+    "xs": {
+      "value": 8,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Extra small - minimal gaps, tight spacing"
+    },
+    "sm": {
+      "value": 12,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Small - compact elements, small gaps"
+    },
+    "md": {
+      "value": 16,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Medium - default spacing, standard padding"
+    },
+    "lg": {
+      "value": 24,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Large - section spacing, card padding"
+    },
+    "xl": {
+      "value": 32,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Extra large - major sections, page margins"
+    },
+    "2xl": {
+      "value": 48,
+      "unit": "px",
+      "type": "dimension",
+      "description": "2x extra large - page sections, spacious layouts"
+    },
+    "3xl": {
+      "value": 64,
+      "unit": "px",
+      "type": "dimension",
+      "description": "3x extra large - hero sections, maximum spacing"
+    }
+  },
+  "radii": {
+    "none": {
+      "value": 0,
+      "unit": "px",
+      "type": "dimension",
+      "description": "No rounding - sharp corners"
+    },
+    "sm": {
+      "value": 6,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Small - subtle rounding"
+    },
+    "md": {
+      "value": 8,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Medium - default buttons, inputs"
+    },
+    "lg": {
+      "value": 12,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Large - cards, panels"
+    },
+    "xl": {
+      "value": 16,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Extra large - prominent cards"
+    },
+    "2xl": {
+      "value": 24,
+      "unit": "px",
+      "type": "dimension",
+      "description": "2x extra large - mobile cards, hero elements"
+    },
+    "full": {
+      "value": 9999,
+      "unit": "px",
+      "type": "dimension",
+      "description": "Full rounding - pills, circles"
+    }
+  },
+  "shadows": {
+    "none": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 0,
+        "spread": 0,
+        "color": "rgba(0, 0, 0, 0)"
+      },
+      "type": "shadow",
+      "description": "No shadow",
+      "ios": "{ shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 0 }"
+    },
+    "sm": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 1,
+        "blur": 2,
+        "spread": 0,
+        "color": "rgba(0, 0, 0, 0.05)"
+      },
+      "type": "shadow",
+      "description": "Small shadow - subtle depth",
+      "ios": "{ shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 1, elevation: 2 }"
+    },
+    "md": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 6,
+        "spread": -1,
+        "color": "rgba(0, 0, 0, 0.1)"
+      },
+      "type": "shadow",
+      "description": "Medium shadow - standard elevation",
+      "ios": "{ shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 4 }"
+    },
+    "lg": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 10,
+        "blur": 15,
+        "spread": -3,
+        "color": "rgba(0, 0, 0, 0.1)"
+      },
+      "type": "shadow",
+      "description": "Large shadow - prominent cards",
+      "ios": "{ shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 7.5, elevation: 8 }"
+    },
+    "xl": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 20,
+        "blur": 25,
+        "spread": -5,
+        "color": "rgba(0, 0, 0, 0.1)"
+      },
+      "type": "shadow",
+      "description": "Extra large shadow - floating elements",
+      "ios": "{ shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 12.5, elevation: 12 }"
+    },
+    "2xl": {
+      "value": {
+        "offsetX": 0,
+        "offsetY": 25,
+        "blur": 50,
+        "spread": -12,
+        "color": "rgba(0, 0, 0, 0.25)"
+      },
+      "type": "shadow",
+      "description": "2x extra large shadow - maximum elevation",
+      "ios": "{ shadowOffset: { width: 0, height: 12.5 }, shadowOpacity: 0.25, shadowRadius: 25, elevation: 16 }"
+    },
+    "inner": {
+      "value": {
+        "inset": true,
+        "offsetX": 0,
+        "offsetY": 2,
+        "blur": 4,
+        "spread": 0,
+        "color": "rgba(0, 0, 0, 0.05)"
+      },
+      "type": "shadow",
+      "description": "Inner shadow - inset effects (not supported in React Native)",
+      "ios": "Not supported - use border or background effects instead"
+    }
+  },
+  "motion": {
+    "duration": {
+      "instant": {
+        "value": 0,
+        "unit": "ms",
+        "type": "duration",
+        "description": "No animation - immediate"
+      },
+      "fast": {
+        "value": 150,
+        "unit": "ms",
+        "type": "duration",
+        "description": "Fast - quick interactions, micro-animations"
+      },
+      "normal": {
+        "value": 200,
+        "unit": "ms",
+        "type": "duration",
+        "description": "Normal - standard transitions"
+      },
+      "moderate": {
+        "value": 300,
+        "unit": "ms",
+        "type": "duration",
+        "description": "Moderate - comfortable animations"
+      },
+      "slow": {
+        "value": 500,
+        "unit": "ms",
+        "type": "duration",
+        "description": "Slow - deliberate, emphasized animations"
+      }
+    },
+    "easing": {
+      "linear": {
+        "value": [0, 0, 1, 1],
+        "type": "cubicBezier",
+        "description": "Linear - constant speed"
+      },
+      "ease": {
+        "value": [0.25, 0.1, 0.25, 1],
+        "type": "cubicBezier",
+        "description": "Ease - default easing"
+      },
+      "easeIn": {
+        "value": [0.42, 0, 1, 1],
+        "type": "cubicBezier",
+        "description": "Ease in - slow start"
+      },
+      "easeOut": {
+        "value": [0, 0, 0.58, 1],
+        "type": "cubicBezier",
+        "description": "Ease out - slow end"
+      },
+      "easeInOut": {
+        "value": [0.42, 0, 0.58, 1],
+        "type": "cubicBezier",
+        "description": "Ease in-out - slow start and end"
+      },
+      "smooth": {
+        "value": [0.4, 0, 0.2, 1],
+        "type": "cubicBezier",
+        "description": "Smooth - natural, Material Design standard"
+      },
+      "snappy": {
+        "value": [0.4, 0, 0.6, 1],
+        "type": "cubicBezier",
+        "description": "Snappy - quick start, slow end"
+      },
+      "spring": {
+        "value": [0.34, 1.56, 0.64, 1],
+        "type": "cubicBezier",
+        "description": "Spring - spring-like bounce effect"
+      }
+    },
+    "spring": {
+      "default": {
+        "value": {
+          "stiffness": 300,
+          "damping": 20,
+          "mass": 1
+        },
+        "type": "spring",
+        "description": "Default spring - balanced animation"
+      },
+      "gentle": {
+        "value": {
+          "stiffness": 200,
+          "damping": 25,
+          "mass": 1
+        },
+        "type": "spring",
+        "description": "Gentle spring - soft, comfortable animation"
+      },
+      "bouncy": {
+        "value": {
+          "stiffness": 400,
+          "damping": 15,
+          "mass": 1
+        },
+        "type": "spring",
+        "description": "Bouncy spring - energetic, playful animation"
+      }
+    }
+  },
+  "componentTokens": {
+    "mobileQuestionCard": {
+      "borderRadius": {
+        "value": 24,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "radii.2xl"
+      },
+      "padding": {
+        "value": 24,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.lg"
+      },
+      "shadow": {
+        "reference": "shadows.lg"
+      }
+    },
+    "desktopQuestionCard": {
+      "borderRadius": {
+        "value": 24,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "radii.2xl"
+      },
+      "padding": {
+        "value": 32,
+        "unit": "px",
+        "type": "dimension"
+      },
+      "shadow": {
+        "reference": "shadows.lg"
+      }
+    },
+    "answerButton": {
+      "borderRadius": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "radii.xl"
+      },
+      "paddingX": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.md"
+      },
+      "paddingY": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.md"
+      },
+      "minHeight": {
+        "value": 44,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Minimum touch target for iOS accessibility"
+      },
+      "minWidth": {
+        "value": 44,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Minimum touch target for iOS accessibility"
+      }
+    },
+    "navigationButton": {
+      "borderRadius": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "radii.xl"
+      },
+      "paddingX": {
+        "value": 24,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.lg"
+      },
+      "paddingY": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.md"
+      },
+      "minHeight": {
+        "value": 56,
+        "unit": "px",
+        "type": "dimension",
+        "description": "Larger touch target for primary actions"
+      }
+    },
+    "progressBar": {
+      "height": {
+        "value": 8,
+        "unit": "px",
+        "type": "dimension"
+      },
+      "borderRadius": {
+        "reference": "radii.full"
+      }
+    },
+    "infoBox": {
+      "borderRadius": {
+        "value": 12,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "radii.lg"
+      },
+      "padding": {
+        "value": 16,
+        "unit": "px",
+        "type": "dimension",
+        "reference": "spacing.md"
+      }
+    }
+  }
+}
