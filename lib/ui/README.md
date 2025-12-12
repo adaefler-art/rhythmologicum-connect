@@ -523,3 +523,102 @@ For questions or issues with the component library, please refer to:
 - Design system showcase: `/admin/design-system`
 - Design tokens documentation: `/lib/design-tokens.ts`
 - Project documentation: `/docs`
+
+---
+
+### Progress
+
+A versatile progress indicator component for showing completion status.
+
+**Variants:**
+- `bar` - Horizontal progress bar (default)
+- `steps` - Step indicators for multi-step processes
+
+**Sizes:** `sm`, `md`, `lg`
+
+**Features:**
+- Two visualization styles (bar or steps)
+- Optional percentage display
+- Optional step text ("Schritt X von Y")
+- Smooth animations
+- Accessible with ARIA attributes
+- Theme-aware colors
+
+**Usage:**
+```tsx
+import { Progress } from '@/lib/ui'
+
+// Basic progress bar
+<Progress value={60} />
+
+// With step text and percentage
+<Progress
+  value={33}
+  currentStep={2}
+  totalSteps={6}
+  showStepText
+  showPercentage
+/>
+
+// Step indicators variant
+<Progress
+  value={50}
+  currentStep={2}
+  totalSteps={4}
+  variant="steps"
+/>
+
+// Custom color and size
+<Progress
+  value={75}
+  color="#10b981"
+  size="lg"
+/>
+```
+
+---
+
+### MobileHeader
+
+A mobile-optimized header component with back button and title.
+
+**Features:**
+- Back button with icon
+- Title and optional subtitle
+- Optional action button/content
+- Touch-optimized (44px min height for interactive elements)
+- Consistent with design tokens
+
+**Usage:**
+```tsx
+import { MobileHeader } from '@/lib/ui'
+import { useRouter } from 'next/navigation'
+
+// Basic header with back button
+const router = useRouter()
+<MobileHeader
+  title="Stress Assessment"
+  onBack={() => router.back()}
+/>
+
+// With subtitle
+<MobileHeader
+  title="Frage 3"
+  subtitle="Stress-Fragebogen"
+  onBack={() => router.back()}
+/>
+
+// With action button
+<MobileHeader
+  title="Settings"
+  onBack={() => router.back()}
+  action={<Button variant="ghost" size="sm">Hilfe</Button>}
+/>
+
+// Without back button
+<MobileHeader
+  title="Willkommen"
+  showBack={false}
+/>
+```
+

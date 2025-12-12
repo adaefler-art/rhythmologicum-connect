@@ -275,6 +275,76 @@ import { Select } from '@/lib/ui'
 </Select>
 ```
 
+### Progress
+
+Versatile progress indicator for showing completion status.
+
+**Import:**
+```tsx
+import { Progress } from '@/lib/ui'
+```
+
+**Variants:**
+- `bar` - Horizontal progress bar (default)
+- `steps` - Step indicators for multi-step processes
+
+**Sizes:**
+- `sm` - Small (6px height)
+- `md` - Medium/Default (8px height)
+- `lg` - Large (12px height)
+
+**Example:**
+```tsx
+<Progress value={60} />
+
+<Progress
+  value={33}
+  currentStep={2}
+  totalSteps={6}
+  showStepText
+  showPercentage
+/>
+
+<Progress
+  value={50}
+  currentStep={2}
+  totalSteps={4}
+  variant="steps"
+/>
+```
+
+### MobileHeader
+
+Mobile-optimized header with back button and title.
+
+**Import:**
+```tsx
+import { MobileHeader } from '@/lib/ui'
+```
+
+**Features:**
+- Back button with icon
+- Title and optional subtitle
+- Optional action button
+- Touch-optimized
+
+**Example:**
+```tsx
+import { useRouter } from 'next/navigation'
+
+const router = useRouter()
+<MobileHeader
+  title="Stress Assessment"
+  onBack={() => router.back()}
+/>
+
+<MobileHeader
+  title="Frage 3"
+  subtitle="Stress-Fragebogen"
+  onBack={() => router.back()}
+/>
+```
+
 ### Label
 
 Form field label with required indicator.
@@ -455,18 +525,36 @@ When updating existing pages to use the new design system:
 - Global Styles: `/app/globals.css`
 - Layouts: `/app/clinician/layout.tsx`, `/app/patient/layout.tsx`
 
-## Future Enhancements
+## Component Checklist
+
+### ✅ Implemented Components
+
+Core UI components available in `/lib/ui/`:
+
+- [x] **Button** - Primary, Secondary, Outline, Ghost, Danger variants
+- [x] **Input** - Text input with error states
+- [x] **Textarea** - Multi-line text input
+- [x] **Select** - Dropdown selection
+- [x] **Card** - Flexible content container (supports KPI cards)
+- [x] **Badge** - Status labels and tags
+- [x] **Progress** - Bar and steps variants (NEW)
+- [x] **MobileHeader** - Back button + title layout (NEW)
+- [x] **Label** - Form field labels
+- [x] **FormField** - Complete form field wrapper
+- [x] **Table** - Data display with sorting
+- [x] **AppShell** - Desktop sidebar and topbar
+
+### Future Enhancements
 
 Planned for future versions:
 
 - [ ] Full dark mode support
 - [ ] Additional component variants
 - [ ] Animation library
-- [ ] Icon system
+- [ ] Icon system with lucide-react standardization
 - [ ] Toast/notification system
 - [ ] Modal/dialog components
 - [ ] Dropdown menu component
-- [ ] Badge/chip component
 - [ ] Tooltip component
 
 ---
