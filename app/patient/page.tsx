@@ -25,5 +25,6 @@ export default function PatientIndexRedirect({
   searchParams?: SearchParams
 }) {
   const query = buildQuery(searchParams)
-  redirect(`/patient/funnel/stress-assessment${query}`)
+  // Redirect to funnel selector page where patients can choose their assessment
+  redirect(`/patient/assessment${query}`)
 }
