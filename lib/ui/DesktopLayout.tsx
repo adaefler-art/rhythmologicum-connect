@@ -305,7 +305,7 @@ export function DesktopLayout({
         className={`
           flex-1 min-w-0
           transition-all duration-300 ease-in-out
-          lg:${sidebarCollapsed ? 'ml-16' : 'ml-64'}
+          ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
           min-h-screen
         `}
       >
