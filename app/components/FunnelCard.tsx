@@ -67,11 +67,13 @@ export default function FunnelCard({
       {/* Icon/Emoji */}
       <div className="mb-4 flex items-center justify-center">
         <div
-          className="flex items-center justify-center bg-gradient-to-br from-primary-100 to-primary-50 border border-primary-200"
+          className="flex items-center justify-center border"
           style={{
             width: '80px',
             height: '80px',
             borderRadius: radii.xl,
+            background: `linear-gradient(to bottom right, ${colors.primary[100]}, ${colors.primary[50]})`,
+            borderColor: colors.primary[200],
           }}
         >
           <span className="text-5xl">{icon}</span>
