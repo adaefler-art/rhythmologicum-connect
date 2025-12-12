@@ -213,6 +213,25 @@ export default function ClinicianOverviewPage() {
     router.push(`/clinician/patient/${patientId}`)
   }
 
+  // Calculate dashboard statistics (must run on every render to keep hook order stable)
+  const stats = useMemo(() => {
+    const totalPatients = patientOverviews.length
+    const highRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'high').length
+    const moderateRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'moderate').length
+    const totalMeasurements = measures.length
+    const now = new Date()
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const recentCount = measures.filter(m => new Date(m.created_at) > oneDayAgo).length
+
+    return {
+      totalPatients,
+      highRiskCount,
+      moderateRiskCount,
+      totalMeasurements,
+      recentCount,
+    }
+  }, [patientOverviews, measures])
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
       return (
@@ -282,27 +301,6 @@ export default function ClinicianOverviewPage() {
       </main>
     )
   }
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const totalPatients = patientOverviews.length
-    const highRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'high').length
-    const moderateRiskCount = patientOverviews.filter(p => p.latest_risk_level === 'moderate').length
-    const totalMeasurements = measures.length
-    
-    // Get patients with assessments in last 24 hours
-    const now = new Date()
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    const recentCount = measures.filter(m => new Date(m.created_at) > oneDayAgo).length
-    
-    return {
-      totalPatients,
-      highRiskCount,
-      moderateRiskCount,
-      totalMeasurements,
-      recentCount,
-    }
-  }, [patientOverviews, measures])
 
   return (
     <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
