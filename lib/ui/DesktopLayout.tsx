@@ -13,6 +13,7 @@ import {
   LogOut,
   User
 } from 'lucide-react'
+import { ThemeToggle } from './ThemeToggle'
 
 export interface NavItem {
   href: string
@@ -92,33 +93,33 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] flex">
+    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 flex transition-colors duration-150">
       {/* Desktop Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-40 h-screen bg-white border-r border-slate-200
+          fixed left-0 top-0 z-40 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           hidden lg:flex flex-col shrink-0
           transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? 'w-16' : 'w-64'}
         `}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
           {!sidebarCollapsed && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-semibold text-slate-900 truncate">
+              <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                 {appTitle}
               </h1>
-              <p className="text-xs text-slate-500 truncate">Clinician</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Clinician</p>
             </div>
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronLeft 
-              className={`w-5 h-5 text-slate-600 transition-transform duration-300 ${
+              className={`w-5 h-5 text-slate-600 dark:text-slate-300 transition-transform duration-300 ${
                 sidebarCollapsed ? 'rotate-180' : ''
               }`}
             />
@@ -137,8 +138,8 @@ export function DesktopLayout({
                     transition-all duration-200
                     ${
                       item.active
-                        ? 'bg-sky-50 text-sky-700 font-medium'
-                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-medium'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                     }
                     ${sidebarCollapsed ? 'justify-center' : ''}
                   `}
@@ -151,7 +152,7 @@ export function DesktopLayout({
                     <span className="flex-1 text-sm">{item.label}</span>
                   )}
                   {!sidebarCollapsed && item.active && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-sky-600 dark:bg-sky-400" />
                   )}
                 </Link>
               </li>
@@ -161,32 +162,42 @@ export function DesktopLayout({
 
         {/* User Section */}
         {userEmail && (
-          <div className="border-t border-slate-200 p-4">
+          <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
             <div
               className={`flex items-center gap-3 ${
                 sidebarCollapsed ? 'justify-center' : ''
               }`}
             >
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4 text-slate-600" />
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
               {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                     {userEmail.split('@')[0]}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
                 </div>
               )}
             </div>
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-2">
+                <ThemeToggle size="sm" showLabel />
+              </div>
+            )}
             {onSignOut && !sidebarCollapsed && (
               <button
                 onClick={onSignOut}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Abmelden</span>
               </button>
+            )}
+            {sidebarCollapsed && (
+              <div className="flex justify-center">
+                <ThemeToggle size="sm" />
+              </div>
             )}
           </div>
         )}
@@ -195,13 +206,13 @@ export function DesktopLayout({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-white border border-slate-200 shadow-sm"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
         aria-label="Toggle mobile menu"
       >
         {mobileMenuOpen ? (
-          <X className="w-6 h-6 text-slate-600" />
+          <X className="w-6 h-6 text-slate-600 dark:text-slate-300" />
         ) : (
-          <Menu className="w-6 h-6 text-slate-600" />
+          <Menu className="w-6 h-6 text-slate-600 dark:text-slate-300" />
         )}
       </button>
 
@@ -216,17 +227,17 @@ export function DesktopLayout({
       {/* Mobile Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-40 h-screen w-72 bg-white border-r border-slate-200
+          fixed left-0 top-0 z-40 h-screen w-72 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           flex flex-col lg:hidden
           transition-transform duration-300 ease-in-out
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Mobile Sidebar Header */}
-        <div className="h-16 flex items-center px-4 border-b border-slate-200">
+        <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex-1">
-            <h1 className="text-sm font-semibold text-slate-900">{appTitle}</h1>
-            <p className="text-xs text-slate-500">Clinician</p>
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{appTitle}</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Clinician</p>
           </div>
         </div>
 
@@ -243,12 +254,12 @@ export function DesktopLayout({
                     transition-all duration-200
                     ${
                       item.active
-                        ? 'bg-sky-50 text-sky-700 font-medium'
-                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-medium'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                     }
                   `}
                 >
-                  <span className={item.active ? 'text-sky-600' : 'text-slate-500'}>
+                  <span className={item.active ? 'text-sky-600 dark:text-sky-400' : 'text-slate-500 dark:text-slate-400'}>
                     {item.icon}
                   </span>
                   <span className="flex-1 text-sm">{item.label}</span>
@@ -260,25 +271,26 @@ export function DesktopLayout({
 
         {/* Mobile User Section */}
         {userEmail && (
-          <div className="border-t border-slate-200 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-600" />
+          <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                   {userEmail.split('@')[0]}
                 </p>
-                <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
               </div>
             </div>
+            <ThemeToggle size="sm" showLabel />
             {onSignOut && (
               <button
                 onClick={() => {
                   onSignOut()
                   setMobileMenuOpen(false)
                 }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Abmelden</span>
@@ -298,10 +310,10 @@ export function DesktopLayout({
         `}
       >
         {/* Topbar */}
-        <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-200 flex items-center px-4 lg:px-8">
+        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150">
           <div className="flex items-center justify-between w-full">
             {/* Page title will be rendered by individual pages */}
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
             </h2>
           </div>

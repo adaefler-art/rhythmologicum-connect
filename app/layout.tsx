@@ -1,25 +1,22 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { UI_CONFIG } from "@/lib/config/ui";
+import type { Metadata } from 'next'
+import './globals.css'
+import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 
 export const metadata: Metadata = {
-  title: "Rhythmologicum Connect",
-  description: "Stress- & Resilienz-Assessment Plattform",
-};
+  title: 'Rhythmologicum Connect',
+  description: 'Stress- & Resilienz-Assessment Plattform',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  // Force light mode by adding 'light' class when dark mode is disabled
-  const htmlClassName = UI_CONFIG.enableDarkMode ? '' : 'light'
-  
   return (
-    <html lang="de" className={htmlClassName}>
+    <html lang="de" suppressHydrationWarning>
       <body className="antialiased">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
-  );
+  )
 }

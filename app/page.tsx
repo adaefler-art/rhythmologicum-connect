@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { featureFlags } from '@/lib/featureFlags'
+import { ThemeToggle } from '@/lib/ui'
 
 type Mode = 'login' | 'signup'
 
@@ -161,34 +162,39 @@ export default function LoginPage() {
     email.trim() !== '' && password.trim() !== '' && !loading
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-muted px-4 py-10">
+    <main className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 py-10 transition-colors duration-150 relative">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle size="md" />
+      </div>
+      
       <div className="w-full max-w-5xl flex flex-col md:flex-row items-stretch gap-8">
         {/* Left column: brand + copy */}
-        <div className="w-full md:w-[420px] rounded-3xl bg-background/80 backdrop-blur p-8 shadow-lg">
+        <div className="w-full md:w-[420px] rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur p-8 shadow-lg transition-colors duration-150">
           <div className="space-y-4">
             <div>
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-sky-600">RHYTHM</h1>
-              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-sky-600 dark:text-sky-400">RHYTHM</h1>
+              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                 Rhythmologicum Connect
               </h2>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               Willkommen! Dieser Bereich dient dem sicheren Zugang zu Ihrem persönlichen
               Stress- & Resilienz-Programm.
             </p>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               Ihre Angaben werden vertraulich behandelt und ausschließlich zur Durchführung Ihrer
               Stress- & Resilienz-Analyse genutzt.
             </p>
             <a
               href="/datenschutz"
-              className="inline-flex text-sm font-medium text-sky-700 hover:text-sky-800"
+              className="inline-flex text-sm font-medium text-sky-700 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300"
             >
               Datenschutz & Datennutzung
             </a>
           </div>
           {versionInfo && (
-            <div className="mt-6 pt-4 border-t border-slate-100 text-sm text-slate-500 space-y-1">
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 space-y-1">
               <p>
                 Version: <span className="font-mono">{versionInfo.commitHashShort}</span>
               </p>
@@ -206,16 +212,16 @@ export default function LoginPage() {
         </div>
 
         {/* Right column: auth form */}
-        <div className="flex-1 rounded-3xl bg-background p-8 shadow-lg">
+        <div className="flex-1 rounded-3xl bg-white dark:bg-slate-800 p-8 shadow-lg transition-colors duration-150">
           {/* Tabs */}
-          <div className="mb-6 grid grid-cols-2 rounded-full bg-slate-100 p-1 text-sm font-medium">
+          <div className="mb-6 grid grid-cols-2 rounded-full bg-slate-100 dark:bg-slate-700 p-1 text-sm font-medium">
             <button
               type="button"
               onClick={() => setMode('login')}
               className={`rounded-full py-2 transition ${
                 mode === 'login'
-                  ? 'bg-white shadow-sm text-slate-900'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-slate-100'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Einloggen
@@ -225,8 +231,8 @@ export default function LoginPage() {
               onClick={() => setMode('signup')}
               className={`rounded-full py-2 transition ${
                 mode === 'signup'
-                  ? 'bg-white shadow-sm text-slate-900'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-slate-100'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Registrieren
@@ -237,20 +243,20 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* E-Mail */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">E-Mail</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-Mail</label>
               <input
                 type="email"
                 required
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 border bg-muted/50 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900"
+                className="w-full rounded-lg px-3 py-2 border bg-slate-50 dark:bg-slate-700 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600"
               />
             </div>
 
             {/* Passwort */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Passwort</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Passwort</label>
               <input
                 type="password"
                 required
@@ -258,9 +264,9 @@ export default function LoginPage() {
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 border bg-muted/50 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900"
+                className="w-full rounded-lg px-3 py-2 border bg-slate-50 dark:bg-slate-700 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600"
               />
-              <p className="mt-1 text-xs text-slate-500">Mindestens 6 Zeichen.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mindestens 6 Zeichen.</p>
             </div>
 
             {/* Fehlermeldung */}
@@ -281,7 +287,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full rounded-xl bg-primary text-primary-foreground px-4 py-2 font-semibold shadow-sm hover:opacity-90 disabled:opacity-60 transition"
+              className="w-full rounded-xl bg-sky-600 dark:bg-sky-500 text-white px-4 py-2 font-semibold shadow-sm hover:bg-sky-700 dark:hover:bg-sky-600 disabled:opacity-60 transition"
             >
               {loading
                 ? 'Bitte warten…'
