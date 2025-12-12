@@ -74,3 +74,6 @@ export type { ProgressProps } from './Progress'
 
 export { DesktopLayout } from './DesktopLayout'
 export type { DesktopLayoutProps, NavItem } from './DesktopLayout'
+
+export { Tabs, TabsList, TabTrigger, TabContent } from './Tabs'
+export type { TabsProps, TabsListProps, TabTriggerProps, TabContentProps } from './Tabs'
