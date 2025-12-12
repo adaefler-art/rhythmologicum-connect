@@ -54,10 +54,15 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
-          <p className="text-slate-600">Seite wird geladen...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent mb-4"
+            style={{
+              borderColor: 'var(--color-primary-500)',
+              borderTopColor: 'transparent',
+            }}
+          ></div>
+          <p style={{ color: 'var(--color-neutral-600)' }}>Seite wird geladen...</p>
         </div>
       </div>
     )
@@ -65,14 +70,21 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (error || !contentPage) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+        <div className="rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+          style={{ backgroundColor: 'var(--background)' }}
+        >
           <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">Fehler</h1>
-          <p className="text-slate-600 mb-6">{error || 'Seite nicht gefunden'}</p>
+          <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--foreground)' }}>
+            Fehler
+          </h1>
+          <p className="mb-6" style={{ color: 'var(--color-neutral-600)' }}>
+            {error || 'Seite nicht gefunden'}
+          </p>
           <button
             onClick={() => router.back()}
-            className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'var(--color-primary-600)' }}
           >
             Zurück
           </button>
@@ -239,7 +251,8 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           <div className="mt-8 text-center">
             <button
               onClick={() => router.push(`/patient/funnel/${targetFunnelSlug}`)}
-              className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-medium px-6 py-3 rounded-lg transition-colors shadow-md"
+              className="inline-flex items-center gap-2 text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90 shadow-md"
+              style={{ backgroundColor: 'var(--color-primary-600)' }}
             >
               <svg
                 className="w-5 h-5"

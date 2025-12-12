@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import FunnelCard from '@/app/components/FunnelCard'
-import { spacing, typography, colors, radii } from '@/lib/design-tokens'
+import { spacing, typography } from '@/lib/design-tokens'
 
 type FunnelData = {
   id: string
