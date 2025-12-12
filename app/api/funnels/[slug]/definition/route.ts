@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import type {
   FunnelDefinition,
   QuestionDefinition,
@@ -27,10 +28,8 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
-    
+
     // Backward compatibility: Legacy slug redirects to canonical slug
-    // Kept for existing database records and external links only
-    // Note: User-facing routes have been removed
     const effectiveSlug =
       slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
         ? 'stress-assessment'
@@ -40,21 +39,30 @@ export async function GET(
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+    // Create Supabase server client consistent with other endpoints (uses NEXT_PUBLIC_* keys + cookies)
+    const cookieStore = await cookies()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase configuration missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY expected')
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 },
       )
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options),
+          )
+        },
+      },
     })
 
     // 1. Fetch funnel by slug - selective fields for performance
@@ -91,7 +99,7 @@ export async function GET(
     // 3. For each step, fetch associated questions
     const stepsWithQuestions: StepDefinition[] = await Promise.all(
       (steps || []).map(async (step): Promise<StepDefinition> => {
-        const stepType = step.type.toLowerCase()
+        const stepType = (step.type || '').toLowerCase()
 
         // For question steps, fetch questions
         if (stepType === 'question_step' || stepType === 'form') {
@@ -169,7 +177,7 @@ export async function GET(
         // Content page steps
         else if (stepType === 'content_page') {
           // Fetch the content page data
-          const contentPage = step.content_page_id
+          const contentPageResult = step.content_page_id
             ? await supabase
                 .from('content_pages')
                 .select('id, slug, title, excerpt, body_markdown, status')
@@ -184,7 +192,7 @@ export async function GET(
             description: step.description,
             type: 'content_page',
             contentPageId: step.content_page_id || '',
-            contentPage: contentPage?.data || undefined,
+            contentPage: contentPageResult?.data || undefined,
           } as ContentPageStepDefinition
         }
         
@@ -230,10 +238,16 @@ export async function GET(
       },
     })
   } catch (error) {
+    // Log full error server-side for diagnostics
     console.error('Error building funnel definition:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+
+    const isDev = process.env.NODE_ENV !== 'production'
+    const payload: any = { error: 'Internal server error', message: 'Funnel konnte nicht geladen werden.' }
+    if (isDev && error instanceof Error) {
+      payload.details = error.message
+      payload.stack = error.stack
+    }
+
+    return NextResponse.json(payload, { status: 500 })
   }
 }
