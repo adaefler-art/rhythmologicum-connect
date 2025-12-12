@@ -2,6 +2,8 @@
 
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import { MobileContentPage } from '@/app/components/mobile'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 
 // Lazy load MarkdownRenderer for better initial page load performance
@@ -14,6 +16,7 @@ type ContentPageClientProps = {
 
 export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageClientProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [contentPage, setContentPage] = useState<ContentPageWithFunnel | null>(null)
@@ -77,15 +80,63 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
     )
   }
 
-  // Determine layout width based on layout setting
+  const targetFunnelSlug = contentPage.funnel?.slug ?? funnelSlug
+
+  // Mobile Layout - New v0.4 design system
+  if (isMobile) {
+    return (
+      <MobileContentPage
+        title={contentPage.title}
+        subtitle={contentPage.funnel?.title}
+        ctaLabel={contentPage.funnel ? 'Zurück zum Fragebogen' : 'Zurück'}
+        onCtaClick={() => {
+          if (contentPage.funnel) {
+            router.push(`/patient/funnel/${targetFunnelSlug}`)
+          } else {
+            router.back()
+          }
+        }}
+        secondaryLabel={contentPage.funnel ? 'Zurück' : undefined}
+        onSecondaryClick={contentPage.funnel ? () => router.back() : undefined}
+      >
+        {/* Excerpt */}
+        {contentPage.excerpt && (
+          <div className="mb-6 pb-6 border-b border-slate-200">
+            <p className="text-lg text-slate-600 leading-relaxed italic">
+              {contentPage.excerpt}
+            </p>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <Suspense fallback={<div className="text-center py-8 text-slate-500">Inhalt wird geladen...</div>}>
+          <MarkdownRenderer content={contentPage.body_markdown} />
+        </Suspense>
+
+        {/* Sections */}
+        {contentPage.sections && contentPage.sections.length > 0 && (
+          <div className="mt-8 space-y-8">
+            {contentPage.sections.map((section) => (
+              <div key={section.id} className="pt-8 border-t border-slate-200">
+                <h2 className="text-2xl font-bold text-slate-900 mb-4">{section.title}</h2>
+                <Suspense fallback={<div className="text-center py-4 text-slate-500">Abschnitt wird geladen...</div>}>
+                  <MarkdownRenderer content={section.body_markdown} />
+                </Suspense>
+              </div>
+            ))}
+          </div>
+        )}
+      </MobileContentPage>
+    )
+  }
+
+  // Desktop Layout - Original v0.3 layout (preserved for non-mobile)
   const layoutClass =
     contentPage.layout === 'wide'
       ? 'max-w-5xl'
       : contentPage.layout === 'hero'
         ? 'max-w-7xl'
         : 'max-w-3xl'
-
-  const targetFunnelSlug = contentPage.funnel?.slug ?? funnelSlug
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50">

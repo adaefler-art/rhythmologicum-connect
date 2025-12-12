@@ -22,3 +22,6 @@ export type { MobileAnswerButtonProps } from './MobileAnswerButton'
 
 export { default as MobileQuestionCard } from './MobileQuestionCard'
 export type { MobileQuestionCardProps } from './MobileQuestionCard'
+
+export { default as MobileContentPage } from './MobileContentPage'
+export type { MobileContentPageProps } from './MobileContentPage'
