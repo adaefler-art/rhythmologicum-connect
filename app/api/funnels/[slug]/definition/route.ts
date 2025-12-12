@@ -29,6 +29,16 @@ export async function GET(
   try {
     const { slug } = await params
 
+    type RawStep = {
+      id: string
+      funnel_id: string
+      order_index: number
+      title: string
+      description: string | null
+      type: string
+      content_page_id?: string | null
+    }
+
     // Backward compatibility: Legacy slug redirects to canonical slug
     // Kept for existing database records and external links only
     const effectiveSlug =
@@ -89,18 +99,40 @@ export async function GET(
       .eq('funnel_id', funnel.id)
       .order('order_index', { ascending: true })
 
+    let resolvedSteps: RawStep[] = (steps || []) as RawStep[]
+
     if (stepsError) {
-      console.error('Error fetching steps:', stepsError)
-      return NextResponse.json(
-        { error: 'Error loading funnel steps' },
-        { status: 500 },
-      )
+      if (stepsError.code === '42703') {
+        console.warn('content_page_id missing on funnel_steps, retrying without column (run migration 20251212204909)')
+        const { data: fallbackSteps, error: fallbackError } = await supabase
+          .from('funnel_steps')
+          .select('id, funnel_id, order_index, title, description, type')
+          .eq('funnel_id', funnel.id)
+          .order('order_index', { ascending: true })
+
+        if (fallbackError) {
+          console.error('Error fetching steps (fallback):', fallbackError)
+          return NextResponse.json(
+            { error: 'Error loading funnel steps' },
+            { status: 500 },
+          )
+        }
+
+        resolvedSteps = (fallbackSteps || []) as RawStep[]
+      } else {
+        console.error('Error fetching steps:', stepsError)
+        return NextResponse.json(
+          { error: 'Error loading funnel steps' },
+          { status: 500 },
+        )
+      }
     }
 
     // 3. For each step, fetch associated questions
     const stepsWithQuestions: StepDefinition[] = await Promise.all(
-      (steps || []).map(async (step): Promise<StepDefinition> => {
+      (resolvedSteps || []).map(async (step): Promise<StepDefinition> => {
         const stepType = (step.type || '').toLowerCase()
+        const contentPageId = step.content_page_id || null
 
         // For question steps, fetch questions
         if (stepType === 'question_step' || stepType === 'form') {
@@ -178,13 +210,37 @@ export async function GET(
         // Content page steps
         else if (stepType === 'content_page') {
           // Fetch the content page data
-          const contentPageResult = step.content_page_id
+          const contentPageResult = contentPageId
             ? await supabase
                 .from('content_pages')
                 .select('id, slug, title, excerpt, body_markdown, status')
-                .eq('id', step.content_page_id)
+                .eq('id', contentPageId)
                 .single()
             : null
+
+          if (contentPageResult?.error?.code === '42703') {
+            console.warn('content_pages.body_markdown missing, retrying with minimal fields (run migration)')
+            const fallbackContent = await supabase
+              .from('content_pages')
+              .select('id, slug, title, excerpt, status')
+              .eq('id', contentPageId || '')
+              .single()
+
+            if (fallbackContent.error) {
+              console.error('Error fetching content page (fallback):', fallbackContent.error)
+              throw fallbackContent.error
+            }
+
+            return {
+              id: step.id,
+              orderIndex: step.order_index,
+              title: step.title,
+              description: step.description,
+              type: 'content_page',
+              contentPageId: contentPageId || '',
+              contentPage: fallbackContent.data,
+            } as ContentPageStepDefinition
+          }
 
           return {
             id: step.id,
@@ -192,7 +248,7 @@ export async function GET(
             title: step.title,
             description: step.description,
             type: 'content_page',
-            contentPageId: step.content_page_id || '',
+            contentPageId: contentPageId || '',
             contentPage: contentPageResult?.data || undefined,
           } as ContentPageStepDefinition
         }
