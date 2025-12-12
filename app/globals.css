@@ -79,6 +79,22 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Dark Mode Colors */
+  --color-dark-bg: #0a0a0a;
+  --color-dark-surface: #1e1e1e;
+  --color-dark-surface-elevated: #2a2a2a;
+  --color-dark-border: #3a3a3a;
+  --color-dark-border-light: #2a2a2a;
+  --color-text-light: #ededed;
+  --color-text-muted-light: #a3a3a3;
+  --color-text-dimmed-light: #737373;
+  
+  /* Dark Mode Shadows */
+  --shadow-dark-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-dark-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-dark-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-dark-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -158,18 +174,20 @@
   --shadow-xl: var(--shadow-xl);
 }
 
-/* Dark mode only applies when NOT explicitly set to light mode */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode - applies when 'dark' class is on root element */
+.dark {
+  --background: var(--color-dark-bg);
+  --foreground: var(--color-text-light);
+  
+  /* Override semantic colors for better dark mode contrast */
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 /* 
@@ -228,19 +246,30 @@ select[aria-invalid="true"] {
   border-color: #dc2626 !important; /* red-600 */
 }
 
-/* Override dark mode completely - form fields stay white */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) input,
-  :root:not(.light) textarea,
-  :root:not(.light) select {
-    /* Force white background even in dark mode */
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #cbd5e1 !important; /* slate-300 */
-  }
-  
-  :root:not(.light) input::placeholder,
-  :root:not(.light) textarea::placeholder {
-    color: #6b7280 !important; /* gray-500 */
-  }
+/* Dark mode form fields */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--color-dark-surface-elevated) !important;
+  color: var(--color-text-light) !important;
+  border-color: var(--color-dark-border) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-text-dimmed-light) !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+}
+
+.dark input:disabled,
+.dark textarea:disabled,
+.dark select:disabled {
+  background-color: var(--color-dark-surface-elevated) !important;
+  color: var(--color-text-muted-light) !important;
 }

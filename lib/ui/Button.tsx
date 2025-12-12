@@ -99,37 +99,37 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // Variant styles
     const variantStyles = {
       primary: `
-        bg-sky-600 text-white 
-        hover:bg-sky-700 
-        active:bg-sky-800
-        disabled:bg-slate-300 disabled:text-slate-500
+        bg-sky-600 dark:bg-sky-500 text-white 
+        hover:bg-sky-700 dark:hover:bg-sky-600
+        active:bg-sky-800 dark:active:bg-sky-700
+        disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-400
         shadow-md hover:shadow-lg
       `,
       secondary: `
-        bg-slate-100 text-slate-900
-        hover:bg-slate-200
-        active:bg-slate-300
-        disabled:bg-slate-50 disabled:text-slate-400
-        border-2 border-slate-200
+        bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100
+        hover:bg-slate-200 dark:hover:bg-slate-600
+        active:bg-slate-300 dark:active:bg-slate-500
+        disabled:bg-slate-50 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600
+        border-2 border-slate-200 dark:border-slate-600
       `,
       outline: `
-        bg-transparent text-sky-600
-        border-2 border-sky-600
-        hover:bg-sky-50
-        active:bg-sky-100
-        disabled:border-slate-300 disabled:text-slate-400
+        bg-transparent text-sky-600 dark:text-sky-400
+        border-2 border-sky-600 dark:border-sky-500
+        hover:bg-sky-50 dark:hover:bg-sky-900/30
+        active:bg-sky-100 dark:active:bg-sky-900/50
+        disabled:border-slate-300 dark:disabled:border-slate-600 disabled:text-slate-400 dark:disabled:text-slate-500
       `,
       ghost: `
-        bg-transparent text-slate-700
-        hover:bg-slate-100
-        active:bg-slate-200
-        disabled:text-slate-400
+        bg-transparent text-slate-700 dark:text-slate-300
+        hover:bg-slate-100 dark:hover:bg-slate-700
+        active:bg-slate-200 dark:active:bg-slate-600
+        disabled:text-slate-400 dark:disabled:text-slate-500
       `,
       danger: `
-        bg-red-600 text-white
-        hover:bg-red-700
-        active:bg-red-800
-        disabled:bg-slate-300 disabled:text-slate-500
+        bg-red-600 dark:bg-red-500 text-white
+        hover:bg-red-700 dark:hover:bg-red-600
+        active:bg-red-800 dark:active:bg-red-700
+        disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-400
         shadow-md hover:shadow-lg
       `,
     }

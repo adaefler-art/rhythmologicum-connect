@@ -69,7 +69,7 @@ export function MobileHeader({
 }: MobileHeaderProps) {
   return (
     <header
-      className={`bg-white border-b border-slate-200 ${className}`}
+      className={`bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 transition-colors duration-150 ${className}`}
       style={{
         paddingLeft: spacing.md,
         paddingRight: spacing.md,
@@ -84,7 +84,7 @@ export function MobileHeader({
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center gap-2 px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 transition-all duration-200 touch-manipulation"
+              className="inline-flex items-center gap-2 px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 active:bg-slate-200 dark:active:bg-slate-600 transition-all duration-200 touch-manipulation"
               aria-label={backLabel}
             >
               <ArrowLeft className="w-5 h-5" />
@@ -103,14 +103,14 @@ export function MobileHeader({
         {/* Center: Title and subtitle */}
         <div className="flex-1 text-center min-w-0">
           <h1
-            className="font-semibold text-slate-900 truncate"
+            className="font-semibold text-slate-900 dark:text-slate-100 truncate"
             style={{ fontSize: typography.fontSize.lg }}
           >
             {title}
           </h1>
           {subtitle && (
             <p
-              className="text-slate-500 truncate mt-0.5"
+              className="text-slate-500 dark:text-slate-400 truncate mt-0.5"
               style={{ fontSize: typography.fontSize.xs }}
             >
               {subtitle}

@@ -10,11 +10,11 @@ export const UI_CONFIG = {
    * Enable Dark Mode Support
    * 
    * When false: Application always renders in light mode, regardless of OS/browser preferences
-   * When true: Application respects system dark mode preferences (via CSS media queries)
+   * When true: Application supports dark mode with user toggle and localStorage persistence
    * 
-   * Default: false (dark mode disabled)
+   * Default: true (dark mode enabled)
    */
-  enableDarkMode: false,
+  enableDarkMode: true,
 } as const
 
 /**

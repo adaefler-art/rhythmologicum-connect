@@ -98,11 +98,11 @@ export function Card({
   const radiusValue = radiusConfig[radiusVariant]
 
   // Base styles
-  const baseClasses = `bg-white ${border ? 'border border-slate-200' : ''}`
+  const baseClasses = `bg-white dark:bg-slate-800 ${border ? 'border border-slate-200 dark:border-slate-700' : ''} transition-colors duration-150`
 
   // Interactive styles
   const interactiveClasses = interactive
-    ? 'cursor-pointer hover:border-sky-400 hover:shadow-lg active:scale-[0.99] transition-all duration-200'
+    ? 'cursor-pointer hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-lg active:scale-[0.99] transition-all duration-200'
     : ''
 
   if (onClick) {
@@ -124,7 +124,7 @@ export function Card({
       >
         {header && (
           <div
-            className="border-b border-slate-200"
+            className="border-b border-slate-200 dark:border-slate-700"
             style={{
               padding: paddingValue,
             }}
@@ -141,7 +141,7 @@ export function Card({
         </div>
         {footer && (
           <div
-            className="border-t border-slate-200"
+            className="border-t border-slate-200 dark:border-slate-700"
             style={{
               padding: paddingValue,
             }}
@@ -164,7 +164,7 @@ export function Card({
     >
       {header && (
         <div
-          className="border-b border-slate-200"
+          className="border-b border-slate-200 dark:border-slate-700"
           style={{
             padding: paddingValue,
           }}
@@ -181,7 +181,7 @@ export function Card({
       </div>
       {footer && (
         <div
-          className="border-t border-slate-200"
+          className="border-t border-slate-200 dark:border-slate-700"
           style={{
             padding: paddingValue,
           }}
