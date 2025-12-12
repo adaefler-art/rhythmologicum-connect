@@ -263,6 +263,48 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           type: stepType,
           content: step.description || '',
         }
+      } else if (stepType === 'content_page') {
+        // For content page steps, fetch the referenced content page
+        const contentPageId = (step as { content_page_id?: string }).content_page_id
+        
+        if (!contentPageId) {
+          return {
+            id: step.id,
+            orderIndex: step.order_index,
+            title: step.title,
+            description: step.description,
+            type: 'content_page' as const,
+            contentPageId: '',
+          }
+        }
+
+        const { data: contentPage, error: contentPageError } = await supabase
+          .from('content_pages')
+          .select('id, slug, title, excerpt, body_markdown, status')
+          .eq('id', contentPageId)
+          .single()
+
+        if (contentPageError) {
+          console.error('Error fetching content page:', contentPageError)
+          return {
+            id: step.id,
+            orderIndex: step.order_index,
+            title: step.title,
+            description: step.description,
+            type: 'content_page' as const,
+            contentPageId,
+          }
+        }
+
+        return {
+          id: step.id,
+          orderIndex: step.order_index,
+          title: step.title,
+          description: step.description,
+          type: 'content_page' as const,
+          contentPageId,
+          contentPage: contentPage || undefined,
+        }
       } else {
         return {
           id: step.id,
