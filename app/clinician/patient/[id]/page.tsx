@@ -393,7 +393,7 @@ type DataPoint = {
   date: Date
 }
 
-function LineChart({
+function SimpleLineChart({
   dataPoints,
   color,
   emptyMessage,
@@ -489,7 +489,7 @@ function StressChart({ measures }: { measures: PatientMeasure[] }) {
     }))
 
   return (
-    <LineChart
+    <SimpleLineChart
       dataPoints={dataPoints}
       color={colors.primary[500]}
       emptyMessage="Keine Stress-Daten vorhanden"
@@ -509,7 +509,7 @@ function SleepChart({ measures }: { measures: PatientMeasure[] }) {
     }))
 
   return (
-    <LineChart
+    <SimpleLineChart
       dataPoints={dataPoints}
       color={colors.semantic.info}
       emptyMessage="Keine Schlaf-Daten vorhanden"
