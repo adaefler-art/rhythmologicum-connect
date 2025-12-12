@@ -93,6 +93,29 @@ export async function PATCH(
       auth: { persistSession: false },
     })
 
+    if (body.content_page_id !== undefined) {
+      // Allow null to clear the content page
+      if (body.content_page_id === null) {
+        updateData.content_page_id = null
+      } else if (typeof body.content_page_id === 'string') {
+        // Validate that content page exists
+        const { data: contentPage } = await adminClient
+          .from('content_pages')
+          .select('id')
+          .eq('id', body.content_page_id)
+          .single()
+
+        if (!contentPage) {
+          return NextResponse.json({ error: 'Content page not found' }, { status: 400 })
+        }
+
+        updateData.content_page_id = body.content_page_id
+      } else {
+        // Reject invalid types
+        return NextResponse.json({ error: 'content_page_id must be a string or null' }, { status: 400 })
+      }
+    }
+
     // Update step
     const { data, error } = await adminClient
       .from('funnel_steps')

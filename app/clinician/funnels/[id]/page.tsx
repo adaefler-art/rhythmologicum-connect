@@ -24,6 +24,14 @@ type Step = {
   title: string
   description: string | null
   type: string
+  content_page_id: string | null
+  content_page?: {
+    id: string
+    slug: string
+    title: string
+    excerpt: string | null
+    status: string
+  } | null
   questions: Question[]
 }
 
@@ -57,6 +65,7 @@ const translateStepType = (type: string): string => {
     form: 'Formular',
     info_step: 'Informationsschritt',
     info: 'Info',
+    content_page: 'Inhaltsseite',
     summary: 'Zusammenfassung',
   }
   return translations[type] || type
@@ -564,6 +573,35 @@ export default function FunnelDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Content Page Info (for content_page steps) */}
+            {step.type === 'content_page' && (
+              <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2">Zugeordnete Inhaltsseite</h4>
+                    {step.content_page ? (
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">{step.content_page.title}</p>
+                        <p className="text-xs text-blue-700 mt-1">Slug: {step.content_page.slug}</p>
+                        {step.content_page.excerpt && (
+                          <p className="text-xs text-blue-600 mt-1">{step.content_page.excerpt}</p>
+                        )}
+                        <span className={`inline-block mt-2 px-2 py-1 text-xs rounded ${
+                          step.content_page.status === 'published'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {step.content_page.status === 'published' ? 'Veröffentlicht' : 'Entwurf'}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-red-700">⚠️ Keine Inhaltsseite zugeordnet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Questions */}
             {step.questions.length > 0 && (
