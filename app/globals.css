@@ -250,7 +250,7 @@ select[aria-invalid="true"] {
 .dark input,
 .dark textarea,
 .dark select {
-  background-color: var(--color-dark-surface) !important;
+  background-color: var(--color-dark-surface-elevated) !important;
   color: var(--color-text-light) !important;
   border-color: var(--color-dark-border) !important;
 }
