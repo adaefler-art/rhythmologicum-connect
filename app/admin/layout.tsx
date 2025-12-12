@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { AppShell } from '@/lib/ui'
+import { DesktopLayout } from '@/lib/ui'
 import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 
@@ -103,14 +103,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   ]
 
   return (
-    <AppShell
+    <DesktopLayout
       appTitle="Rhythmologicum Connect"
-      subtitle="Admin Area"
       userEmail={user?.email}
       onSignOut={handleSignOut}
       navItems={navItems}
     >
       {children}
-    </AppShell>
+    </DesktopLayout>
   )
 }

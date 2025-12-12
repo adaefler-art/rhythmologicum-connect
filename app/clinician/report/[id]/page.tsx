@@ -101,15 +101,15 @@ export default function ClinicianReportDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <p>Report wird geladen…</p>
-      </main>
+      </div>
     )
   }
 
   if (error || !report) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">
             {error ?? 'Report nicht gefunden.'}
@@ -121,7 +121,7 @@ export default function ClinicianReportDetailPage() {
             Zurück
           </button>
         </div>
-      </main>
+      </div>
     )
   }
 
@@ -133,7 +133,7 @@ export default function ClinicianReportDetailPage() {
       : 'Niedriges Stressniveau'
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <button
         onClick={() => router.push('/clinician')}
         className="mb-4 px-4 py-2.5 min-h-11 text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
@@ -202,6 +202,6 @@ export default function ClinicianReportDetailPage() {
           </ul>
         )}
       </div>
-    </main>
+    </div>
   )
 }
