@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   
+  // Ship source maps in production to debug minified errors
+  productionBrowserSourceMaps: true,
+
   // Enable compiler optimizations
   compiler: {
     // Remove console logs in production
