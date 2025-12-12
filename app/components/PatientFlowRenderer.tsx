@@ -77,8 +77,8 @@ export default function PatientFlowRenderer({
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
-      <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8">
+    <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
+      <div className="w-full max-w-4xl mx-auto rounded-3xl bg-background shadow-lg border border-slate-200/80 p-5 sm:p-7 md:p-9">
         {/* Recovery Banner */}
         {showRecoveryBanner && answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
           <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">

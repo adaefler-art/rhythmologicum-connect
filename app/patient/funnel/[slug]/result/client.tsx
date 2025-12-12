@@ -89,7 +89,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
 
   if (loading) {
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20">
+      <main className="flex items-center justify-center bg-muted py-20">
         <p className="text-sm text-slate-600">Ergebnisse werden geladen…</p>
       </main>
     )
@@ -97,8 +97,8 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
 
   if (error || !assessment) {
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md bg-white border-2 border-red-200 rounded-xl p-6">
+      <main className="flex items-center justify-center bg-muted py-20 px-4">
+        <div className="max-w-md bg-background border-2 border-red-200 rounded-2xl p-6 shadow-lg">
           <div className="flex items-start gap-3">
             <span className="text-2xl">❌</span>
             <div>
@@ -122,10 +122,10 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   const showContentLinks = resultPages.length > 0 || infoPages.length > 0
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 sm:py-10">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
+      <div className="max-w-4xl mx-auto">
         {/* Success Header */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+        <div className="bg-background border border-slate-200/80 rounded-3xl shadow-lg p-5 sm:p-7 md:p-9 mb-4 sm:mb-6">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mb-3 sm:mb-4">
               <span className="text-2xl sm:text-3xl">✓</span>
@@ -264,7 +264,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
         </div>
 
         {/* Privacy & Data Security Card */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6">
+        <div className="bg-background border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-start gap-3">
             <span className="text-xl sm:text-2xl shrink-0">🔒</span>
             <div className="flex-1">

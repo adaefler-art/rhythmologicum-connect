@@ -9,10 +9,10 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-muted flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+      <header className="border-b border-slate-200 bg-background">
+        <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
@@ -53,8 +53,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <footer className="border-t border-slate-200 bg-background">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
             <p className="text-[11px] text-slate-500">
               Rhythmologicum Connect – frühe Testversion, nicht für den klinischen Einsatz.
