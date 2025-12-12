@@ -49,7 +49,7 @@ export default function FunnelListPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center py-12">
           <p className="text-slate-600">Lade Funnels…</p>
         </div>
@@ -59,7 +59,7 @@ export default function FunnelListPage() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error}</p>
         </div>
@@ -68,7 +68,7 @@ export default function FunnelListPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">

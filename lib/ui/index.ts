@@ -71,3 +71,6 @@ export type { MobileHeaderProps } from './MobileHeader'
 
 export { Progress } from './Progress'
 export type { ProgressProps } from './Progress'
+
+export { DesktopLayout } from './DesktopLayout'
+export type { DesktopLayoutProps, NavItem } from './DesktopLayout'

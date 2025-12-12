@@ -283,27 +283,27 @@ export default function ClinicianOverviewPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <p className="text-slate-600">Patientenübersicht wird geladen…</p>
-      </main>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error}</p>
           <Button variant="primary" onClick={() => window.location.reload()}>
             Neu laden
           </Button>
         </div>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="mb-6 lg:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
         <p className="text-sm sm:text-base text-slate-600">
@@ -484,6 +484,6 @@ export default function ClinicianOverviewPage() {
         </div>
         )}
       </Card>
-    </main>
+    </div>
   )
 }

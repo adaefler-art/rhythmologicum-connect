@@ -317,7 +317,7 @@ export default function FunnelDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center py-12">
           <p className="text-slate-600">Lade Funnel-Details…</p>
         </div>
@@ -327,7 +327,7 @@ export default function FunnelDetailPage() {
 
   if (error || !funnel) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error || 'Funnel nicht gefunden'}</p>
         </div>
@@ -344,7 +344,7 @@ export default function FunnelDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="mb-4">

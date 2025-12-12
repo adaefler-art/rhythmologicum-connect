@@ -137,27 +137,27 @@ export default function PatientDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <p className="text-slate-600">Patientendaten werden geladen…</p>
-      </main>
+      </div>
     )
   }
 
   if (error || !patient) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="max-w-md text-center">
           <p className="text-red-500 mb-4">{error ?? 'Patient nicht gefunden.'}</p>
           <Button variant="primary" onClick={() => router.push('/clinician')}>
             Zurück zur Übersicht
           </Button>
         </div>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <button
@@ -272,7 +272,7 @@ export default function PatientDetailPage() {
           </Card>
         </div>
       )}
-    </main>
+    </div>
   )
 }
 
