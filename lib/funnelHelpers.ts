@@ -321,7 +321,7 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           description: step.description,
           type: 'content_page' as const,
           contentPageId,
-          contentPage: contentPage ?? undefined,
+          contentPage: contentPage,
         }
       } else {
         return {
