@@ -105,8 +105,8 @@ export default function PatientFlowRenderer({
 
   // Desktop or multi-question step: traditional card-based layout
   return (
-    <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
-      <div className="w-full max-w-4xl mx-auto rounded-3xl bg-background shadow-lg border border-slate-200/80 p-5 sm:p-7 md:p-9">
+    <main className="min-h-screen bg-muted px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="w-full max-w-6xl mx-auto rounded-3xl bg-background shadow-lg border border-slate-200/80 p-5 sm:p-7 md:p-9">
         {/* Recovery Banner */}
         {showRecoveryBanner && answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
           <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
