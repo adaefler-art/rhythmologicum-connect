@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import FunnelCard from '@/app/components/FunnelCard'
-import { spacing, typography, colors, radii } from '@/lib/design-tokens'
+import { spacing, typography, radii } from '@/lib/design-tokens'
 
 type FunnelData = {
   id: string
@@ -79,9 +79,9 @@ export default function FunnelSelectorClient() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col bg-gradient-to-b"
       style={{
-        background: `linear-gradient(to bottom, ${colors.primary[50]}, ${colors.background.light}, ${colors.neutral[50]})`,
+        backgroundImage: `linear-gradient(to bottom, var(--color-primary-50), var(--background), var(--color-neutral-50))`,
       }}
     >
       <MobileHeader
@@ -99,19 +99,20 @@ export default function FunnelSelectorClient() {
           <div className="flex-1 min-w-0 space-y-6">
             <div className="space-y-2">
               <h1
-                className="font-bold text-slate-900 leading-tight"
+                className="font-bold leading-tight"
                 style={{
                   fontSize: typography.fontSize['2xl'],
                   lineHeight: typography.lineHeight.tight,
+                  color: 'var(--foreground)',
                 }}
               >
                 Wählen Sie Ihr Assessment
               </h1>
               <p
-                className="text-slate-700"
                 style={{
                   fontSize: typography.fontSize.base,
                   lineHeight: typography.lineHeight.relaxed,
+                  color: 'var(--color-neutral-700)',
                 }}
               >
                 Erkunden Sie verschiedene Bereiche Ihrer Gesundheit und erhalten Sie personalisierte
@@ -123,7 +124,8 @@ export default function FunnelSelectorClient() {
               <div className="text-center py-12">
                 <div className="inline-block">
                   <svg
-                    className="animate-spin h-10 w-10 text-sky-600"
+                    className="animate-spin h-10 w-10"
+                    style={{ color: 'var(--color-primary-600)' }}
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -143,7 +145,11 @@ export default function FunnelSelectorClient() {
                     />
                   </svg>
                 </div>
-                <p className="text-slate-600 mt-4" style={{ fontSize: typography.fontSize.sm }}>
+                <p style={{ 
+                  color: 'var(--color-neutral-600)', 
+                  marginTop: '1rem',
+                  fontSize: typography.fontSize.sm,
+                }}>
                   Lade Assessments...
                 </p>
               </div>

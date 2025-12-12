@@ -305,7 +305,10 @@ export default function PatientHistoryClient() {
             <button
               type="button"
               onClick={() => router.push('/patient/assessment')}
-              className="mt-6 inline-flex items-center rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition"
+              className="mt-6 inline-flex items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: 'var(--color-primary-600)',
+              }}
             >
               Zum Fragebogen
             </button>
@@ -339,7 +342,12 @@ export default function PatientHistoryClient() {
               type="button"
               onClick={handleExportJSON}
               disabled={isExporting}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold shadow-sm hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              style={{
+                borderColor: 'var(--color-neutral-200)',
+                backgroundColor: 'var(--background)',
+                color: 'var(--color-neutral-700)',
+              }}
             >
               {isExporting ? (
                 <>
@@ -371,7 +379,10 @@ export default function PatientHistoryClient() {
           <button
             type="button"
             onClick={() => router.push('/patient/assessment')}
-            className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg bg-sky-600 text-white text-sm font-semibold shadow-sm hover:bg-sky-700 transition"
+            className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg text-white text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity"
+            style={{
+              backgroundColor: 'var(--color-primary-600)',
+            }}
             aria-label="Neue Messung durchführen"
           >
             <span className="text-base" aria-hidden="true">✓</span>

@@ -108,15 +108,28 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   if (error || !assessment) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <div className="max-w-md bg-background border-2 border-red-200 rounded-2xl p-6 shadow-lg">
+        <div className="max-w-md border-2 rounded-2xl p-6 shadow-lg"
+          style={{
+            backgroundColor: 'var(--background)',
+            borderColor: 'var(--color-error-light)',
+          }}
+        >
           <div className="flex items-start gap-3">
             <span className="text-2xl">❌</span>
             <div>
-              <h3 className="text-lg font-semibold text-red-900 mb-1">Fehler</h3>
-              <p className="text-red-700">{error || 'Ergebnisse konnten nicht geladen werden.'}</p>
+              <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--color-error)' }}>
+                Fehler
+              </h3>
+              <p style={{ color: 'var(--color-error)' }}>
+                {error || 'Ergebnisse konnten nicht geladen werden.'}
+              </p>
               <button
                 onClick={() => router.push('/patient')}
-                className="mt-4 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                className="mt-4 px-4 py-2 rounded-lg hover:opacity-80 transition-opacity"
+                style={{
+                  backgroundColor: 'var(--color-neutral-200)',
+                  color: 'var(--color-neutral-700)',
+                }}
               >
                 Zurück zur Übersicht
               </button>
@@ -200,16 +213,20 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
         <div className="max-w-4xl mx-auto space-y-6">
         {/* Success Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-4"
+            style={{ backgroundColor: 'var(--color-success-light)' }}
+          >
             <span className="text-3xl sm:text-4xl">✓</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2"
+            style={{ color: 'var(--foreground)' }}
+          >
             Assessment abgeschlossen!
           </h1>
-          <p className="text-base sm:text-lg text-slate-600">
+          <p className="text-base sm:text-lg" style={{ color: 'var(--color-neutral-600)' }}>
             {funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert
           </p>
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-sm mt-2" style={{ color: 'var(--color-neutral-500)' }}>
             {new Intl.DateTimeFormat('de-DE', {
               dateStyle: 'medium',
               timeStyle: 'short',

@@ -69,8 +69,8 @@ export default function IntroPageClient({ funnelSlug }: IntroPageClientProps) {
   // Loading state
   if (loading) {
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20">
-        <p className="text-sm text-slate-600">Bitte warten…</p>
+      <main className="flex items-center justify-center bg-muted py-20">
+        <p className="text-sm" style={{ color: 'var(--color-neutral-600)' }}>Bitte warten…</p>
       </main>
     )
   }
@@ -78,12 +78,20 @@ export default function IntroPageClient({ funnelSlug }: IntroPageClientProps) {
   // Error state or no intro page
   if (error || !introPage) {
     return (
-      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md bg-white border-2 border-slate-200 rounded-xl p-6">
-          <p className="text-slate-700 mb-4">Intro-Seite konnte nicht geladen werden.</p>
+      <main className="flex items-center justify-center bg-muted py-20 px-4">
+        <div className="max-w-md border-2 rounded-xl p-6"
+          style={{
+            backgroundColor: 'var(--background)',
+            borderColor: 'var(--color-neutral-200)',
+          }}
+        >
+          <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
+            Intro-Seite konnte nicht geladen werden.
+          </p>
           <button
             onClick={handleStartAssessment}
-            className="px-6 py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors font-medium"
+            className="px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+            style={{ backgroundColor: 'var(--color-primary-600)' }}
           >
             Direkt zum Assessment
           </button>
