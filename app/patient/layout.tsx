@@ -26,38 +26,52 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
               }}>
                 Rhythmologicum Connect
               </p>
-              <p className="text-sm font-medium text-foreground dark:text-slate-100">Stress &amp; Resilienz Pilot</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+                Stress &amp; Resilienz Pilot
+              </p>
             </div>
           </div>
           <nav className="flex gap-2">
             <Link
               href="/patient/assessment"
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 ${
-                isAssessments
-                  ? ''
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200"
               style={isAssessments ? {
                 backgroundColor: 'var(--color-primary-100)',
                 color: 'var(--color-primary-700)',
               } : {
                 color: 'var(--color-neutral-600)',
               }}
+              onMouseEnter={(e) => {
+                if (!isAssessments) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isAssessments) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }
+              }}
             >
               Assessments
             </Link>
             <Link
               href="/patient/history"
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 ${
-                isHistory
-                  ? ''
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200"
               style={isHistory ? {
                 backgroundColor: 'var(--color-primary-100)',
                 color: 'var(--color-primary-700)',
               } : {
                 color: 'var(--color-neutral-600)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isHistory) {
+                  e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isHistory) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }
               }}
             >
               Verlauf
