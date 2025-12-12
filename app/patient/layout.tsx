@@ -10,10 +10,15 @@ import { usePathname } from 'next/navigation'
 // This matches the breakpoint used in useIsMobile() hook
 const MOBILE_BREAKPOINT = 640
 
+// Routes that should render their own full-screen mobile UI
+// These routes will not show the patient layout header/footer on mobile
+const FULL_SCREEN_MOBILE_ROUTES = ['/patient/funnel/', '/patient/assessment']
+
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   // Initialize as undefined to prevent hydration mismatch
-  // Will be set on client after hydration
+  // SSR returns undefined, then client sets actual value after mount
+  // This prevents server/client mismatch that causes React hydration errors
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
 
   // Detect mobile viewport (<640px)
@@ -33,8 +38,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   // Routes that render their own full-screen mobile UI with headers
   const isFullScreenMobileRoute =
     isMobile === true &&
-    (pathname?.startsWith('/patient/funnel/') ||
-      pathname?.startsWith('/patient/assessment'))
+    FULL_SCREEN_MOBILE_ROUTES.some((route) => pathname?.startsWith(route))
 
   // Hide layout header/footer on mobile for full-screen routes
   // On first render (isMobile === undefined), use default layout to prevent flash
