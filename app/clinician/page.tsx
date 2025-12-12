@@ -323,9 +323,6 @@ export default function ClinicianOverviewPage() {
               <div>
                 <p className="text-sm text-slate-500 mb-1">Active Patients</p>
                 <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
-                <Badge variant="success" size="sm" className="mt-2">
-                  +12%
-                </Badge>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Users className="w-5 h-5 text-blue-600" />
@@ -339,12 +336,14 @@ export default function ClinicianOverviewPage() {
               <div>
                 <p className="text-sm text-slate-500 mb-1">Open Funnels</p>
                 <p className="text-3xl font-bold text-slate-900">{stats.totalMeasurements}</p>
-                <Badge variant="warning" size="sm" className="mt-2">
-                  8 pending
-                </Badge>
+                {stats.moderateRiskCount > 0 && (
+                  <Badge variant="warning" size="sm" className="mt-2">
+                    {stats.moderateRiskCount} pending
+                  </Badge>
+                )}
               </div>
-              <div className="p-3 bg-[rgba(29,127,140,0.1)] rounded-lg">
-                <ClipboardList className="w-5 h-5 text-[#1D7F8C]" />
+              <div className="p-3 bg-teal-100 rounded-lg">
+                <ClipboardList className="w-5 h-5 text-teal-700" />
               </div>
             </div>
           </Card>
@@ -355,9 +354,11 @@ export default function ClinicianOverviewPage() {
               <div>
                 <p className="text-sm text-slate-500 mb-1">Recent Assessments</p>
                 <p className="text-3xl font-bold text-slate-900">{stats.recentCount}</p>
-                <Badge variant="info" size="sm" className="mt-2">
-                  Today
-                </Badge>
+                {stats.recentCount > 0 && (
+                  <Badge variant="info" size="sm" className="mt-2">
+                    Today
+                  </Badge>
+                )}
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <FileCheck className="w-5 h-5 text-purple-600" />
@@ -371,9 +372,11 @@ export default function ClinicianOverviewPage() {
               <div>
                 <p className="text-sm text-slate-500 mb-1">Red Flags (24h)</p>
                 <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount}</p>
-                <Badge variant="danger" size="sm" className="mt-2">
-                  Urgent
-                </Badge>
+                {stats.highRiskCount > 0 && (
+                  <Badge variant="danger" size="sm" className="mt-2">
+                    Urgent
+                  </Badge>
+                )}
               </div>
               <div className="p-3 bg-red-100 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
