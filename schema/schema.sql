@@ -2837,7 +2837,9 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
      priority integer DEFAULT 0 NOT NULL,
      deleted_at timestamp with time zone,
      seo_title text,
-     seo_description text
+     seo_description text,
+     flow_step text,
+     order_index integer
  );
 
  --
@@ -3995,6 +3997,24 @@ CREATE INDEX idx_content_pages_deleted_at ON public.content_pages USING btree (d
 --
 
 CREATE INDEX idx_content_pages_priority ON public.content_pages USING btree (priority);
+
+--
+-- Name: idx_content_pages_flow_step; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_pages_flow_step ON public.content_pages USING btree (flow_step) WHERE (flow_step IS NOT NULL);
+
+--
+-- Name: idx_content_pages_funnel_flow; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_pages_funnel_flow ON public.content_pages USING btree (funnel_id, flow_step) WHERE ((funnel_id IS NOT NULL) AND (flow_step IS NOT NULL));
+
+--
+-- Name: idx_content_pages_order_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_content_pages_order_index ON public.content_pages USING btree (order_index) WHERE (order_index IS NOT NULL);
 
 --
 -- Name: idx_content_page_sections_page_id; Type: INDEX; Schema: public; Owner: -

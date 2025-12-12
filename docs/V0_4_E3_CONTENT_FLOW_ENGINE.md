@@ -12,6 +12,8 @@ The Content Flow Engine enables editorial content pages to be integrated directl
 
 ### 1. Database Schema
 
+#### Funnel Steps Integration (Initial Implementation)
+
 - **New Column**: `funnel_steps.content_page_id` (UUID, nullable)
   - References `content_pages.id`
   - ON DELETE SET NULL
@@ -24,6 +26,33 @@ The Content Flow Engine enables editorial content pages to be integrated directl
 - **Index**: `funnel_steps_content_page_id_idx`
   - Partial index on content_page_id WHERE NOT NULL
   - Optimizes content page lookups
+
+#### Content Flow Mapping (Enhancement - Epic #208)
+
+Extension to support bidirectional content-to-funnel mapping:
+
+- **New Column**: `content_pages.flow_step` (TEXT, nullable)
+  - Identifies which step in the funnel flow this content belongs to
+  - Examples: "intro", "pre-assessment", "step-1", "post-assessment", "result"
+  - NULL if not part of a specific flow step
+  - Enables filtering and organizing content by flow position
+
+- **New Column**: `content_pages.order_index` (INTEGER, nullable)
+  - Determines display order within a flow step
+  - Lower numbers appear first
+  - NULL if ordering is not relevant
+  - Allows multiple content pages per flow step in a defined sequence
+
+- **Existing Column**: `content_pages.funnel_id` (UUID, nullable)
+  - Associates content with a specific funnel
+  - Used in combination with flow_step for precise placement
+
+- **New Indexes**:
+  - `idx_content_pages_flow_step`: Partial index on flow_step WHERE NOT NULL
+  - `idx_content_pages_funnel_flow`: Composite index on (funnel_id, flow_step) WHERE both NOT NULL
+  - `idx_content_pages_order_index`: Partial index on order_index WHERE NOT NULL
+
+**Migration**: `20251212220145_add_content_flow_mapping.sql`
 
 ### 2. TypeScript Types
 
@@ -120,6 +149,60 @@ POST /api/admin/funnel-steps
   "content_page_id": "uuid-of-content-page",
   "order_index": 2  // Optional, defaults to end
 }
+```
+
+### Using Content Flow Mapping Fields
+
+The new `flow_step` and `order_index` fields enable flexible content organization:
+
+#### Example 1: Intro Content Pages
+```sql
+-- Create intro content pages for a funnel
+UPDATE content_pages 
+SET 
+  funnel_id = 'uuid-of-stress-funnel',
+  flow_step = 'intro',
+  order_index = 1
+WHERE slug = 'was-ist-stress';
+
+UPDATE content_pages 
+SET 
+  funnel_id = 'uuid-of-stress-funnel',
+  flow_step = 'intro',
+  order_index = 2
+WHERE slug = 'ueber-das-assessment';
+```
+
+#### Example 2: Post-Assessment Content
+```sql
+-- Add content pages to show after assessment
+UPDATE content_pages 
+SET 
+  funnel_id = 'uuid-of-stress-funnel',
+  flow_step = 'post-assessment',
+  order_index = 1
+WHERE slug = 'result-naechste-schritte';
+```
+
+#### Example 3: Querying Content by Flow Step
+```sql
+-- Get all intro content for a funnel, ordered
+SELECT id, title, slug, excerpt
+FROM content_pages
+WHERE funnel_id = 'uuid-of-stress-funnel'
+  AND flow_step = 'intro'
+ORDER BY order_index ASC NULLS LAST, created_at;
+```
+
+#### Example 4: TypeScript/API Usage
+```typescript
+// Fetch content pages for a specific flow step
+const { data: contentPages, error } = await supabase
+  .from('content_pages')
+  .select('*')
+  .eq('funnel_id', funnelId)
+  .eq('flow_step', 'intro')
+  .order('order_index', { ascending: true, nullsFirst: false })
 ```
 
 ### Patient Experience
