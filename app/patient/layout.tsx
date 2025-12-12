@@ -6,14 +6,20 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+// Mobile breakpoint: <640px (Tailwind's sm breakpoint)
+// This matches the breakpoint used in useIsMobile() hook
+const MOBILE_BREAKPOINT = 640
+
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const [isMobile, setIsMobile] = useState(false)
+  // Initialize as undefined to prevent hydration mismatch
+  // Will be set on client after hydration
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
 
   // Detect mobile viewport (<640px)
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
     
     // Initial check
@@ -26,11 +32,12 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
 
   // Routes that render their own full-screen mobile UI with headers
   const isFullScreenMobileRoute =
-    isMobile &&
+    isMobile === true &&
     (pathname?.startsWith('/patient/funnel/') ||
       pathname?.startsWith('/patient/assessment'))
 
   // Hide layout header/footer on mobile for full-screen routes
+  // On first render (isMobile === undefined), use default layout to prevent flash
   if (isFullScreenMobileRoute) {
     return <div className="min-h-screen">{children}</div>
   }
