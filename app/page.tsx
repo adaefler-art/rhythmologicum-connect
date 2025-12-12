@@ -127,7 +127,7 @@ export default function LoginPage() {
           router.push('/clinician')
         } else {
           // If clinician dashboard is disabled, redirect to patient flow immediately
-          router.push('/patient/funnel/stress-assessment')
+          router.push('/patient')
         }
       } else {
         // For patients: ensure patient_profile exists
@@ -143,7 +143,7 @@ export default function LoginPage() {
 
         if (profileError) throw profileError
 
-        router.push('/patient/funnel/stress-assessment')
+        router.push('/patient')
       }
     } catch (err: unknown) {
       console.error(err)

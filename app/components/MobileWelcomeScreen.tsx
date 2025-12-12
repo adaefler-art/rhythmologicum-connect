@@ -54,8 +54,8 @@ export default function MobileWelcomeScreen({
       />
 
       {/* Main Content - Scrollable */}
-      <main className="flex-1 overflow-y-auto" style={{ padding: spacing.lg }}>
-        <div className="max-w-md mx-auto">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="w-full max-w-5xl mx-auto">
           
           {/* Illustration Placeholder */}
           <div 
@@ -122,7 +122,7 @@ export default function MobileWelcomeScreen({
           )}
 
           {/* Info Cards Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {/* Duration Card */}
             <div 
               className="bg-white border border-slate-200"
@@ -252,10 +252,9 @@ export default function MobileWelcomeScreen({
 
       {/* CTA Footer - Fixed at bottom */}
       <footer 
-        className="bg-white border-t border-slate-200 shadow-lg"
-        style={{ padding: spacing.lg }}
+        className="bg-white border-t border-slate-200 shadow-lg px-4 sm:px-6 lg:px-8 py-4"
       >
-        <div className="max-w-md mx-auto">
+        <div className="w-full max-w-5xl mx-auto">
           <button
             type="button"
             onClick={onContinue}
