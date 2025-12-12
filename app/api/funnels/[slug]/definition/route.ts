@@ -6,6 +6,7 @@ import type {
   StepDefinition,
   QuestionStepDefinition,
   InfoStepDefinition,
+  ContentPageStepDefinition,
   OtherStepDefinition,
 } from '@/lib/types/funnel'
 
@@ -75,7 +76,7 @@ export async function GET(
     // 2. Fetch funnel steps ordered by order_index - selective fields for performance
     const { data: steps, error: stepsError } = await supabase
       .from('funnel_steps')
-      .select('id, funnel_id, order_index, title, description, type')
+      .select('id, funnel_id, order_index, title, description, type, content_page_id')
       .eq('funnel_id', funnel.id)
       .order('order_index', { ascending: true })
 
@@ -164,6 +165,28 @@ export async function GET(
             content: step.description || '',
           } as InfoStepDefinition
         } 
+        
+        // Content page steps
+        else if (stepType === 'content_page') {
+          // Fetch the content page data
+          const contentPage = step.content_page_id
+            ? await supabase
+                .from('content_pages')
+                .select('id, slug, title, excerpt, body_markdown, status')
+                .eq('id', step.content_page_id)
+                .single()
+            : null
+
+          return {
+            id: step.id,
+            orderIndex: step.order_index,
+            title: step.title,
+            description: step.description,
+            type: 'content_page',
+            contentPageId: step.content_page_id || '',
+            contentPage: contentPage?.data || undefined,
+          } as ContentPageStepDefinition
+        }
         
         // Other step types (summary, etc.)
         else {

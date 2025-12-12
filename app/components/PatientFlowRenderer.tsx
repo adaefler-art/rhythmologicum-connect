@@ -1,9 +1,10 @@
 'use client'
 
 import type { FunnelDefinition, StepDefinition } from '@/lib/types/funnel'
-import { isQuestionStep, isInfoStep } from '@/lib/types/funnel'
+import { isQuestionStep, isInfoStep, isContentPageStep } from '@/lib/types/funnel'
 import QuestionStepRenderer from './QuestionStepRenderer'
 import InfoStepRenderer from './InfoStepRenderer'
+import ContentPageStepRenderer from './ContentPageStepRenderer'
 import AssessmentProgress from './AssessmentProgress'
 import AssessmentNavigationController from './AssessmentNavigationController'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
@@ -12,7 +13,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
  * PatientFlowRenderer - Central component for rendering the patient assessment flow
  * 
  * Responsibilities:
- * - Determine current node type (Question, Info, Result)
+ * - Determine current node type (Question, Info, Content Page, Result)
  * - Delegate rendering to appropriate node-specific renderer
  * - Display progress indicators
  * - Coordinate navigation between nodes
@@ -165,6 +166,19 @@ export default function PatientFlowRenderer({
           )}
 
           {isInfoStep(currentStep) && <InfoStepRenderer step={currentStep} />}
+
+          {isContentPageStep(currentStep) && (
+            <ContentPageStepRenderer
+              step={currentStep}
+              onNextStep={onNextStep}
+              onPreviousStep={onPreviousStep}
+              isFirstStep={isFirstStep}
+              isLastStep={isLastStep}
+              submitting={submitting}
+              totalQuestions={totalQuestions}
+              answeredCount={answeredCount}
+            />
+          )}
 
           {/* Future: Add ResultRenderer for result steps */}
         </div>

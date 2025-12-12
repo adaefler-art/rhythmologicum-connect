@@ -301,6 +301,20 @@ CREATE TYPE realtime.equality_op AS ENUM (
     ALTER TABLE ONLY public.funnel_steps
         ADD CONSTRAINT funnel_steps_funnel_id_fkey FOREIGN KEY (funnel_id) REFERENCES public.funnels(id) ON DELETE CASCADE;
 
+    --
+    -- Name: funnel_steps funnel_steps_content_page_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_steps
+        ADD CONSTRAINT funnel_steps_content_page_id_fkey FOREIGN KEY (content_page_id) REFERENCES public.content_pages(id) ON DELETE SET NULL;
+
+    --
+    -- Name: funnel_steps funnel_steps_content_page_consistency; Type: CHECK CONSTRAINT; Schema: public; Owner: -
+    --
+
+    ALTER TABLE ONLY public.funnel_steps
+        ADD CONSTRAINT funnel_steps_content_page_consistency CHECK (((type = 'content_page'::text) AND (content_page_id IS NOT NULL)) OR ((type <> 'content_page'::text) AND (content_page_id IS NULL)));
+
 	value text
 );
 
@@ -2898,6 +2912,7 @@ COMMENT ON COLUMN auth.users.is_sso_user IS 'Auth: Set this column to true when 
      title text NOT NULL,
      description text,
      type text NOT NULL,
+     content_page_id uuid,
      created_at timestamp with time zone DEFAULT now() NOT NULL,
      updated_at timestamp with time zone DEFAULT now() NOT NULL
  );
@@ -4046,6 +4061,12 @@ CREATE INDEX funnel_steps_funnel_id_idx ON public.funnel_steps USING btree (funn
 --
 
 CREATE INDEX funnel_steps_order_index_idx ON public.funnel_steps USING btree (order_index);
+
+--
+-- Name: funnel_steps_content_page_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX funnel_steps_content_page_id_idx ON public.funnel_steps USING btree (content_page_id) WHERE (content_page_id IS NOT NULL);
 
 --
 -- Name: idx_user_consents_user_id; Type: INDEX; Schema: public; Owner: -

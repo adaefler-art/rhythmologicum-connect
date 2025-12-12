@@ -116,13 +116,27 @@ export interface InfoStepDefinition extends BaseStepDefinition {
   content?: string
 }
 
+// Content page step (references a content page)
+export interface ContentPageStepDefinition extends BaseStepDefinition {
+  type: 'content_page'
+  contentPageId: string
+  contentPage?: {
+    id: string
+    slug: string
+    title: string
+    excerpt: string | null
+    body_markdown: string
+    status: string
+  }
+}
+
 // Other step types
 export interface OtherStepDefinition extends BaseStepDefinition {
   type: 'summary' | 'other'
 }
 
 // Union type for all step types
-export type StepDefinition = QuestionStepDefinition | InfoStepDefinition | OtherStepDefinition
+export type StepDefinition = QuestionStepDefinition | InfoStepDefinition | ContentPageStepDefinition | OtherStepDefinition
 
 // Complete funnel definition for UI consumption
 export type FunnelDefinition = {
@@ -145,4 +159,8 @@ export function isQuestionStep(step: StepDefinition): step is QuestionStepDefini
 
 export function isInfoStep(step: StepDefinition): step is InfoStepDefinition {
   return step.type === 'info_step' || step.type === 'info'
+}
+
+export function isContentPageStep(step: StepDefinition): step is ContentPageStepDefinition {
+  return step.type === 'content_page'
 }
