@@ -25,3 +25,6 @@ export type { MobileQuestionCardProps } from './MobileQuestionCard'
 
 export { default as MobileContentPage } from './MobileContentPage'
 export type { MobileContentPageProps } from './MobileContentPage'
+
+export { default as MobileHeader } from './MobileHeader'
+export type { MobileHeaderProps, MobileHeaderVariant } from './MobileHeader'

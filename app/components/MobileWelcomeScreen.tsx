@@ -1,6 +1,7 @@
 'use client'
 
 import { spacing, typography, radii, shadows, colors, componentTokens } from '@/lib/design-tokens'
+import MobileHeader from './MobileHeader'
 
 export type MobileWelcomeScreenProps = {
   title: string
@@ -44,6 +45,14 @@ export default function MobileWelcomeScreen({
         background: `linear-gradient(to bottom, ${colors.primary[50]}, ${colors.background.light}, ${colors.neutral[50]})`,
       }}
     >
+      {/* Mobile Header */}
+      <MobileHeader
+        variant="with-title"
+        title={title}
+        subtitle="Rhythmologicum Connect"
+        showBack={true}
+      />
+
       {/* Main Content - Scrollable */}
       <main className="flex-1 overflow-y-auto" style={{ padding: spacing.lg }}>
         <div className="max-w-md mx-auto">

@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
 import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import MobileHeader from '@/app/components/MobileHeader'
 import {
   ScoreCard,
   InsightCardsGroup,
@@ -36,6 +38,7 @@ type ResultResponse = {
 
 export default function ResultClient({ slug, assessmentId }: ResultClientProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
@@ -182,8 +185,19 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   ]
 
   return (
-    <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <>
+      {/* Mobile Header - Only on Mobile */}
+      {isMobile && (
+        <MobileHeader
+          variant="with-title"
+          title="Ergebnisse"
+          subtitle={funnelTitle || 'Assessment'}
+          showBack={true}
+        />
+      )}
+      
+      <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
+        <div className="max-w-4xl mx-auto space-y-6">
         {/* Success Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
@@ -322,5 +336,6 @@ Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. W
         </div>
       </div>
     </main>
+    </>
   )
 }
