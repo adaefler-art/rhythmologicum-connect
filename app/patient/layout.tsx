@@ -2,12 +2,40 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const [isMobile, setIsMobile] = useState(false)
 
+  // Detect mobile viewport (<640px)
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640)
+    }
+    
+    // Initial check
+    checkMobile()
+    
+    // Listen for resize
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Routes that render their own full-screen mobile UI with headers
+  const isFullScreenMobileRoute =
+    isMobile &&
+    (pathname?.startsWith('/patient/funnel/') ||
+      pathname?.startsWith('/patient/assessment'))
+
+  // Hide layout header/footer on mobile for full-screen routes
+  if (isFullScreenMobileRoute) {
+    return <div className="min-h-screen">{children}</div>
+  }
+
+  // Default layout with header and footer (desktop or non-fullscreen mobile routes)
   return (
     <div className="min-h-screen bg-muted flex flex-col">
       {/* Header */}

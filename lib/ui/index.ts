@@ -66,9 +66,6 @@ export type { HelperTextProps } from './HelperText'
 export { ErrorText } from './ErrorText'
 export type { ErrorTextProps } from './ErrorText'
 
-export { MobileHeader } from './MobileHeader'
-export type { MobileHeaderProps } from './MobileHeader'
-
 export { Progress } from './Progress'
 export type { ProgressProps } from './Progress'
 
