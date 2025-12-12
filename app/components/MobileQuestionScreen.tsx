@@ -3,11 +3,12 @@
 import { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { QuestionDefinition } from '@/lib/types/funnel'
-import { componentTokens, motion as motionTokens, spacing, typography, colors } from '@/lib/design-tokens'
+import { componentTokens, motion as motionTokens, spacing, typography, colors, shadows } from '@/lib/design-tokens'
 import ScaleAnswerButtons from './ScaleAnswerButtons'
 import BinaryAnswerButtons from './BinaryAnswerButtons'
 import SingleChoiceAnswerButtons from './SingleChoiceAnswerButtons'
 import SliderAnswerComponent from './SliderAnswerComponent'
+import MobileHeader from './MobileHeader'
 import {
   getQuestionOptions,
   getBinaryQuestionConfig,
@@ -184,26 +185,28 @@ const MobileQuestionScreen = memo(function MobileQuestionScreen({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
-      {/* Top Progress Indicator - Sticky */}
-      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
-        {/* Funnel Title */}
-        <div
-          className="border-b border-slate-100"
-          style={{ padding: `${spacing.md} ${spacing.lg}` }}
-        >
-          <p
-            className="font-medium uppercase tracking-wide text-sky-600"
-            style={{ fontSize: typography.fontSize.xs }}
-          >
-            {funnelTitle}
-          </p>
-        </div>
+      {/* Mobile Header */}
+      <MobileHeader
+        variant="with-title"
+        title={funnelTitle}
+        subtitle={`Frage ${questionIndex + 1} von ${totalQuestions}`}
+        showBack={!isFirst}
+        onBack={onPrevious}
+      />
 
-        {/* Progress Bar */}
-        <div style={{ padding: `${spacing.md} ${spacing.lg}` }}>
+      {/* Progress Bar - Sticky below header */}
+      <div 
+        className="sticky bg-white border-b border-slate-100"
+        style={{ 
+          top: '56px', // Height of MobileHeader
+          zIndex: 40,
+          boxShadow: shadows.sm,
+        }}
+      >
+        <div style={{ padding: `${spacing.sm} ${spacing.lg}` }}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-slate-600">
-              Frage {questionIndex + 1} von {totalQuestions}
+              Fortschritt
             </span>
             <span className="text-xs font-semibold text-sky-600">
               {Math.round(progressPercent)}%
@@ -224,7 +227,7 @@ const MobileQuestionScreen = memo(function MobileQuestionScreen({
             />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Question Block - Scrollable Content */}
       <main

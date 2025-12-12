@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react'
 import { spacing, typography, radii, shadows, colors, componentTokens } from '@/lib/design-tokens'
+import MobileHeader from './MobileHeader'
 
 export type MobileContentPageProps = {
   /** Page title displayed at the top */
@@ -70,43 +71,13 @@ export default function MobileContentPage({
         background: `linear-gradient(to bottom, ${colors.primary[50]}, ${colors.background.light})`,
       }}
     >
-      {/* Header - Title Section */}
-      <header 
-        className="shrink-0 bg-white border-b border-slate-200"
-        style={{ 
-          padding: `${spacing.lg} ${spacing.lg}`,
-          boxShadow: shadows.sm,
-        }}
-      >
-        <div className="max-w-3xl mx-auto">
-          {/* Subtitle/Category Badge */}
-          {subtitle && (
-            <div className="mb-3">
-              <span 
-                className="inline-block bg-sky-100 text-sky-700 font-semibold uppercase tracking-wide"
-                style={{
-                  fontSize: typography.fontSize.xs,
-                  padding: `${spacing.xs} ${spacing.sm}`,
-                  borderRadius: radii.md,
-                }}
-              >
-                {subtitle}
-              </span>
-            </div>
-          )}
-          
-          {/* Title */}
-          <h1 
-            className="font-bold text-slate-900 leading-tight"
-            style={{ 
-              fontSize: typography.fontSize['3xl'],
-              lineHeight: typography.lineHeight.tight,
-            }}
-          >
-            {title}
-          </h1>
-        </div>
-      </header>
+      {/* Mobile Header */}
+      <MobileHeader
+        variant="with-title"
+        title={title}
+        subtitle={subtitle}
+        showBack={true}
+      />
 
       {/* Main Content - Scrollable */}
       <main 
