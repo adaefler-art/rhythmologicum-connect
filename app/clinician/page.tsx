@@ -220,66 +220,79 @@ export default function ClinicianOverviewPage() {
   // Calculate dashboard statistics (must run on every render to keep hook order stable)
   const stats = useMemo(() => {
     const totalPatients = patientOverviews.length
-    const highRiskCount = patientOverviews.filter((p) => p.latest_risk_level === 'high').length
+    const now = new Date()
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    
+    // High risk in last 24h
+    const highRiskCount24h = measures.filter(
+      (m) => m.risk_level === 'high' && new Date(m.created_at) > oneDayAgo
+    ).length
+    
     const moderateRiskCount = patientOverviews.filter(
       (p) => p.latest_risk_level === 'moderate'
     ).length
+    
     const totalMeasurements = measures.length
-    const now = new Date()
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const recentCount = measures.filter((m) => new Date(m.created_at) > oneDayAgo).length
+    
+    // Count of unique patients with assessments (active funnels)
+    const openFunnelsCount = new Set(measures.map((m) => m.patient_id)).size
 
     return {
       totalPatients,
-      highRiskCount,
+      highRiskCount24h,
       moderateRiskCount,
       totalMeasurements,
       recentCount,
+      openFunnelsCount,
     }
   }, [patientOverviews, measures])
 
-  // Define table columns
-  const columns: TableColumn<PatientOverview>[] = [
-    {
-      header: 'Patient:in',
-      accessor: (row) => <span className="font-medium text-slate-900">{row.patient_name}</span>,
-      sortable: true,
-    },
-    {
-      header: 'StressScore',
-      accessor: (row) =>
-        row.latest_stress_score !== null ? (
-          <span className="text-slate-900 font-semibold">
-            {Math.round(row.latest_stress_score)}
-          </span>
-        ) : (
-          <span className="text-slate-400">—</span>
+  // Define table columns (memoized for performance)
+  const columns: TableColumn<PatientOverview>[] = useMemo(
+    () => [
+      {
+        header: 'Patient:in',
+        accessor: (row) => <span className="font-medium text-slate-900">{row.patient_name}</span>,
+        sortable: true,
+      },
+      {
+        header: 'StressScore',
+        accessor: (row) =>
+          row.latest_stress_score !== null ? (
+            <span className="text-slate-900 font-semibold">
+              {Math.round(row.latest_stress_score)}
+            </span>
+          ) : (
+            <span className="text-slate-400">—</span>
+          ),
+        sortable: true,
+      },
+      {
+        header: 'RiskLevel',
+        accessor: (row) => (
+          <Badge variant={getRiskBadgeVariant(row.latest_risk_level)}>
+            {getRiskLabel(row.latest_risk_level)}
+          </Badge>
         ),
-      sortable: true,
-    },
-    {
-      header: 'RiskLevel',
-      accessor: (row) => (
-        <Badge variant={getRiskBadgeVariant(row.latest_risk_level)}>
-          {getRiskLabel(row.latest_risk_level)}
-        </Badge>
-      ),
-      sortable: true,
-    },
-    {
-      header: 'Letzte Messung',
-      accessor: (row) => (
-        <span className="text-slate-700 whitespace-nowrap">
-          {formatDateTime(row.latest_measurement_time)}
-        </span>
-      ),
-      sortable: true,
-    },
-    {
-      header: 'Messungen',
-      accessor: (row) => <span className="text-slate-600">{row.measurement_count}</span>,
-    },
-  ]
+        sortable: true,
+      },
+      {
+        header: 'Letzte Messung',
+        accessor: (row) => (
+          <span className="text-slate-700 whitespace-nowrap">
+            {formatDateTime(row.latest_measurement_time)}
+          </span>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Messungen',
+        accessor: (row) => <span className="text-slate-600">{row.measurement_count}</span>,
+      },
+    ],
+    []
+  )
 
   if (loading) {
     return (
@@ -335,7 +348,7 @@ export default function ClinicianOverviewPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Open Funnels</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.totalMeasurements}</p>
+                <p className="text-3xl font-bold text-slate-900">{stats.openFunnelsCount}</p>
                 {stats.moderateRiskCount > 0 && (
                   <Badge variant="warning" size="sm" className="mt-2">
                     {stats.moderateRiskCount} pending
@@ -371,8 +384,8 @@ export default function ClinicianOverviewPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Red Flags (24h)</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount}</p>
-                {stats.highRiskCount > 0 && (
+                <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount24h}</p>
+                {stats.highRiskCount24h > 0 && (
                   <Badge variant="danger" size="sm" className="mt-2">
                     Urgent
                   </Badge>
@@ -398,7 +411,6 @@ export default function ClinicianOverviewPage() {
         bordered
         onRowClick={handleRowClick}
         emptyMessage="Noch keine Assessments vorhanden"
-        loading={loading}
       />
     </>
   )
