@@ -1,6 +1,6 @@
 'use client'
 
-import { spacing, typography, radii, shadows, colors, componentTokens, motion } from '@/lib/design-tokens'
+import { spacing, typography, radii, shadows, colors, componentTokens } from '@/lib/design-tokens'
 
 export type MobileWelcomeScreenProps = {
   title: string
@@ -38,25 +38,34 @@ export default function MobileWelcomeScreen({
   const infoTokens = componentTokens.infoBox
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-white to-slate-50">
+    <div 
+      className="min-h-screen flex flex-col"
+      style={{
+        background: `linear-gradient(to bottom, ${colors.primary[50]}, ${colors.background.light}, ${colors.neutral[50]})`,
+      }}
+    >
       {/* Main Content - Scrollable */}
       <main className="flex-1 overflow-y-auto" style={{ padding: spacing.lg }}>
         <div className="max-w-md mx-auto">
           
           {/* Illustration Placeholder */}
           <div 
-            className="mb-8 bg-gradient-to-br from-sky-100 to-sky-50 flex items-center justify-center overflow-hidden"
+            className="mb-8 flex items-center justify-center overflow-hidden"
             style={{ 
               height: '240px',
               borderRadius: radii['2xl'],
               border: `1px solid ${colors.primary[200]}`,
+              background: `linear-gradient(to bottom right, ${colors.primary[100]}, ${colors.primary[50]})`,
             }}
           >
             <div className="text-center">
               <div className="text-6xl mb-3">🧘‍♀️</div>
               <p 
-                className="text-sky-700 font-medium"
-                style={{ fontSize: typography.fontSize.sm }}
+                className="font-medium"
+                style={{ 
+                  fontSize: typography.fontSize.sm,
+                  color: colors.primary[700],
+                }}
               >
                 Rhythmologicum Connect
               </p>

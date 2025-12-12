@@ -13,7 +13,7 @@ export default function MobileWelcomeDemoPage() {
   const handleContinue = () => {
     setIsLoading(true)
     setTimeout(() => {
-      alert('Assessment würde jetzt starten!')
+      console.log('Assessment würde jetzt starten!')
       setIsLoading(false)
     }, 2000)
   }
