@@ -5,6 +5,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
 import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
+import {
+  ScoreCard,
+  InsightCardsGroup,
+  StressDistributionBar,
+  FollowUpActions,
+  AmyTextSection,
+} from './components'
 
 const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
 
@@ -119,163 +126,196 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
 
   const resultPages = getResultPages(contentPages)
   const infoPages = getInfoPages(contentPages)
-  const showContentLinks = resultPages.length > 0 || infoPages.length > 0
+
+  // Sample insights - these would come from assessment analysis
+  const sampleInsights = [
+    {
+      icon: '🎯',
+      title: 'Stresslevel erkannt',
+      description:
+        'Ihre Antworten zeigen ein moderates Stresslevel. Dies ist wichtig für das Gespräch mit Ihrem Behandlungsteam.',
+      variant: 'info' as const,
+    },
+    {
+      icon: '💪',
+      title: 'Resilienz-Faktoren',
+      description:
+        'Sie verfügen über gute Bewältigungsstrategien, die Ihnen helfen, mit Stress umzugehen.',
+      variant: 'success' as const,
+    },
+    {
+      icon: '⚡',
+      title: 'Achtsamkeitspunkte',
+      description:
+        'Einige Bereiche könnten von zusätzlicher Unterstützung profitieren. Besprechen Sie diese beim nächsten Termin.',
+      variant: 'warning' as const,
+    },
+  ]
+
+  // Sample follow-up actions
+  const followUpActions = [
+    {
+      title: 'Termin besprechen',
+      description:
+        'Ihre Ergebnisse werden von Ihrem Behandlungsteam eingesehen und beim nächsten Termin besprochen.',
+    },
+    {
+      title: 'Ressourcen ansehen',
+      description:
+        'Entdecken Sie hilfreiche Artikel und Strategien zum Umgang mit Stress und zur Stärkung Ihrer Resilienz.',
+      ...(resultPages.length > 0 || infoPages.length > 0
+        ? {
+            actionLabel: 'Ressourcen ansehen',
+            actionUrl: `/patient/funnel/${canonicalSlug}/content/${
+              resultPages[0]?.slug || infoPages[0]?.slug
+            }`,
+          }
+        : {}),
+    },
+    {
+      title: 'Verlauf ansehen',
+      description:
+        'Verfolgen Sie Ihre Assessments über die Zeit und erkennen Sie Muster in Ihrer Historie.',
+      actionLabel: 'Zur Historie',
+      onClick: () => router.push('/patient/history'),
+    },
+  ]
 
   return (
     <main className="min-h-screen bg-muted px-4 py-8 sm:py-12">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Success Header */}
-        <div className="bg-background border border-slate-200/80 rounded-3xl shadow-lg p-5 sm:p-7 md:p-9 mb-4 sm:mb-6">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full mb-3 sm:mb-4">
-              <span className="text-2xl sm:text-3xl">✓</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-2 leading-tight">
-              Assessment abgeschlossen!
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600">{funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert.</p>
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
+            <span className="text-3xl sm:text-4xl">✓</span>
           </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+            Assessment abgeschlossen!
+          </h1>
+          <p className="text-base sm:text-lg text-slate-600">
+            {funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert
+          </p>
+          <p className="text-sm text-slate-500 mt-2">
+            {new Intl.DateTimeFormat('de-DE', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            }).format(new Date(assessment.completedAt))}
+          </p>
+        </div>
 
-          {/* Main Outcome Box - Prominent display */}
-          <div className="bg-gradient-to-br from-sky-50 to-blue-50 border-2 border-sky-200 rounded-xl p-4 sm:p-6 mb-6">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-sky-600 text-white rounded-full mb-3 sm:mb-4">
-                <span className="text-xl sm:text-2xl font-bold">✓</span>
-              </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
-                Ihre Antworten wurden gespeichert
-              </h2>
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                Vielen Dank für Ihre Zeit. Ihre Angaben helfen dabei, ein besseres Verständnis 
-                Ihrer Situation zu entwickeln.
-              </p>
-            </div>
-          </div>
+        {/* Score Card - Prominent Result Display */}
+        <ScoreCard
+          score={undefined}
+          maxScore={100}
+          level="medium"
+          label="Abgeschlossen"
+          description="Ihre Antworten wurden gespeichert"
+        />
 
-          {/* Assessment Info */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Abgeschlossen am</dt>
-                <dd className="text-xs sm:text-sm text-slate-900">
-                  {new Intl.DateTimeFormat('de-DE', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }).format(new Date(assessment.completedAt))}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Assessment-Typ</dt>
-                <dd className="text-xs sm:text-sm text-slate-900">{funnelTitle || canonicalSlug}</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Status</dt>
-                <dd>
-                  <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800">
-                    ✓ Abgeschlossen
-                  </span>
-                </dd>
-              </div>
-            </dl>
-          </div>
+        {/* AMY Text Section - Personalized Insights */}
+        <AmyTextSection
+          text={`## Vielen Dank für Ihre Teilnahme
 
-          {/* Next Steps Info - More prominent */}
-          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <span className="text-lg sm:text-xl flex-shrink-0">💡</span>
+Ihre Antworten sind nun gesichert und werden für die weitere Betreuung verwendet.
+
+### Was bedeutet das?
+
+Ihre Angaben helfen Ihrem Behandlungsteam dabei, ein besseres Verständnis Ihrer aktuellen Situation zu entwickeln. Die Ergebnisse werden vertraulich behandelt und nur mit autorisiertem medizinischem Personal geteilt.
+
+### Nächste Schritte
+
+Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. Weitere personalisierte Auswertungen werden in Kürze verfügbar sein.`}
+          title="Ihre persönliche Zusammenfassung"
+          icon="🤖"
+        />
+
+        {/* Insight Cards - Key Findings */}
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
+            Wichtige Erkenntnisse
+          </h2>
+          <InsightCardsGroup insights={sampleInsights} />
+        </div>
+
+        {/* Stress Distribution Bar - Visual Breakdown */}
+        <StressDistributionBar />
+
+        {/* Follow-Up Actions - What's Next */}
+        <FollowUpActions actions={followUpActions} />
+
+        {/* Additional Resources */}
+        {(resultPages.length > 0 || infoPages.length > 0) && (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">📚</span>
               <div className="flex-1">
-                <h3 className="text-sm sm:text-base font-semibold text-blue-900 mb-2">Was passiert jetzt?</h3>
-                <ul className="text-xs sm:text-sm text-blue-800 space-y-2 leading-relaxed">
-                  <li className="flex items-start gap-2">
-                    <span className="text-sky-600 font-bold shrink-0">1.</span>
-                    <span>Ihre Antworten werden sicher gespeichert und können von Ihrem Behandlungsteam eingesehen werden.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-sky-600 font-bold shrink-0">2.</span>
-                    <span>Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-sky-600 font-bold shrink-0">3.</span>
-                    <span>Weitere Auswertungen und personalisierte Empfehlungen werden in Kürze verfügbar sein.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Page Links - Recommendations Section */}
-          {showContentLinks && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-              <div className="flex items-start gap-2 sm:gap-3">
-                <span className="text-lg sm:text-xl flex-shrink-0">📚</span>
-                <div className="flex-1">
-                  <h3 className="text-sm sm:text-base font-semibold text-green-900 mb-2">
-                    Empfohlene Ressourcen
-                  </h3>
-                  <p className="text-xs sm:text-sm text-green-800 mb-3 leading-relaxed">
-                    Erfahren Sie mehr über Stress, Resilienz und praktische Strategien zur Selbstfürsorge:
-                  </p>
-                  <div className="space-y-2">
-                    {resultPages.map((page) => (
-                      <a
-                        key={page.id}
-                        href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-xs sm:text-sm text-green-700 hover:text-green-900 hover:underline font-medium p-2 hover:bg-green-100 rounded transition-colors"
-                      >
-                        📄 {page.title}
-                      </a>
-                    ))}
-                    {infoPages.map((page) => (
-                      <a
-                        key={page.id}
-                        href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-xs sm:text-sm text-green-700 hover:text-green-900 hover:underline font-medium p-2 hover:bg-green-100 rounded transition-colors"
-                      >
-                        📄 {page.title}
-                      </a>
-                    ))}
-                  </div>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                  Weitere Ressourcen
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600 mb-4">
+                  Erfahren Sie mehr über Stress, Resilienz und praktische Strategien:
+                </p>
+                <div className="grid gap-2">
+                  {resultPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm sm:text-base text-sky-700 hover:text-sky-900 hover:underline font-medium p-2 hover:bg-sky-50 rounded transition-colors"
+                    >
+                      <span>📄</span>
+                      <span>{page.title}</span>
+                    </a>
+                  ))}
+                  {infoPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${canonicalSlug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm sm:text-base text-sky-700 hover:text-sky-900 hover:underline font-medium p-2 hover:bg-sky-50 rounded transition-colors"
+                    >
+                      <span>📄</span>
+                      <span>{page.title}</span>
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => router.push('/patient')}
-              className="w-full sm:flex-1 px-5 sm:px-6 py-3 sm:py-4 bg-sky-600 text-white rounded-xl text-sm sm:text-base font-semibold hover:bg-sky-700 active:bg-sky-800 transition-colors shadow-md touch-manipulation"
-              style={{ minHeight: '56px' }}
-            >
-              Zur Übersicht
-            </button>
-            <button
-              onClick={() => router.push('/patient/history')}
-              className="w-full sm:flex-1 px-5 sm:px-6 py-3 sm:py-4 bg-slate-200 text-slate-700 rounded-xl text-sm sm:text-base font-semibold hover:bg-slate-300 active:bg-slate-400 transition-colors touch-manipulation"
-              style={{ minHeight: '56px' }}
-            >
-              Meine Assessments
-            </button>
           </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <button
+            onClick={() => router.push('/patient')}
+            className="w-full sm:flex-1 px-6 py-4 bg-sky-600 text-white rounded-xl text-base font-semibold hover:bg-sky-700 active:bg-sky-800 transition-colors shadow-md"
+            style={{ minHeight: '56px' }}
+          >
+            Zur Übersicht
+          </button>
+          <button
+            onClick={() => router.push('/patient/history')}
+            className="w-full sm:flex-1 px-6 py-4 bg-slate-200 text-slate-700 rounded-xl text-base font-semibold hover:bg-slate-300 active:bg-slate-400 transition-colors"
+            style={{ minHeight: '56px' }}
+          >
+            Meine Assessments
+          </button>
         </div>
 
-        {/* Privacy & Data Security Card */}
-        <div className="bg-background border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+        {/* Privacy Notice */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-start gap-3">
-            <span className="text-xl sm:text-2xl shrink-0">🔒</span>
+            <span className="text-2xl flex-shrink-0">🔒</span>
             <div className="flex-1">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 mb-2">Ihre Daten sind sicher</h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-3">
-                Alle Ihre Antworten wurden verschlüsselt gespeichert und unterliegen strengen Datenschutzrichtlinien. 
-                Nur autorisiertes medizinisches Personal hat Zugriff auf Ihre Daten.
-              </p>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Sie können jederzeit auf Ihre früheren Assessments in der Historie zugreifen oder 
-                ein neues Assessment durchführen.
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
+                Ihre Daten sind sicher
+              </h3>
+              <p className="text-sm sm:text-base text-slate-600">
+                Alle Ihre Antworten wurden verschlüsselt gespeichert und unterliegen strengen
+                Datenschutzrichtlinien. Nur autorisiertes medizinisches Personal hat Zugriff auf
+                Ihre Daten.
               </p>
             </div>
           </div>
