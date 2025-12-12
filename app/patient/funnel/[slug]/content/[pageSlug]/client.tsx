@@ -54,9 +54,9 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
           <p className="text-slate-600">Seite wird geladen...</p>
         </div>
       </div>
@@ -65,14 +65,14 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
   if (error || !contentPage) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-slate-900 mb-3">Fehler</h1>
           <p className="text-slate-600 mb-6">{error || 'Seite nicht gefunden'}</p>
           <button
             onClick={() => router.back()}
-            className="bg-sky-600 hover:bg-sky-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
           >
             Zurück
           </button>
@@ -208,7 +208,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
               {contentPage.title}
             </h1>
             {contentPage.excerpt && (
-              <p className="text-blue-100 text-lg leading-relaxed">{contentPage.excerpt}</p>
+              <p className="text-primary-100 text-lg leading-relaxed">{contentPage.excerpt}</p>
             )}
           </div>
 

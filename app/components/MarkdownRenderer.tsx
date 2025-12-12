@@ -23,12 +23,12 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-5
         prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-4
         prose-p:text-slate-700 prose-p:leading-relaxed prose-p:mb-4
-        prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+        prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline
         prose-strong:text-slate-900 prose-strong:font-semibold
         prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
         prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
         prose-li:my-1 prose-li:text-slate-700
-        prose-blockquote:border-l-4 prose-blockquote:border-blue-500 
+        prose-blockquote:border-l-4 prose-blockquote:border-primary-500 
         prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-600
         prose-code:text-sm prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 
         prose-code:rounded prose-code:text-slate-800

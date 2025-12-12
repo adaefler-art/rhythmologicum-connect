@@ -36,7 +36,7 @@ export function StressDistributionBar({
       : [
           { label: 'Körperlich', value: 30, color: 'bg-red-500' },
           { label: 'Emotional', value: 45, color: 'bg-amber-500' },
-          { label: 'Kognitiv', value: 25, color: 'bg-blue-500' },
+          { label: 'Kognitiv', value: 25, color: 'bg-primary-500' },
         ]
 
   return (

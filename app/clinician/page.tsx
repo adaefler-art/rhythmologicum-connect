@@ -337,8 +337,8 @@ export default function ClinicianOverviewPage() {
                 <p className="text-sm text-slate-500 mb-1">Active Patients</p>
                 <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="p-3 bg-primary-100 rounded-lg">
+                <Users className="w-5 h-5 text-primary-600" />
               </div>
             </div>
           </Card>
