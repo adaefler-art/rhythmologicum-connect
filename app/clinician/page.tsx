@@ -361,7 +361,7 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Active Patients</p>
+                <p className="text-sm font-medium text-slate-500 mb-1">Aktive Patienten</p>
                 <p className="text-3xl font-bold text-slate-900 mb-1">{stats.totalPatients}</p>
                 <p className="text-xs text-slate-500">Patienten mit Assessments</p>
               </div>
@@ -375,7 +375,7 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Open Funnels</p>
+                <p className="text-sm font-medium text-slate-500 mb-1">Offene Funnels</p>
                 <p className="text-3xl font-bold text-slate-900 mb-1">{stats.openFunnelsCount}</p>
                 {stats.moderateRiskCount > 0 && (
                   <Badge variant="warning" size="sm" className="mt-1">
@@ -393,7 +393,7 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Recent Assessments</p>
+                <p className="text-sm font-medium text-slate-500 mb-1">Aktuelle Assessments</p>
                 <p className="text-3xl font-bold text-slate-900 mb-1">{stats.recentCount}</p>
                 {stats.recentCount > 0 && (
                   <Badge variant="info" size="sm" className="mt-1">
@@ -411,7 +411,7 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Red Flags (24h)</p>
+                <p className="text-sm font-medium text-slate-500 mb-1">Rote Flaggen (24h)</p>
                 <p className="text-3xl font-bold text-slate-900 mb-1">{stats.highRiskCount24h}</p>
                 {stats.highRiskCount24h > 0 && (
                   <Badge variant="danger" size="sm" className="mt-1">
