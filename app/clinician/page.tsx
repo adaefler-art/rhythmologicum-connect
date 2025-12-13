@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Badge, Button, Card, Table } from '@/lib/ui'
@@ -40,16 +40,11 @@ type PatientOverview = {
   report_id: string | null
 }
 
-type SortField = 'name' | 'risk' | 'date' | 'score'
-type SortDirection = 'asc' | 'desc'
-
 export default function ClinicianOverviewPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
-  const [sortField, setSortField] = useState<SortField>('date')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   useEffect(() => {
     const loadPatientData = async () => {
@@ -125,56 +120,8 @@ export default function ClinicianOverviewPage() {
     return overviews
   }, [measures])
 
-  // Sort the patient overviews
-  const sortedPatients = useMemo(() => {
-    const sorted = [...patientOverviews]
-
-    const riskOrder: Record<string, number> = {
-      high: 3,
-      moderate: 2,
-      low: 1,
-      pending: 0,
-    }
-
-    sorted.sort((a, b) => {
-      let comparison = 0
-
-      switch (sortField) {
-        case 'name':
-          comparison = a.patient_name.localeCompare(b.patient_name)
-          break
-        case 'risk': {
-          const aRisk = riskOrder[a.latest_risk_level ?? ''] ?? -1
-          const bRisk = riskOrder[b.latest_risk_level ?? ''] ?? -1
-          comparison = aRisk - bRisk
-          break
-        }
-        case 'date':
-          comparison =
-            new Date(a.latest_measurement_time).getTime() -
-            new Date(b.latest_measurement_time).getTime()
-          break
-        case 'score':
-          comparison = (a.latest_stress_score ?? 0) - (b.latest_stress_score ?? 0)
-          break
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison
-    })
-
-    return sorted
-  }, [patientOverviews, sortField, sortDirection])
-
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection(field === 'risk' ? 'desc' : 'asc')
-    }
-  }
-
-  const getRiskLabel = (risk: RiskLevel): string => {
+  // Helper functions wrapped in useCallback for stable references
+  const getRiskLabel = useCallback((risk: RiskLevel): string => {
     switch (risk) {
       case 'high':
         return 'Hoch'
@@ -187,9 +134,9 @@ export default function ClinicianOverviewPage() {
       default:
         return 'Unbekannt'
     }
-  }
+  }, [])
 
-  const getRiskBadgeVariant = (
+  const getRiskBadgeVariant = useCallback((
     risk: RiskLevel
   ): 'danger' | 'warning' | 'success' | 'secondary' | 'default' => {
     switch (risk) {
@@ -204,9 +151,9 @@ export default function ClinicianOverviewPage() {
       default:
         return 'default'
     }
-  }
+  }, [])
 
-  const formatDateTime = (isoString: string): string => {
+  const formatDateTime = useCallback((isoString: string): string => {
     try {
       return new Intl.DateTimeFormat('de-DE', {
         day: '2-digit',
@@ -218,11 +165,11 @@ export default function ClinicianOverviewPage() {
     } catch {
       return 'Datum unbekannt'
     }
-  }
+  }, [])
 
-  const handleRowClick = (patient: PatientOverview) => {
+  const handleRowClick = useCallback((patient: PatientOverview) => {
     router.push(`/clinician/patient/${patient.patient_id}`)
-  }
+  }, [router])
 
   // Calculate dashboard statistics (must run on every render to keep hook order stable)
   const stats = useMemo(() => {
@@ -254,6 +201,13 @@ export default function ClinicianOverviewPage() {
       openFunnelsCount,
     }
   }, [patientOverviews, measures])
+
+  // Sort patients by date (newest first)
+  const sortedPatients = useMemo(() => {
+    return [...patientOverviews].sort((a, b) => {
+      return new Date(b.latest_measurement_time).getTime() - new Date(a.latest_measurement_time).getTime()
+    })
+  }, [patientOverviews])
 
   // Define table columns (memoized for performance)
   const columns: TableColumn<PatientOverview>[] = useMemo(
