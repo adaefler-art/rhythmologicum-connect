@@ -42,7 +42,9 @@ export default function ContentPageStepRenderer({
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8">
           <div className="text-center">
-            <div className="mb-4 text-4xl">❌</div>
+            <div className="mb-4 text-4xl" role="img" aria-label="Fehler">
+              ❌
+            </div>
             <p className="text-lg font-semibold text-red-700 mb-4">
               Inhalt konnte nicht geladen werden
             </p>
@@ -165,7 +167,7 @@ export default function ContentPageStepRenderer({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Bitte warten…
+                  Bitte warten...
                 </>
               ) : isLastStep ? (
                 'Abschließen →'
