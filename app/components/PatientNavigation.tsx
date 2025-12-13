@@ -31,20 +31,25 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
           paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        {navItems.map((item, index) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center text-xs font-semibold transition-colors ${
-              item.active 
-                ? 'text-sky-700 dark:text-sky-400' 
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
-          >
-            <span className="text-lg">{index === 0 ? '📝' : '📊'}</span>
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          // Determine icon based on route
+          const icon = item.href.includes('assessment') || item.href.includes('funnel') ? '📝' : '📊'
+          
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center text-xs font-semibold transition-colors ${
+                item.active 
+                  ? 'text-sky-700 dark:text-sky-400' 
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              <span className="text-lg">{icon}</span>
+              {item.label}
+            </Link>
+          )
+        })}
       </nav>
     )
   }

@@ -83,10 +83,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100'
       : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-sky-500'
 
-    // Custom dropdown arrow (different for dark mode)
+    // Custom dropdown arrow
+    // Note: SVG data URLs cannot use CSS classes, so we use a mid-tone that works in both themes
+    // For error state, use red; for normal state, use a neutral gray
     const backgroundImage = error
       ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
-      : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
+      : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
+    
+    // Alternative: Use CSS background-image with currentColor via mask-image
+    // This would require refactoring to use mask-image property instead
 
     const generatedId = useId()
     const selectId = props.id || generatedId
