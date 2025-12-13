@@ -73,17 +73,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       rounded-lg
       transition-all duration-200
       focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1
-      disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60
+      disabled:bg-slate-100 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60
       appearance-none
       bg-no-repeat
       cursor-pointer
     `
 
     const stateClasses = error
-      ? 'border-red-500 bg-red-50 text-red-900'
-      : 'border-slate-300 bg-white text-slate-900 focus:border-sky-500'
+      ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100'
+      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-sky-500'
 
-    // Custom dropdown arrow
+    // Custom dropdown arrow (different for dark mode)
     const backgroundImage = error
       ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
       : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
@@ -118,7 +118,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {errorMessage && error && (
           <p
             id={`${selectId}-error`}
-            className="text-sm text-red-600 mt-1.5"
+            className="text-sm text-red-600 dark:text-red-400 mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {errorMessage}
@@ -127,7 +127,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {helperText && !error && (
           <p
             id={`${selectId}-helper`}
-            className="text-sm text-slate-500 mt-1.5"
+            className="text-sm text-slate-500 dark:text-slate-400 mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {helperText}
