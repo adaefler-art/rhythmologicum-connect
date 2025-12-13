@@ -89,7 +89,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       console.error('Error loading existing answers:', err)
       // Don't throw - we can continue with empty answers
     }
-  }, [])
+  }, [slug])
 
   const loadAssessmentStatus = useCallback(
     async (assessmentId: string, retryAttempt: number = 0) => {
