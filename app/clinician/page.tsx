@@ -326,7 +326,7 @@ export default function ClinicianOverviewPage() {
   }
 
   return (
-    <>
+    <div className="w-full">
       {/* Page Header with Actions */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -447,6 +447,6 @@ export default function ClinicianOverviewPage() {
         onRowClick={handleRowClick}
         emptyMessage="Noch keine Assessments vorhanden"
       />
-    </>
+    </div>
   )
 }

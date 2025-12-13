@@ -163,7 +163,7 @@ export default function PatientDetailPage() {
   const latestMeasure = measures.length > 0 ? measures[0] : null
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Back Button */}
       <button
         onClick={() => router.push('/clinician')}

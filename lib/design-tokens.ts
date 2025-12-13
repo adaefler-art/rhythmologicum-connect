@@ -140,6 +140,26 @@ export const motion = {
 } as const
 
 /**
+ * Layout Constraints
+ * 
+ * Maximum width values for content containers at different layout levels.
+ * These ensure consistent content width across the application.
+ * 
+ * Usage:
+ * - contentMaxWidth: For clinician dashboard and data-heavy pages
+ * - patientMaxWidth: For patient-facing content pages
+ * - Component-specific: Use Tailwind classes (max-w-md, max-w-lg, etc.)
+ */
+export const layout = {
+  // Maximum width for clinician content areas (data-heavy, tables)
+  contentMaxWidth: '1600px', // ~100rem - Accommodates wide tables on large monitors
+  // Maximum width for patient content areas (readability-focused)
+  patientMaxWidth: '1152px', // 72rem - Tailwind max-w-6xl equivalent
+  // Maximum width for article-style content
+  articleMaxWidth: '896px', // 56rem - Tailwind max-w-4xl equivalent
+} as const
+
+/**
  * Color Theme Structure
  * 
  * Defines color tokens that can be overridden by theme variants.
