@@ -81,7 +81,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       </header>
 
       <main className="flex-1 md:pb-0" style={{
-        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
       }}>{children}</main>
 
       {/* Desktop Footer */}
