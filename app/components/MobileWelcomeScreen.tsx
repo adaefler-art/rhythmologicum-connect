@@ -54,7 +54,9 @@ export default function MobileWelcomeScreen({
       />
 
       {/* Main Content - Scrollable */}
-      <main className="px-4 sm:px-6 lg:px-8 py-6 pb-8">
+      <main className="px-4 sm:px-6 lg:px-8 py-6" style={{
+        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom, 0px)))',
+      }}>
         <div className="w-full max-w-5xl mx-auto">
           
           {/* Illustration Placeholder */}
