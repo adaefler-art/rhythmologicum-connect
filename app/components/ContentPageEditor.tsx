@@ -22,6 +22,8 @@ export type ContentPageEditorData = {
   category: string
   priority: number
   funnel_id: string | null
+  flow_step: string | null
+  order_index: number | null
   layout: string | null
 }
 
@@ -47,6 +49,9 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [error, setError] = useState<string | null>(null)
   const [funnels, setFunnels] = useState<Funnel[]>([])
 
+  // Validation constants
+  const SLUG_REGEX = /^[a-z0-9-]+$/
+
   // Form state
   const [title, setTitle] = useState(initialData?.title || '')
   const [slug, setSlug] = useState(initialData?.slug || '')
@@ -55,6 +60,8 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [category, setCategory] = useState(initialData?.category || '')
   const [priority, setPriority] = useState(initialData?.priority || 0)
   const [funnelId, setFunnelId] = useState<string>(initialData?.funnel_id || '')
+  const [flowStep, setFlowStep] = useState(initialData?.flow_step || '')
+  const [orderIndex, setOrderIndex] = useState<number | null>(initialData?.order_index ?? null)
   const [layout] = useState(initialData?.layout || 'default')
   const status: 'draft' | 'published' = (initialData?.status as 'draft' | 'published') || 'draft'
 
@@ -125,7 +132,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     setSlug(newSlug)
 
     // Validate slug format
-    if (newSlug && !/^[a-z0-9-]+$/.test(newSlug)) {
+    if (newSlug && !SLUG_REGEX.test(newSlug)) {
       setSlugError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
     } else {
       setSlugError(null)
@@ -141,12 +148,23 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       setError('Slug ist erforderlich')
       return false
     }
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!SLUG_REGEX.test(slug)) {
       setError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
       return false
     }
     if (!bodyMarkdown.trim()) {
       setError('Inhalt (Markdown) ist erforderlich')
+      return false
+    }
+    // Validate flow_step format if provided
+    const trimmedFlowStep = flowStep.trim()
+    if (trimmedFlowStep && !SLUG_REGEX.test(trimmedFlowStep)) {
+      setError('Flow Step darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
+      return false
+    }
+    // Validate that order_index is non-negative if provided
+    if (orderIndex !== null && orderIndex < 0) {
+      setError('Order Index muss eine nicht-negative Zahl sein')
       return false
     }
     return true
@@ -172,6 +190,8 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         category: category.trim() || null,
         priority,
         funnel_id: funnelId || null,
+        flow_step: flowStep.trim() || null,
+        order_index: orderIndex,
         layout: layout || null,
       }
 
@@ -474,6 +494,48 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Funnel, zu dem diese Content-Page gehört
+              </p>
+            </div>
+
+            {/* Flow Step */}
+            <div>
+              <label htmlFor="flowStep" className="block text-sm font-medium text-slate-700 mb-2">
+                Flow Step
+              </label>
+              <input
+                id="flowStep"
+                type="text"
+                value={flowStep}
+                onChange={(e) => setFlowStep(e.target.value)}
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                placeholder="z.B. intro-1, between-questions-2"
+                disabled={!funnelId}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Identifier für den Flow-Schritt (z.B. &quot;intro-1&quot;, &quot;between-questions-2&quot;)
+              </p>
+            </div>
+
+            {/* Order Index */}
+            <div>
+              <label htmlFor="orderIndex" className="block text-sm font-medium text-slate-700 mb-2">
+                Order Index
+              </label>
+              <input
+                id="orderIndex"
+                type="number"
+                value={orderIndex ?? ''}
+                onChange={(e) => setOrderIndex(e.target.value ? parseInt(e.target.value, 10) : null)}
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                min="0"
+                placeholder="Optional"
+                disabled={!funnelId}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Reihenfolge bei mehreren Content-Seiten im gleichen Flow-Schritt
+              </p>
             </div>
 
             {/* Priority */}

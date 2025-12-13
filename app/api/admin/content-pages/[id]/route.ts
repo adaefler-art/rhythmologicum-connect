@@ -76,6 +76,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         category,
         priority,
         funnel_id,
+        flow_step,
+        order_index,
         updated_at,
         created_at,
         deleted_at,
@@ -106,6 +108,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             category,
             priority,
             funnel_id,
+            flow_step,
+            order_index,
             updated_at,
             created_at,
             funnels (
@@ -249,6 +253,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.category !== undefined) updateData.category = body.category || null
     if (body.priority !== undefined) updateData.priority = body.priority
     if (body.funnel_id !== undefined) updateData.funnel_id = body.funnel_id || null
+    if (body.flow_step !== undefined) updateData.flow_step = body.flow_step || null
+    if (body.order_index !== undefined) updateData.order_index = body.order_index
     if (body.layout !== undefined) updateData.layout = body.layout || null
 
     // Update content page
