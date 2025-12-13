@@ -11,6 +11,14 @@ import PatientFlowRenderer, {
   type ValidationError,
 } from '@/app/components/PatientFlowRenderer'
 import { LoadingSpinner, ErrorState } from '@/lib/ui'
+import {
+  logAssessmentStarted,
+  logAssessmentResumed,
+  logAssessmentCompleted,
+  logStepNavigated,
+  logValidationError,
+  logErrorDisplayed,
+} from '@/lib/logging/clientLogger'
 
 type RecoveryState = {
   isRecovering: boolean
@@ -73,6 +81,8 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         // Log successful resume if we have answers
         if (Object.keys(answersMap).length > 0) {
           console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+          // Client-side event logging for assessment resume
+          logAssessmentResumed(assessmentId, slug, Object.keys(answersMap).length)
         }
       }
     } catch (err) {
@@ -322,6 +332,10 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         }
 
         const { data } = await response.json()
+        
+        // Log assessment start
+        logAssessmentStarted(data.assessmentId, slug)
+        
         await loadAssessmentStatus(data.assessmentId)
       } catch (err) {
         console.error('Error bootstrapping assessment:', err)
@@ -418,11 +432,22 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         if (errorData.error?.details?.missingQuestions) {
           setValidationErrors(errorData.error.details.missingQuestions)
           setError('Nicht alle Pflichtfragen wurden beantwortet.')
+          
+          // Log validation error
+          logValidationError(
+            assessmentStatus.assessmentId,
+            assessmentStatus.currentStep.stepId,
+            errorData.error.details.missingQuestions.length
+          )
+          
           setSubmitting(false)
           return
         }
         throw new Error('Fehler beim Abschließen des Assessments.')
       }
+
+      // Log assessment completion
+      logAssessmentCompleted(assessmentStatus.assessmentId, slug)
 
       // Redirect to result page
       router.push(`/patient/funnel/${slug}/result?assessmentId=${assessmentStatus.assessmentId}`)
@@ -499,6 +524,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
       // Validation passed
       if (data.nextStep) {
+        // Log step navigation
+        logStepNavigated(assessmentStatus.assessmentId, data.nextStep.stepId, 'next')
+        
         // Reload status to get updated current step
         try {
           await loadAssessmentStatus(assessmentStatus.assessmentId)
@@ -577,6 +605,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
   // Error state
   if (!loading && error && !assessmentStatus) {
+    // Log error display
+    logErrorDisplayed(error, 'funnel_client', { funnelSlug: slug })
+    
     const handleRetry = () => {
       setError(null)
       setLoading(true)
