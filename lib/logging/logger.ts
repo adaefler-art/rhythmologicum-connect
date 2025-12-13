@@ -3,6 +3,9 @@
  * 
  * Provides consistent, structured logging across the application.
  * Supports multiple log levels and JSON formatting for better monitoring.
+ * 
+ * TODO: Integrate with production error tracking service (Sentry recommended)
+ * See: docs/MONITORING_INTEGRATION.md for integration guide
  */
 
 export enum LogLevel {
@@ -35,6 +38,9 @@ type LogEntry = {
 
 /**
  * Core logging function with structured output
+ * 
+ * TODO: Integrate with Sentry for production error tracking
+ * See: docs/MONITORING_INTEGRATION.md
  */
 function log(level: LogLevel, message: string, context?: LogContext, error?: unknown): void {
   const entry: LogEntry = {
@@ -151,4 +157,38 @@ export function logApiRequest(endpoint: string, method: string, context?: LogCon
     method,
     type: 'api_request',
   })
+}
+
+/**
+ * Log assessment lifecycle events
+ */
+
+export function logAssessmentStarted(context: LogContext): void {
+  logInfo('Assessment started', {
+    ...context,
+    type: 'assessment_started',
+  })
+}
+
+export function logAssessmentCompleted(context: LogContext): void {
+  logInfo('Assessment completed', {
+    ...context,
+    type: 'assessment_completed',
+  })
+}
+
+export function logAssessmentError(context: LogContext, error: unknown): void {
+  logError('Assessment error', context, error)
+}
+
+/**
+ * Log major flow errors for monitoring
+ */
+
+export function logClinicianFlowError(context: LogContext, error: unknown): void {
+  logError('Clinician flow error', { ...context, area: 'clinician' }, error)
+}
+
+export function logPatientFlowError(context: LogContext, error: unknown): void {
+  logError('Patient flow error', { ...context, area: 'patient' }, error)
 }

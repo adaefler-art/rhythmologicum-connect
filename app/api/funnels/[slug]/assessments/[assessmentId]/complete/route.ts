@@ -16,6 +16,7 @@ import {
   logForbidden,
   logValidationFailure,
   logDatabaseError,
+  logAssessmentCompleted,
 } from '@/lib/logging/logger'
 
 /**
@@ -199,6 +200,14 @@ export async function POST(
       )
       return internalErrorResponse('Fehler beim Abschließen des Assessments.')
     }
+
+    // Log successful assessment completion
+    logAssessmentCompleted({
+      userId: user.id,
+      assessmentId,
+      endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+      funnel: slug,
+    })
 
     // Success response
     return successResponse({

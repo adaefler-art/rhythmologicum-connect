@@ -234,10 +234,26 @@ export function logUserAction(
  * 
  * TODO: Implement actual event collection when ready.
  * This can send events to:
- * - LogRocket
- * - Sentry
- * - PostHog
+ * - LogRocket (Recommended for session recording)
+ * - Sentry (For error tracking with session replay)
+ * - PostHog (For product analytics)
  * - Custom analytics endpoint
+ * 
+ * See: docs/MONITORING_INTEGRATION.md for detailed integration guide
+ * 
+ * Example implementation with LogRocket:
+ * 
+ * import LogRocket from 'logrocket'
+ * 
+ * if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_LOGROCKET_ID) {
+ *   LogRocket.init(process.env.NEXT_PUBLIC_LOGROCKET_ID)
+ * }
+ * 
+ * async function sendToMonitoringService(entry: ClientLogEntry): Promise<void> {
+ *   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+ *     LogRocket.track(entry.eventType, entry.context)
+ *   }
+ * }
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function sendToMonitoringService(entry: ClientLogEntry): Promise<void> {

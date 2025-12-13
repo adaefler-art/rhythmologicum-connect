@@ -13,6 +13,7 @@ import {
 import {
   logUnauthorized,
   logDatabaseError,
+  logAssessmentStarted,
 } from '@/lib/logging/logger'
 
 /**
@@ -155,6 +156,14 @@ export async function POST(
       )
       return internalErrorResponse('Fehler beim Ermitteln des ersten Schritts.')
     }
+
+    // Log successful assessment start
+    logAssessmentStarted({
+      userId: user.id,
+      assessmentId: assessment.id,
+      endpoint: `/api/funnels/${slug}/assessments`,
+      funnel: slug,
+    })
 
     // Return success response
     return successResponse(

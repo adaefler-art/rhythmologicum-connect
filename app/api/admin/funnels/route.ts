@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import {
+  logUnauthorized,
+  logForbidden,
+  logClinicianFlowError,
+} from '@/lib/logging/logger'
 
 /**
  * B7 API Endpoint: List all funnels for admin/clinician management
@@ -35,6 +40,7 @@ export async function GET() {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      logUnauthorized({ endpoint: '/api/admin/funnels' })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -42,6 +48,7 @@ export async function GET() {
     // Allow access for clinician and admin roles
     const hasAccess = role === 'clinician' || role === 'admin'
     if (!hasAccess) {
+      logForbidden({ userId: user.id, endpoint: '/api/admin/funnels' }, 'User lacks clinician/admin role')
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -50,7 +57,10 @@ export async function GET() {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
+      logClinicianFlowError(
+        { endpoint: '/api/admin/funnels', userId: user.id },
+        new Error('Supabase configuration missing')
+      )
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
@@ -65,13 +75,19 @@ export async function GET() {
       .order('created_at', { ascending: false })
 
     if (funnelsError) {
-      console.error('Error fetching funnels:', funnelsError)
+      logClinicianFlowError(
+        { endpoint: '/api/admin/funnels', userId: user.id },
+        funnelsError
+      )
       return NextResponse.json({ error: 'Failed to fetch funnels' }, { status: 500 })
     }
 
     return NextResponse.json({ funnels: funnels || [] })
   } catch (error) {
-    console.error('Error in GET /api/admin/funnels:', error)
+    logClinicianFlowError(
+      { endpoint: '/api/admin/funnels' },
+      error
+    )
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
