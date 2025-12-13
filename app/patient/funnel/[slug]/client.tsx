@@ -10,6 +10,15 @@ import PatientFlowRenderer, {
   type AssessmentStatus,
   type ValidationError,
 } from '@/app/components/PatientFlowRenderer'
+import { LoadingSpinner, ErrorState } from '@/lib/ui'
+import {
+  logAssessmentStarted,
+  logAssessmentResumed,
+  logAssessmentCompleted,
+  logStepNavigated,
+  logValidationError,
+  logErrorDisplayed,
+} from '@/lib/logging/clientLogger'
 
 type RecoveryState = {
   isRecovering: boolean
@@ -72,13 +81,15 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         // Log successful resume if we have answers
         if (Object.keys(answersMap).length > 0) {
           console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+          // Client-side event logging for assessment resume
+          logAssessmentResumed(assessmentId, slug, Object.keys(answersMap).length)
         }
       }
     } catch (err) {
       console.error('Error loading existing answers:', err)
       // Don't throw - we can continue with empty answers
     }
-  }, [])
+  }, [slug])
 
   const loadAssessmentStatus = useCallback(
     async (assessmentId: string, retryAttempt: number = 0) => {
@@ -321,6 +332,10 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         }
 
         const { data } = await response.json()
+        
+        // Log assessment start
+        logAssessmentStarted(data.assessmentId, slug)
+        
         await loadAssessmentStatus(data.assessmentId)
       } catch (err) {
         console.error('Error bootstrapping assessment:', err)
@@ -417,11 +432,22 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         if (errorData.error?.details?.missingQuestions) {
           setValidationErrors(errorData.error.details.missingQuestions)
           setError('Nicht alle Pflichtfragen wurden beantwortet.')
+          
+          // Log validation error
+          logValidationError(
+            assessmentStatus.assessmentId,
+            assessmentStatus.currentStep.stepId,
+            errorData.error.details.missingQuestions.length
+          )
+          
           setSubmitting(false)
           return
         }
         throw new Error('Fehler beim Abschließen des Assessments.')
       }
+
+      // Log assessment completion
+      logAssessmentCompleted(assessmentStatus.assessmentId, slug)
 
       // Redirect to result page
       router.push(`/patient/funnel/${slug}/result?assessmentId=${assessmentStatus.assessmentId}`)
@@ -498,6 +524,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
       // Validation passed
       if (data.nextStep) {
+        // Log step navigation
+        logStepNavigated(assessmentStatus.assessmentId, data.nextStep.stepId, 'next')
+        
         // Reload status to get updated current step
         try {
           await loadAssessmentStatus(assessmentStatus.assessmentId)
@@ -565,39 +594,20 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   if (loading || !funnel || !assessmentStatus || !currentStep) {
     return (
       <main className="flex flex-col items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="text-center">
-          <div className="mb-4">
-            <svg
-              className="animate-spin h-8 w-8 text-sky-600 mx-auto"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          </div>
-          <p className="text-sm text-slate-600">
-            {recovery.isRecovering ? recovery.recoveryMessage : 'Fragebogen wird geladen…'}
-          </p>
-        </div>
+        <LoadingSpinner
+          size="lg"
+          text={recovery.isRecovering ? recovery.recoveryMessage || 'Laden...' : 'Fragebogen wird geladen…'}
+          centered
+        />
       </main>
     )
   }
 
   // Error state
   if (!loading && error && !assessmentStatus) {
+    // Log error display
+    logErrorDisplayed(error, 'funnel_client', { funnelSlug: slug })
+    
     const handleRetry = () => {
       setError(null)
       setLoading(true)
@@ -607,29 +617,12 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
 
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md bg-white border-2 border-red-200 rounded-xl p-6">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">❌</span>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-red-900 mb-1">Fehler</h3>
-              <p className="text-red-700 mb-4">{error}</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleRetry}
-                  className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors font-medium"
-                >
-                  Neu versuchen
-                </button>
-                <button
-                  onClick={() => router.push('/patient')}
-                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
-                >
-                  Zurück zur Übersicht
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ErrorState
+          title="Fehler"
+          message={error}
+          onRetry={handleRetry}
+          centered
+        />
       </main>
     )
   }
