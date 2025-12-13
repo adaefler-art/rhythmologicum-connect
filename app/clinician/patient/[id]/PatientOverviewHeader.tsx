@@ -76,15 +76,15 @@ export function PatientOverviewHeader({
   const hrvBadge = getHrvBadge(hrvStatus)
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6 transition-colors duration-150">
       {/* Patient Name */}
-      <h1 className="text-3xl font-bold text-slate-900 mb-4">{displayName}</h1>
+      <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-4">{displayName}</h1>
 
       {/* Basic Stats */}
-      <div className="flex flex-wrap gap-4 mb-4 text-slate-600">
+      <div className="flex flex-wrap gap-4 mb-4 text-slate-600 dark:text-slate-300">
         {age && (
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-400" />
+            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             <span className="text-sm">
               {age} Jahre (Jahrgang {birthYear})
             </span>
@@ -92,15 +92,15 @@ export function PatientOverviewHeader({
         )}
         {sex && (
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-slate-400" />
+            <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             <span className="text-sm">
               {sex === 'male' ? 'Männlich' : sex === 'female' ? 'Weiblich' : sex}
             </span>
           </div>
         )}
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-slate-400" />
-          <span className="text-sm text-slate-400">ID: {patientId.slice(0, 8)}...</span>
+          <Activity className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+          <span className="text-sm text-slate-400 dark:text-slate-500">ID: {patientId.slice(0, 8)}...</span>
         </div>
       </div>
 

@@ -89,10 +89,10 @@ export function AssessmentList({ assessments, onViewDetails }: AssessmentListPro
           <p className="text-6xl mb-4" aria-label="Beruhigendes Symbol">
             🌿
           </p>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
             Noch keine Assessments vorhanden
           </h3>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Für diese:n Patient:in wurden noch keine Assessments durchgeführt.
           </p>
         </div>
@@ -114,8 +114,8 @@ export function AssessmentList({ assessments, onViewDetails }: AssessmentListPro
             {/* Left: Assessment Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-600">{formatDate(assessment.created_at)}</span>
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-sm text-slate-600 dark:text-slate-300">{formatDate(assessment.created_at)}</span>
                 <Badge variant={getRiskBadgeVariant(assessment.risk_level)} size="sm">
                   {getRiskLabel(assessment.risk_level)}
                 </Badge>
@@ -124,14 +124,14 @@ export function AssessmentList({ assessments, onViewDetails }: AssessmentListPro
               {/* Scores */}
               <div className="flex gap-4 mb-3">
                 <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-sky-500" />
-                  <span className="text-sm text-slate-700">
+                  <Activity className="w-4 h-4 text-sky-500 dark:text-sky-400" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
                     Stress: {assessment.stress_score !== null ? assessment.stress_score : '—'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm text-slate-700">
+                  <Activity className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
                     Schlaf: {assessment.sleep_score !== null ? assessment.sleep_score : '—'}
                   </span>
                 </div>
@@ -139,9 +139,9 @@ export function AssessmentList({ assessments, onViewDetails }: AssessmentListPro
 
               {/* Report Preview */}
               {assessment.reports?.report_text_short && (
-                <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-100">
-                  <FileText className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-slate-600 line-clamp-2">
+                <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                  <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
                     {assessment.reports.report_text_short}
                   </p>
                 </div>

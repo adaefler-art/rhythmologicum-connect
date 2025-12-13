@@ -141,7 +141,7 @@ export default function PatientDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-slate-600">Patientendaten werden geladen…</p>
+        <p className="text-slate-600 dark:text-slate-300">Patientendaten werden geladen…</p>
       </div>
     )
   }
@@ -167,7 +167,7 @@ export default function PatientDetailPage() {
       {/* Back Button */}
       <button
         onClick={() => router.push('/clinician')}
-        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 hover:text-sky-700 hover:underline transition touch-manipulation inline-flex items-center gap-2"
+        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline transition touch-manipulation inline-flex items-center gap-2"
       >
         ← Zurück zur Übersicht
       </button>
@@ -199,10 +199,10 @@ export default function PatientDetailPage() {
                 <p className="text-6xl mb-4" aria-label="Beruhigendes Symbol">
                   🌿
                 </p>
-                <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
                   Noch keine Messungen vorhanden
                 </h2>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                   Für diese:n Patient:in liegen noch keine Stress- oder Schlafmessungen vor.
                   Sobald das erste Assessment durchgeführt wurde, werden die Ergebnisse hier
                   angezeigt.
@@ -215,22 +215,22 @@ export default function PatientDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card padding="lg" shadow="md">
                   <div className="text-center">
-                    <p className="text-sm text-slate-500 mb-1">Total Assessments</p>
-                    <p className="text-3xl font-bold text-slate-900">{measures.length}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Assessments</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{measures.length}</p>
                   </div>
                 </Card>
                 <Card padding="lg" shadow="md">
                   <div className="text-center">
-                    <p className="text-sm text-slate-500 mb-1">Latest Stress Score</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Latest Stress Score</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">
                       {latestMeasure?.stress_score ?? '—'}
                     </p>
                   </div>
                 </Card>
                 <Card padding="lg" shadow="md">
                   <div className="text-center">
-                    <p className="text-sm text-slate-500 mb-1">Latest Sleep Score</p>
-                    <p className="text-3xl font-bold text-slate-900">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Latest Sleep Score</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">
                       {latestMeasure?.sleep_score ?? '—'}
                     </p>
                   </div>
@@ -242,16 +242,16 @@ export default function PatientDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card padding="lg" shadow="md">
                     <div className="flex items-center gap-2 mb-4">
-                      <LineChart className="w-5 h-5 text-sky-600" />
-                      <h2 className="text-base md:text-lg font-semibold">Stress-Verlauf</h2>
+                      <LineChart className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                      <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Stress-Verlauf</h2>
                     </div>
                     <StressChart measures={measures} />
                   </Card>
 
                   <Card padding="lg" shadow="md">
                     <div className="flex items-center gap-2 mb-4">
-                      <LineChart className="w-5 h-5 text-purple-600" />
-                      <h2 className="text-base md:text-lg font-semibold">Schlaf-Verlauf</h2>
+                      <LineChart className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Schlaf-Verlauf</h2>
                     </div>
                     <SleepChart measures={measures} />
                   </Card>
@@ -261,7 +261,7 @@ export default function PatientDetailPage() {
               {/* Raw Data Section */}
               <Card padding="lg" shadow="md">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base md:text-lg font-semibold">Rohdaten (JSON)</h2>
+                  <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">Rohdaten (JSON)</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -271,7 +271,7 @@ export default function PatientDetailPage() {
                   </Button>
                 </div>
                 {showRawData && (
-                  <pre className="bg-slate-50 rounded p-4 overflow-x-auto text-xs md:text-sm text-slate-800">
+                  <pre className="bg-slate-50 dark:bg-slate-900/50 rounded p-4 overflow-x-auto text-xs md:text-sm text-slate-800 dark:text-slate-200">
                     {JSON.stringify({ patient, measures }, null, 2)}
                   </pre>
                 )}
@@ -300,8 +300,8 @@ export default function PatientDetailPage() {
             <div className="space-y-4">
               <Card padding="lg" shadow="md">
                 <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-5 h-5 text-purple-600" />
-                  <h2 className="text-lg font-semibold">AMY-Berichte (Chronologisch)</h2>
+                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">AMY-Berichte (Chronologisch)</h2>
                 </div>
                 <div className="space-y-4">
                   {measures
@@ -319,19 +319,19 @@ export default function PatientDetailPage() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs md:text-sm text-slate-500">
+                            <span className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
                               {formatDate(measure.created_at)}
                             </span>
                             <Badge variant={getRiskBadgeVariant(measure.risk_level)} size="sm">
                               {getRiskLabel(measure.risk_level)}
                             </Badge>
                           </div>
-                          <div className="text-xs md:text-sm text-slate-500">
+                          <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
                             Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
                             {measure.sleep_score ?? '—'}
                           </div>
                         </div>
-                        <p className="text-sm md:text-base text-slate-700 whitespace-pre-line">
+                        <p className="text-sm md:text-base text-slate-700 dark:text-slate-300 whitespace-pre-line">
                           {measure.reports!.report_text_short}
                         </p>
                       </div>
@@ -342,11 +342,11 @@ export default function PatientDetailPage() {
           ) : (
             <Card padding="lg" shadow="md">
               <div className="text-center py-8">
-                <Brain className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                <Brain className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
                   Keine AMY Insights verfügbar
                 </h3>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
                   {!featureFlags.AMY_ENABLED
                     ? 'AMY-Integration ist derzeit deaktiviert.'
                     : 'Für diese:n Patient:in liegen noch keine AMY-generierten Berichte vor.'}

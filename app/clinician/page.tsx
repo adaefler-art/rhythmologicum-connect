@@ -214,18 +214,18 @@ export default function ClinicianOverviewPage() {
     () => [
       {
         header: 'Patient:in',
-        accessor: (row) => <span className="font-medium text-slate-900">{row.patient_name}</span>,
+        accessor: (row) => <span className="font-medium text-slate-900 dark:text-slate-50">{row.patient_name}</span>,
         sortable: true,
       },
       {
         header: 'StressScore',
         accessor: (row) =>
           row.latest_stress_score !== null ? (
-            <span className="text-slate-900 font-semibold">
+            <span className="text-slate-900 dark:text-slate-50 font-semibold">
               {Math.round(row.latest_stress_score)}
             </span>
           ) : (
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-400 dark:text-slate-500">—</span>
           ),
         sortable: true,
       },
@@ -241,7 +241,7 @@ export default function ClinicianOverviewPage() {
       {
         header: 'Letzte Messung',
         accessor: (row) => (
-          <span className="text-slate-700 whitespace-nowrap">
+          <span className="text-slate-700 dark:text-slate-300 whitespace-nowrap">
             {formatDateTime(row.latest_measurement_time)}
           </span>
         ),
@@ -249,7 +249,7 @@ export default function ClinicianOverviewPage() {
       },
       {
         header: 'Messungen',
-        accessor: (row) => <span className="text-slate-600">{row.measurement_count}</span>,
+        accessor: (row) => <span className="text-slate-600 dark:text-slate-300">{row.measurement_count}</span>,
       },
     ],
     [getRiskBadgeVariant, getRiskLabel, formatDateTime]
@@ -258,7 +258,7 @@ export default function ClinicianOverviewPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-slate-600">Patientenübersicht wird geladen…</p>
+        <p className="text-slate-600 dark:text-slate-300">Patientenübersicht wird geladen…</p>
       </div>
     )
   }
@@ -284,8 +284,8 @@ export default function ClinicianOverviewPage() {
       {/* Page Header with Actions */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
-          <p className="text-slate-600">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">Dashboard</h1>
+          <p className="text-slate-600 dark:text-slate-300">
             Übersicht aller Patientinnen und Patienten mit aktuellen Assessments
           </p>
         </div>
@@ -315,12 +315,12 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Aktive Patienten</p>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.totalPatients}</p>
-                <p className="text-xs text-slate-500">Patienten mit Assessments</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Aktive Patienten</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">{stats.totalPatients}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Patienten mit Assessments</p>
               </div>
-              <div className="p-3 bg-primary-100 rounded-lg">
-                <Users className="w-5 h-5 text-primary-600" />
+              <div className="p-3 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                <Users className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
             </div>
           </Card>
@@ -329,16 +329,16 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Offene Funnels</p>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.openFunnelsCount}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Offene Funnels</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">{stats.openFunnelsCount}</p>
                 {stats.moderateRiskCount > 0 && (
                   <Badge variant="warning" size="sm" className="mt-1">
                     {stats.moderateRiskCount} pending
                   </Badge>
                 )}
               </div>
-              <div className="p-3 bg-teal-100 rounded-lg">
-                <ClipboardList className="w-5 h-5 text-teal-700" />
+              <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                <ClipboardList className="w-5 h-5 text-teal-700 dark:text-teal-400" />
               </div>
             </div>
           </Card>
@@ -347,16 +347,16 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Aktuelle Assessments</p>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.recentCount}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Aktuelle Assessments</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">{stats.recentCount}</p>
                 {stats.recentCount > 0 && (
                   <Badge variant="info" size="sm" className="mt-1">
                     Today
                   </Badge>
                 )}
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <FileCheck className="w-5 h-5 text-purple-600" />
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <FileCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </Card>
@@ -365,16 +365,16 @@ export default function ClinicianOverviewPage() {
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">Rote Flaggen (24h)</p>
-                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.highRiskCount24h}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Rote Flaggen (24h)</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">{stats.highRiskCount24h}</p>
                 {stats.highRiskCount24h > 0 && (
                   <Badge variant="danger" size="sm" className="mt-1">
                     Urgent
                   </Badge>
                 )}
               </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
           </Card>
@@ -384,8 +384,8 @@ export default function ClinicianOverviewPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">Recent Assessments</h2>
-              <p className="text-sm text-slate-600 mt-1">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Recent Assessments</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
                 Aktuelle Messungen und Risikobewertungen
               </p>
             </div>
