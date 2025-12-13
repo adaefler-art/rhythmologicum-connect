@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Badge } from '@/lib/ui'
+import { Button, Badge, Input, Select } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -327,13 +327,13 @@ export default function AdminContentDashboard() {
               <label htmlFor="search" className="block text-sm font-medium text-slate-700 mb-2">
                 Suche
               </label>
-              <input
+              <Input
                 id="search"
                 type="text"
                 placeholder="Titel oder Slug suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                inputSize="sm"
               />
             </div>
 
@@ -342,11 +342,11 @@ export default function AdminContentDashboard() {
               <label htmlFor="funnel" className="block text-sm font-medium text-slate-700 mb-2">
                 Funnel
               </label>
-              <select
+              <Select
                 id="funnel"
                 value={filterFunnel}
                 onChange={(e) => setFilterFunnel(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                selectSize="sm"
               >
                 <option value="all">Alle Funnels</option>
                 {uniqueFunnels.map((funnel) => (
@@ -354,7 +354,7 @@ export default function AdminContentDashboard() {
                     {funnel.title}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Layout/Category Filter */}
@@ -362,11 +362,11 @@ export default function AdminContentDashboard() {
               <label htmlFor="layout" className="block text-sm font-medium text-slate-700 mb-2">
                 Kategorie
               </label>
-              <select
+              <Select
                 id="layout"
                 value={filterLayout}
                 onChange={(e) => setFilterLayout(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                selectSize="sm"
               >
                 <option value="all">Alle Kategorien</option>
                 {uniqueLayouts.map((layout) => (
@@ -374,7 +374,7 @@ export default function AdminContentDashboard() {
                     {layout}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Status Filter */}
@@ -382,11 +382,11 @@ export default function AdminContentDashboard() {
               <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
                 Status
               </label>
-              <select
+              <Select
                 id="status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                selectSize="sm"
               >
                 <option value="all">Alle Status</option>
                 {uniqueStatuses.map((status) => (
@@ -394,7 +394,7 @@ export default function AdminContentDashboard() {
                     {getStatusLabel(status)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         </div>

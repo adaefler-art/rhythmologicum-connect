@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Input, Textarea } from '@/lib/ui'
 import MarkdownRenderer from './MarkdownRenderer'
 import type { ContentPageSection } from '@/lib/types/content'
 
@@ -50,13 +51,14 @@ export default function SectionEditor({
           <label htmlFor={`section-title-${section.id}`} className="sr-only">
             Section Titel
           </label>
-          <input
+          <Input
             id={`section-title-${section.id}`}
             type="text"
             value={section.title}
             onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="font-medium"
             placeholder="Section-Titel..."
+            inputSize="sm"
           />
         </div>
 
@@ -144,13 +146,14 @@ export default function SectionEditor({
           <label htmlFor={`section-markdown-${section.id}`} className="sr-only">
             Section Inhalt (Markdown)
           </label>
-          <textarea
+          <Textarea
             id={`section-markdown-${section.id}`}
             value={section.body_markdown}
             onChange={(e) => handleMarkdownChange(e.target.value)}
-            className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+            className="font-mono"
             rows={10}
             placeholder="Markdown-Inhalt für diese Section..."
+            textareaSize="sm"
           />
         </div>
       )}

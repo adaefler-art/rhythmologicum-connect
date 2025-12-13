@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Input, Textarea, Select } from '@/lib/ui'
 import MarkdownRenderer from './MarkdownRenderer'
 import SectionEditor from './SectionEditor'
 import type { ContentPageSection } from '@/lib/types/content'
@@ -428,14 +429,14 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
                 Titel *
               </label>
-              <input
+              <Input
                 id="title"
                 type="text"
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="Seitentitel eingeben..."
                 required
+                inputSize="sm"
               />
             </div>
 
@@ -444,21 +445,19 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="slug" className="block text-sm font-medium text-slate-700 mb-2">
                 Slug *
               </label>
-              <input
+              <Input
                 id="slug"
                 type="text"
                 value={slug}
                 onChange={(e) => handleSlugChange(e.target.value)}
-                className={`w-full px-3 py-2 bg-white text-slate-900 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono ${
-                  slugError ? 'border-red-300' : 'border-slate-300'
-                }`}
+                className="font-mono"
                 placeholder="seiten-url"
                 required
+                error={!!slugError}
+                errorMessage={slugError || undefined}
+                helperText={!slugError ? 'Nur Kleinbuchstaben, Zahlen und Bindestriche' : undefined}
+                inputSize="sm"
               />
-              {slugError && <p className="mt-1 text-xs text-red-600">{slugError}</p>}
-              <p className="mt-1 text-xs text-slate-500">
-                Nur Kleinbuchstaben, Zahlen und Bindestriche
-              </p>
             </div>
 
             {/* Category */}
@@ -466,13 +465,13 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
                 Kategorie
               </label>
-              <input
+              <Input
                 id="category"
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 placeholder="z.B. Info, Tutorial, FAQ"
+                inputSize="sm"
               />
             </div>
 
@@ -481,11 +480,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="funnel" className="block text-sm font-medium text-slate-700 mb-2">
                 Funnel
               </label>
-              <select
+              <Select
                 id="funnel"
                 value={funnelId}
                 onChange={(e) => setFunnelId(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                selectSize="sm"
+                helperText="Funnel, zu dem diese Content-Page gehört"
               >
                 <option value="">Kein Funnel</option>
                 {funnels.map((funnel) => (
@@ -493,10 +493,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
                     {funnel.title}
                   </option>
                 ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                Funnel, zu dem diese Content-Page gehört
-              </p>
+              </Select>
             </div>
 
             {/* Flow Step */}
@@ -504,18 +501,17 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="flowStep" className="block text-sm font-medium text-slate-700 mb-2">
                 Flow Step
               </label>
-              <input
+              <Input
                 id="flowStep"
                 type="text"
                 value={flowStep}
                 onChange={(e) => setFlowStep(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                className="font-mono"
                 placeholder="z.B. intro-1, between-questions-2"
                 disabled={!funnelId}
+                helperText="Identifier für den Flow-Schritt (z.B. &quot;intro-1&quot;, &quot;between-questions-2&quot;)"
+                inputSize="sm"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                Identifier für den Flow-Schritt (z.B. &quot;intro-1&quot;, &quot;between-questions-2&quot;)
-              </p>
             </div>
 
             {/* Order Index */}
@@ -523,19 +519,17 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="orderIndex" className="block text-sm font-medium text-slate-700 mb-2">
                 Order Index
               </label>
-              <input
+              <Input
                 id="orderIndex"
                 type="number"
                 value={orderIndex ?? ''}
                 onChange={(e) => setOrderIndex(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 min="0"
                 placeholder="Optional"
                 disabled={!funnelId}
+                helperText="Reihenfolge bei mehreren Content-Seiten im gleichen Flow-Schritt"
+                inputSize="sm"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                Reihenfolge bei mehreren Content-Seiten im gleichen Flow-Schritt
-              </p>
             </div>
 
             {/* Priority */}
@@ -543,15 +537,15 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="priority" className="block text-sm font-medium text-slate-700 mb-2">
                 Priorität
               </label>
-              <input
+              <Input
                 id="priority"
                 type="number"
                 value={priority}
                 onChange={(e) => setPriority(parseInt(e.target.value, 10) || 0)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 min="0"
+                helperText="Höhere Werte = höhere Priorität"
+                inputSize="sm"
               />
-              <p className="mt-1 text-xs text-slate-500">Höhere Werte = höhere Priorität</p>
             </div>
 
             {/* Excerpt */}
@@ -559,13 +553,13 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="excerpt" className="block text-sm font-medium text-slate-700 mb-2">
                 Auszug / Kurzbeschreibung
               </label>
-              <textarea
+              <Textarea
                 id="excerpt"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
                 rows={2}
                 placeholder="Kurze Beschreibung für Übersichten..."
+                textareaSize="sm"
               />
             </div>
           </div>
@@ -590,14 +584,15 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
               <label htmlFor="markdown" className="block text-sm font-medium text-slate-700 mb-2">
                 Markdown *
               </label>
-              <textarea
+              <Textarea
                 id="markdown"
                 value={bodyMarkdown}
                 onChange={(e) => setBodyMarkdown(e.target.value)}
-                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-mono"
+                className="font-mono"
                 rows={20}
                 placeholder="# Überschrift&#10;&#10;Ihr Markdown-Inhalt..."
                 required
+                textareaSize="sm"
               />
             </div>
 

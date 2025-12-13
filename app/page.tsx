@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { featureFlags } from '@/lib/featureFlags'
-import { ThemeToggle } from '@/lib/ui'
+import { ThemeToggle, Input } from '@/lib/ui'
 import { getRoleLandingPage, getUserRole } from '@/lib/utils/roleBasedRouting'
 
 type Mode = 'login' | 'signup'
@@ -266,30 +266,32 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* E-Mail */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-Mail</label>
-              <input
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-Mail</label>
+              <Input
+                id="email"
                 type="email"
                 required
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 border bg-slate-50 dark:bg-slate-700 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600"
+                inputSize="md"
               />
             </div>
 
             {/* Passwort */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Passwort</label>
-              <input
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Passwort</label>
+              <Input
+                id="password"
                 type="password"
                 required
                 minLength={6}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg px-3 py-2 border bg-slate-50 dark:bg-slate-700 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600"
+                inputSize="md"
+                helperText="Mindestens 6 Zeichen."
               />
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mindestens 6 Zeichen.</p>
             </div>
 
             {/* Fehlermeldung */}

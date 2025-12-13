@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Input, Textarea } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -372,42 +373,45 @@ export default function FunnelDetailPage() {
               {editingFunnel ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor="funnel-title" className="block text-sm font-medium text-slate-700 mb-1">
                       Titel
                     </label>
-                    <input
+                    <Input
+                      id="funnel-title"
                       type="text"
                       value={editedFunnel.title || ''}
                       onChange={(e) =>
                         setEditedFunnel({ ...editedFunnel, title: e.target.value })
                       }
-                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      inputSize="md"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor="funnel-subtitle" className="block text-sm font-medium text-slate-700 mb-1">
                       Untertitel
                     </label>
-                    <input
+                    <Input
+                      id="funnel-subtitle"
                       type="text"
                       value={editedFunnel.subtitle || ''}
                       onChange={(e) =>
                         setEditedFunnel({ ...editedFunnel, subtitle: e.target.value })
                       }
-                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      inputSize="md"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor="funnel-description" className="block text-sm font-medium text-slate-700 mb-1">
                       Beschreibung
                     </label>
-                    <textarea
+                    <Textarea
+                      id="funnel-description"
                       value={editedFunnel.description || ''}
                       onChange={(e) =>
                         setEditedFunnel({ ...editedFunnel, description: e.target.value })
                       }
                       rows={3}
-                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      textareaSize="md"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -489,27 +493,29 @@ export default function FunnelDetailPage() {
               {editingStep === step.id ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor={`step-title-${step.id}`} className="block text-sm font-medium text-slate-700 mb-1">
                       Schritt-Titel
                     </label>
-                    <input
+                    <Input
+                      id={`step-title-${step.id}`}
                       type="text"
                       value={editedStep.title || ''}
                       onChange={(e) => setEditedStep({ ...editedStep, title: e.target.value })}
-                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      inputSize="md"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label htmlFor={`step-desc-${step.id}`} className="block text-sm font-medium text-slate-700 mb-1">
                       Schritt-Beschreibung
                     </label>
-                    <textarea
+                    <Textarea
+                      id={`step-desc-${step.id}`}
                       value={editedStep.description || ''}
                       onChange={(e) =>
                         setEditedStep({ ...editedStep, description: e.target.value })
                       }
                       rows={2}
-                      className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      textareaSize="md"
                     />
                   </div>
                   <div className="flex gap-2">
