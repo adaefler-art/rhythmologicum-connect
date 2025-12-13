@@ -49,6 +49,9 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   const [error, setError] = useState<string | null>(null)
   const [funnels, setFunnels] = useState<Funnel[]>([])
 
+  // Validation constants
+  const SLUG_REGEX = /^[a-z0-9-]+$/
+
   // Form state
   const [title, setTitle] = useState(initialData?.title || '')
   const [slug, setSlug] = useState(initialData?.slug || '')
@@ -129,7 +132,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     setSlug(newSlug)
 
     // Validate slug format
-    if (newSlug && !/^[a-z0-9-]+$/.test(newSlug)) {
+    if (newSlug && !SLUG_REGEX.test(newSlug)) {
       setSlugError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
     } else {
       setSlugError(null)
@@ -145,7 +148,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       setError('Slug ist erforderlich')
       return false
     }
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!SLUG_REGEX.test(slug)) {
       setError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
       return false
     }
@@ -154,12 +157,10 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       return false
     }
     // Validate flow_step format if provided
-    if (flowStep && flowStep.trim()) {
-      const flowStepRegex = /^[a-z0-9-]+$/
-      if (!flowStepRegex.test(flowStep.trim())) {
-        setError('Flow Step darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
-        return false
-      }
+    const trimmedFlowStep = flowStep.trim()
+    if (trimmedFlowStep && !SLUG_REGEX.test(trimmedFlowStep)) {
+      setError('Flow Step darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten')
+      return false
     }
     // Validate that order_index is non-negative if provided
     if (orderIndex !== null && orderIndex < 0) {
