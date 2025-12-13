@@ -181,22 +181,6 @@
   
   /* Override semantic colors for better dark mode contrast */
   color-scheme: dark;
-  
-  /* Semantic Text Colors for Dark Mode */
-  /* Primary text - headings, important content */
-  --text-primary: #f8fafc;        /* slate-50 - near white, highest contrast */
-  --text-secondary: #cbd5e1;      /* slate-300 - light gray for labels, secondary content */
-  --text-muted: #94a3b8;          /* slate-400 - muted gray for hints, meta info */
-  --text-disabled: #64748b;       /* slate-500 - disabled state */
-  
-  /* Background colors for surfaces */
-  --bg-primary: var(--color-dark-bg);              /* #0a0a0a */
-  --bg-surface: var(--color-dark-surface);         /* #1e1e1e */
-  --bg-elevated: var(--color-dark-surface-elevated); /* #2a2a2a */
-  
-  /* Border colors */
-  --border-default: var(--color-dark-border);      /* #3a3a3a */
-  --border-light: var(--color-dark-border-light);  /* #2a2a2a */
 }
 
 body {
