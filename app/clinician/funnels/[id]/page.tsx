@@ -328,7 +328,7 @@ export default function FunnelDetailPage() {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center py-12">
-          <p className="text-slate-600">Lade Funnel-Details…</p>
+          <p className="text-slate-600 dark:text-slate-300">Lade Funnel-Details…</p>
         </div>
       </div>
     )
@@ -337,8 +337,8 @@ export default function FunnelDetailPage() {
   if (error || !funnel) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error || 'Funnel nicht gefunden'}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-800 dark:text-red-300">{error || 'Funnel nicht gefunden'}</p>
         </div>
         <div className="mt-4">
           <Link
@@ -429,16 +429,16 @@ export default function FunnelDetailPage() {
                 </div>
               ) : (
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
                     {funnel.title}
                   </h1>
                   {funnel.subtitle && (
-                    <p className="text-lg text-slate-600 mb-2">{funnel.subtitle}</p>
+                    <p className="text-lg text-slate-600 dark:text-slate-300 mb-2">{funnel.subtitle}</p>
                   )}
                   {funnel.description && (
-                    <p className="text-sm text-slate-500 mb-3">{funnel.description}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{funnel.description}</p>
                   )}
-                  <div className="flex items-center gap-3 text-sm text-slate-400">
+                  <div className="flex items-center gap-3 text-sm text-slate-400 dark:text-slate-500">
                     <span>ID: {funnel.slug}</span>
                     <span>•</span>
                     <span>{steps.length} Schritte</span>
@@ -478,7 +478,7 @@ export default function FunnelDetailPage() {
 
       {/* Steps List */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-slate-900">Schritte</h2>
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Schritte</h2>
         {steps.map((step, stepIndex) => (
           <div
             key={step.id}
