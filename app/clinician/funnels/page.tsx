@@ -51,7 +51,7 @@ export default function FunnelListPage() {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center py-12">
-          <p className="text-slate-600">Lade Funnels…</p>
+          <p className="text-slate-600 dark:text-slate-300">Lade Funnels…</p>
         </div>
       </div>
     )
@@ -60,8 +60,8 @@ export default function FunnelListPage() {
   if (error) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-800 dark:text-red-300">{error}</p>
         </div>
       </div>
     )
@@ -71,10 +71,10 @@ export default function FunnelListPage() {
     <div className="w-full">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
           Funnel Verwaltung
         </h1>
-        <p className="text-slate-600">
+        <p className="text-slate-600 dark:text-slate-300">
           Übersicht und Verwaltung aller Funnel-Definitionen
         </p>
       </div>
@@ -83,7 +83,7 @@ export default function FunnelListPage() {
       <div className="mb-6">
         <Link
           href="/clinician"
-          className="inline-flex items-center text-sm text-sky-600 hover:text-sky-700 font-medium"
+          className="inline-flex items-center text-sm text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium"
         >
           ← Zurück zum Dashboard
         </Link>
@@ -92,7 +92,7 @@ export default function FunnelListPage() {
       {/* Funnel List */}
       {funnels.length === 0 ? (
         <Card padding="lg">
-          <p className="text-slate-600 text-center">Keine Funnels gefunden.</p>
+          <p className="text-slate-600 dark:text-slate-300 text-center">Keine Funnels gefunden.</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -101,7 +101,7 @@ export default function FunnelListPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-slate-900 truncate">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 truncate">
                       {funnel.title}
                     </h3>
                     <Badge variant={funnel.is_active ? 'success' : 'secondary'} size="sm">
@@ -110,14 +110,14 @@ export default function FunnelListPage() {
                   </div>
 
                   {funnel.subtitle && (
-                    <p className="text-sm text-slate-600 mb-2">{funnel.subtitle}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">{funnel.subtitle}</p>
                   )}
 
                   {funnel.description && (
-                    <p className="text-sm text-slate-500 mb-2">{funnel.description}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{funnel.description}</p>
                   )}
 
-                  <div className="flex items-center gap-4 text-xs text-slate-400">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
                     <span>ID: {funnel.slug}</span>
                     <span>•</span>
                     <span>
