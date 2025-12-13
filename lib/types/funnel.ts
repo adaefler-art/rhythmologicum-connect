@@ -7,6 +7,22 @@
 /**
  * Node/Step type constants for the funnel engine.
  * These correspond to the 'type' field in the funnel_steps table.
+ * 
+ * Usage:
+ * ```typescript
+ * import { NODE_TYPE, isContentPageStep } from '@/lib/types/funnel'
+ * 
+ * // Check step type using constants
+ * if (step.type === NODE_TYPE.CONTENT_PAGE) {
+ *   // Handle content page step
+ * }
+ * 
+ * // Or use type guard functions
+ * if (isContentPageStep(step)) {
+ *   // TypeScript knows step is ContentPageStepDefinition
+ *   console.log(step.contentPageId)
+ * }
+ * ```
  */
 export const NODE_TYPE = {
   QUESTION_STEP: 'question_step',
