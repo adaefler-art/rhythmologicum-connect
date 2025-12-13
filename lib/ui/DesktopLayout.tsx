@@ -320,8 +320,10 @@ export function DesktopLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-8 max-w-full">
-          {children}
+        <main className="p-4 lg:p-8 w-full">
+          <div className="w-full max-w-[1600px] mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -68,7 +68,7 @@ export default function FunnelListPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
