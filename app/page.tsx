@@ -26,6 +26,28 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null) // neu: Erfolgsmeldungen
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
 
+  // Check if user is already authenticated and redirect to appropriate landing page
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const role = getUserRole(user)
+        // Use role-based landing page
+        if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          router.replace('/patient')
+        } else {
+          const landingPage = getRoleLandingPage(user)
+          router.replace(landingPage)
+        }
+      }
+    }
+
+    checkAuthAndRedirect()
+  }, [router])
+
   useEffect(() => {
     const {
       data: { subscription },
