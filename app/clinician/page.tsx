@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Badge, Button, Card, Table } from '@/lib/ui'
+import { Badge, Button, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   Users,
@@ -258,7 +258,7 @@ export default function ClinicianOverviewPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-slate-600 dark:text-slate-300">Patientenübersicht wird geladen…</p>
+        <LoadingSpinner size="md" text="Patientenübersicht wird geladen…" />
       </div>
     )
   }
@@ -266,15 +266,12 @@ export default function ClinicianOverviewPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="max-w-md text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition"
-          >
-            Neu laden
-          </button>
-        </div>
+        <ErrorState
+          title="Fehler beim Laden"
+          message={error}
+          onRetry={() => window.location.reload()}
+          retryText="Neu laden"
+        />
       </div>
     )
   }

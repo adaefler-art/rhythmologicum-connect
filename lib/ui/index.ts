@@ -76,3 +76,9 @@ export { Tabs, TabsList, TabTrigger, TabContent } from './Tabs'
 export type { TabsProps, TabsListProps, TabTriggerProps, TabContentProps } from './Tabs'
 
 export { ThemeToggle } from './ThemeToggle'
+
+export { LoadingSpinner } from './LoadingSpinner'
+export type { LoadingSpinnerProps, LoadingSpinnerSize } from './LoadingSpinner'
+
+export { ErrorState } from './ErrorState'
+export type { ErrorStateProps } from './ErrorState'

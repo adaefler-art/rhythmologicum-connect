@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
 import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+import { LoadingSpinner, ErrorState } from '@/lib/ui'
 import MobileHeader from '@/app/components/MobileHeader'
 import {
   ScoreCard,
@@ -100,7 +101,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   if (loading) {
     return (
       <main className="flex items-center justify-center bg-muted py-20">
-        <p className="text-sm text-slate-600">Ergebnisse werden geladen…</p>
+        <LoadingSpinner size="md" text="Ergebnisse werden geladen…" />
       </main>
     )
   }
@@ -108,34 +109,12 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
   if (error || !assessment) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <div className="max-w-md border-2 rounded-2xl p-6 shadow-lg"
-          style={{
-            backgroundColor: 'var(--background)',
-            borderColor: 'var(--color-error-light)',
-          }}
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">❌</span>
-            <div>
-              <h3 className="text-lg font-semibold mb-1" style={{ color: 'var(--color-error)' }}>
-                Fehler
-              </h3>
-              <p style={{ color: 'var(--color-error)' }}>
-                {error || 'Ergebnisse konnten nicht geladen werden.'}
-              </p>
-              <button
-                onClick={() => router.push('/patient')}
-                className="mt-4 px-4 py-2 rounded-lg hover:opacity-80 transition-opacity"
-                style={{
-                  backgroundColor: 'var(--color-neutral-200)',
-                  color: 'var(--color-neutral-700)',
-                }}
-              >
-                Zurück zur Übersicht
-              </button>
-            </div>
-          </div>
-        </div>
+        <ErrorState
+          title="Fehler"
+          message={error || 'Ergebnisse konnten nicht geladen werden.'}
+          onRetry={() => router.push('/patient')}
+          retryText="Zurück zur Übersicht"
+        />
       </main>
     )
   }
