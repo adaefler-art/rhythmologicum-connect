@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
+import { LoadingSpinner } from '@/lib/ui'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 
 type ContentPageClientProps = {
@@ -53,27 +54,24 @@ export default function ContentPageClient({ slug }: ContentPageClientProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mb-4"></div>
-          <p className="text-slate-600">Seite wird geladen...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-neutral-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4 transition-colors duration-150">
+        <LoadingSpinner size="lg" text="Seite wird geladen..." centered />
       </div>
     )
   }
 
   if (error || !contentPage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-neutral-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-neutral-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4 transition-colors duration-150">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">Seite nicht gefunden</h1>
-          <p className="text-slate-600 mb-6">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-3">Seite nicht gefunden</h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
             {error || 'Die angeforderte Seite konnte nicht gefunden werden.'}
           </p>
           <button
             onClick={() => router.push('/')}
-            className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white font-medium px-6 py-3 rounded-lg transition-colors"
           >
             Zur Startseite
           </button>
