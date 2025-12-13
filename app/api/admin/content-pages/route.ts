@@ -220,6 +220,8 @@ export async function POST(request: NextRequest) {
     if (body.category !== undefined) insertData.category = body.category || null
     if (body.priority !== undefined) insertData.priority = body.priority
     if (body.funnel_id !== undefined) insertData.funnel_id = body.funnel_id || null
+    if (body.flow_step !== undefined) insertData.flow_step = body.flow_step || null
+    if (body.order_index !== undefined) insertData.order_index = body.order_index
     if (body.layout !== undefined) insertData.layout = body.layout || null
 
     // Create content page
