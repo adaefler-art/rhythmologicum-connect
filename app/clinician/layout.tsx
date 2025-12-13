@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
+import { getClinicianNavItems, hasAnyRole, getUserRole, getRoleDisplayName } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 
@@ -29,9 +30,8 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
         return
       }
 
-      const role = user.app_metadata?.role || user.user_metadata?.role
-      
-      if (role !== 'clinician') {
+      // Check if user has clinician or admin role
+      if (!hasAnyRole(user, ['clinician', 'admin'])) {
         router.push(ACCESS_DENIED_REDIRECT)
         return
       }
@@ -50,8 +50,7 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          const role = session.user.app_metadata?.role || session.user.user_metadata?.role
-          if (role !== 'clinician') {
+          if (!hasAnyRole(session.user, ['clinician', 'admin'])) {
             router.push(ACCESS_DENIED_REDIRECT)
           } else {
             setUser(session.user)
@@ -79,24 +78,10 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
     )
   }
 
-  // Navigation items with active state detection
-  const navItems = [
-    {
-      href: '/clinician',
-      label: 'Dashboard',
-      active: pathname === '/clinician',
-    },
-    {
-      href: '/clinician/funnels',
-      label: 'Funnels',
-      active: pathname?.startsWith('/clinician/funnels') ?? false,
-    },
-    {
-      href: '/admin/content',
-      label: 'Content',
-      active: pathname?.startsWith('/admin/content') ?? false,
-    },
-  ]
+  // Get navigation items and role display name
+  const navItems = getClinicianNavItems(pathname)
+  const role = getUserRole(user)
+  const roleDisplay = getRoleDisplayName(role)
 
   return (
     <DesktopLayout
@@ -105,6 +90,10 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
       onSignOut={handleSignOut}
       navItems={navItems}
     >
+      {/* Role indicator */}
+      <div className="mb-4 text-xs text-slate-500">
+        Angemeldet als: <span className="font-medium text-slate-700">{roleDisplay}</span>
+      </div>
       {children}
     </DesktopLayout>
   )
