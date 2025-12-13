@@ -192,29 +192,23 @@ body {
 
 /* 
  * Global Form Field Styling
- * Ensures all form elements have consistent white backgrounds and black text
- * regardless of system dark mode preferences
+ * Provides consistent form field styling with dark mode support
  */
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 textarea,
 select {
-  /* Force white background and black text for all form fields */
-  background-color: #ffffff !important;
-  color: #000000 !important;
   /* Default border styling */
-  border: 1px solid #cbd5e1; /* slate-300 */
-  border-radius: 0.375rem; /* rounded-md */
-  /* Prevent dark mode from affecting form fields */
+  border-radius: 0.5rem; /* rounded-lg */
+  /* Prevent dark mode from affecting form fields inappropriately */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
 }
 
-/* Placeholder text styling - dark gray for good readability */
+/* Placeholder text styling - subtle for good readability */
 input::placeholder,
 textarea::placeholder {
-  color: #6b7280 !important; /* gray-500 - dark enough to be clearly readable */
-  opacity: 1;
+  opacity: 0.6;
 }
 
 /* Focus state - clear visual feedback with blue ring */
@@ -226,12 +220,17 @@ select:focus {
   box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
 
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+}
+
 /* Disabled state */
 input:disabled,
 textarea:disabled,
 select:disabled {
-  background-color: #f1f5f9 !important; /* slate-100 */
-  color: #94a3b8 !important; /* slate-400 */
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -244,32 +243,4 @@ input[aria-invalid="true"],
 textarea[aria-invalid="true"],
 select[aria-invalid="true"] {
   border-color: #dc2626 !important; /* red-600 */
-}
-
-/* Dark mode form fields */
-.dark input,
-.dark textarea,
-.dark select {
-  background-color: var(--color-dark-surface-elevated) !important;
-  color: var(--color-text-light) !important;
-  border-color: var(--color-dark-border) !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: var(--color-text-dimmed-light) !important;
-}
-
-.dark input:focus,
-.dark textarea:focus,
-.dark select:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
-}
-
-.dark input:disabled,
-.dark textarea:disabled,
-.dark select:disabled {
-  background-color: var(--color-dark-surface-elevated) !important;
-  color: var(--color-text-muted-light) !important;
 }

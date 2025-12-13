@@ -25,26 +25,31 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
   if (variant === 'mobile') {
     return (
       <nav 
-        className="md:hidden fixed inset-x-0 bottom-0 bg-background/95 backdrop-blur border-t px-4 py-2.5 flex items-center justify-around"
+        className="md:hidden fixed inset-x-0 bottom-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-around transition-colors duration-150"
         style={{
-          borderColor: 'var(--color-neutral-200)',
-          boxShadow: 'var(--shadow-lg)',
+          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
           paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        {navItems.map((item, index) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex flex-col items-center text-xs font-semibold transition-colors"
-            style={{ 
-              color: item.active ? 'var(--color-primary-700)' : 'var(--color-neutral-600)',
-            }}
-          >
-            <span className="text-lg">{index === 0 ? '📝' : '📊'}</span>
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          // Determine icon based on route
+          const icon = item.href.includes('assessment') || item.href.includes('funnel') ? '📝' : '📊'
+          
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center text-xs font-semibold transition-colors ${
+                item.active 
+                  ? 'text-sky-700 dark:text-sky-400' 
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              <span className="text-lg">{icon}</span>
+              {item.label}
+            </Link>
+          )
+        })}
       </nav>
     )
   }
@@ -56,23 +61,11 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
         <Link
           key={item.href}
           href={item.href}
-          className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200"
-          style={item.active ? {
-            backgroundColor: 'var(--color-primary-100)',
-            color: 'var(--color-primary-700)',
-          } : {
-            color: 'var(--color-neutral-600)',
-          }}
-          onMouseEnter={(e) => {
-            if (!item.active) {
-              e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!item.active) {
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }
-          }}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 ${
+            item.active 
+              ? 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400' 
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+          }`}
         >
           {item.label}
         </Link>

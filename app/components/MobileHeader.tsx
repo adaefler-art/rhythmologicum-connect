@@ -112,7 +112,7 @@ export default function MobileHeader({
       <button
         type="button"
         onClick={onAction}
-        className="shrink-0 flex items-center justify-center rounded-full bg-white hover:bg-slate-100 active:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+        className="shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 active:bg-slate-300 dark:active:bg-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
         style={{
           width: '44px',
           height: '44px',
@@ -120,9 +120,9 @@ export default function MobileHeader({
         aria-label={actionIcon === 'settings' ? 'Einstellungen' : 'Information'}
       >
         {actionIcon === 'settings' ? (
-          <Settings {...iconProps} className="text-slate-700" />
+          <Settings {...iconProps} className="text-slate-700 dark:text-slate-300" />
         ) : (
-          <Info {...iconProps} className="text-slate-700" />
+          <Info {...iconProps} className="text-slate-700 dark:text-slate-300" />
         )}
       </button>
     )
@@ -130,7 +130,7 @@ export default function MobileHeader({
 
   return (
     <header
-      className={`sticky top-0 bg-white border-b border-slate-200 ${className}`}
+      className={`sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 transition-colors duration-150 ${className}`}
       style={{
         zIndex: 50,
         boxShadow: shadows.sm,
@@ -148,7 +148,7 @@ export default function MobileHeader({
           <button
             type="button"
             onClick={handleBack}
-            className="shrink-0 flex items-center justify-center rounded-full bg-white hover:bg-slate-100 active:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+            className="shrink-0 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 active:bg-slate-300 dark:active:bg-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
             style={{
               width: '44px',
               height: '44px',
@@ -158,7 +158,7 @@ export default function MobileHeader({
             <ArrowLeft
               size={20}
               strokeWidth={2}
-              className="text-slate-700"
+              className="text-slate-700 dark:text-slate-300"
               aria-hidden={true}
             />
           </button>
@@ -169,7 +169,7 @@ export default function MobileHeader({
           <div className="flex-1 min-w-0">
             {subtitle && (
               <p
-                className="text-xs font-medium text-sky-600 uppercase tracking-wide truncate"
+                className="text-xs font-medium text-sky-600 dark:text-sky-400 uppercase tracking-wide truncate"
                 style={{ fontSize: typography.fontSize.xs }}
               >
                 {subtitle}
@@ -177,7 +177,7 @@ export default function MobileHeader({
             )}
             {title && (
               <h1
-                className="font-semibold text-slate-900 truncate"
+                className="font-semibold text-slate-900 dark:text-slate-100 truncate"
                 style={{
                   fontSize: typography.fontSize.lg,
                   lineHeight: typography.lineHeight.tight,

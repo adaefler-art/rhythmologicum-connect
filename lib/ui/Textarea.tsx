@@ -71,13 +71,13 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       rounded-lg
       transition-all duration-200
       focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1
-      disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60
+      disabled:bg-slate-100 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60
       resize-y
     `
 
     const stateClasses = error
-      ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-400'
-      : 'border-slate-300 bg-white text-slate-900 placeholder-slate-500 focus:border-sky-500'
+      ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 placeholder-red-400 dark:placeholder-red-300'
+      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:border-sky-500'
 
     const generatedId = useId()
     const textareaId = props.id || generatedId
@@ -104,7 +104,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {errorMessage && error && (
           <p
             id={`${textareaId}-error`}
-            className="text-sm text-red-600 mt-1.5"
+            className="text-sm text-red-600 dark:text-red-400 mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {errorMessage}
@@ -113,7 +113,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {helperText && !error && (
           <p
             id={`${textareaId}-helper`}
-            className="text-sm text-slate-500 mt-1.5"
+            className="text-sm text-slate-500 dark:text-slate-400 mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {helperText}
