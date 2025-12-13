@@ -339,6 +339,7 @@ export default function FunnelDetailPage() {
         <ErrorState
           title="Fehler beim Laden"
           message={error || 'Funnel nicht gefunden'}
+          onRetry={loadFunnelDetails}
           centered
         />
         <div className="mt-4 text-center">
