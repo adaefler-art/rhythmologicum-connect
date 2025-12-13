@@ -639,51 +639,49 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     <>
       {/* Content Page Links - Show above the main flow */}
       {showContentLinks && (
-        <div className="bg-slate-50 px-4 py-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <span className="text-xl shrink-0">ℹ️</span>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-primary-900 mb-2">
-                    Weitere Informationen
-                  </h3>
-                  <div className="space-y-2">
-                    {introPages.map((page) => (
-                      <a
-                        key={page.id}
-                        href={`/patient/funnel/${slug}/content/${page.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
-                      >
-                        📄 {page.title}
-                        {page.excerpt && (
-                          <span className="text-xs text-primary-600 ml-1">
-                            — {page.excerpt.substring(0, 60)}
-                            {page.excerpt.length > 60 ? '...' : ''}
-                          </span>
-                        )}
-                      </a>
-                    ))}
-                    {infoPages.map((page) => (
-                      <a
-                        key={page.id}
-                        href={`/patient/funnel/${slug}/content/${page.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
-                      >
-                        📄 {page.title}
-                        {page.excerpt && (
-                          <span className="text-xs text-primary-600 ml-1">
-                            — {page.excerpt.substring(0, 60)}
-                            {page.excerpt.length > 60 ? '...' : ''}
-                          </span>
-                        )}
-                      </a>
-                    ))}
-                  </div>
+        <div className="bg-slate-50 px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl shrink-0">ℹ️</span>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-primary-900 mb-2">
+                  Weitere Informationen
+                </h3>
+                <div className="space-y-2">
+                  {introPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${slug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
+                    >
+                      📄 {page.title}
+                      {page.excerpt && (
+                        <span className="text-xs text-primary-600 ml-1">
+                          — {page.excerpt.substring(0, 60)}
+                          {page.excerpt.length > 60 ? '...' : ''}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                  {infoPages.map((page) => (
+                    <a
+                      key={page.id}
+                      href={`/patient/funnel/${slug}/content/${page.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-sm text-primary-700 hover:text-primary-900 hover:underline"
+                    >
+                      📄 {page.title}
+                      {page.excerpt && (
+                        <span className="text-xs text-primary-600 ml-1">
+                          — {page.excerpt.substring(0, 60)}
+                          {page.excerpt.length > 60 ? '...' : ''}
+                        </span>
+                      )}
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
