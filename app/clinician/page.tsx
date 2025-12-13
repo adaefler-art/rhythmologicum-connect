@@ -3,9 +3,16 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Badge, Card, Table } from '@/lib/ui'
+import { Badge, Button, Card, Table } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
-import { Users, ClipboardList, FileCheck, AlertTriangle } from 'lucide-react'
+import {
+  Users,
+  ClipboardList,
+  FileCheck,
+  AlertTriangle,
+  Download,
+  Settings,
+} from 'lucide-react'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -320,22 +327,43 @@ export default function ClinicianOverviewPage() {
 
   return (
     <>
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
-        <p className="text-slate-600">
-          Übersicht aller Patientinnen und Patienten mit aktuellen Assessments
-        </p>
+      {/* Page Header with Actions */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Dashboard</h1>
+          <p className="text-slate-600">
+            Übersicht aller Patientinnen und Patienten mit aktuellen Assessments
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Settings className="w-4 h-4" />}
+            onClick={() => router.push('/clinician/funnels')}
+          >
+            Funnels verwalten
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<Download className="w-4 h-4" />}
+            onClick={() => window.print()}
+          >
+            Exportieren
+          </Button>
+        </div>
       </div>
 
-        {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Active Patients */}
-          <Card padding="lg" shadow="md" radius="lg">
+          <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Active Patients</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.totalPatients}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Aktive Patienten</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.totalPatients}</p>
+                <p className="text-xs text-slate-500">Patienten mit Assessments</p>
               </div>
               <div className="p-3 bg-primary-100 rounded-lg">
                 <Users className="w-5 h-5 text-primary-600" />
@@ -344,13 +372,13 @@ export default function ClinicianOverviewPage() {
           </Card>
 
           {/* Open Funnels */}
-          <Card padding="lg" shadow="md" radius="lg">
+          <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Open Funnels</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.openFunnelsCount}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Offene Funnels</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.openFunnelsCount}</p>
                 {stats.moderateRiskCount > 0 && (
-                  <Badge variant="warning" size="sm" className="mt-2">
+                  <Badge variant="warning" size="sm" className="mt-1">
                     {stats.moderateRiskCount} pending
                   </Badge>
                 )}
@@ -362,13 +390,13 @@ export default function ClinicianOverviewPage() {
           </Card>
 
           {/* Recent Assessments */}
-          <Card padding="lg" shadow="md" radius="lg">
+          <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Recent Assessments</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.recentCount}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Aktuelle Assessments</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.recentCount}</p>
                 {stats.recentCount > 0 && (
-                  <Badge variant="info" size="sm" className="mt-2">
+                  <Badge variant="info" size="sm" className="mt-1">
                     Today
                   </Badge>
                 )}
@@ -380,13 +408,13 @@ export default function ClinicianOverviewPage() {
           </Card>
 
           {/* Red Flags */}
-          <Card padding="lg" shadow="md" radius="lg">
+          <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500 mb-1">Red Flags (24h)</p>
-                <p className="text-3xl font-bold text-slate-900">{stats.highRiskCount24h}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-slate-500 mb-1">Rote Flaggen (24h)</p>
+                <p className="text-3xl font-bold text-slate-900 mb-1">{stats.highRiskCount24h}</p>
                 {stats.highRiskCount24h > 0 && (
-                  <Badge variant="danger" size="sm" className="mt-2">
+                  <Badge variant="danger" size="sm" className="mt-1">
                     Urgent
                   </Badge>
                 )}
@@ -399,8 +427,15 @@ export default function ClinicianOverviewPage() {
         </div>
 
         {/* Recent Assessments Table */}
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">Recent Assessments</h2>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Recent Assessments</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                Aktuelle Messungen und Risikobewertungen
+              </p>
+            </div>
+          </div>
         </div>
 
       <Table
