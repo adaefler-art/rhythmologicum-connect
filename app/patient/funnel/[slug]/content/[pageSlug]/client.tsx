@@ -213,7 +213,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
 
       {/* Content */}
       <main className={`${layoutClass} mx-auto px-4 pt-8 sm:py-12`} style={{
-        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom, 0px)))',
+        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))',
       }}>
         <article className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Page Header */}

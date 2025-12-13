@@ -210,7 +210,7 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
       )}
       
       <main className="min-h-screen bg-muted px-4 pt-8 sm:py-12" style={{
-        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom, 0px)))',
+        paddingBottom: 'max(6rem, calc(6rem + env(safe-area-inset-bottom)))',
       }}>
         <div className="max-w-4xl mx-auto space-y-6">
         {/* Success Header */}
