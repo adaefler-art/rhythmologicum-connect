@@ -113,10 +113,29 @@ export function withMonitoring<T = unknown>(
  * 
  * TODO: Implement actual metrics collection when ready.
  * This can be implemented later to send metrics to:
- * - Prometheus
- * - DataDog
- * - CloudWatch
+ * - Prometheus (with pushgateway)
+ * - DataDog (recommended for comprehensive APM)
+ * - CloudWatch (if using AWS)
+ * - New Relic
  * - Custom metrics dashboard
+ * 
+ * See: docs/MONITORING_INTEGRATION.md for detailed integration guide
+ * 
+ * Example implementation with DataDog:
+ * 
+ * import { StatsD } from 'node-dogstatsd'
+ * const statsd = new StatsD()
+ * 
+ * async function sendMetrics(metrics: ApiMetrics): Promise<void> {
+ *   statsd.increment('api.request', 1, [`endpoint:${metrics.endpoint}`])
+ *   statsd.histogram('api.response_time', metrics.responseTime, [`endpoint:${metrics.endpoint}`])
+ *   if (!metrics.success) {
+ *     statsd.increment('api.error', 1, [
+ *       `endpoint:${metrics.endpoint}`,
+ *       `error_code:${metrics.errorCode}`,
+ *     ])
+ *   }
+ * }
  * 
  * @param metrics - The metrics to send
  */

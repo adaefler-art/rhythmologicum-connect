@@ -4,6 +4,7 @@ import { createClient, type PostgrestError } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 import { featureFlags } from '@/lib/featureFlags';
+import { logError, logPatientFlowError } from '@/lib/logging/logger';
 
 // Supabase-ENV robust auslesen
 const supabaseUrl =
@@ -210,6 +211,14 @@ async function createAmySummary(params: {
       model: MODEL,
     });
 
+    // Log structured error for monitoring
+    logError('AMY API request failed', {
+      endpoint: '/api/amy/stress-report',
+      errorType,
+      model: MODEL,
+      duration,
+    }, error);
+
     // LLM-Fehler → Fallback-Text verwenden
     return getAmyFallbackText({ riskLevel, stressScore, sleepScore });
   }
@@ -221,8 +230,11 @@ export async function POST(req: Request) {
 
   try {
     if (!supabase) {
-      console.error(
-        '[stress-report] Supabase nicht initialisiert – Env Variablen fehlen.'
+      const errorMsg = 'Supabase nicht initialisiert – Env Variablen fehlen.';
+      console.error(`[stress-report] ${errorMsg}`);
+      logPatientFlowError(
+        { endpoint: '/api/amy/stress-report' },
+        new Error(errorMsg)
       );
       return NextResponse.json(
         { error: 'Server-Konfiguration unvollständig (Supabase).' },
@@ -398,6 +410,13 @@ export async function POST(req: Request) {
       duration: `${totalDuration}ms`,
       error: error?.message ?? String(err),
     });
+    
+    // Log structured error for monitoring
+    logPatientFlowError(
+      { endpoint: '/api/amy/stress-report', duration: totalDuration },
+      err
+    );
+    
     return NextResponse.json(
       {
         error: 'Interner Fehler bei der Erstellung des Reports.',

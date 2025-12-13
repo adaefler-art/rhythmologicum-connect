@@ -180,12 +180,25 @@ export const GET = withMonitoring(
 
 In production, logs should be sent to a monitoring service:
 
-- **Server-side**: CloudWatch, DataDog, or custom logging service
-- **Client-side**: LogRocket, Sentry, PostHog, or custom analytics
+- **Server-side**: Sentry (recommended), CloudWatch, DataDog, or custom logging service
+- **Client-side**: LogRocket (recommended), Sentry, PostHog, or custom analytics
+
+**📖 Detailed Integration Guide**: See [docs/MONITORING_INTEGRATION.md](./MONITORING_INTEGRATION.md) for complete setup instructions and recommendations.
 
 ### Placeholder Functions
 
 Both `logger.ts` and `clientLogger.ts` include placeholder functions (`sendMetrics`, `sendToMonitoringService`) for future integration.
+
+### Quick Integration Steps
+
+1. Choose monitoring service (Sentry recommended for error tracking)
+2. Add SDK to dependencies
+3. Configure in logging utilities
+4. Set environment variables
+5. Test in staging environment
+6. Deploy to production
+
+See [MONITORING_INTEGRATION.md](./MONITORING_INTEGRATION.md) for detailed implementation checklist.
 
 ### Example Integration
 
