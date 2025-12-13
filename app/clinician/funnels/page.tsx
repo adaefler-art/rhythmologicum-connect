@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Button, Card, Badge } from '@/lib/ui'
+import { Button, Card, Badge, LoadingSpinner, ErrorState } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,20 +49,21 @@ export default function FunnelListPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-slate-600 dark:text-slate-300">Lade Funnels…</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" text="Lade Funnels…" centered />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-800 dark:text-red-300">{error}</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <ErrorState
+          title="Fehler beim Laden"
+          message={error}
+          onRetry={loadFunnels}
+          centered
+        />
       </div>
     )
   }

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Input, Textarea } from '@/lib/ui'
+import { Input, Textarea, LoadingSpinner, ErrorState } from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -327,10 +327,8 @@ export default function FunnelDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-center py-12">
-          <p className="text-slate-600 dark:text-slate-300">Lade Funnel-Details…</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="lg" text="Lade Funnel-Details…" centered />
       </div>
     )
   }
@@ -338,13 +336,15 @@ export default function FunnelDetailPage() {
   if (error || !funnel) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-800 dark:text-red-300">{error || 'Funnel nicht gefunden'}</p>
-        </div>
-        <div className="mt-4">
+        <ErrorState
+          title="Fehler beim Laden"
+          message={error || 'Funnel nicht gefunden'}
+          centered
+        />
+        <div className="mt-4 text-center">
           <Link
             href="/clinician/funnels"
-            className="inline-flex items-center text-sm text-sky-600 hover:text-sky-700 font-medium"
+            className="inline-flex items-center text-sm text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium"
           >
             ← Zurück zur Übersicht
           </Link>
