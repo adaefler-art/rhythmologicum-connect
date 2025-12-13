@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useEffect, useState } from 'react'
-import { getUserRole, getRoleDisplayName } from '@/lib/utils/roleBasedRouting'
+import { getUserRole, getRoleDisplayName, getPatientNavItems } from '@/lib/utils/roleBasedRouting'
+import { PatientNavigation } from '@/app/components/PatientNavigation'
 import type { User } from '@supabase/supabase-js'
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
@@ -41,10 +42,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
     router.push('/')
   }
 
-  const isAssessments =
-    pathname?.startsWith('/patient/assessment') || pathname?.startsWith('/patient/funnel') || false
-  const isHistory = pathname === '/patient/history'
-
+  // Get navigation items from shared configuration
+  const navItems = getPatientNavItems(pathname)
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 
@@ -85,52 +84,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
               )}
             </div>
           </div>
-          <nav className="flex gap-2">
-            <Link
-              href="/patient/assessment"
-              className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200"
-              style={isAssessments ? {
-                backgroundColor: 'var(--color-primary-100)',
-                color: 'var(--color-primary-700)',
-              } : {
-                color: 'var(--color-neutral-600)',
-              }}
-              onMouseEnter={(e) => {
-                if (!isAssessments) {
-                  e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isAssessments) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }
-              }}
-            >
-              Assessments
-            </Link>
-            <Link
-              href="/patient/history"
-              className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200"
-              style={isHistory ? {
-                backgroundColor: 'var(--color-primary-100)',
-                color: 'var(--color-primary-700)',
-              } : {
-                color: 'var(--color-neutral-600)',
-              }}
-              onMouseEnter={(e) => {
-                if (!isHistory) {
-                  e.currentTarget.style.backgroundColor = 'var(--color-neutral-100)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isHistory) {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }
-              }}
-            >
-              Verlauf
-            </Link>
-          </nav>
+          <PatientNavigation navItems={navItems} variant="desktop" />
         </div>
       </header>
 
@@ -162,35 +116,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Mobile Bottom Tabs */}
-      <nav 
-        className="md:hidden fixed inset-x-0 bottom-0 bg-background/95 backdrop-blur border-t px-4 py-2.5 flex items-center justify-around"
-        style={{
-          borderColor: 'var(--color-neutral-200)',
-          boxShadow: 'var(--shadow-lg)',
-          paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))',
-        }}
-      >
-        <Link
-          href="/patient/assessment"
-          className="flex flex-col items-center text-xs font-semibold transition-colors"
-          style={{ 
-            color: isAssessments ? 'var(--color-primary-700)' : 'var(--color-neutral-600)',
-          }}
-        >
-          <span className="text-lg">📝</span>
-          Assessments
-        </Link>
-        <Link
-          href="/patient/history"
-          className="flex flex-col items-center text-xs font-semibold transition-colors"
-          style={{ 
-            color: isHistory ? 'var(--color-primary-700)' : 'var(--color-neutral-600)',
-          }}
-        >
-          <span className="text-lg">📊</span>
-          Verlauf
-        </Link>
-      </nav>
+      <PatientNavigation navItems={navItems} variant="mobile" />
     </div>
   )
 }

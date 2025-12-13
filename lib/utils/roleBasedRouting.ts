@@ -61,44 +61,101 @@ export function getRoleLandingPage(user: User | null): string {
 
 /**
  * Get navigation items for clinician/admin role
+ * 
+ * Returns user-friendly navigation with clear, non-technical labels.
+ * Navigation order reflects typical workflow: overview -> assessments -> content.
  */
 export function getClinicianNavItems(pathname: string): RoleNavItem[] {
   return [
     {
       href: '/clinician',
-      label: 'Dashboard',
+      label: 'Übersicht',
       active: pathname === '/clinician',
     },
     {
       href: '/clinician/funnels',
-      label: 'Funnels',
+      label: 'Fragebögen',
       active: pathname?.startsWith('/clinician/funnels') ?? false,
     },
     {
       href: '/admin/content',
-      label: 'Content',
+      label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
     },
   ]
 }
 
 /**
+ * Get navigation items for admin role
+ * 
+ * Admins get additional navigation items including design system access.
+ */
+export function getAdminNavItems(pathname: string): RoleNavItem[] {
+  return [
+    {
+      href: '/clinician',
+      label: 'Übersicht',
+      active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/funnels',
+      label: 'Fragebögen',
+      active: pathname?.startsWith('/clinician/funnels') ?? false,
+    },
+    {
+      href: '/admin/content',
+      label: 'Inhalte',
+      active: pathname?.startsWith('/admin/content') ?? false,
+    },
+    {
+      href: '/admin/design-system',
+      label: 'Design System',
+      active: pathname?.startsWith('/admin/design-system') ?? false,
+    },
+  ]
+}
+
+/**
  * Get navigation items for patient role
+ * 
+ * Patient-facing navigation with clear, friendly labels in German.
+ * Simple two-item navigation: start assessment -> view history.
  */
 export function getPatientNavItems(pathname: string): RoleNavItem[] {
   return [
     {
       href: '/patient/assessment',
-      label: 'Assessments',
+      label: 'Fragebogen starten',
       active:
         pathname?.startsWith('/patient/assessment') || pathname?.startsWith('/patient/funnel') || false,
     },
     {
       href: '/patient/history',
-      label: 'Verlauf',
+      label: 'Mein Verlauf',
       active: pathname === '/patient/history',
     },
   ]
+}
+
+/**
+ * Get navigation items based on user role
+ * 
+ * Automatically returns the appropriate navigation items for the user's role.
+ * This is the recommended way to get navigation items in layouts.
+ */
+export function getNavItemsForRole(user: User | null, pathname: string): RoleNavItem[] {
+  const role = getUserRole(user)
+  
+  switch (role) {
+    case 'admin':
+      return getAdminNavItems(pathname)
+    case 'clinician':
+      return getClinicianNavItems(pathname)
+    case 'patient':
+      return getPatientNavItems(pathname)
+    default:
+      return []
+  }
 }
 
 /**
