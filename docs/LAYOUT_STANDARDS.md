@@ -1,6 +1,6 @@
 # Layout Standards & Content Container Guidelines
 
-**Last Updated**: 2025-12-13  
+**Last Updated**: 2025-01-13  
 **Version**: v0.4.1  
 **Related Issues**: Fix global table width & layout constraints (mobile + desktop)
 
@@ -43,15 +43,18 @@ Uses `DesktopLayout` component:
 ### DesktopLayout Content Container (`/lib/ui/DesktopLayout.tsx`)
 
 ```tsx
+import { layout } from '@/lib/design-tokens'
+
 <main className="p-4 lg:p-8 w-full">
-  <div className="w-full max-w-[1600px] mx-auto">
+  <div className="w-full mx-auto" style={{ maxWidth: layout.contentMaxWidth }}>
     {children}
   </div>
 </main>
 ```
 
 **Specifications**:
-- **Maximum Width**: `1600px` (chosen to accommodate wide tables on large monitors)
+- **Maximum Width**: `layout.contentMaxWidth` from design tokens (1600px)
+- **Design Token Source**: `/lib/design-tokens.ts`
 - **Padding**: `16px` mobile, `32px` desktop
 - **Centering**: `mx-auto` ensures content is centered on ultra-wide screens
 - **Flexibility**: Pages inside use `w-full` to utilize full available width
@@ -60,6 +63,16 @@ Uses `DesktopLayout` component:
 - Large enough for data-heavy tables to display without excessive horizontal scrolling
 - Small enough to maintain readability on ultra-wide monitors
 - Balances information density with usability
+
+**Design Token Definition**:
+```ts
+// lib/design-tokens.ts
+export const layout = {
+  contentMaxWidth: '1600px', // Clinician data-heavy pages
+  patientMaxWidth: '1152px',  // Patient readability-focused pages
+  articleMaxWidth: '896px',   // Article-style content
+} as const
+```
 
 ---
 
@@ -322,8 +335,32 @@ When modifying layout:
 ### Potential Improvements
 1. **Custom Breakpoint**: Consider adding `3xl` breakpoint for ultra-wide monitors
 2. **Container Component**: Create reusable `<ContentContainer>` component
-3. **Layout Tokens**: Move max-widths to design tokens file
+3. **CSS Custom Properties**: Consider moving layout tokens to CSS variables for runtime theming
 4. **Grid System**: Implement consistent column system for complex layouts
+
+### Layout Token Implementation
+All layout max-widths are defined in `/lib/design-tokens.ts`:
+```ts
+export const layout = {
+  contentMaxWidth: '1600px', // Clinician content
+  patientMaxWidth: '1152px',  // Patient content (max-w-6xl)
+  articleMaxWidth: '896px',   // Articles (max-w-4xl)
+} as const
+```
+
+Usage in components:
+```tsx
+import { layout } from '@/lib/design-tokens'
+
+<div style={{ maxWidth: layout.contentMaxWidth }}>
+  {/* Content */}
+</div>
+```
+
+Or for Tailwind classes, use the equivalent:
+- `max-w-[1600px]` → `layout.contentMaxWidth`
+- `max-w-6xl` (1152px) → `layout.patientMaxWidth`
+- `max-w-4xl` (896px) → `layout.articleMaxWidth`
 
 ### Feature Requests
 - User-adjustable content width preference

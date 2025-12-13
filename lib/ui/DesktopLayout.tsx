@@ -14,6 +14,7 @@ import {
   User
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
+import { layout } from '@/lib/design-tokens'
 
 export interface NavItem {
   href: string
@@ -321,7 +322,7 @@ export function DesktopLayout({
 
         {/* Page Content */}
         <main className="p-4 lg:p-8 w-full">
-          <div className="w-full max-w-[1600px] mx-auto">
+          <div className="w-full mx-auto" style={{ maxWidth: layout.contentMaxWidth }}>
             {children}
           </div>
         </main>
