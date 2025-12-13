@@ -80,8 +80,8 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 pb-20 md:pb-0" style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 5rem)',
+      <main className="flex-1 md:pb-0" style={{
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
       }}>{children}</main>
 
       {/* Desktop Footer */}
