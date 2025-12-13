@@ -3,14 +3,50 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
+import { useEffect, useState } from 'react'
+import { getUserRole, getRoleDisplayName } from '@/lib/utils/roleBasedRouting'
+import type { User } from '@supabase/supabase-js'
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    // Get current user
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
 
   const isAssessments =
     pathname?.startsWith('/patient/assessment') || pathname?.startsWith('/patient/funnel') || false
   const isHistory = pathname === '/patient/history'
+
+  const role = getUserRole(user)
+  const roleDisplay = getRoleDisplayName(role)
 
   return (
     <div className="min-h-screen bg-muted flex flex-col">
@@ -29,6 +65,24 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
               <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                 Stress &amp; Resilienz Pilot
               </p>
+            </div>
+            {/* User info and logout */}
+            <div className="flex items-center gap-4">
+              {user && (
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs text-neutral-500">Angemeldet als</p>
+                    <p className="text-sm font-medium text-neutral-700">{roleDisplay}</p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-200 hover:bg-neutral-100"
+                    style={{ color: 'var(--color-neutral-600)' }}
+                  >
+                    Abmelden
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <nav className="flex gap-2">

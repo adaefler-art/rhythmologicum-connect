@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { featureFlags } from '@/lib/featureFlags'
 import { ThemeToggle } from '@/lib/ui'
+import { getRoleLandingPage, getUserRole } from '@/lib/utils/roleBasedRouting'
 
 type Mode = 'login' | 'signup'
 
@@ -118,19 +119,11 @@ export default function LoginPage() {
       if (userError) throw userError
       if (!user) throw new Error('Kein Benutzerprofil gefunden.')
 
-      // Check user role to determine redirect
-      const role = user.app_metadata?.role || user.user_metadata?.role
-
-      if (role === 'clinician') {
-        // Check if clinician dashboard is enabled
-        if (featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
-          router.replace('/clinician')
-        } else {
-          // If clinician dashboard is disabled, redirect to patient flow immediately
-          router.replace('/patient')
-        }
-      } else {
-        // For patients: ensure patient_profile exists
+      // Get user role and determine landing page
+      const role = getUserRole(user)
+      
+      // For patients: ensure patient_profile exists
+      if (role === 'patient') {
         const { error: profileError } = await supabase
           .from('patient_profiles')
           .upsert(
@@ -142,8 +135,16 @@ export default function LoginPage() {
           )
 
         if (profileError) throw profileError
+      }
 
+      // Redirect based on role
+      if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+        // If clinician dashboard is disabled, redirect clinicians to patient flow
         router.replace('/patient')
+      } else {
+        // Use role-based landing page
+        const landingPage = getRoleLandingPage(user)
+        router.replace(landingPage)
       }
     } catch (err: unknown) {
       console.error(err)
