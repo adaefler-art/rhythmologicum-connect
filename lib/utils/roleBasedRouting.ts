@@ -120,18 +120,21 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
  * 
  * Patient-facing navigation with clear, friendly labels in German.
  * Simple two-item navigation: start assessment -> view history.
+ * Icons use emoji for visual clarity on mobile.
  */
 export function getPatientNavItems(pathname: string): RoleNavItem[] {
   return [
     {
       href: '/patient/assessment',
       label: 'Fragebogen starten',
+      icon: '📝',
       active:
         pathname?.startsWith('/patient/assessment') || pathname?.startsWith('/patient/funnel') || false,
     },
     {
       href: '/patient/history',
       label: 'Mein Verlauf',
+      icon: '📊',
       active: pathname === '/patient/history',
     },
   ]

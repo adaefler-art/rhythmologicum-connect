@@ -32,7 +32,7 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
           paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -41,7 +41,7 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
               color: item.active ? 'var(--color-primary-700)' : 'var(--color-neutral-600)',
             }}
           >
-            <span className="text-lg">{index === 0 ? '📝' : '📊'}</span>
+            {item.icon && <span className="text-lg">{item.icon}</span>}
             {item.label}
           </Link>
         ))}
