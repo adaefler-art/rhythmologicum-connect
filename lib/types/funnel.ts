@@ -1,5 +1,48 @@
 // Funnel type definitions based on database schema
 
+// ============================================================
+// Node Type Constants
+// ============================================================
+
+/**
+ * Node/Step type constants for the funnel engine.
+ * These correspond to the 'type' field in the funnel_steps table.
+ * 
+ * Usage:
+ * ```typescript
+ * import { NODE_TYPE, isContentPageStep } from '@/lib/types/funnel'
+ * 
+ * // Check step type using constants
+ * if (step.type === NODE_TYPE.CONTENT_PAGE) {
+ *   // Handle content page step
+ * }
+ * 
+ * // Or use type guard functions
+ * if (isContentPageStep(step)) {
+ *   // TypeScript knows step is ContentPageStepDefinition
+ *   console.log(step.contentPageId)
+ * }
+ * ```
+ */
+export const NODE_TYPE = {
+  QUESTION_STEP: 'question_step',
+  FORM: 'form',
+  INFO_STEP: 'info_step',
+  INFO: 'info',
+  CONTENT_PAGE: 'content_page',
+  SUMMARY: 'summary',
+  OTHER: 'other',
+} as const
+
+/**
+ * Type derived from NODE_TYPE constants
+ */
+export type NodeType = typeof NODE_TYPE[keyof typeof NODE_TYPE]
+
+// ============================================================
+// Base Database Types
+// ============================================================
+
 export type Funnel = {
   id: string
   slug: string
@@ -154,13 +197,13 @@ export type FunnelDefinition = {
 
 // Helper type guard functions
 export function isQuestionStep(step: StepDefinition): step is QuestionStepDefinition {
-  return step.type === 'question_step' || step.type === 'form'
+  return step.type === NODE_TYPE.QUESTION_STEP || step.type === NODE_TYPE.FORM
 }
 
 export function isInfoStep(step: StepDefinition): step is InfoStepDefinition {
-  return step.type === 'info_step' || step.type === 'info'
+  return step.type === NODE_TYPE.INFO_STEP || step.type === NODE_TYPE.INFO
 }
 
 export function isContentPageStep(step: StepDefinition): step is ContentPageStepDefinition {
-  return step.type === 'content_page'
+  return step.type === NODE_TYPE.CONTENT_PAGE
 }
