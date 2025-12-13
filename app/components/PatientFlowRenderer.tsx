@@ -104,110 +104,108 @@ export default function PatientFlowRenderer({
     )
   }
 
-  // Desktop or multi-question step: traditional card-based layout
+  // Desktop or multi-question step: full-width patient layout
   return (
-    <main className="min-h-screen bg-muted px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <div className="w-full max-w-6xl mx-auto rounded-3xl bg-background shadow-lg border border-slate-200/80 p-5 sm:p-7 md:p-9">
-        {/* Recovery Banner */}
-        {showRecoveryBanner && answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
-          <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-start gap-2 sm:gap-3">
-              <span className="text-lg sm:text-xl shrink-0">✅</span>
-              <div className="flex-1">
-                <h3 className="text-xs sm:text-sm font-semibold text-green-900 mb-1">
-                  Fortschritt wiederhergestellt
-                </h3>
-                <p className="text-xs sm:text-sm text-green-700">
-                  Sie setzen Ihre Umfrage fort. Ihre bisherigen {answeredCount} Antworten wurden
-                  wiederhergestellt.
-                </p>
-              </div>
+    <main className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      {/* Recovery Banner */}
+      {showRecoveryBanner && answeredCount > 0 && assessmentStatus.currentStep.stepIndex > 0 && (
+        <div className="mb-4 sm:mb-6 bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <span className="text-lg sm:text-xl shrink-0">✅</span>
+            <div className="flex-1">
+              <h3 className="text-xs sm:text-sm font-semibold text-green-900 mb-1">
+                Fortschritt wiederhergestellt
+              </h3>
+              <p className="text-xs sm:text-sm text-green-700">
+                Sie setzen Ihre Umfrage fort. Ihre bisherigen {answeredCount} Antworten wurden
+                wiederhergestellt.
+              </p>
             </div>
           </div>
-        )}
-
-        {/* Header */}
-        <header className="mb-4 sm:mb-6">
-          <p className="text-xs sm:text-sm font-medium uppercase tracking-wide text-sky-600 mb-2">
-            {funnel.title}
-          </p>
-          <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-slate-900 mb-2 leading-tight">
-            Schritt {assessmentStatus.currentStep.stepIndex + 1} von {assessmentStatus.totalSteps}:{' '}
-            {currentStep.title}
-          </h1>
-          {currentStep.description && (
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{currentStep.description}</p>
-          )}
-        </header>
-
-        {/* Progress Indicator */}
-        <AssessmentProgress
-          answeredCount={answeredCount}
-          totalQuestions={totalQuestions}
-          progressPercent={progressPercent}
-        />
-
-        {/* Step Content Renderer - Delegates to node-specific renderers */}
-        <div className="mb-6">
-          {isQuestionStep(currentStep) && (
-            <QuestionStepRenderer
-              step={currentStep}
-              answers={answers}
-              validationErrors={validationErrors}
-              onAnswerChange={onAnswerChange}
-              onNextStep={onNextStep}
-              onPreviousStep={onPreviousStep}
-              isFirstStep={isFirstStep}
-              isLastStep={isLastStep}
-              submitting={submitting}
-              totalQuestions={totalQuestions}
-              funnelTitle={funnel.title}
-            />
-          )}
-
-          {isInfoStep(currentStep) && <InfoStepRenderer step={currentStep} />}
-
-          {isContentPageStep(currentStep) && (
-            <ContentPageStepRenderer
-              step={currentStep}
-              onNextStep={onNextStep}
-              onPreviousStep={onPreviousStep}
-              isFirstStep={isFirstStep}
-              isLastStep={isLastStep}
-              submitting={submitting}
-              totalQuestions={totalQuestions}
-              answeredCount={answeredCount}
-            />
-          )}
-
-          {/* Future: Add ResultRenderer for result steps */}
         </div>
+      )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="mt-4 sm:mt-6 text-xs sm:text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 flex items-start gap-2 sm:gap-3">
-            <span className="text-lg sm:text-xl shrink-0">❌</span>
-            <p className="leading-relaxed">{error}</p>
-          </div>
+      {/* Header */}
+      <header className="mb-4 sm:mb-6">
+        <p className="text-xs sm:text-sm font-medium uppercase tracking-wide text-sky-600 mb-2">
+          {funnel.title}
+        </p>
+        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-slate-900 mb-2 leading-tight">
+          Schritt {assessmentStatus.currentStep.stepIndex + 1} von {assessmentStatus.totalSteps}:{' '}
+          {currentStep.title}
+        </h1>
+        {currentStep.description && (
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{currentStep.description}</p>
+        )}
+      </header>
+
+      {/* Progress Indicator */}
+      <AssessmentProgress
+        answeredCount={answeredCount}
+        totalQuestions={totalQuestions}
+        progressPercent={progressPercent}
+      />
+
+      {/* Step Content Renderer - Delegates to node-specific renderers */}
+      <div className="mb-6">
+        {isQuestionStep(currentStep) && (
+          <QuestionStepRenderer
+            step={currentStep}
+            answers={answers}
+            validationErrors={validationErrors}
+            onAnswerChange={onAnswerChange}
+            onNextStep={onNextStep}
+            onPreviousStep={onPreviousStep}
+            isFirstStep={isFirstStep}
+            isLastStep={isLastStep}
+            submitting={submitting}
+            totalQuestions={totalQuestions}
+            funnelTitle={funnel.title}
+          />
         )}
 
-        {/* Navigation Controls */}
-        <AssessmentNavigationController
-          onNextStep={onNextStep}
-          onPreviousStep={onPreviousStep}
-          isFirstStep={isFirstStep}
-          isLastStep={isLastStep}
-          submitting={submitting}
-        />
+        {isInfoStep(currentStep) && <InfoStepRenderer step={currentStep} />}
 
-        {/* Last Step Helper Text */}
-        {isLastStep && (
-          <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-slate-500 text-center leading-relaxed px-2 sm:px-4">
-            Nach dem Abschicken werden Ihre Antworten ausgewertet. Anschließend sehen Sie Ihre
-            Ergebnisse.
-          </p>
+        {isContentPageStep(currentStep) && (
+          <ContentPageStepRenderer
+            step={currentStep}
+            onNextStep={onNextStep}
+            onPreviousStep={onPreviousStep}
+            isFirstStep={isFirstStep}
+            isLastStep={isLastStep}
+            submitting={submitting}
+            totalQuestions={totalQuestions}
+            answeredCount={answeredCount}
+          />
         )}
+
+        {/* Future: Add ResultRenderer for result steps */}
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mt-4 sm:mt-6 text-xs sm:text-sm md:text-base text-red-700 bg-red-50 border-2 border-red-200 rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 flex items-start gap-2 sm:gap-3">
+          <span className="text-lg sm:text-xl shrink-0">❌</span>
+          <p className="leading-relaxed">{error}</p>
+        </div>
+      )}
+
+      {/* Navigation Controls */}
+      <AssessmentNavigationController
+        onNextStep={onNextStep}
+        onPreviousStep={onPreviousStep}
+        isFirstStep={isFirstStep}
+        isLastStep={isLastStep}
+        submitting={submitting}
+      />
+
+      {/* Last Step Helper Text */}
+      {isLastStep && (
+        <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-slate-500 text-center leading-relaxed px-2 sm:px-4">
+          Nach dem Abschicken werden Ihre Antworten ausgewertet. Anschließend sehen Sie Ihre
+          Ergebnisse.
+        </p>
+      )}
     </main>
   )
 }
