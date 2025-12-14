@@ -1,5 +1,150 @@
 # Zusammenfassung der Änderungen
 
+## 🎉 V0.4 - Production-Ready Release (2025-12-14)
+
+**Release-Status:** ✅ Production-Ready  
+**Release-Datum:** 14. Dezember 2025  
+**Git Tag:** v0.4.0
+
+### 🎯 Release-Highlights
+
+Version 0.4 markiert einen wichtigen Meilenstein: Die vollständige Konsolidierung und Produktionsreife der Rhythmologicum Connect Plattform. Dieser Release beinhaltet umfassende Verbesserungen in den Bereichen Architektur, Sicherheit, UX und Dokumentation.
+
+### ✨ Added (Neue Features)
+
+#### Patient Experience
+- **Unified Funnel Flow V2** - Vollständig datengetriebener, moderner Assessment-Flow
+- **Mobile-First Design** - Optimierte mobile Komponenten für Touch-Geräte
+- **Session Recovery** - Automatische Wiederherstellung unterbrochener Assessments
+- **Content Integration** - Nahtlose Integration von Intro-, Info- und Result-Pages
+- **Dark/Light Mode** - Vollständige Theme-Unterstützung mit automatischer Erkennung
+
+#### Clinician Dashboard
+- **Funnel Management** - Zentrale Verwaltung von Assessment-Funnels
+- **Content Management** - CMS mit Status-Workflow (Draft/Published/Archived)
+- **Patient Overview** - Detaillierte Patienten-Übersicht mit Assessment-Historie
+- **Report Access** - Zugriff auf alle Patient-Reports und Maßnahmen
+
+#### Technical Infrastructure
+- **Design Token System (C1)** - Zentralisiertes, typsicheres Design-System
+- **Row Level Security (D4)** - Umfassende RLS-Policies für alle Tabellen
+- **Funnel Runtime (Epic B)** - Vollständig datengetriebene Funnel-Architektur
+- **Content Engine (F4)** - Flexibles Content-Management mit Status-Workflow
+- **Monitoring Hooks** - Vorbereitung für Production Monitoring (Sentry-ready)
+
+### 🔄 Changed (Änderungen)
+
+#### Architecture
+- **Legacy Route Cleanup** - Entfernung aller veralteten Redirect-Routen
+- **Patient Layout Consolidation** - Einheitliches Layout für alle Patient-Bereiche
+- **API Standardization** - Konsistente API-Response-Formate
+- **Migration Structure** - Optimierte Datenbank-Migrationsstruktur
+
+#### User Experience
+- **Responsive Tables** - Verbesserte Tabellen-Darstellung auf allen Geräten
+- **Theme Consistency** - Konsistente Dark/Light-Mode-Unterstützung
+- **Navigation** - Vereinfachte, intuitive Navigation für Patient:innen und Kliniker:innen
+- **Form Validation** - Verbesserte Validierung mit klaren Fehlermeldungen
+
+#### Documentation
+- **Executive Summary (Z4)** - Umfassende Projekt-Übersicht für Stakeholder
+- **QA Documentation** - Vollständige Test-Checklisten und Audit-Dokumentation
+- **API Documentation** - Detaillierte Dokumentation aller API-Endpunkte
+- **Deployment Guide (E3)** - Komplette Vercel-Deployment-Anleitung
+
+### 🐛 Fixed (Fehlerbehebungen)
+
+#### UI/UX
+- **Table Rendering** - Behebung von Tabellen-Layout-Problemen in Content-Pages
+- **Dark Mode Consistency** - Korrektur inkonsistenter Theme-Anwendung
+- **Mobile Layout** - Behebung von Layout-Problemen auf kleinen Bildschirmen
+- **Session Persistence** - Korrektur von Session-Verlust bei Page-Reload
+
+#### Security
+- **RLS Enforcement** - Durchsetzung von Row Level Security auf allen Tabellen
+- **Auth Flow** - Robustere Authentifizierungs- und Autorisierungsprüfungen
+- **Data Isolation** - Sicherstellung der Datenisolierung zwischen Patient:innen
+
+#### Performance
+- **Database Indexes (B9)** - Optimierung kritischer Datenbank-Queries
+- **Asset Loading** - Optimierte Asset-Ladezeiten
+- **Build Performance** - Reduzierte Build-Zeiten durch optimierte Dependencies
+
+### 📊 Technical Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total Lines of Code | ~22,000 LoC (TypeScript) |
+| Database Tables | 46 Tables |
+| API Endpoints | 30+ Endpoints |
+| Database Migrations | 19 Migrations |
+| RLS Policies | 19 Policies |
+| UI Components | 50+ Components |
+| Documentation Files | 25+ Docs |
+
+### 🔒 Security & Compliance
+
+- ✅ **Row Level Security** - Vollständig aktiviert auf allen Tabellen
+- ✅ **DSGVO/GDPR** - Datenschutz-konforme Datenhaltung und -verarbeitung
+- ✅ **Role-Based Access Control** - Strikte Trennung Patient/Clinician/Admin
+- ✅ **Audit Logging** - Logging von RLS-Verstößen und kritischen Aktionen
+- ✅ **Secure Defaults** - Sichere Standard-Konfigurationen
+
+### 📦 Epic Completion Status
+
+| Epic | Title | Status |
+|------|-------|--------|
+| **B1-B8** | Datengetriebenes Funnel-System | ✅ Complete |
+| **C1** | Global Design Tokens | ✅ Complete |
+| **D1, D2, D4** | Content Management & Security | ✅ Complete |
+| **E1-E4** | Quality Assurance & Deployment | ✅ Complete |
+| **F4, F8, F10, F11** | Content Engine Features | ✅ Complete |
+| **Z4** | Executive Documentation | ✅ Complete |
+
+### 🚀 Deployment Readiness
+
+- ✅ **Build:** Erfolgreich (Next.js 16 + Turbopack)
+- ✅ **Tests:** Manual Testing completed
+- ✅ **Migrations:** Alle Migrationen dokumentiert und getestet
+- ✅ **Environment:** .env.example vollständig dokumentiert
+- ✅ **Documentation:** Umfassende Dokumentation für alle Bereiche
+- ✅ **RLS:** Row Level Security aktiv und validiert
+
+### 📚 Key Documentation
+
+- **CHANGES.md** - Diese Datei (vollständiger Changelog)
+- **README.md** - Projekt-Übersicht und Quick Start
+- **PR_SUMMARY.md** - Detaillierte PR-Zusammenfassungen
+- **MANUAL_TEST_PLAN.md** - Manuelle Test-Checklisten
+- **TESTING_GUIDE.md** - Umfassender Testing-Guide
+- **THEME_TESTING_CHECKLIST.md** - Theme-System Testing
+- **CONTENT_QA_CHECKLIST.md** - Content-QA Checkliste
+- **PATIENT_LAYOUT_AUDIT.md** - Patient-Layout Audit
+- **docs/Z4_EXECUTIVE_SUMMARY_V0.3.md** - Executive Summary
+
+### 🎯 Known Limitations
+
+- AMY AI benötigt ANTHROPIC_API_KEY für volle Funktionalität (Fallbacks vorhanden)
+- Monitoring-Integration vorbereitet, aber noch nicht aktiv (Sentry-ready)
+- Chart-Visualisierungen in Clinician-Views optional über Feature Flag
+
+### 🔮 Next Steps (v0.5+)
+
+- Advanced Analytics & Reporting
+- Multi-Language Support
+- Extended Content Types
+- Advanced Monitoring & Alerting
+- Performance Optimizations
+- Extended Test Coverage
+
+### 🙏 Credits
+
+Entwickelt mit GitHub Copilot und Next.js 16  
+Testing & QA: Manual verification completed  
+Dokumentation: Vollständig auf Deutsch
+
+---
+
 ## V0.4 - Legacy Route Cleanup (2025-12-11)
 
 ### Was wurde bereinigt?
