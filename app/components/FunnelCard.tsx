@@ -3,6 +3,13 @@
 import { Heart } from 'lucide-react'
 import { spacing, typography, radii, shadows, colors, motion } from '@/lib/design-tokens'
 
+// Funnel slugs that should display the heart icon instead of emoji
+const STRESS_FUNNEL_SLUGS = ['stress-assessment', 'stress']
+
+// Heart icon configuration for stress assessment cards
+const HEART_ICON_SIZE = 48 // px
+const HEART_ICON_STROKE_WIDTH = 2.5
+
 export type FunnelCardProps = {
   /** Funnel slug for routing */
   slug: string
@@ -55,9 +62,8 @@ export default function FunnelCard({
   theme,
   onClick,
 }: FunnelCardProps) {
-  // Define stress-related funnel slugs that should use the heart icon
-  const stressFunnelSlugs = ['stress-assessment', 'stress']
-  const isStressFunnel = stressFunnelSlugs.includes(slug)
+  // Determine if this funnel should use the heart icon
+  const isStressFunnel = STRESS_FUNNEL_SLUGS.includes(slug)
   const shouldUseHeartIcon = useIconComponent || isStressFunnel
 
   return (
@@ -89,8 +95,8 @@ export default function FunnelCard({
             // Heart icon with pulse animation for stress/resilience assessment
             <Heart
               className="heartbeat-pulse text-rose-600 dark:text-rose-500"
-              size={48}
-              strokeWidth={2.5}
+              size={HEART_ICON_SIZE}
+              strokeWidth={HEART_ICON_STROKE_WIDTH}
               fill="currentColor"
               aria-hidden="true"
             />
