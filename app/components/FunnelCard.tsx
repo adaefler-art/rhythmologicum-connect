@@ -1,6 +1,14 @@
 'use client'
 
+import { Heart } from 'lucide-react'
 import { spacing, typography, radii, shadows, colors, motion } from '@/lib/design-tokens'
+
+// Funnel slugs that should display the heart icon instead of emoji
+const STRESS_FUNNEL_SLUGS = ['stress-assessment', 'stress']
+
+// Heart icon configuration for stress assessment cards
+const HEART_ICON_SIZE = 48 // px
+const HEART_ICON_STROKE_WIDTH = 2.5
 
 export type FunnelCardProps = {
   /** Funnel slug for routing */
@@ -13,6 +21,8 @@ export type FunnelCardProps = {
   description?: string | null
   /** Emoji or icon to represent the funnel */
   icon?: string
+  /** Use icon component instead of emoji (for stress/heart icon) */
+  useIconComponent?: boolean
   /** Theme color for the card (future use) */
   theme?: string | null
   /** Click handler */
@@ -48,14 +58,19 @@ export default function FunnelCard({
   subtitle,
   description,
   icon = '📋',
+  useIconComponent = false,
   theme,
   onClick,
 }: FunnelCardProps) {
+  // Determine if this funnel should use the heart icon
+  const isStressFunnel = STRESS_FUNNEL_SLUGS.includes(slug)
+  const shouldUseHeartIcon = useIconComponent || isStressFunnel
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full bg-white border-2 border-slate-200 hover:border-sky-400 hover:shadow-xl active:scale-[0.98] text-left"
+      className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-xl active:scale-[0.98] text-left transition-colors duration-150"
       style={{
         padding: spacing.lg,
         borderRadius: radii.xl,
@@ -76,7 +91,19 @@ export default function FunnelCard({
             borderColor: colors.primary[200],
           }}
         >
-          <span className="text-5xl">{icon}</span>
+          {shouldUseHeartIcon ? (
+            // Heart icon with pulse animation for stress/resilience assessment
+            <Heart
+              className="heartbeat-pulse text-rose-600 dark:text-rose-500"
+              size={HEART_ICON_SIZE}
+              strokeWidth={HEART_ICON_STROKE_WIDTH}
+              fill="currentColor"
+              aria-hidden="true"
+            />
+          ) : (
+            // Default emoji for other funnels
+            <span className="text-5xl">{icon}</span>
+          )}
         </div>
       </div>
 
@@ -98,7 +125,7 @@ export default function FunnelCard({
 
       {/* Title */}
       <h3
-        className="font-bold text-slate-900 mb-2"
+        className="font-bold text-slate-900 dark:text-slate-100 mb-2"
         style={{
           fontSize: typography.fontSize.xl,
           lineHeight: typography.lineHeight.tight,
@@ -110,7 +137,7 @@ export default function FunnelCard({
       {/* Description */}
       {description && (
         <p
-          className="text-slate-600"
+          className="text-slate-600 dark:text-slate-300"
           style={{
             fontSize: typography.fontSize.sm,
             lineHeight: typography.lineHeight.relaxed,
@@ -121,7 +148,7 @@ export default function FunnelCard({
       )}
 
       {/* CTA Arrow */}
-      <div className="mt-4 flex items-center gap-2 text-sky-600 font-semibold">
+      <div className="mt-4 flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold">
         <span style={{ fontSize: typography.fontSize.sm }}>Assessment starten</span>
         <span>→</span>
       </div>
