@@ -55,8 +55,9 @@ export default function FunnelCard({
   theme,
   onClick,
 }: FunnelCardProps) {
-  // Determine if this is a stress-related funnel (should use heart icon)
-  const isStressFunnel = slug.includes('stress')
+  // Define stress-related funnel slugs that should use the heart icon
+  const stressFunnelSlugs = ['stress-assessment', 'stress']
+  const isStressFunnel = stressFunnelSlugs.includes(slug)
   const shouldUseHeartIcon = useIconComponent || isStressFunnel
 
   return (
