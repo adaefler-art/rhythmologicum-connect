@@ -244,3 +244,32 @@ textarea[aria-invalid="true"],
 select[aria-invalid="true"] {
   border-color: #dc2626 !important; /* red-600 */
 }
+
+/*
+ * Heartbeat Pulse Animation
+ * Subtle, medical-grade animation for heart icon in assessment cards.
+ * Features gentle scale and opacity changes for a calming, professional effect.
+ * Respects user's motion preferences via prefers-reduced-motion.
+ */
+@keyframes heartbeat-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+/* Apply animation by default */
+.heartbeat-pulse {
+  animation: heartbeat-pulse 2s ease-in-out infinite;
+}
+
+/* Disable animation for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .heartbeat-pulse {
+    animation: none;
+  }
+}
