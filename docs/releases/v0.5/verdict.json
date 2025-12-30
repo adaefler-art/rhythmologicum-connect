@@ -3,7 +3,8 @@
   "status": "planning",
   "target_release_date": "TBD",
   "previous_version": "0.4.0",
-  "verdict": "IN_PLANNING",
+  "verdict": "HOLD",
+  "hold_reason": "Awaiting gate approval to proceed with development. Prerequisites must be validated before starting implementation.",
   "summary": {
     "title": "Multi-Funnel Expansion & Enhanced Analytics",
     "description": "Expand assessment portfolio with sleep and recovery funnels, enhance content management, add advanced analytics, and implement comprehensive testing infrastructure."
@@ -172,5 +173,203 @@
     ]
   },
   "last_updated": "2025-12-30",
-  "notes": "This is a draft planning document. All epics, timelines, and priorities are subject to change based on stakeholder feedback and business priorities."
+  "notes": "This is a draft planning document. All epics, timelines, and priorities are subject to change based on stakeholder feedback and business priorities.",
+  "gate_plan": {
+    "gate_0_planning": {
+      "name": "Planning & Requirements Gate",
+      "status": "in_progress",
+      "target_date": "2026-01-15",
+      "criteria": [
+        "Epic definitions finalized and approved",
+        "Stakeholder sign-off on scope",
+        "Resource allocation confirmed",
+        "Technical feasibility validated",
+        "Medical content requirements defined"
+      ],
+      "exit_criteria": [
+        "All prerequisites validated",
+        "Risk mitigation strategies defined",
+        "Gate 1 approval obtained"
+      ]
+    },
+    "gate_1_design": {
+      "name": "Design & Architecture Gate",
+      "status": "pending",
+      "target_date": "2026-01-31",
+      "entry_criteria": [
+        "Gate 0 passed",
+        "UI/UX designs ready for new funnels",
+        "Technical architecture documented"
+      ],
+      "criteria": [
+        "Multi-funnel architecture designed",
+        "Sleep assessment UX finalized",
+        "Recovery assessment UX finalized",
+        "Content editor design approved",
+        "Analytics dashboard wireframes ready"
+      ],
+      "exit_criteria": [
+        "All design artifacts approved",
+        "Technical design review passed",
+        "Gate 2 approval obtained"
+      ]
+    },
+    "gate_2_development": {
+      "name": "Development Kickoff Gate",
+      "status": "pending",
+      "target_date": "2026-02-07",
+      "entry_criteria": [
+        "Gate 1 passed",
+        "Development environment ready",
+        "Testing framework selected"
+      ],
+      "criteria": [
+        "Development priorities set",
+        "Epic breakdown into sprints complete",
+        "Testing strategy defined",
+        "CI/CD pipeline prepared"
+      ],
+      "exit_criteria": [
+        "Development can begin",
+        "Gate 3 checkpoints scheduled"
+      ]
+    },
+    "gate_3_alpha": {
+      "name": "Alpha Release Gate",
+      "status": "pending",
+      "target_date": "2026-03-31",
+      "entry_criteria": [
+        "Gate 2 passed",
+        "Core features implemented"
+      ],
+      "criteria": [
+        "Multi-funnel architecture functional",
+        "At least one new funnel (sleep) complete",
+        "Basic testing infrastructure in place",
+        "Alpha testing can begin"
+      ],
+      "exit_criteria": [
+        "Alpha version deployable to staging",
+        "Internal testing approved",
+        "Gate 4 approval obtained"
+      ]
+    },
+    "gate_4_beta": {
+      "name": "Beta Release Gate",
+      "status": "pending",
+      "target_date": "2026-04-30",
+      "entry_criteria": [
+        "Gate 3 passed",
+        "Alpha testing feedback incorporated"
+      ],
+      "criteria": [
+        "All planned funnels complete",
+        "Content editor functional",
+        "Analytics dashboard deployed",
+        "Test coverage > 70%",
+        "Beta testing ready"
+      ],
+      "exit_criteria": [
+        "Beta version stable",
+        "User acceptance testing approved",
+        "Gate 5 approval obtained"
+      ]
+    },
+    "gate_5_release": {
+      "name": "Production Release Gate",
+      "status": "pending",
+      "target_date": "2026-05-31",
+      "entry_criteria": [
+        "Gate 4 passed",
+        "Beta testing complete"
+      ],
+      "criteria": [
+        "All must-have success criteria met",
+        "Security audit passed",
+        "Performance benchmarks met",
+        "Documentation complete",
+        "Migration plan ready"
+      ],
+      "exit_criteria": [
+        "Production deployment approved",
+        "Rollback plan validated",
+        "Support team trained"
+      ]
+    }
+  },
+  "current_gate_status": {
+    "current_gate": "Gate 0 - Planning & Requirements",
+    "blocker_status": "HOLD pending prerequisite validation",
+    "next_actions": [
+      "Validate v0.4.0 deployment to production",
+      "Collect initial user feedback from v0.4.0",
+      "Obtain medical team input on sleep/recovery assessments",
+      "Establish performance baseline from v0.4.0",
+      "Complete security audit of v0.4.0",
+      "Finalize epic priorities based on feedback",
+      "Select third-party services (analytics, testing, content editor)",
+      "Confirm resource allocation and timeline"
+    ],
+    "ready_to_proceed_when": [
+      "All Gate 0 prerequisites validated",
+      "Stakeholder approval obtained",
+      "Resources allocated",
+      "v0.4.0 proven stable in production"
+    ]
+  },
+  "definition_of_done": {
+    "code_quality": [
+      "TypeScript strict mode compliance maintained",
+      "ESLint passes with zero errors",
+      "Prettier formatting applied consistently",
+      "Code review completed for all changes",
+      "No commented-out code or debug statements"
+    ],
+    "testing": [
+      "Automated test coverage > 70%",
+      "All unit tests passing",
+      "Integration tests for critical paths passing",
+      "E2E tests for main user flows passing",
+      "Manual testing checklist completed",
+      "Performance benchmarks met or exceeded",
+      "Accessibility audit passed (WCAG 2.1 AA)"
+    ],
+    "security": [
+      "Security audit completed",
+      "No critical or high vulnerabilities",
+      "RLS policies verified on all new tables",
+      "Authentication flows tested",
+      "GDPR compliance verified",
+      "Sensitive data handling reviewed"
+    ],
+    "database": [
+      "All migrations documented and tested",
+      "Schema changes backward compatible or migration path defined",
+      "RLS policies implemented",
+      "Database indexes optimized",
+      "Backup and recovery procedures updated"
+    ],
+    "documentation": [
+      "API documentation updated",
+      "User guides completed (patient and clinician)",
+      "Technical architecture documented",
+      "Migration guide created (if breaking changes)",
+      "Release notes finalized",
+      "Changelog updated"
+    ],
+    "deployment": [
+      "Staging deployment successful",
+      "Production deployment plan approved",
+      "Rollback procedure documented and tested",
+      "Environment variables documented",
+      "Monitoring and alerting configured",
+      "Performance metrics baseline established"
+    ],
+    "user_acceptance": [
+      "Internal stakeholder sign-off",
+      "Beta testing feedback addressed",
+      "Critical user feedback incorporated",
+      "User documentation reviewed by non-technical users"
+    ]
+  }
 }
