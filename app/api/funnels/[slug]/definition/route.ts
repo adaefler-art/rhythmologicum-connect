@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { env } from '@/lib/env'
+import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import type {
   FunnelDefinition,
   QuestionDefinition,
@@ -39,12 +41,8 @@ export async function GET(
       content_page_id?: string | null
     }
 
-    // Backward compatibility: Legacy slug redirects to canonical slug
-    // Kept for existing database records and external links only
-    const effectiveSlug =
-      slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
-        ? 'stress-assessment'
-        : slug
+    // Use canonical funnel slug from registry
+    const effectiveSlug = getCanonicalFunnelSlug(slug)
 
     if (!slug) {
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
@@ -52,8 +50,8 @@ export async function GET(
 
     // Create Supabase server client consistent with other endpoints (uses NEXT_PUBLIC_* keys + cookies)
     const cookieStore = await cookies()
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error('Supabase configuration missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY expected')

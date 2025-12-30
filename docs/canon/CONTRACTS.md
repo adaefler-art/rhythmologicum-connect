@@ -102,7 +102,7 @@ GET /api/funnels/{slug}/assessments/{assessmentId}
   success: true,
   data: {
     id: string
-    status: 'in_progress' | 'completed' | 'abandoned'
+    status: 'in_progress' | 'completed'
     currentStep: {
       id: string
       type: 'QUESTION' | 'CONTENT_PAGE'
@@ -291,7 +291,7 @@ CREATE TABLE public.assessments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id),
   funnel_id UUID NOT NULL REFERENCES public.funnels(id),
-  status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'abandoned')),
+  status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
   current_step_id UUID REFERENCES public.funnel_steps(id),
   started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at TIMESTAMPTZ,

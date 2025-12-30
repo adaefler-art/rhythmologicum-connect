@@ -10,6 +10,8 @@
  * - NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: Enable/disable charts in clinician views (default: true)
  */
 
+import { env } from '@/lib/env'
+
 export type FeatureFlags = {
   AMY_ENABLED: boolean
   CLINICIAN_DASHBOARD_ENABLED: boolean
@@ -35,15 +37,15 @@ export function parseEnvBoolean(value: string | undefined, defaultValue: boolean
  */
 export const featureFlags: FeatureFlags = {
   AMY_ENABLED: parseEnvBoolean(
-    process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
+    env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
     true
   ),
   CLINICIAN_DASHBOARD_ENABLED: parseEnvBoolean(
-    process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
+    env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
     true
   ),
   CHARTS_ENABLED: parseEnvBoolean(
-    process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+    env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
     true
   ),
 }

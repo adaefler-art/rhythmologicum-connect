@@ -1,0 +1,58 @@
+# CODEOWNERS - Protected Files and Directories
+#
+# This file defines ownership and review requirements for critical files.
+# Any changes to these files require approval from designated code owners.
+#
+# Pattern format: <pattern> @owner1 @owner2
+# Use * as a wildcard to require review from repository admins
+
+# ===================================================================
+# Critical Infrastructure & Contracts
+# ===================================================================
+
+# Contract Registry - All identifiers must be reviewed
+/lib/contracts/** @*
+
+# Environment Schema - All env vars must be reviewed
+/lib/env.ts @*
+
+# ===================================================================
+# Documentation & Canonical Sources
+# ===================================================================
+
+# Canonical documentation requires review
+/docs/canon/** @*
+
+# Release documentation requires review
+/docs/releases/** @*
+
+# ===================================================================
+# Database & Migrations
+# ===================================================================
+
+# All database migrations require review
+/supabase/migrations/** @*
+
+# Database schema must be reviewed
+/schema/** @*
+
+# ===================================================================
+# Build & Deployment Configuration
+# ===================================================================
+
+# Package dependencies require review
+/package.json @*
+/package-lock.json @*
+
+# Build configuration requires review
+/next.config.ts @*
+/tsconfig.json @*
+
+# ===================================================================
+# GitHub Configuration
+# ===================================================================
+
+# Changes to GitHub configuration require review
+/.github/CODEOWNERS @*
+/.github/PULL_REQUEST_TEMPLATE.md @*
+/.github/workflows/** @*

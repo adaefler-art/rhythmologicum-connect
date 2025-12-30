@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { User } from '@supabase/supabase-js'
+import { env } from '@/lib/env'
 
 /**
  * F10: Authentication and Authorization Helpers for API Routes
@@ -22,8 +23,8 @@ export interface AuthCheckResult {
 export async function requireAuth(): Promise<AuthCheckResult> {
   try {
     const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const publicSupabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+    const publicSupabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
       console.error('Supabase URL or anon key not configured')

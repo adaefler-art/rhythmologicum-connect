@@ -1,5 +1,7 @@
 // Funnel type definitions based on database schema
 
+import { NODE_TYPE, type NodeType, type AssessmentStatus } from '@/lib/contracts/registry'
+
 // ============================================================
 // Node Type Constants
 // ============================================================
@@ -24,20 +26,9 @@
  * }
  * ```
  */
-export const NODE_TYPE = {
-  QUESTION_STEP: 'question_step',
-  FORM: 'form',
-  INFO_STEP: 'info_step',
-  INFO: 'info',
-  CONTENT_PAGE: 'content_page',
-  SUMMARY: 'summary',
-  OTHER: 'other',
-} as const
 
-/**
- * Type derived from NODE_TYPE constants
- */
-export type NodeType = typeof NODE_TYPE[keyof typeof NODE_TYPE]
+// Re-export NODE_TYPE and NodeType from registry
+export { NODE_TYPE, type NodeType }
 
 // ============================================================
 // Base Database Types
@@ -95,7 +86,7 @@ export type Assessment = {
   funnel_id: string | null
   started_at: string
   completed_at: string | null
-  status: 'in_progress' | 'completed'
+  status: AssessmentStatus
 }
 
 // Extended types with joined data

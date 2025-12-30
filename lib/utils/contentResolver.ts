@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
+import { env } from '@/lib/env'
 
 /**
  * F5 - Content Resolver: Core utility for Funnel Integration
@@ -40,11 +41,8 @@ export type ContentResolverResult = {
  * Uses service role key for unrestricted access to published content
  */
 function getSupabaseClient() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || 
-    process.env.SUPABASE_SERVICE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Supabase configuration missing')
