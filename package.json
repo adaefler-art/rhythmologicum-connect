@@ -9,6 +9,10 @@
     "start": "next start",
     "lint": "eslint",
     "lint:migrations": "bash scripts/check-migrations.sh",
+    "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:verify": "bash scripts/verify-db-determinism.sh",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

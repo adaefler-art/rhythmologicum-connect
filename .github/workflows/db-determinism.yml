@@ -1,0 +1,107 @@
+name: DB Determinism Check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'lib/types/supabase.ts'
+      - 'schema/**'
+      - '.github/workflows/db-determinism.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  db-determinism:
+    name: Verify migrations, drift, and types
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for migration checks
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      # Check 1: Ensure no existing migrations were edited
+      - name: Check migration immutability
+        run: npm run lint:migrations -- --base-ref origin/${{ github.base_ref }}
+        env:
+          ALLOW_MIGRATION_EDITS: '0'
+      
+      # Check 2: Start Supabase and apply all migrations
+      - name: Start Supabase local instance
+        run: supabase start
+      
+      - name: Apply migrations
+        run: supabase db reset
+      
+      # Check 3: Verify no schema drift
+      - name: Check for schema drift
+        run: |
+          echo "Checking for drift between migrations and actual schema..."
+          if ! supabase db diff --exit-code; then
+            echo "❌ Schema drift detected!"
+            echo "This means there are database changes not captured in migrations."
+            echo "Please create a new migration to capture these changes."
+            exit 1
+          fi
+          echo "✅ No schema drift detected"
+      
+      # Check 4: Generate types and verify they match committed version
+      - name: Generate TypeScript types
+        run: npm run db:typegen
+      
+      - name: Check types are up to date
+        run: |
+          if ! git diff --exit-code lib/types/supabase.ts; then
+            echo "❌ Generated types differ from committed version!"
+            echo "The database schema changed but types weren't regenerated."
+            echo ""
+            echo "To fix this:"
+            echo "  1. Run: npm run db:typegen"
+            echo "  2. Commit the updated lib/types/supabase.ts file"
+            echo ""
+            echo "Diff:"
+            git diff lib/types/supabase.ts
+            exit 1
+          fi
+          echo "✅ Types are up to date"
+      
+      # Check 5: Verify schema.sql is up to date (optional, informational)
+      - name: Check canonical schema
+        run: |
+          echo "ℹ️  Canonical schema check (informational only)"
+          echo "The schema/schema.sql file is updated automatically on merge to main"
+        continue-on-error: true
+      
+      - name: Success summary
+        if: success()
+        run: |
+          echo ""
+          echo "🎉 All DB determinism checks passed!"
+          echo "   ✅ No existing migrations were edited"
+          echo "   ✅ Migrations apply cleanly"
+          echo "   ✅ No schema drift detected"
+          echo "   ✅ TypeScript types are up to date"
+          echo ""
+          echo "Your database changes follow migration-first discipline."
+      
+      - name: Cleanup
+        if: always()
+        run: supabase stop --no-backup
