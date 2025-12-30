@@ -37,17 +37,25 @@ Write-Host ""
 
 # 2. Check for schema drift
 Write-Host "🔍 Checking for schema drift..." -ForegroundColor Yellow
-$diffOutput = & supabase db diff --exit-code 2>&1
+$diffOutput = & supabase db diff --local 2>&1
 if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Failed to run 'supabase db diff'" -ForegroundColor Red
+    Write-Host $diffOutput
+    exit 1
+}
+
+$diffText = ($diffOutput | Out-String)
+if ($diffText -match '(?im)No schema changes (found|detected)') {
+    Write-Host "✅ No schema drift detected" -ForegroundColor Green
+} else {
     Write-Host "❌ Schema drift detected!" -ForegroundColor Red
     Write-Host "   This means there are manual changes in the database not captured in migrations." -ForegroundColor Yellow
     Write-Host "   Fix: Create a migration to capture these changes." -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Drift details:" -ForegroundColor Yellow
-    Write-Host $diffOutput
+    Write-Host $diffText
     exit 1
 }
-Write-Host "✅ No schema drift detected" -ForegroundColor Green
 Write-Host ""
 
 # 3. Generate types and check if they're up to date
@@ -55,7 +63,7 @@ Write-Host "🔧 Generating TypeScript types..." -ForegroundColor Yellow
 $typesFile = "lib\types\supabase.ts"
 
 try {
-    $typeOutput = & supabase gen types typescript --local 2>&1
+    $typeOutput = & supabase gen types typescript --local
     if ($LASTEXITCODE -ne 0) {
         throw "Type generation command failed"
     }

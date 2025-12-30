@@ -85,15 +85,20 @@ jobs:
       - name: Check for schema drift
         run: |
           echo "🔍 Checking for drift between migrations and actual schema..."
-          if ! supabase db diff --exit-code; then
-            echo ""
-            echo "❌ Schema drift detected!"
-            echo "This means there are database changes not captured in migrations."
-            echo "Please create a new migration to capture these changes."
-            echo ""
-            exit 1
+          DIFF_OUTPUT=$(supabase db diff --local 2>&1)
+          echo "$DIFF_OUTPUT"
+
+          if echo "$DIFF_OUTPUT" | grep -Eqi 'No schema changes (found|detected)'; then
+            echo "✅ No schema drift detected"
+            exit 0
           fi
-          echo "✅ No schema drift detected"
+
+          echo ""
+          echo "❌ Schema drift detected!"
+          echo "This means there are database changes not captured in migrations."
+          echo "Please create a new migration to capture these changes."
+          echo ""
+          exit 1
       
       # Check 4: Generate types and verify they match committed version
       - name: Generate TypeScript types
