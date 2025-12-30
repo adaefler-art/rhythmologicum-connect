@@ -85,7 +85,7 @@ jobs:
       - name: Check for schema drift
         run: |
           echo "🔍 Checking for drift between migrations and actual schema..."
-          DIFF_OUTPUT=$(supabase db diff --local 2>&1)
+          DIFF_OUTPUT=$(supabase db diff --local 2>&1 || true)
           echo "$DIFF_OUTPUT"
 
           if echo "$DIFF_OUTPUT" | grep -Eqi 'No schema changes (found|detected)'; then
