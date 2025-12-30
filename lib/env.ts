@@ -65,6 +65,19 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   SUPABASE_SERVICE_KEY: z.string().optional(), // Alternative to SUPABASE_SERVICE_ROLE_KEY
 })
 
+function getRawClientEnv() {
+  return {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_FEATURE_AMY_ENABLED: process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
+    NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
+      process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
+    NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PHASE: process.env.NEXT_PHASE,
+  }
+}
+
 // ============================================================
 // Validated Environment Variables
 // ============================================================
@@ -122,7 +135,7 @@ function parseEnv(): Env {
     // - In the browser we only parse client-safe variables to avoid requiring secrets.
     const parsed = isServerRuntime
       ? serverOnlyEnvSchema.parse(process.env)
-      : baseEnvSchema.parse(process.env)
+      : baseEnvSchema.parse(getRawClientEnv())
 
     // Handle legacy/alternative variable names with fallbacks
     return {
