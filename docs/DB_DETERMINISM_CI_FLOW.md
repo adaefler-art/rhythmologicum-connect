@@ -216,7 +216,7 @@ git commit -m "chore: update generated types"
 
 ### Before Creating PR
 
-```bash
+```powershell
 # 1. Reset database
 supabase db reset
 
@@ -227,32 +227,8 @@ npm run db:typegen
 npm run db:verify
 
 # 4. Commit everything
-git add supabase/migrations/*.sql lib/types/supabase.ts
+git add supabase\migrations\*.sql lib\types\supabase.ts
 git commit -m "feat: add new feature with migration"
-```
-
-### PowerShell (Windows)
-
-```powershell
-# Run comprehensive check
-function Test-DbDeterminism {
-    supabase db reset
-    if ($LASTEXITCODE -ne 0) { return $false }
-    
-    supabase db diff
-    if ($LASTEXITCODE -ne 0) { return $false }
-    
-    npm run db:typegen
-    if ($LASTEXITCODE -ne 0) { return $false }
-    
-    git diff --exit-code lib\types\supabase.ts
-    if ($LASTEXITCODE -ne 0) { return $false }
-    
-    Write-Host "✓ All checks passed!" -ForegroundColor Green
-    return $true
-}
-
-Test-DbDeterminism
 ```
 
 ---

@@ -185,13 +185,13 @@ The framework is ready for use. When developers run:
 - `.github/workflows/db-determinism.yml` - CI workflow for determinism checks
 - `lib/types/supabase.ts` - TypeScript types (placeholder, to be generated)
 - `lib/types/README.md` - Type generation documentation
-- `scripts/verify-db-determinism.sh` - Local verification script
+- `scripts/verify-db-determinism.ps1` - Local verification script (PowerShell)
 
 ## Files Modified
 
 - `docs/canon/DB_MIGRATIONS.md` - Added DB stack, migration-first, and PowerShell runbook
 - `README.md` - Added DB determinism section
-- `package.json` - Added db:* npm scripts
+- `package.json` - Added db:* npm scripts (using PowerShell for verify)
 - `.github/CODEOWNERS` - Added types protection
 - `supabase/config.toml` - Fixed project_id naming
 
@@ -200,20 +200,20 @@ The framework is ready for use. When developers run:
 For developers using this framework:
 
 1. **First time setup:**
-   ```bash
+   ```powershell
    supabase start
    npm run db:typegen
    ```
 
 2. **After creating migration:**
-   ```bash
+   ```powershell
    supabase db reset
    npm run db:typegen
-   git add lib/types/supabase.ts
+   git add lib\types\supabase.ts
    ```
 
 3. **Before committing:**
-   ```bash
+   ```powershell
    npm run db:verify
    ```
 
@@ -229,7 +229,7 @@ For developers using this framework:
 - **Epic:** E50 - Database Determinism
 - **Canonical Docs:** `docs/canon/DB_MIGRATIONS.md`
 - **Workflow:** `.github/workflows/db-determinism.yml`
-- **Scripts:** `scripts/verify-db-determinism.sh`
+- **Scripts:** `scripts/verify-db-determinism.ps1`
 
 ---
 

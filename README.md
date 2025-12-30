@@ -124,11 +124,11 @@ The application uses Supabase (PostgreSQL) with automated migration deployment a
 - ❌ PRs fail if types are out of date or drift is detected
 
 **Type generation workflow:**
-```bash
+```powershell
 # After creating/modifying migrations
 supabase db reset              # Apply all migrations
 npm run db:typegen            # Generate TypeScript types
-git add lib/types/supabase.ts # Commit generated types
+git add lib\types\supabase.ts # Commit generated types
 ```
 
 The CI workflow (`db-determinism.yml`) automatically verifies:
@@ -157,7 +157,7 @@ For automated deployment to work, configure these secrets in GitHub repository s
 
 Apply migrations locally using Supabase CLI:
 
-```bash
+```powershell
 # Start local Supabase
 supabase start
 
@@ -174,8 +174,7 @@ npm run db:verify
 ### Verify Migrations
 
 **Before deployment:**
-```bash
-./scripts/check-migration-status.sh
+```powershell
 npm run db:verify  # Full determinism check
 ```
 

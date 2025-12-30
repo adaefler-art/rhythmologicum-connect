@@ -40,36 +40,73 @@ jobs:
       
       # Check 1: Ensure no existing migrations were edited
       - name: Check migration immutability
-        run: npm run lint:migrations -- --base-ref origin/${{ github.base_ref }}
+        run: |
+          echo "🔍 Checking migration immutability..."
+          
+          # Find merge base with target branch
+          MERGE_BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          echo "Merge base: $MERGE_BASE"
+          
+          # Check for modified migrations
+          MODIFIED_MIGRATIONS=$(git diff --name-status $MERGE_BASE...HEAD -- supabase/migrations/*.sql | grep -v '^A' || true)
+          
+          if [ -n "$MODIFIED_MIGRATIONS" ]; then
+            echo "❌ ERROR: Existing migration files were modified:"
+            echo "$MODIFIED_MIGRATIONS" | while IFS=$'\t' read -r status file; do
+              echo "  [$status] $file"
+            done
+            echo ""
+            echo "Migrations are append-only. Create a new migration instead of editing existing ones."
+            echo "If this is an emergency hotfix, set ALLOW_MIGRATION_EDITS=1"
+            exit 1
+          fi
+          
+          echo "✅ All migration changes are new additions"
         env:
           ALLOW_MIGRATION_EDITS: '0'
       
-      # Check 2: Start Supabase and apply all migrations
+      # Check 2: Start Supabase with clear lifecycle
       - name: Start Supabase local instance
-        run: supabase start
+        run: |
+          echo "🚀 Starting Supabase local instance..."
+          supabase start
+          echo ""
+          echo "📊 Supabase Status:"
+          supabase status
+          echo ""
       
       - name: Apply migrations
-        run: supabase db reset
+        run: |
+          echo "📦 Applying all migrations via db reset..."
+          supabase db reset
+          echo "✅ Migrations applied successfully"
       
       # Check 3: Verify no schema drift
       - name: Check for schema drift
         run: |
-          echo "Checking for drift between migrations and actual schema..."
+          echo "🔍 Checking for drift between migrations and actual schema..."
           if ! supabase db diff --exit-code; then
+            echo ""
             echo "❌ Schema drift detected!"
             echo "This means there are database changes not captured in migrations."
             echo "Please create a new migration to capture these changes."
+            echo ""
             exit 1
           fi
           echo "✅ No schema drift detected"
       
       # Check 4: Generate types and verify they match committed version
       - name: Generate TypeScript types
-        run: npm run db:typegen
+        run: |
+          echo "🔧 Generating TypeScript types from database schema..."
+          npm run db:typegen
+          echo "✅ Types generated"
       
       - name: Check types are up to date
         run: |
+          echo "🔍 Checking if types match committed version..."
           if ! git diff --exit-code lib/types/supabase.ts; then
+            echo ""
             echo "❌ Generated types differ from committed version!"
             echo "The database schema changed but types weren't regenerated."
             echo ""
@@ -83,13 +120,7 @@ jobs:
           fi
           echo "✅ Types are up to date"
       
-      # Check 5: Verify schema.sql is up to date (optional, informational)
-      - name: Check canonical schema
-        run: |
-          echo "ℹ️  Canonical schema check (informational only)"
-          echo "The schema/schema.sql file is updated automatically on merge to main"
-        continue-on-error: true
-      
+      # Success summary
       - name: Success summary
         if: success()
         run: |
@@ -102,6 +133,10 @@ jobs:
           echo ""
           echo "Your database changes follow migration-first discipline."
       
-      - name: Cleanup
+      # Cleanup: Always stop Supabase
+      - name: Stop Supabase
         if: always()
-        run: supabase stop --no-backup
+        run: |
+          echo "🛑 Stopping Supabase local instance..."
+          supabase stop --no-backup
+          echo "✅ Supabase stopped"

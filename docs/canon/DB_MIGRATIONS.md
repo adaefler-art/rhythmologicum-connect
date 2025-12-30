@@ -36,10 +36,12 @@
 
 ### 1. Create Migration File
 
-```bash
+```powershell
 # Use timestamp format: YYYYMMDDHHMMSS_description.sql
 # Example: 20251230164500_add_sleep_funnel.sql
-cp tools/migration-template.sql supabase/migrations/$(date +%Y%m%d%H%M%S)_your_description.sql
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$description = "add_sleep_funnel"  # Replace with your description
+Copy-Item tools\migration-template.sql supabase\migrations\${timestamp}_${description}.sql
 ```
 
 ### 2. Write Migration
@@ -84,42 +86,39 @@ END $$;
 
 ### 3. Test Locally
 
-```bash
+```powershell
 # Reset database and apply all migrations
 supabase db reset
 
-# Or apply just new migrations
-./scripts/apply-migrations.sh
-
-# Verify
+# Verify no drift
 supabase db diff
 ```
 
-### 4. Update Schema
+### 4. Generate Types
 
-```bash
-# Generate canonical schema
-./scripts/generate-schema.sh
+```powershell
+# Generate TypeScript types
+npm run db:typegen
 
-# Review the diff
-git diff schema/schema.sql
+# Review the generated types
+git diff lib\types\supabase.ts
 ```
 
 ### 5. Validate
 
-```bash
+```powershell
 # Check migration files haven't been edited
 npm run lint:migrations
 
-# Run in CI context
-npm run lint:migrations -- --base-ref origin/main
+# Run full determinism check
+npm run db:verify
 ```
 
 ### 6. Commit
 
-```bash
-git add supabase/migrations/YYYYMMDDHHMMSS_description.sql
-git add schema/schema.sql
+```powershell
+git add supabase\migrations\*.sql
+git add lib\types\supabase.ts
 git commit -m "feat: add sleep assessment funnel"
 ```
 
@@ -310,14 +309,17 @@ ALTER TABLE public.old_name RENAME TO new_name;
 
 If two migrations with same timestamp:
 
-```bash
+```powershell
 # Rename one with new timestamp
-mv supabase/migrations/20251230120000_feature_a.sql \
-   supabase/migrations/20251230120001_feature_a.sql
+Move-Item supabase\migrations\20251230120000_feature_a.sql `
+          supabase\migrations\20251230120001_feature_a.sql
 
-# Update references in migration if needed
 # Test locally
+supabase db reset
+
 # Commit changes
+git add supabase\migrations\
+git commit -m "fix: resolve migration timestamp conflict"
 ```
 
 ---
@@ -326,28 +328,40 @@ mv supabase/migrations/20251230120000_feature_a.sql \
 
 ### GitHub Actions
 
-The CI workflow enforces migration-first discipline and prevents schema drift:
+The CI workflow (`.github/workflows/db-determinism.yml`) enforces migration-first discipline and prevents schema drift:
 
-```yaml
-- name: Validate migrations
-  run: npm run lint:migrations -- --base-ref origin/main
+**Workflow runs on:**
+- Pull requests affecting migrations, types, or schema files
+- Manual workflow dispatch
 
-- name: Apply migrations
-  run: supabase db reset
+**Checks performed:**
+1. **Migration Immutability** - Ensures no existing migrations were edited
+   - Compares against merge-base with target branch
+   - Shows specific files that were modified (not just added)
+   - Fails with clear list of affected files
 
-- name: Check for drift
-  run: supabase db diff --exit-code
+2. **Migration Application** - Applies all migrations cleanly
+   - Starts Supabase with deterministic lifecycle
+   - Shows Supabase status for debugging
+   - Runs `supabase db reset` to apply all migrations
 
-- name: Generate and verify types
-  run: |
-    npm run db:typegen
-    git diff --exit-code lib/types/supabase.ts
-```
+3. **Drift Detection** - Verifies no manual schema changes
+   - Runs `supabase db diff --exit-code`
+   - Fails if schema differs from what migrations produce
+
+4. **Type Synchronization** - Ensures types match schema
+   - Generates types via `npm run db:typegen`
+   - Compares with committed version using `git diff --exit-code`
+
+**Cleanup:**
+- Always stops Supabase at the end (success or failure)
+- Uses `supabase stop --no-backup` for clean teardown
 
 **CI Failures:**
-- Migration edited (not added) → `lint:migrations` fails
-- Schema drift detected → `db diff` fails
-- Generated types out of sync → `git diff` fails
+- Migration edited (not added) → Shows which files were modified
+- Migration syntax error → Shows error from `db reset`
+- Schema drift detected → Shows drift details from `db diff`
+- Generated types out of sync → Shows diff of type changes
 
 ---
 

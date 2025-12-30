@@ -227,13 +227,13 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
 "db:reset": "supabase db reset",
 "db:diff": "supabase db diff",
-"db:verify": "bash scripts/verify-db-determinism.sh"
+"db:verify": "pwsh -File scripts/verify-db-determinism.ps1"
 ```
 
 ### Configuration Updates
 
 1. ✅ `supabase/config.toml` - Fixed project_id (underscore instead of hyphen)
-2. ✅ `package.json` - Added db:* scripts
+2. ✅ `package.json` - Added db:* scripts (using PowerShell for verify)
 3. ✅ `.github/CODEOWNERS` - Added types protection
 
 ---
@@ -244,17 +244,17 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 ```powershell
 supabase start
 supabase db reset
-supabase gen types typescript --local > .\src\types\supabase.ts
+supabase gen types typescript --local > .\lib\types\supabase.ts
 git diff --exit-code
 ```
 
 **Our Implementation:**
-```bash
-# Same workflow, different path (lib/ instead of src/)
+```powershell
+# Same workflow, RHYTHM-conform PowerShell
 supabase start
 supabase db reset
-npm run db:typegen  # Generates to lib/types/supabase.ts
-git diff --exit-code lib/types/supabase.ts
+npm run db:typegen  # Generates to lib\types\supabase.ts
+git diff --exit-code lib\types\supabase.ts
 
 # Or use the all-in-one verification
 npm run db:verify
