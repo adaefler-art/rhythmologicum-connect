@@ -1,5 +1,7 @@
 // Content page type definitions based on database schema
 
+import { type ContentStatus } from '@/lib/contracts/registry'
+
 export type ContentPageSection = {
   id: string
   title: string
@@ -13,7 +15,7 @@ export type ContentPage = {
   title: string
   excerpt: string | null
   body_markdown: string
-  status: 'draft' | 'published' | 'archived'
+  status: ContentStatus
   layout: string | null
   category: string | null
   priority: number

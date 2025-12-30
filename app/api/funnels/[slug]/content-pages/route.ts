@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
+import { env } from '@/lib/env'
+import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 
 /**
  * D1 API Endpoint: List Content Pages for a Funnel
@@ -15,22 +17,16 @@ export async function GET(
   try {
     const { slug } = await params
     
-    // Backward compatibility: Legacy slug redirects to canonical slug
-    // Kept for existing database records and external links only
-    // Note: User-facing routes have been removed
-    const effectiveSlug =
-      slug === 'stress' || slug === 'stress-check' || slug === 'stress-check-v2'
-        ? 'stress-assessment'
-        : slug
+    // Use canonical funnel slug from registry
+    const effectiveSlug = getCanonicalFunnelSlug(slug)
 
     if (!effectiveSlug) {
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
     }
 
     // Initialize Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseKey) {
       console.error('Supabase configuration missing')

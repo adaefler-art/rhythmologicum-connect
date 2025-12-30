@@ -8,4 +8,17 @@
 - [ ] DB‑abhängige Tests erfolgreich lokal ausgeführt / CI besteht
 - [ ] Prisma/ORM Schema (z. B. schema.prisma) aktualisiert und ggf. `prisma migrate`/`prisma db push` überprüft
 - [ ] Breaking changes dokumentiert & Rollback‑Plan beschrieben (falls destruktive Änderungen)
+
+## Contracts & Environment (E50 - No Fantasy Names)
+- [ ] **Evidence**: Neue Identifier nutzen `lib/contracts/registry.ts` (oder begründen, warum nicht)
+- [ ] **Evidence**: Neue Environment Variables nutzen `lib/env.ts` (oder begründen, warum nicht)
+- [ ] **Evidence**: Keine direkten `process.env.*` Zugriffe hinzugefügt (außer in `lib/env.ts` selbst)
+- [ ] **Memory Entry**: Falls neue Patterns/Konventionen eingeführt wurden, Memory-Eintrag angelegt via `store_memory` Tool
+
+## Testing Evidence
+- [ ] **Evidence**: Tests ausgeführt (lokal oder CI-Link)
+- [ ] **Evidence**: Manuelle Tests durchgeführt (Beschreibung oder Screenshots)
+- [ ] **Evidence**: Keine Regressionen in bestehender Funktionalität
+
+## Reviewer
 - [ ] Reviewer: @
