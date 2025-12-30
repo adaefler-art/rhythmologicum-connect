@@ -136,5 +136,47 @@
     "approved_by": "Development Team",
     "date": "2025-12-14",
     "notes": "All release criteria met. Production deployment approved."
+  },
+  "evidence_links": {
+    "release_documentation": {
+      "release_notes": "docs/releases/v0.4/RELEASE.md",
+      "changelog": "docs/releases/v0.4/changelog.md",
+      "changes_summary": "CHANGES.md"
+    },
+    "technical_documentation": {
+      "executive_summary": "docs/Z4_EXECUTIVE_SUMMARY_V0.3.md",
+      "architecture": "docs/ARCHITECTURE_V0_4.md",
+      "funnel_runtime": "docs/EPIC_B_CONSOLIDATION.md",
+      "design_tokens": "docs/C1_DESIGN_TOKENS.md",
+      "rls_implementation": "docs/D4_RLS_IMPLEMENTATION.md"
+    },
+    "deployment_guides": {
+      "deployment_guide": "docs/DEPLOYMENT_GUIDE.md",
+      "env_variables": "docs/ENV_VARIABLES.md",
+      "vercel_config": "vercel.json"
+    },
+    "quality_assurance": {
+      "manual_test_plan": "MANUAL_TEST_PLAN.md",
+      "testing_guide": "TESTING_GUIDE.md",
+      "content_qa_checklist": "CONTENT_QA_CHECKLIST.md",
+      "theme_testing": "THEME_TESTING_CHECKLIST.md",
+      "patient_layout_audit": "PATIENT_LAYOUT_AUDIT.md"
+    },
+    "implementation_summaries": {
+      "implementation_summary": "IMPLEMENTATION_SUMMARY.md",
+      "pr_summary": "PR_SUMMARY.md",
+      "release_checklist": "RELEASE_CHECKLIST_V0.4.0.md",
+      "release_notes": "RELEASE_NOTES_V0.4.0.md",
+      "v0.4_summary": "V0.4_RELEASE_SUMMARY.md"
+    },
+    "database": {
+      "schema": "schema/schema.sql",
+      "migrations": "supabase/migrations/"
+    },
+    "project_management": {
+      "readme": "README.md",
+      "git_tag_guide": "GIT_TAG_RELEASE_GUIDE.md",
+      "handoff_to_release_manager": "HANDOFF_TO_RELEASE_MANAGER.md"
+    }
   }
 }
