@@ -321,3 +321,39 @@ After deployment, perform these smoke tests:
 - **[Z2 Pilot Readiness Checklist](docs/Z2_PILOT_READINESS_CHECKLIST.md)** - Complete guide for preparing and launching the remote pilot (German, non-technical friendly)
 
 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
+
+---
+
+## 📚 Documentation Hub
+
+The project documentation is organized into three main areas:
+
+### [📖 Canon Documentation](docs/canon/)
+**Timeless principles and standards** - These documents define core practices that don't change with versions:
+- [Principles](docs/canon/PRINCIPLES.md) - Core development principles
+- [Review Checklist](docs/canon/REVIEW_CHECKLIST.md) - Code review standards
+- [Glossary](docs/canon/GLOSSARY.md) - Project terminology
+- [Database Migrations](docs/canon/DB_MIGRATIONS.md) - Migration best practices
+- [Contracts](docs/canon/CONTRACTS.md) - API and component contracts
+
+### [🚀 Release Documentation](docs/releases/)
+**Version-specific information** - Release notes, plans, and artifacts:
+- [Current Status](docs/releases/CURRENT.md) - **Start here** for release information
+- [v0.4 Release](docs/releases/v0.4/) - Production release (December 2025)
+  - [Release Notes](docs/releases/v0.4/RELEASE.md)
+  - [Changelog](docs/releases/v0.4/changelog.md) (German)
+  - [Verdict](docs/releases/v0.4/verdict.json) - Structured release data
+- [v0.5 Planning](docs/releases/v0.5/) - Next version planning
+  - [Release Plan](docs/releases/v0.5/RELEASE.md)
+  - [Backlog](docs/releases/v0.5/backlog.md)
+  - [Verdict](docs/releases/v0.5/verdict.json) - Planning status
+
+### [🧠 Project Memory](docs/memory/)
+**Learnings and incidents** - Institutional knowledge base:
+- [Memory Index](docs/memory/INDEX.md) - Overview and search guide
+- `entries/` - Key learnings and architectural decisions
+- `incidents/` - Post-incident reviews and resolutions
+
+### Legacy Documentation
+- [Archive (v0.3)](docs/_archive_0_3/) - Historical documentation from v0.3
+- [Current v0.4 Implementation Docs](docs/) - Active v0.4 implementation details
