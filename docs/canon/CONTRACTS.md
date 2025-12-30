@@ -58,6 +58,96 @@ type ApiResponse<T> = {
 
 ---
 
+## V0.5 Database Enums and Status Values
+
+### User Roles
+
+```sql
+CREATE TYPE public.user_role AS ENUM ('patient', 'clinician', 'nurse', 'admin');
+```
+
+**Values:**
+- `patient` - Patient/end user
+- `clinician` - Medical professional with full access
+- `nurse` - Care coordinator with task management
+- `admin` - System administrator
+
+### Assessment States
+
+```sql
+CREATE TYPE public.assessment_state AS ENUM ('draft', 'in_progress', 'completed', 'archived');
+```
+
+**Values:**
+- `draft` - Assessment created but not started
+- `in_progress` - Assessment actively being filled out
+- `completed` - Assessment finished by patient
+- `archived` - Historical assessment no longer active
+
+### Report Status
+
+```sql
+CREATE TYPE public.report_status AS ENUM ('pending', 'generating', 'completed', 'failed');
+```
+
+**Values:**
+- `pending` - Report queued for generation
+- `generating` - AI currently generating report
+- `completed` - Report successfully generated
+- `failed` - Report generation encountered error
+
+### Task Status
+
+```sql
+CREATE TYPE public.task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
+```
+
+**Values:**
+- `pending` - Task created, not yet started
+- `in_progress` - Task actively being worked on
+- `completed` - Task finished successfully
+- `cancelled` - Task no longer needed
+
+### Document Parsing Status
+
+```sql
+CREATE TYPE public.parsing_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'partial');
+```
+
+**Values:**
+- `pending` - Document uploaded, awaiting processing
+- `processing` - AI actively extracting data
+- `completed` - All data successfully extracted
+- `failed` - Extraction failed completely
+- `partial` - Some data extracted, manual review needed
+
+### Notification Status
+
+```sql
+CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', 'cancelled');
+```
+
+**Values:**
+- `scheduled` - Notification queued to send
+- `sent` - Successfully delivered
+- `failed` - Delivery failed (retry may occur)
+- `cancelled` - Notification no longer needed
+
+### Patient Funnel Status
+
+```sql
+-- TEXT CHECK constraint, not enum
+CHECK (status IN ('active', 'paused', 'completed', 'archived'))
+```
+
+**Values:**
+- `active` - Patient actively engaged with funnel
+- `paused` - Temporarily suspended by patient/clinician
+- `completed` - Patient finished all funnel steps
+- `archived` - Historical funnel instance
+
+---
+
 ## Funnel Runtime Endpoints
 
 ### Start Assessment
@@ -380,6 +470,171 @@ CREATE POLICY "service_role_all"
   ON public.my_table
   FOR ALL
   USING (auth.jwt() ->> 'role' = 'service_role');
+```
+
+---
+
+## V0.5 JSONB Field Schemas
+
+### Funnel Version Configuration
+
+**questionnaire_config JSONB:**
+```typescript
+{
+  steps: Array<{
+    id: string
+    order: number
+    questions: Array<{
+      id: string
+      type: 'scale' | 'single_choice' | 'multiple_choice' | 'text'
+      required: boolean
+      validation?: object
+    }>
+  }>
+  branching_rules?: Array<{
+    condition: object
+    target_step: string
+  }>
+}
+```
+
+**content_manifest JSONB:**
+```typescript
+{
+  pages: Array<{
+    id: string
+    slug: string
+    flow_step: 'intro' | 'result' | 'info'
+    order: number
+  }>
+  media: Array<{
+    id: string
+    type: 'image' | 'video'
+    url: string
+  }>
+}
+```
+
+### Document Extraction Data
+
+**extracted_data JSONB:**
+```typescript
+{
+  fields: Array<{
+    key: string
+    value: any
+    confidence: number // 0-1
+    location?: { page: number, bbox: [x, y, w, h] }
+  }>
+  metadata: {
+    pages: number
+    format: string
+    extracted_at: string
+  }
+}
+```
+
+**confidence JSONB:**
+```typescript
+{
+  overall: number // 0-1
+  per_field: {
+    [field_key: string]: number
+  }
+}
+```
+
+### Calculated Results
+
+**scores JSONB:**
+```typescript
+{
+  primary_score: number
+  subscores?: {
+    [category: string]: number
+  }
+  percentile?: number
+}
+```
+
+**risk_models JSONB:**
+```typescript
+{
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+  risk_factors: Array<{
+    factor: string
+    severity: number
+    explanation: string
+  }>
+}
+```
+
+**priority_ranking JSONB:**
+```typescript
+{
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  urgency_score: number
+  recommended_actions: string[]
+}
+```
+
+### Report Citations
+
+**citations_meta JSONB:**
+```typescript
+{
+  sources: Array<{
+    id: string
+    type: 'research' | 'guideline' | 'internal'
+    title: string
+    url?: string
+    year?: number
+  }>
+  inline_citations: Array<{
+    text_segment: string
+    source_ids: string[]
+  }>
+}
+```
+
+### Task Payloads
+
+**task payload JSONB:**
+```typescript
+{
+  task_specific_data: any
+  priority: 'low' | 'medium' | 'high'
+  metadata: {
+    created_by: string
+    reason: string
+  }
+}
+```
+
+### Notification Payloads
+
+**notification payload JSONB:**
+```typescript
+{
+  template_variables: {
+    [key: string]: any
+  }
+  preferences: {
+    locale?: string
+    timezone?: string
+  }
+}
+```
+
+### Audit Log Diff
+
+**diff JSONB:**
+```typescript
+{
+  before: object | null
+  after: object | null
+  changed_fields: string[]
+}
 ```
 
 ---
