@@ -6,12 +6,29 @@
 
 ---
 
+## DB Stack Decision
+
+**Stack:** Supabase CLI + PostgreSQL  
+**Migration Tool:** Supabase CLI (`supabase db reset`, `supabase db push`)  
+**Type Generation:** Supabase CLI (`supabase gen types typescript`)  
+**Version Control:** Git-tracked migrations in `supabase/migrations/`  
+
+**Rationale:**
+- Supabase CLI provides integrated workflow for local development, migrations, and type generation
+- Native TypeScript type generation ensures type safety across codebase
+- Built-in drift detection via `supabase db diff`
+- Consistent tooling from local development through CI/CD
+
+---
+
 ## Core Principles
 
 1. **Migrations are append-only** - Never edit existing migration files after they're merged
 2. **Migrations are idempotent** - Safe to run multiple times
 3. **Schema is canonical** - `schema/schema.sql` is the single source of truth
 4. **Forward-only** - No rollback scripts; fix forward with new migrations
+5. **Migration-first** - Schema changes must be defined in migrations, never manually applied
+6. **Type-safe** - Generated types must be kept in sync with database schema
 
 ---
 
@@ -19,10 +36,12 @@
 
 ### 1. Create Migration File
 
-```bash
+```powershell
 # Use timestamp format: YYYYMMDDHHMMSS_description.sql
 # Example: 20251230164500_add_sleep_funnel.sql
-cp tools/migration-template.sql supabase/migrations/$(date +%Y%m%d%H%M%S)_your_description.sql
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$description = "add_sleep_funnel"  # Replace with your description
+Copy-Item tools\migration-template.sql supabase\migrations\${timestamp}_${description}.sql
 ```
 
 ### 2. Write Migration
@@ -67,42 +86,39 @@ END $$;
 
 ### 3. Test Locally
 
-```bash
+```powershell
 # Reset database and apply all migrations
 supabase db reset
 
-# Or apply just new migrations
-./scripts/apply-migrations.sh
-
-# Verify
+# Verify no drift
 supabase db diff
 ```
 
-### 4. Update Schema
+### 4. Generate Types
 
-```bash
-# Generate canonical schema
-./scripts/generate-schema.sh
+```powershell
+# Generate TypeScript types
+npm run db:typegen
 
-# Review the diff
-git diff schema/schema.sql
+# Review the generated types
+git diff lib\types\supabase.ts
 ```
 
 ### 5. Validate
 
-```bash
+```powershell
 # Check migration files haven't been edited
 npm run lint:migrations
 
-# Run in CI context
-npm run lint:migrations -- --base-ref origin/main
+# Run full determinism check
+npm run db:verify
 ```
 
 ### 6. Commit
 
-```bash
-git add supabase/migrations/YYYYMMDDHHMMSS_description.sql
-git add schema/schema.sql
+```powershell
+git add supabase\migrations\*.sql
+git add lib\types\supabase.ts
 git commit -m "feat: add sleep assessment funnel"
 ```
 
@@ -293,14 +309,17 @@ ALTER TABLE public.old_name RENAME TO new_name;
 
 If two migrations with same timestamp:
 
-```bash
+```powershell
 # Rename one with new timestamp
-mv supabase/migrations/20251230120000_feature_a.sql \
-   supabase/migrations/20251230120001_feature_a.sql
+Move-Item supabase\migrations\20251230120000_feature_a.sql `
+          supabase\migrations\20251230120001_feature_a.sql
 
-# Update references in migration if needed
 # Test locally
+supabase db reset
+
 # Commit changes
+git add supabase\migrations\
+git commit -m "fix: resolve migration timestamp conflict"
 ```
 
 ---
@@ -309,17 +328,160 @@ mv supabase/migrations/20251230120000_feature_a.sql \
 
 ### GitHub Actions
 
-```yaml
-- name: Validate migrations
-  run: npm run lint:migrations -- --base-ref origin/main
+The CI workflow (`.github/workflows/db-determinism.yml`) enforces migration-first discipline and prevents schema drift:
 
-- name: Apply migrations
-  run: supabase db reset
+**Workflow runs on:**
+- Pull requests affecting migrations, types, or schema files
+- Manual workflow dispatch
 
-- name: Verify schema
-  run: |
-    ./scripts/generate-schema.sh
-    git diff --exit-code schema/schema.sql
+**Checks performed:**
+1. **Migration Immutability** - Ensures no existing migrations were edited
+   - Compares against merge-base with target branch
+   - Shows specific files that were modified (not just added)
+   - Fails with clear list of affected files
+
+2. **Migration Application** - Applies all migrations cleanly
+   - Starts Supabase with deterministic lifecycle
+   - Shows Supabase status for debugging
+   - Runs `supabase db reset` to apply all migrations
+
+3. **Drift Detection** - Verifies no manual schema changes
+   - Runs `supabase db diff --exit-code`
+   - Fails if schema differs from what migrations produce
+
+4. **Type Synchronization** - Ensures types match schema
+   - Generates types via `npm run db:typegen`
+   - Compares with committed version using `git diff --exit-code`
+
+**Cleanup:**
+- Always stops Supabase at the end (success or failure)
+- Uses `supabase stop --no-backup` for clean teardown
+
+**CI Failures:**
+- Migration edited (not added) → Shows which files were modified
+- Migration syntax error → Shows error from `db reset`
+- Schema drift detected → Shows drift details from `db diff`
+- Generated types out of sync → Shows diff of type changes
+
+---
+
+## PowerShell Runbook (Windows Development)
+
+### Prerequisites
+
+```powershell
+# Install Supabase CLI (via Scoop)
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+
+# Or via NPM
+npm install -g supabase
+```
+
+### Local Development Workflow
+
+```powershell
+# Start local Supabase instance
+supabase start
+
+# Reset database and apply all migrations
+supabase db reset
+
+# Generate TypeScript types
+supabase gen types typescript --local > .\lib\types\supabase.ts
+
+# Verify no drift or uncommitted type changes
+git diff --exit-code
+# Exit code 0 = clean, exit code 1 = changes detected
+```
+
+### Pre-Commit Verification
+
+```powershell
+# Run full verification before committing schema changes
+function Test-DbDeterminism {
+    Write-Host "Starting DB determinism check..." -ForegroundColor Cyan
+    
+    # 1. Reset database
+    Write-Host "→ Resetting database..." -ForegroundColor Yellow
+    supabase db reset
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Database reset failed" -ForegroundColor Red
+        return $false
+    }
+    
+    # 2. Check for drift
+    Write-Host "→ Checking for drift..." -ForegroundColor Yellow
+    supabase db diff
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Schema drift detected" -ForegroundColor Red
+        return $false
+    }
+    
+    # 3. Generate types
+    Write-Host "→ Generating types..." -ForegroundColor Yellow
+    supabase gen types typescript --local > .\lib\types\supabase.ts
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Type generation failed" -ForegroundColor Red
+        return $false
+    }
+    
+    # 4. Check for uncommitted changes
+    Write-Host "→ Checking for uncommitted changes..." -ForegroundColor Yellow
+    git diff --exit-code lib\types\supabase.ts
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Generated types have uncommitted changes" -ForegroundColor Red
+        Write-Host "  Run: git add lib\types\supabase.ts" -ForegroundColor Yellow
+        return $false
+    }
+    
+    Write-Host "✓ All checks passed!" -ForegroundColor Green
+    return $true
+}
+
+# Run the check
+Test-DbDeterminism
+```
+
+### Creating a New Migration
+
+```powershell
+# Generate timestamp
+$timestamp = Get-Date -Format "yyyyMMddHHmmss"
+$description = "add_new_feature"  # Replace with your description
+$filename = "supabase\migrations\${timestamp}_${description}.sql"
+
+# Copy template
+Copy-Item "tools\migration-template.sql" $filename
+
+# Edit the migration
+code $filename
+
+# Test migration
+supabase db reset
+
+# Generate updated types
+supabase gen types typescript --local > .\lib\types\supabase.ts
+
+# Verify
+git status
+git diff lib\types\supabase.ts
+```
+
+### Troubleshooting
+
+```powershell
+# Stop Supabase if it's hanging
+supabase stop
+
+# Start fresh
+supabase start
+
+# View logs
+supabase logs
+
+# Check Supabase status
+supabase status
 ```
 
 ---

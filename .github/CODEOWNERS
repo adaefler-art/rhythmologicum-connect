@@ -36,6 +36,9 @@
 # Database schema must be reviewed
 /schema/** @*
 
+# Generated database types require review (should be auto-generated)
+/lib/types/supabase.ts @*
+
 # ===================================================================
 # Build & Deployment Configuration
 # ===================================================================

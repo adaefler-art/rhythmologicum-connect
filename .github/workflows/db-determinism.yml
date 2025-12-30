@@ -1,0 +1,142 @@
+name: DB Determinism Check
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'lib/types/supabase.ts'
+      - 'schema/**'
+      - '.github/workflows/db-determinism.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  db-determinism:
+    name: Verify migrations, drift, and types
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for migration checks
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      # Check 1: Ensure no existing migrations were edited
+      - name: Check migration immutability
+        run: |
+          echo "🔍 Checking migration immutability..."
+          
+          # Find merge base with target branch
+          MERGE_BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          echo "Merge base: $MERGE_BASE"
+          
+          # Check for modified migrations
+          MODIFIED_MIGRATIONS=$(git diff --name-status $MERGE_BASE...HEAD -- supabase/migrations/*.sql | grep -v '^A' || true)
+          
+          if [ -n "$MODIFIED_MIGRATIONS" ]; then
+            echo "❌ ERROR: Existing migration files were modified:"
+            echo "$MODIFIED_MIGRATIONS" | while IFS=$'\t' read -r status file; do
+              echo "  [$status] $file"
+            done
+            echo ""
+            echo "Migrations are append-only. Create a new migration instead of editing existing ones."
+            echo "If this is an emergency hotfix, set ALLOW_MIGRATION_EDITS=1"
+            exit 1
+          fi
+          
+          echo "✅ All migration changes are new additions"
+        env:
+          ALLOW_MIGRATION_EDITS: '0'
+      
+      # Check 2: Start Supabase with clear lifecycle
+      - name: Start Supabase local instance
+        run: |
+          echo "🚀 Starting Supabase local instance..."
+          supabase start
+          echo ""
+          echo "📊 Supabase Status:"
+          supabase status
+          echo ""
+      
+      - name: Apply migrations
+        run: |
+          echo "📦 Applying all migrations via db reset..."
+          supabase db reset
+          echo "✅ Migrations applied successfully"
+      
+      # Check 3: Verify no schema drift
+      - name: Check for schema drift
+        run: |
+          echo "🔍 Checking for drift between migrations and actual schema..."
+          if ! supabase db diff --exit-code; then
+            echo ""
+            echo "❌ Schema drift detected!"
+            echo "This means there are database changes not captured in migrations."
+            echo "Please create a new migration to capture these changes."
+            echo ""
+            exit 1
+          fi
+          echo "✅ No schema drift detected"
+      
+      # Check 4: Generate types and verify they match committed version
+      - name: Generate TypeScript types
+        run: |
+          echo "🔧 Generating TypeScript types from database schema..."
+          npm run db:typegen
+          echo "✅ Types generated"
+      
+      - name: Check types are up to date
+        run: |
+          echo "🔍 Checking if types match committed version..."
+          if ! git diff --exit-code lib/types/supabase.ts; then
+            echo ""
+            echo "❌ Generated types differ from committed version!"
+            echo "The database schema changed but types weren't regenerated."
+            echo ""
+            echo "To fix this:"
+            echo "  1. Run: npm run db:typegen"
+            echo "  2. Commit the updated lib/types/supabase.ts file"
+            echo ""
+            echo "Diff:"
+            git diff lib/types/supabase.ts
+            exit 1
+          fi
+          echo "✅ Types are up to date"
+      
+      # Success summary
+      - name: Success summary
+        if: success()
+        run: |
+          echo ""
+          echo "🎉 All DB determinism checks passed!"
+          echo "   ✅ No existing migrations were edited"
+          echo "   ✅ Migrations apply cleanly"
+          echo "   ✅ No schema drift detected"
+          echo "   ✅ TypeScript types are up to date"
+          echo ""
+          echo "Your database changes follow migration-first discipline."
+      
+      # Cleanup: Always stop Supabase
+      - name: Stop Supabase
+        if: always()
+        run: |
+          echo "🛑 Stopping Supabase local instance..."
+          supabase stop --no-backup
+          echo "✅ Supabase stopped"

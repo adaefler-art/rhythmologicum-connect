@@ -113,7 +113,31 @@ Unauthorized access attempts are logged and users are redirected with clear erro
 
 ## Database & Migrations
 
-The application uses Supabase (PostgreSQL) with automated migration deployment.
+The application uses Supabase (PostgreSQL) with automated migration deployment and strict determinism enforcement.
+
+### DB Determinism & Type Safety
+
+**CI enforces migration-first discipline:**
+- ✅ All schema changes must be in migration files
+- ✅ No manual database edits allowed (drift detection)
+- ✅ TypeScript types must stay in sync with schema
+- ❌ PRs fail if types are out of date or drift is detected
+
+**Type generation workflow:**
+```powershell
+# After creating/modifying migrations
+supabase db reset              # Apply all migrations
+npm run db:typegen            # Generate TypeScript types
+git add lib\types\supabase.ts # Commit generated types
+```
+
+The CI workflow (`db-determinism.yml`) automatically verifies:
+1. No existing migrations were edited
+2. Migrations apply cleanly
+3. No schema drift exists
+4. Generated types match database schema
+
+**📚 See:** [DB Migrations Guide](docs/canon/DB_MIGRATIONS.md) - Complete workflow with PowerShell runbook
 
 ### Automated Migration Deployment
 
@@ -133,22 +157,25 @@ For automated deployment to work, configure these secrets in GitHub repository s
 
 Apply migrations locally using Supabase CLI:
 
-```bash
-# Link to your project
-supabase link --project-ref YOUR_PROJECT_ID
+```powershell
+# Start local Supabase
+supabase start
 
-# Apply all pending migrations
-supabase db push
-
-# Or reset database (destructive - use with caution)
+# Reset database and apply all migrations
 supabase db reset
+
+# Generate TypeScript types
+npm run db:typegen
+
+# Verify no drift or uncommitted changes
+npm run db:verify
 ```
 
 ### Verify Migrations
 
 **Before deployment:**
-```bash
-./scripts/check-migration-status.sh
+```powershell
+npm run db:verify  # Full determinism check
 ```
 
 **After deployment:**
@@ -165,8 +192,8 @@ WHERE funnel_id = (SELECT id FROM funnels WHERE slug = 'stress-assessment');
 For comprehensive verification, use `scripts/verify-migrations.sql` in Supabase SQL Editor.
 
 **📚 Documentation:**
+- [Database Migrations](docs/canon/DB_MIGRATIONS.md) - Migration-first workflow & PowerShell runbook
 - [Migration Deployment Guide](docs/DEPLOYMENT_MIGRATIONS.md) - Automated deployment setup
-- [Migrations Guide](docs/MIGRATIONS_GUIDE.md) - Writing new migrations
 - [F11 Seed Pages](docs/F11_SEED_PAGES.md) - Content page seeding
 
 ## Environment Variables
