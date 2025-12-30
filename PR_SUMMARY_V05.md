@@ -1,12 +1,31 @@
-# Pull Request Summary: V05-I01.1 - DB Schema v0.5
+# Pull Request Summary: V05-I01.1 - DB Schema v0.5 (Schema Only)
 
 ## 🎯 Objective
 
 Implement v0.5 core database schema with JSONB fields for multi-funnel support, document processing, calculated results, reports/sections, tasks/notifications, and audit logging.
 
-## ✅ Status: COMPLETE
+**Scope:** Tables, Constraints, Indexes, Enums (RLS deferred to V05-I01.2)
 
-All acceptance criteria met. Migration ready for CI validation and deployment.
+## ✅ Status: COMPLETE (Scope Refined)
+
+Migration focuses on schema definition only. RLS policies will be implemented separately in V05-I01.2.
+
+## ⚠️ Scope Change from Original Implementation
+
+**Removed from V05-I01.1:** All Row Level Security (RLS) policies (~380 lines)
+- RLS table enablement statements
+- All policy definitions
+- Moved to future V05-I01.2 migration
+
+**Reason:** Clean separation of concerns - schema definition (I01.1) vs access control (I01.2)
+
+**What Remains in V05-I01.1:**
+- ✅ Tables and columns
+- ✅ Enums and types
+- ✅ Constraints and unique keys
+- ✅ Indexes for performance
+- ✅ JSONB field schemas
+- ✅ Backwards compatibility
 
 ---
 
@@ -14,22 +33,22 @@ All acceptance criteria met. Migration ready for CI validation and deployment.
 
 ### 1. Migration File
 - **File:** `supabase/migrations/20251230211228_v05_core_schema_jsonb_fields.sql`
-- **Size:** 1,003 lines, 39KB
+- **Size:** 625 lines (reduced from 1,003 - RLS removed)
 - **Quality:** 100% idempotent, well-documented, follows project standards
 
 ### 2. Verification Script
 - **File:** `scripts/verify-v05-schema.ps1`
 - **Purpose:** Automated verification of schema implementation
-- **Checks:** Enums, tables, JSONB columns, constraints, indexes, RLS
+- **Checks:** Enums, tables, JSONB columns, constraints, indexes (RLS checks removed)
 
 ### 3. Documentation
 - **Updated:** `docs/canon/CONTRACTS.md` (+250 lines)
   - V0.5 Database Enums section
   - V0.5 JSONB Field Schemas section
-- **Created:** `docs/V05_SCHEMA_EVIDENCE.md` (400+ lines)
-  - Comprehensive implementation evidence
-  - Table-by-table breakdown
-  - Verification commands
+- **Created:** `docs/V05_I01_1_CONSTRAINTS_EVIDENCE.md` (new, 200+ lines)
+  - Idempotency constraints evidence
+  - Backwards compatibility documentation
+  - Migration safety checklist
 
 ---
 
@@ -44,8 +63,8 @@ All acceptance criteria met. Migration ready for CI validation and deployment.
 | **Extended Tables** | 2 | assessments (+2 cols), reports (+8 cols) |
 | **JSONB Fields** | 17 | Across configuration, extraction, results, reports, and operational tables |
 | **Indexes** | 34 | Strategic indexes for query optimization |
-| **Unique Constraints** | 6 | Idempotent operation support |
-| **RLS Policies** | ~50 | Comprehensive access control |
+| **Unique Constraints** | 7 | Idempotent operation support (includes assessment_answers from prior migration) |
+| **RLS Policies** | 0 | Deferred to V05-I01.2 |
 
 ### Total Database Changes
 - **13 new tables** created
@@ -53,40 +72,26 @@ All acceptance criteria met. Migration ready for CI validation and deployment.
 - **6 enum types** defined
 - **17 JSONB fields** for flexible storage
 - **34 performance indexes**
-- **100% RLS coverage** on new tables
+- **7 unique constraints** for idempotency (6 new + 1 from prior migration)
 
 ---
 
 ## 🔐 Security & Access Control
 
-### Row Level Security
+### Row Level Security (RLS)
 
-All 13 new tables have RLS enabled with policies for:
-- **Patients:** View own data only
-- **Clinicians:** View all patient data
-- **Nurses:** Task management access
-- **Admins:** Full system access
-- **Service Role:** Backend operations
+**Status:** Deferred to V05-I01.2
 
-### Access Pattern Example
+RLS policies will be implemented in a separate migration to:
+- Enable clean separation of schema vs access control
+- Allow focused review of security policies
+- Support iterative testing of RLS rules
 
-```sql
--- Patients view own assessment events
-CREATE POLICY "Patients can view own assessment events"
-  ON assessment_events FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM assessments
-      WHERE assessments.id = assessment_events.assessment_id
-        AND assessments.patient_id = get_my_patient_profile_id()
-    )
-  );
-
--- Clinicians view all
-CREATE POLICY "Clinicians can view all assessment events"
-  ON assessment_events FOR SELECT
-  USING (is_clinician());
-```
+**Future V05-I01.2 will include:**
+- Table RLS enablement for all 13 new tables
+- Policies for patient/clinician/nurse/admin/service roles
+- Organization isolation policies
+- Comprehensive RLS testing
 
 ---
 

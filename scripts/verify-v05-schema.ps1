@@ -166,27 +166,8 @@ foreach ($con in $constraints) {
 Write-Host "  Found $constraintsFound / $($constraints.Count) unique constraints" -ForegroundColor $(if ($constraintsFound -eq $constraints.Count) { "Green" } else { "Red" })
 Write-Host ""
 
-# Section 5: Verify RLS Enabled
-Write-Host "5️⃣  Verifying RLS Enabled..." -ForegroundColor Yellow
-$rlsTables = $tables
-
-$rlsEnabled = 0
-foreach ($table in $rlsTables) {
-    $query = "SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = '$table' AND rowsecurity = true;"
-    $result = Invoke-SqlQuery -Query $query -Description "Checking RLS: $table"
-    if ($result) {
-        $rlsEnabled++
-        Write-Host "  ✓ $table" -ForegroundColor Green
-    } else {
-        Write-Host "  ✗ $table" -ForegroundColor Red
-    }
-}
-
-Write-Host "  RLS enabled on $rlsEnabled / $($rlsTables.Count) tables" -ForegroundColor $(if ($rlsEnabled -eq $rlsTables.Count) { "Green" } else { "Red" })
-Write-Host ""
-
-# Section 6: Verify Critical Indexes
-Write-Host "6️⃣  Verifying Critical Indexes..." -ForegroundColor Yellow
+# Section 5: Verify Critical Indexes
+Write-Host "5️⃣  Verifying Critical Indexes..." -ForegroundColor Yellow
 $indexes = @(
     @{ Table = "funnels_catalog"; Index = "idx_funnels_catalog_slug" },
     @{ Table = "funnel_versions"; Index = "idx_funnel_versions_funnel_id" },
@@ -219,27 +200,27 @@ Write-Host "📊 Verification Summary" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-$totalChecks = 6
+$totalChecks = 5
 $passedChecks = 0
 
 if ($enumsFound -eq $enums.Count) { $passedChecks++ }
 if ($tablesFound -eq $tables.Count) { $passedChecks++ }
 if ($jsonbFound -eq $jsonbColumns.Count) { $passedChecks++ }
 if ($constraintsFound -eq $constraints.Count) { $passedChecks++ }
-if ($rlsEnabled -eq $rlsTables.Count) { $passedChecks++ }
 if ($indexesFound -eq $indexes.Count) { $passedChecks++ }
 
 Write-Host "Enums:       $enumsFound / $($enums.Count)" -ForegroundColor $(if ($enumsFound -eq $enums.Count) { "Green" } else { "Red" })
 Write-Host "Tables:      $tablesFound / $($tables.Count)" -ForegroundColor $(if ($tablesFound -eq $tables.Count) { "Green" } else { "Red" })
 Write-Host "JSONB:       $jsonbFound / $($jsonbColumns.Count)" -ForegroundColor $(if ($jsonbFound -eq $jsonbColumns.Count) { "Green" } else { "Red" })
 Write-Host "Constraints: $constraintsFound / $($constraints.Count)" -ForegroundColor $(if ($constraintsFound -eq $constraints.Count) { "Green" } else { "Red" })
-Write-Host "RLS:         $rlsEnabled / $($rlsTables.Count)" -ForegroundColor $(if ($rlsEnabled -eq $rlsTables.Count) { "Green" } else { "Red" })
 Write-Host "Indexes:     $indexesFound / $($indexes.Count)" -ForegroundColor $(if ($indexesFound -eq $indexes.Count) { "Green" } else { "Red" })
+Write-Host ""
+Write-Host "NOTE: RLS policies deferred to V05-I01.2" -ForegroundColor Yellow
 Write-Host ""
 
 if ($passedChecks -eq $totalChecks) {
     Write-Host "🎉 All verification checks passed!" -ForegroundColor Green
-    Write-Host "   V0.5 schema migration successfully applied." -ForegroundColor Green
+    Write-Host "   V0.5 schema migration (I01.1) successfully applied." -ForegroundColor Green
     exit 0
 } else {
     Write-Host "⚠️  Some verification checks failed: $passedChecks / $totalChecks passed" -ForegroundColor Yellow
