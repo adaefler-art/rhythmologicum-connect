@@ -1,0 +1,176 @@
+{
+  "version": "0.5.0",
+  "status": "planning",
+  "target_release_date": "TBD",
+  "previous_version": "0.4.0",
+  "verdict": "IN_PLANNING",
+  "summary": {
+    "title": "Multi-Funnel Expansion & Enhanced Analytics",
+    "description": "Expand assessment portfolio with sleep and recovery funnels, enhance content management, add advanced analytics, and implement comprehensive testing infrastructure."
+  },
+  "epics_planned": [
+    {
+      "id": "V0.5-E1",
+      "name": "Multi-Funnel Architecture",
+      "priority": "high",
+      "status": "planning",
+      "estimated_effort": "medium",
+      "description": "Support multiple concurrent assessment funnels with navigation between them"
+    },
+    {
+      "id": "V0.5-E2",
+      "name": "Sleep Assessment Funnel",
+      "priority": "high",
+      "status": "planning",
+      "estimated_effort": "large",
+      "description": "Complete sleep quality and patterns assessment funnel"
+    },
+    {
+      "id": "V0.5-E3",
+      "name": "Recovery Assessment Funnel",
+      "priority": "medium",
+      "status": "planning",
+      "estimated_effort": "large",
+      "description": "Post-stress recovery capability evaluation funnel"
+    },
+    {
+      "id": "V0.5-E4",
+      "name": "Content Management V2",
+      "priority": "medium",
+      "status": "planning",
+      "estimated_effort": "large",
+      "description": "Visual editor, versioning, media management, and templates"
+    },
+    {
+      "id": "V0.5-E5",
+      "name": "Analytics & Reporting V2",
+      "priority": "high",
+      "status": "planning",
+      "estimated_effort": "medium",
+      "description": "Longitudinal analysis, comparison reports, data export, enhanced dashboard"
+    },
+    {
+      "id": "V0.5-E6",
+      "name": "Testing Infrastructure",
+      "priority": "high",
+      "status": "planning",
+      "estimated_effort": "medium",
+      "description": "Automated testing suite with unit, integration, and E2E tests"
+    },
+    {
+      "id": "V0.5-E7",
+      "name": "Performance & Monitoring",
+      "priority": "medium",
+      "status": "planning",
+      "estimated_effort": "small",
+      "description": "Production monitoring, error tracking, and performance optimization"
+    }
+  ],
+  "key_features": [
+    "Sleep assessment funnel",
+    "Recovery assessment funnel",
+    "Multi-funnel navigation",
+    "Visual content editor",
+    "Content versioning system",
+    "Longitudinal analytics",
+    "Advanced data export (CSV, PDF, JSON)",
+    "Automated testing suite",
+    "Performance monitoring",
+    "Enhanced clinician dashboard"
+  ],
+  "technical_goals": [
+    "Test coverage > 70%",
+    "Performance metrics maintained or improved",
+    "Storybook component library",
+    "Feature flag system",
+    "Blue-green deployment capability"
+  ],
+  "prerequisites": [
+    "v0.4.0 deployed to production",
+    "Initial user feedback from v0.4 collected",
+    "Medical team input on new assessment content",
+    "Performance baseline established from v0.4",
+    "Security audit of v0.4 completed"
+  ],
+  "timeline": {
+    "planning_phase": "2 weeks",
+    "design_phase": "2 weeks",
+    "development_phase": "8-10 weeks",
+    "qa_phase": "2 weeks",
+    "release_prep": "1 week",
+    "total_estimated": "15-17 weeks (~4 months)"
+  },
+  "risks": [
+    {
+      "risk": "Medical content delays",
+      "probability": "medium",
+      "impact": "high",
+      "mitigation": "Start content creation early, use placeholders for development"
+    },
+    {
+      "risk": "Scope creep",
+      "probability": "high",
+      "impact": "medium",
+      "mitigation": "Strict epic boundaries, regular scope reviews"
+    },
+    {
+      "risk": "Performance degradation with multiple funnels",
+      "probability": "low",
+      "impact": "high",
+      "mitigation": "Regular performance testing, established budgets"
+    },
+    {
+      "risk": "Breaking changes affecting v0.4 users",
+      "probability": "medium",
+      "impact": "high",
+      "mitigation": "Careful migration planning, feature flags, staged rollout"
+    },
+    {
+      "risk": "Resource/time constraints",
+      "probability": "medium",
+      "impact": "medium",
+      "mitigation": "Prioritize epics, consider phased rollout"
+    }
+  ],
+  "success_criteria": {
+    "must_have": [
+      "At least 2 additional funnels (sleep, recovery) fully functional",
+      "Automated test coverage > 70%",
+      "All v0.4 features remain stable",
+      "Performance metrics meet or exceed v0.4",
+      "Security audit passed"
+    ],
+    "should_have": [
+      "Enhanced content editor deployed",
+      "Advanced analytics available",
+      "Monitoring and alerting in production",
+      "Complete user documentation"
+    ],
+    "nice_to_have": [
+      "Feature flags system operational",
+      "Storybook component library",
+      "Blue-green deployment implemented"
+    ]
+  },
+  "open_questions": [
+    "Which analytics service to use? (PostHog, Mixpanel, custom)",
+    "Testing framework preference? (Jest vs Vitest, Playwright vs Cypress)",
+    "Content editor choice? (TipTap, Slate, Draft.js, Lexical)",
+    "Feature flag service? (LaunchDarkly, Unleash, custom)",
+    "Monitoring provider? (Sentry, DataDog, custom)"
+  ],
+  "dependencies": {
+    "internal": [
+      "Medical team for content creation",
+      "UI/UX team for new feature designs",
+      "Infrastructure team for capacity planning"
+    ],
+    "external": [
+      "Third-party service evaluations and contracts",
+      "Budget approval for new tools",
+      "Potential API integrations"
+    ]
+  },
+  "last_updated": "2025-12-30",
+  "notes": "This is a draft planning document. All epics, timelines, and priorities are subject to change based on stakeholder feedback and business priorities."
+}
