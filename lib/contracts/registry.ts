@@ -66,18 +66,24 @@ export type FunnelSlug = typeof FUNNEL_SLUG[keyof typeof FUNNEL_SLUG]
 
 /**
  * Maps legacy funnel slugs to their canonical equivalents
+ * Uses lowercase keys for case-insensitive matching
  */
 export const FUNNEL_SLUG_ALIASES: Record<string, string> = {
-  [FUNNEL_SLUG.STRESS]: FUNNEL_SLUG.STRESS_ASSESSMENT,
-  [FUNNEL_SLUG.STRESS_CHECK]: FUNNEL_SLUG.STRESS_ASSESSMENT,
-  [FUNNEL_SLUG.STRESS_CHECK_V2]: FUNNEL_SLUG.STRESS_ASSESSMENT,
+  'stress': FUNNEL_SLUG.STRESS_ASSESSMENT,
+  'stress-check': FUNNEL_SLUG.STRESS_ASSESSMENT,
+  'stress-check-v2': FUNNEL_SLUG.STRESS_ASSESSMENT,
 }
 
 /**
  * Resolves a funnel slug to its canonical form
+ * Normalizes input by trimming and converting to lowercase for deterministic matching
+ * 
+ * @param slug - The funnel slug to resolve (case-insensitive, whitespace trimmed)
+ * @returns The canonical slug or the normalized input if no mapping exists
  */
 export function getCanonicalFunnelSlug(slug: string): string {
-  return FUNNEL_SLUG_ALIASES[slug] || slug
+  const normalized = slug.toLowerCase().trim()
+  return FUNNEL_SLUG_ALIASES[normalized] || normalized
 }
 
 // ============================================================
@@ -112,6 +118,7 @@ export const USER_ROLE = {
   PATIENT: 'patient',
   CLINICIAN: 'clinician',
   ADMIN: 'admin',
+  NURSE: 'nurse',
 } as const
 
 export type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE]

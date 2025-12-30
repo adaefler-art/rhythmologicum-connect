@@ -13,6 +13,21 @@ const eslintConfig = defineConfig([
     rules: {
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      // E50 "No Fantasy Names": Enforce env module usage
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.object.name='process'][object.property.name='env']",
+          message: "Direct process.env access is forbidden. Use env from @/lib/env instead. Exceptions: lib/env.ts, next.config.ts, scripts/**, tools/**",
+        },
+      ],
+    },
+  },
+  // File-specific overrides for allowed process.env usage
+  {
+    files: ["lib/env.ts", "next.config.ts", "scripts/**/*", "tools/**/*"],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   },
   // Override default ignores of eslint-config-next.
