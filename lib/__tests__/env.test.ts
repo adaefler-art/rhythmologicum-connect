@@ -8,17 +8,22 @@
 describe('Environment schema', () => {
   const originalEnv = process.env
   const originalNextPhase = process.env.NEXT_PHASE
+  const originalWindow = (global as any).window
 
   beforeEach(() => {
     // Reset modules to clear cached env module
     jest.resetModules()
     // Reset environment to original state
     process.env = { ...originalEnv }
+
+    // Default to server runtime for tests unless explicitly overridden
+    ;(global as any).window = undefined
   })
 
   afterAll(() => {
     // Restore original environment
     process.env = originalEnv
+    ;(global as any).window = originalWindow
   })
 
   describe('Legacy variable name support', () => {
@@ -114,6 +119,26 @@ describe('Environment schema', () => {
       expect(() => {
         require('../env')
       }).toThrow('Invalid environment variables')
+
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('does not throw in the browser runtime (even if server-only vars are missing)', () => {
+      process.env.NODE_ENV = 'production'
+      delete process.env.NEXT_PHASE
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY
+
+      // Simulate browser runtime
+      ;(global as any).window = {}
+
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+
+      expect(() => {
+        const { env } = require('../env')
+        expect(env.SUPABASE_SERVICE_ROLE_KEY).toBe('')
+      }).not.toThrow()
 
       consoleErrorSpy.mockRestore()
     })

@@ -17,7 +17,11 @@ fi
 # Compare the generated schema to the committed one
 TMP_GEN="$(mktemp)"
 pg_dump --schema-only --no-owner --no-privileges --dbname="$DATABASE_URL" > "$TMP_GEN"
-sed -E '/^SET search_path/d' "$TMP_GEN" | sed -E '/^-- Dumped by pg_dump/d' | sed '/^$/N;/^\n$/D' > "${TMP_GEN}.norm"
+sed -E '/^SET search_path/d' "$TMP_GEN" \
+  | sed -E '/^-- Dumped by pg_dump/d' \
+  | sed -E '/^\\\\(un)?restrict /d' \
+  | sed '/^$/N;/^\n$/D' \
+  > "${TMP_GEN}.norm"
 
 # Compare normalized dump with committed file
 if ! diff -u schema/schema.sql "${TMP_GEN}.norm"; then

@@ -38,9 +38,9 @@ jobs:
 
       - name: Normalize schemas and diff
         run: |
-          sed '/^--/d' schema_new.sql | sed '/^$/d' > /tmp/gen.sql
+          sed '/^--/d' schema_new.sql | sed -E '/^\\\\(un)?restrict /d' | sed '/^$/d' > /tmp/gen.sql
           if [ -f schema/schema.sql ]; then
-            sed '/^--/d' schema/schema.sql | sed '/^$/d' > /tmp/old.sql
+            sed '/^--/d' schema/schema.sql | sed -E '/^\\\\(un)?restrict /d' | sed '/^$/d' > /tmp/old.sql
           else
             touch /tmp/old.sql
           fi

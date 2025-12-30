@@ -19,6 +19,7 @@ pg_dump --schema-only --no-owner --no-privileges --dbname="$DATABASE_URL" > "$TM
 # - remove comment lines with dump timestamps
 sed -E '/^SET search_path/d' "$TMP_FILE" \
   | sed -E '/^-- Dumped by pg_dump/d' \
+  | sed -E '/^\\\\(un)?restrict /d' \
   | sed '/^$/N;/^\n$/D' \
   > "$OUT_FILE"
 

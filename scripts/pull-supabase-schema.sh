@@ -21,6 +21,7 @@ pg_dump --schema-only --no-owner --no-privileges --dbname="$DB_URL" > "$TMP_FILE
 # Normalize: remove search_path, dump header timestamps, collapse blank lines
 sed -E '/^SET search_path/d' "$TMP_FILE" \
   | sed -E '/^-- Dumped by pg_dump/d' \
+  | sed -E '/^\\\\(un)?restrict /d' \
   | sed '/^$/N;/^\n$/D' \
   > "$OUT_FILE"
 
