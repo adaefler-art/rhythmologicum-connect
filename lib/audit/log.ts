@@ -101,6 +101,129 @@ function getAuditClient() {
 }
 
 // ============================================================
+// PHI Protection & Redaction
+// ============================================================
+
+/**
+ * List of allowed keys in metadata and diff objects
+ * These are safe to store (IDs, versions, statuses, numeric values)
+ */
+const ALLOWED_METADATA_KEYS = [
+  'request_id',
+  'correlation_id',
+  'algorithm_version',
+  'prompt_version',
+  'report_version',
+  'safety_score',
+  'finding_count',
+  'status_from',
+  'status_to',
+  'assigned_to_role',
+  'reason',
+  'consent_type',
+  'granted',
+  'rollout_percent',
+  'rollout_percent_from',
+  'rollout_percent_to',
+  'is_active',
+  'assessment_id',
+  'report_id',
+  'task_id',
+  'funnel_id',
+  'version_id',
+  'consent_id',
+  'config_key',
+] as const
+
+/**
+ * List of keys that contain PHI and must be blocked
+ */
+const PHI_KEYS = [
+  'content',
+  'text',
+  'notes',
+  'answers',
+  'answer',
+  'response',
+  'extracted_data',
+  'clinical_notes',
+  'patient_notes',
+  'observation',
+  'diagnosis',
+  'medication',
+  'name',
+  'email',
+  'phone',
+  'address',
+  'ssn',
+  'dob',
+  'date_of_birth',
+] as const
+
+/**
+ * Redacts PHI from a data object
+ * Only allows specific safe keys and removes PHI-containing fields
+ * 
+ * @param data - Object to redact
+ * @param maxSize - Maximum allowed size in characters (default: 5000)
+ * @returns Redacted object with only safe fields
+ */
+export function redactPHI(data: Record<string, unknown> | undefined, maxSize = 5000): Record<string, unknown> {
+  if (!data || typeof data !== 'object') {
+    return {}
+  }
+
+  const redacted: Record<string, unknown> = {}
+  let totalSize = 0
+
+  for (const [key, value] of Object.entries(data)) {
+    // Block PHI keys explicitly
+    const lowerKey = key.toLowerCase()
+    if (PHI_KEYS.some(phiKey => lowerKey.includes(phiKey))) {
+      redacted[key] = '[REDACTED]'
+      continue
+    }
+
+    // Check if key is in allowlist
+    const isAllowed = ALLOWED_METADATA_KEYS.includes(key as typeof ALLOWED_METADATA_KEYS[number])
+    
+    // Allow numeric values, booleans, and safe strings
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      redacted[key] = value
+      totalSize += String(value).length
+    } else if (typeof value === 'string') {
+      // Only allow strings from allowlist or UUID-like patterns
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+      const isShortSafe = value.length <= 100 && !/[<>{}]/.test(value) // No HTML/JSON
+      
+      if (isAllowed || isUUID || (isShortSafe && lowerKey.includes('id'))) {
+        redacted[key] = value
+        totalSize += value.length
+      } else {
+        redacted[key] = '[REDACTED]'
+      }
+    } else if (value === null || value === undefined) {
+      redacted[key] = value
+    } else if (typeof value === 'object' && !Array.isArray(value)) {
+      // Recursively redact nested objects
+      redacted[key] = redactPHI(value as Record<string, unknown>, maxSize - totalSize)
+      totalSize += JSON.stringify(redacted[key]).length
+    } else {
+      // Arrays and other types - redact to be safe
+      redacted[key] = '[REDACTED]'
+    }
+
+    // Enforce size limit
+    if (totalSize > maxSize) {
+      console.warn('[audit/log] Metadata/diff size exceeded limit, truncating')
+      break
+    }
+  }
+
+  return redacted
+}
+
+// ============================================================
 // Core Logging Function
 // ============================================================
 
@@ -159,6 +282,20 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
       return { success: false, error: 'Supabase client unavailable' }
     }
 
+    // Redact PHI from diff and metadata
+    const safeMetadata = redactPHI(event.metadata || {})
+    const safeDiff: Record<string, unknown> = {}
+    
+    if (event.diff?.before) {
+      safeDiff.before = redactPHI(event.diff.before as Record<string, unknown>)
+    }
+    if (event.diff?.after) {
+      safeDiff.after = redactPHI(event.diff.after as Record<string, unknown>)
+    }
+    if (event.diff?.changes) {
+      safeDiff.changes = redactPHI(event.diff.changes as Record<string, unknown>)
+    }
+
     // Prepare audit log entry
     const auditEntry: Database['public']['Tables']['audit_log']['Insert'] = {
       org_id: event.org_id || null,
@@ -168,8 +305,8 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
       entity_type: event.entity_type,
       entity_id: event.entity_id,
       action: event.action,
-      diff: (event.diff as Json) || {},
-      metadata: (event.metadata as Json) || {},
+      diff: (safeDiff as Json) || {},
+      metadata: (safeMetadata as Json) || {},
     }
 
     // Insert audit log

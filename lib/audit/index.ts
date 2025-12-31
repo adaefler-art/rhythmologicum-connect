@@ -20,3 +20,6 @@ export {
   type AuditDiff,
   type AuditLogResult,
 } from './log'
+
+// Export redaction function for testing
+export { redactPHI } from './log'
