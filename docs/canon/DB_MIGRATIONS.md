@@ -12,12 +12,68 @@
 **Migration Tool:** Supabase CLI (`supabase db reset`, `supabase db push`)  
 **Type Generation:** Supabase CLI (`supabase gen types typescript`)  
 **Version Control:** Git-tracked migrations in `supabase/migrations/`  
+**Schema Validation:** Migration linter (`scripts/db/lint-migrations.ps1`)
 
 **Rationale:**
 - Supabase CLI provides integrated workflow for local development, migrations, and type generation
 - Native TypeScript type generation ensures type safety across codebase
 - Built-in drift detection via `supabase db diff`
 - Consistent tooling from local development through CI/CD
+- Migration linter enforces canonical schema object usage
+
+---
+
+## Schema Manifest (V0.5+)
+
+**Purpose:** Hard guardrail to prevent non-canonical DB objects from being introduced.
+
+**Location:** `docs/canon/DB_SCHEMA_MANIFEST.json`
+
+**Contents:**
+- **tables**: Canonical list of allowed table names
+- **enums**: Canonical list of allowed enum/type names
+- **deprecated**: Objects that exist but should not be used in new migrations
+- **columns**: Per-table column definitions (optional, for reference)
+- **constraints**: Per-table constraint names (optional, for reference)
+
+**Usage:**
+```powershell
+# Lint all migrations against canonical manifest
+.\scripts\db\lint-migrations.ps1
+
+# Verbose output
+.\scripts\db\lint-migrations.ps1 -Verbose
+```
+
+**Exit Codes:**
+- `0` = All checks passed
+- `1` = Non-canonical objects detected (blocks PR)
+- `2` = Script execution error
+
+**Adding New Schema Objects:**
+
+When introducing a new canonical table or enum:
+
+1. Create the migration file
+2. Add the table/enum name to `docs/canon/DB_SCHEMA_MANIFEST.json`
+3. Run linter to validate: `.\scripts\db\lint-migrations.ps1`
+4. Document the change in this file (DB_MIGRATIONS.md)
+5. Commit both migration and manifest together
+
+**Example manifest entry:**
+```json
+{
+  "tables": [
+    "assessments",
+    "funnels_catalog",
+    "new_canonical_table"
+  ],
+  "enums": [
+    "user_role",
+    "new_canonical_enum"
+  ]
+}
+```
 
 ---
 
@@ -29,6 +85,7 @@
 4. **Forward-only** - No rollback scripts; fix forward with new migrations
 5. **Migration-first** - Schema changes must be defined in migrations, never manually applied
 6. **Type-safe** - Generated types must be kept in sync with database schema
+7. **Schema manifest** - All DB objects must be in the canonical manifest (V0.5+)
 
 ---
 
@@ -107,6 +164,9 @@ git diff lib\types\supabase.ts
 ### 5. Validate
 
 ```powershell
+# Lint migrations against canonical manifest (V0.5+)
+.\scripts\db\lint-migrations.ps1
+
 # Check migration files haven't been edited
 npm run lint:migrations
 
