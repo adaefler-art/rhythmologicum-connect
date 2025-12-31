@@ -92,14 +92,21 @@ export async function computeInputsHash(inputs: unknown): Promise<string>
 
 **Purpose:**
 - Single source of truth for current versions
-- Deterministic report version generation
+- Deterministic report version generation (no date dependency)
 - SHA256 hashing for input equivalence detection
 
 **Version Pattern:**
 ```
-{funnelVersion}-{algorithmVersion}-{promptVersion}-{date}
-Example: 1.0.0-v1.0.0-1.0-20251231
+{funnelVersion}-{algorithmVersion}-{promptVersion}-{inputsHashPrefix}
+Example: 1.0.0-v1.0.0-1.0-abc12345
 ```
+
+**Inputs Hash includes:**
+- assessment_id
+- funnel_version_id (when available)
+- algorithm_version
+- prompt_version
+- answers or confirmed data/document IDs
 
 #### 2. Processing Pipeline Integration
 
@@ -107,8 +114,10 @@ Example: 1.0.0-v1.0.0-1.0-20251231
 
 **Changes:**
 1. Import version utilities
-2. Generate `reportVersion` using `generateReportVersion()`
-3. Persist version fields when creating/updating reports:
+2. Compute `inputsHash` from normalized inputs (assessment_id + algorithm_version + prompt_version + answers)
+3. Generate `inputsHashPrefix` (first 8 characters)
+4. Generate `reportVersion` using `generateReportVersion()` with hash prefix
+5. Persist version fields when creating/updating reports:
    - `algorithm_version`
    - `prompt_version`
    - `report_version`
@@ -124,9 +133,20 @@ Example: 1.0.0-v1.0.0-1.0-20251231
 
 **After:**
 ```typescript
+// Compute inputs hash
+const inputsForHash = {
+  assessment_id: assessmentId,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  prompt_version: CURRENT_PROMPT_VERSION,
+  answers: typedAnswers,
+}
+const inputsHash = await computeInputsHash(inputsForHash)
+const inputsHashPrefix = getHashPrefix(inputsHash, 8)
+
 const reportVersion = generateReportVersion({
   algorithmVersion: CURRENT_ALGORITHM_VERSION,
   promptVersion: CURRENT_PROMPT_VERSION,
+  inputsHashPrefix,
 })
 
 .insert({

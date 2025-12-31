@@ -9,6 +9,8 @@ import {
   CURRENT_ALGORITHM_VERSION,
   CURRENT_PROMPT_VERSION,
   generateReportVersion,
+  computeInputsHash,
+  getHashPrefix,
 } from '@/lib/versioning/constants';
 
 // Supabase-ENV robust auslesen
@@ -306,15 +308,27 @@ export async function POST(req: Request) {
     });
 
     // V05-I01.3: Generate versioned report with full traceability
+    // Compute inputs hash from normalized inputs including assessment context
+    const inputsForHash = {
+      assessment_id: assessmentId,
+      algorithm_version: CURRENT_ALGORITHM_VERSION,
+      prompt_version: CURRENT_PROMPT_VERSION,
+      answers: typedAnswers,
+    }
+    const inputsHash = await computeInputsHash(inputsForHash)
+    const inputsHashPrefix = getHashPrefix(inputsHash, 8)
+
     const reportVersion = generateReportVersion({
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
       promptVersion: CURRENT_PROMPT_VERSION,
+      inputsHashPrefix,
     })
 
     console.log('[stress-report] Generating versioned report', {
       algorithmVersion: CURRENT_ALGORITHM_VERSION,
       promptVersion: CURRENT_PROMPT_VERSION,
       reportVersion,
+      inputsHashPrefix,
     })
 
     const { data: existingReports, error: existingError } = await supabase

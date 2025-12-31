@@ -5,6 +5,7 @@ import {
   DEFAULT_FUNNEL_VERSION,
   generateReportVersion,
   computeInputsHash,
+  getHashPrefix,
 } from '../constants'
 
 describe('Versioning Constants', () => {
@@ -26,47 +27,68 @@ describe('Versioning Constants', () => {
   })
 
   describe('generateReportVersion', () => {
-    it('should generate version with all components', () => {
+    it('should generate version with all components and hash prefix', () => {
       const version = generateReportVersion({
         funnelVersion: '1.0.0',
         algorithmVersion: 'v1.0.0',
         promptVersion: '1.0',
+        inputsHashPrefix: 'abc12345',
       })
 
-      expect(version).toMatch(/^1\.0\.0-v1\.0\.0-1\.0-\d{8}$/)
+      expect(version).toBe('1.0.0-v1.0.0-1.0-abc12345')
     })
 
     it('should use defaults when components not provided', () => {
-      const version = generateReportVersion({})
+      const version = generateReportVersion({
+        inputsHashPrefix: 'def67890',
+      })
 
       expect(version).toContain(DEFAULT_FUNNEL_VERSION)
       expect(version).toContain(CURRENT_ALGORITHM_VERSION)
       expect(version).toContain(CURRENT_PROMPT_VERSION)
-      expect(version).toMatch(/\d{8}$/) // ends with date
+      expect(version).toContain('def67890')
     })
 
-    it('should include date in YYYYMMDD format', () => {
-      const version = generateReportVersion({})
-      const datePart = version.split('-').pop()
-
-      expect(datePart).toBeDefined()
-      expect(datePart).toHaveLength(8)
-      expect(datePart).toMatch(/^\d{8}$/)
+    it('should include hash prefix for deterministic uniqueness', () => {
+      const version = generateReportVersion({
+        inputsHashPrefix: 'test1234',
+      })
+      
+      expect(version).toMatch(/-test1234$/)
     })
 
-    it('should generate same version on same day with same inputs', () => {
+    it('should generate same version with same inputs including hash', () => {
       const version1 = generateReportVersion({
         funnelVersion: '2.0.0',
         algorithmVersion: 'v2.1.0',
         promptVersion: '2.5',
+        inputsHashPrefix: 'xyz98765',
       })
       const version2 = generateReportVersion({
         funnelVersion: '2.0.0',
         algorithmVersion: 'v2.1.0',
         promptVersion: '2.5',
+        inputsHashPrefix: 'xyz98765',
       })
 
       expect(version1).toBe(version2)
+    })
+
+    it('should generate different versions with different hash prefixes', () => {
+      const version1 = generateReportVersion({
+        funnelVersion: '2.0.0',
+        algorithmVersion: 'v2.1.0',
+        promptVersion: '2.5',
+        inputsHashPrefix: 'aaa11111',
+      })
+      const version2 = generateReportVersion({
+        funnelVersion: '2.0.0',
+        algorithmVersion: 'v2.1.0',
+        promptVersion: '2.5',
+        inputsHashPrefix: 'bbb22222',
+      })
+
+      expect(version1).not.toBe(version2)
     })
   })
 
@@ -112,6 +134,31 @@ describe('Versioning Constants', () => {
 
       expect(hash).toBeDefined()
       expect(hash).toHaveLength(64)
+    })
+  })
+
+  describe('getHashPrefix', () => {
+    it('should return first 8 characters by default', () => {
+      const hash = 'abcdef1234567890abcdef1234567890'
+      const prefix = getHashPrefix(hash)
+
+      expect(prefix).toBe('abcdef12')
+      expect(prefix).toHaveLength(8)
+    })
+
+    it('should return custom length when specified', () => {
+      const hash = 'abcdef1234567890abcdef1234567890'
+      const prefix = getHashPrefix(hash, 12)
+
+      expect(prefix).toBe('abcdef123456')
+      expect(prefix).toHaveLength(12)
+    })
+
+    it('should handle short hashes gracefully', () => {
+      const hash = 'abc'
+      const prefix = getHashPrefix(hash, 8)
+
+      expect(prefix).toBe('abc')
     })
   })
 })

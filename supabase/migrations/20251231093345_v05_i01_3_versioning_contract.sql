@@ -149,16 +149,16 @@ END $$ LANGUAGE plpgsql;
 -- =============================================================================
 
 -- Helper function to generate deterministic report_version
--- Pattern: {funnelVersion}-{algorithmVersion}-{promptVersion}-{date}
+-- Pattern: {funnelVersion}-{algorithmVersion}-{promptVersion}-{inputsHashPrefix}
+-- Note: This SQL version is for reference. In practice, generate in application code
+-- where inputs_hash is available.
 CREATE OR REPLACE FUNCTION public.generate_report_version(
     p_funnel_version TEXT,
     p_algorithm_version TEXT,
-    p_prompt_version TEXT
+    p_prompt_version TEXT,
+    p_inputs_hash_prefix TEXT
 ) RETURNS TEXT AS $$
-DECLARE
-    v_date TEXT;
 BEGIN
-    v_date := TO_CHAR(NOW(), 'YYYYMMDD');
     RETURN CONCAT(
         COALESCE(p_funnel_version, 'unknown'),
         '-',
@@ -166,12 +166,12 @@ BEGIN
         '-',
         COALESCE(p_prompt_version, '1.0'),
         '-',
-        v_date
+        COALESCE(p_inputs_hash_prefix, '00000000')
     );
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
-COMMENT ON FUNCTION public.generate_report_version IS 'V05-I01.3: Generate deterministic report version from component versions';
+COMMENT ON FUNCTION public.generate_report_version IS 'V05-I01.3: Generate deterministic report version from component versions and inputs hash prefix. Inputs hash includes: assessment_id, funnel_version_id, algorithm_version, prompt_version, confirmed data/doc IDs';
 
 -- Helper function to compute SHA256 hash of inputs (for inputs_hash)
 CREATE OR REPLACE FUNCTION public.compute_inputs_hash(

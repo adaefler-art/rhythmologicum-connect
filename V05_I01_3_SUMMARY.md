@@ -217,9 +217,10 @@ Follow semantic versioning:
 
 1. **Migration is idempotent** - Safe to run multiple times
 2. **Version constants are single source of truth** - Update in one place
-3. **Deterministic version generation** - Same inputs = same version on same day
+3. **Deterministic version generation** - Same inputs = same version (NO date dependency)
 4. **Helper functions available in SQL and TypeScript** - Use everywhere
 5. **All constraints prevent accidental duplication** - Retry-safe by design
+6. **Inputs hash ensures uniqueness** - Hash prefix in version string
 
 ## Status: ✅ COMPLETE
 

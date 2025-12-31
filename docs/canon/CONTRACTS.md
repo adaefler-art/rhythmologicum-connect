@@ -992,20 +992,57 @@ This enables **reproducibility**: "What did the system know when this output was
 
 **report_version Pattern:**
 ```
-{funnelVersion}-{algorithmVersion}-{promptVersion}-{date}
+{funnelVersion}-{algorithmVersion}-{promptVersion}-{inputsHashPrefix}
 ```
 
-Example: `1.0.0-v1.0.0-1.0-20251231`
+Example: `1.0.0-v1.0.0-1.0-abc12345`
+
+This deterministic format ensures:
+- No date dependency (fully reproducible)
+- Uniqueness through inputs hash
+- Same inputs = same version (idempotent)
+
+**Inputs Hash Definition:**
+
+The `inputs_hash` is a SHA256 hash of normalized inputs that MUST include:
+- `assessment_id` - Which assessment this is for
+- `funnel_version_id` - Which funnel version was used
+- `algorithm_version` - Which algorithm version was used
+- `prompt_version` - Which prompt version was used
+- `answers` or confirmed data/document IDs - The actual input data
+
+This ensures that:
+1. Same inputs produce same hash (idempotency)
+2. Different inputs produce different hash (uniqueness)
+3. Hash is deterministic and reproducible
 
 **Implementation:**
 ```typescript
-import { generateReportVersion, CURRENT_ALGORITHM_VERSION, CURRENT_PROMPT_VERSION } from '@/lib/versioning/constants'
+import { 
+  generateReportVersion, 
+  CURRENT_ALGORITHM_VERSION, 
+  CURRENT_PROMPT_VERSION,
+  computeInputsHash,
+  getHashPrefix,
+} from '@/lib/versioning/constants'
+
+// Compute inputs hash from assessment context
+const inputsForHash = {
+  assessment_id: assessmentId,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  prompt_version: CURRENT_PROMPT_VERSION,
+  answers: normalizedAnswers,
+}
+const inputsHash = await computeInputsHash(inputsForHash)
+const inputsHashPrefix = getHashPrefix(inputsHash, 8) // First 8 chars
 
 const reportVersion = generateReportVersion({
   funnelVersion: '1.0.0',
   algorithmVersion: CURRENT_ALGORITHM_VERSION,
   promptVersion: CURRENT_PROMPT_VERSION,
+  inputsHashPrefix,
 })
+// Returns: "1.0.0-v1.0.0-1.0-abc12345"
 ```
 
 ### Inputs Hash
@@ -1028,23 +1065,42 @@ This enables:
 **When generating calculated_results:**
 
 ```typescript
+const inputsForHash = {
+  assessment_id: assessmentId,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  answers: normalizedAnswers,
+}
+const inputsHash = await computeInputsHash(inputsForHash)
+
 await supabase.from('calculated_results').insert({
   assessment_id: assessmentId,
   algorithm_version: CURRENT_ALGORITHM_VERSION,
   funnel_version_id: funnelVersionId,
   scores: { ... },
   computed_at: new Date().toISOString(),
-  inputs_hash: await computeInputsHash(answers),
+  inputs_hash: inputsHash,
 })
 ```
 
 **When generating reports:**
 
 ```typescript
+// Compute inputs hash for deterministic versioning
+const inputsForHash = {
+  assessment_id: assessmentId,
+  funnel_version_id: funnelVersionId,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  prompt_version: CURRENT_PROMPT_VERSION,
+  answers: normalizedAnswers,
+}
+const inputsHash = await computeInputsHash(inputsForHash)
+const inputsHashPrefix = getHashPrefix(inputsHash, 8)
+
 const reportVersion = generateReportVersion({
   funnelVersion: funnel.version,
   algorithmVersion: CURRENT_ALGORITHM_VERSION,
   promptVersion: CURRENT_PROMPT_VERSION,
+  inputsHashPrefix,
 })
 
 await supabase.from('reports').insert({
