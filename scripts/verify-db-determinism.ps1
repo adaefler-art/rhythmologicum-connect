@@ -8,6 +8,66 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Restart-SupabaseLocalStack {
+    Write-Host "🔄 Restarting local Supabase stack..." -ForegroundColor Yellow
+    try {
+        & supabase stop --no-backup 2>&1 | Out-String | Out-Host
+    } catch {
+        Write-Host "⚠️  supabase stop failed (continuing)" -ForegroundColor Yellow
+    }
+
+    & supabase start 2>&1 | Out-String | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "supabase start failed"
+    }
+}
+
+function Invoke-SupabaseDbResetWithRetries {
+    param(
+        [string[]]$Args,
+        [int]$MaxAttempts = 3
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        $output = & supabase @Args 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return ,$output
+        }
+
+        $text = ($output | Out-String)
+        $is502Restart = $text -match '(?im)Restarting containers\.+\s*Error status 502|invalid response was received from the upstream server'
+        $isDockerNameConflict = $text -match '(?im)Conflict\. The container name "(?<name>/[^"]+)" is already in use'
+
+        if ($attempt -lt $MaxAttempts -and ($is502Restart -or $isDockerNameConflict)) {
+            Write-Host "⚠️  supabase db reset failed (attempt $attempt/$MaxAttempts). Retrying..." -ForegroundColor Yellow
+
+            if ($isDockerNameConflict) {
+                $conflictName = $Matches['name']
+                $containerName = $conflictName.TrimStart('/')
+                if (Get-Command docker -ErrorAction SilentlyContinue) {
+                    Write-Host "🧹 Removing conflicting Docker container: $containerName" -ForegroundColor Yellow
+                    try {
+                        & docker rm -f $containerName 2>&1 | Out-String | Out-Host
+                    } catch {
+                        Write-Host "⚠️  Failed to remove conflicting container (continuing)" -ForegroundColor Yellow
+                    }
+                } else {
+                    Write-Host "⚠️  Docker CLI not found; cannot auto-remove conflicting container." -ForegroundColor Yellow
+                }
+            }
+
+            if ($is502Restart) {
+                Restart-SupabaseLocalStack
+            }
+
+            Start-Sleep -Seconds 2
+            continue
+        }
+
+        throw $text
+    }
+}
+
 Write-Host "🔍 Starting DB determinism verification..." -ForegroundColor Cyan
 Write-Host ""
 
@@ -26,10 +86,11 @@ if ($Debug) {
     $resetArgs += "--debug"
 }
 
-$resetOutput = & supabase @resetArgs 2>&1
-if ($LASTEXITCODE -ne 0) {
+try {
+    $resetOutput = Invoke-SupabaseDbResetWithRetries -Args $resetArgs -MaxAttempts 3
+} catch {
     Write-Host "❌ Database reset failed" -ForegroundColor Red
-    Write-Host $resetOutput
+    Write-Host $_.Exception.Message
     exit 1
 }
 Write-Host "✅ Migrations applied successfully" -ForegroundColor Green

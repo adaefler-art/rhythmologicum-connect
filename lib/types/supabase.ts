@@ -193,8 +193,11 @@ export type Database = {
         Row: {
           algorithm_version: string
           assessment_id: string
+          computed_at: string
           created_at: string
+          funnel_version_id: string | null
           id: string
+          inputs_hash: string | null
           priority_ranking: Json | null
           risk_models: Json | null
           scores: Json
@@ -202,8 +205,11 @@ export type Database = {
         Insert: {
           algorithm_version: string
           assessment_id: string
+          computed_at?: string
           created_at?: string
+          funnel_version_id?: string | null
           id?: string
+          inputs_hash?: string | null
           priority_ranking?: Json | null
           risk_models?: Json | null
           scores?: Json
@@ -211,8 +217,11 @@ export type Database = {
         Update: {
           algorithm_version?: string
           assessment_id?: string
+          computed_at?: string
           created_at?: string
+          funnel_version_id?: string | null
           id?: string
+          inputs_hash?: string | null
           priority_ranking?: Json | null
           risk_models?: Json | null
           scores?: Json
@@ -223,6 +232,13 @@ export type Database = {
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_results_funnel_version_id_fkey"
+            columns: ["funnel_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -956,15 +972,17 @@ export type Database = {
       }
       reports: {
         Row: {
+          algorithm_version: string | null
           assessment_id: string
           citations_meta: Json | null
           created_at: string | null
+          funnel_version_id: string | null
           html_path: string | null
           id: string
           pdf_path: string | null
-          prompt_version: string | null
+          prompt_version: string
           report_text_short: string | null
-          report_version: string | null
+          report_version: string
           risk_level: string | null
           safety_findings: Json | null
           safety_score: number | null
@@ -974,15 +992,17 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          algorithm_version?: string | null
           assessment_id: string
           citations_meta?: Json | null
           created_at?: string | null
+          funnel_version_id?: string | null
           html_path?: string | null
           id?: string
           pdf_path?: string | null
-          prompt_version?: string | null
+          prompt_version?: string
           report_text_short?: string | null
-          report_version?: string | null
+          report_version?: string
           risk_level?: string | null
           safety_findings?: Json | null
           safety_score?: number | null
@@ -992,15 +1012,17 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          algorithm_version?: string | null
           assessment_id?: string
           citations_meta?: Json | null
           created_at?: string | null
+          funnel_version_id?: string | null
           html_path?: string | null
           id?: string
           pdf_path?: string | null
-          prompt_version?: string | null
+          prompt_version?: string
           report_text_short?: string | null
-          report_version?: string | null
+          report_version?: string
           risk_level?: string | null
           safety_findings?: Json | null
           safety_score?: number | null
@@ -1015,6 +1037,13 @@ export type Database = {
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_funnel_version_id_fkey"
+            columns: ["funnel_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -1217,9 +1246,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_inputs_hash: { Args: { p_inputs: Json }; Returns: string }
       current_user_role: {
         Args: { org_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      generate_report_version: {
+        Args: {
+          p_algorithm_version: string
+          p_funnel_version: string
+          p_inputs_hash_prefix: string
+          p_prompt_version: string
+        }
+        Returns: string
       }
       get_my_patient_profile_id: { Args: never; Returns: string }
       get_user_org_ids: { Args: never; Returns: string[] }
