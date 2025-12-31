@@ -21,6 +21,8 @@ $manifestPath = Join-Path $PSScriptRoot "..\..\docs\canon\DB_SCHEMA_MANIFEST.jso
 $migrationsDir = Join-Path $PSScriptRoot "..\..\supabase\migrations"
 
 # Regex patterns for extracting database objects
+# NOTE: Case-insensitive flag (?i) handles both 'create table' and 'CREATE TABLE'
+# Tested with actual migrations which use lowercase 'create table' syntax
 $tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
 $enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(public\.)?(?<enum>[a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+ENUM'
 
@@ -87,7 +89,6 @@ foreach ($file in $migrationFiles) {
     
     try {
         $content = Get-Content $filePath -Raw -ErrorAction Stop
-        $lines = Get-Content $filePath -ErrorAction Stop
     } catch {
         Write-Host "⚠️  Failed to read file: $relativePath" -ForegroundColor Yellow
         continue
