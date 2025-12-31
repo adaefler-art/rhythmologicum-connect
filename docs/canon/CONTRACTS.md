@@ -1173,6 +1173,269 @@ Next: `v0.5.0` (new features planned)
 
 ---
 
+## Audit Event Contract
+
+**Version:** V0.5 (V05-I01.4)  
+**Purpose:** Comprehensive audit trail for decision-relevant events  
+**Location:** `lib/audit/log.ts`
+
+### Overview
+
+All decision-relevant events MUST be logged to the `audit_log` table for accountability and traceability. This includes:
+- Report generation, flagging, approval/rejection
+- Task creation, assignment, status changes
+- Configuration changes (funnel activation, version rollouts)
+- Consent record changes
+
+### Audit Event Structure
+
+```typescript
+type AuditEvent = {
+  // Context
+  org_id?: string              // Organization context (NULL for system-level)
+  actor_user_id?: string       // User performing action (NULL for system)
+  actor_role?: UserRole        // Role of actor (patient, clinician, nurse, admin)
+  source: AuditSource          // 'api' | 'job' | 'admin-ui' | 'system'
+
+  // Entity
+  entity_type: AuditEntityType // Type of entity (see registry)
+  entity_id: string            // UUID of the entity
+  action: AuditAction          // Action performed (see registry)
+
+  // Details
+  diff?: AuditDiff            // Before/after changes
+  metadata?: AuditMetadata    // Versions, correlation IDs, etc.
+}
+```
+
+### Entity Types (Registry-Based)
+
+Defined in `lib/contracts/registry.ts`:
+
+```typescript
+export const AUDIT_ENTITY_TYPE = {
+  ASSESSMENT: 'assessment',
+  REPORT: 'report',
+  TASK: 'task',
+  FUNNEL_VERSION: 'funnel_version',
+  FUNNEL_CATALOG: 'funnel_catalog',
+  CONFIG: 'config',
+  CONSENT: 'consent',
+  ORGANIZATION: 'organization',
+  USER_ORG_MEMBERSHIP: 'user_org_membership',
+  CLINICIAN_ASSIGNMENT: 'clinician_assignment',
+}
+```
+
+### Actions (Registry-Based)
+
+```typescript
+export const AUDIT_ACTION = {
+  CREATE: 'create',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  APPROVE: 'approve',
+  REJECT: 'reject',
+  GENERATE: 'generate',
+  FLAG: 'flag',
+  ASSIGN: 'assign',
+  ACTIVATE: 'activate',
+  DEACTIVATE: 'deactivate',
+  ROLLOUT: 'rollout',
+  COMPLETE: 'complete',
+}
+```
+
+### Sources
+
+```typescript
+export const AUDIT_SOURCE = {
+  API: 'api',           // API route handler
+  JOB: 'job',           // Background job/worker
+  ADMIN_UI: 'admin-ui', // Admin interface action
+  SYSTEM: 'system',     // Automated system action
+}
+```
+
+### Usage Examples
+
+#### Report Generated
+
+```typescript
+import { logReportGenerated } from '@/lib/audit'
+
+await logReportGenerated({
+  report_id: reportId,
+  assessment_id: assessmentId,
+  algorithm_version: '1.0',
+  prompt_version: '2.0',
+  report_version: '1.0',
+})
+```
+
+#### Report Flagged (Safety Findings)
+
+```typescript
+import { logReportFlagged } from '@/lib/audit'
+
+await logReportFlagged({
+  report_id: reportId,
+  safety_score: 45,
+  finding_count: 3,
+})
+```
+
+#### Task Created/Assigned
+
+```typescript
+import { logTaskEvent } from '@/lib/audit'
+
+await logTaskEvent({
+  org_id: organizationId,
+  actor_user_id: userId,
+  actor_role: 'clinician',
+  task_id: taskId,
+  action: 'create',
+  assigned_to_role: 'nurse',
+})
+```
+
+#### Funnel Activation
+
+```typescript
+import { logFunnelConfigChange } from '@/lib/audit'
+
+await logFunnelConfigChange({
+  actor_user_id: userId,
+  actor_role: 'admin',
+  funnel_id: funnelId,
+  action: 'activate',
+  is_active: true,
+})
+```
+
+### PHI Protection Guidelines
+
+**CRITICAL:** Audit logs MUST NOT contain PHI by default.
+
+✅ **SAFE to log:**
+- Entity IDs (UUIDs)
+- Status transitions (draft → completed)
+- Scores/metrics (numerical values without context)
+- Versions (algorithm, prompt, report)
+- Counts and summaries
+
+❌ **NEVER log:**
+- Raw assessment answers
+- Free-text patient responses
+- Clinical notes or observations
+- Personal identifiers (names, emails, etc.)
+
+### Diff Structure
+
+```typescript
+type AuditDiff = {
+  before?: Record<string, unknown>  // State before change
+  after?: Record<string, unknown>   // State after change
+  changes?: Record<string, {        // Explicit field changes
+    from: unknown
+    to: unknown
+  }>
+}
+```
+
+Example (status change):
+```typescript
+{
+  diff: {
+    before: { status: 'pending' },
+    after: { status: 'completed' }
+  }
+}
+```
+
+### Metadata Structure
+
+```typescript
+type AuditMetadata = {
+  request_id?: string
+  algorithm_version?: string
+  prompt_version?: string
+  report_version?: string
+  correlation_id?: string
+  safety_score?: number
+  status_from?: string
+  status_to?: string
+  [key: string]: string | number | boolean | undefined
+}
+```
+
+### Database Schema
+
+```sql
+CREATE TABLE public.audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id UUID REFERENCES public.organizations(id),
+  actor_user_id UUID REFERENCES auth.users(id),
+  actor_role public.user_role,
+  source TEXT CHECK (source IN ('api', 'job', 'admin-ui', 'system')),
+  entity_type TEXT NOT NULL,
+  entity_id UUID NOT NULL,
+  action TEXT NOT NULL,
+  diff JSONB DEFAULT '{}'::jsonb,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+### Row Level Security
+
+- **Admins:** Can view audit logs for their organization(s)
+- **Clinicians/Nurses:** Can view audit logs for assigned patients (assessment/report/task entities)
+- **Patients:** Can view audit logs for their own entities
+- **Service Role:** Bypasses RLS for writing audit logs
+
+### Querying Audit Logs
+
+**By Entity:**
+```sql
+SELECT * FROM audit_log
+WHERE entity_type = 'report'
+  AND entity_id = 'report-uuid'
+ORDER BY created_at DESC;
+```
+
+**By Organization:**
+```sql
+SELECT * FROM audit_log
+WHERE org_id = 'org-uuid'
+ORDER BY created_at DESC
+LIMIT 100;
+```
+
+**By Action Type:**
+```sql
+SELECT * FROM audit_log
+WHERE action IN ('approve', 'reject')
+  AND entity_type = 'report'
+ORDER BY created_at DESC;
+```
+
+### Error Handling
+
+Audit logging failures MUST NOT cause request failures. Always wrap in try-catch:
+
+```typescript
+try {
+  await logAuditEvent({ /* ... */ })
+} catch (auditError) {
+  // Log error but continue
+  console.error('[audit] Logging failed (non-blocking):', auditError)
+}
+```
+
+---
+
 ## Related Documentation
 
 - [Principles](PRINCIPLES.md) - Core development principles
