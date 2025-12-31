@@ -162,6 +162,7 @@
     "purpose": "This manifest serves as the canonical allowlist for database objects. Any CREATE TABLE or CREATE TYPE statement in migrations must reference objects listed here.",
     "usage": "Run scripts/db/lint-migrations.ps1 to validate migrations against this manifest",
     "maintenance": "When adding new canonical tables/enums, update this manifest AND document the change in docs/canon/DB_MIGRATIONS.md",
-    "legacy": "The 'deprecated' section lists objects that should be flagged in migrations. These may exist for backward compatibility but should not be used in new migrations."
+    "legacy": "The 'deprecated' section lists objects that should be flagged in migrations. These may exist for backward compatibility but should not be used in new migrations.",
+    "deprecation_model": "Deprecated objects remain in the 'tables' or 'enums' array to allow existing migrations to pass validation, but are ALSO listed in the 'deprecated' section to warn on usage. This supports gradual migration away from legacy objects."
   }
 }

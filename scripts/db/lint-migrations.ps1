@@ -20,6 +20,10 @@ $ErrorActionPreference = "Stop"
 $manifestPath = Join-Path $PSScriptRoot "..\..\docs\canon\DB_SCHEMA_MANIFEST.json"
 $migrationsDir = Join-Path $PSScriptRoot "..\..\supabase\migrations"
 
+# Regex patterns for extracting database objects
+$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
+$enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(public\.)?(?<enum>[a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+ENUM'
+
 Write-Host "🔍 Migration Linter - DB Schema Manifest Validator" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
@@ -72,8 +76,6 @@ Write-Host ""
 Write-Host "🔎 Extracting database objects from migrations..." -ForegroundColor Yellow
 
 $violations = @()
-$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
-$enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(public\.)?(?<enum>[a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+ENUM'
 
 foreach ($file in $migrationFiles) {
     $filePath = $file.FullName
@@ -98,19 +100,13 @@ foreach ($file in $migrationFiles) {
         continue
     }
     
-    # Extract CREATE TABLE statements
+    # Extract CREATE TABLE statements with line numbers
     $tableMatches = [regex]::Matches($content, $tablePattern)
     foreach ($match in $tableMatches) {
         $tableName = $match.Groups['table'].Value
         
-        # Find line number
-        $lineNum = 0
-        for ($i = 0; $i -lt $lines.Count; $i++) {
-            if ($lines[$i] -match "CREATE\s+TABLE.*$tableName") {
-                $lineNum = $i + 1
-                break
-            }
-        }
+        # Calculate line number from match position
+        $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
         
         # Check against canonical list
         $isCanonical = $manifest.tables -contains $tableName
@@ -137,19 +133,13 @@ foreach ($file in $migrationFiles) {
         }
     }
     
-    # Extract CREATE TYPE (enum) statements
+    # Extract CREATE TYPE (enum) statements with line numbers
     $enumMatches = [regex]::Matches($content, $enumPattern)
     foreach ($match in $enumMatches) {
         $enumName = $match.Groups['enum'].Value
         
-        # Find line number
-        $lineNum = 0
-        for ($i = 0; $i -lt $lines.Count; $i++) {
-            if ($lines[$i] -match "CREATE\s+TYPE.*$enumName.*AS\s+ENUM") {
-                $lineNum = $i + 1
-                break
-            }
-        }
+        # Calculate line number from match position
+        $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
         
         # Check against canonical list
         $isCanonical = $manifest.enums -contains $enumName
