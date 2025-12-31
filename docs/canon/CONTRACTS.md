@@ -445,7 +445,195 @@ if (!hasClinicianRole(user)) {
 
 ---
 
-## RLS Policy Contract
+## V0.5 RLS Policy Contract
+
+All tables with user data MUST have RLS enabled and appropriate policies for multi-tenant isolation.
+
+### Organization-Based Access Rules
+
+**Patient Role:**
+- Can SELECT/INSERT/UPDATE only their own data
+- Identified by: `patient_id = public.get_my_patient_profile_id()` or `user_id = auth.uid()`
+- Cannot access any other patient's data
+- Cannot access organization configuration
+
+**Clinician Role:**
+- Can SELECT data for patients in same organization(s)
+- Can SELECT data for explicitly assigned patients (cross-org via `clinician_patient_assignments`)
+- Can INSERT/UPDATE limited tables (reports review, tasks)
+- Cannot access patients from other organizations unless explicitly assigned
+
+**Nurse Role:**
+- Can SELECT patients and assessments in same organization(s)
+- Can SELECT/UPDATE tasks where `assigned_to_role = 'nurse'`
+- Can add support notes to patient records
+- Same org-scoping as clinicians
+
+**Admin Role:**
+- Can SELECT/UPDATE organization settings within their org
+- Can manage `user_org_membership` for their org
+- Can manage `funnels_catalog` and `funnel_versions` (global)
+- **NO ACCESS** to patient health data (PHI) by default
+- Exception: Can view `audit_log` for compliance purposes
+
+### Helper Functions (use in policies)
+
+```typescript
+// Get user's organization IDs
+public.get_user_org_ids() => UUID[]
+
+// Check if user is member of specific org
+public.is_member_of_org(org_id: UUID) => boolean
+
+// Get user's role in specific org
+public.current_user_role(org_id: UUID) => 'patient' | 'clinician' | 'nurse' | 'admin'
+
+// Check if user has role in any org
+public.has_any_role(role: 'patient' | 'clinician' | 'nurse' | 'admin') => boolean
+
+// Check if clinician assigned to patient
+public.is_assigned_to_patient(patient_user_id: UUID) => boolean
+
+// Get current user's patient_profile.id (legacy, patients only)
+public.get_my_patient_profile_id() => UUID | null
+
+// Check if user is clinician (legacy, deprecated - use has_any_role)
+public.is_clinician() => boolean
+```
+
+### Policy Templates
+
+**Patient Data Table:**
+```sql
+ALTER TABLE public.patient_data_table ENABLE ROW LEVEL SECURITY;
+
+-- Patient sees own data
+CREATE POLICY "Patients can view own data"
+  ON public.patient_data_table
+  FOR SELECT
+  USING (patient_id = public.get_my_patient_profile_id());
+
+-- Staff sees org or assigned patients
+CREATE POLICY "Staff can view org patient data"
+  ON public.patient_data_table
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.patient_profiles pp
+      JOIN public.user_org_membership uom1 ON pp.user_id = uom1.user_id
+      WHERE pp.id = patient_data_table.patient_id
+        AND EXISTS (
+          SELECT 1 FROM public.user_org_membership uom2
+          WHERE uom2.user_id = auth.uid()
+            AND uom2.organization_id = uom1.organization_id
+            AND uom2.is_active = true
+            AND (uom2.role IN ('clinician', 'nurse'))
+        )
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.patient_profiles pp
+      WHERE pp.id = patient_data_table.patient_id
+        AND public.is_assigned_to_patient(pp.user_id)
+    )
+  );
+
+-- Patient can insert own data
+CREATE POLICY "Patients can insert own data"
+  ON public.patient_data_table
+  FOR INSERT
+  WITH CHECK (patient_id = public.get_my_patient_profile_id());
+```
+
+**Organization Config Table:**
+```sql
+ALTER TABLE public.config_table ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their org config
+CREATE POLICY "Users can view own org config"
+  ON public.config_table
+  FOR SELECT
+  USING (organization_id = ANY(public.get_user_org_ids()));
+
+-- Admins can update their org config
+CREATE POLICY "Admins can update org config"
+  ON public.config_table
+  FOR UPDATE
+  USING (public.current_user_role(organization_id) = 'admin')
+  WITH CHECK (public.current_user_role(organization_id) = 'admin');
+```
+
+**Service/System Table:**
+```sql
+-- For tables managed by backend APIs (reports, notifications, audit)
+CREATE POLICY "Service can manage data"
+  ON public.system_table
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+```
+
+### Assignment Table
+
+Cross-organization patient access is controlled via:
+
+```sql
+CREATE TABLE public.clinician_patient_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id),
+  clinician_user_id UUID NOT NULL REFERENCES auth.users(id),
+  patient_user_id UUID NOT NULL REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id),
+  UNIQUE(organization_id, clinician_user_id, patient_user_id)
+);
+```
+
+### V0.5 Tables with RLS Enabled
+
+- ✅ `organizations` - Org config, admins only
+- ✅ `user_profiles` - User can see own + staff see org
+- ✅ `user_org_membership` - User sees own + admins manage org
+- ✅ `patient_profiles` - Patient isolation + org/assignment access
+- ✅ `funnels_catalog` - Read-only for authenticated, admins manage
+- ✅ `funnel_versions` - Read-only for authenticated, admins manage
+- ✅ `patient_funnels` - Patient-owned, staff view org
+- ✅ `assessments` - Patient-owned, staff view org
+- ✅ `assessment_events` - Follows assessment access
+- ✅ `assessment_answers` - Follows assessment access
+- ✅ `documents` - Patient upload/view, staff view org
+- ✅ `calculated_results` - Patient view own, staff view org
+- ✅ `reports` - Patient view own, staff view org, service manages
+- ✅ `report_sections` - Follows report access
+- ✅ `tasks` - Role-based (nurse/clinician), org-scoped
+- ✅ `notifications` - User sees own, service manages
+- ✅ `audit_log` - Admins only, service inserts
+- ✅ `clinician_patient_assignments` - Clinician sees own, admins manage org
+
+### Testing RLS Policies
+
+Verification queries documented in migration `20251231072347_v05_rls_verification_tests.sql`.
+
+Quick smoke test:
+```sql
+-- Verify all tables have RLS enabled
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE schemaname = 'public' 
+  AND tablename LIKE ANY(ARRAY['%patient%', '%assessment%', '%org%', '%funnel%', '%task%', '%report%', '%document%', '%audit%']);
+
+-- Count policies per table
+SELECT tablename, COUNT(*) as policy_count
+FROM pg_policies
+WHERE schemaname = 'public'
+GROUP BY tablename
+ORDER BY policy_count DESC;
+```
+
+---
+
+## RLS Policy Contract (Legacy Pre-V0.5)
+
+**DEPRECATED:** Legacy single-org RLS patterns below. Use V0.5 multi-tenant patterns above.
 
 All tables with user data MUST have RLS enabled and policies:
 

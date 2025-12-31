@@ -182,35 +182,126 @@ END $$;
 
 ### RLS Policies
 
+**V0.5 Multi-Tenant RLS Architecture:**
+
+The V0.5 schema implements comprehensive Row Level Security with organization-based isolation:
+
+**Access Model:**
+- **Patients**: See only their own data
+- **Clinicians/Nurses**: See data for patients in their organization OR explicitly assigned patients
+- **Admins**: See organization configuration (no PHI access by default)
+
+**Helper Functions (use these in policies):**
+```sql
+-- Get user's organization IDs
+public.get_user_org_ids() RETURNS UUID[]
+
+-- Check org membership
+public.is_member_of_org(org_id UUID) RETURNS BOOLEAN
+
+-- Get user's role in org
+public.current_user_role(org_id UUID) RETURNS user_role
+
+-- Check if user has role in any org
+public.has_any_role(check_role user_role) RETURNS BOOLEAN
+
+-- Check patient assignment
+public.is_assigned_to_patient(patient_uid UUID) RETURNS BOOLEAN
+```
+
+**Policy Pattern for Patient Data:**
 ```sql
 -- Enable RLS
 ALTER TABLE public.my_table ENABLE ROW LEVEL SECURITY;
 
--- Create policies with idempotency check
+-- Patient can see own data
 DO $$ 
 BEGIN
-  -- Select policy
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
     WHERE tablename = 'my_table' 
-    AND policyname = 'Users select own rows'
+    AND policyname = 'Patients can view own data'
   ) THEN
-    CREATE POLICY "Users select own rows"
+    CREATE POLICY "Patients can view own data"
       ON public.my_table
       FOR SELECT
-      USING (auth.uid() = user_id);
+      USING (
+        -- Direct ownership check
+        patient_id = public.get_my_patient_profile_id()
+      );
   END IF;
+END $$;
 
-  -- Insert policy
+-- Staff can see org or assigned patient data
+DO $$ 
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
     WHERE tablename = 'my_table' 
-    AND policyname = 'Users insert own rows'
+    AND policyname = 'Staff can view org patient data'
   ) THEN
-    CREATE POLICY "Users insert own rows"
+    CREATE POLICY "Staff can view org patient data"
       ON public.my_table
-      FOR INSERT
-      WITH CHECK (auth.uid() = user_id);
+      FOR SELECT
+      USING (
+        -- Same org check
+        EXISTS (
+          SELECT 1 FROM public.patient_profiles pp
+          JOIN public.user_org_membership uom1 ON pp.user_id = uom1.user_id
+          WHERE pp.id = my_table.patient_id
+            AND EXISTS (
+              SELECT 1 FROM public.user_org_membership uom2
+              WHERE uom2.user_id = auth.uid()
+                AND uom2.organization_id = uom1.organization_id
+                AND uom2.is_active = true
+                AND (uom2.role = 'clinician' OR uom2.role = 'nurse')
+            )
+        )
+        -- OR explicit assignment
+        OR EXISTS (
+          SELECT 1 FROM public.patient_profiles pp
+          WHERE pp.id = my_table.patient_id
+            AND public.is_assigned_to_patient(pp.user_id)
+        )
+      );
+  END IF;
+END $$;
+```
+
+**Policy Pattern for Config Tables:**
+```sql
+-- Admins can manage org config
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'organizations' 
+    AND policyname = 'Admins can update org settings'
+  ) THEN
+    CREATE POLICY "Admins can update org settings"
+      ON public.organizations
+      FOR UPDATE
+      USING (public.current_user_role(id) = 'admin')
+      WITH CHECK (public.current_user_role(id) = 'admin');
+  END IF;
+END $$;
+```
+
+**Service Role Policies:**
+For system operations (reports, AI processing), use service policies:
+```sql
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'my_table' 
+    AND policyname = 'Service can manage data'
+  ) THEN
+    CREATE POLICY "Service can manage data"
+      ON public.my_table
+      FOR ALL
+      USING (true)
+      WITH CHECK (true);
   END IF;
 END $$;
 ```
