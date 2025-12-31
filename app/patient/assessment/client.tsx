@@ -166,12 +166,8 @@ export default function FunnelSelectorClient() {
                 {funnels.map((funnel) => (
                   <FunnelCard
                     key={funnel.id}
-                    slug={funnel.slug}
-                    title={funnel.title}
-                    subtitle={funnel.subtitle}
-                    description={funnel.description}
+                    funnel={funnel}
                     icon={getFunnelIcon(funnel.slug)}
-                    theme={funnel.default_theme}
                     onClick={() => handleFunnelClick(funnel.slug)}
                   />
                 ))}

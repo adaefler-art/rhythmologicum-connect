@@ -687,9 +687,13 @@ export type Database = {
       funnels_catalog: {
         Row: {
           created_at: string
+          default_version_id: string | null
           description: string | null
+          est_duration_min: number | null
           id: string
           is_active: boolean
+          org_id: string | null
+          outcomes: Json | null
           pillar_id: string | null
           slug: string
           title: string
@@ -697,9 +701,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_version_id?: string | null
           description?: string | null
+          est_duration_min?: number | null
           id?: string
           is_active?: boolean
+          org_id?: string | null
+          outcomes?: Json | null
           pillar_id?: string | null
           slug: string
           title: string
@@ -707,15 +715,27 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_version_id?: string | null
           description?: string | null
+          est_duration_min?: number | null
           id?: string
           is_active?: boolean
+          org_id?: string | null
+          outcomes?: Json | null
           pillar_id?: string | null
           slug?: string
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "funnels_catalog_default_version_id_fkey"
+            columns: ["default_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -910,6 +930,36 @@ export type Database = {
           id?: string
           sex?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      pillars: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
