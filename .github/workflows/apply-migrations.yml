@@ -23,6 +23,11 @@ on:
         options:
           - 'false'
           - 'true'
+      repair_versions:
+        description: 'Comma/space-separated migration versions to mark as applied in remote history (e.g. 20251207074557). Requires SUPABASE_DB_URL secret.'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -105,6 +110,37 @@ jobs:
           echo "Baseline repair complete. Current remote migration list:"
           supabase migration list --linked || true
 
+      - name: Optional repair additional migration versions (remote history)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.repair_versions != '' }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "ERROR: SUPABASE_DB_URL secret is not set"
+            exit 1
+          fi
+
+          echo "Installing psql client..."
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+          echo "Repairing remote migration history for: ${{ inputs.repair_versions }}"
+          REPAIR_INPUT="${{ inputs.repair_versions }}"
+
+          # Split on commas and whitespace
+          IFS=', ' read -r -a VERSIONS <<< "$REPAIR_INPUT"
+          for V in "${VERSIONS[@]}"; do
+            if [ -z "$V" ]; then
+              continue
+            fi
+            if ! echo "$V" | grep -Eq '^[0-9]+$'; then
+              echo "ERROR: Invalid migration version '$V' (digits only)"
+              exit 1
+            fi
+            echo "Marking migration version as applied: $V"
+            psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "INSERT INTO supabase_migrations.schema_migrations(version, name) VALUES ('$V', '$V') ON CONFLICT (version) DO NOTHING;"
+          done
+
       - name: Apply pending migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -112,9 +148,9 @@ jobs:
           echo "Applying migrations to Supabase project..."
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_all }}" = "true" ]; then
             echo "NOTE: Running with --include-all (requested via workflow_dispatch input)"
-            supabase db push --include-all
+            supabase db push --include-all --yes
           else
-            supabase db push
+            supabase db push --yes
           fi
 
       - name: Verify migration status
