@@ -77,23 +77,33 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.baseline_repair == 'true' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "ERROR: SUPABASE_DB_PASSWORD secret is not set"
-            echo "This step requires the remote database password to run 'supabase migration repair'."
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "ERROR: SUPABASE_DB_URL secret is not set"
+            echo "This step needs a Postgres connection string to update supabase_migrations.schema_migrations."
+            echo "Tip: You can copy it from Supabase Dashboard > Project Settings > Database > Connection string."
             exit 1
           fi
 
-          echo "Repairing remote migration history for baseline migrations (mark as applied)..."
-          supabase migration repair \
-            01_create_funnel_tables \
-            02_add_funnel_id_to_assessments \
-            03_create_content_pages \
-            20241203110000_init_patient_profiles_and_assessments \
-            --status applied \
-            --linked \
-            --password "$SUPABASE_DB_PASSWORD"
+          echo "Installing psql client..."
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+          echo "Repairing remote migration history for legacy baseline migrations (mark as applied, without executing SQL)..."
+
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO supabase_migrations.schema_migrations(version, name)
+          VALUES
+            ('01', '01_create_funnel_tables'),
+            ('02', '02_add_funnel_id_to_assessments'),
+            ('03', '03_create_content_pages'),
+            ('20241203110000', '20241203110000_init_patient_profiles_and_assessments')
+          ON CONFLICT (version) DO NOTHING;
+          SQL
+
+          echo "Baseline repair complete. Current remote migration list:"
+          supabase migration list --linked || true
 
       - name: Apply pending migrations
         env:
