@@ -46,6 +46,21 @@ export const CONTENT_STATUS = {
 export type ContentStatus = typeof CONTENT_STATUS[keyof typeof CONTENT_STATUS]
 
 // ============================================================
+// Pillar Keys
+// ============================================================
+
+/**
+ * Valid pillar keys for funnel taxonomy
+ */
+export const PILLAR_KEY = {
+  STRESS: 'stress',
+  RESILIENCE: 'resilience',
+  SLEEP: 'sleep',
+} as const
+
+export type PillarKey = typeof PILLAR_KEY[keyof typeof PILLAR_KEY]
+
+// ============================================================
 // Funnel Slugs
 // ============================================================
 
@@ -188,6 +203,13 @@ export function isValidUserRole(value: unknown): value is UserRole {
  */
 export function isValidNodeType(value: unknown): value is NodeType {
   return typeof value === 'string' && Object.values(NODE_TYPE).includes(value as NodeType)
+}
+
+/**
+ * Type guard to check if a value is a valid pillar key
+ */
+export function isValidPillarKey(value: unknown): value is PillarKey {
+  return typeof value === 'string' && Object.values(PILLAR_KEY).includes(value as PillarKey)
 }
 
 // ============================================================

@@ -11,13 +11,22 @@ const HEART_ICON_SIZE = 48 // px
 const HEART_ICON_STROKE_WIDTH = 2.5
 
 export type FunnelCardProps = {
-  /** Funnel slug for routing */
-  slug: string
-  /** Display name of the funnel */
-  title: string
-  /** Short tagline/subtitle */
+  /** Funnel data object (legacy support) */
+  funnel?: {
+    id: string
+    slug: string
+    title: string
+    subtitle?: string | null
+    description?: string | null
+    default_theme?: string | null
+  }
+  /** Funnel slug for routing (can be overridden by funnel.slug) */
+  slug?: string
+  /** Display name of the funnel (can be overridden by funnel.title) */
+  title?: string
+  /** Short tagline/subtitle (can be overridden by funnel.subtitle) */
   subtitle?: string | null
-  /** Brief description of what the funnel assesses */
+  /** Brief description of what the funnel assesses (can be overridden by funnel.description) */
   description?: string | null
   /** Emoji or icon to represent the funnel */
   icon?: string
@@ -25,6 +34,12 @@ export type FunnelCardProps = {
   useIconComponent?: boolean
   /** Theme color for the card (future use) */
   theme?: string | null
+  /** Estimated duration in minutes */
+  estimatedDuration?: number | null
+  /** Array of outcome tags */
+  outcomes?: string[]
+  /** Version string */
+  version?: string | null
   /** Click handler */
   onClick: () => void
 }
@@ -53,15 +68,26 @@ export type FunnelCardProps = {
  * />
  */
 export default function FunnelCard({
-  slug,
-  title,
-  subtitle,
-  description,
+  funnel,
+  slug: slugProp,
+  title: titleProp,
+  subtitle: subtitleProp,
+  description: descriptionProp,
   icon = '📋',
   useIconComponent = false,
-  theme,
+  theme: themeProp,
+  estimatedDuration,
+  outcomes,
+  version,
   onClick,
 }: FunnelCardProps) {
+  // Support both funnel object and individual props
+  const slug = funnel?.slug ?? slugProp ?? ''
+  const title = funnel?.title ?? titleProp ?? ''
+  const subtitle = funnel?.subtitle ?? subtitleProp
+  const description = funnel?.description ?? descriptionProp
+  const theme = funnel?.default_theme ?? themeProp
+
   // Determine if this funnel should use the heart icon
   const isStressFunnel = STRESS_FUNNEL_SLUGS.includes(slug)
   const shouldUseHeartIcon = useIconComponent || isStressFunnel
@@ -137,7 +163,7 @@ export default function FunnelCard({
       {/* Description */}
       {description && (
         <p
-          className="text-slate-600 dark:text-slate-300"
+          className="text-slate-600 dark:text-slate-300 mb-3"
           style={{
             fontSize: typography.fontSize.sm,
             lineHeight: typography.lineHeight.relaxed,
@@ -145,6 +171,54 @@ export default function FunnelCard({
         >
           {description}
         </p>
+      )}
+
+      {/* Metadata tags */}
+      {(estimatedDuration || outcomes || version) && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {estimatedDuration && (
+            <span
+              className="inline-block bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded"
+              style={{
+                fontSize: typography.fontSize.xs,
+                borderRadius: radii.sm,
+              }}
+            >
+              ⏱️ ca. {estimatedDuration} Min.
+            </span>
+          )}
+          {version && (
+            <span
+              className="inline-block bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded"
+              style={{
+                fontSize: typography.fontSize.xs,
+                borderRadius: radii.sm,
+              }}
+            >
+              v{version}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Outcomes */}
+      {outcomes && outcomes.length > 0 && (
+        <div className="mb-3">
+          <ul className="space-y-1">
+            {outcomes.slice(0, 3).map((outcome, idx) => (
+              <li
+                key={idx}
+                className="text-slate-600 dark:text-slate-400 flex items-start gap-2"
+                style={{
+                  fontSize: typography.fontSize.xs,
+                }}
+              >
+                <span className="text-sky-500 mt-0.5">✓</span>
+                <span>{outcome}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* CTA Arrow */}
