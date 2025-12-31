@@ -189,3 +189,93 @@ export function isValidUserRole(value: unknown): value is UserRole {
 export function isValidNodeType(value: unknown): value is NodeType {
   return typeof value === 'string' && Object.values(NODE_TYPE).includes(value as NodeType)
 }
+
+// ============================================================
+// Audit Log Entity Types
+// ============================================================
+
+/**
+ * Valid entity types for audit logging
+ * These correspond to the 'entity_type' field in the audit_log table
+ */
+export const AUDIT_ENTITY_TYPE = {
+  ASSESSMENT: 'assessment',
+  REPORT: 'report',
+  TASK: 'task',
+  FUNNEL_VERSION: 'funnel_version',
+  FUNNEL_CATALOG: 'funnel_catalog',
+  CONFIG: 'config',
+  CONSENT: 'consent',
+  ORGANIZATION: 'organization',
+  USER_ORG_MEMBERSHIP: 'user_org_membership',
+  CLINICIAN_ASSIGNMENT: 'clinician_assignment',
+} as const
+
+export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
+
+// ============================================================
+// Audit Log Actions
+// ============================================================
+
+/**
+ * Valid actions for audit logging
+ * These correspond to the 'action' field in the audit_log table
+ */
+export const AUDIT_ACTION = {
+  CREATE: 'create',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  APPROVE: 'approve',
+  REJECT: 'reject',
+  GENERATE: 'generate',
+  FLAG: 'flag',
+  ASSIGN: 'assign',
+  ACTIVATE: 'activate',
+  DEACTIVATE: 'deactivate',
+  ROLLOUT: 'rollout',
+  COMPLETE: 'complete',
+} as const
+
+export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION]
+
+// ============================================================
+// Audit Log Sources
+// ============================================================
+
+/**
+ * Valid sources for audit logging
+ * These correspond to the 'source' field in the audit_log table
+ */
+export const AUDIT_SOURCE = {
+  API: 'api',
+  JOB: 'job',
+  ADMIN_UI: 'admin-ui',
+  SYSTEM: 'system',
+} as const
+
+export type AuditSource = typeof AUDIT_SOURCE[keyof typeof AUDIT_SOURCE]
+
+// ============================================================
+// Audit Type Guards
+// ============================================================
+
+/**
+ * Type guard to check if a value is a valid audit entity type
+ */
+export function isValidAuditEntityType(value: unknown): value is AuditEntityType {
+  return typeof value === 'string' && Object.values(AUDIT_ENTITY_TYPE).includes(value as AuditEntityType)
+}
+
+/**
+ * Type guard to check if a value is a valid audit action
+ */
+export function isValidAuditAction(value: unknown): value is AuditAction {
+  return typeof value === 'string' && Object.values(AUDIT_ACTION).includes(value as AuditAction)
+}
+
+/**
+ * Type guard to check if a value is a valid audit source
+ */
+export function isValidAuditSource(value: unknown): value is AuditSource {
+  return typeof value === 'string' && Object.values(AUDIT_SOURCE).includes(value as AuditSource)
+}

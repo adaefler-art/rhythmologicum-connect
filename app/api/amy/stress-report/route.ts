@@ -12,6 +12,7 @@ import {
   computeInputsHash,
   getHashPrefix,
 } from '@/lib/versioning/constants';
+import { logReportGenerated } from '@/lib/audit';
 
 // Supabase-ENV robust auslesen
 const supabaseUrl =
@@ -420,6 +421,20 @@ export async function POST(req: Request) {
       console.error('[stress-report] Fehler beim Aktualisieren von patient_measures (non-blocking):', measureError);
       // Do not fail the report creation if patient_measures is temporarily unavailable or schema-mismatched
       console.warn('[stress-report] Skipping patient_measures persistence and continuing response')
+    }
+
+    // Audit log: Report generated
+    try {
+      await logReportGenerated({
+        report_id: reportRow.id,
+        assessment_id: assessmentId,
+        algorithm_version: CURRENT_ALGORITHM_VERSION,
+        prompt_version: CURRENT_PROMPT_VERSION,
+        report_version: reportVersion,
+      });
+    } catch (auditError) {
+      // Log audit failures but don't fail the request
+      console.error('[stress-report] Audit logging failed (non-blocking):', auditError);
     }
 
     const totalDuration = Date.now() - requestStartTime;

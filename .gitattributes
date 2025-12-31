@@ -9,3 +9,6 @@ schema/schema.sql text eol=lf
 
 # GitHub Actions workflows are LF-only
 .github/workflows/*.yml text eol=lf
+
+# Generated Supabase types must be LF-only (CI typegen runs on Linux)
+lib/types/supabase.ts text eol=lf
