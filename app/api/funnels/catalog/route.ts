@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { successResponse, unauthorizedResponse, internalErrorResponse } from '@/lib/api/responses'
 import type { FunnelCatalogResponse, PillarWithFunnels, CatalogFunnel } from '@/lib/types/catalog'
+import { env } from '@/lib/env'
 
 /**
  * GET /api/funnels/catalog
@@ -24,8 +24,8 @@ export async function GET() {
     // Create Supabase server client
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {

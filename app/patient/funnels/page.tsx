@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import FunnelCatalogClient from './client'
+import { env } from '@/lib/env'
 
 /**
  * Patient Funnel Catalog Page (V05-I02.1)
@@ -15,8 +16,8 @@ export default async function FunnelCatalogPage() {
   // Create Supabase server client
   const cookieStore = await cookies()
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {

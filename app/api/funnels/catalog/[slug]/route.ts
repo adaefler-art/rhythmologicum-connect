@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import {
@@ -9,6 +8,7 @@ import {
 } from '@/lib/api/responses'
 import type { FunnelDetailResponse, CatalogFunnel, FunnelVersion } from '@/lib/types/catalog'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { env } from '@/lib/env'
 
 type Params = {
   params: Promise<{
@@ -41,8 +41,8 @@ export async function GET(request: Request, { params }: Params) {
     // Create Supabase server client
     const cookieStore = await cookies()
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      env.NEXT_PUBLIC_SUPABASE_URL,
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           getAll() {
@@ -79,8 +79,7 @@ export async function GET(request: Request, { params }: Params) {
         est_duration_min,
         outcomes,
         is_active,
-        default_version_id,
-        pillars!inner(key, title)
+        default_version_id
       `)
       .eq('slug', canonicalSlug)
       .single()
@@ -88,6 +87,22 @@ export async function GET(request: Request, { params }: Params) {
     if (funnelError || !funnel) {
       console.error('[catalog] Error fetching funnel:', funnelError)
       return notFoundResponse('Funnel', `Funnel with slug "${slug}" not found`)
+    }
+
+    // Fetch pillar information if funnel has a pillar_id
+    let pillarKey = null
+    let pillarTitle = null
+    if (funnel.pillar_id) {
+      const { data: pillar } = await supabase
+        .from('pillars')
+        .select('key, title')
+        .eq('id', funnel.pillar_id)
+        .single()
+
+      if (pillar) {
+        pillarKey = pillar.key
+        pillarTitle = pillar.title
+      }
     }
 
     // Transform funnel data
@@ -98,8 +113,8 @@ export async function GET(request: Request, { params }: Params) {
       subtitle: funnel.subtitle,
       description: funnel.description,
       pillar_id: funnel.pillar_id,
-      pillar_key: funnel.pillars?.key || null,
-      pillar_title: funnel.pillars?.title || null,
+      pillar_key: pillarKey,
+      pillar_title: pillarTitle,
       est_duration_min: funnel.est_duration_min,
       outcomes: Array.isArray(funnel.outcomes) ? funnel.outcomes : [],
       is_active: funnel.is_active,

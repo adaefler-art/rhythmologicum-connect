@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import FunnelCard from '@/app/components/FunnelCard'
-import { spacing, typography, radii } from '@/lib/design-tokens'
-import type { FunnelCatalogResponse, PillarWithFunnels, CatalogFunnel } from '@/lib/types/catalog'
+import { typography, radii } from '@/lib/design-tokens'
+import type { FunnelCatalogResponse } from '@/lib/types/catalog'
 import { PILLAR_KEY } from '@/lib/contracts/registry'
 
 /**
