@@ -51,6 +51,18 @@ jobs:
             echo "Please add this secret in GitHub repository settings"
             exit 1
           fi
+
+          # Basic format check to prevent using anon keys / JWTs by accident.
+          # Supabase Personal Access Tokens typically look like: sbp_...
+          TOKEN="${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+          if ! echo "$TOKEN" | grep -Eq '^sbp_[A-Za-z0-9]+'; then
+            echo "ERROR: SUPABASE_ACCESS_TOKEN has an invalid format."
+            echo "Expected a Supabase Personal Access Token that starts with 'sbp_...'"
+            echo "Common mistake: using NEXT_PUBLIC_SUPABASE_ANON_KEY (often starts with 'eyJ' or 'sb_publishable_...')"
+            echo "Fix: Supabase Dashboard (account) -> Access Tokens -> create token -> set as GitHub secret SUPABASE_ACCESS_TOKEN"
+            exit 1
+          fi
+
           PROJECT_REF="${{ secrets.SUPABASE_PROJECT_ID }}"
           if [ -z "$PROJECT_REF" ]; then
             PROJECT_REF="${{ secrets.SUPABASE_PROJECT_REF }}"
@@ -146,11 +158,24 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Applying migrations to Supabase project..."
+          SUPPORTS_YES=0
+          if supabase db push --help 2>/dev/null | grep -q -- '--yes'; then
+            SUPPORTS_YES=1
+          fi
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_all }}" = "true" ]; then
             echo "NOTE: Running with --include-all (requested via workflow_dispatch input)"
-            supabase db push --include-all --yes
+            if [ "$SUPPORTS_YES" = "1" ]; then
+              supabase db push --include-all --yes
+            else
+              printf "y\n" | supabase db push --include-all
+            fi
           else
-            supabase db push --yes
+            if [ "$SUPPORTS_YES" = "1" ]; then
+              supabase db push --yes
+            else
+              printf "y\n" | supabase db push
+            fi
           fi
 
       - name: Verify migration status

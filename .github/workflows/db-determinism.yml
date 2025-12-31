@@ -64,6 +64,12 @@ jobs:
           echo "✅ All migration changes are new additions"
         env:
           ALLOW_MIGRATION_EDITS: '0'
+
+      - name: Lint new migrations for idempotency
+        run: |
+          echo "🔍 Linting new migrations for idempotency guard rails..."
+          git fetch origin ${{ github.base_ref }} --depth=1 || true
+          bash scripts/lint-new-migrations-idempotency.sh "origin/${{ github.base_ref }}"
       
       # Check 2: Start Supabase with clear lifecycle
       - name: Start Supabase local instance
