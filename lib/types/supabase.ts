@@ -66,35 +66,80 @@ export type Database = {
           },
         ]
       }
+      assessment_events: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_events_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           completed_at: string | null
+          current_step_id: string | null
           funnel: string
           funnel_id: string | null
           id: string
           patient_id: string
           started_at: string
+          state: Database["public"]["Enums"]["assessment_state"] | null
           status: Database["public"]["Enums"]["assessment_status"]
         }
         Insert: {
           completed_at?: string | null
+          current_step_id?: string | null
           funnel: string
           funnel_id?: string | null
           id?: string
           patient_id: string
           started_at?: string
+          state?: Database["public"]["Enums"]["assessment_state"] | null
           status?: Database["public"]["Enums"]["assessment_status"]
         }
         Update: {
           completed_at?: string | null
+          current_step_id?: string | null
           funnel?: string
           funnel_id?: string | null
           id?: string
           patient_id?: string
           started_at?: string
+          state?: Database["public"]["Enums"]["assessment_state"] | null
           status?: Database["public"]["Enums"]["assessment_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "assessments_current_step_id_fkey"
+            columns: ["current_step_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_steps"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "assessments_funnel_id_fkey"
             columns: ["funnel_id"]
@@ -107,6 +152,112 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_role: Database["public"]["Enums"]["user_role"] | null
+          actor_user_id: string | null
+          created_at: string
+          diff: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          actor_user_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          actor_user_id?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      calculated_results: {
+        Row: {
+          algorithm_version: string
+          assessment_id: string
+          created_at: string
+          id: string
+          priority_ranking: Json | null
+          risk_models: Json | null
+          scores: Json
+        }
+        Insert: {
+          algorithm_version: string
+          assessment_id: string
+          created_at?: string
+          id?: string
+          priority_ranking?: Json | null
+          risk_models?: Json | null
+          scores?: Json
+        }
+        Update: {
+          algorithm_version?: string
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          priority_ranking?: Json | null
+          risk_models?: Json | null
+          scores?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculated_results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinician_patient_assignments: {
+        Row: {
+          clinician_user_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          organization_id: string
+          patient_user_id: string
+        }
+        Insert: {
+          clinician_user_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id: string
+          patient_user_id: string
+        }
+        Update: {
+          clinician_user_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          organization_id?: string
+          patient_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinician_patient_assignments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -213,6 +364,56 @@ export type Database = {
             columns: ["funnel_id"]
             isOneToOne: false
             referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          assessment_id: string | null
+          confidence: Json | null
+          confirmed_at: string | null
+          confirmed_data: Json | null
+          created_at: string
+          doc_type: string | null
+          extracted_data: Json | null
+          id: string
+          parsing_status: Database["public"]["Enums"]["parsing_status"]
+          storage_path: string
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          confidence?: Json | null
+          confirmed_at?: string | null
+          confirmed_data?: Json | null
+          created_at?: string
+          doc_type?: string | null
+          extracted_data?: Json | null
+          id?: string
+          parsing_status?: Database["public"]["Enums"]["parsing_status"]
+          storage_path: string
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_id?: string | null
+          confidence?: Json | null
+          confirmed_at?: string | null
+          confirmed_data?: Json | null
+          created_at?: string
+          doc_type?: string | null
+          extracted_data?: Json | null
+          id?: string
+          parsing_status?: Database["public"]["Enums"]["parsing_status"]
+          storage_path?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
         ]
@@ -364,6 +565,56 @@ export type Database = {
           },
         ]
       }
+      funnel_versions: {
+        Row: {
+          algorithm_bundle_version: string | null
+          content_manifest: Json
+          created_at: string
+          funnel_id: string
+          id: string
+          is_default: boolean
+          prompt_version: string | null
+          questionnaire_config: Json
+          rollout_percent: number | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          algorithm_bundle_version?: string | null
+          content_manifest?: Json
+          created_at?: string
+          funnel_id: string
+          id?: string
+          is_default?: boolean
+          prompt_version?: string | null
+          questionnaire_config?: Json
+          rollout_percent?: number | null
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          algorithm_bundle_version?: string | null
+          content_manifest?: Json
+          created_at?: string
+          funnel_id?: string
+          id?: string
+          is_default?: boolean
+          prompt_version?: string | null
+          questionnaire_config?: Json
+          rollout_percent?: number | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_versions_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funnels: {
         Row: {
           created_at: string
@@ -399,6 +650,163 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      funnels_catalog: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          pillar_id: string | null
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pillar_id?: string | null
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          pillar_id?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          payload: Json
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["notification_status"]
+          template_key: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          template_key: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          template_key?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      patient_funnels: {
+        Row: {
+          active_version_id: string | null
+          completed_at: string | null
+          created_at: string
+          funnel_id: string
+          id: string
+          patient_id: string
+          started_at: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          active_version_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          funnel_id: string
+          id?: string
+          patient_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          active_version_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          funnel_id?: string
+          id?: string
+          patient_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_funnels_active_version_id_fkey"
+            columns: ["active_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_funnels_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_funnels_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patient_measures: {
         Row: {
@@ -508,35 +916,97 @@ export type Database = {
         }
         Relationships: []
       }
+      report_sections: {
+        Row: {
+          citations_meta: Json | null
+          content: string
+          created_at: string
+          id: string
+          prompt_version: string | null
+          report_id: string
+          section_key: string
+        }
+        Insert: {
+          citations_meta?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          prompt_version?: string | null
+          report_id: string
+          section_key: string
+        }
+        Update: {
+          citations_meta?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          prompt_version?: string | null
+          report_id?: string
+          section_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           assessment_id: string
+          citations_meta: Json | null
           created_at: string | null
+          html_path: string | null
           id: string
+          pdf_path: string | null
+          prompt_version: string | null
           report_text_short: string | null
+          report_version: string | null
           risk_level: string | null
+          safety_findings: Json | null
+          safety_score: number | null
           score_numeric: number | null
           sleep_score: number | null
+          status: Database["public"]["Enums"]["report_status"] | null
           updated_at: string | null
         }
         Insert: {
           assessment_id: string
+          citations_meta?: Json | null
           created_at?: string | null
+          html_path?: string | null
           id?: string
+          pdf_path?: string | null
+          prompt_version?: string | null
           report_text_short?: string | null
+          report_version?: string | null
           risk_level?: string | null
+          safety_findings?: Json | null
+          safety_score?: number | null
           score_numeric?: number | null
           sleep_score?: number | null
+          status?: Database["public"]["Enums"]["report_status"] | null
           updated_at?: string | null
         }
         Update: {
           assessment_id?: string
+          citations_meta?: Json | null
           created_at?: string | null
+          html_path?: string | null
           id?: string
+          pdf_path?: string | null
+          prompt_version?: string | null
           report_text_short?: string | null
+          report_version?: string | null
           risk_level?: string | null
+          safety_findings?: Json | null
+          safety_score?: number | null
           score_numeric?: number | null
           sleep_score?: number | null
+          status?: Database["public"]["Enums"]["report_status"] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -582,6 +1052,63 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assessment_id: string | null
+          assigned_to_role: Database["public"]["Enums"]["user_role"] | null
+          created_at: string
+          created_by_role: Database["public"]["Enums"]["user_role"] | null
+          due_at: string | null
+          id: string
+          patient_id: string | null
+          payload: Json
+          status: Database["public"]["Enums"]["task_status"]
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_id?: string | null
+          assigned_to_role?: Database["public"]["Enums"]["user_role"] | null
+          created_at?: string
+          created_by_role?: Database["public"]["Enums"]["user_role"] | null
+          due_at?: string | null
+          id?: string
+          patient_id?: string | null
+          payload?: Json
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_id?: string | null
+          assigned_to_role?: Database["public"]["Enums"]["user_role"] | null
+          created_at?: string
+          created_by_role?: Database["public"]["Enums"]["user_role"] | null
+          due_at?: string | null
+          id?: string
+          patient_id?: string | null
+          payload?: Json
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_consents: {
         Row: {
           consent_version: string
@@ -609,14 +1136,104 @@ export type Database = {
         }
         Relationships: []
       }
+      user_org_membership: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          organization_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_org_membership_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_user_role: {
+        Args: { org_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       get_my_patient_profile_id: { Args: never; Returns: string }
+      get_user_org_ids: { Args: never; Returns: string[] }
+      has_any_role: {
+        Args: { check_role: Database["public"]["Enums"]["user_role"] }
+        Returns: boolean
+      }
       has_role: { Args: { check_role: string }; Returns: boolean }
+      is_assigned_to_patient: {
+        Args: { patient_uid: string }
+        Returns: boolean
+      }
       is_clinician: { Args: never; Returns: boolean }
+      is_member_of_org: { Args: { org_id: string }; Returns: boolean }
       log_rls_violation: {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
@@ -627,7 +1244,18 @@ export type Database = {
       }
     }
     Enums: {
+      assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
+      notification_status: "scheduled" | "sent" | "failed" | "cancelled"
+      parsing_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "partial"
+      report_status: "pending" | "generating" | "completed" | "failed"
+      task_status: "pending" | "in_progress" | "completed" | "cancelled"
+      user_role: "patient" | "clinician" | "nurse" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -758,7 +1386,19 @@ export const Constants = {
   },
   public: {
     Enums: {
+      assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
+      notification_status: ["scheduled", "sent", "failed", "cancelled"],
+      parsing_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "partial",
+      ],
+      report_status: ["pending", "generating", "completed", "failed"],
+      task_status: ["pending", "in_progress", "completed", "cancelled"],
+      user_role: ["patient", "clinician", "nurse", "admin"],
     },
   },
 } as const
