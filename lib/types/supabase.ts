@@ -166,6 +166,9 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
+          metadata: Json | null
+          org_id: string | null
+          source: string | null
         }
         Insert: {
           action: string
@@ -176,6 +179,9 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          source?: string | null
         }
         Update: {
           action?: string
@@ -186,6 +192,9 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          source?: string | null
         }
         Relationships: []
       }

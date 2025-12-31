@@ -8,13 +8,14 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/supabase'
+import type { Database, Json } from '@/lib/types/supabase'
 import {
   type AuditEntityType,
   type AuditAction,
   type AuditSource,
   type UserRole,
 } from '@/lib/contracts/registry'
+import { env } from '@/lib/env'
 
 // ============================================================
 // Types
@@ -86,9 +87,8 @@ export type AuditLogResult = {
  * Bypasses RLS to ensure audit logs are always written
  */
 function getAuditClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-  const supabaseServiceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL
+  const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('[audit/log] Missing Supabase credentials')
@@ -160,7 +160,7 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
     }
 
     // Prepare audit log entry
-    const auditEntry = {
+    const auditEntry: Database['public']['Tables']['audit_log']['Insert'] = {
       org_id: event.org_id || null,
       actor_user_id: event.actor_user_id || null,
       actor_role: event.actor_role || null,
@@ -168,8 +168,8 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
       entity_type: event.entity_type,
       entity_id: event.entity_id,
       action: event.action,
-      diff: event.diff || {},
-      metadata: event.metadata || {},
+      diff: (event.diff as Json) || {},
+      metadata: (event.metadata as Json) || {},
     }
 
     // Insert audit log
