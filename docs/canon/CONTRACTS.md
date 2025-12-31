@@ -562,19 +562,31 @@ CREATE POLICY "Admins can update org config"
   WITH CHECK (public.current_user_role(organization_id) = 'admin');
 ```
 
-**Service/System Table:**
-```sql
--- For tables managed by backend APIs (reports, notifications, audit)
-CREATE POLICY "Service can manage data"
-  ON public.system_table
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+**Service Role Handling:**
+
+Server-side operations use Supabase `service_role` key which **bypasses RLS entirely**. No RLS policies needed for server operations.
+
+```typescript
+// Server-side: service_role bypasses ALL RLS policies
+const serviceSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!  // Bypasses RLS
+)
+
+// This works regardless of RLS policies
+await serviceSupabase.from('reports').insert({ ... })
+await serviceSupabase.from('audit_log').insert({ ... })
 ```
+
+**Important:** 
+- Service role key must NEVER be exposed to client-side code
+- RLS policies only apply to authenticated users (JWT-based)
+- Backend APIs should use service role for system operations
+- Client-side code uses anon/authenticated keys (subject to RLS)
 
 ### Assignment Table
 
-Cross-organization patient access is controlled via:
+**V0.5 Default:** Assignments are enforced within the same organization only.
 
 ```sql
 CREATE TABLE public.clinician_patient_assignments (
@@ -584,7 +596,22 @@ CREATE TABLE public.clinician_patient_assignments (
   patient_user_id UUID NOT NULL REFERENCES auth.users(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id),
-  UNIQUE(organization_id, clinician_user_id, patient_user_id)
+  UNIQUE(organization_id, clinician_user_id, patient_user_id),
+  -- Constraint: Both users must be members of the same organization
+  CHECK (
+    EXISTS (
+      SELECT 1 FROM user_org_membership
+      WHERE user_id = clinician_user_id
+        AND organization_id = clinician_patient_assignments.organization_id
+        AND role IN ('clinician', 'nurse', 'admin')
+    )
+    AND EXISTS (
+      SELECT 1 FROM user_org_membership
+      WHERE user_id = patient_user_id
+        AND organization_id = clinician_patient_assignments.organization_id
+        AND role = 'patient'
+    )
+  )
 );
 ```
 

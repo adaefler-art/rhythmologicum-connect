@@ -162,12 +162,17 @@ CREATE POLICY "Admins can update own org settings"
   WITH CHECK (public.current_user_role(id) = 'admin');
 ```
 
-**Service Operations (reports):**
-```sql
-CREATE POLICY "Service can insert reports"
-  ON public.reports
-  FOR INSERT
-  WITH CHECK (true);
+**Service Role Handling:**
+
+Server-side operations (reports, notifications, audit logs) use Supabase `service_role` key which **bypasses RLS entirely**. No separate RLS policies needed.
+
+```typescript
+// Backend uses service_role - bypasses all RLS
+const serviceSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+// All operations bypass RLS when using service_role
 ```
 
 ## Verification Commands
@@ -270,18 +275,18 @@ See `supabase/migrations/20251231072347_v05_rls_verification_tests.sql` for 60+ 
 ### What RLS Allows
 
 ✅ Patient can read/write own data  
-✅ Clinician can read org patients + assigned patients  
+✅ Clinician can read org patients + assigned patients (same org only)  
 ✅ Nurse can read org patients + manage nurse tasks  
 ✅ Admin can manage org settings + memberships  
-✅ Service role can manage system operations (reports, notifications)  
-✅ Staff can be assigned to patients across orgs  
+✅ Server uses service_role key which bypasses RLS for system operations  
+✅ Staff can be assigned to patients within same organization  
 
 ### Edge Cases Handled
 
 - **Multi-org users**: User can belong to multiple orgs with different roles
 - **Inactive memberships**: `is_active = false` blocks access
-- **Cross-org assignments**: Explicit via `clinician_patient_assignments`
-- **Service operations**: Separate policies for backend API operations
+- **Same-org assignments**: Enforced via CHECK constraint on `clinician_patient_assignments`
+- **Service operations**: Backend uses service_role key (bypasses RLS entirely)
 - **Audit compliance**: Admins can view audit_log without PHI access
 
 ## Compliance Notes

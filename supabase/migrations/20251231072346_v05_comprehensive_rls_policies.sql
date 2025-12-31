@@ -1,8 +1,10 @@
 -- Migration: V0.5 Comprehensive Row Level Security (RLS) Policies
 -- Description: V05-I01.2 - Implements tenant-isolated RLS policies for multi-org architecture
 --              - Patients see only their own data
---              - Clinicians/Nurses see org-scoped or assigned patients
+--              - Clinicians/Nurses see org-scoped or assigned patients (within same org)
 --              - Admins see only org configuration (no PHI by default)
+--              - Service role: Server uses Supabase service_role key which BYPASSES RLS entirely
+--                (no JWT-based "service" policies needed - RLS only applies to authenticated users)
 -- Date: 2025-12-31
 -- Issue: V05-I01.2
 
@@ -11,6 +13,8 @@
 -- =============================================================================
 
 -- Assignment table for explicit clinician-patient relationships
+-- DEFAULT: Assignments are enforced within the same organization only
+-- RULE: Both clinician and patient must be members of the specified organization
 CREATE TABLE IF NOT EXISTS public.clinician_patient_assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -21,7 +25,7 @@ CREATE TABLE IF NOT EXISTS public.clinician_patient_assignments (
     UNIQUE(organization_id, clinician_user_id, patient_user_id)
 );
 
-COMMENT ON TABLE public.clinician_patient_assignments IS 'V0.5: Explicit clinician-patient assignments within organizations';
+COMMENT ON TABLE public.clinician_patient_assignments IS 'V0.5: Clinician-patient assignments within same organization. Both users must be members of specified org.';
 
 -- Add FK to auth.users if exists
 DO $$
@@ -73,6 +77,40 @@ CREATE INDEX IF NOT EXISTS idx_clinician_patient_assignments_clinician
     ON public.clinician_patient_assignments(clinician_user_id);
 CREATE INDEX IF NOT EXISTS idx_clinician_patient_assignments_patient 
     ON public.clinician_patient_assignments(patient_user_id);
+
+-- Constraint: Ensure both clinician and patient are members of the same organization
+-- This enforces v0.5 default: assignments only within the same org
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'clinician_patient_same_org_check'
+          AND conrelid = 'public.clinician_patient_assignments'::regclass
+    ) THEN
+        ALTER TABLE public.clinician_patient_assignments
+            ADD CONSTRAINT clinician_patient_same_org_check
+            CHECK (
+                -- Verify clinician is member of org
+                EXISTS (
+                    SELECT 1 FROM public.user_org_membership
+                    WHERE user_id = clinician_user_id
+                      AND organization_id = clinician_patient_assignments.organization_id
+                      AND role IN ('clinician', 'nurse', 'admin')
+                )
+                AND
+                -- Verify patient is member of org
+                EXISTS (
+                    SELECT 1 FROM public.user_org_membership
+                    WHERE user_id = patient_user_id
+                      AND organization_id = clinician_patient_assignments.organization_id
+                      AND role = 'patient'
+                )
+            );
+    END IF;
+END $$ LANGUAGE plpgsql;
+
+COMMENT ON CONSTRAINT clinician_patient_same_org_check ON public.clinician_patient_assignments 
+    IS 'Enforces that both clinician and patient must be members of the specified organization';
 
 -- =============================================================================
 -- SECTION 2: HELPER FUNCTIONS
@@ -683,21 +721,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can insert assessment events
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'assessment_events'
-          AND policyname = 'Service can insert assessment events'
-    ) THEN
-        CREATE POLICY "Service can insert assessment events"
-            ON public.assessment_events
-            FOR INSERT
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Server-side operations use Supabase service_role key which bypasses RLS.
+-- No separate "Service" policies needed - those operations are not subject to RLS.
 
 -- =============================================================================
 -- SECTION 12: ASSESSMENT_ANSWERS TABLE RLS (UPDATE EXISTING)
@@ -816,22 +841,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can update documents (for AI extraction)
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'documents'
-          AND policyname = 'Service can update documents'
-    ) THEN
-        CREATE POLICY "Service can update documents"
-            ON public.documents
-            FOR UPDATE
-            USING (true)
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Document AI extraction is performed server-side using service_role key (bypasses RLS).
+-- No additional "Service" policy needed.
 
 -- =============================================================================
 -- SECTION 14: CALCULATED_RESULTS TABLE RLS
@@ -891,21 +902,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can insert calculated results
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'calculated_results'
-          AND policyname = 'Service can insert results'
-    ) THEN
-        CREATE POLICY "Service can insert results"
-            ON public.calculated_results
-            FOR INSERT
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Calculated results are generated server-side using service_role key (bypasses RLS).
+-- No additional "Service" policy needed.
 
 -- =============================================================================
 -- SECTION 15: REPORTS TABLE RLS (UPDATE EXISTING)
@@ -1004,21 +1002,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can insert report sections
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'report_sections'
-          AND policyname = 'Service can insert report sections'
-    ) THEN
-        CREATE POLICY "Service can insert report sections"
-            ON public.report_sections
-            FOR INSERT
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Report sections are generated server-side using service_role key (bypasses RLS).
+-- No additional "Service" policy needed.
 
 -- =============================================================================
 -- SECTION 17: TASKS TABLE RLS
@@ -1166,22 +1151,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can manage notifications
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'notifications'
-          AND policyname = 'Service can manage notifications'
-    ) THEN
-        CREATE POLICY "Service can manage notifications"
-            ON public.notifications
-            FOR ALL
-            USING (true)
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Notifications are managed server-side using service_role key (bypasses RLS).
+-- No additional "Service" policy needed.
 
 -- =============================================================================
 -- SECTION 19: AUDIT_LOG TABLE RLS
@@ -1207,21 +1178,8 @@ BEGIN
     END IF;
 END $$;
 
--- Service can insert audit logs
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' 
-          AND tablename = 'audit_log'
-          AND policyname = 'Service can insert audit logs'
-    ) THEN
-        CREATE POLICY "Service can insert audit logs"
-            ON public.audit_log
-            FOR INSERT
-            WITH CHECK (true);
-    END IF;
-END $$;
+-- NOTE: Audit logs are inserted server-side using service_role key (bypasses RLS).
+-- No additional "Service" policy needed.
 
 -- =============================================================================
 -- SECTION 20: CLINICIAN_PATIENT_ASSIGNMENTS TABLE RLS

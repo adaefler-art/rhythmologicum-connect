@@ -287,24 +287,24 @@ BEGIN
 END $$;
 ```
 
-**Service Role Policies:**
-For system operations (reports, AI processing), use service policies:
-```sql
-DO $$ 
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies 
-    WHERE tablename = 'my_table' 
-    AND policyname = 'Service can manage data'
-  ) THEN
-    CREATE POLICY "Service can manage data"
-      ON public.my_table
-      FOR ALL
-      USING (true)
-      WITH CHECK (true);
-  END IF;
-END $$;
+**Service Role Handling:**
+
+Server-side operations (reports, AI processing, notifications, audit logging) use the Supabase `service_role` key which **bypasses RLS entirely**. No JWT-based "service" policies are needed or recommended.
+
+```typescript
+// Server-side code uses service role (bypasses RLS)
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY  // Service role bypasses RLS
+)
+
+// This INSERT bypasses all RLS policies
+await supabase.from('reports').insert({ ... })
 ```
+
+**Important:** Never expose the service_role key to client-side code. RLS policies only apply to authenticated users (not service role).
 
 ### Helper Functions
 
