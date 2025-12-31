@@ -2,7 +2,12 @@
 -- Created: 2025-12-31
 -- Author: GitHub Copilot
 --
--- Purpose: Implements a pillar-based funnel catalog with multi-tenant support
+-- Purpose: Implements a pillar-based funnel catalog with multi-tenant support.
+--
+-- IMPORTANT:
+-- The V0.5 core schema already creates `public.funnels_catalog` and `public.funnel_versions`.
+-- This migration must integrate with those tables (add missing columns + seed data)
+-- instead of attempting to recreate them.
 -- 
 -- Tables:
 -- 1. pillars - Taxonomy for organizing funnels by category
@@ -37,205 +42,139 @@ COMMENT ON COLUMN public.pillars.sort_order IS 'Display order for pillars (lower
 ALTER TABLE public.pillars ENABLE ROW LEVEL SECURITY;
 
 -- Pillars are read-only for all authenticated users
+DROP POLICY IF EXISTS "Authenticated users can view pillars" ON public.pillars;
 CREATE POLICY "Authenticated users can view pillars"
   ON public.pillars
   FOR SELECT
   USING (auth.role() = 'authenticated');
 
--- Only admins can manage pillars (for future admin UI)
--- Note: This uses a simplified check. In V0.5 multi-org, this should check has_any_role('admin')
-CREATE POLICY "Admins can manage pillars"
-  ON public.pillars
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-        AND (auth.users.raw_app_meta_data->>'role' = 'admin')
-    )
-  );
-
 -- ============================================================
--- 2. FUNNEL VERSIONS TABLE
+-- 2. EXTEND FUNNELS_CATALOG (V0.5 CORE) WITH APP-SPECIFIC FIELDS
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS public.funnel_versions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  funnel_id UUID NOT NULL REFERENCES public.funnels(id) ON DELETE CASCADE,
-  version TEXT NOT NULL,
-  is_default BOOLEAN NOT NULL DEFAULT false,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  questionnaire_config JSONB DEFAULT '{}'::jsonb,
-  content_manifest JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(funnel_id, version)
-);
+-- NOTE: `public.funnels_catalog` is created in 20251230211228_v05_core_schema_jsonb_fields.sql
 
-COMMENT ON TABLE public.funnel_versions IS 'Version tracking for funnel configurations';
-COMMENT ON COLUMN public.funnel_versions.version IS 'Version identifier (e.g., 1.0.0, 2.0.0)';
-COMMENT ON COLUMN public.funnel_versions.is_default IS 'Whether this is the default version for new assessments';
-COMMENT ON COLUMN public.funnel_versions.questionnaire_config IS 'JSONB configuration for questionnaire steps';
-COMMENT ON COLUMN public.funnel_versions.content_manifest IS 'JSONB manifest of content pages and media';
-
-CREATE INDEX IF NOT EXISTS idx_funnel_versions_funnel_id ON public.funnel_versions(funnel_id);
-CREATE INDEX IF NOT EXISTS idx_funnel_versions_is_default ON public.funnel_versions(funnel_id, is_default) WHERE is_default = true;
-
--- Enable RLS
-ALTER TABLE public.funnel_versions ENABLE ROW LEVEL SECURITY;
-
--- Authenticated users can view active versions
-CREATE POLICY "Authenticated users can view active funnel versions"
-  ON public.funnel_versions
-  FOR SELECT
-  USING (auth.role() = 'authenticated' AND is_active = true);
-
--- Admins can manage versions
-CREATE POLICY "Admins can manage funnel versions"
-  ON public.funnel_versions
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-        AND (auth.users.raw_app_meta_data->>'role' = 'admin')
-    )
-  );
-
--- ============================================================
--- 3. EXTEND FUNNELS TABLE WITH CATALOG FIELDS
--- ============================================================
-
--- Add pillar_id to existing funnels table
-DO $$ 
+-- Add org_id for multi-tenant support
+DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-      AND table_name = 'funnels' 
-      AND column_name = 'pillar_id'
-  ) THEN
-    ALTER TABLE public.funnels ADD COLUMN pillar_id UUID REFERENCES public.pillars(id) ON DELETE SET NULL;
-  END IF;
-END $$;
-
--- Add org_id for multi-tenant support (nullable for system-wide funnels)
-DO $$ 
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-      AND table_name = 'funnels' 
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'funnels_catalog'
       AND column_name = 'org_id'
   ) THEN
-    ALTER TABLE public.funnels ADD COLUMN org_id UUID;
+    ALTER TABLE public.funnels_catalog ADD COLUMN org_id UUID;
   END IF;
-END $$;
+END $$ LANGUAGE plpgsql;
 
--- Add catalog-specific fields
-DO $$ 
+-- Add est_duration_min
+DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-      AND table_name = 'funnels' 
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'funnels_catalog'
       AND column_name = 'est_duration_min'
   ) THEN
-    ALTER TABLE public.funnels ADD COLUMN est_duration_min INTEGER;
+    ALTER TABLE public.funnels_catalog ADD COLUMN est_duration_min INTEGER;
   END IF;
-END $$;
+END $$ LANGUAGE plpgsql;
 
-DO $$ 
+-- Add outcomes
+DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-      AND table_name = 'funnels' 
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'funnels_catalog'
       AND column_name = 'outcomes'
   ) THEN
-    ALTER TABLE public.funnels ADD COLUMN outcomes JSONB DEFAULT '[]'::jsonb;
+    ALTER TABLE public.funnels_catalog ADD COLUMN outcomes JSONB DEFAULT '[]'::jsonb;
   END IF;
-END $$;
+END $$ LANGUAGE plpgsql;
 
-DO $$ 
+-- Add default_version_id
+DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_schema = 'public' 
-      AND table_name = 'funnels' 
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'funnels_catalog'
       AND column_name = 'default_version_id'
   ) THEN
-    ALTER TABLE public.funnels ADD COLUMN default_version_id UUID REFERENCES public.funnel_versions(id) ON DELETE SET NULL;
+    ALTER TABLE public.funnels_catalog
+      ADD COLUMN default_version_id UUID REFERENCES public.funnel_versions(id) ON DELETE SET NULL;
   END IF;
-END $$;
+END $$ LANGUAGE plpgsql;
 
-COMMENT ON COLUMN public.funnels.pillar_id IS 'Pillar category this funnel belongs to';
-COMMENT ON COLUMN public.funnels.org_id IS 'Organization scope (NULL for system-wide funnels)';
-COMMENT ON COLUMN public.funnels.est_duration_min IS 'Estimated duration in minutes';
-COMMENT ON COLUMN public.funnels.outcomes IS 'JSONB array of expected outcomes/tags';
-COMMENT ON COLUMN public.funnels.default_version_id IS 'Default version for new assessments';
+COMMENT ON COLUMN public.funnels_catalog.org_id IS 'Organization scope (NULL for system-wide funnels)';
+COMMENT ON COLUMN public.funnels_catalog.est_duration_min IS 'Estimated duration in minutes';
+COMMENT ON COLUMN public.funnels_catalog.outcomes IS 'JSONB array of expected outcomes/tags';
+COMMENT ON COLUMN public.funnels_catalog.default_version_id IS 'Default version for new assessments';
 
--- Create indexes
-CREATE INDEX IF NOT EXISTS idx_funnels_pillar_id ON public.funnels(pillar_id);
-CREATE INDEX IF NOT EXISTS idx_funnels_org_id ON public.funnels(org_id);
-CREATE INDEX IF NOT EXISTS idx_funnels_is_active ON public.funnels(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_funnels_catalog_org_id ON public.funnels_catalog(org_id);
+CREATE INDEX IF NOT EXISTS idx_funnels_catalog_is_active ON public.funnels_catalog(is_active) WHERE is_active = true;
 
 -- ============================================================
--- 4. SEED INITIAL PILLARS
+-- 3. SEED CANONICAL 7 PILLARS
 -- ============================================================
 
 INSERT INTO public.pillars (key, title, description, sort_order)
 VALUES
-  ('stress', 'Stress & Belastung', 'Assessments zur Erfassung von Stress und psychischer Belastung', 1),
-  ('resilience', 'Resilienz', 'Assessments zur Messung von Resilienz und Bewältigungsstrategien', 2),
-  ('sleep', 'Schlaf', 'Assessments zur Schlafqualität und Schlafstörungen', 3)
-ON CONFLICT (key) DO NOTHING;
+  ('nutrition', 'Ernährung', 'Assessments zur Ernährung und gesunden Essgewohnheiten', 1),
+  ('movement', 'Bewegung', 'Assessments zu körperlicher Aktivität und Fitness', 2),
+  ('sleep', 'Schlaf', 'Assessments zur Schlafqualität und Schlafhygiene', 3),
+  ('mental-health', 'Mentale Gesundheit & Stressmanagement', 'Assessments zu Stress, Resilienz und mentaler Balance', 4),
+  ('social', 'Soziale Verbindungen', 'Assessments zu sozialen Beziehungen und Gemeinschaft', 5),
+  ('meaning', 'Sinn & Lebensqualität', 'Assessments zu Lebenszweck und persönlicher Erfüllung', 6),
+  ('prevention', 'Prävention & Gesundheitsvorsorge', 'Assessments zur Vorsorge und Krankheitsprävention', 7)
+ON CONFLICT (key) DO UPDATE SET
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  sort_order = EXCLUDED.sort_order;
 
 -- ============================================================
--- 5. MIGRATE EXISTING STRESS FUNNEL TO CATALOG
+-- 4. ENSURE STRESS FUNNEL EXISTS IN FUNNELS_CATALOG
 -- ============================================================
 
 -- Update existing stress-assessment funnel with catalog data
 DO $$
 DECLARE
-  v_stress_pillar_id UUID;
   v_stress_funnel_id UUID;
   v_version_id UUID;
 BEGIN
-  -- Get stress pillar ID
-  SELECT id INTO v_stress_pillar_id FROM public.pillars WHERE key = 'stress';
-  
-  -- Get or create stress-assessment funnel
-  SELECT id INTO v_stress_funnel_id FROM public.funnels WHERE slug = 'stress-assessment';
+  -- Get or create stress-assessment funnel in funnels_catalog
+  SELECT id INTO v_stress_funnel_id FROM public.funnels_catalog WHERE slug = 'stress-assessment';
   
   IF v_stress_funnel_id IS NULL THEN
     -- Create stress assessment funnel if it doesn't exist
-    INSERT INTO public.funnels (slug, title, subtitle, description, is_active, pillar_id, est_duration_min, outcomes)
+    INSERT INTO public.funnels_catalog (slug, title, pillar_id, description, is_active, est_duration_min, outcomes)
     VALUES (
       'stress-assessment',
       'Stress Assessment',
-      'Erfassen Sie Ihr aktuelles Stresslevel',
+      'mental-health',
       'Ein wissenschaftlich validiertes Assessment zur Messung von Stress und psychischer Belastung',
       true,
-      v_stress_pillar_id,
       10,
       '["Stresslevel ermitteln", "Risikofaktoren identifizieren", "Handlungsempfehlungen erhalten"]'::jsonb
     )
     RETURNING id INTO v_stress_funnel_id;
   ELSE
     -- Update existing funnel with catalog fields
-    UPDATE public.funnels
+    UPDATE public.funnels_catalog
     SET 
-      pillar_id = v_stress_pillar_id,
+      pillar_id = COALESCE(pillar_id, 'mental-health'),
       est_duration_min = COALESCE(est_duration_min, 10),
       outcomes = COALESCE(outcomes, '["Stresslevel ermitteln", "Risikofaktoren identifizieren", "Handlungsempfehlungen erhalten"]'::jsonb)
     WHERE id = v_stress_funnel_id;
   END IF;
   
-  -- Create default version if it doesn't exist
-  INSERT INTO public.funnel_versions (funnel_id, version, is_default, is_active)
-  VALUES (v_stress_funnel_id, '1.0.0', true, true)
-  ON CONFLICT (funnel_id, version) DO NOTHING
+  -- Create or update default version (V0.5 core schema has no is_active column)
+  INSERT INTO public.funnel_versions (funnel_id, version, is_default, rollout_percent)
+  VALUES (v_stress_funnel_id, '1.0.0', true, 100)
+  ON CONFLICT (funnel_id, version) DO UPDATE SET
+    is_default = true,
+    rollout_percent = 100
   RETURNING id INTO v_version_id;
   
   -- If version was created, get its ID
@@ -246,7 +185,7 @@ BEGIN
   END IF;
   
   -- Set default version reference
-  UPDATE public.funnels
+  UPDATE public.funnels_catalog
   SET default_version_id = v_version_id
-  WHERE id = v_stress_funnel_id AND default_version_id IS NULL;
+  WHERE id = v_stress_funnel_id AND (default_version_id IS NULL OR default_version_id <> v_version_id);
 END $$;
