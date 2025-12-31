@@ -29,9 +29,15 @@ jobs:
             echo "Please add this secret in GitHub repository settings"
             exit 1
           fi
-          if [ -z "${{ secrets.SUPABASE_PROJECT_ID }}" ]; then
-            echo "ERROR: SUPABASE_PROJECT_ID secret is not set"
-            echo "Please add this secret in GitHub repository settings"
+          PROJECT_REF="${{ secrets.SUPABASE_PROJECT_ID }}"
+          if [ -z "$PROJECT_REF" ]; then
+            PROJECT_REF="${{ secrets.SUPABASE_PROJECT_REF }}"
+          fi
+          if [ -z "$PROJECT_REF" ]; then
+            echo "ERROR: Missing Supabase project ref secret"
+            echo "Please set either SUPABASE_PROJECT_ID or SUPABASE_PROJECT_REF"
+            echo "Hint: The project ref is the value in the Supabase Dashboard URL:"
+            echo "  https://supabase.com/dashboard/project/<project-ref>"
             exit 1
           fi
           echo "✓ Required secrets are configured"
@@ -39,9 +45,9 @@ jobs:
       - name: Link Supabase project
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_ID || secrets.SUPABASE_PROJECT_REF }}
         run: |
-          supabase link --project-ref $SUPABASE_PROJECT_ID
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply pending migrations
         env:
