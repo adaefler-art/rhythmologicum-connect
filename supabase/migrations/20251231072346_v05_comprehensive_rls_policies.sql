@@ -78,39 +78,68 @@ CREATE INDEX IF NOT EXISTS idx_clinician_patient_assignments_clinician
 CREATE INDEX IF NOT EXISTS idx_clinician_patient_assignments_patient 
     ON public.clinician_patient_assignments(patient_user_id);
 
--- Constraint: Ensure both clinician and patient are members of the same organization
--- This enforces v0.5 default: assignments only within the same org
+-- NOTE:
+-- PostgreSQL does NOT allow subqueries in CHECK constraints.
+-- To enforce "both users are members of the org", we use a trigger.
+
+-- Drop old constraint if it exists (from previous attempts)
+ALTER TABLE public.clinician_patient_assignments
+    DROP CONSTRAINT IF EXISTS clinician_patient_same_org_check;
+
+-- Trigger function: enforce same-organization membership
+CREATE OR REPLACE FUNCTION public.enforce_clinician_patient_same_org()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- If membership table is missing for some reason, skip enforcement
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'user_org_membership'
+    ) THEN
+        RETURN NEW;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.user_org_membership
+        WHERE user_id = NEW.clinician_user_id
+          AND organization_id = NEW.organization_id
+          AND is_active = true
+          AND role IN ('clinician', 'nurse', 'admin')
+    ) THEN
+        RAISE EXCEPTION 'Clinician user % is not an active member of org %', NEW.clinician_user_id, NEW.organization_id;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM public.user_org_membership
+        WHERE user_id = NEW.patient_user_id
+          AND organization_id = NEW.organization_id
+          AND is_active = true
+          AND role = 'patient'
+    ) THEN
+        RAISE EXCEPTION 'Patient user % is not an active member of org %', NEW.patient_user_id, NEW.organization_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+-- Create trigger idempotently
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'clinician_patient_same_org_check'
-          AND conrelid = 'public.clinician_patient_assignments'::regclass
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'clinician_patient_assignments'
     ) THEN
-        ALTER TABLE public.clinician_patient_assignments
-            ADD CONSTRAINT clinician_patient_same_org_check
-            CHECK (
-                -- Verify clinician is member of org
-                EXISTS (
-                    SELECT 1 FROM public.user_org_membership
-                    WHERE user_id = clinician_user_id
-                      AND organization_id = clinician_patient_assignments.organization_id
-                      AND role IN ('clinician', 'nurse', 'admin')
-                )
-                AND
-                -- Verify patient is member of org
-                EXISTS (
-                    SELECT 1 FROM public.user_org_membership
-                    WHERE user_id = patient_user_id
-                      AND organization_id = clinician_patient_assignments.organization_id
-                      AND role = 'patient'
-                )
-            );
+        DROP TRIGGER IF EXISTS trg_enforce_clinician_patient_same_org ON public.clinician_patient_assignments;
+        CREATE TRIGGER trg_enforce_clinician_patient_same_org
+            BEFORE INSERT OR UPDATE ON public.clinician_patient_assignments
+            FOR EACH ROW
+            EXECUTE FUNCTION public.enforce_clinician_patient_same_org();
     END IF;
 END $$ LANGUAGE plpgsql;
-
-COMMENT ON CONSTRAINT clinician_patient_same_org_check ON public.clinician_patient_assignments 
-    IS 'Enforces that both clinician and patient must be members of the specified organization';
 
 -- =============================================================================
 -- SECTION 2: HELPER FUNCTIONS
