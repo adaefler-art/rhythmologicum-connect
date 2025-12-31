@@ -937,6 +937,171 @@ All statements must be idempotent (safe to run multiple times):
 
 ## Versioning Contract
 
+### Overview
+
+All processing outputs (scores, rankings, reports, sections) MUST be traceable to specific version references:
+- **funnel_version**: Which questionnaire/content version was used
+- **algorithm_version**: Which scoring/analysis algorithm bundle was used
+- **prompt_version**: Which AI prompt template version was used
+- **report_version**: Composite version identifier for the entire report
+
+This enables **reproducibility**: "What did the system know when this output was generated?"
+
+### Version Fields in Database
+
+#### calculated_results Table
+
+```typescript
+{
+  algorithm_version: string        // NOT NULL - e.g., "v1.0.0"
+  funnel_version_id: UUID          // FK to funnel_versions
+  computed_at: timestamp           // NOT NULL - when computed
+  inputs_hash: string              // SHA256 of normalized inputs
+}
+```
+
+**Unique constraint:** `(assessment_id, algorithm_version)` - ensures idempotent re-runs
+
+#### reports Table
+
+```typescript
+{
+  report_version: string           // NOT NULL - composite version
+  prompt_version: string           // NOT NULL - AI prompt version
+  algorithm_version: string        // Algorithm used for scoring
+  funnel_version_id: UUID          // FK to funnel_versions
+}
+```
+
+**Unique constraint:** `(assessment_id, report_version)` - ensures retry safety
+
+#### report_sections Table
+
+```typescript
+{
+  section_key: string              // Section identifier
+  prompt_version: string           // AI prompt version for this section
+  content: text                    // Generated content
+  citations_meta: jsonb            // Citation metadata
+}
+```
+
+**Unique constraint:** `(report_id, section_key)` - one section per report+key
+
+### Version Generation Rules
+
+**report_version Pattern:**
+```
+{funnelVersion}-{algorithmVersion}-{promptVersion}-{date}
+```
+
+Example: `1.0.0-v1.0.0-1.0-20251231`
+
+**Implementation:**
+```typescript
+import { generateReportVersion, CURRENT_ALGORITHM_VERSION, CURRENT_PROMPT_VERSION } from '@/lib/versioning/constants'
+
+const reportVersion = generateReportVersion({
+  funnelVersion: '1.0.0',
+  algorithmVersion: CURRENT_ALGORITHM_VERSION,
+  promptVersion: CURRENT_PROMPT_VERSION,
+})
+```
+
+### Inputs Hash
+
+To detect equivalent runs (same inputs), use `inputs_hash`:
+
+```typescript
+import { computeInputsHash } from '@/lib/versioning/constants'
+
+const inputsHash = await computeInputsHash(normalizedAnswers)
+```
+
+This enables:
+- Caching: Skip re-computation if hash matches
+- Debugging: Find assessments with identical inputs
+- Auditing: Verify data integrity
+
+### Usage in Processing Pipeline
+
+**When generating calculated_results:**
+
+```typescript
+await supabase.from('calculated_results').insert({
+  assessment_id: assessmentId,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  funnel_version_id: funnelVersionId,
+  scores: { ... },
+  computed_at: new Date().toISOString(),
+  inputs_hash: await computeInputsHash(answers),
+})
+```
+
+**When generating reports:**
+
+```typescript
+const reportVersion = generateReportVersion({
+  funnelVersion: funnel.version,
+  algorithmVersion: CURRENT_ALGORITHM_VERSION,
+  promptVersion: CURRENT_PROMPT_VERSION,
+})
+
+await supabase.from('reports').insert({
+  assessment_id: assessmentId,
+  report_version: reportVersion,
+  prompt_version: CURRENT_PROMPT_VERSION,
+  algorithm_version: CURRENT_ALGORITHM_VERSION,
+  funnel_version_id: funnelVersionId,
+  // ... other fields
+})
+```
+
+**When generating report_sections:**
+
+```typescript
+await supabase.from('report_sections').insert({
+  report_id: reportId,
+  section_key: 'summary',
+  prompt_version: CURRENT_PROMPT_VERSION,
+  content: generatedContent,
+})
+```
+
+### Updating Version Constants
+
+When changing scoring logic or prompts, update:
+
+```typescript
+// lib/versioning/constants.ts
+
+export const CURRENT_ALGORITHM_VERSION = 'v1.1.0' // ← Increment when algorithm changes
+export const CURRENT_PROMPT_VERSION = '1.1'       // ← Increment when prompts change
+```
+
+**Versioning Rules:**
+- **algorithm_version**: Use semantic versioning (MAJOR.MINOR.PATCH)
+  - MAJOR: Breaking changes in scoring methodology
+  - MINOR: New features, backward compatible
+  - PATCH: Bug fixes, no output changes expected
+  
+- **prompt_version**: Use simple versioning (MAJOR.MINOR)
+  - MAJOR: Significant prompt restructuring
+  - MINOR: Refinements, adjustments
+
+### Benefits
+
+✅ **Reproducibility**: Can recreate exact output with same versions  
+✅ **Debugging**: Know which version produced which result  
+✅ **A/B Testing**: Compare outputs from different versions  
+✅ **Rollback Safety**: Identify reports needing regeneration  
+✅ **Auditing**: Full traceability for compliance  
+✅ **Idempotency**: Unique constraints prevent duplicate runs
+
+---
+
+## Versioning Contract
+
 ### Semantic Versioning
 
 ```
