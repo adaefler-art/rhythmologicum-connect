@@ -6,6 +6,23 @@ on:
     paths:
       - 'supabase/migrations/**'
   workflow_dispatch:
+    inputs:
+      include_all:
+        description: 'Force apply migrations that would be inserted before last remote migration (passes --include-all to supabase db push). Use with care.'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      baseline_repair:
+        description: 'Mark known baseline migrations as applied on remote (uses supabase migration repair; requires SUPABASE_DB_PASSWORD secret).'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: read
@@ -49,12 +66,46 @@ jobs:
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
+      - name: Show migration status (local vs remote)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "Local + remote migration status:"
+          supabase migration list --linked || supabase migration list || true
+
+      - name: Optional baseline repair (remote history)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.baseline_repair == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "ERROR: SUPABASE_DB_PASSWORD secret is not set"
+            echo "This step requires the remote database password to run 'supabase migration repair'."
+            exit 1
+          fi
+
+          echo "Repairing remote migration history for baseline migrations (mark as applied)..."
+          supabase migration repair \
+            01_create_funnel_tables \
+            02_add_funnel_id_to_assessments \
+            03_create_content_pages \
+            20241203110000_init_patient_profiles_and_assessments \
+            --status applied \
+            --linked \
+            --password "$SUPABASE_DB_PASSWORD"
+
       - name: Apply pending migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Applying migrations to Supabase project..."
-          supabase db push
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.include_all }}" = "true" ]; then
+            echo "NOTE: Running with --include-all (requested via workflow_dispatch input)"
+            supabase db push --include-all
+          else
+            supabase db push
+          fi
 
       - name: Verify migration status
         env:
