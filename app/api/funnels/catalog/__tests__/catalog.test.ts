@@ -16,10 +16,10 @@ describe('Funnel Catalog API Types', () => {
           {
             pillar: {
               id: 'test-id',
-              key: PILLAR_KEY.STRESS,
-              title: 'Stress & Belastung',
+              key: PILLAR_KEY.MENTAL_HEALTH,
+              title: 'Mentale Gesundheit & Stressmanagement',
               description: 'Test description',
-              sort_order: 1,
+              sort_order: 4,
             },
             funnels: [
               {
@@ -68,8 +68,8 @@ describe('Funnel Catalog API Types', () => {
           subtitle: 'Test subtitle',
           description: 'Test description',
           pillar_id: 'pillar-id',
-          pillar_key: PILLAR_KEY.STRESS,
-          pillar_title: 'Stress & Belastung',
+          pillar_key: PILLAR_KEY.MENTAL_HEALTH,
+          pillar_title: 'Mentale Gesundheit & Stressmanagement',
           est_duration_min: 10,
           outcomes: ['outcome1'],
           is_active: true,
@@ -141,8 +141,8 @@ describe('Catalog Response Shape Validation', () => {
         {
           pillar: {
             id: '1',
-            key: PILLAR_KEY.STRESS,
-            title: 'Stress',
+            key: PILLAR_KEY.NUTRITION,
+            title: 'Ernährung',
             description: null,
             sort_order: 1,
           },
@@ -151,8 +151,8 @@ describe('Catalog Response Shape Validation', () => {
         {
           pillar: {
             id: '2',
-            key: PILLAR_KEY.RESILIENCE,
-            title: 'Resilience',
+            key: PILLAR_KEY.MOVEMENT,
+            title: 'Bewegung',
             description: null,
             sort_order: 2,
           },

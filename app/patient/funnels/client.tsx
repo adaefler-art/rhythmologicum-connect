@@ -75,9 +75,13 @@ export default function FunnelCatalogClient() {
   // Map pillar keys to icons
   const getPillarIcon = (key: string): string => {
     const iconMap: Record<string, string> = {
-      [PILLAR_KEY.STRESS]: '🧘‍♀️',
-      [PILLAR_KEY.RESILIENCE]: '💪',
+      [PILLAR_KEY.NUTRITION]: '🥗',
+      [PILLAR_KEY.MOVEMENT]: '🏃',
       [PILLAR_KEY.SLEEP]: '😴',
+      [PILLAR_KEY.MENTAL_HEALTH]: '🧘‍♀️',
+      [PILLAR_KEY.SOCIAL]: '👥',
+      [PILLAR_KEY.MEANING]: '🌟',
+      [PILLAR_KEY.PREVENTION]: '🛡️',
     }
     return iconMap[key] || '📋'
   }

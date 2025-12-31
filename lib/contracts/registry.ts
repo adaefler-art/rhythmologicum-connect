@@ -46,16 +46,20 @@ export const CONTENT_STATUS = {
 export type ContentStatus = typeof CONTENT_STATUS[keyof typeof CONTENT_STATUS]
 
 // ============================================================
-// Pillar Keys
+// Pillar Keys (7-Pillar Model)
 // ============================================================
 
 /**
- * Valid pillar keys for funnel taxonomy
+ * Valid pillar keys for funnel taxonomy (7-Pillar Wellness Model)
  */
 export const PILLAR_KEY = {
-  STRESS: 'stress',
-  RESILIENCE: 'resilience',
+  NUTRITION: 'nutrition',
+  MOVEMENT: 'movement',
   SLEEP: 'sleep',
+  MENTAL_HEALTH: 'mental-health',
+  SOCIAL: 'social',
+  MEANING: 'meaning',
+  PREVENTION: 'prevention',
 } as const
 
 export type PillarKey = typeof PILLAR_KEY[keyof typeof PILLAR_KEY]

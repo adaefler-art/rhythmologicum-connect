@@ -2,13 +2,21 @@
 ## Säulen-/Funnel-Katalog: UI + API
 
 **Date:** 2025-12-31  
-**Status:** ✅ Complete
+**Status:** ✅ Complete (Fixed)
+
+**CORRECTION NOTE:** This implementation was corrected to properly use the V05 core schema tables (`funnels_catalog`, `funnel_versions`) instead of creating duplicates, and to implement the canonical 7-pillar wellness model.
 
 ---
 
 ## Overview
 
-Implemented a complete funnel catalog system with pillar-based taxonomy, versioning support, and multi-tenant capabilities. The catalog allows patients to browse available assessments organized by category (pillars) and view detailed information including estimated duration, outcomes, and version information.
+Implemented a complete funnel catalog system with the canonical 7-pillar wellness taxonomy, versioning support, and multi-tenant capabilities. The catalog allows patients to browse available assessments organized by category (pillars) and view detailed information including estimated duration, outcomes, and version information.
+
+**Key Corrections Made:**
+1. Uses `funnels_catalog` table from V05 core schema (not `funnels`)
+2. Uses existing `funnel_versions` table from V05 core schema
+3. Implements canonical 7-pillar model (not 3)
+4. Assigns stress funnel to Pillar 4 (Mental Health & Stress Management)
 
 ---
 
@@ -17,46 +25,69 @@ Implemented a complete funnel catalog system with pillar-based taxonomy, version
 ### New Tables
 
 #### `pillars` Table
-- Purpose: Taxonomic categories for organizing funnels
+- Purpose: Taxonomic categories for organizing funnels (7-Pillar Wellness Model)
 - Fields:
   - `id` (UUID, PK)
   - `key` (TEXT, UNIQUE) - programmatic identifier
   - `title` (TEXT) - display name
   - `description` (TEXT)
-  - `sort_order` (INTEGER) - for deterministic ordering
+  - `sort_order` (INTEGER) - for deterministic ordering (1-7)
 - RLS: Readable by authenticated users, manageable by admins
-- Initial data: stress, resilience, sleep
+- **Canonical 7 Pillars:**
+  1. `nutrition` - Ernährung
+  2. `movement` - Bewegung
+  3. `sleep` - Schlaf
+  4. `mental-health` - Mentale Gesundheit & Stressmanagement
+  5. `social` - Soziale Verbindungen
+  6. `meaning` - Sinn & Lebensqualität
+  7. `prevention` - Prävention & Gesundheitsvorsorge
 
 #### `funnel_versions` Table
+- **NOTE:** This table already existed in V05 core schema (`20251230211228_v05_core_schema_jsonb_fields.sql`)
 - Purpose: Version tracking for funnel configurations
 - Fields:
   - `id` (UUID, PK)
-  - `funnel_id` (UUID, FK to funnels)
+  - `funnel_id` (UUID, FK to `funnels_catalog.id`)
   - `version` (TEXT)
   - `is_default` (BOOLEAN)
   - `is_active` (BOOLEAN)
   - `questionnaire_config` (JSONB)
   - `content_manifest` (JSONB)
+  - `algorithm_bundle_version` (TEXT)
+  - `prompt_version` (TEXT)
+  - `rollout_percent` (INTEGER)
 - RLS: Readable by authenticated users for active versions, manageable by admins
 - Unique constraint: (funnel_id, version)
 
 ### Extended Tables
 
-#### `funnels` Table Extensions
+#### `funnels_catalog` Table Extensions
+- **NOTE:** This table already existed in V05 core schema, we only added new fields
 Added fields:
-- `pillar_id` (UUID, FK to pillars, nullable)
 - `org_id` (UUID, nullable for system-wide funnels)
 - `est_duration_min` (INTEGER, nullable)
 - `outcomes` (JSONB, default: [])
 - `default_version_id` (UUID, FK to funnel_versions, nullable)
 
-Purpose: Transform existing funnels table into catalog-ready structure
+Purpose: Extend catalog table with additional metadata for patient browsing
 
 ### Data Migration
 
-- Seeded 3 initial pillars
-- Updated stress-assessment funnel with catalog fields
+- Seeded canonical 7 pillars
+- Updated stress-assessment funnel in `funnels_catalog` with catalog fields
+- Assigned stress funnel to Pillar 4 (Mental Health & Stress Management)
 - Created default version (1.0.0) for stress-assessment
+
+### Corrective Migration
+
+**File:** `supabase/migrations/20251231145000_fix_catalog_schema.sql`
+
+This migration corrects issues from the initial implementation:
+1. Removes duplicate `funnel_versions` policies (table already existed in V05 core)
+2. Adds missing columns to `funnels_catalog` instead of `funnels`
+3. Seeds canonical 7-pillar model
+4. Migrates stress funnel to correct pillar (4 - Mental Health)
+5. Migrates data from old `funnels` table if it exists
 
 ---
 

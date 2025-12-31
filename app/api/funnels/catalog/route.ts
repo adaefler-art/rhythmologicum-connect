@@ -62,14 +62,13 @@ export async function GET() {
 
     // Fetch all active funnels with their pillar information
     const { data: funnels, error: funnelsError } = await supabase
-      .from('funnels')
+      .from('funnels_catalog')
       .select(`
         id,
         slug,
         title,
-        subtitle,
-        description,
         pillar_id,
+        description,
         est_duration_min,
         outcomes,
         is_active,
@@ -123,6 +122,7 @@ export async function GET() {
       funnels.forEach((funnel) => {
         const catalogFunnel: CatalogFunnel = {
           ...funnel,
+          subtitle: null, // funnels_catalog doesn't have subtitle
           outcomes: Array.isArray(funnel.outcomes) ? funnel.outcomes : [],
           default_version: funnel.default_version_id
             ? versionMap.get(funnel.id) || null

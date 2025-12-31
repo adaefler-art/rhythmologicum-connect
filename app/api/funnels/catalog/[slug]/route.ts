@@ -68,12 +68,11 @@ export async function GET(request: Request, { params }: Params) {
 
     // Fetch funnel with pillar information
     const { data: funnel, error: funnelError } = await supabase
-      .from('funnels')
+      .from('funnels_catalog')
       .select(`
         id,
         slug,
         title,
-        subtitle,
         description,
         pillar_id,
         est_duration_min,
@@ -110,7 +109,7 @@ export async function GET(request: Request, { params }: Params) {
       id: funnel.id,
       slug: funnel.slug,
       title: funnel.title,
-      subtitle: funnel.subtitle,
+      subtitle: null, // funnels_catalog doesn't have subtitle
       description: funnel.description,
       pillar_id: funnel.pillar_id,
       pillar_key: pillarKey,
