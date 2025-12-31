@@ -36,7 +36,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.63.1
       
       # Check 1: Ensure no existing migrations were edited
       - name: Check migration immutability
