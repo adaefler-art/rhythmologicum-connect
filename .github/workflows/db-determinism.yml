@@ -6,6 +6,7 @@ on:
       - 'supabase/migrations/**'
       - 'lib/types/supabase.ts'
       - 'schema/**'
+      - 'docs/canon/DB_SCHEMA_MANIFEST.json'
       - '.github/workflows/db-determinism.yml'
   workflow_dispatch:
 
