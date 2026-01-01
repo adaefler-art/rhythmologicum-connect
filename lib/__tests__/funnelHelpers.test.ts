@@ -40,8 +40,7 @@ beforeAll(async () => {
     const queryResult = async (): Promise<QueryResult> => ({ data: null, error })
 
     const createQueryBuilder = (): QueryBuilder => {
-      let builder: QueryBuilder
-      builder = {
+      const builder: QueryBuilder = {
         select: async () => queryResult(),
         insert: async () => queryResult(),
         update: async () => queryResult(),
