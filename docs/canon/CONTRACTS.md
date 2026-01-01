@@ -301,6 +301,70 @@ POST /api/funnels/{slug}/assessments/{assessmentId}/complete
 
 ---
 
+## Funnel Catalog Endpoint (V05-I02.x)
+
+### Get Funnel Catalog
+
+```
+GET /api/funnels/catalog
+```
+
+**Auth:**
+- Requires authentication (any logged-in user)
+- No special role required
+
+**Headers:**
+- Optional: `x-request-id` (string)
+- Response always echoes `x-request-id` for correlation
+
+**Success Response (200):**
+```typescript
+{
+  success: true,
+  data: {
+    pillars: Array<{
+      pillar: {
+        id: string
+        key: string
+        title: string
+        description: string | null
+        sort_order: number
+      }
+      funnels: Array<{
+        id: string
+        slug: string
+        title: string
+        subtitle: null
+        description: string | null
+        pillar_id: string | null
+        est_duration_min: number | null
+        outcomes: string[]
+        is_active: boolean
+        default_version_id: string | null
+        default_version: string | null
+      }>
+    }>,
+    uncategorized_funnels: Array<{
+      // same shape as pillars[].funnels[]
+    }>
+  }
+}
+```
+
+**Degraded behavior (still 200):**
+- If `pillars` fetch fails with a transient/non-critical error, all funnels are returned under `uncategorized_funnels` and `pillars` is empty.
+- If `funnel_versions` fetch fails with a transient/non-critical error, all funnels are returned with `default_version: null`.
+
+**Determinism:**
+- Pillars are ordered by `sort_order`, then `id`.
+- Funnels are ordered by `title`, then `slug`.
+
+**Error Responses (non-200):**
+- `401 UNAUTHORIZED` when the user is not logged in.
+- `403 FORBIDDEN` for auth/RLS/permission failures reading catalog tables.
+- `500 CONFIGURATION_ERROR` when required Supabase env vars are missing.
+- `503 SCHEMA_NOT_READY` when required relations/columns are missing (migration drift).
+
 ## Component Contracts
 
 ### QuestionRenderer
