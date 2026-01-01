@@ -10,6 +10,7 @@
  * - 1: Violations found
  * 
  * Usage: node scripts/db/verify-db-access.js
+ *        node scripts/db/verify-db-access.js --files <file1> <file2> ...
  */
 
 const fs = require('fs')
@@ -43,6 +44,14 @@ const ALLOWED_ADMIN_USAGE = [
 ]
 
 const violations = []
+
+function parseArgs(argv) {
+  const args = argv.slice(2)
+  const filesIndex = args.indexOf('--files')
+  if (filesIndex === -1) return { files: null }
+  const files = args.slice(filesIndex + 1).filter(Boolean)
+  return { files: files.length > 0 ? files : [] }
+}
 
 function shouldScanFile(filePath) {
   const parts = filePath.split(path.sep)
@@ -153,7 +162,15 @@ function checkFile(filePath) {
 function main() {
   console.log('🔍 Verifying DB access patterns...\n')
 
-  const files = scanDirectory(REPO_ROOT)
+  const { files: providedFiles } = parseArgs(process.argv)
+
+  const files =
+    providedFiles === null
+      ? scanDirectory(REPO_ROOT)
+      : providedFiles
+          .map((f) => path.resolve(REPO_ROOT, f))
+          .filter((f) => fs.existsSync(f) && shouldScanFile(f))
+
   console.log(`Scanning ${files.length} files...\n`)
 
   for (const file of files) {
