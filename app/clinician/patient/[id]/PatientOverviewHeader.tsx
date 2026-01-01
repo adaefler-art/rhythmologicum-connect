@@ -7,6 +7,7 @@
 
 import { Badge } from '@/lib/ui'
 import { User, Calendar, Activity } from 'lucide-react'
+import { PATIENT_SEX } from '@/lib/contracts/registry'
 
 export interface PatientOverviewHeaderProps {
   /** Patient's full name */
@@ -94,7 +95,15 @@ export function PatientOverviewHeader({
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             <span className="text-sm">
-              {sex === 'male' ? 'Männlich' : sex === 'female' ? 'Weiblich' : sex}
+              {sex === PATIENT_SEX.MALE
+                ? 'Männlich'
+                : sex === PATIENT_SEX.FEMALE
+                  ? 'Weiblich'
+                  : sex === PATIENT_SEX.OTHER
+                    ? 'Divers'
+                    : sex === PATIENT_SEX.PREFER_NOT_TO_SAY
+                      ? 'Keine Angabe'
+                      : sex}
             </span>
           </div>
         )}
