@@ -91,32 +91,7 @@ describe('GET /api/funnels/catalog', () => {
     jest.clearAllMocks()
   })
 
-  it('returns 401 when unauthenticated (with x-request-id)', async () => {
-    const { GET } = await importRouteWithEnv({
-      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
-    })
-
-    setupCookieStore()
-
-    const mockClient: MockSupabaseClient = {
-      auth: {
-        getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
-      },
-      from: jest.fn(),
-    }
-
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
-
-    const res = await GET(new Request('http://localhost/api/funnels/catalog'))
-
-    expect(res.status).toBe(401)
-    expect(res.headers.get('x-request-id')).toBeTruthy()
-  })
-
-  it('degrades gracefully when pillars query fails transiently', async () => {
+  it('returns 200 on success (with x-request-id)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -126,8 +101,16 @@ describe('GET /api/funnels/catalog', () => {
     setupCookieStore()
 
     const pillarsBuilder = makeThenableBuilder({
-      data: null,
-      error: { message: 'temporary network issue' },
+      data: [
+        {
+          id: 'p1',
+          key: 'movement',
+          title: 'Movement',
+          description: null,
+          sort_order: 1,
+        },
+      ],
+      error: null,
     })
 
     const funnelsBuilder = makeThenableBuilder({
@@ -163,15 +146,104 @@ describe('GET /api/funnels/catalog', () => {
     createServerClient.mockReturnValue(mockClient)
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
-    expect(res.status).toBe(200)
 
-    const json = (await res.json()) as unknown as {
-      success: boolean
-      data: { pillars: unknown[]; uncategorized_funnels: unknown[] }
-    }
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-request-id')).toBeTruthy()
+
+    const json = (await res.json()) as unknown as { success: boolean }
     expect(json.success).toBe(true)
-    expect(json.data.pillars).toEqual([])
-    expect(json.data.uncategorized_funnels).toHaveLength(1)
+  })
+
+  it('returns 401 when unauthenticated (with x-request-id)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+      },
+      from: jest.fn(),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/funnels/catalog'))
+
+    expect(res.status).toBe(401)
+    expect(res.headers.get('x-request-id')).toBeTruthy()
+  })
+
+  it('returns 503 SCHEMA_NOT_READY when pillars relation is missing', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: '42P01', message: 'relation "pillars" does not exist' },
+    })
+
+    const mockClient: MockSupabaseClient = {
+      auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/funnels/catalog'))
+
+    expect(res.status).toBe(503)
+    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('SCHEMA_NOT_READY')
+    expect(res.headers.get('x-request-id')).toBeTruthy()
+  })
+
+  it('returns 403 FORBIDDEN when pillars are not accessible (RLS/permission denied)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: '42501', message: 'permission denied for relation pillars' },
+    })
+
+    const mockClient: MockSupabaseClient = {
+      auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/funnels/catalog'))
+
+    expect(res.status).toBe(403)
+    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('FORBIDDEN')
     expect(res.headers.get('x-request-id')).toBeTruthy()
   })
 
@@ -322,6 +394,8 @@ describe('GET /api/funnels/catalog', () => {
       SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
+    const { cookies, createServerClient } = getMocks()
+
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
     expect(res.status).toBe(500)
@@ -329,6 +403,9 @@ describe('GET /api/funnels/catalog', () => {
     expect(json.success).toBe(false)
     expect(json.error.code).toBe('CONFIGURATION_ERROR')
     expect(res.headers.get('x-request-id')).toBeTruthy()
+
+    expect(cookies).not.toHaveBeenCalled()
+    expect(createServerClient).not.toHaveBeenCalled()
   })
 
   it('returns 403 FORBIDDEN when funnels_catalog is not accessible (RLS/permission denied)', async () => {

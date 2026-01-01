@@ -150,19 +150,16 @@ export async function GET(request: Request) {
       const safeErr = sanitizeSupabaseError(pillarsError)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error(`[catalog:${requestId}] Schema not ready (pillars):`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn(`[catalog:${requestId}] Forbidden (pillars):`, safeErr)
+        console.warn({ requestId, supabaseError: safeErr })
         return withRequestId(forbiddenResponse(), requestId)
       }
 
-      // Non-critical: we can still return funnels as uncategorized
-      console.warn(
-        `[catalog:${requestId}] Pillars unavailable (continuing uncategorized):`,
-        safeErr,
-      )
+      console.error({ requestId, supabaseError: safeErr })
+      return withRequestId(internalErrorResponse('Failed to fetch pillars.'), requestId)
     }
 
     // Fetch all active funnels with their pillar information
@@ -188,15 +185,15 @@ export async function GET(request: Request) {
       const safeErr = sanitizeSupabaseError(funnelsError)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error(`[catalog:${requestId}] Schema not ready (funnels_catalog):`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn(`[catalog:${requestId}] Forbidden (funnels_catalog):`, safeErr)
+        console.warn({ requestId, supabaseError: safeErr })
         return withRequestId(forbiddenResponse(), requestId)
       }
 
-      console.error(`[catalog:${requestId}] Error fetching funnels_catalog:`, safeErr)
+      console.error({ requestId, supabaseError: safeErr })
       return withRequestId(internalErrorResponse('Failed to fetch catalog funnels'), requestId)
     }
 
@@ -217,16 +214,16 @@ export async function GET(request: Request) {
       const safeErr = sanitizeSupabaseError(versionsResult.error)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error(`[catalog:${requestId}] Schema not ready (funnel_versions):`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn(`[catalog:${requestId}] Forbidden (funnel_versions):`, safeErr)
+        console.warn({ requestId, supabaseError: safeErr })
         return withRequestId(forbiddenResponse(), requestId)
       }
 
       // Non-critical: continue without version info
-      console.warn(`[catalog:${requestId}] Versions unavailable (continuing without versions):`, safeErr)
+      console.warn({ requestId, supabaseError: safeErr })
     }
 
     // Create version lookup map
@@ -277,14 +274,8 @@ export async function GET(request: Request) {
 
     return withRequestId(successResponse(catalogData), requestId)
   } catch (error) {
-    const requestId =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    console.error(
-      `[catalog:${requestId}] Error in GET /api/funnels/catalog:`,
-      sanitizeSupabaseError(error),
-    )
+    const requestId = getRequestId(request)
+    console.error({ requestId, supabaseError: sanitizeSupabaseError(error) })
     return withRequestId(internalErrorResponse(), requestId)
   }
 }
