@@ -23,7 +23,6 @@ export type FunnelVersion = {
   funnel_id: string
   version: string
   is_default: boolean
-  is_active: boolean
 }
 
 /**

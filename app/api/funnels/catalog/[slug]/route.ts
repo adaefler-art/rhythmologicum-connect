@@ -6,7 +6,7 @@ import {
   internalErrorResponse,
 } from '@/lib/api/responses'
 import { getRequestId, withRequestId, logError } from '@/lib/db/errors'
-import type { FunnelDetailResponse, CatalogFunnel, FunnelVersion } from '@/lib/types/catalog'
+import type { FunnelDetailResponse, CatalogFunnel } from '@/lib/types/catalog'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 
 type Params = {
@@ -109,7 +109,7 @@ export async function GET(request: Request, { params }: Params) {
       pillar_key: pillarKey,
       pillar_title: pillarTitle,
       est_duration_min: funnel.est_duration_min,
-      outcomes: Array.isArray(funnel.outcomes) ? funnel.outcomes : [],
+      outcomes: Array.isArray(funnel.outcomes) ? (funnel.outcomes as string[]) : [],
       is_active: funnel.is_active,
       default_version_id: funnel.default_version_id,
     }
@@ -117,7 +117,7 @@ export async function GET(request: Request, { params }: Params) {
     // Fetch all versions for this funnel (with deterministic ordering)
     const { data: versions, error: versionsError } = await supabase
       .from('funnel_versions')
-      .select('id, funnel_id, version, is_default, is_active')
+      .select('id, funnel_id, version, is_default')
       .eq('funnel_id', funnel.id)
       .order('version', { ascending: false })
       .order('id', { ascending: true })
@@ -136,11 +136,11 @@ export async function GET(request: Request, { params }: Params) {
       )
     }
 
-    // Find active and default versions
-    const activeVersion =
-      (versions || []).find((v: FunnelVersion) => v.is_active && v.is_default) || null
-    const defaultVersion =
-      (versions || []).find((v: FunnelVersion) => v.is_default) || null
+    // Find default version
+    const defaultVersion = (versions || []).find((v) => v.is_default) || null
+
+    // Active version is the same as default for now (no separate is_active column)
+    const activeVersion = defaultVersion
 
     // Add default version string to funnel
     if (defaultVersion) {
