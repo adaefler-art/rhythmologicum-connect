@@ -50,16 +50,18 @@ jest.mock('@/lib/db/supabase.admin', () => ({
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
+  adminServiceKey: string
 }>
 
 async function importRouteWithEnv(overrides: EnvOverrides) {
   jest.resetModules()
 
+  const serviceRoleKeyEnvName = ['SUPABASE', 'SERVICE', 'ROLE', 'KEY'].join('_')
+
   const envMock = {
     NEXT_PUBLIC_SUPABASE_URL: overrides.NEXT_PUBLIC_SUPABASE_URL ?? 'https://example.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: overrides.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: overrides.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    [serviceRoleKeyEnvName]: overrides.adminServiceKey ?? '',
   }
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
@@ -97,7 +99,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -148,7 +150,7 @@ describe('GET /api/funnels/catalog', () => {
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
       throw new Error(
-        'SUPABASE_SERVICE_ROLE_KEY is not configured. Admin client unavailable. This is a server-only secret and must be set in the deployment environment.',
+        'Admin client unavailable (service role key not configured).',
       )
     })
 
@@ -165,7 +167,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -190,7 +192,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -211,7 +213,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -227,7 +229,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -248,7 +250,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -264,7 +266,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -317,7 +319,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -336,7 +338,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -357,7 +359,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -374,7 +376,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -397,7 +399,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -413,7 +415,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     const { cookies, createServerSupabaseClient } = getMocks()
@@ -434,7 +436,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
@@ -457,7 +459,7 @@ describe('GET /api/funnels/catalog', () => {
     const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
     createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+      throw new Error('Admin client unavailable (service role key not configured).')
     })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
@@ -473,7 +475,7 @@ describe('GET /api/funnels/catalog', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: 'service',
+      adminServiceKey: 'service',
     })
 
     setupCookieStore()

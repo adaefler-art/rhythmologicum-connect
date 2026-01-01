@@ -83,7 +83,7 @@ function scanDirectory(dir) {
 }
 
 function isAllowedFile(filePath, allowedList) {
-  const relativePath = path.relative(REPO_ROOT, filePath)
+  const relativePath = path.relative(REPO_ROOT, filePath).split(path.sep).join('/')
   return allowedList.some(allowed => {
     if (allowed.endsWith('/')) {
       return relativePath.startsWith(allowed)
@@ -93,7 +93,7 @@ function isAllowedFile(filePath, allowedList) {
 }
 
 function checkFile(filePath) {
-  const relativePath = path.relative(REPO_ROOT, filePath)
+  const relativePath = path.relative(REPO_ROOT, filePath).split(path.sep).join('/')
   const content = fs.readFileSync(filePath, 'utf-8')
   const lines = content.split('\n')
 

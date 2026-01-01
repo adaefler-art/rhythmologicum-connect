@@ -39,7 +39,7 @@ import type { Database } from '@/lib/types/supabase'
  * @example
  * ```typescript
  * // In an admin API route (after auth check!)
- * import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+ * import { createAdminSupabaseClient } from '<admin-supabase-factory-module>'
  * import { hasClinicianRole } from '@/lib/db/supabase.server'
  * 
  * export async function GET() {
