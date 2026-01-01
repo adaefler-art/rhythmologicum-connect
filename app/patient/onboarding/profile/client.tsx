@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBaselineProfile, getBaselineProfile, hasUserConsented } from '@/lib/actions/onboarding'
+import { PATIENT_SEX } from '@/lib/contracts/registry'
 
 export function ProfileClient() {
   const router = useRouter()
@@ -140,10 +141,10 @@ export function ProfileClient() {
                 disabled={isSubmitting}
               >
                 <option value="">Bitte wählen</option>
-                <option value="male">Männlich</option>
-                <option value="female">Weiblich</option>
-                <option value="other">Divers</option>
-                <option value="prefer_not_to_say">Keine Angabe</option>
+                <option value={PATIENT_SEX.MALE}>Männlich</option>
+                <option value={PATIENT_SEX.FEMALE}>Weiblich</option>
+                <option value={PATIENT_SEX.OTHER}>Divers</option>
+                <option value={PATIENT_SEX.PREFER_NOT_TO_SAY}>Keine Angabe</option>
               </select>
             </div>
 

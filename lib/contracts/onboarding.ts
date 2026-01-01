@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod'
+import { PATIENT_SEX } from '@/lib/contracts/registry'
 
 // ============================================================
 // Consent Contracts
@@ -68,9 +69,12 @@ export const BaselineProfileSchema = z.object({
     .optional()
     .nullable(),
   sex: z
-    .enum(['male', 'female', 'other', 'prefer_not_to_say'], {
-      message: 'Please select a valid option',
-    })
+    .enum(
+      [PATIENT_SEX.MALE, PATIENT_SEX.FEMALE, PATIENT_SEX.OTHER, PATIENT_SEX.PREFER_NOT_TO_SAY],
+      {
+        message: 'Please select a valid option',
+      },
+    )
     .optional()
     .nullable(),
 })

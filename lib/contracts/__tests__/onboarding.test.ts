@@ -8,6 +8,7 @@ import {
   OnboardingStatusSchema,
   CURRENT_CONSENT_VERSION,
 } from '../onboarding'
+import { PATIENT_SEX } from '../registry'
 
 describe('Onboarding Contracts', () => {
   describe('ConsentFormSchema', () => {
@@ -52,7 +53,7 @@ describe('Onboarding Contracts', () => {
       const validData = {
         full_name: 'John Doe',
         birth_year: 1990,
-        sex: 'male',
+        sex: PATIENT_SEX.MALE,
       }
       const result = BaselineProfileSchema.safeParse(validData)
       expect(result.success).toBe(true)
@@ -72,7 +73,7 @@ describe('Onboarding Contracts', () => {
       const invalidData = {
         full_name: '',
         birth_year: 1990,
-        sex: 'female',
+        sex: PATIENT_SEX.FEMALE,
       }
       const result = BaselineProfileSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
@@ -82,7 +83,7 @@ describe('Onboarding Contracts', () => {
       const invalidData = {
         full_name: 'a'.repeat(201),
         birth_year: 1990,
-        sex: 'female',
+        sex: PATIENT_SEX.FEMALE,
       }
       const result = BaselineProfileSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
@@ -92,7 +93,7 @@ describe('Onboarding Contracts', () => {
       const validData = {
         full_name: '  John Doe  ',
         birth_year: 1990,
-        sex: 'male',
+        sex: PATIENT_SEX.MALE,
       }
       const result = BaselineProfileSchema.safeParse(validData)
       expect(result.success).toBe(true)
@@ -105,7 +106,7 @@ describe('Onboarding Contracts', () => {
       const invalidData = {
         full_name: 'John Doe',
         birth_year: 1899,
-        sex: 'male',
+        sex: PATIENT_SEX.MALE,
       }
       const result = BaselineProfileSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
@@ -116,7 +117,7 @@ describe('Onboarding Contracts', () => {
       const invalidData = {
         full_name: 'John Doe',
         birth_year: futureYear,
-        sex: 'male',
+        sex: PATIENT_SEX.MALE,
       }
       const result = BaselineProfileSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
@@ -127,14 +128,19 @@ describe('Onboarding Contracts', () => {
       const validData = {
         full_name: 'Baby Doe',
         birth_year: currentYear,
-        sex: 'other',
+        sex: PATIENT_SEX.OTHER,
       }
       const result = BaselineProfileSchema.safeParse(validData)
       expect(result.success).toBe(true)
     })
 
     it('should validate all sex enum values', () => {
-      const sexValues = ['male', 'female', 'other', 'prefer_not_to_say']
+      const sexValues = [
+        PATIENT_SEX.MALE,
+        PATIENT_SEX.FEMALE,
+        PATIENT_SEX.OTHER,
+        PATIENT_SEX.PREFER_NOT_TO_SAY,
+      ]
       
       sexValues.forEach((sex) => {
         const validData = {
@@ -161,7 +167,7 @@ describe('Onboarding Contracts', () => {
       const validData = {
         full_name: 'John Doe',
         birth_year: null,
-        sex: 'male',
+        sex: PATIENT_SEX.MALE,
       }
       const result = BaselineProfileSchema.safeParse(validData)
       expect(result.success).toBe(true)

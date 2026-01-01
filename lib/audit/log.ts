@@ -134,6 +134,8 @@ const ALLOWED_METADATA_KEYS = [
   'version_id',
   'consent_id',
   'config_key',
+  'consent_version',
+  'profile_updated',
 ] as const
 
 /**
