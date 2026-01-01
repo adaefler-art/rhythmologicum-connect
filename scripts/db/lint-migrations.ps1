@@ -1,6 +1,6 @@
 # Migration Linter - Validates DB schema objects against canonical manifest
 # Purpose: Hard guardrail to prevent non-canonical DB objects from being introduced
-# Usage: .\scripts\db\lint-migrations.ps1 [-Verbose]
+# Usage: .\scripts\db\lint-migrations.ps1 [-Verbose] [-Path <file_or_directory>]
 #
 # Exit Codes:
 #   0 = All checks passed
@@ -8,7 +8,8 @@
 #   2 = Script execution error
 
 param(
-    [switch]$Verbose
+    [switch]$Verbose,
+    [string]$Path = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -60,9 +61,25 @@ Write-Host ""
 # SCAN MIGRATIONS
 # ============================================================
 
-Write-Host "📂 Scanning migrations in: supabase/migrations/" -ForegroundColor Yellow
-
-$migrationFiles = Get-ChildItem -Path $migrationsDir -Filter "*.sql" | Sort-Object Name
+if ($Path) {
+    # Custom path provided (for testing)
+    if (Test-Path $Path -PathType Leaf) {
+        # Single file
+        $migrationFiles = @(Get-Item $Path)
+        Write-Host "📂 Scanning single file: $Path" -ForegroundColor Yellow
+    } elseif (Test-Path $Path -PathType Container) {
+        # Directory
+        $migrationFiles = Get-ChildItem -Path $Path -Filter "*.sql" | Sort-Object Name
+        Write-Host "📂 Scanning directory: $Path" -ForegroundColor Yellow
+    } else {
+        Write-Host "❌ Path not found: $Path" -ForegroundColor Red
+        exit 2
+    }
+} else {
+    # Default: scan migrations directory
+    Write-Host "📂 Scanning migrations in: supabase/migrations/" -ForegroundColor Yellow
+    $migrationFiles = Get-ChildItem -Path $migrationsDir -Filter "*.sql" | Sort-Object Name
+}
 
 if ($migrationFiles.Count -eq 0) {
     Write-Host "⚠️  No migration files found" -ForegroundColor Yellow

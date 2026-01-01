@@ -44,7 +44,14 @@ jobs:
           echo "✅ PowerShell is already available on Ubuntu"
           pwsh --version
       
-      # Check 0: Lint migrations against canonical schema manifest (V0.5+)
+      # Check 0a: Test linter with fixtures (deterministic tests)
+      - name: Test migration linter
+        run: |
+          echo "🧪 Running linter test suite..."
+          pwsh -File scripts/db/test-linter.ps1
+          echo "✅ Linter tests passed"
+      
+      # Check 0b: Lint migrations against canonical schema manifest (V0.5+)
       - name: Lint migrations against schema manifest
         run: |
           echo "🔍 Linting migrations against canonical schema manifest..."
@@ -150,6 +157,7 @@ jobs:
         run: |
           echo ""
           echo "🎉 All DB determinism checks passed!"
+          echo "   ✅ Linter tests passed (fixtures validated)"
           echo "   ✅ All schema objects are canonical"
           echo "   ✅ No existing migrations were edited"
           echo "   ✅ Migrations apply cleanly"
