@@ -54,13 +54,7 @@ export async function GET(
     }
 
     // Create Supabase server client
-        const supabase = await createServerSupabaseClient() => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      },
-    )
+        const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

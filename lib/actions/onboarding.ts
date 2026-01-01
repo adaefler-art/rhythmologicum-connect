@@ -39,20 +39,7 @@ type ActionResult<T> = {
 // ============================================================
 
 async function getAuthenticatedClient() {
-    const supabase = await createServerSupabaseClient(
-    env.NEXT_PUBLIC_SUPABASE_URL!,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
-          )
-        },
-      },
-    },
-  )
+  const supabase = await createServerSupabaseClient()
 
   const {
     data: { user },

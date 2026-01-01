@@ -19,13 +19,7 @@ export async function GET(
     return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
   }
 
-    const supabase = await createServerSupabaseClient() => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
+    const supabase = await createServerSupabaseClient()
 
   const {
     data: { user },

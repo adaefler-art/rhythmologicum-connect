@@ -35,22 +35,7 @@ export async function validateRequiredQuestions(
   assessmentId: string,
   stepId: string,
 ): Promise<ValidationResult> {
-    const supabase = await createServerSupabaseClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
+  const supabase = await createServerSupabaseClient()
 
   // Get all required questions for this step
   const { data: requiredQuestions, error: questionsError } = await supabase
@@ -133,25 +118,10 @@ export async function validateAllRequiredQuestions(
   assessmentId: string,
   funnelId: string,
 ): Promise<ValidationResult> {
-    const supabase = await createServerSupabaseClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
+  const supabase = await createServerSupabaseClient()
 
   // Get all steps for this funnel
-  const { data: steps, error: stepsError } = await supabase
+  const { data: steps, error: stepsError} = await supabase
     .from('funnel_steps')
     .select('id')
     .eq('funnel_id', funnelId)
@@ -196,22 +166,7 @@ export async function validateRequiredQuestionsExtended(
   assessmentId: string,
   stepId: string,
 ): Promise<ValidationResultExtended> {
-    const supabase = await createServerSupabaseClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
+  const supabase = await createServerSupabaseClient()
 
   // Get all questions for this step (both required and optional)
   const { data: stepQuestions, error: questionsError } = await supabase
