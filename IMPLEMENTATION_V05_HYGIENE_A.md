@@ -201,6 +201,25 @@ const adminClient = createAdminSupabaseClient()
 
 ## Test Results
 
+### PowerShell Verification Commands (as per issue requirements)
+
+```powershell
+# Clean install dependencies
+npm ci
+
+# Verify DB access patterns
+npm run db:access-verify
+
+# Run tests
+npm test
+
+# Build the project
+npm run build
+
+# Optional: Run dev server locally
+npm run dev
+```
+
 ### DB Access Verification
 ```bash
 $ npm run db:access-verify -- --files app/api/admin/funnels/**
@@ -221,9 +240,10 @@ PASS app/api/admin/funnels/__tests__/route.test.ts
     ✓ blank env => 500 CONFIGURATION_ERROR (no client construction) (19 ms)
     ✓ no funnels => does not query funnel_versions (avoid .in([])) (20 ms)
     ✓ returns 503 SCHEMA_NOT_READY when schema cache is missing relation (PGRST205) (22 ms)
+    ✓ no authenticated user => 401 UNAUTHORIZED (18 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       6 passed, 6 total
+Tests:       7 passed, 7 total
 ```
 
 ### ESLint
