@@ -1,7 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { NextRequest } from 'next/server'
+import {
+  configurationErrorResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+  notFoundResponse,
+  schemaNotReadyResponse,
+  successResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/api/responses'
+import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { env } from '@/lib/env'
 
 /**
  * B7 API Endpoint: Update step order_index or content fields
@@ -13,42 +24,34 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestId = getRequestId(request)
+  
   try {
     const { id } = await params
     const body = await request.json()
 
-    // Check authentication and authorization
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check Supabase configuration
+    if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+      return withRequestId(
+        configurationErrorResponse(
+          'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+        ),
+        requestId,
+      )
     }
 
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    // Allow access for clinician and admin roles
-    const hasAccess = role === 'clinician' || role === 'admin'
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Check authentication and authorization using canonical helpers
+    if (!(await hasClinicianRole())) {
+      const authClient = await createServerSupabaseClient()
+      const {
+        data: { user },
+      } = await authClient.auth.getUser()
+      
+      if (!user) {
+        return withRequestId(unauthorizedResponse(), requestId)
+      }
+      
+      return withRequestId(forbiddenResponse(), requestId)
     }
 
     // Build update object with only provided fields
@@ -58,40 +61,43 @@ export async function PATCH(
 
     if (typeof body.order_index === 'number') {
       if (body.order_index < 0) {
-        return NextResponse.json({ error: 'Order index must be non-negative' }, { status: 400 })
+        return withRequestId(
+          validationErrorResponse('Order index must be non-negative'),
+          requestId,
+        )
       }
       updateData.order_index = body.order_index
     }
     if (typeof body.title === 'string') {
       const trimmedTitle = body.title.trim()
       if (trimmedTitle.length === 0) {
-        return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+        return withRequestId(
+          validationErrorResponse('Title cannot be empty'),
+          requestId,
+        )
       }
       if (trimmedTitle.length > 255) {
-        return NextResponse.json({ error: 'Title too long (max 255 characters)' }, { status: 400 })
+        return withRequestId(
+          validationErrorResponse('Title too long (max 255 characters)'),
+          requestId,
+        )
       }
       updateData.title = trimmedTitle
     }
     if (typeof body.description === 'string') {
       const trimmedDescription = body.description.trim()
       if (trimmedDescription.length > 2000) {
-        return NextResponse.json({ error: 'Description too long (max 2000 characters)' }, { status: 400 })
+        return withRequestId(
+          validationErrorResponse('Description too long (max 2000 characters)'),
+          requestId,
+        )
       }
       updateData.description = trimmedDescription || null
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for cross-user operations (metadata tables only)
+    // Justification: Clinicians need to update steps for all funnels
+    const adminClient = createAdminSupabaseClient()
 
     if (body.content_page_id !== undefined) {
       // Allow null to clear the content page
@@ -99,20 +105,41 @@ export async function PATCH(
         updateData.content_page_id = null
       } else if (typeof body.content_page_id === 'string') {
         // Validate that content page exists
-        const { data: contentPage } = await adminClient
+        const { data: contentPage, error: contentPageError } = await adminClient
           .from('content_pages')
           .select('id')
           .eq('id', body.content_page_id)
           .single()
 
+        if (contentPageError) {
+          const safeErr = sanitizeSupabaseError(contentPageError)
+          
+          // PGRST116 means no rows found
+          if (safeErr.code === 'PGRST116') {
+            return withRequestId(
+              validationErrorResponse('Content page not found'),
+              requestId,
+            )
+          }
+
+          console.error({ requestId, operation: 'verify_content_page', supabaseError: safeErr })
+          return withRequestId(internalErrorResponse('Failed to verify content page.'), requestId)
+        }
+
         if (!contentPage) {
-          return NextResponse.json({ error: 'Content page not found' }, { status: 400 })
+          return withRequestId(
+            validationErrorResponse('Content page not found'),
+            requestId,
+          )
         }
 
         updateData.content_page_id = body.content_page_id
       } else {
         // Reject invalid types
-        return NextResponse.json({ error: 'content_page_id must be a string or null' }, { status: 400 })
+        return withRequestId(
+          validationErrorResponse('content_page_id must be a string or null'),
+          requestId,
+        )
       }
     }
 
@@ -125,13 +152,27 @@ export async function PATCH(
       .single()
 
     if (error) {
-      console.error('Error updating step:', error)
-      return NextResponse.json({ error: 'Failed to update step' }, { status: 500 })
+      const safeErr = sanitizeSupabaseError(error)
+      const classified = classifySupabaseError(safeErr)
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error({ requestId, supabaseError: safeErr })
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      // PGRST116 means no rows found
+      if (safeErr.code === 'PGRST116') {
+        return withRequestId(notFoundResponse('Funnel step'), requestId)
+      }
+
+      console.error({ requestId, operation: 'update_step', supabaseError: safeErr })
+      return withRequestId(internalErrorResponse('Failed to update step.'), requestId)
     }
 
-    return NextResponse.json({ step: data })
+    return withRequestId(successResponse({ step: data }), requestId)
   } catch (error) {
-    console.error('Error in PATCH /api/admin/funnel-steps/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const safeErr = sanitizeSupabaseError(error)
+    console.error({ requestId, operation: 'PATCH /api/admin/funnel-steps/[id]', error: safeErr })
+    return withRequestId(internalErrorResponse(), requestId)
   }
 }

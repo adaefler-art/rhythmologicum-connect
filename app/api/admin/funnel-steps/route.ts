@@ -1,7 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { NextRequest } from 'next/server'
+import {
+  configurationErrorResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+  notFoundResponse,
+  schemaNotReadyResponse,
+  successResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/api/responses'
+import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { env } from '@/lib/env'
 
 /**
  * V0.4-E3 API Endpoint: Create new funnel step
@@ -17,104 +28,138 @@ import { createServerClient } from '@supabase/ssr'
  * }
  */
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
+  
   try {
     const body = await request.json()
 
-    // Check authentication and authorization
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check Supabase configuration
+    if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+      return withRequestId(
+        configurationErrorResponse(
+          'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+        ),
+        requestId,
+      )
     }
 
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    // Allow access for clinician and admin roles
-    const hasAccess = role === 'clinician' || role === 'admin'
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Check authentication and authorization using canonical helpers
+    if (!(await hasClinicianRole())) {
+      const authClient = await createServerSupabaseClient()
+      const {
+        data: { user },
+      } = await authClient.auth.getUser()
+      
+      if (!user) {
+        return withRequestId(unauthorizedResponse(), requestId)
+      }
+      
+      return withRequestId(forbiddenResponse(), requestId)
     }
 
     // Validate required fields
     if (!body.funnel_id || typeof body.funnel_id !== 'string') {
-      return NextResponse.json({ error: 'funnel_id is required' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('funnel_id is required'),
+        requestId,
+      )
     }
     if (!body.title || typeof body.title !== 'string') {
-      return NextResponse.json({ error: 'title is required' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('title is required'),
+        requestId,
+      )
     }
     if (!body.type || typeof body.type !== 'string') {
-      return NextResponse.json({ error: 'type is required' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('type is required'),
+        requestId,
+      )
     }
 
     const trimmedTitle = body.title.trim()
     if (trimmedTitle.length === 0) {
-      return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('Title cannot be empty'),
+        requestId,
+      )
     }
     if (trimmedTitle.length > 255) {
-      return NextResponse.json({ error: 'Title too long (max 255 characters)' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('Title too long (max 255 characters)'),
+        requestId,
+      )
     }
 
     // Validate type-specific requirements
     if (body.type === 'content_page' && !body.content_page_id) {
-      return NextResponse.json({ error: 'content_page_id is required for content_page steps' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('content_page_id is required for content_page steps'),
+        requestId,
+      )
     }
     if (body.type !== 'content_page' && body.content_page_id) {
-      return NextResponse.json({ error: 'content_page_id can only be set for content_page steps' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('content_page_id can only be set for content_page steps'),
+        requestId,
+      )
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for cross-user operations (metadata tables only)
+    // Justification: Clinicians need to create/manage steps for all funnels
+    const adminClient = createAdminSupabaseClient()
 
     // Verify funnel exists
-    const { data: funnel } = await adminClient
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels')
       .select('id')
       .eq('id', body.funnel_id)
       .single()
 
+    if (funnelError) {
+      const safeErr = sanitizeSupabaseError(funnelError)
+      
+      // PGRST116 means no rows found
+      if (safeErr.code === 'PGRST116') {
+        return withRequestId(notFoundResponse('Funnel'), requestId)
+      }
+
+      const classified = classifySupabaseError(safeErr)
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error({ requestId, supabaseError: safeErr })
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      console.error({ requestId, operation: 'verify_funnel', supabaseError: safeErr })
+      return withRequestId(internalErrorResponse('Failed to verify funnel.'), requestId)
+    }
+
     if (!funnel) {
-      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+      return withRequestId(notFoundResponse('Funnel'), requestId)
     }
 
     // If content_page_id is provided, verify it exists
     if (body.content_page_id) {
-      const { data: contentPage } = await adminClient
+      const { data: contentPage, error: contentPageError } = await adminClient
         .from('content_pages')
         .select('id')
         .eq('id', body.content_page_id)
         .single()
 
+      if (contentPageError) {
+        const safeErr = sanitizeSupabaseError(contentPageError)
+        
+        // PGRST116 means no rows found
+        if (safeErr.code === 'PGRST116') {
+          return withRequestId(notFoundResponse('Content page'), requestId)
+        }
+
+        console.error({ requestId, operation: 'verify_content_page', supabaseError: safeErr })
+        return withRequestId(internalErrorResponse('Failed to verify content page.'), requestId)
+      }
+
       if (!contentPage) {
-        return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
+        return withRequestId(notFoundResponse('Content page'), requestId)
       }
     }
 
@@ -134,14 +179,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create step
-    const stepData: Record<string, unknown> = {
+    const stepData = {
       funnel_id: body.funnel_id,
       title: trimmedTitle,
       type: body.type,
       order_index: orderIndex,
       description: body.description?.trim() || null,
       content_page_id: body.content_page_id || null,
-    }
+    } as const
 
     const { data, error } = await adminClient
       .from('funnel_steps')
@@ -150,13 +195,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating step:', error)
-      return NextResponse.json({ error: 'Failed to create step: ' + error.message }, { status: 500 })
+      const safeErr = sanitizeSupabaseError(error)
+      const classified = classifySupabaseError(safeErr)
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error({ requestId, supabaseError: safeErr })
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      console.error({ requestId, operation: 'create_step', supabaseError: safeErr })
+      return withRequestId(internalErrorResponse('Failed to create step.'), requestId)
     }
 
-    return NextResponse.json({ step: data }, { status: 201 })
+    return withRequestId(successResponse({ step: data }, 201), requestId)
   } catch (error) {
-    console.error('Error in POST /api/admin/funnel-steps:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const safeErr = sanitizeSupabaseError(error)
+    console.error({ requestId, operation: 'POST /api/admin/funnel-steps', error: safeErr })
+    return withRequestId(internalErrorResponse(), requestId)
   }
 }

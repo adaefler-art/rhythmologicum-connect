@@ -1,6 +1,3 @@
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
 import { env } from '@/lib/env'
 import {
   configurationErrorResponse,
@@ -10,6 +7,9 @@ import {
   successResponse,
   unauthorizedResponse,
 } from '@/lib/api/responses'
+import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
 
 /**
  * B7 API Endpoint: List all funnels for admin/clinician management
@@ -33,36 +33,32 @@ export async function GET(request: Request) {
       )
     }
 
-    const cookieStore = await cookies()
-    const authClient = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
-
-    const {
-      data: { user },
-    } = await authClient.auth.getUser()
-
-    if (!user) {
-      return withRequestId(unauthorizedResponse(), requestId)
-    }
-
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    const hasAccess = role === 'clinician' || role === 'admin'
-    if (!hasAccess) {
+    // Check authentication and authorization using canonical helpers
+    const authClient = await createServerSupabaseClient()
+    
+    if (!(await hasClinicianRole())) {
+      const {
+        data: { user },
+      } = await authClient.auth.getUser()
+      
+      if (!user) {
+        return withRequestId(unauthorizedResponse(), requestId)
+      }
+      
       return withRequestId(forbiddenResponse(), requestId)
     }
 
-    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY
-    const readClient = !isBlank(serviceKey)
-      ? createClient(publicSupabaseUrl, serviceKey, { auth: { persistSession: false } })
-      : authClient
+    // Use admin client for cross-user query (metadata tables only)
+    // Justification: Clinicians need to view/manage all funnels, not just their own
+    // Try to use admin client if service key is available, otherwise fall back to auth client
+    let readClient
+    try {
+      readClient = createAdminSupabaseClient()
+    } catch (err) {
+      // Service key not configured, fall back to auth client
+      console.warn({ requestId, message: 'Service key not configured, using auth client for admin funnels' })
+      readClient = authClient
+    }
 
     const { data: pillars, error: pillarsError } = await readClient
       .from('pillars')
@@ -194,70 +190,4 @@ export async function GET(request: Request) {
     console.error({ requestId, supabaseError: safeErr })
     return withRequestId(internalErrorResponse(), requestId)
   }
-}
-
-function isBlank(value: string | null | undefined): boolean {
-  return !value || value.trim().length === 0
-}
-
-function getRequestId(request: Request): string {
-  return request.headers.get('x-request-id') || crypto.randomUUID()
-}
-
-function withRequestId(response: Response, requestId: string): Response {
-  response.headers.set('x-request-id', requestId)
-  return response
-}
-
-type SafeSupabaseError = {
-  code?: string
-  message: string
-}
-
-function sanitizeSupabaseError(error: unknown): SafeSupabaseError {
-  if (!error) return { message: 'Unknown error' }
-  if (typeof error === 'string') return { message: error }
-
-  if (typeof error === 'object') {
-    const maybeCode = 'code' in error ? (error as { code?: unknown }).code : undefined
-    const maybeMessage = 'message' in error ? (error as { message?: unknown }).message : undefined
-    return {
-      code: typeof maybeCode === 'string' ? maybeCode : undefined,
-      message: typeof maybeMessage === 'string' ? maybeMessage : 'Unknown error',
-    }
-  }
-
-  return { message: 'Unknown error' }
-}
-
-function classifySupabaseError(error: SafeSupabaseError):
-  | { kind: 'SCHEMA_NOT_READY' }
-  | { kind: 'AUTH_OR_RLS' }
-  | { kind: 'OTHER' } {
-  const code = error.code
-  const message = error.message.toLowerCase()
-
-  if (
-    code === 'PGRST205' ||
-    code === '42P01' ||
-    code === '42703' ||
-    message.includes('schema cache') ||
-    (message.includes('could not find') && message.includes('schema cache')) ||
-    message.includes('relation') && message.includes('does not exist') ||
-    message.includes('column') && message.includes('does not exist')
-  ) {
-    return { kind: 'SCHEMA_NOT_READY' }
-  }
-
-  if (
-    code === '42501' ||
-    message.includes('permission denied') ||
-    message.includes('rls') ||
-    message.includes('jwt') ||
-    message.includes('not authorized')
-  ) {
-    return { kind: 'AUTH_OR_RLS' }
-  }
-
-  return { kind: 'OTHER' }
 }
