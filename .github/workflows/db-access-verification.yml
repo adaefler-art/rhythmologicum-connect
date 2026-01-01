@@ -1,0 +1,110 @@
+name: DB Access Pattern Verification
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'app/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'eslint.config.mjs'
+      - 'scripts/db/**'
+      - 'package.json'
+  push:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'app/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-db-access:
+    runs-on: ubuntu-latest
+    name: Verify DB Access Patterns
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (changed files only)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            MERGE_BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+            mapfile -t CHANGED < <(git diff --name-only "$MERGE_BASE"...HEAD -- '*.ts' '*.tsx' || true)
+          else
+            mapfile -t CHANGED < <(git diff --name-only "${{ github.event.before }}"...HEAD -- '*.ts' '*.tsx' || true)
+          fi
+
+          if [ ${#CHANGED[@]} -eq 0 ]; then
+            echo "No TS/TSX changes to lint."
+            exit 0
+          fi
+
+          echo "Linting ${#CHANGED[@]} changed files"
+          npx eslint "${CHANGED[@]}"
+
+      - name: Verify DB Access Patterns (changed files only)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            MERGE_BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
+            mapfile -t CHANGED < <(git diff --name-only "$MERGE_BASE"...HEAD -- '*.ts' '*.tsx' || true)
+          else
+            mapfile -t CHANGED < <(git diff --name-only "${{ github.event.before }}"...HEAD -- '*.ts' '*.tsx' || true)
+          fi
+
+          if [ ${#CHANGED[@]} -eq 0 ]; then
+            echo "No TS/TSX changes to verify."
+            exit 0
+          fi
+
+          node scripts/db/verify-db-access.js --files "${CHANGED[@]}"
+
+      - name: Generate audit report (on failure)
+        if: failure()
+        run: |
+          echo "Generating DB access audit report..."
+          npm run db:access-audit
+          echo ""
+          echo "📊 Audit reports generated:"
+          echo "  - docs/canon/DB_ACCESS_PATTERNS.md"
+          echo "  - docs/canon/DB_ACCESS_MATRIX.md"
+          echo ""
+          echo "Review these files to identify violations."
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "✅ All DB access pattern checks passed!"
+          echo ""
+          echo "Summary:"
+          echo "  - ESLint rules enforced"
+          echo "  - No direct createClient/createServerClient usage outside canonical factories"
+          echo "  - Admin client usage properly scoped"
+          echo "  - All database access follows canonical patterns"
