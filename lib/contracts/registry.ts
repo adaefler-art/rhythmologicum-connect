@@ -75,6 +75,9 @@ export type PillarKey = typeof PILLAR_KEY[keyof typeof PILLAR_KEY]
  */
 export const FUNNEL_SLUG = {
   STRESS_ASSESSMENT: 'stress-assessment',
+  CARDIOVASCULAR_AGE: 'cardiovascular-age',
+  SLEEP_QUALITY: 'sleep-quality',
+  HEART_HEALTH_NUTRITION: 'heart-health-nutrition',
   // Legacy aliases - deprecated but maintained for compatibility
   STRESS: 'stress',
   STRESS_CHECK: 'stress-check',
