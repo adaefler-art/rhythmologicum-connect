@@ -15,6 +15,18 @@ type Funnel = {
   is_active: boolean
   created_at: string
   updated_at: string
+  default_version?: string | null
+}
+
+type PillarGroup = {
+  pillar: {
+    id: string
+    key: string
+    title: string
+    description: string | null
+    sort_order: number
+  }
+  funnels: Funnel[]
 }
 
 export default function FunnelListPage() {
@@ -38,7 +50,19 @@ export default function FunnelListPage() {
       }
 
       const data = await response.json()
-      setFunnels(data.funnels || [])
+      if (!data?.success) {
+        throw new Error(data?.error?.message || 'Failed to load funnels')
+      }
+
+      const pillars: PillarGroup[] = data.data?.pillars || []
+      const uncategorized: Funnel[] = data.data?.uncategorized_funnels || []
+
+      const flattened: Funnel[] = [
+        ...pillars.flatMap((p) => p.funnels || []),
+        ...(uncategorized || []),
+      ]
+
+      setFunnels(flattened)
     } catch (err) {
       console.error('Error loading funnels:', err)
       setError('Fehler beim Laden der Funnels')

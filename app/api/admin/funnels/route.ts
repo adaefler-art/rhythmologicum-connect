@@ -1,12 +1,15 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+import { env } from '@/lib/env'
 import {
-  logUnauthorized,
-  logForbidden,
-  logClinicianFlowError,
-} from '@/lib/logging/logger'
+  configurationErrorResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+  schemaNotReadyResponse,
+  successResponse,
+  unauthorizedResponse,
+} from '@/lib/api/responses'
 
 /**
  * B7 API Endpoint: List all funnels for admin/clinician management
@@ -14,80 +17,244 @@ import {
  * 
  * Returns all funnels with basic metadata for overview page
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const requestId = getRequestId(request)
+
   try {
-    // Check authentication and authorization
+    const publicSupabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+    const publicSupabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (isBlank(publicSupabaseUrl) || isBlank(publicSupabaseAnonKey)) {
+      return withRequestId(
+        configurationErrorResponse(
+          'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+        ),
+        requestId,
+      )
+    }
+
     const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
+    const authClient = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        },
+      },
+    })
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await authClient.auth.getUser()
 
     if (!user) {
-      logUnauthorized({ endpoint: '/api/admin/funnels' })
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return withRequestId(unauthorizedResponse(), requestId)
     }
 
     const role = user.app_metadata?.role || user.user_metadata?.role
-    // Allow access for clinician and admin roles
     const hasAccess = role === 'clinician' || role === 'admin'
     if (!hasAccess) {
-      logForbidden({ userId: user.id, endpoint: '/api/admin/funnels' }, 'User lacks clinician/admin role')
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return withRequestId(forbiddenResponse(), requestId)
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY
+    const readClient = !isBlank(serviceKey)
+      ? createClient(publicSupabaseUrl, serviceKey, { auth: { persistSession: false } })
+      : authClient
 
-    if (!supabaseUrl || !supabaseKey) {
-      logClinicianFlowError(
-        { endpoint: '/api/admin/funnels', userId: user.id },
-        new Error('Supabase configuration missing')
+    const { data: pillars, error: pillarsError } = await readClient
+      .from('pillars')
+      .select('id,key,title,description,sort_order')
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true })
+
+    if (pillarsError) {
+      const safeErr = sanitizeSupabaseError(pillarsError)
+      const classified = classifySupabaseError(safeErr)
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error(`[admin-funnels:${requestId}] Schema not ready (pillars):`, safeErr)
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      if (classified.kind === 'AUTH_OR_RLS') {
+        console.warn(`[admin-funnels:${requestId}] Forbidden (pillars):`, safeErr)
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
+      console.error(`[admin-funnels:${requestId}] Failed to fetch pillars:`, safeErr)
+      return withRequestId(internalErrorResponse('Failed to fetch pillars.'), requestId)
+    }
+
+    const { data: funnels, error: funnelsError } = await readClient
+      .from('funnels_catalog')
+      .select(
+        'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
       )
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
-
-    // Fetch all funnels
-    const { data: funnels, error: funnelsError } = await adminClient
-      .from('funnels')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .order('title', { ascending: true })
+      .order('slug', { ascending: true })
 
     if (funnelsError) {
-      logClinicianFlowError(
-        { endpoint: '/api/admin/funnels', userId: user.id },
-        funnelsError
-      )
-      return NextResponse.json({ error: 'Failed to fetch funnels' }, { status: 500 })
+      const safeErr = sanitizeSupabaseError(funnelsError)
+      const classified = classifySupabaseError(safeErr)
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error(`[admin-funnels:${requestId}] Schema not ready (funnels_catalog):`, safeErr)
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      if (classified.kind === 'AUTH_OR_RLS') {
+        console.warn(`[admin-funnels:${requestId}] Forbidden (funnels_catalog):`, safeErr)
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
+      console.error(`[admin-funnels:${requestId}] Failed to fetch funnels_catalog:`, safeErr)
+      return withRequestId(internalErrorResponse('Failed to fetch funnels.'), requestId)
     }
 
-    return NextResponse.json({ funnels: funnels || [] })
-  } catch (error) {
-    logClinicianFlowError(
-      { endpoint: '/api/admin/funnels' },
-      error
+    const funnelIds = (funnels ?? []).map((f) => f.id)
+
+    const defaultVersionLookup = new Map<string, string>()
+    if (funnelIds.length > 0) {
+      const { data: versions, error: versionsError } = await readClient
+        .from('funnel_versions')
+        .select('id,version,funnel_id')
+        .in('funnel_id', funnelIds)
+        .order('id', { ascending: true })
+
+      if (versionsError) {
+        const safeErr = sanitizeSupabaseError(versionsError)
+        const classified = classifySupabaseError(safeErr)
+
+        if (classified.kind === 'SCHEMA_NOT_READY') {
+          console.error(`[admin-funnels:${requestId}] Schema not ready (funnel_versions):`, safeErr)
+          return withRequestId(schemaNotReadyResponse(), requestId)
+        }
+
+        if (classified.kind === 'AUTH_OR_RLS') {
+          console.warn(`[admin-funnels:${requestId}] Forbidden (funnel_versions):`, safeErr)
+          return withRequestId(forbiddenResponse(), requestId)
+        }
+
+        console.error(`[admin-funnels:${requestId}] Failed to fetch funnel_versions:`, safeErr)
+        return withRequestId(internalErrorResponse('Failed to fetch funnel versions.'), requestId)
+      }
+
+      ;(versions ?? []).forEach((v) => {
+        defaultVersionLookup.set(v.id, v.version)
+      })
+    }
+
+    const funnelsWithVersions = (funnels ?? []).map((f) => ({
+      ...f,
+      subtitle: null,
+      outcomes: Array.isArray(f.outcomes) ? f.outcomes : [],
+      default_version: f.default_version_id
+        ? (defaultVersionLookup.get(f.default_version_id) ?? null)
+        : null,
+    }))
+
+    const pillarById = new Map(
+      (pillars ?? []).map((p) => [
+        p.id,
+        {
+          pillar: p,
+          funnels: [] as typeof funnelsWithVersions,
+        },
+      ]),
     )
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+
+    const uncategorized: typeof funnelsWithVersions = []
+    for (const funnel of funnelsWithVersions) {
+      if (!funnel.pillar_id) {
+        uncategorized.push(funnel)
+        continue
+      }
+      const bucket = pillarById.get(funnel.pillar_id)
+      if (!bucket) {
+        uncategorized.push(funnel)
+        continue
+      }
+      bucket.funnels.push(funnel)
+    }
+
+    const pillarGroups = Array.from(pillarById.values())
+
+    return withRequestId(
+      successResponse({
+        pillars: pillarGroups,
+        uncategorized_funnels: uncategorized,
+      }),
+      requestId,
+    )
+  } catch (error) {
+    const safeErr = sanitizeSupabaseError(error)
+    console.error(`[admin-funnels:${requestId}] Unexpected error:`, safeErr)
+    return withRequestId(internalErrorResponse(), requestId)
   }
+}
+
+function isBlank(value: string | null | undefined): boolean {
+  return !value || value.trim().length === 0
+}
+
+function getRequestId(request: Request): string {
+  return request.headers.get('x-request-id') || crypto.randomUUID()
+}
+
+function withRequestId(response: Response, requestId: string): Response {
+  response.headers.set('x-request-id', requestId)
+  return response
+}
+
+type SafeSupabaseError = {
+  code?: string
+  message: string
+}
+
+function sanitizeSupabaseError(error: unknown): SafeSupabaseError {
+  if (!error) return { message: 'Unknown error' }
+  if (typeof error === 'string') return { message: error }
+
+  if (typeof error === 'object') {
+    const maybeCode = 'code' in error ? (error as { code?: unknown }).code : undefined
+    const maybeMessage = 'message' in error ? (error as { message?: unknown }).message : undefined
+    return {
+      code: typeof maybeCode === 'string' ? maybeCode : undefined,
+      message: typeof maybeMessage === 'string' ? maybeMessage : 'Unknown error',
+    }
+  }
+
+  return { message: 'Unknown error' }
+}
+
+function classifySupabaseError(error: SafeSupabaseError):
+  | { kind: 'SCHEMA_NOT_READY' }
+  | { kind: 'AUTH_OR_RLS' }
+  | { kind: 'OTHER' } {
+  const code = error.code
+  const message = error.message.toLowerCase()
+
+  if (
+    code === '42P01' ||
+    code === '42703' ||
+    message.includes('relation') && message.includes('does not exist') ||
+    message.includes('column') && message.includes('does not exist')
+  ) {
+    return { kind: 'SCHEMA_NOT_READY' }
+  }
+
+  if (
+    code === '42501' ||
+    message.includes('permission denied') ||
+    message.includes('rls') ||
+    message.includes('jwt') ||
+    message.includes('not authorized')
+  ) {
+    return { kind: 'AUTH_OR_RLS' }
+  }
+
+  return { kind: 'OTHER' }
 }
