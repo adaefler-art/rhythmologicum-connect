@@ -924,6 +924,57 @@ const fullManifest = {
 }
 ```
 
+---
+
+## Canonical Funnel Slugs (V05-I02.3)
+
+**Version:** V0.5  
+**Purpose:** Registry of all canonical funnel identifiers  
+**Location:** `lib/contracts/registry.ts`
+
+### Available Funnels
+
+All funnel slugs MUST be defined in the `FUNNEL_SLUG` constant in the registry. The following canonical slugs are available:
+
+| Slug | Title | Pillar | Duration | Description |
+|------|-------|--------|----------|-------------|
+| `stress-assessment` | Stress Assessment | mental-health | 10 min | Scientific stress and mental health assessment |
+| `cardiovascular-age` | Cardiovascular Age Assessment | prevention | 8 min | Determine cardiovascular age based on risk factors |
+| `sleep-quality` | Sleep Quality Assessment | sleep | 10 min | Comprehensive sleep quality and hygiene evaluation |
+| `heart-health-nutrition` | Heart Health Nutrition | nutrition | 12 min | Heart-healthy eating pattern assessment |
+
+### Slug Resolution
+
+Funnel slugs are resolved using the canonical slug registry:
+
+```typescript
+import { FUNNEL_SLUG, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+
+// Use canonical constants
+const slug = FUNNEL_SLUG.CARDIOVASCULAR_AGE  // 'cardiovascular-age'
+
+// Resolve legacy aliases
+const resolved = getCanonicalFunnelSlug('stress')  // Returns 'stress-assessment'
+```
+
+### Adding New Funnels
+
+To add a new funnel:
+
+1. **Add slug to registry** (`lib/contracts/registry.ts`):
+   ```typescript
+   export const FUNNEL_SLUG = {
+     // ... existing slugs
+     YOUR_NEW_FUNNEL: 'your-new-funnel',
+   } as const
+   ```
+
+2. **Create migration** with `funnels_catalog` and `funnel_versions` entries
+3. **Provide stub manifests** (questionnaire_config + content_manifest)
+4. **Document in this section** with details in table above
+
+---
+
 ### Legacy Funnel Configuration (Pre-V0.5)
 
 **DEPRECATED:** Legacy configuration below. Use Plugin Manifest above for V0.5+.
