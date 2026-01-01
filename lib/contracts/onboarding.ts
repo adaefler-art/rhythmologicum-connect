@@ -69,7 +69,7 @@ export const BaselineProfileSchema = z.object({
     .nullable(),
   sex: z
     .enum(['male', 'female', 'other', 'prefer_not_to_say'], {
-      errorMap: () => ({ message: 'Please select a valid option' }),
+      message: 'Please select a valid option',
     })
     .optional()
     .nullable(),

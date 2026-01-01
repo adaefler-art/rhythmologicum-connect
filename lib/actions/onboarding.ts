@@ -23,6 +23,7 @@ import {
   CURRENT_CONSENT_VERSION,
 } from '@/lib/contracts/onboarding'
 import { logAuditEvent } from '@/lib/audit'
+import { env } from '@/lib/env'
 
 // ============================================================
 // Types
@@ -41,8 +42,8 @@ type ActionResult<T> = {
 async function getAuthenticatedClient() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL!,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
@@ -86,9 +87,10 @@ export async function recordConsent(formData: {
     // Validate input
     const validationResult = ConsentFormSchema.safeParse(formData)
     if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0]
       return {
         success: false,
-        error: validationResult.error.errors[0]?.message || 'Invalid consent data',
+        error: firstError?.message || 'Invalid consent data',
       }
     }
 
@@ -216,9 +218,10 @@ export async function saveBaselineProfile(
     // Validate input
     const validationResult = BaselineProfileSchema.safeParse(profileData)
     if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0]
       return {
         success: false,
-        error: validationResult.error.errors[0]?.message || 'Invalid profile data',
+        error: firstError?.message || 'Invalid profile data',
       }
     }
 
