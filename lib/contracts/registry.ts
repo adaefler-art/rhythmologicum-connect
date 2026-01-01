@@ -166,6 +166,23 @@ export const QUESTION_TYPE = {
 export type QuestionType = typeof QUESTION_TYPE[keyof typeof QUESTION_TYPE]
 
 // ============================================================
+// Patient Demographics
+// ============================================================
+
+/**
+ * Valid sex/gender options for patient profiles
+ * These correspond to the 'sex' field in the patient_profiles table
+ */
+export const PATIENT_SEX = {
+  MALE: 'male',
+  FEMALE: 'female',
+  OTHER: 'other',
+  PREFER_NOT_TO_SAY: 'prefer_not_to_say',
+} as const
+
+export type PatientSex = typeof PATIENT_SEX[keyof typeof PATIENT_SEX]
+
+// ============================================================
 // Feature Flag Names
 // ============================================================
 
@@ -217,6 +234,13 @@ export function isValidNodeType(value: unknown): value is NodeType {
  */
 export function isValidPillarKey(value: unknown): value is PillarKey {
   return typeof value === 'string' && Object.values(PILLAR_KEY).includes(value as PillarKey)
+}
+
+/**
+ * Type guard to check if a value is a valid patient sex option
+ */
+export function isValidPatientSex(value: unknown): value is PatientSex {
+  return typeof value === 'string' && Object.values(PATIENT_SEX).includes(value as PatientSex)
 }
 
 // ============================================================
