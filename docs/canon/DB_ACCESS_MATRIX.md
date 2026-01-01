@@ -33,7 +33,7 @@
 | app/api/funnels/[slug]/definition/route.ts | API Routes | createServerClient | content_pages, funnel_step_questions, funnel_steps +2 |  |
 | app/api/funnels/active/route.ts | API Routes | createServerClient | funnels |  |
 | app/api/funnels/catalog/[slug]/route.ts | API Routes | createServerClient | pillars, funnels_catalog, funnel_versions |  |
-| app/api/funnels/catalog/route.ts | API Routes | createServerClient, createClient | pillars, funnels_catalog, funnel_versions |  |
+| app/api/funnels/catalog/route.ts | API Routes |  | pillars, funnels_catalog, funnel_versions |  |
 | app/api/patient-measures/export/route.ts | API Routes | createClient | reports, patient_measures, patient_profiles |  |
 | app/api/patient-measures/history/route.ts | API Routes | createClient | reports, patient_measures |  |
 | app/clinician/page.tsx | App Pages/Components |  | patient_measures |  |
@@ -50,11 +50,13 @@
 | lib/actions/onboarding.ts | Library/Utilities | createServerClient | patient_profiles, user_consents |  |
 | lib/api/authHelpers.ts | Library/Utilities | createServerClient |  |  |
 | lib/audit/log.ts | Library/Utilities |  | audit_log |  |
+| lib/db/errors.ts | Library/Utilities |  | table |  |
+| lib/db/supabase.admin.ts | Library/Utilities |  | content_pages, funnel_steps, funnels +1 |  |
+| lib/db/supabase.public.ts | Library/Utilities |  | public_table |  |
+| lib/db/supabase.server.ts | Library/Utilities |  | user_data |  |
 | lib/funnelHelpers.ts | Library/Utilities |  | funnel_step_questions, funnel_steps, funnels +1 |  |
 | lib/funnels/loadFunnelVersion.ts | Library/Utilities | createClient | funnels_catalog, funnel_versions |  |
 | lib/navigation/assessmentNavigation.ts | Library/Utilities |  | funnel_step_questions, funnel_steps, questions +2 |  |
-| lib/supabaseClient.ts | Library/Utilities | createClient |  |  |
-| lib/supabaseServer.ts | Library/Utilities | createClient, createServerClient |  |  |
 | lib/utils/contentResolver.ts | Library/Utilities | createClient | content_pages, funnels |  |
 | lib/validation/requiredQuestions.ts | Library/Utilities | createServerClient | funnel_step_questions, funnel_steps, assessment_answers +1 |  |
 | lib/validation/stepValidation.ts | Library/Utilities |  | funnel_step_questions, funnel_steps, questions |  |

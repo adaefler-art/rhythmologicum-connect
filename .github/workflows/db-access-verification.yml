@@ -6,15 +6,21 @@ on:
     paths:
       - '**.ts'
       - '**.tsx'
-      - 'lib/db/**'
+      - 'app/**'
+      - 'src/**'
+      - 'lib/**'
       - 'eslint.config.mjs'
       - 'scripts/db/**'
+      - 'package.json'
   push:
     branches: [ main ]
     paths:
       - '**.ts'
       - '**.tsx'
-      - 'lib/db/**'
+      - 'app/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'package.json'
 
 permissions:
   contents: read

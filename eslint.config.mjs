@@ -43,6 +43,13 @@ const eslintConfig = defineConfig([
               message: "Admin client import is restricted. Only use in server-side API routes (app/api/**) or server-only lib modules. Document justification for each use.",
             },
           ],
+          patterns: [
+            {
+              group: ["*supabase*"],
+              importNames: ["createClient", "createServerClient"],
+              message: "Direct Supabase client imports (including aliases) are forbidden. Use canonical factories from @/lib/db/supabase.* instead.",
+            },
+          ],
         },
       ],
     },
@@ -78,6 +85,13 @@ const eslintConfig = defineConfig([
               name: "@supabase/ssr",
               importNames: ["createServerClient"],
               message: "Direct createServerClient import is forbidden. Use createServerSupabaseClient from @/lib/db/supabase.server instead.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["*supabase*"],
+              importNames: ["createClient", "createServerClient"],
+              message: "Direct Supabase client imports (including aliases) are forbidden. Use canonical factories from @/lib/db/supabase.* instead.",
             },
           ],
         },

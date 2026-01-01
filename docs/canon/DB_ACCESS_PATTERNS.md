@@ -1,18 +1,18 @@
 # DB Access Pattern Audit Report
 
-Generated: 2026-01-01T17:13:23.572Z
+Generated: 2026-01-01T17:35:53.302Z
 
 ## Summary
 
-- Total files scanned: 306
-- Direct createClient calls: 20
-- createServerClient calls: 44
-- Service role key usage: 71
+- Total files scanned: 313
+- Direct createClient calls: 16
+- createServerClient calls: 42
+- Service role key usage: 74
 - Existing helper usage: 8
 
 ## Client Creation Patterns
 
-### API Routes (47)
+### API Routes (45)
 
 - `app/api/admin/content-pages/[id]/route.ts:25` - createServerClient
 - `app/api/admin/content-pages/[id]/route.ts:60` - createClient
@@ -34,7 +34,7 @@ Generated: 2026-01-01T17:13:23.572Z
 - `app/api/admin/funnels/[id]/route.ts:21` - createServerClient
 - `app/api/admin/funnels/[id]/route.ts:62` - createClient
 - `app/api/admin/funnels/[id]/route.ts:179` - createServerClient
-  _... and 27 more_
+  _... and 25 more_
 
 ### App Pages/Components (5)
 
@@ -44,15 +44,11 @@ Generated: 2026-01-01T17:13:23.572Z
 - `app/patient/funnel/[slug]/result/page.tsx:23` - createServerClient
 - `app/patient/funnels/page.tsx:18` - createServerClient
 
-### Library/Utilities (11)
+### Library/Utilities (7)
 
 - `lib/actions/onboarding.ts:44` - createServerClient
 - `lib/api/authHelpers.ts:37` - createServerClient
 - `lib/funnels/loadFunnelVersion.ts:118` - createClient
-- `lib/supabaseClient.ts:55` - createClient
-- `lib/supabaseServer.ts:5` - createClient
-- `lib/supabaseServer.ts:8` - createServerClient
-- `lib/supabaseServer.ts:33` - createClient
 - `lib/utils/contentResolver.ts:51` - createClient
 - `lib/validation/requiredQuestions.ts:40` - createServerClient
 - `lib/validation/requiredQuestions.ts:139` - createServerClient
@@ -67,21 +63,24 @@ Generated: 2026-01-01T17:13:23.572Z
 | Table | Access Count | Files |
 |-------|--------------|-------|
 | patient_profiles | 23 | 19 |
-| content_pages | 21 | 10 |
+| content_pages | 22 | 11 |
 | assessments | 21 | 16 |
-| funnel_steps | 18 | 10 |
-| funnels | 12 | 10 |
+| funnel_steps | 19 | 11 |
+| funnels | 13 | 11 |
 | funnel_step_questions | 10 | 7 |
 | assessment_answers | 10 | 8 |
 | content_page_sections | 7 | 3 |
 | patient_measures | 7 | 5 |
 | questions | 6 | 5 |
+| funnels_catalog | 6 | 5 |
 | funnel_versions | 6 | 4 |
 | reports | 6 | 4 |
 | user_consents | 6 | 3 |
-| funnels_catalog | 4 | 4 |
 | pillars | 3 | 3 |
 | audit_log | 1 | 1 |
+| table | 1 | 1 |
+| public_table | 1 | 1 |
+| user_data | 1 | 1 |
 | funnel_question_rules | 1 | 1 |
 
 ## Environment Variable Usage (process.env)
