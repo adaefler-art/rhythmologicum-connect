@@ -6,6 +6,7 @@ on:
       - 'supabase/migrations/**'
       - 'lib/types/supabase.ts'
       - 'schema/**'
+      - 'docs/canon/DB_SCHEMA_MANIFEST.json'
       - '.github/workflows/db-determinism.yml'
   workflow_dispatch:
 
@@ -37,6 +38,25 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: 2.63.1
+      
+      - name: Setup PowerShell
+        run: |
+          echo "✅ PowerShell is already available on Ubuntu"
+          pwsh --version
+      
+      # Check 0a: Test linter with fixtures (deterministic tests)
+      - name: Test migration linter
+        run: |
+          echo "🧪 Running linter test suite..."
+          pwsh -File scripts/db/test-linter.ps1
+          echo "✅ Linter tests passed"
+      
+      # Check 0b: Lint migrations against canonical schema manifest (V0.5+)
+      - name: Lint migrations against schema manifest
+        run: |
+          echo "🔍 Linting migrations against canonical schema manifest..."
+          pwsh -File scripts/db/lint-migrations.ps1
+          echo "✅ All migrations use canonical schema objects"
       
       # Check 1: Ensure no existing migrations were edited
       - name: Check migration immutability
@@ -137,6 +157,8 @@ jobs:
         run: |
           echo ""
           echo "🎉 All DB determinism checks passed!"
+          echo "   ✅ Linter tests passed (fixtures validated)"
+          echo "   ✅ All schema objects are canonical"
           echo "   ✅ No existing migrations were edited"
           echo "   ✅ Migrations apply cleanly"
           echo "   ✅ No schema drift detected"
