@@ -4,8 +4,10 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   internalErrorResponse,
+  schemaNotReadyResponse,
+  forbiddenResponse,
 } from '@/lib/api/responses'
-import { getRequestId, withRequestId, logError } from '@/lib/db/errors'
+import { getRequestId, withRequestId, logError, classifySupabaseError } from '@/lib/db/errors'
 import type { FunnelDetailResponse, CatalogFunnel } from '@/lib/types/catalog'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 
@@ -69,13 +71,24 @@ export async function GET(request: Request, { params }: Params) {
       .single()
 
     if (funnelError || !funnel) {
-      logError({
-        requestId,
-        operation: 'fetch_funnel_detail',
-        error: funnelError,
-        userId: user.id,
-        context: { slug: canonicalSlug },
-      })
+      if (funnelError) {
+        const classified = classifySupabaseError(funnelError)
+        logError({
+          requestId,
+          operation: 'fetch_funnel_detail',
+          error: funnelError,
+          userId: user.id,
+          context: { slug: canonicalSlug },
+        })
+
+        if (classified.kind === 'SCHEMA_NOT_READY') {
+          return withRequestId(schemaNotReadyResponse(), requestId)
+        }
+        if (classified.kind === 'AUTH_OR_RLS') {
+          return withRequestId(forbiddenResponse(), requestId)
+        }
+      }
+
       return withRequestId(
         notFoundResponse('Funnel', `Funnel with slug "${slug}" not found`),
         requestId,
@@ -123,6 +136,7 @@ export async function GET(request: Request, { params }: Params) {
       .order('id', { ascending: true })
 
     if (versionsError) {
+      const classified = classifySupabaseError(versionsError)
       logError({
         requestId,
         operation: 'fetch_funnel_versions',
@@ -130,6 +144,14 @@ export async function GET(request: Request, { params }: Params) {
         userId: user.id,
         context: { funnelId: funnel.id },
       })
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+      if (classified.kind === 'AUTH_OR_RLS') {
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
       return withRequestId(
         internalErrorResponse('Failed to fetch funnel versions'),
         requestId,
