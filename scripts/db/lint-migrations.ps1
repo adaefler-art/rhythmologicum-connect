@@ -25,6 +25,7 @@ $migrationsDir = Join-Path $PSScriptRoot "..\..\supabase\migrations"
 # Tested with actual migrations which use lowercase 'create table' syntax
 $tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
 $enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(public\.)?(?<enum>[a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+ENUM'
+$alterTablePattern = '(?im)^\s*ALTER\s+TABLE\s+(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
 
 Write-Host "🔍 Migration Linter - DB Schema Manifest Validator" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
@@ -153,6 +154,39 @@ foreach ($file in $migrationFiles) {
                 Line = $lineNum
                 Reason = "Not in canonical manifest"
                 Severity = "ERROR"
+            }
+        }
+    }
+    
+    # Extract ALTER TABLE statements with line numbers
+    $alterTableMatches = [regex]::Matches($content, $alterTablePattern)
+    foreach ($match in $alterTableMatches) {
+        $tableName = $match.Groups['table'].Value
+        
+        # Calculate line number from match position
+        $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
+        
+        # Check against canonical list
+        $isCanonical = $manifest.tables -contains $tableName
+        $isDeprecated = $manifest.deprecated.tables | Where-Object { $_.name -eq $tableName }
+        
+        if (-not $isCanonical) {
+            $violations += @{
+                Type = "ALTER TABLE"
+                Name = $tableName
+                File = $relativePath
+                Line = $lineNum
+                Reason = "Table not in canonical manifest"
+                Severity = "ERROR"
+            }
+        } elseif ($isDeprecated) {
+            $violations += @{
+                Type = "ALTER TABLE"
+                Name = $tableName
+                File = $relativePath
+                Line = $lineNum
+                Reason = "Deprecated: $($isDeprecated.reason). Use '$($isDeprecated.replacement)' instead."
+                Severity = "WARNING"
             }
         }
     }

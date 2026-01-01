@@ -45,6 +45,12 @@
 .\scripts\db\lint-migrations.ps1 -Verbose
 ```
 
+**Validation Scope:**
+The linter validates the following SQL statements:
+- `CREATE TABLE` - Ensures new tables are in the canonical manifest
+- `CREATE TYPE ... AS ENUM` - Ensures new enums are in the canonical manifest
+- `ALTER TABLE` - Ensures tables being altered are canonical (prevents altering non-existent tables)
+
 **Exit Codes:**
 - `0` = All checks passed
 - `1` = Non-canonical objects detected (blocks PR)

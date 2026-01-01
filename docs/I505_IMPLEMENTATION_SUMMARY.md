@@ -62,6 +62,7 @@ Implemented a **hard, machine-enforced guardrail** that blocks any PR introducin
 **Features:**
 - Scans all `.sql` files in `supabase/migrations/`
 - Extracts `CREATE TABLE` and `CREATE TYPE` identifiers using regex
+- **Validates `ALTER TABLE` statements** to ensure tables being altered are canonical
 - Compares against manifest allowlist
 - Reports violations with file + line + identifier
 - Supports deprecated object warnings
@@ -94,9 +95,9 @@ npm run lint:schema
   Issue: Not in canonical manifest
 
   File: 20251231999999_bad_migration.sql:12
-  Type: ENUM
-  Name: fake_enum
-  Issue: Not in canonical manifest
+  Type: ALTER TABLE
+  Name: fantasy_table
+  Issue: Table not in canonical manifest
 ```
 
 ### 3. CI Integration

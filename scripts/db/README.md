@@ -23,6 +23,7 @@ npm run lint:schema
 **What it does:**
 - Scans all SQL files in `supabase/migrations/`
 - Extracts `CREATE TABLE` and `CREATE TYPE` identifiers
+- Extracts `ALTER TABLE` statements and validates table names
 - Validates against canonical manifest (`docs/canon/DB_SCHEMA_MANIFEST.json`)
 - Reports non-canonical or deprecated objects with file + line numbers
 
