@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { env } from '@/lib/env'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import type {
@@ -49,8 +48,7 @@ export async function GET(
     }
 
     // Create Supabase server client consistent with other endpoints (uses NEXT_PUBLIC_* keys + cookies)
-    const cookieStore = await cookies()
-    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
@@ -61,7 +59,7 @@ export async function GET(
       )
     }
 
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = await createServerSupabaseClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return cookieStore.getAll()

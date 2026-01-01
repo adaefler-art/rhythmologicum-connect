@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 /**
  * F3 API Endpoint: Update section
@@ -15,25 +14,7 @@ export async function PATCH(
     const body = await request.json()
 
     // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -91,25 +72,7 @@ export async function DELETE(
     const { sectionId } = await params
 
     // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },

@@ -1,21 +1,9 @@
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import type { NextRequest } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value
-        },
-        set(name, value, options) {
-          try {
-            cookieStore.set({ name, value, ...(options ?? {}) })
+    const supabase = await createServerSupabaseClient() })
           } catch {
             // cookies() is immutable in some runtimes (e.g. middleware)
           }

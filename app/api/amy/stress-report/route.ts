@@ -222,6 +222,7 @@ export async function POST(req: Request) {
   const supabase = createAdminSupabaseClient();
 
   try {
+    const body = await req.json().catch((parseError) => {
       console.error('[stress-report] JSON parsing error', {
         error: String(parseError),
       });
@@ -379,7 +380,7 @@ export async function POST(req: Request) {
         reportId: reportRow.id,
         stressScore: stressScore ?? reportRow.score_numeric ?? null,
         sleepScore: sleepScore ?? reportRow.sleep_score ?? null,
-        riskLevel: riskLevel ?? reportRow.risk_level ?? null,
+        riskLevel: (riskLevel ?? reportRow.risk_level ?? null) as RiskLevel | null,
       });
       if (!measureResult.persisted) {
         console.warn('[stress-report] Continuing without patient_measures persistence (recoverable)', {

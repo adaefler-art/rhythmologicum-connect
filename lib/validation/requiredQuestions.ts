@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { evaluateRule, describeRule } from './ruleEngine'
 import { env } from '@/lib/env'
 import type {
@@ -36,8 +35,7 @@ export async function validateRequiredQuestions(
   assessmentId: string,
   stepId: string,
 ): Promise<ValidationResult> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
+    const supabase = await createServerSupabaseClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
@@ -135,8 +133,7 @@ export async function validateAllRequiredQuestions(
   assessmentId: string,
   funnelId: string,
 ): Promise<ValidationResult> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
+    const supabase = await createServerSupabaseClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
@@ -199,8 +196,7 @@ export async function validateRequiredQuestionsExtended(
   assessmentId: string,
   stepId: string,
 ): Promise<ValidationResultExtended> {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
+    const supabase = await createServerSupabaseClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
