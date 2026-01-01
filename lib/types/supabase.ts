@@ -600,39 +600,39 @@ export type Database = {
       }
       funnel_versions: {
         Row: {
-          algorithm_bundle_version: string | null
+          algorithm_bundle_version: string
           content_manifest: Json
           created_at: string
           funnel_id: string
           id: string
           is_default: boolean
-          prompt_version: string | null
+          prompt_version: string
           questionnaire_config: Json
           rollout_percent: number | null
           updated_at: string | null
           version: string
         }
         Insert: {
-          algorithm_bundle_version?: string | null
+          algorithm_bundle_version?: string
           content_manifest?: Json
           created_at?: string
           funnel_id: string
           id?: string
           is_default?: boolean
-          prompt_version?: string | null
+          prompt_version?: string
           questionnaire_config?: Json
           rollout_percent?: number | null
           updated_at?: string | null
           version: string
         }
         Update: {
-          algorithm_bundle_version?: string | null
+          algorithm_bundle_version?: string
           content_manifest?: Json
           created_at?: string
           funnel_id?: string
           id?: string
           is_default?: boolean
-          prompt_version?: string | null
+          prompt_version?: string
           questionnaire_config?: Json
           rollout_percent?: number | null
           updated_at?: string | null

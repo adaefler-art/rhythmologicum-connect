@@ -691,9 +691,244 @@ CREATE POLICY "service_role_all"
 
 ## V0.5 JSONB Field Schemas
 
-### Funnel Version Configuration
+### Funnel Plugin Manifest (V05-I02.2)
 
-**questionnaire_config JSONB:**
+**Version:** V0.5  
+**Purpose:** Versioned configuration for funnel questionnaires and content  
+**Location:** `lib/contracts/funnelManifest.ts`
+
+A funnel version's complete configuration is stored in JSONB fields validated by Zod schemas. All configuration is versioned and immutable once deployed.
+
+#### Manifest Structure
+
+Each `funnel_versions` row contains:
+
+```typescript
+{
+  questionnaire_config: FunnelQuestionnaireConfig  // JSONB NOT NULL
+  content_manifest: FunnelContentManifest          // JSONB NOT NULL
+  algorithm_bundle_version: string                 // NOT NULL (e.g., "v1.0.0")
+  prompt_version: string                           // NOT NULL (e.g., "1.0")
+}
+```
+
+#### Questionnaire Config Schema
+
+**Type Safety:** All question types MUST come from `QUESTION_TYPE` registry.
+
+```typescript
+type FunnelQuestionnaireConfig = {
+  version: string                    // Default: "1.0"
+  steps: Array<{
+    id: string
+    title: string
+    description?: string
+    questions: Array<{
+      id: string
+      key: string                    // Unique key for answer storage
+      type: QuestionType             // From registry: 'radio' | 'checkbox' | 'text' | 'textarea' | 'number' | 'scale' | 'slider'
+      label: string
+      helpText?: string
+      required: boolean              // Default: false
+      options?: Array<{              // For radio/checkbox
+        value: string
+        label: string
+        helpText?: string
+      }>
+      validation?: {
+        required?: boolean
+        min?: number
+        max?: number
+        pattern?: string
+        message?: string
+      }
+      minValue?: number              // For scale/slider
+      maxValue?: number              // For scale/slider
+    }>
+    conditionalLogic?: {             // Optional step visibility logic
+      type: 'show' | 'hide' | 'skip'
+      conditions: Array<{
+        questionId: string
+        operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'notIn'
+        value: string | number | boolean | string[]
+      }>
+      logic: 'and' | 'or'            // Default: 'and'
+    }
+  }>
+  conditionalLogic?: Array<...>      // Global conditional logic
+  metadata?: Record<string, any>     // Custom metadata
+}
+```
+
+**Validation:**
+```typescript
+import { parseQuestionnaireConfig } from '@/lib/contracts/funnelManifest'
+
+const config = parseQuestionnaireConfig(jsonb)  // Throws on invalid
+```
+
+#### Content Manifest Schema
+
+**Type Safety:** All section types MUST come from `SECTION_TYPE` constant.
+
+```typescript
+type FunnelContentManifest = {
+  version: string                    // Default: "1.0"
+  pages: Array<{
+    slug: string
+    title: string
+    description?: string
+    sections: Array<{
+      key: string
+      type: SectionType              // 'hero' | 'text' | 'image' | 'video' | 'markdown' | 'cta' | 'divider'
+      contentRef?: string            // Reference to external content
+      content?: Record<string, any>  // Inline content data
+      orderIndex?: number
+    }>
+    metadata?: Record<string, any>
+  }>
+  assets?: Array<{
+    key: string
+    type: 'image' | 'video' | 'audio' | 'document'
+    url: string
+    metadata?: Record<string, any>
+  }>
+  metadata?: Record<string, any>
+}
+```
+
+**Validation:**
+```typescript
+import { parseContentManifest } from '@/lib/contracts/funnelManifest'
+
+const manifest = parseContentManifest(jsonb)  // Throws on invalid
+```
+
+#### Loading Funnel Versions
+
+**Server-Side Only:**
+
+```typescript
+import { loadFunnelVersion } from '@/lib/funnels/loadFunnelVersion'
+
+// Load by slug (gets default version)
+const version = await loadFunnelVersion('stress-assessment')
+// Returns: LoadedFunnelVersion with validated manifest
+
+// Access typed manifest
+const { questionnaire_config, content_manifest } = version.manifest
+const steps = questionnaire_config.steps
+const pages = content_manifest.pages
+```
+
+**Error Handling:**
+
+```typescript
+import { 
+  FunnelNotFoundError, 
+  FunnelVersionNotFoundError,
+  ManifestValidationError 
+} from '@/lib/funnels/loadFunnelVersion'
+
+try {
+  const version = await loadFunnelVersion('unknown-funnel')
+} catch (error) {
+  if (error instanceof FunnelNotFoundError) {
+    // Funnel doesn't exist
+  } else if (error instanceof ManifestValidationError) {
+    // JSONB failed schema validation
+  }
+}
+```
+
+#### No Magic Strings Rule
+
+**CRITICAL:** All type identifiers MUST come from registries:
+
+- **Question Types:** `QUESTION_TYPE` from `lib/contracts/registry.ts`
+- **Section Types:** `SECTION_TYPE` from `lib/contracts/funnelManifest.ts`
+- **Node Types:** `NODE_TYPE` from `lib/contracts/registry.ts`
+
+**Rejected by Schema:**
+```typescript
+// ❌ Fantasy type - will throw validation error
+{
+  type: "magic_input"  // NOT in QUESTION_TYPE registry
+}
+
+// ✅ Valid type
+{
+  type: QUESTION_TYPE.SCALE  // "scale" from registry
+}
+```
+
+#### Validation Functions
+
+```typescript
+// Standalone validation (server-side)
+import { 
+  validateQuestionnaireConfig,
+  validateContentManifest 
+} from '@/lib/funnels/loadFunnelVersion'
+
+const config = validateQuestionnaireConfig(userInput)
+const manifest = validateContentManifest(userInput)
+```
+
+#### Example: Complete Manifest
+
+```typescript
+const fullManifest = {
+  questionnaire_config: {
+    version: "1.0",
+    steps: [
+      {
+        id: "step-1",
+        title: "Stress Level",
+        questions: [
+          {
+            id: "q1",
+            key: "stress_level",
+            type: QUESTION_TYPE.SCALE,
+            label: "How stressed do you feel?",
+            helpText: "1 = Not at all, 10 = Extremely",
+            required: true,
+            minValue: 1,
+            maxValue: 10
+          }
+        ]
+      }
+    ]
+  },
+  content_manifest: {
+    version: "1.0",
+    pages: [
+      {
+        slug: "intro",
+        title: "Welcome",
+        sections: [
+          {
+            key: "hero",
+            type: SECTION_TYPE.HERO,
+            content: {
+              title: "Stress Assessment",
+              subtitle: "Understand your stress level"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  algorithm_bundle_version: "v1.0.0",
+  prompt_version: "1.0"
+}
+```
+
+### Legacy Funnel Configuration (Pre-V0.5)
+
+**DEPRECATED:** Legacy configuration below. Use Plugin Manifest above for V0.5+.
+
+**questionnaire_config JSONB (Legacy):**
 ```typescript
 {
   steps: Array<{
@@ -713,7 +948,7 @@ CREATE POLICY "service_role_all"
 }
 ```
 
-**content_manifest JSONB:**
+**content_manifest JSONB (Legacy):**
 ```typescript
 {
   pages: Array<{
