@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { requireAdminOrClinicianRole } from '@/lib/api/authHelpers'
 
 /**
@@ -13,25 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
 
     // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -48,18 +29,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for content pages management (RLS bypass for cross-user access)
+    const adminClient = createAdminSupabaseClient()
 
     // Fetch single content page with funnel data
     const { data: contentPage, error: pageError } = await adminClient
@@ -151,25 +122,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json()
 
     // Check authentication and authorization
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -186,18 +139,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for content pages management (RLS bypass for cross-user access)
+    const adminClient = createAdminSupabaseClient()
 
     // Validate required fields
     const { title, slug, body_markdown, status } = body
@@ -292,18 +235,8 @@ export async function DELETE(
     const { error: authError } = await requireAdminOrClinicianRole()
     if (authError) return authError
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for content pages management (RLS bypass for cross-user access)
+    const adminClient = createAdminSupabaseClient()
 
     // Delete content page (cascades to sections due to FK constraint)
     const { error: deleteError } = await adminClient

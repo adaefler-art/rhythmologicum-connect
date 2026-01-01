@@ -1,6 +1,6 @@
 // app/api/amy/stress-report/route.ts
 import { NextResponse } from 'next/server';
-import { createClient, type PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestError } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 import { featureFlags } from '@/lib/featureFlags';
@@ -13,25 +13,7 @@ import {
   getHashPrefix,
 } from '@/lib/versioning/constants';
 import { logReportGenerated } from '@/lib/audit';
-
-// Supabase-ENV robust auslesen
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn(
-    '[stress-report] Supabase-Env nicht gesetzt. Bitte NEXT_PUBLIC_SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY prüfen.'
-  );
-}
-
-const supabase =
-  supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey, {
-        auth: { persistSession: false },
-      })
-    : null;
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin';
 
 const anthropicApiKey =
   process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_TOKEN;
@@ -236,21 +218,10 @@ export async function POST(req: Request) {
   const requestStartTime = Date.now();
   console.log('[stress-report] POST request received');
 
-  try {
-    if (!supabase) {
-      const errorMsg = 'Supabase nicht initialisiert – Env Variablen fehlen.';
-      console.error(`[stress-report] ${errorMsg}`);
-      logPatientFlowError(
-        { endpoint: '/api/amy/stress-report' },
-        new Error(errorMsg)
-      );
-      return NextResponse.json(
-        { error: 'Server-Konfiguration unvollständig (Supabase).' },
-        { status: 500 }
-      );
-    }
+  // Use admin client for accessing reports across users (RLS bypass for system operation)
+  const supabase = createAdminSupabaseClient();
 
-    const body = await req.json().catch((parseError) => {
+  try {
       console.error('[stress-report] JSON parsing error', {
         error: String(parseError),
       });
@@ -528,9 +499,8 @@ async function upsertPatientMeasure(params: {
   sleepScore: number | null
   riskLevel: RiskLevel | null
 }): Promise<UpsertPatientMeasureResult> {
-  if (!supabase) {
-    throw new Error('Supabase client not initialised');
-  }
+  // Use admin client for patient measures (system operation)
+  const supabase = createAdminSupabaseClient();
 
   const normalizedRisk = params.riskLevel ?? 'pending';
 

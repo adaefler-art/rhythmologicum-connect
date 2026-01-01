@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 
 /**
@@ -19,22 +19,8 @@ export async function GET(
       return NextResponse.json({ error: 'Page slug is required' }, { status: 400 })
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 },
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for published content pages (RLS bypass for public metadata)
+    const supabase = createAdminSupabaseClient()
 
     // Fetch content page by slug, only if published and not deleted
     const { data: contentPage, error: pageError } = await supabase
