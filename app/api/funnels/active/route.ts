@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 /**
  * GET /api/funnels/active
@@ -10,24 +9,7 @@ import { cookies } from 'next/headers'
  */
 export async function GET() {
   try {
-    // Create Supabase server client
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            )
-          },
-        },
-      },
-    )
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {
@@ -50,9 +32,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch funnels' }, { status: 500 })
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      data: funnels || [] 
+      data: funnels || [],
     })
   } catch (error) {
     console.error('Error in GET /api/funnels/active:', error)

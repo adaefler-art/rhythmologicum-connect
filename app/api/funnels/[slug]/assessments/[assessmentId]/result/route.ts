@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import {
   unauthorizedResponse,
   forbiddenResponse,
@@ -14,29 +13,14 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  const { slug, assessmentId } = await context.params
+  try {
+    const { slug, assessmentId } = await context.params
 
-  if (!slug || !assessmentId) {
-    return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
-  }
+    if (!slug || !assessmentId) {
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
+    }
 
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
+    const supabase = await createServerSupabaseClient()
 
   const {
     data: { user },
@@ -91,13 +75,17 @@ export async function GET(
     return internalErrorResponse('Fehler beim Laden des Funnels.')
   }
 
-  return NextResponse.json(
-    successResponse({
-      id: assessment.id,
-      funnel: assessment.funnel,
-      completedAt: assessment.completed_at,
-      status: assessment.status,
-      funnelTitle: funnelRow?.title ?? null,
-    }),
-  )
+    return NextResponse.json(
+      successResponse({
+        id: assessment.id,
+        funnel: assessment.funnel,
+        completedAt: assessment.completed_at,
+        status: assessment.status,
+        funnelTitle: funnelRow?.title ?? null,
+      }),
+    )
+  } catch (error) {
+    console.error('Error in GET /api/funnels/[slug]/assessments/[assessmentId]/result:', error)
+    return internalErrorResponse('Internal server error')
+  }
 }
