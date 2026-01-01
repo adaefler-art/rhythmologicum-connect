@@ -149,6 +149,8 @@ function checkFile(filePath) {
       'lib/audit/log.ts',
       'lib/utils/contentResolver.ts',
       'lib/funnels/loadFunnelVersion.ts',
+      'app/api/admin/funnels/__tests__/route.test.ts',
+      'lib/__tests__/env.test.ts',
     ])) {
       violations.push({
         file: relativePath,

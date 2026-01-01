@@ -353,4 +353,35 @@ describe('GET /api/admin/funnels', () => {
     expect(json.error.code).toBe('SCHEMA_NOT_READY')
     expect(res.headers.get('x-request-id')).toBe('rid-pgrst205')
   })
+
+  it('no authenticated user => 401 UNAUTHORIZED', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+      },
+      from: jest.fn(() => {
+        throw new Error('should not query database when not authenticated')
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-401' } }))
+
+    expect(res.status).toBe(401)
+    expect(res.headers.get('x-request-id')).toBe('rid-401')
+
+    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('UNAUTHORIZED')
+  })
 })

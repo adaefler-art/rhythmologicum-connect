@@ -1,7 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
+import { NextRequest } from 'next/server'
+import {
+  configurationErrorResponse,
+  forbiddenResponse,
+  internalErrorResponse,
+  notFoundResponse,
+  schemaNotReadyResponse,
+  successResponse,
+  unauthorizedResponse,
+  validationErrorResponse,
+} from '@/lib/api/responses'
+import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { env } from '@/lib/env'
 
 /**
  * B7 API Endpoint: Update question is_required flag
@@ -13,61 +24,47 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestId = getRequestId(request)
+  
   try {
     const { id } = await params
     const body = await request.json()
 
-    // Check authentication and authorization
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Check Supabase configuration
+    if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+      return withRequestId(
+        configurationErrorResponse(
+          'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+        ),
+        requestId,
+      )
     }
 
-    const role = user.app_metadata?.role || user.user_metadata?.role
-    // Allow access for clinician and admin roles
-    const hasAccess = role === 'clinician' || role === 'admin'
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Check authentication and authorization using canonical helpers
+    if (!(await hasClinicianRole())) {
+      const authClient = await createServerSupabaseClient()
+      const {
+        data: { user },
+      } = await authClient.auth.getUser()
+      
+      if (!user) {
+        return withRequestId(unauthorizedResponse(), requestId)
+      }
+      
+      return withRequestId(forbiddenResponse(), requestId)
     }
 
     // Validate request body
     if (typeof body.is_required !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+      return withRequestId(
+        validationErrorResponse('is_required must be a boolean'),
+        requestId,
+      )
     }
 
-    // Use service role for admin operations
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const adminClient = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for cross-user operations (metadata tables only)
+    // Justification: Clinicians need to update questions for all funnels
+    const adminClient = createAdminSupabaseClient()
 
     // Update question is_required
     const { data, error } = await adminClient
@@ -81,13 +78,27 @@ export async function PATCH(
       .single()
 
     if (error) {
-      console.error('Error updating question:', error)
-      return NextResponse.json({ error: 'Failed to update question' }, { status: 500 })
+      const safeErr = sanitizeSupabaseError(error)
+      const classified = classifySupabaseError(safeErr)
+
+      if (classified.kind === 'SCHEMA_NOT_READY') {
+        console.error({ requestId, supabaseError: safeErr })
+        return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      // PGRST116 means no rows found
+      if (safeErr.code === 'PGRST116') {
+        return withRequestId(notFoundResponse('Funnel step question'), requestId)
+      }
+
+      console.error({ requestId, operation: 'update_question', supabaseError: safeErr })
+      return withRequestId(internalErrorResponse('Failed to update question.'), requestId)
     }
 
-    return NextResponse.json({ question: data })
+    return withRequestId(successResponse({ question: data }), requestId)
   } catch (error) {
-    console.error('Error in PATCH /api/admin/funnel-step-questions/[id]:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const safeErr = sanitizeSupabaseError(error)
+    console.error({ requestId, operation: 'PATCH /api/admin/funnel-step-questions/[id]', error: safeErr })
+    return withRequestId(internalErrorResponse(), requestId)
   }
 }
