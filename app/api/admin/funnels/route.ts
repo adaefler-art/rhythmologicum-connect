@@ -75,16 +75,16 @@ export async function GET(request: Request) {
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error(`[admin-funnels:${requestId}] Schema not ready (pillars):`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
 
       if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn(`[admin-funnels:${requestId}] Forbidden (pillars):`, safeErr)
+        console.warn({ requestId, supabaseError: safeErr })
         return withRequestId(forbiddenResponse(), requestId)
       }
 
-      console.error(`[admin-funnels:${requestId}] Failed to fetch pillars:`, safeErr)
+      console.error({ requestId, supabaseError: safeErr })
       return withRequestId(internalErrorResponse('Failed to fetch pillars.'), requestId)
     }
 
@@ -101,16 +101,16 @@ export async function GET(request: Request) {
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error(`[admin-funnels:${requestId}] Schema not ready (funnels_catalog):`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
 
       if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn(`[admin-funnels:${requestId}] Forbidden (funnels_catalog):`, safeErr)
+        console.warn({ requestId, supabaseError: safeErr })
         return withRequestId(forbiddenResponse(), requestId)
       }
 
-      console.error(`[admin-funnels:${requestId}] Failed to fetch funnels_catalog:`, safeErr)
+      console.error({ requestId, supabaseError: safeErr })
       return withRequestId(internalErrorResponse('Failed to fetch funnels.'), requestId)
     }
 
@@ -129,16 +129,16 @@ export async function GET(request: Request) {
         const classified = classifySupabaseError(safeErr)
 
         if (classified.kind === 'SCHEMA_NOT_READY') {
-          console.error(`[admin-funnels:${requestId}] Schema not ready (funnel_versions):`, safeErr)
+          console.error({ requestId, supabaseError: safeErr })
           return withRequestId(schemaNotReadyResponse(), requestId)
         }
 
         if (classified.kind === 'AUTH_OR_RLS') {
-          console.warn(`[admin-funnels:${requestId}] Forbidden (funnel_versions):`, safeErr)
+          console.warn({ requestId, supabaseError: safeErr })
           return withRequestId(forbiddenResponse(), requestId)
         }
 
-        console.error(`[admin-funnels:${requestId}] Failed to fetch funnel_versions:`, safeErr)
+        console.error({ requestId, supabaseError: safeErr })
         return withRequestId(internalErrorResponse('Failed to fetch funnel versions.'), requestId)
       }
 
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
     )
   } catch (error) {
     const safeErr = sanitizeSupabaseError(error)
-    console.error(`[admin-funnels:${requestId}] Unexpected error:`, safeErr)
+    console.error({ requestId, supabaseError: safeErr })
     return withRequestId(internalErrorResponse(), requestId)
   }
 }
@@ -238,8 +238,11 @@ function classifySupabaseError(error: SafeSupabaseError):
   const message = error.message.toLowerCase()
 
   if (
+    code === 'PGRST205' ||
     code === '42P01' ||
     code === '42703' ||
+    message.includes('schema cache') ||
+    (message.includes('could not find') && message.includes('schema cache')) ||
     message.includes('relation') && message.includes('does not exist') ||
     message.includes('column') && message.includes('does not exist')
   ) {

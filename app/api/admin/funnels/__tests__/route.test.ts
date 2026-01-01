@@ -317,4 +317,40 @@ describe('GET /api/admin/funnels', () => {
     expect(mockClient.from).toHaveBeenCalledWith('funnels_catalog')
     expect(mockClient.from).not.toHaveBeenCalledWith('funnel_versions')
   })
+
+  it('returns 503 SCHEMA_NOT_READY when schema cache is missing relation (PGRST205)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: 'PGRST205', message: "Could not find the 'pillars' table in the schema cache" },
+    })
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-pgrst205' } }))
+
+    expect(res.status).toBe(503)
+    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('SCHEMA_NOT_READY')
+    expect(res.headers.get('x-request-id')).toBe('rid-pgrst205')
+  })
 })
