@@ -125,3 +125,9 @@ export function configurationErrorResponse(
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.CONFIGURATION_ERROR, message, 500)
 }
+
+export function schemaNotReadyResponse(
+  message = 'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.SCHEMA_NOT_READY, message, 503)
+}
