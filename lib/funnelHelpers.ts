@@ -7,7 +7,21 @@ import type {
   FunnelWithSteps,
   ActiveQuestion,
   FunnelDefinition,
+  StepDefinition,
 } from './types/funnel'
+import { NODE_TYPE } from '@/lib/contracts/registry'
+
+type StepType = StepDefinition['type']
+
+export function normalizeStepType(raw: string): StepType {
+  const normalized = raw.toLowerCase().trim()
+  const candidate = normalized.replace(/-/g, '_')
+
+  const allowed = new Set<string>(Object.values(NODE_TYPE))
+  if (allowed.has(candidate)) return candidate as StepType
+
+  throw new Error(`Invalid step type: ${raw}`)
+}
 
 /**
  * Fetches a funnel with all its steps and questions
@@ -188,12 +202,21 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
   if (stepsError) throw new Error(`Error loading steps: ${stepsError.message}`)
 
   // 3. For each step, fetch associated questions
-  const stepsWithQuestions = await Promise.all(
-    (steps || []).map(async (step) => {
-      const stepType = step.type.toLowerCase()
+  type DbStep = {
+    id: string
+    order_index: number
+    title: string
+    description: string | null
+    type: string
+    content_page_id?: string | null
+  }
+
+  const stepsWithQuestions: StepDefinition[] = await Promise.all(
+    (steps || []).map(async (step: DbStep) => {
+      const stepType = normalizeStepType(step.type)
 
       // For question steps, fetch questions
-      if (stepType === 'question_step' || stepType === 'form') {
+      if (stepType === NODE_TYPE.QUESTION_STEP || stepType === NODE_TYPE.FORM) {
         const { data: stepQuestions, error: stepQuestionsError } = await supabase
           .from('funnel_step_questions')
           .select('*')
@@ -254,7 +277,9 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           type: stepType,
           questions,
         }
-      } else if (stepType === 'info_step' || stepType === 'info') {
+      }
+
+      if (stepType === NODE_TYPE.INFO_STEP || stepType === NODE_TYPE.INFO) {
         return {
           id: step.id,
           orderIndex: step.order_index,
@@ -263,14 +288,30 @@ export async function getFunnelDefinitionServer(slug: string): Promise<FunnelDef
           type: stepType,
           content: step.description || '',
         }
-      } else {
+      }
+
+      if (stepType === NODE_TYPE.CONTENT_PAGE) {
+        const contentPageId = step.content_page_id || null
+        if (!contentPageId) {
+          throw new Error(`content_page step missing content_page_id: ${step.id}`)
+        }
+
         return {
           id: step.id,
           orderIndex: step.order_index,
           title: step.title,
           description: step.description,
           type: stepType,
+          contentPageId,
         }
+      }
+
+      return {
+        id: step.id,
+        orderIndex: step.order_index,
+        title: step.title,
+        description: step.description,
+        type: stepType,
       }
     }),
   )

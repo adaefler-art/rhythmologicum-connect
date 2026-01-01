@@ -39,12 +39,12 @@ jest.mock('next/headers', () => ({
   cookies: jest.fn(),
 }))
 
-jest.mock('@supabase/ssr', () => ({
-  createServerClient: jest.fn(),
+jest.mock('@/lib/db/supabase.server', () => ({
+  createServerSupabaseClient: jest.fn(),
 }))
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(),
+jest.mock('@/lib/db/supabase.admin', () => ({
+  createAdminSupabaseClient: jest.fn(),
 }))
 
 type EnvOverrides = Partial<{
@@ -70,12 +70,14 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
 
 function getMocks() {
   const { cookies } = jest.requireMock('next/headers') as { cookies: jest.Mock }
-  const { createServerClient } = jest.requireMock('@supabase/ssr') as {
-    createServerClient: jest.Mock
+  const { createServerSupabaseClient } = jest.requireMock('@/lib/db/supabase.server') as {
+    createServerSupabaseClient: jest.Mock
   }
-  const { createClient } = jest.requireMock('@supabase/supabase-js') as { createClient: jest.Mock }
+  const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+    createAdminSupabaseClient: jest.Mock
+  }
 
-  return { cookies, createServerClient, createClient }
+  return { cookies, createServerSupabaseClient, createAdminSupabaseClient }
 }
 
 function setupCookieStore() {
@@ -142,8 +144,13 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error(
+        'SUPABASE_SERVICE_ROLE_KEY is not configured. Admin client unavailable. This is a server-only secret and must be set in the deployment environment.',
+      )
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -170,8 +177,8 @@ describe('GET /api/funnels/catalog', () => {
       from: jest.fn(),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -201,8 +208,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -235,8 +245,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -301,8 +314,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -338,8 +354,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -375,8 +394,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -394,7 +416,7 @@ describe('GET /api/funnels/catalog', () => {
       SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
-    const { cookies, createServerClient } = getMocks()
+    const { cookies, createServerSupabaseClient } = getMocks()
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -405,7 +427,7 @@ describe('GET /api/funnels/catalog', () => {
     expect(res.headers.get('x-request-id')).toBeTruthy()
 
     expect(cookies).not.toHaveBeenCalled()
-    expect(createServerClient).not.toHaveBeenCalled()
+    expect(createServerSupabaseClient).not.toHaveBeenCalled()
   })
 
   it('returns 403 FORBIDDEN when funnels_catalog is not accessible (RLS/permission denied)', async () => {
@@ -432,8 +454,11 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerClient } = getMocks()
-    createServerClient.mockReturnValue(mockClient)
+    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured.')
+    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -469,14 +494,14 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createClient, createServerClient } = getMocks()
-    createClient.mockReturnValue(serviceClient)
-    createServerClient.mockReturnValue(authClient)
+    const { createAdminSupabaseClient, createServerSupabaseClient } = getMocks()
+    createAdminSupabaseClient.mockReturnValue(serviceClient)
+    createServerSupabaseClient.mockResolvedValue(authClient)
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
     expect(res.status).toBe(200)
-    expect(createClient).toHaveBeenCalled()
+    expect(createAdminSupabaseClient).toHaveBeenCalled()
     expect(serviceClient.from).toHaveBeenCalledWith('pillars')
     expect(serviceClient.from).toHaveBeenCalledWith('funnels_catalog')
   })

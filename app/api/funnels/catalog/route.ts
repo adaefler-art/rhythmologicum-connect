@@ -21,9 +21,15 @@ import {
   unauthorizedResponse,
   forbiddenResponse,
   internalErrorResponse,
+  configurationErrorResponse,
   schemaNotReadyResponse,
 } from '@/lib/api/responses'
 import type { FunnelCatalogResponse, PillarWithFunnels, CatalogFunnel } from '@/lib/types/catalog'
+import { env } from '@/lib/env'
+
+function isBlank(value: unknown): boolean {
+  return typeof value !== 'string' || value.trim().length === 0
+}
 
 /**
  * GET /api/funnels/catalog
@@ -44,6 +50,14 @@ export async function GET(request: Request) {
   const requestId = getRequestId(request)
 
   try {
+    // Early deterministic configuration guard (do not construct clients)
+    if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
+      return withRequestId(
+        configurationErrorResponse('Supabase Konfiguration fehlt oder ist leer.'),
+        requestId,
+      )
+    }
+
     // Auth check with server client (RLS active)
     const serverClient = await createServerSupabaseClient()
     const {
@@ -63,10 +77,19 @@ export async function GET(request: Request) {
      * Scope: funnels_catalog, pillars, funnel_versions (metadata only)
      * Mitigation: Only active funnels shown, no PHI in these tables
      */
-    const admin = createAdminSupabaseClient()
+    // Prefer admin client for metadata reads when available; fallback to server client otherwise.
+    let dataClient = serverClient
+    try {
+      dataClient = createAdminSupabaseClient()
+    } catch (e) {
+      const classified = classifySupabaseError(e)
+      if (classified.kind !== 'CONFIGURATION_ERROR') {
+        throw e
+      }
+    }
 
     // Fetch all pillars ordered by sort_order
-    const { data: pillars, error: pillarsError } = await admin
+    const { data: pillars, error: pillarsError } = await dataClient
       .from('pillars')
       .select('id, key, title, description, sort_order')
       .order('sort_order', { ascending: true })
@@ -92,7 +115,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch all active funnels with their pillar information
-    const { data: funnels, error: funnelsError } = await admin
+    const { data: funnels, error: funnelsError } = await dataClient
       .from('funnels_catalog')
       .select(`
         id,
@@ -132,7 +155,7 @@ export async function GET(request: Request) {
     const funnelIds = (funnels || []).map((f) => f.id)
     const versionsResult =
       funnelIds.length > 0
-        ? await admin
+        ? await dataClient
             .from('funnel_versions')
             .select('id, funnel_id, version, is_default')
             .in('funnel_id', funnelIds)
