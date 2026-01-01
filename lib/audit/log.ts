@@ -114,6 +114,7 @@ const ALLOWED_METADATA_KEYS = [
   'algorithm_version',
   'prompt_version',
   'report_version',
+  'version',
   'safety_score',
   'finding_count',
   'status_from',
