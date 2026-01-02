@@ -153,18 +153,22 @@ export async function GET(
     }
 
     // Fetch funnel steps
-    let { data: steps, error: stepsError } = await readClient
+    const { data: steps, error: initialStepsError } = await readClient
       .from('funnel_steps')
       .select('*')
       .eq('funnel_id', id)
       .order('order_index', { ascending: true })
 
+    let stepsError = initialStepsError
+
     if (stepsError && (await maybeFallbackClient('fetch_steps_admin_fallback', stepsError))) {
-      ;({ data: steps, error: stepsError } = await readClient
+      const { error: fallbackStepsError } = await readClient
         .from('funnel_steps')
         .select('*')
         .eq('funnel_id', id)
-        .order('order_index', { ascending: true }))
+        .order('order_index', { ascending: true })
+
+      stepsError = fallbackStepsError
     }
 
     if (stepsError) {
