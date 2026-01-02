@@ -4,7 +4,7 @@ import {
 } from '@/lib/api/responses'
 import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
-import { getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { classifySupabaseError, getRequestId, logError, withRequestId, isBlank } from '@/lib/db/errors'
 import { NextResponse } from 'next/server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
@@ -53,6 +53,60 @@ function jsonError(
   )
 }
 
+function dbErrorToResponse(args: {
+  requestId: string
+  operation: string
+  error: unknown
+  userId?: string
+}) {
+  const classified = classifySupabaseError(args.error)
+
+  logError({
+    requestId: args.requestId,
+    operation: args.operation,
+    error: args.error,
+    userId: args.userId,
+  })
+
+  if (classified.kind === 'SCHEMA_NOT_READY') {
+    return jsonError(
+      503,
+      ErrorCode.SCHEMA_NOT_READY,
+      'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+      args.requestId,
+    )
+  }
+
+  if (classified.kind === 'AUTH_OR_RLS') {
+    return jsonError(
+      403,
+      ErrorCode.FORBIDDEN,
+      'Sie haben keine Berechtigung für diese Aktion.',
+      args.requestId,
+    )
+  }
+
+  if (classified.kind === 'TRANSIENT') {
+    return jsonError(
+      503,
+      ErrorCode.DATABASE_ERROR,
+      'Datenbankfehler. Bitte versuchen Sie es später erneut.',
+      args.requestId,
+    )
+  }
+
+  if (classified.kind === 'CONFIGURATION_ERROR') {
+    return jsonError(
+      500,
+      ErrorCode.CONFIGURATION_ERROR,
+      'Server-Konfigurationsfehler.',
+      args.requestId,
+    )
+  }
+
+  return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', args.requestId)
+}
+
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
 
@@ -61,12 +115,13 @@ export async function GET(request: Request) {
     const publicSupabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (isBlank(publicSupabaseUrl) || isBlank(publicSupabaseAnonKey)) {
-      console.error('[DB_ERROR]', {
+      logError({
         requestId,
         operation: 'env_check',
         error: {
           code: 'CONFIG',
-          message: 'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+          message:
+            'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
           details: null,
           hint: null,
         },
@@ -115,7 +170,7 @@ export async function GET(request: Request) {
       readClient = createAdminSupabaseClient()
     } catch (err) {
       // Service key not configured (or admin client failed), fall back to auth client.
-      console.error('[DB_ERROR]', {
+      logError({
         requestId,
         operation: 'create_admin_client',
         userId: user.id,
@@ -131,14 +186,12 @@ export async function GET(request: Request) {
       .order('id', { ascending: true })
 
     if (pillarsError) {
-      console.error('[DB_ERROR]', {
+      return dbErrorToResponse({
         requestId,
         operation: 'fetch_pillars',
         userId: user.id,
-        error: getSupabaseErrorFields(pillarsError),
+        error: pillarsError,
       })
-
-      return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
     }
 
     const { data: funnels, error: funnelsError } = await readClient
@@ -150,14 +203,12 @@ export async function GET(request: Request) {
       .order('slug', { ascending: true })
 
     if (funnelsError) {
-      console.error('[DB_ERROR]', {
+      return dbErrorToResponse({
         requestId,
         operation: 'fetch_funnels_catalog',
         userId: user.id,
-        error: getSupabaseErrorFields(funnelsError),
+        error: funnelsError,
       })
-
-      return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
     }
 
     const funnelIds = (funnels ?? []).map((f) => f.id)
@@ -171,14 +222,12 @@ export async function GET(request: Request) {
         .order('id', { ascending: true })
 
       if (versionsError) {
-        console.error('[DB_ERROR]', {
+        return dbErrorToResponse({
           requestId,
           operation: 'fetch_funnel_versions',
           userId: user.id,
-          error: getSupabaseErrorFields(versionsError),
+          error: versionsError,
         })
-
-        return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
       }
 
       ;(versions ?? []).forEach((v) => {
@@ -229,12 +278,10 @@ export async function GET(request: Request) {
       requestId,
     )
   } catch (error) {
-    console.error('[DB_ERROR]', {
+    return dbErrorToResponse({
       requestId,
       operation: 'get_admin_funnels',
-      error: getSupabaseErrorFields(error),
+      error,
     })
-
-    return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
   }
 }

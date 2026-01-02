@@ -475,4 +475,48 @@ describe('GET /api/admin/funnels', () => {
     expect(json.error.code).toBe('INTERNAL_ERROR')
     expect(json.error.requestId).toBe('rid-500')
   })
+
+  it('invalid api key => 500 CONFIGURATION_ERROR (requestId in body)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: {
+        message: 'Invalid API key',
+        hint: 'Double check your Supabase `anon` or `service_role` API key.',
+      },
+    })
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-badkey' } }))
+
+    expect(res.status).toBe(500)
+    expect(res.headers.get('x-request-id')).toBe('rid-badkey')
+
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; requestId: string }
+    }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('CONFIGURATION_ERROR')
+    expect(json.error.requestId).toBe('rid-badkey')
+  })
 })

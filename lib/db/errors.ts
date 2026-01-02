@@ -86,6 +86,14 @@ export function classifySupabaseError(error: unknown): ClassifiedError {
   const code = safeError.code
   const message = safeError.message.toLowerCase()
 
+  // Configuration errors (invalid/missing keys, misconfigured project)
+  if (
+    message.includes('invalid api key') ||
+    message.includes('api key') && message.includes('invalid')
+  ) {
+    return { kind: 'CONFIGURATION_ERROR', error: safeError }
+  }
+
   // Schema/table not ready errors
   if (
     code === '42P01' || // undefined_table
