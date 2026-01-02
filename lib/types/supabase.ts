@@ -1318,6 +1318,7 @@ export type Database = {
         Args: { org_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      diagnostics_pillars_sot: { Args: never; Returns: Json }
       generate_report_version: {
         Args: {
           p_algorithm_version: string

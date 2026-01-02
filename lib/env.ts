@@ -68,6 +68,9 @@ const baseEnvSchema = z.object({
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
   NEXT_PHASE: z.string().optional(),
+
+  // Hosting provider (optional)
+  VERCEL_ENV: z.string().optional(),
 })
 
 const serverOnlyEnvSchema = baseEnvSchema.extend({
@@ -124,6 +127,7 @@ export type Env = {
   SUPABASE_SERVICE_KEY?: string
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
+  VERCEL_ENV?: string
 }
 
 /**
@@ -145,6 +149,7 @@ function getDefaultEnv(): Env {
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
     NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test' | undefined,
     NEXT_PHASE: process.env.NEXT_PHASE,
+    VERCEL_ENV: process.env.VERCEL_ENV,
   }
 }
 
@@ -184,6 +189,7 @@ function parseEnv(): Env {
       SUPABASE_SERVICE_KEY: isServerRuntime ? (parsed as any).SUPABASE_SERVICE_KEY : undefined,
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
+      VERCEL_ENV: (parsed as any).VERCEL_ENV,
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
