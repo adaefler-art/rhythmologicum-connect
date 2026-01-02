@@ -53,6 +53,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          set -x
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
@@ -65,8 +66,7 @@ jobs:
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA: $HEAD_SHA"
 
-          # Ensure both SHAs are available even with shallow clones.
-          git fetch --no-tags --prune --depth=1 origin "$BASE_SHA" "$HEAD_SHA" || true
+          # Note: actions/checkout is configured with fetch-depth: 0, so SHAs should already be available.
 
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.ts' '*.tsx' > changed_ts_files.txt || true
 
@@ -91,6 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          set -x
 
           mapfile -t CHANGED < <(printf '%s' "${{ steps.changed_ts.outputs.files }}")
           FILTERED=()
@@ -101,6 +102,12 @@ jobs:
 
           echo "Linting ${#CHANGED[@]} changed files (reporting only)"
           npm run lint -- -f json -o eslint-report.json "${CHANGED[@]}" || true
+
+          if [ ! -s eslint-report.json ]; then
+            echo "eslint-report.json missing or empty; failing to avoid silent bypass"
+            ls -la
+            exit 1
+          fi
 
           # Build a { file: [{start,end}] } map of the changed line ranges in the HEAD version.
           node - <<'NODE'
@@ -208,24 +215,23 @@ jobs:
         run: echo "No TS/TSX changes to lint. Skipping ESLint."
 
       - name: Verify DB Access Patterns (changed files only)
+        if: steps.changed_ts.outputs.count != '0'
         shell: bash
         run: |
           set -euo pipefail
+          set -x
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            MERGE_BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
-            mapfile -t CHANGED < <(git diff --name-only "$MERGE_BASE"...HEAD -- '*.ts' '*.tsx' || true)
-          else
-            mapfile -t CHANGED < <(git diff --name-only "${{ github.event.before }}"...HEAD -- '*.ts' '*.tsx' || true)
-          fi
-
+          mapfile -t CHANGED < <(cat changed_ts_files_existing.txt)
           if [ ${#CHANGED[@]} -eq 0 ]; then
             echo "No TS/TSX changes to verify."
             exit 0
           fi
 
           node scripts/db/verify-db-access.js --files "${CHANGED[@]}"
+
+      - name: Skip DB Access Verification (no TS/TSX changes)
+        if: steps.changed_ts.outputs.count == '0'
+        run: echo "No TS/TSX changes to verify. Skipping DB access verification."
 
       - name: Generate audit report (on failure)
         if: failure()
