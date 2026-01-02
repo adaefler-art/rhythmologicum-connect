@@ -45,46 +45,193 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint (changed files only)
+      # Interim lint gate: Fail only on ESLint errors occurring on PR-changed lines.
+      # Rationale: the repo currently contains pre-existing ESLint violations; this prevents PRs from being blocked
+      # by unrelated lint debt while still enforcing rules on newly changed code.
+      - name: Determine changed TS/TSX files (base SHA -> head SHA)
+        id: changed_ts
         shell: bash
         run: |
           set -euo pipefail
+          set -x
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            MERGE_BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
-            mapfile -t CHANGED < <(git diff --name-only "$MERGE_BASE"...HEAD -- '*.ts' '*.tsx' || true)
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           else
-            mapfile -t CHANGED < <(git diff --name-only "${{ github.event.before }}"...HEAD -- '*.ts' '*.tsx' || true)
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
           fi
 
-          if [ ${#CHANGED[@]} -eq 0 ]; then
-            echo "No TS/TSX changes to lint."
-            exit 0
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA: $HEAD_SHA"
+
+          # Note: actions/checkout is configured with fetch-depth: 0, so SHAs should already be available.
+
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- '*.ts' '*.tsx' > changed_ts_files.txt || true
+
+          # Filter deleted/renamed-away files to avoid ESLint failing on missing paths.
+          : > changed_ts_files_existing.txt
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            if [ -f "$file" ]; then
+              printf '%s\n' "$file" >> changed_ts_files_existing.txt
+            fi
+          done < changed_ts_files.txt
+
+          COUNT=$(wc -l < changed_ts_files_existing.txt | tr -d ' ')
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+          echo 'files<<EOF' >> "$GITHUB_OUTPUT"
+          cat changed_ts_files_existing.txt >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> "$GITHUB_OUTPUT"
+
+      - name: Run ESLint (changed lines only)
+        if: steps.changed_ts.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -x
+
+          mapfile -t CHANGED < <(printf '%s' "${{ steps.changed_ts.outputs.files }}")
+          FILTERED=()
+          for file in "${CHANGED[@]}"; do
+            [ -n "$file" ] && FILTERED+=("$file")
+          done
+          CHANGED=("${FILTERED[@]}")
+
+          echo "Linting ${#CHANGED[@]} changed files (reporting only)"
+          npm run lint -- -f json -o eslint-report.json "${CHANGED[@]}" || true
+
+          if [ ! -s eslint-report.json ]; then
+            echo "eslint-report.json missing or empty; failing to avoid silent bypass"
+            ls -la
+            exit 1
           fi
 
-          echo "Linting ${#CHANGED[@]} changed files"
-          npx eslint "${CHANGED[@]}"
+          # Build a { file: [{start,end}] } map of the changed line ranges in the HEAD version.
+          node - <<'NODE'
+          const fs = require('fs')
+          const { execFileSync } = require('child_process')
+
+          const baseSha = process.env.BASE_SHA
+          const headSha = process.env.HEAD_SHA
+          if (!baseSha || !headSha) {
+            console.error('Missing BASE_SHA/HEAD_SHA')
+            process.exit(2)
+          }
+
+          const files = fs
+            .readFileSync('changed_ts_files_existing.txt', 'utf8')
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+
+          const rangeMap = {}
+          const hunkRe = /@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/g
+
+          for (const file of files) {
+            const diff = execFileSync('git', ['diff', '-U0', baseSha, headSha, '--', file], {
+              encoding: 'utf8',
+            })
+            const ranges = []
+            let m
+            while ((m = hunkRe.exec(diff)) !== null) {
+              const start = Number(m[1])
+              const count = m[2] === undefined ? 1 : Number(m[2])
+              if (!Number.isFinite(start) || !Number.isFinite(count)) continue
+              if (count <= 0) continue
+              ranges.push({ start, end: start + count - 1 })
+            }
+            rangeMap[file] = ranges
+          }
+
+          fs.writeFileSync('changed_line_ranges.json', JSON.stringify(rangeMap, null, 2) + '\n')
+          console.log(`Computed changed-line ranges for ${files.length} files`) 
+          NODE
+          
+          # Fail only if ESLint errors intersect with changed line ranges.
+          node - <<'NODE'
+          const fs = require('fs')
+
+          const ranges = JSON.parse(fs.readFileSync('changed_line_ranges.json', 'utf8'))
+          const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'))
+
+          function inRanges(file, line) {
+            const list = ranges[file] || []
+            for (const r of list) {
+              if (line >= r.start && line <= r.end) return true
+            }
+            return false
+          }
+
+          const relevantErrors = []
+          let ignoredErrors = 0
+
+          for (const fileReport of report) {
+            const filePath = fileReport.filePath
+            // eslint json uses absolute paths by default; normalize to repo-relative if possible.
+            const rel = fileReport.filePath.replace(process.cwd() + '/', '')
+            const key = ranges[rel] ? rel : filePath
+
+            for (const msg of fileReport.messages || []) {
+              if (msg.severity !== 2) continue
+              const line = msg.line || 0
+              if (line <= 0) {
+                // Parser errors etc. can't be mapped safely → treat as relevant.
+                relevantErrors.push({ file: rel, line: msg.line, ruleId: msg.ruleId, message: msg.message })
+                continue
+              }
+
+              if (inRanges(key, line)) {
+                relevantErrors.push({ file: rel, line, ruleId: msg.ruleId, message: msg.message })
+              } else {
+                ignoredErrors++
+              }
+            }
+          }
+
+          if (relevantErrors.length > 0) {
+            console.error(`\n❌ ESLint errors on changed lines: ${relevantErrors.length}`)
+            for (const e of relevantErrors.slice(0, 50)) {
+              const rule = e.ruleId ? ` (${e.ruleId})` : ''
+              console.error(`- ${e.file}:${e.line}${rule} ${e.message}`)
+            }
+            if (relevantErrors.length > 50) {
+              console.error(`...and ${relevantErrors.length - 50} more`)
+            }
+            process.exit(1)
+          }
+
+          console.log(`\n✅ No ESLint errors on changed lines. Ignored ${ignoredErrors} pre-existing errors outside changed ranges.`)
+          process.exit(0)
+          NODE
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Skip ESLint (no TS/TSX changes)
+        if: steps.changed_ts.outputs.count == '0'
+        run: echo "No TS/TSX changes to lint. Skipping ESLint."
 
       - name: Verify DB Access Patterns (changed files only)
+        if: steps.changed_ts.outputs.count != '0'
         shell: bash
         run: |
           set -euo pipefail
+          set -x
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            MERGE_BASE=$(git merge-base "origin/${{ github.base_ref }}" HEAD)
-            mapfile -t CHANGED < <(git diff --name-only "$MERGE_BASE"...HEAD -- '*.ts' '*.tsx' || true)
-          else
-            mapfile -t CHANGED < <(git diff --name-only "${{ github.event.before }}"...HEAD -- '*.ts' '*.tsx' || true)
-          fi
-
+          mapfile -t CHANGED < <(cat changed_ts_files_existing.txt)
           if [ ${#CHANGED[@]} -eq 0 ]; then
             echo "No TS/TSX changes to verify."
             exit 0
           fi
 
           node scripts/db/verify-db-access.js --files "${CHANGED[@]}"
+
+      - name: Skip DB Access Verification (no TS/TSX changes)
+        if: steps.changed_ts.outputs.count == '0'
+        run: echo "No TS/TSX changes to verify. Skipping DB access verification."
 
       - name: Generate audit report (on failure)
         if: failure()
