@@ -13,9 +13,9 @@ import {
   isPillarActiveInTier,
   PROGRAM_TIER,
   TOUCHPOINT_TYPE,
-} from '../programTier'
-import { PILLAR_KEY, FUNNEL_SLUG } from '../registry'
-import { TIER_1_ESSENTIAL, TIER_2_5_ENHANCED, TIER_2_COMPREHENSIVE } from '../tiers'
+} from '../../programTier'
+import { PILLAR_KEY, FUNNEL_SLUG } from '../../registry'
+import { TIER_1_ESSENTIAL, TIER_2_5_ENHANCED, TIER_2_COMPREHENSIVE } from '../index'
 
 describe('Program Tier Contract Validation', () => {
   describe('validateProgramTierContract', () => {
