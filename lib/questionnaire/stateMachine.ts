@@ -130,7 +130,15 @@ export function validateCurrentStep(
   const requiredQuestions = getRequiredQuestions(currentStep)
   const missingQuestions = requiredQuestions.filter((q) => {
     const answer = state.answers[q.id]
-    return answer === undefined || answer === null || answer === ''
+    // Only check for undefined/null - empty string is valid for text fields
+    if (answer === undefined || answer === null) {
+      return true
+    }
+    // For arrays (checkbox), check if empty
+    if (Array.isArray(answer) && answer.length === 0) {
+      return true
+    }
+    return false
   })
 
   return {

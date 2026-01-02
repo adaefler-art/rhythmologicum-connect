@@ -59,7 +59,10 @@ function evaluateCondition(
       }
       return false
     default:
-      console.warn(`Unknown operator: ${operator}`)
+      // Unknown operator - fail safely by returning false
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`Unknown operator: ${operator}`)
+      }
       return false
   }
 }

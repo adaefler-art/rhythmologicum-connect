@@ -190,13 +190,26 @@ function TextareaQuestion({ question, value, onChange, error, className }: Quest
  * Number input renderer
  */
 function NumberQuestion({ question, value, onChange, error, className }: QuestionRendererProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    if (val === '') {
+      // Allow clearing the input for optional fields
+      onChange(val as any)
+    } else {
+      const numValue = parseFloat(val)
+      if (!isNaN(numValue)) {
+        onChange(numValue)
+      }
+    }
+  }
+
   return (
     <div className={className}>
       <input
         type="number"
         id={question.id}
         value={typeof value === 'number' ? value : ''}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onChange={handleChange}
         min={question.validation?.min}
         max={question.validation?.max}
         placeholder={question.helpText}
