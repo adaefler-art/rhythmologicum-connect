@@ -172,22 +172,31 @@ export async function GET() {
 
     const findings: DiagnosticsFinding[] = []
 
+    // Create admin client (service role) via the canonical factory.
+    // Important: do NOT access the service role secret directly here.
+    let adminClient: ReturnType<typeof createAdminSupabaseClient> | null = null
+    let hasSupabaseServiceRoleKey = false
+
+    try {
+      adminClient = createAdminSupabaseClient()
+      hasSupabaseServiceRoleKey = true
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      findings.push({
+        type: 'error',
+        code: 'ADMIN_CLIENT_UNAVAILABLE',
+        message: `Admin Supabase client unavailable: ${message}`,
+        suggestion:
+          'Configure server-side Supabase admin credentials in the deployment environment and retry.',
+      })
+    }
+
     // Gather environment information
     const environment = {
       supabaseUrl: redactUrl(env.NEXT_PUBLIC_SUPABASE_URL),
       envName: getEnvironmentName(),
-      hasSupabaseServiceRoleKey: !!env.SUPABASE_SERVICE_ROLE_KEY,
+      hasSupabaseServiceRoleKey,
       hasSupabaseAnonKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    }
-
-    // Check for missing environment variables
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-      findings.push({
-        type: 'error',
-        code: 'MISSING_SERVICE_ROLE_KEY',
-        message: 'SUPABASE_SERVICE_ROLE_KEY environment variable is not set',
-        suggestion: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables or .env.local',
-      })
     }
 
     if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -199,8 +208,29 @@ export async function GET() {
       })
     }
 
+    if (!adminClient) {
+      // Return 200 with RED status and findings (not 500)
+      return successResponse({
+        diagnosticsVersion: '1.0.0',
+        status: 'RED' as const,
+        findings,
+        environment,
+        tables: {
+          pillars: { metadata: { exists: false } },
+          funnels_catalog: { metadata: { exists: false } },
+          funnel_versions: { metadata: { exists: false } },
+        },
+        seeds: {
+          stressFunnelPresent: false,
+          pillarCount: 0,
+          expectedPillarCount: getExpectedPillarCount(),
+        },
+        generatedAt: new Date().toISOString(),
+        requestId,
+      })
+    }
+
     // Query database diagnostics using RPC function
-    const adminClient = createAdminSupabaseClient()
     const rpc = (adminClient as unknown as {
       rpc: (
         fn: string,

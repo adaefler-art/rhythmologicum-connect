@@ -56,7 +56,6 @@ jest.mock('@supabase/supabase-js', () => ({
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
 }>
 
 async function importRouteWithEnv(overrides: EnvOverrides) {
@@ -65,10 +64,11 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
   const envMock = {
     NEXT_PUBLIC_SUPABASE_URL: overrides.NEXT_PUBLIC_SUPABASE_URL ?? 'https://example.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: overrides.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: overrides.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    NODE_ENV: 'test',
   }
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
+  jest.doMock('@/lib/db/supabase.admin', () => ({ createAdminSupabaseClient: jest.fn() }))
 
   const mod = await import('../route')
   return mod as { GET: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response> }
@@ -97,11 +97,10 @@ describe('GET /api/admin/funnels/[id]', () => {
     jest.clearAllMocks()
   })
 
-  it('invalid service role key => falls back to auth client (200)', async () => {
+  it('admin client invalid API key => falls back to auth client (200)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: 'service-role',
     })
 
     setupCookieStore()
@@ -158,6 +157,11 @@ describe('GET /api/admin/funnels/[id]', () => {
     const { createServerClient, createClient } = getMocks()
     createServerClient.mockReturnValue(authClient)
     createClient.mockReturnValue(adminClient)
+
+    const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+      createAdminSupabaseClient: jest.Mock
+    }
+    createAdminSupabaseClient.mockReturnValue(adminClient)
 
     const res = await GET(
       new Request('http://localhost/api/admin/funnels/f1', { headers: { 'x-request-id': 'rid-detail-fallback' } }),
