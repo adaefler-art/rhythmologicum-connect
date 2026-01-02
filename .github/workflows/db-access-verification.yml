@@ -154,13 +154,21 @@ jobs:
           node - <<'NODE'
           const fs = require('fs')
 
-          // Minimal allowlist for legacy lint debt.
-          // Keep this list small and temporary.
-          const IGNORED_RULE_IDS = new Set(['@typescript-eslint/no-explicit-any'])
+          // Interim allowlist: ignore specific legacy lint-debt rules even on changed lines.
+          // Keep this list minimal and delete it once repo-wide lint debt is resolved.
+          function normalizeRuleId(value) {
+            if (typeof value !== 'string') return ''
+            // Defensive normalization: CI logs can hide invisible characters.
+            return value
+              .trim()
+              .normalize('NFKC')
+              .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          }
+
+          const IGNORED_RULE_IDS = new Set([normalizeRuleId('@typescript-eslint/no-explicit-any')])
 
           const ranges = JSON.parse(fs.readFileSync('changed_line_ranges.json', 'utf8'))
           const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'))
-
           function inRanges(file, line) {
             const list = ranges[file] || []
             for (const r of list) {
@@ -180,7 +188,7 @@ jobs:
 
             for (const msg of fileReport.messages || []) {
               if (msg.severity !== 2) continue
-              const ruleId = typeof msg.ruleId === 'string' ? msg.ruleId.trim() : ''
+              const ruleId = normalizeRuleId(msg.ruleId)
               if (ruleId && IGNORED_RULE_IDS.has(ruleId)) {
                 ignoredErrors++
                 continue
