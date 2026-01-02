@@ -86,7 +86,8 @@ return successResponse({
 ```
 
 **Behavior:**
-- Always returns HTTP 200 (never 500 due to disabled state)
+- Authentication errors still return 401 (unauthenticated) or 403 (unauthorized)
+- Authorized requests return HTTP 200 (never 500 when telemetry is disabled)
 - `enabled: false` when telemetry is off
 - Empty `routes: []` when no data or disabled
 - Endpoint remains accessible for monitoring
@@ -117,9 +118,11 @@ Updated with telemetry toggle tests:
 **File:** `app/api/admin/usage/__tests__/route.test.ts`
 
 Updated with enabled flag tests:
+- ✅ Returns 401 for unauthenticated requests
+- ✅ Returns 403 for unauthorized requests
 - ✅ Returns `enabled: true` when telemetry is on
 - ✅ Returns `enabled: false` when telemetry is off
-- ✅ Always returns HTTP 200 (not 500) when disabled
+- ✅ Returns HTTP 200 for authorized requests (not 500) when telemetry is disabled
 - ✅ Empty routes array when disabled
 
 **Total:** 385 tests passing (including 18 new telemetry toggle tests)
@@ -223,6 +226,7 @@ getAggregatedUsage()
 
 **Admin Endpoint Still Works:**
 ```bash
+# Authorized request with telemetry disabled
 GET /api/admin/usage
 # HTTP 200
 {
@@ -232,6 +236,16 @@ GET /api/admin/usage
     "routes": [],
     "generatedAt": "2026-01-02T...",
     "totalRoutes": 0
+  }
+}
+
+# Unauthenticated request
+GET /api/admin/usage
+# HTTP 401
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED"
   }
 }
 ```
