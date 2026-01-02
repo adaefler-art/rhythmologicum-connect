@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
+import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper';
 
 // Anthropic API configuration
 const anthropicApiKey =
@@ -277,7 +278,12 @@ export async function POST(req: Request) {
       responseLength: summary.report_text_short.length,
     });
 
-    return NextResponse.json<StressSummaryResponse>(summary);
+    const response = NextResponse.json<StressSummaryResponse>(summary);
+    
+    // Track usage (fire and forget)
+    trackUsage('POST /api/amy/stress-summary', response);
+    
+    return response;
   } catch (err) {
     const duration = Date.now() - requestStartTime;
     const error = err as { message?: string };
@@ -286,7 +292,7 @@ export async function POST(req: Request) {
       error: error?.message ?? String(err),
     });
 
-    return NextResponse.json<ErrorResponse>(
+    const response = NextResponse.json<ErrorResponse>(
       {
         error: 'Interner Fehler bei der Erstellung der Kurzinterpretation.',
         errorType: 'unknown',
@@ -294,5 +300,10 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
+    
+    // Track usage (fire and forget)
+    trackUsage('POST /api/amy/stress-summary', response);
+    
+    return response;
   }
 }

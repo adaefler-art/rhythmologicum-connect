@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getContentPage } from '@/lib/utils/contentResolver'
+import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
 
 /**
  * F6 API Endpoint: Content Resolver
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Validate required parameters
     if (!funnel) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { 
           success: false,
           error: { 
@@ -36,6 +37,8 @@ export async function GET(request: NextRequest) {
         },
         { status: 400 },
       )
+      trackUsage('GET /api/content/resolve', response)
+      return response
     }
 
     // Call content resolver
@@ -48,15 +51,17 @@ export async function GET(request: NextRequest) {
 
     // Return result based on resolution strategy
     if (result.page) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         page: result.page,
         strategy: result.strategy,
       })
+      trackUsage('GET /api/content/resolve', response)
+      return response
     }
 
     // No page found
-    return NextResponse.json(
+    const notFoundResponse = NextResponse.json(
       {
         success: false,
         error: {
@@ -67,9 +72,11 @@ export async function GET(request: NextRequest) {
       },
       { status: 404 },
     )
+    trackUsage('GET /api/content/resolve', notFoundResponse)
+    return notFoundResponse
   } catch (error) {
     console.error('Error in content resolver API:', error)
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       {
         success: false,
         error: {
@@ -79,5 +86,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
+    trackUsage('GET /api/content/resolve', errorResponse)
+    return errorResponse
   }
 }
