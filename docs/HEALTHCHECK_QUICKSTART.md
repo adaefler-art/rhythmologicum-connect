@@ -29,59 +29,72 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
 
 ## Expected Response
 
-### All Checks Pass
+### All Checks Pass (GREEN Status)
 
 ```json
 {
   "success": true,
   "data": {
+    "healthcheckVersion": "1.0.0",
+    "status": "GREEN",
     "checks": [
       {
         "name": "NEXT_PUBLIC_SUPABASE_URL",
-        "pass": true,
+        "ok": true,
         "message": "Valid URL format"
       },
       {
         "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        "pass": true,
+        "ok": true,
         "message": "Valid key format"
       },
       {
         "name": "SUPABASE_SERVICE_ROLE_KEY",
-        "pass": true,
+        "ok": true,
         "message": "Valid key format"
       },
       {
         "name": "Database Connectivity",
-        "pass": true,
+        "ok": true,
         "message": "Successfully connected to database"
       }
     ],
-    "overallStatus": "pass",
-    "timestamp": "2026-01-02T18:43:14.296Z"
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2026-01-02T19:00:00.000Z"
   }
 }
 ```
 
-### Checks Fail
+### Checks Fail (RED Status)
 
 ```json
 {
   "success": true,
   "data": {
+    "healthcheckVersion": "1.0.0",
+    "status": "RED",
     "checks": [
       {
         "name": "NEXT_PUBLIC_SUPABASE_URL",
-        "pass": false,
-        "message": "Contains leading/trailing whitespace"
+        "ok": false,
+        "message": "Contains leading/trailing whitespace",
+        "hint": "Remove spaces before/after the URL value"
+      },
+      {
+        "name": "Database Connectivity",
+        "ok": false,
+        "message": "Schema drift detected",
+        "hint": "Table \"pillars\" does not exist - run migrations or verify schema"
       }
       // ... more checks
     ],
-    "overallStatus": "fail",
-    "timestamp": "2026-01-02T18:43:14.296Z"
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2026-01-02T19:00:00.000Z"
   }
 }
 ```
+
+**Note**: The endpoint returns HTTP 200 even with RED status. Only auth failures return 401/403.
 
 ## Common Issues
 
@@ -119,6 +132,16 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
 2. Verify API keys are valid
 3. Check network connectivity
 4. Check Supabase project status
+
+### Issue: Schema drift detected
+
+**Cause**: Database table `pillars` does not exist  
+**Fix**: Run migrations with `npm run db:reset` or `supabase db reset`
+
+### Issue: Invalid API key error
+
+**Cause**: Permission denied (42501 error code)  
+**Fix**: Verify SUPABASE_SERVICE_ROLE_KEY is correct and has proper permissions
 
 ## Testing
 

@@ -30,73 +30,83 @@ GET /api/health/env
 
 ### Response
 
-**Success (200 OK)**:
+**Success - All Checks Pass (200 OK)**:
 
 ```json
 {
   "success": true,
   "data": {
+    "healthcheckVersion": "1.0.0",
+    "status": "GREEN",
     "checks": [
       {
         "name": "NEXT_PUBLIC_SUPABASE_URL",
-        "pass": true,
+        "ok": true,
         "message": "Valid URL format"
       },
       {
         "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        "pass": true,
+        "ok": true,
         "message": "Valid key format"
       },
       {
         "name": "SUPABASE_SERVICE_ROLE_KEY",
-        "pass": true,
+        "ok": true,
         "message": "Valid key format"
       },
       {
         "name": "Database Connectivity",
-        "pass": true,
+        "ok": true,
         "message": "Successfully connected to database"
       }
     ],
-    "overallStatus": "pass",
-    "timestamp": "2026-01-02T18:43:14.296Z"
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2026-01-02T19:00:00.000Z"
   }
 }
 ```
 
-**Failure Example (200 OK with failed checks)**:
+**Failure Example (200 OK with RED status)**:
 
 ```json
 {
   "success": true,
   "data": {
+    "healthcheckVersion": "1.0.0",
+    "status": "RED",
     "checks": [
       {
         "name": "NEXT_PUBLIC_SUPABASE_URL",
-        "pass": false,
-        "message": "Contains leading/trailing whitespace"
+        "ok": false,
+        "message": "Contains leading/trailing whitespace",
+        "hint": "Remove spaces before/after the URL value"
       },
       {
         "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        "pass": false,
-        "message": "Invalid key format (expected long alphanumeric string)"
+        "ok": false,
+        "message": "Invalid key format",
+        "hint": "Expected long alphanumeric string (JWT-like format)"
       },
       {
         "name": "SUPABASE_SERVICE_ROLE_KEY",
-        "pass": false,
-        "message": "Missing service role key (required for admin operations)"
+        "ok": false,
+        "message": "Missing service role key",
+        "hint": "Required for admin operations - set from Supabase dashboard"
       },
       {
         "name": "Database Connectivity",
-        "pass": false,
-        "message": "Database query failed: Connection refused"
+        "ok": false,
+        "message": "Schema drift detected",
+        "hint": "Table \"pillars\" does not exist - run migrations or verify schema"
       }
     ],
-    "overallStatus": "fail",
-    "timestamp": "2026-01-02T18:43:14.296Z"
+    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+    "timestamp": "2026-01-02T19:00:00.000Z"
   }
 }
 ```
+
+**Note**: The endpoint returns HTTP 200 even with RED status for fail-safe behavior. Only authentication (401) and authorization (403) errors return non-200 status codes.
 
 **Unauthorized (401)**:
 
@@ -152,30 +162,52 @@ app/api/health/env/
 
 ### Database Connectivity Check
 
-The endpoint performs a simple database query to verify connectivity:
+The endpoint performs a simple database query to verify connectivity using the canonical v0.5.x schema:
 
 ```typescript
-const { error } = await supabase.from('funnels').select('id', { count: 'exact', head: true })
+const { error } = await supabase.from('pillars').select('id').limit(1)
 ```
 
 This query:
+- Uses the `pillars` table (canonical, non-PHI taxonomic table)
+- Performs a minimal query (just selects id, limit 1)
+- Verifies authentication, database connectivity, and schema state
 
-- Uses the `funnels` table (no PHI)
-- Performs a `head` request (doesn't return data, just checks existence)
-- Verifies both authentication and database connectivity
+#### Error Detection
+
+The check specifically detects:
+
+1. **Schema Drift (42P01)**: Relation does not exist
+   - Returns: `"Schema drift detected"` 
+   - Hint: Run migrations or verify schema
+
+2. **Invalid API Key (42501)**: Permission denied
+   - Returns: `"Authentication/permission error"`
+   - Hint: Check API key credentials
+
+3. **Generic Errors**: Network, connection, etc.
+   - Returns specific error message in hint field
+
+### Fail-Safe Behavior
+
+**Important**: The endpoint returns HTTP 200 with RED status for expected failure states instead of 500 errors. This ensures:
+- Structured error information is always available
+- Healthcheck tooling doesn't falsely report the endpoint as down
+- Clients can programmatically distinguish between different failure types
+
+Only authentication (401) and authorization (403) errors return non-200 status codes.
 
 ### Security Features
 
 #### Secret Redaction
 
 The endpoint **never** includes actual environment variable values in responses. All checks return only:
-
 - Check name
-- Pass/fail status
+- Pass/fail status (`ok` field)
 - Generic diagnostic message
+- Optional hint (on failure)
 
 Example of what is **NOT** included:
-
 - Actual URL values
 - Actual API keys
 - Any sensitive configuration data
@@ -190,8 +222,8 @@ Example of what is **NOT** included:
 
 The endpoint gracefully handles errors:
 
-1. **Database connectivity failures**: Captured and reported as failed check (not a 500 error)
-2. **Unexpected errors**: Caught and returned as 500 with generic error message
+1. **Database connectivity failures**: Captured and reported as failed check with RED status (not a 500 error)
+2. **Unexpected errors**: Caught and returned as 200 with RED status and error details
 3. **Authentication failures**: Return appropriate 401/403 responses
 
 ## Testing
@@ -205,16 +237,37 @@ The test suite (`route.test.ts`) covers:
    - 403 for non-admin/non-clinician users
 
 2. **Environment Checks**
-   - All checks pass with valid environment
-   - Database connectivity check is included
+   - GREEN status when all checks pass
+   - Uses pillars table for database connectivity check
 
 3. **Secret Redaction**
    - No actual secret values in responses
-   - Only allowed fields (name, pass, message) in checks
+   - Fields include name, ok (boolean), message, and optional hint
 
 4. **Failure Scenarios**
-   - Database connectivity issues
-   - Database connectivity exceptions
+   - Schema drift detection (42P01: relation does not exist)
+   - Invalid API key detection (42501: permission denied)
+   - Generic database errors
+   - Connection exceptions
+   - Missing environment configuration
+
+5. **Response Structure**
+   - Correct JSON structure with healthcheckVersion
+   - Valid UUID for requestId
+   - Valid ISO 8601 timestamp format
+
+6. **Fail-Safe Behavior**
+   - Returns 200 + RED status for unexpected errors (not 500)
+
+### Test Results
+
+All 15 tests pass (was 12 tests in original implementation):
+- ✓ Authentication and Authorization (2 tests)
+- ✓ Environment Checks (2 tests)
+- ✓ Secret Redaction (2 tests)
+- ✓ Failure Scenarios (5 tests)
+- ✓ Response Structure (3 tests)
+- ✓ Fail-Safe Behavior (1 test)
 
 5. **Response Structure**
    - Correct JSON structure
