@@ -114,8 +114,13 @@ export async function GET(request: Request) {
     try {
       readClient = createAdminSupabaseClient()
     } catch (err) {
-      // Service key not configured, fall back to auth client
-      console.warn({ requestId, message: 'Service key not configured, using auth client for admin funnels' })
+      // Service key not configured (or admin client failed), fall back to auth client.
+      console.error('[DB_ERROR]', {
+        requestId,
+        operation: 'create_admin_client',
+        userId: user.id,
+        error: getSupabaseErrorFields(err),
+      })
       readClient = authClient
     }
 

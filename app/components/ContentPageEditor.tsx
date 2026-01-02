@@ -80,10 +80,31 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     const loadFunnels = async () => {
       try {
         const response = await fetch('/api/admin/funnels')
-        if (response.ok) {
-          const data = await response.json()
-          setFunnels(data.funnels || [])
+        let data: any = null
+        try {
+          data = await response.json()
+        } catch {
+          // ignore
         }
+
+        const headerRequestId = response.headers.get('x-request-id')
+        const bodyRequestId = data?.error?.requestId
+        const requestId = bodyRequestId || headerRequestId
+
+        if (!response.ok || !data?.success) {
+          const message = data?.error?.message || 'Failed to load funnels'
+          const requestIdSuffix = requestId ? ` (requestId: ${requestId})` : ''
+          throw new Error(`${message}${requestIdSuffix}`)
+        }
+
+        const pillars = data?.data?.pillars || []
+        const uncategorized = data?.data?.uncategorized_funnels || []
+        const flattened = [
+          ...pillars.flatMap((p: any) => p?.funnels || []),
+          ...(uncategorized || []),
+        ]
+
+        setFunnels(flattened)
       } catch (e) {
         console.error('Failed to load funnels:', e)
       }

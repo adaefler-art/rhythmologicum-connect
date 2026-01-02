@@ -44,14 +44,22 @@ export default function FunnelListPage() {
       setError(null)
 
       const response = await fetch('/api/admin/funnels')
-      
-      if (!response.ok) {
-        throw new Error('Failed to load funnels')
+
+      let data: any = null
+      try {
+        data = await response.json()
+      } catch {
+        // ignore
       }
 
-      const data = await response.json()
-      if (!data?.success) {
-        throw new Error(data?.error?.message || 'Failed to load funnels')
+      const headerRequestId = response.headers.get('x-request-id')
+      const bodyRequestId = data?.error?.requestId
+      const requestId = bodyRequestId || headerRequestId
+
+      if (!response.ok || !data?.success) {
+        const message = data?.error?.message || 'Failed to load funnels'
+        const requestIdSuffix = requestId ? ` (requestId: ${requestId})` : ''
+        throw new Error(`${message}${requestIdSuffix}`)
       }
 
       const pillars: PillarGroup[] = data.data?.pillars || []
