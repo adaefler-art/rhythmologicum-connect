@@ -97,7 +97,7 @@ describe('GET /api/admin/funnels/[id]', () => {
     jest.clearAllMocks()
   })
 
-  it('admin client invalid API key => falls back to auth client (200)', async () => {
+  it('fetches funnel by slug from catalog with versions', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -105,39 +105,52 @@ describe('GET /api/admin/funnels/[id]', () => {
 
     setupCookieStore()
 
-    // Admin client fails on first query
-    const adminFunnelsBuilder = makeThenableBuilder({
-      data: null,
-      error: {
-        message: 'Invalid API key',
-        hint: 'Double check your Supabase `anon` or `service_role` API key.',
-      },
-    })
-
-    const adminClient: Pick<MockSupabaseClient, 'from'> = {
-      from: jest.fn((table: string) => {
-        if (table === 'funnels') return adminFunnelsBuilder
-        throw new Error(`admin should only be used for funnels in this test: ${table}`)
-      }),
-    }
-
-    // Auth client succeeds
-    const authFunnelsBuilder = makeThenableBuilder({
+    // Mock catalog funnel response
+    const funnelBuilder = makeThenableBuilder({
       data: {
         id: 'f1',
-        slug: 'stress',
-        title: 'Stress',
-        subtitle: null,
-        description: null,
+        slug: 'stress-assessment',
+        title: 'Stress Assessment',
+        description: 'Test description',
+        pillar_id: 'p1',
+        est_duration_min: 10,
+        outcomes: ['outcome1', 'outcome2'],
         is_active: true,
+        default_version_id: 'v1',
         created_at: '2026-01-01T00:00:00Z',
         updated_at: '2026-01-01T00:00:00Z',
       },
       error: null,
     })
 
-    const authStepsBuilder = makeThenableBuilder({
-      data: [],
+    // Mock pillar response
+    const pillarBuilder = makeThenableBuilder({
+      data: {
+        id: 'p1',
+        key: 'mental-health',
+        title: 'Mental Health',
+        description: 'Mental health pillar',
+      },
+      error: null,
+    })
+
+    // Mock versions response
+    const versionsBuilder = makeThenableBuilder({
+      data: [
+        {
+          id: 'v1',
+          funnel_id: 'f1',
+          version: '1.0.0',
+          is_default: true,
+          rollout_percent: 100,
+          questionnaire_config: { steps: [] },
+          content_manifest: { pages: [] },
+          algorithm_bundle_version: '1.0',
+          prompt_version: '1.0',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: null,
+        },
+      ],
       error: null,
     })
 
@@ -148,36 +161,86 @@ describe('GET /api/admin/funnels/[id]', () => {
           .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
       },
       from: jest.fn((table: string) => {
-        if (table === 'funnels') return authFunnelsBuilder
-        if (table === 'funnel_steps') return authStepsBuilder
+        if (table === 'funnels_catalog') return funnelBuilder
+        if (table === 'pillars') return pillarBuilder
+        if (table === 'funnel_versions') return versionsBuilder
         throw new Error(`unexpected table: ${table}`)
       }),
     }
 
-    const { createServerClient, createClient } = getMocks()
+    const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(authClient)
-    createClient.mockReturnValue(adminClient)
-
-    const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
-      createAdminSupabaseClient: jest.Mock
-    }
-    createAdminSupabaseClient.mockReturnValue(adminClient)
 
     const res = await GET(
-      new Request('http://localhost/api/admin/funnels/f1', { headers: { 'x-request-id': 'rid-detail-fallback' } }),
-      { params: Promise.resolve({ id: 'f1' }) },
+      new Request('http://localhost/api/admin/funnels/stress-assessment', {
+        headers: { 'x-request-id': 'rid-detail-slug' },
+      }),
+      { params: Promise.resolve({ id: 'stress-assessment' }) },
     )
 
     expect(res.status).toBe(200)
-    expect(res.headers.get('x-request-id')).toBe('rid-detail-fallback')
+    expect(res.headers.get('x-request-id')).toBe('rid-detail-slug')
 
     const json = (await res.json()) as unknown as {
       success: boolean
-      data: { funnel: { id: string }; steps: unknown[] }
+      data: { funnel: { id: string; slug: string; pillar: any }; versions: any[]; default_version: any; steps: any[] }
     }
 
     expect(json.success).toBe(true)
     expect(json.data.funnel.id).toBe('f1')
+    expect(json.data.funnel.slug).toBe('stress-assessment')
+    expect(json.data.funnel.pillar).toBeTruthy()
+    expect(json.data.funnel.pillar.key).toBe('mental-health')
+    expect(json.data.versions).toHaveLength(1)
+    expect(json.data.default_version).toBeTruthy()
+    expect(json.data.default_version.version).toBe('1.0.0')
     expect(Array.isArray(json.data.steps)).toBe(true)
+  })
+
+  it('funnel not found => 404', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const funnelBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: 'PGRST116', message: 'No rows returned' },
+    })
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'funnels_catalog') return funnelBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    const res = await GET(
+      new Request('http://localhost/api/admin/funnels/nonexistent', {
+        headers: { 'x-request-id': 'rid-404' },
+      }),
+      { params: Promise.resolve({ id: 'nonexistent' }) },
+    )
+
+    expect(res.status).toBe(404)
+    expect(res.headers.get('x-request-id')).toBe('rid-404')
+
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; message: string }
+    }
+
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('NOT_FOUND')
   })
 })

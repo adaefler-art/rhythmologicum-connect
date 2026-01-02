@@ -10,7 +10,6 @@ type Funnel = {
   id: string
   slug: string
   title: string
-  subtitle: string | null
   description: string | null
   is_active: boolean
   created_at: string
@@ -142,10 +141,6 @@ export default function FunnelListPage() {
                     </Badge>
                   </div>
 
-                  {funnel.subtitle && (
-                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">{funnel.subtitle}</p>
-                  )}
-
                   {funnel.description && (
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{funnel.description}</p>
                   )}
@@ -159,7 +154,7 @@ export default function FunnelListPage() {
                   </div>
                 </div>
 
-                <Link href={`/clinician/funnels/${funnel.id}`}>
+                <Link href={`/clinician/funnels/${funnel.slug}`}>
                   <Button variant="primary" size="sm">
                     Details
                   </Button>
