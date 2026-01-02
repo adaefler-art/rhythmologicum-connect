@@ -14,22 +14,26 @@ Successfully completed a comprehensive cleanup audit of the Rhythmologicum Conne
 ### Key Achievements
 
 ✅ **Complete Repository Inventory**
+
 - Analyzed 35 API routes
 - Analyzed 22 page routes
 - Analyzed 6 server actions
 - Analyzed 3 contract files
 
 ✅ **V05 Issue Mapping**
+
 - Identified 8 V05 canonical issues
 - Verified 100% implementation rate
 - Documented all migrations and code changes
 
 ✅ **Actionable Cleanup Backlog**
+
 - Created 10 prioritized cleanup tasks
 - Estimated 18 hours total effort
 - Categorized by priority and risk
 
 ✅ **Automation & Reproducibility**
+
 - Created Bash script for data collection
 - Created PowerShell script alternative
 - Documented methodology for future audits
@@ -41,20 +45,25 @@ Successfully completed a comprehensive cleanup audit of the Rhythmologicum Conne
 ### 1. Reports (3 files, 60KB total)
 
 #### TV05_CLEANUP_AUDIT_UNUSED.md (16KB, 602 lines)
+
 Comprehensive inventory of potentially unused code:
+
 - **API Routes:** 4 potentially unused (AMY, consent, content resolvers)
 - **Pages:** All 22 verified as reachable (dynamic routes confirmed)
 - **Server Actions:** All 6 verified as in use
 - **Contracts:** All 3 verified as in use
 
 **Key Findings:**
+
 - AMY endpoints have 0 usage references (potential cost risk)
 - Consent flow has duplicate implementations (API + server actions)
 - Content resolvers may be duplicated
 - All page routes properly integrated (false positives clarified)
 
 #### TV05_CLEANUP_AUDIT_ISSUE_MAP.md (20KB, 800 lines)
+
 Complete mapping of V05 issues to implementation:
+
 - **Issues Tracked:** 8 V05 canonical IDs
 - **Implementation Rate:** 100%
 - **Migrations:** 7 unique migration files
@@ -62,17 +71,21 @@ Complete mapping of V05 issues to implementation:
 - **Code Files:** 12 implementation files
 
 **Quality Metrics:**
+
 - 100% documentation coverage
 - 87.5% with database migrations
 - Excellent code quality with tests
 
 #### TV05_CLEANUP_BACKLOG.md (24KB, 929 lines)
+
 Prioritized cleanup tasks with full specifications:
+
 - **High Priority:** 3 tasks (8 hours) - Architecture decisions
 - **Medium Priority:** 4 tasks (6 hours) - Feature integration
 - **Low Priority:** 3 tasks (4 hours) - Documentation & polish
 
 **Top 3 Priorities:**
+
 1. Verify AMY integration status (Medium risk, 4h)
 2. Consolidate consent flow (Low risk, 2h)
 3. Review content resolver consolidation (Low risk, 2h)
@@ -82,6 +95,7 @@ Prioritized cleanup tasks with full specifications:
 #### scripts/tv05-cleanup-audit.ps1 (PowerShell, 30KB)
 
 Automated data collection script (canonical):
+
 - API route analysis with usage counts
 - Page route navigation reference tracking
 - Server action usage detection
@@ -93,7 +107,9 @@ Automated data collection script (canonical):
 ### 3. Documentation (1 file)
 
 #### docs/CLEANUP_AUDIT_README.md (10KB)
+
 Complete guide for using audit materials:
+
 - Overview of all reports
 - How to use scripts
 - Execution strategy for cleanup
@@ -128,6 +144,7 @@ grep -roh "V05-I[0-9]*\.[0-9]*" docs/ supabase/ | sort -u
 ### Manual Verification
 
 All flagged items were manually reviewed:
+
 - Code inspection for dynamic route usage
 - Git history analysis for recent changes
 - Documentation review for context
@@ -168,22 +185,23 @@ All flagged items were manually reviewed:
 
 ### V05 Implementation Status (8 issues, 100% complete)
 
-| Epic | Issue | Status | Migration | Documentation |
-|------|-------|--------|-----------|---------------|
-| I01 | V05-I01.1 | ✅ Complete | Yes | Excellent |
-| I01 | V05-I01.2 | ✅ Complete | Yes | Excellent |
-| I01 | V05-I01.3 | ✅ Complete | Yes | Excellent |
-| I01 | V05-I01.4 | ✅ Complete | Yes | Excellent |
-| I02 | V05-I02.1 | ✅ Complete | Yes | Excellent |
-| I02 | V05-I02.2 | ✅ Complete | Yes | Excellent |
-| I02 | V05-I02.3 | ✅ Complete | Yes | Excellent |
-| I03 | V05-I03.1 | ✅ Complete | No* | Excellent |
+| Epic | Issue     | Status      | Migration | Documentation |
+| ---- | --------- | ----------- | --------- | ------------- |
+| I01  | V05-I01.1 | ✅ Complete | Yes       | Excellent     |
+| I01  | V05-I01.2 | ✅ Complete | Yes       | Excellent     |
+| I01  | V05-I01.3 | ✅ Complete | Yes       | Excellent     |
+| I01  | V05-I01.4 | ✅ Complete | Yes       | Excellent     |
+| I02  | V05-I02.1 | ✅ Complete | Yes       | Excellent     |
+| I02  | V05-I02.2 | ✅ Complete | Yes       | Excellent     |
+| I02  | V05-I02.3 | ✅ Complete | Yes       | Excellent     |
+| I03  | V05-I03.1 | ✅ Complete | No\*      | Excellent     |
 
-*V05-I03.1 uses existing schema, no new migrations required (documented)
+\*V05-I03.1 uses existing schema, no new migrations required (documented)
 
 ### Code Quality Observations
 
 **Strengths:**
+
 - ✅ All V05 issues fully implemented
 - ✅ Comprehensive documentation (33 files)
 - ✅ Idempotent migrations
@@ -191,6 +209,7 @@ All flagged items were manually reviewed:
 - ✅ Security-first design (RLS, validation)
 
 **Areas for Improvement:**
+
 - ⚠️ Potential duplicate implementations (consent, content resolvers)
 - ⚠️ Unused AI integrations (AMY endpoints)
 - 📋 Some features not discoverable in UI (export button)
@@ -249,23 +268,27 @@ All flagged items were manually reviewed:
 ### Original Requirements
 
 ✅ **Unused/Unintegrated Inventory Report exists**
+
 - File: `docs/TV05_CLEANUP_AUDIT_UNUSED.md`
 - Contains: Path, Type, Status, Evidence, Recommended Action, Risk
 - Format: Markdown with detailed sections
 
 ✅ **Issue↔Repo Map Report exists**
+
 - File: `docs/TV05_CLEANUP_AUDIT_ISSUE_MAP.md`
 - Contains: Issue ID → PR/Commit/Files mapping
 - Status: complete, partial, present-but-unused, missing
 - Format: Tabular with detailed breakdowns
 
 ✅ **Aufräum-Backlog is derived and prioritized (Top 10)**
+
 - File: `docs/TV05_CLEANUP_BACKLOG.md`
 - Contains: 10 items with Title, Scope, AC, Verify, Risk
 - Priority: High (3), Medium (4), Low (3)
 - Format: Detailed task specifications
 
 ✅ **Repro Script exists and generates/updates reports**
+
 - Files: `scripts/tv05-cleanup-audit.ps1` (PowerShell canonical script)
 - Deterministic data collection
 - Can be re-run for updates
@@ -274,12 +297,14 @@ All flagged items were manually reviewed:
 ### Scope Compliance
 
 **In Scope (✅ Complete):**
+
 - ✅ Repo-wide inventarisierung (app/**, lib/**, supabase/**, docs/**)
 - ✅ GitHub-Abgleich (V05 canonical IDs extracted and mapped)
 - ✅ Ergebnis-Artefakte (3 reports + README)
 - ✅ Script zur Reproduzierbarkeit (2 scripts)
 
 **Out of Scope (✅ Correctly Avoided):**
+
 - ❌ Feature-Integration (deferred to backlog items)
 - ❌ Code/DB removal (deferred to backlog items)
 - ❌ Neue Begriffe/Slugs/Tabellen (no fantasy names used)
@@ -409,6 +434,7 @@ No breaking changes or code removal performed during audit. All changes deferred
 **Key Message:** V05 implementation is excellent (100% complete). Cleanup needed for 4 potentially unused API endpoints and some duplicate implementations. Estimated 18 hours to address all findings.
 
 **Action Items:**
+
 - Review cleanup backlog
 - Prioritize within next sprint
 - Allocate ~3 days for cleanup execution
@@ -418,6 +444,7 @@ No breaking changes or code removal performed during audit. All changes deferred
 **Key Message:** Great work on V05! Some endpoints may be unused and should be verified before removal. Clear backlog with step-by-step instructions available.
 
 **Action Items:**
+
 - Read CLEANUP_AUDIT_README.md
 - Pick backlog items matching your expertise
 - Follow acceptance criteria and verification steps
@@ -427,6 +454,7 @@ No breaking changes or code removal performed during audit. All changes deferred
 **Key Message:** Need architectural decisions on AMY integration, consent flow pattern, and content resolver consolidation. All other patterns are clean and well-implemented.
 
 **Action Items:**
+
 - Review high-priority backlog items
 - Make architecture decisions
 - Document canonical patterns

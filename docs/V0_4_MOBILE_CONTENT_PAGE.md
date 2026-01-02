@@ -11,6 +11,7 @@ Mobile-first content page component for displaying markdown content with a consi
 ## Key Features
 
 ### 1. **Sticky Header with Title**
+
 - Fixed header that remains visible during scroll
 - Page title with clear typography hierarchy
 - Optional subtitle/category badge
@@ -18,6 +19,7 @@ Mobile-first content page component for displaying markdown content with a consi
 - Consistent with v0.4 design tokens
 
 ### 2. **Scrollable Content Area**
+
 - Clean, card-based content display
 - Markdown rendering with GitHub Flavored Markdown support
 - Proper spacing and typography
@@ -25,6 +27,7 @@ Mobile-first content page component for displaying markdown content with a consi
 - Support for sections (F3 feature)
 
 ### 3. **Sticky Bottom CTA**
+
 - Fixed footer navigation
 - Primary CTA button (customizable label)
 - Optional secondary action (text link)
@@ -34,6 +37,7 @@ Mobile-first content page component for displaying markdown content with a consi
 - Tap animation feedback
 
 ### 4. **Design System Integration**
+
 - Full v0.4 design tokens implementation
 - Consistent spacing, typography, and colors
 - Shadows and border radius from design system
@@ -41,6 +45,7 @@ Mobile-first content page component for displaying markdown content with a consi
 - Component tokens for standardized styling
 
 ### 5. **Responsive Behavior**
+
 - Mobile-first layout (min-h-screen, flex column)
 - Automatically used on mobile devices (<640px)
 - Desktop fallback to original layout
@@ -85,13 +90,13 @@ All styling uses v0.4 design tokens:
 ### Design Tokens Used
 
 ```typescript
-import { 
-  spacing,              // Spacing scale
-  typography,           // Font sizes and weights
-  radii,               // Border radius
-  shadows,             // Box shadows
-  colors,              // Theme colors
-  componentTokens,     // Pre-configured component patterns
+import {
+  spacing, // Spacing scale
+  typography, // Font sizes and weights
+  radii, // Border radius
+  shadows, // Box shadows
+  colors, // Theme colors
+  componentTokens, // Pre-configured component patterns
 } from '@/lib/design-tokens'
 ```
 
@@ -154,11 +159,7 @@ type MobileContentPageProps = {
 import { MobileContentPage } from '@/app/components/mobile'
 import MarkdownRenderer from '@/app/components/MarkdownRenderer'
 
-<MobileContentPage
-  title="Datenschutz"
-  ctaLabel="Zurück"
-  onCtaClick={() => router.back()}
->
+;<MobileContentPage title="Datenschutz" ctaLabel="Zurück" onCtaClick={() => router.back()}>
   <MarkdownRenderer content={markdownContent} />
 </MobileContentPage>
 ```

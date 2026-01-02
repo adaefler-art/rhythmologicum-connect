@@ -155,12 +155,11 @@ app/api/health/env/
 The endpoint performs a simple database query to verify connectivity:
 
 ```typescript
-const { error } = await supabase
-  .from('funnels')
-  .select('id', { count: 'exact', head: true })
+const { error } = await supabase.from('funnels').select('id', { count: 'exact', head: true })
 ```
 
 This query:
+
 - Uses the `funnels` table (no PHI)
 - Performs a `head` request (doesn't return data, just checks existence)
 - Verifies both authentication and database connectivity
@@ -170,11 +169,13 @@ This query:
 #### Secret Redaction
 
 The endpoint **never** includes actual environment variable values in responses. All checks return only:
+
 - Check name
 - Pass/fail status
 - Generic diagnostic message
 
 Example of what is **NOT** included:
+
 - Actual URL values
 - Actual API keys
 - Any sensitive configuration data
@@ -236,6 +237,7 @@ npm test
 ### Test Results
 
 All 12 tests pass:
+
 - ✓ Authentication and Authorization (2 tests)
 - ✓ Environment Checks (2 tests)
 - ✓ Secret Redaction (2 tests)
@@ -268,7 +270,7 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 ```typescript
 const response = await fetch('/api/health/env', {
   headers: {
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   },
 })
 const data = await response.json()
@@ -306,7 +308,7 @@ Both commands should complete successfully.
 
 Potential improvements for future iterations:
 
-1. **Additional checks**: 
+1. **Additional checks**:
    - Anthropic API key format validation
    - Feature flag validation
    - Database migration status

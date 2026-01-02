@@ -9,6 +9,7 @@ The application currently uses structured console logging for all events and err
 ## Current Logging Infrastructure
 
 ### Server-Side Logging
+
 - **Location**: `lib/logging/logger.ts`
 - **Output**: Structured JSON to console (stdout/stderr)
 - **Key Events**:
@@ -19,6 +20,7 @@ The application currently uses structured console logging for all events and err
   - Validation failures
 
 ### Client-Side Logging
+
 - **Location**: `lib/logging/clientLogger.ts`
 - **Output**: Structured JSON to browser console
 - **Key Events**:
@@ -29,6 +31,7 @@ The application currently uses structured console logging for all events and err
   - Loading states
 
 ### API Performance Monitoring
+
 - **Location**: `lib/monitoring/apiWrapper.ts`
 - **Wrapper Function**: `withMonitoring(handler, endpointName)`
 - **Metrics Collected**:
@@ -42,12 +45,13 @@ The application currently uses structured console logging for all events and err
 ### 1. Server-Side Error Tracking (Sentry/Rollbar/Bugsnag)
 
 #### Integration Location
+
 Add monitoring initialization in `lib/logging/logger.ts`:
 
 ```typescript
 // TODO: Initialize Sentry or similar service
 // import * as Sentry from '@sentry/nextjs'
-// 
+//
 // if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
 //   Sentry.init({
 //     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -60,10 +64,11 @@ Add monitoring initialization in `lib/logging/logger.ts`:
 #### Key Functions to Modify
 
 **`logError()` function** - Send errors to monitoring service:
+
 ```typescript
 export function logError(message: string, context?: LogContext, error?: unknown): void {
   log(LogLevel.ERROR, message, context, error)
-  
+
   // TODO: Send to Sentry
   // if (process.env.NODE_ENV === 'production' && error) {
   //   Sentry.captureException(error, {
@@ -80,10 +85,11 @@ export function logError(message: string, context?: LogContext, error?: unknown)
 ```
 
 **`logAssessmentError()` function** - Track assessment-specific errors:
+
 ```typescript
 export function logAssessmentError(context: LogContext, error: unknown): void {
   logError('Assessment error', context, error)
-  
+
   // TODO: Add custom tracking for assessment errors
   // Sentry.captureException(error, {
   //   fingerprint: ['assessment-error', context.assessmentId || 'unknown'],
@@ -98,6 +104,7 @@ export function logAssessmentError(context: LogContext, error: unknown): void {
 ### 2. Client-Side Session Recording (LogRocket/FullStory/Hotjar)
 
 #### Integration Location
+
 Add initialization in `lib/logging/clientLogger.ts`:
 
 ```typescript
@@ -112,11 +119,12 @@ Add initialization in `lib/logging/clientLogger.ts`:
 #### Key Functions to Modify
 
 **`logClientEvent()` function** - Send events to analytics:
+
 ```typescript
 export function logClientEvent(
   eventType: ClientEventType,
   context: ClientEventContext,
-  message?: string
+  message?: string,
 ): void {
   const entry: ClientLogEntry = {
     timestamp: new Date().toISOString(),
@@ -124,9 +132,8 @@ export function logClientEvent(
     context: {
       ...context,
       userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
-      screenSize: typeof window !== 'undefined' 
-        ? `${window.innerWidth}x${window.innerHeight}` 
-        : 'unknown',
+      screenSize:
+        typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : 'unknown',
     },
     message,
   }
@@ -145,6 +152,7 @@ export function logClientEvent(
 ### 3. API Performance Monitoring (DataDog/New Relic/Prometheus)
 
 #### Integration Location
+
 Add metrics collection in `lib/monitoring/apiWrapper.ts`:
 
 ```typescript
@@ -154,7 +162,7 @@ Add metrics collection in `lib/monitoring/apiWrapper.ts`:
 async function sendMetrics(metrics: ApiMetrics): Promise<void> {
   // TODO: Implement actual metrics collection when ready.
   // Example with DataDog:
-  // 
+  //
   // import { StatsD } from 'node-dogstatsd'
   // const statsd = new StatsD()
   //
@@ -174,6 +182,7 @@ async function sendMetrics(metrics: ApiMetrics): Promise<void> {
 When a user is authenticated, identify them in monitoring services:
 
 **Add to authentication callback** (`app/api/auth/callback/route.ts` or similar):
+
 ```typescript
 // After successful authentication
 const user = await supabase.auth.getUser()
@@ -185,7 +194,7 @@ const user = await supabase.auth.getUser()
 //     id: user.data.user.id,
 //     email: user.data.user.email,
 //   })
-//   
+//
 //   // Client-side (LogRocket)
 //   LogRocket.identify(user.data.user.id, {
 //     email: user.data.user.email,
@@ -217,6 +226,7 @@ ENABLE_MONITORING=true
 ## Recommended Services
 
 ### Error Tracking & Monitoring
+
 1. **Sentry** (Recommended)
    - Excellent Next.js integration
    - Source map support
@@ -230,6 +240,7 @@ ENABLE_MONITORING=true
    - Cost: Free tier available, paid plans from $12.50/month
 
 ### Session Recording
+
 1. **LogRocket** (Recommended for healthcare)
    - Session replay with privacy controls
    - Performance monitoring
@@ -243,6 +254,7 @@ ENABLE_MONITORING=true
    - Cost: Custom pricing
 
 ### APM (Application Performance Monitoring)
+
 1. **DataDog**
    - Comprehensive monitoring
    - Log aggregation
@@ -257,7 +269,9 @@ ENABLE_MONITORING=true
 ## Privacy & GDPR Considerations
 
 ### PHI/Personal Data
+
 ⚠️ **IMPORTANT**: Never log or send to monitoring services:
+
 - Full names
 - Email addresses (use hashed IDs instead)
 - Assessment answers
@@ -266,6 +280,7 @@ ENABLE_MONITORING=true
 - Passwords
 
 ### Data Minimization
+
 - Use user IDs instead of email addresses
 - Redact sensitive fields in error contexts
 - Configure monitoring services to respect privacy:
@@ -274,15 +289,16 @@ ENABLE_MONITORING=true
   - Set appropriate data retention policies
 
 ### Example: Sanitizing Context
+
 ```typescript
 function sanitizeContext(context: LogContext): LogContext {
   const sanitized = { ...context }
-  
+
   // Remove sensitive fields
   delete sanitized.email
   delete sanitized.fullName
   delete sanitized.answerValue
-  
+
   return sanitized
 }
 ```
@@ -290,6 +306,7 @@ function sanitizeContext(context: LogContext): LogContext {
 ## Implementation Checklist
 
 ### Phase 1: Basic Error Tracking
+
 - [ ] Choose and set up Sentry account
 - [ ] Add Sentry SDK to dependencies
 - [ ] Configure Sentry in `next.config.ts`
@@ -299,6 +316,7 @@ function sanitizeContext(context: LogContext): LogContext {
 - [ ] Configure error alerts
 
 ### Phase 2: Client-Side Monitoring
+
 - [ ] Choose session recording service (LogRocket)
 - [ ] Add SDK to dependencies
 - [ ] Initialize in client logger
@@ -308,6 +326,7 @@ function sanitizeContext(context: LogContext): LogContext {
 - [ ] Configure session replay filters
 
 ### Phase 3: Performance Monitoring
+
 - [ ] Choose APM service (DataDog/New Relic)
 - [ ] Set up account and API keys
 - [ ] Install monitoring agent
@@ -316,6 +335,7 @@ function sanitizeContext(context: LogContext): LogContext {
 - [ ] Configure performance alerts
 
 ### Phase 4: Production Deployment
+
 - [ ] Add environment variables to production
 - [ ] Enable monitoring in production only
 - [ ] Test all monitoring integrations
@@ -326,6 +346,7 @@ function sanitizeContext(context: LogContext): LogContext {
 ## Testing Monitoring Integration
 
 ### Test Error Capture
+
 ```typescript
 // Add to a test route: /api/test-monitoring
 export async function GET() {
@@ -335,14 +356,11 @@ export async function GET() {
 ```
 
 ### Test Client Event
+
 ```typescript
 // Add to a test page
 useEffect(() => {
-  logClientEvent(
-    ClientEventType.PAGE_VIEW,
-    { currentPath: '/test-monitoring' },
-    'Test page view'
-  )
+  logClientEvent(ClientEventType.PAGE_VIEW, { currentPath: '/test-monitoring' }, 'Test page view')
 }, [])
 ```
 

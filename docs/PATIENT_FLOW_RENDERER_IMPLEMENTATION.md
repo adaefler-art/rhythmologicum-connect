@@ -40,6 +40,7 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 **Purpose:** Central orchestrator for the patient assessment flow
 
 **Responsibilities:**
+
 - Determine current node type (Question, Info, or Result)
 - Delegate rendering to appropriate node-specific renderer
 - Display progress indicators and recovery banners
@@ -47,6 +48,7 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 - Show error messages
 
 **Props:**
+
 ```typescript
 {
   funnel: FunnelDefinition
@@ -67,6 +69,7 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 ```
 
 **Key Features:**
+
 - Uses type guards (`isQuestionStep`, `isInfoStep`) to determine rendering strategy
 - Calculates progress percentage from answer count
 - Conditionally shows recovery banner for resumed assessments
@@ -79,6 +82,7 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 **Purpose:** Render question steps with answer controls
 
 **Responsibilities:**
+
 - Display all questions in a step
 - Render Likert scale answer buttons (0-4)
 - Show validation errors for unanswered required questions
@@ -86,6 +90,7 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 - Highlight answered vs unanswered questions
 
 **Features:**
+
 - Memoized QuestionCard component for performance
 - 5-point Likert scale with labels: Nie, Selten, Manchmal, Oft, Sehr häufig
 - Touch-friendly button sizing (min 90px on mobile)
@@ -99,14 +104,17 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 **Purpose:** Render informational/content-only steps
 
 **Responsibilities:**
+
 - Display step content or description
 - Provide simple visual container
 
 **Features:**
+
 - Styled info box with blue theme
 - Minimal implementation for content display
 
 **Future Enhancements:**
+
 - Rich text rendering (Markdown)
 - Image/media support
 - Interactive elements
@@ -118,11 +126,13 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 **Purpose:** Display progress through the assessment
 
 **Responsibilities:**
+
 - Show answered/total question count
 - Display visual progress bar
 - Calculate and show completion percentage
 
 **Features:**
+
 - Responsive text sizing
 - Animated progress bar with transition
 - Rounded percentage display
@@ -135,12 +145,14 @@ FunnelClient (app/patient/funnel/[slug]/client.tsx)
 **Purpose:** Manage navigation between assessment steps
 
 **Responsibilities:**
+
 - Provide Back button (hidden on first step)
 - Provide Next button with context-aware label
 - Handle button states (enabled/disabled)
 - Show loading state when submitting
 
 **Features:**
+
 - Conditional Back button rendering
 - Dynamic Next button text:
   - "Weiter →" for middle steps
@@ -168,6 +180,7 @@ UI Update (Component)
 ### State Location
 
 **FunnelClient** manages:
+
 - `funnel`: Funnel definition from API
 - `assessmentStatus`: Current assessment state
 - `answers`: User answers (question_id → value)
@@ -179,6 +192,7 @@ UI Update (Component)
 - `recovery`: Recovery state for retry logic
 
 **PatientFlowRenderer** receives:
+
 - All display-related state as props
 - Event handlers as callbacks
 - Does NOT manage state internally (presentational)
@@ -257,6 +271,7 @@ UI Update (Component)
 Currently implemented as placeholder - displays message that feature is coming soon.
 
 **Future Implementation:**
+
 - Track completed steps
 - Allow navigation to previous steps
 - Preserve answers when going back
@@ -267,6 +282,7 @@ Currently implemented as placeholder - displays message that feature is coming s
 ### Validation Errors
 
 When a required question is unanswered:
+
 1. Server returns `{ isValid: false, missingQuestions: [...] }`
 2. FunnelClient updates `validationErrors` state
 3. PatientFlowRenderer passes errors to QuestionStepRenderer
@@ -285,6 +301,7 @@ When a required question is unanswered:
 ### Recovery Mechanism
 
 When user returns after closing browser:
+
 1. System detects `in_progress` assessment
 2. Loads existing answers from database
 3. Displays recovery banner with answer count
@@ -302,9 +319,9 @@ All components use Tailwind CSS with mobile-first breakpoints:
 // sm: classes apply at 640px+
 // md: classes apply at 768px+
 
-className="text-2xl md:text-3xl"        // Larger text on desktop
-className="p-6 md:p-8"                  // More padding on desktop
-className="flex-col md:flex-row"        // Stack on mobile, row on desktop
+className = 'text-2xl md:text-3xl' // Larger text on desktop
+className = 'p-6 md:p-8' // More padding on desktop
+className = 'flex-col md:flex-row' // Stack on mobile, row on desktop
 ```
 
 ### Touch-Friendly Interactions
@@ -362,6 +379,7 @@ className="flex-col md:flex-row"        // Stack on mobile, row on desktop
 ### Future Unit Tests
 
 Recommended test coverage:
+
 - PatientFlowRenderer: props rendering, conditional rendering
 - QuestionStepRenderer: question display, validation states
 - AssessmentProgress: percentage calculation
@@ -434,17 +452,20 @@ Recommended test coverage:
 ## Acceptance Criteria Review
 
 ✅ **Single entrypoint for the Stress & Resilience flow**
+
 - PatientFlowRenderer is the single rendering component
 - No duplicate flow implementations
 - Clear component hierarchy
 
 ✅ **Next/back navigation works from welcome to result without dead-ends**
+
 - Next navigation works through all steps
 - Validation prevents dead-ends
 - Successful completion redirects to result
 - Back navigation shows placeholder message (future implementation)
 
 ✅ **Progress is visible and understandable to the patient**
+
 - Question count: "Frage X von Y beantwortet"
 - Visual progress bar with percentage
 - Step counter: "Schritt X von Y"

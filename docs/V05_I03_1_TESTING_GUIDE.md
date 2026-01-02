@@ -17,11 +17,13 @@
 ## Setup Steps
 
 1. **Start Local Supabase**
+
    ```bash
    npx supabase start
    ```
 
 2. **Reset Database** (applies all migrations)
+
    ```bash
    npm run db:reset
    ```
@@ -162,6 +164,7 @@
 **Objective**: Verify users can only see their own data
 
 **Setup**: Create two test users
+
 - User A: `patient-a@example.com`
 - User B: `patient-b@example.com`
 
@@ -180,6 +183,7 @@
    ```sql
    SELECT full_name FROM patient_profiles WHERE user_id = '<user-a-id>';
    ```
+
    - **Verify**: Can see User A's profile in admin view
    - As User B (using anon key):
      - Cannot query other users' profiles
@@ -189,8 +193,9 @@
 **Objective**: Verify audit events are created
 
 1. **After completing onboarding**, check audit log:
+
    ```sql
-   SELECT 
+   SELECT
      entity_type,
      action,
      created_at,
@@ -229,16 +234,19 @@
 ## Database Verification Commands
 
 ### Check Consent Records
+
 ```sql
 SELECT * FROM user_consents WHERE user_id = '<test-user-id>';
 ```
 
 ### Check Patient Profiles
+
 ```sql
 SELECT * FROM patient_profiles WHERE user_id = '<test-user-id>';
 ```
 
 ### Check RLS Policies
+
 ```sql
 SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
 FROM pg_policies
@@ -247,30 +255,33 @@ WHERE tablename IN ('user_consents', 'patient_profiles');
 
 ## Expected Results Summary
 
-| Scenario | Expected Outcome |
-|----------|-----------------|
-| New user onboarding | Completes consent → profile → assessment |
-| Reload persistence | Data saved and reloaded correctly |
-| Idempotent consent | No errors on re-submission |
-| Profile update | Changes saved and visible |
-| Validation errors | Clear error messages displayed |
-| RLS enforcement | Users only see own data |
-| Audit logging | All events recorded |
-| Redirect logic | Correct redirects for incomplete onboarding |
+| Scenario            | Expected Outcome                            |
+| ------------------- | ------------------------------------------- |
+| New user onboarding | Completes consent → profile → assessment    |
+| Reload persistence  | Data saved and reloaded correctly           |
+| Idempotent consent  | No errors on re-submission                  |
+| Profile update      | Changes saved and visible                   |
+| Validation errors   | Clear error messages displayed              |
+| RLS enforcement     | Users only see own data                     |
+| Audit logging       | All events recorded                         |
+| Redirect logic      | Correct redirects for incomplete onboarding |
 
 ## Troubleshooting
 
 ### Issue: Redirects not working
+
 - Check browser console for errors
 - Verify `getOnboardingStatus()` is being called
 - Check network tab for 401/403 errors
 
 ### Issue: Data not persisting
+
 - Verify Supabase connection
 - Check RLS policies are enabled
 - Verify user_id matches auth.uid()
 
 ### Issue: Validation not working
+
 - Check browser console for Zod errors
 - Verify server action is being called
 - Check network tab for 400 errors

@@ -13,7 +13,9 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
 ## Deliverables
 
 ### 1. Migration File ✅
+
 **File:** `supabase/migrations/20260101110320_v05_i02_3_additional_funnels.sql`
+
 - ✅ 21,747 characters
 - ✅ 3 idempotent funnel insertions using ON CONFLICT DO UPDATE
 - ✅ Complete questionnaire_config stubs (3-4 steps each)
@@ -22,27 +24,35 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
 - ✅ prompt_version: '1.0'
 
 ### 2. Registry Updates ✅
+
 **File:** `lib/contracts/registry.ts`
+
 - ✅ Added `CARDIOVASCULAR_AGE: 'cardiovascular-age'`
 - ✅ Added `SLEEP_QUALITY: 'sleep-quality'`
 - ✅ Added `HEART_HEALTH_NUTRITION: 'heart-health-nutrition'`
 
 ### 3. Documentation ✅
+
 **File:** `docs/canon/CONTRACTS.md`
+
 - ✅ Added "Canonical Funnel Slugs (V05-I02.3)" section
 - ✅ Table of all 4 funnels with metadata
 - ✅ Slug resolution examples
 - ✅ Guide for adding new funnels
 
 ### 4. Tests ✅
+
 **File:** `lib/contracts/__tests__/newFunnels.test.ts`
+
 - ✅ 9 new tests, all passing
 - ✅ Registry slug validation
 - ✅ Manifest structure validation
 - ✅ Question type validation
 
 ### 5. Evidence ✅
+
 **Files:**
+
 - `V05_I02_3_VALIDATION_EVIDENCE.md` - Detailed validation evidence
 - `EXPECTED_UI_CATALOG.txt` - Expected UI structure
 - `tools/mockCatalogVisualization.ts` - Mock data structure
@@ -52,6 +62,7 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
 ## Funnels Added
 
 ### 1. Cardiovascular Age Assessment
+
 - **Slug:** `cardiovascular-age`
 - **Pillar:** prevention
 - **Duration:** 8 minutes
@@ -70,6 +81,7 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
   - Präventionsstrategien erhalten
 
 ### 2. Sleep Quality Assessment
+
 - **Slug:** `sleep-quality`
 - **Pillar:** sleep
 - **Duration:** 10 minutes
@@ -87,6 +99,7 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
   - Verbesserungstipps erhalten
 
 ### 3. Heart Health Nutrition
+
 - **Slug:** `heart-health-nutrition`
 - **Pillar:** nutrition
 - **Duration:** 12 minutes
@@ -111,25 +124,31 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
 ## Technical Implementation
 
 ### Manifest Validation
+
 All manifests validated against Zod schemas:
+
 - ✅ `FunnelQuestionnaireConfigSchema`
 - ✅ `FunnelContentManifestSchema`
 - ✅ No magic strings (all types from registry)
 - ✅ Proper JSONB structure
 
 ### Question Types Used
+
 - `number` - Numeric input (age, hours, portions)
 - `radio` - Single choice selection
 - `scale` - Numeric scale (1-10, 0-7)
 - `checkbox` - Multiple choice selection
 
 ### Section Types Used
+
 - `hero` - Hero section for page headers
 - `text` - Plain text content
 - `markdown` - Markdown-formatted content
 
 ### Idempotency
+
 Migration uses `ON CONFLICT (slug) DO UPDATE` for:
+
 - `funnels_catalog` entries
 - `funnel_versions` entries
 
@@ -140,6 +159,7 @@ This ensures safe re-runs without duplicates.
 ## Quality Assurance
 
 ### Build Status ✅
+
 ```
 ✓ Compiled successfully in 8.7s
 ✓ TypeScript compilation passed
@@ -147,17 +167,20 @@ This ensures safe re-runs without duplicates.
 ```
 
 ### Test Status ✅
+
 ```
 Test Suites: 14 passed, 14 total
 Tests:       212 passed, 212 total
 ```
 
 ### Test Coverage
+
 - ✅ 203 existing tests (unchanged)
 - ✅ 9 new tests for V05-I02.3
 - ✅ 100% pass rate
 
 ### Code Quality ✅
+
 - ✅ TypeScript strict mode compliant
 - ✅ No ESLint errors
 - ✅ Prettier formatting applied
@@ -189,6 +212,7 @@ Expected response includes all 4 funnels organized by pillar:
 ### GET /api/funnels/catalog/{slug}
 
 Each funnel endpoint will return:
+
 - Funnel metadata
 - Default version information
 - Outcomes array
@@ -199,6 +223,7 @@ Each funnel endpoint will return:
 ## Migration Safety
 
 ✅ **Production-ready** because:
+
 1. Idempotent operations (ON CONFLICT DO UPDATE)
 2. No data loss (additive only)
 3. No breaking changes
@@ -223,6 +248,7 @@ Each funnel endpoint will return:
 ## Deployment Steps
 
 1. **Apply migration:**
+
    ```bash
    supabase db reset  # Local development
    # or
@@ -230,6 +256,7 @@ Each funnel endpoint will return:
    ```
 
 2. **Verify API:**
+
    ```bash
    curl -H "Authorization: Bearer <token>" \
      http://localhost:3000/api/funnels/catalog
@@ -257,6 +284,7 @@ Each funnel endpoint will return:
 ## Next Steps
 
 After deployment:
+
 1. Monitor catalog API response for new funnels
 2. Test patient UI displays all 4 funnels correctly
 3. Verify each funnel's intro page loads
@@ -278,6 +306,7 @@ After deployment:
 ## Conclusion
 
 V05-I02.3 successfully implemented 3 additional funnels with:
+
 - Complete stub manifests (questionnaire + content)
 - Canonical slug registry
 - Idempotent migrations

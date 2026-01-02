@@ -25,28 +25,29 @@ Comprehensive Row Level Security (RLS) policies have been implemented for the V0
 
 ### Tables with RLS Enabled
 
-| Table | RLS Enabled | Patient | Clinician | Nurse | Admin |
-|-------|-------------|---------|-----------|-------|-------|
-| organizations | ✅ | View own | View own | View own | Update own |
-| user_profiles | ✅ | Own only | Org-scoped | Org-scoped | Org-scoped |
-| user_org_membership | ✅ | Own only | View own | View own | Manage org |
-| patient_profiles | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| funnels_catalog | ✅ | Read active | Read active | Read active | Manage all |
-| funnel_versions | ✅ | Read active | Read active | Read active | Manage all |
-| patient_funnels | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| assessments | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| assessment_events | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| assessment_answers | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| documents | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| calculated_results | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| reports | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| report_sections | ✅ | Own only | Org/Assigned | Org/Assigned | No access |
-| tasks | ✅ | Own only | Role-based | Role-based | Org-scoped |
-| notifications | ✅ | Own only | Own only | Own only | Own only |
-| audit_log | ✅ | No access | No access | No access | View org |
-| clinician_patient_assignments | ✅ | No access | Own only | No access | Manage org |
+| Table                         | RLS Enabled | Patient     | Clinician    | Nurse        | Admin      |
+| ----------------------------- | ----------- | ----------- | ------------ | ------------ | ---------- |
+| organizations                 | ✅          | View own    | View own     | View own     | Update own |
+| user_profiles                 | ✅          | Own only    | Org-scoped   | Org-scoped   | Org-scoped |
+| user_org_membership           | ✅          | Own only    | View own     | View own     | Manage org |
+| patient_profiles              | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| funnels_catalog               | ✅          | Read active | Read active  | Read active  | Manage all |
+| funnel_versions               | ✅          | Read active | Read active  | Read active  | Manage all |
+| patient_funnels               | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| assessments                   | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| assessment_events             | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| assessment_answers            | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| documents                     | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| calculated_results            | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| reports                       | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| report_sections               | ✅          | Own only    | Org/Assigned | Org/Assigned | No access  |
+| tasks                         | ✅          | Own only    | Role-based   | Role-based   | Org-scoped |
+| notifications                 | ✅          | Own only    | Own only     | Own only     | Own only   |
+| audit_log                     | ✅          | No access   | No access    | No access    | View org   |
+| clinician_patient_assignments | ✅          | No access   | Own only     | No access    | Manage org |
 
 **Legend:**
+
 - **Own only**: User can only see/modify their own records
 - **Org-scoped**: User can see records from patients in same organization
 - **Org/Assigned**: User can see org patients + explicitly assigned patients from other orgs
@@ -67,6 +68,7 @@ public.is_assigned_to_patient(patient_uid UUID) => BOOLEAN
 ```
 
 Plus legacy functions retained for backward compatibility:
+
 ```sql
 public.get_my_patient_profile_id() => UUID
 public.is_clinician() => BOOLEAN
@@ -75,11 +77,13 @@ public.is_clinician() => BOOLEAN
 ### Access Control Model
 
 **Multi-Tenant Isolation:**
+
 - Organizations are the primary tenant boundary
 - Users belong to organization(s) via `user_org_membership`
 - Each membership has a role: `patient`, `clinician`, `nurse`, or `admin`
 
 **Patient Data Protection:**
+
 - Patients can NEVER see other patients' data
 - Cross-patient queries return 0 rows due to RLS
 - All PHI tables enforce patient-level isolation
@@ -87,6 +91,7 @@ public.is_clinician() => BOOLEAN
 **Staff Access Patterns:**
 
 1. **Same Organization**: Clinicians/Nurses see all patients in their org(s)
+
    ```sql
    -- Check via user_org_membership join
    WHERE EXISTS (
@@ -99,6 +104,7 @@ public.is_clinician() => BOOLEAN
    ```
 
 2. **Explicit Assignment**: Clinicians can be assigned patients from other orgs
+
    ```sql
    -- Check via clinician_patient_assignments
    WHERE public.is_assigned_to_patient(patient.user_id)
@@ -107,6 +113,7 @@ public.is_clinician() => BOOLEAN
 3. **No Assignment**: Staff from Org A cannot see Org B patients without explicit assignment
 
 **Admin Restrictions:**
+
 - Admins can manage organization settings
 - Admins can view/manage user_org_membership for their org
 - Admins can view audit_log (compliance)
@@ -119,11 +126,12 @@ public.is_clinician() => BOOLEAN
 ✅ **No public read** for patient data  
 ✅ **Patient isolation** - patients see only own data  
 ✅ **Org-scoped access** - clinicians/nurses see org + assigned patients  
-✅ **Admin config-only** - admins cannot access PHI  
+✅ **Admin config-only** - admins cannot access PHI
 
 ### Policy Examples
 
 **Patient Isolation (patient_profiles):**
+
 ```sql
 CREATE POLICY "Patients can view own profile"
   ON public.patient_profiles
@@ -132,6 +140,7 @@ CREATE POLICY "Patients can view own profile"
 ```
 
 **Org-Scoped Access (assessments):**
+
 ```sql
 CREATE POLICY "Staff can view org patient assessments"
   ON public.assessments
@@ -154,6 +163,7 @@ CREATE POLICY "Staff can view org patient assessments"
 ```
 
 **Admin Config (organizations):**
+
 ```sql
 CREATE POLICY "Admins can update own org settings"
   ON public.organizations
@@ -170,7 +180,7 @@ Server-side operations (reports, notifications, audit logs) use Supabase `servic
 // Backend uses service_role - bypasses all RLS
 const serviceSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 // All operations bypass RLS when using service_role
 ```
@@ -181,11 +191,11 @@ const serviceSupabase = createClient(
 
 ```sql
 -- 1. Check RLS enabled on all tables
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
-WHERE schemaname = 'public' 
+SELECT schemaname, tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
   AND tablename IN (
-    'organizations', 'user_profiles', 'user_org_membership', 
+    'organizations', 'user_profiles', 'user_org_membership',
     'patient_profiles', 'funnels_catalog', 'funnel_versions',
     'patient_funnels', 'assessments', 'assessment_events',
     'assessment_answers', 'documents', 'calculated_results',
@@ -270,7 +280,7 @@ See `supabase/migrations/20251231072347_v05_rls_verification_tests.sql` for 60+ 
 ❌ Patient cannot update org settings  
 ❌ Admin cannot access patient PHI (by default)  
 ❌ Unauthenticated users cannot read any data  
-❌ Patient cannot insert data for another patient  
+❌ Patient cannot insert data for another patient
 
 ### What RLS Allows
 
@@ -279,7 +289,7 @@ See `supabase/migrations/20251231072347_v05_rls_verification_tests.sql` for 60+ 
 ✅ Nurse can read org patients + manage nurse tasks  
 ✅ Admin can manage org settings + memberships  
 ✅ Server uses service_role key which bypasses RLS for system operations  
-✅ Staff can be assigned to patients within same organization  
+✅ Staff can be assigned to patients within same organization
 
 ### Edge Cases Handled
 

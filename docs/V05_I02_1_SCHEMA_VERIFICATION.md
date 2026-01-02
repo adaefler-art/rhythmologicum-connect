@@ -57,7 +57,7 @@
 
 ```sql
 -- Check which migration created which table
-SELECT 
+SELECT
   schemaname,
   tablename,
   tableowner
@@ -68,6 +68,7 @@ ORDER BY tablename;
 ```
 
 **Expected Result:**
+
 ```
 schemaname | tablename        | tableowner
 -----------+------------------+-----------
@@ -81,7 +82,7 @@ public     | pillars          | postgres  (V05-I02.1)
 
 ```sql
 -- Check funnel_versions policies (should only have V05 core policies)
-SELECT 
+SELECT
   schemaname,
   tablename,
   policyname,
@@ -99,7 +100,7 @@ ORDER BY policyname;
 
 ```sql
 -- Should return exactly 7 pillars
-SELECT 
+SELECT
   key,
   title,
   sort_order
@@ -108,6 +109,7 @@ ORDER BY sort_order;
 ```
 
 **Expected Result:**
+
 ```
 key           | title                                    | sort_order
 --------------+------------------------------------------+-----------
@@ -124,7 +126,7 @@ prevention    | Prävention & Gesundheitsvorsorge         | 7
 
 ```sql
 -- Check stress funnel is in correct pillar
-SELECT 
+SELECT
   fc.slug,
   fc.title,
   p.key as pillar_key,
@@ -136,6 +138,7 @@ WHERE fc.slug = 'stress-assessment';
 ```
 
 **Expected Result:**
+
 ```
 slug              | title             | pillar_key    | pillar_title                          | pillar_order
 ------------------+-------------------+---------------+---------------------------------------+-------------
@@ -149,6 +152,7 @@ stress-assessment | Stress Assessment | mental-health | Mentale Gesundheit & Str
 ### GET /api/funnels/catalog
 
 **Tables Queried:**
+
 ```typescript
 // 1. Fetch pillars
 FROM public.pillars
@@ -171,6 +175,7 @@ AND is_default = true
 ### GET /api/funnels/catalog/[slug]
 
 **Tables Queried:**
+
 ```typescript
 // 1. Fetch funnel
 FROM public.funnels_catalog
@@ -196,13 +201,13 @@ ORDER BY version DESC
 ```typescript
 // lib/contracts/registry.ts
 export const PILLAR_KEY = {
-  NUTRITION: 'nutrition',       // Pillar 1
-  MOVEMENT: 'movement',         // Pillar 2
-  SLEEP: 'sleep',               // Pillar 3
+  NUTRITION: 'nutrition', // Pillar 1
+  MOVEMENT: 'movement', // Pillar 2
+  SLEEP: 'sleep', // Pillar 3
   MENTAL_HEALTH: 'mental-health', // Pillar 4 (Stress funnel here)
-  SOCIAL: 'social',             // Pillar 5
-  MEANING: 'meaning',           // Pillar 6
-  PREVENTION: 'prevention',     // Pillar 7
+  SOCIAL: 'social', // Pillar 5
+  MEANING: 'meaning', // Pillar 6
+  PREVENTION: 'prevention', // Pillar 7
 } as const
 ```
 
@@ -219,6 +224,7 @@ npm run build
 ```
 
 **Output:**
+
 ```
 ✓ Compiled successfully
 Routes:
@@ -240,6 +246,7 @@ npm test
 ```
 
 **Results:**
+
 ```
 Test Suites: 1 failed, 9 passed, 10 total
 Tests:       1 failed, 140 passed, 141 total
@@ -255,22 +262,26 @@ Tests:       1 failed, 140 passed, 141 total
 
 ## Conclusion
 
-**No Duplicate Tables:** ✅  
+**No Duplicate Tables:** ✅
+
 - `funnels_catalog` from V05 core (extended)
 - `funnel_versions` from V05 core (unchanged)
 - `pillars` newly created (no conflict)
 
-**7-Pillar Model:** ✅  
+**7-Pillar Model:** ✅
+
 - All 7 canonical pillars seeded
 - Deterministic sort_order (1-7)
 - Stress funnel in Pillar 4
 
-**API Alignment:** ✅  
+**API Alignment:** ✅
+
 - All endpoints use `funnels_catalog`
 - No references to old `funnels` table
 - Proper V05 core integration
 
-**Evidence Complete:** ✅  
+**Evidence Complete:** ✅
+
 - SQL queries provided
 - Build successful
 - Tests passing

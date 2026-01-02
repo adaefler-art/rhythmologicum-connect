@@ -13,18 +13,22 @@ Converted entire DB determinism framework from bash to PowerShell to comply with
 ## Files Changed
 
 ### Created
+
 - ✅ `scripts/verify-db-determinism.ps1` - PowerShell verification script with color-coded output
 
 ### Removed
+
 - ✅ `scripts/verify-db-determinism.sh` - Old bash script
 
 ### Modified
 
 #### Scripts & Configuration
+
 - ✅ `package.json` - db:verify now uses `pwsh -File scripts/verify-db-determinism.ps1`
 - ✅ `.github/workflows/db-determinism.yml` - Enhanced with deterministic Supabase lifecycle
 
 #### Documentation (All Bash → PowerShell)
+
 - ✅ `docs/canon/DB_MIGRATIONS.md` - Core workflow documentation
 - ✅ `README.md` - Quick reference
 - ✅ `docs/I503_IMPLEMENTATION_SUMMARY.md` - Implementation details
@@ -40,6 +44,7 @@ Converted entire DB determinism framework from bash to PowerShell to comply with
 **File:** `scripts/verify-db-determinism.ps1`
 
 **Features:**
+
 - Color-coded output (Red/Yellow/Green/Cyan)
 - Clear step-by-step progress indicators
 - Emoji indicators for visual clarity (🔍 🔧 ✅ ❌)
@@ -48,6 +53,7 @@ Converted entire DB determinism framework from bash to PowerShell to comply with
 - Exit codes: 0 = success, 1 = failure
 
 **Usage:**
+
 ```powershell
 # Via npm
 npm run db:verify
@@ -66,13 +72,16 @@ pwsh -File scripts/verify-db-determinism.ps1 -Debug
 **Improvements:**
 
 #### Migration Immutability Check
+
 **Before:**
+
 ```yaml
 - name: Check migration immutability
   run: npm run lint:migrations -- --base-ref origin/${{ github.base_ref }}
 ```
 
 **After:**
+
 ```bash
 # Find merge base with target branch
 MERGE_BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
@@ -87,13 +96,16 @@ done
 ```
 
 **Benefits:**
+
 - Uses merge-base for accurate comparison
 - Shows specific files that were modified
 - Distinguishes M (Modified), D (Deleted), R (Renamed) from A (Added)
 - Clear error messages with file listing
 
 #### Deterministic Supabase Lifecycle
+
 **Added:**
+
 ```yaml
 - name: Start Supabase local instance
   run: |
@@ -112,6 +124,7 @@ done
 ```
 
 **Benefits:**
+
 - Clear lifecycle: start → status → work → stop
 - Status check helps debug CI failures
 - Always stops Supabase (even on failure)
@@ -122,6 +135,7 @@ done
 **All documentation now uses PowerShell examples:**
 
 #### Creating Migrations
+
 ```powershell
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
 $description = "add_new_feature"
@@ -129,6 +143,7 @@ Copy-Item tools\migration-template.sql supabase\migrations\${timestamp}_${descri
 ```
 
 #### Running Verification
+
 ```powershell
 supabase db reset
 npm run db:typegen
@@ -136,6 +151,7 @@ npm run db:verify
 ```
 
 #### Committing Changes
+
 ```powershell
 git add supabase\migrations\*.sql
 git add lib\types\supabase.ts
@@ -154,6 +170,7 @@ npm run db:verify
 ```
 
 **Expected Output:**
+
 ```
 🔍 Starting DB determinism verification...
 
@@ -204,7 +221,7 @@ From `docs/canon/DB_MIGRATIONS.md`:
 ```powershell
 function Test-DbDeterminism {
     Write-Host "Starting DB determinism check..." -ForegroundColor Cyan
-    
+
     # 1. Reset database
     Write-Host "→ Resetting database..." -ForegroundColor Yellow
     supabase db reset
@@ -212,7 +229,7 @@ function Test-DbDeterminism {
         Write-Host "✗ Database reset failed" -ForegroundColor Red
         return $false
     }
-    
+
     # 2. Check for drift
     Write-Host "→ Checking for drift..." -ForegroundColor Yellow
     supabase db diff
@@ -220,7 +237,7 @@ function Test-DbDeterminism {
         Write-Host "✗ Schema drift detected" -ForegroundColor Red
         return $false
     }
-    
+
     # 3. Generate types
     Write-Host "→ Generating types..." -ForegroundColor Yellow
     supabase gen types typescript --local > .\lib\types\supabase.ts
@@ -228,7 +245,7 @@ function Test-DbDeterminism {
         Write-Host "✗ Type generation failed" -ForegroundColor Red
         return $false
     }
-    
+
     # 4. Check for uncommitted changes
     Write-Host "→ Checking for uncommitted changes..." -ForegroundColor Yellow
     git diff --exit-code lib\types\supabase.ts
@@ -237,7 +254,7 @@ function Test-DbDeterminism {
         Write-Host "  Run: git add lib\types\supabase.ts" -ForegroundColor Yellow
         return $false
     }
-    
+
     Write-Host "✓ All checks passed!" -ForegroundColor Green
     return $true
 }
@@ -253,6 +270,7 @@ Test-DbDeterminism
 ### Workflow Triggers
 
 The workflow runs on:
+
 - Pull requests affecting:
   - `supabase/migrations/**`
   - `lib/types/supabase.ts`
@@ -340,16 +358,19 @@ Diff:
 ## Testing Performed
 
 ### Local PowerShell Script
+
 ✅ Created and tested `scripts/verify-db-determinism.ps1`
 ✅ Verified color output and error handling
 ✅ Tested exit codes (0 = success, 1 = failure)
 
 ### Documentation Updates
+
 ✅ Converted all bash snippets to PowerShell
 ✅ Updated all file paths (/ → \)
 ✅ Verified consistency across all docs
 
 ### CI Workflow
+
 ✅ Enhanced migration immutability check with merge-base
 ✅ Added deterministic Supabase lifecycle
 ✅ Added clear logging throughout
@@ -362,6 +383,7 @@ Diff:
 ### Script Comparison
 
 **Before (Bash):**
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -378,6 +400,7 @@ supabase db reset
 ```
 
 **After (PowerShell):**
+
 ```powershell
 param([switch]$Debug)
 
@@ -409,6 +432,7 @@ supabase db reset
 ## Acceptance Criteria - Verified ✅
 
 ### Original Requirements
+
 1. ✅ **Ersetze alle Bash-Snippets in Doku durch PowerShell**
    - All documentation files updated
    - No bash snippets remain
@@ -437,17 +461,17 @@ supabase db reset
 
 ## Files Changed Summary
 
-| File | Change | Type |
-|------|--------|------|
-| `scripts/verify-db-determinism.ps1` | Created | PowerShell script |
-| `scripts/verify-db-determinism.sh` | Removed | Bash script |
-| `.github/workflows/db-determinism.yml` | Enhanced | CI workflow |
-| `package.json` | Updated | Config |
-| `docs/canon/DB_MIGRATIONS.md` | Converted | Documentation |
-| `README.md` | Converted | Documentation |
-| `docs/I503_IMPLEMENTATION_SUMMARY.md` | Updated | Documentation |
-| `docs/I503_ACCEPTANCE_VERIFICATION.md` | Converted | Documentation |
-| `docs/DB_DETERMINISM_CI_FLOW.md` | Converted | Documentation |
+| File                                   | Change    | Type              |
+| -------------------------------------- | --------- | ----------------- |
+| `scripts/verify-db-determinism.ps1`    | Created   | PowerShell script |
+| `scripts/verify-db-determinism.sh`     | Removed   | Bash script       |
+| `.github/workflows/db-determinism.yml` | Enhanced  | CI workflow       |
+| `package.json`                         | Updated   | Config            |
+| `docs/canon/DB_MIGRATIONS.md`          | Converted | Documentation     |
+| `README.md`                            | Converted | Documentation     |
+| `docs/I503_IMPLEMENTATION_SUMMARY.md`  | Updated   | Documentation     |
+| `docs/I503_ACCEPTANCE_VERIFICATION.md` | Converted | Documentation     |
+| `docs/DB_DETERMINISM_CI_FLOW.md`       | Converted | Documentation     |
 
 **Total:** 1 created, 1 removed, 7 modified = 9 files changed
 

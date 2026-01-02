@@ -81,21 +81,27 @@ This document shows example output from the new logging functions implemented fo
 ## Benefits of Structured Logging
 
 ### Easy Parsing
+
 All logs are valid JSON and can be parsed programmatically:
+
 ```javascript
 const logEntry = JSON.parse(logLine)
 console.log(`User ${logEntry.context.userId} completed assessment ${logEntry.context.assessmentId}`)
 ```
 
 ### Searchable Context
+
 Each log includes rich context that can be used for filtering:
+
 - Filter by `userId` to see all actions by a specific user
 - Filter by `assessmentId` to trace an assessment lifecycle
 - Filter by `endpoint` to see all requests to a specific API route
 - Filter by `area` to separate clinician vs patient errors
 
 ### Monitoring Integration
+
 The structured format makes it easy to send logs to monitoring services:
+
 ```typescript
 // Future integration example
 if (entry.level === 'error' && process.env.NODE_ENV === 'production') {
@@ -112,10 +118,12 @@ if (entry.level === 'error' && process.env.NODE_ENV === 'production') {
 ```
 
 ### Time-Series Analysis
+
 ISO 8601 timestamps enable time-based queries:
+
 ```sql
 -- Example log aggregation query
-SELECT 
+SELECT
   DATE(timestamp) as date,
   COUNT(*) as assessment_count
 FROM logs
@@ -139,7 +147,7 @@ When running the application in development mode, you'll see structured logs in 
 To view and analyze these logs in production:
 
 1. **Development**: View in terminal/console
-2. **Staging/Production**: 
+2. **Staging/Production**:
    - Send to Sentry for error tracking
    - Send to LogRocket for session replay
    - Send to DataDog for APM and dashboards

@@ -1,4 +1,5 @@
 # V05-I02.1 Implementation Summary
+
 ## Säulen-/Funnel-Katalog: UI + API
 
 **Date:** 2025-12-31  
@@ -13,6 +14,7 @@
 Implemented a complete funnel catalog system with the canonical 7-pillar wellness taxonomy, versioning support, and multi-tenant capabilities. The catalog allows patients to browse available assessments organized by category (pillars) and view detailed information including estimated duration, outcomes, and version information.
 
 **Key Corrections Made:**
+
 1. Uses `funnels_catalog` table from V05 core schema (not `funnels`)
 2. Uses existing `funnel_versions` table from V05 core schema
 3. Implements canonical 7-pillar model (not 3)
@@ -25,6 +27,7 @@ Implemented a complete funnel catalog system with the canonical 7-pillar wellnes
 ### New Tables
 
 #### `pillars` Table
+
 - Purpose: Taxonomic categories for organizing funnels (7-Pillar Wellness Model)
 - Fields:
   - `id` (UUID, PK)
@@ -43,6 +46,7 @@ Implemented a complete funnel catalog system with the canonical 7-pillar wellnes
   7. `prevention` - Prävention & Gesundheitsvorsorge
 
 #### `funnel_versions` Table
+
 - **NOTE:** This table already existed in V05 core schema (`20251230211228_v05_core_schema_jsonb_fields.sql`)
 - Purpose: Version tracking for funnel configurations
 - Fields:
@@ -62,8 +66,9 @@ Implemented a complete funnel catalog system with the canonical 7-pillar wellnes
 ### Extended Tables
 
 #### `funnels_catalog` Table Extensions
+
 - **NOTE:** This table already existed in V05 core schema, we only added new fields
-Added fields:
+  Added fields:
 - `org_id` (UUID, nullable for system-wide funnels)
 - `est_duration_min` (INTEGER, nullable)
 - `outcomes` (JSONB, default: [])
@@ -83,6 +88,7 @@ Purpose: Extend catalog table with additional metadata for patient browsing
 **File:** `supabase/migrations/20251231145000_fix_catalog_schema.sql`
 
 This migration corrects issues from the initial implementation:
+
 1. Removes duplicate `funnel_versions` policies (table already existed in V05 core)
 2. Adds missing columns to `funnels_catalog` instead of `funnels`
 3. Seeds canonical 7-pillar model
@@ -96,9 +102,11 @@ This migration corrects issues from the initial implementation:
 ### Endpoints
 
 #### `GET /api/funnels/catalog`
+
 **Purpose:** Browse all active funnels organized by pillar
 
 **Response Format:**
+
 ```typescript
 {
   success: true,
@@ -121,15 +129,18 @@ This migration corrects issues from the initial implementation:
 ```
 
 **Features:**
+
 - Deterministic ordering by pillar.sort_order and funnel.title
 - Includes version information
 - Authenticated users only
 - RLS-compliant
 
 #### `GET /api/funnels/catalog/[slug]`
+
 **Purpose:** Get detailed information for a specific funnel
 
 **Response Format:**
+
 ```typescript
 {
   success: true,
@@ -143,6 +154,7 @@ This migration corrects issues from the initial implementation:
 ```
 
 **Features:**
+
 - Supports canonical slug resolution
 - Returns all versions for the funnel
 - Includes pillar information
@@ -158,6 +170,7 @@ This migration corrects issues from the initial implementation:
 **Route:** `/patient/funnels`
 
 **Features:**
+
 - Accordion-based pillar sections
 - Auto-expands first pillar
 - Funnel cards show:
@@ -176,12 +189,14 @@ This migration corrects issues from the initial implementation:
 #### Extended `FunnelCard`
 
 Added optional props (backward compatible):
+
 - `funnel` object prop (supports both old and new API)
 - `estimatedDuration` (number | null)
 - `outcomes` (string[])
 - `version` (string | null)
 
 Displays:
+
 - Duration badge (⏱️ ca. X Min.)
 - Version badge (vX.X.X)
 - Outcomes list with checkmarks (✓)
@@ -193,17 +208,18 @@ Displays:
 ### New Types (`lib/types/catalog.ts`)
 
 ```typescript
-- Pillar
-- FunnelVersion
-- CatalogFunnel
-- PillarWithFunnels
-- FunnelCatalogResponse
-- FunnelDetailResponse
+;-Pillar -
+  FunnelVersion -
+  CatalogFunnel -
+  PillarWithFunnels -
+  FunnelCatalogResponse -
+  FunnelDetailResponse
 ```
 
 ### Registry Updates (`lib/contracts/registry.ts`)
 
 Added:
+
 ```typescript
 export const PILLAR_KEY = {
   STRESS: 'stress',
@@ -223,6 +239,7 @@ export function isValidPillarKey(value: unknown): value is PillarKey
 **File:** `app/api/funnels/catalog/__tests__/catalog.test.ts`
 
 **Coverage:**
+
 - FunnelCatalogResponse type validation
 - FunnelDetailResponse type validation
 - Pillar sort order determinism
@@ -269,14 +286,17 @@ export function isValidPillarKey(value: unknown): value is PillarKey
 ### RLS Policies
 
 **pillars:**
+
 - SELECT: All authenticated users
 - ALL: Admins only
 
 **funnel_versions:**
+
 - SELECT: Authenticated users (active versions only)
 - ALL: Admins only
 
 **funnels (existing + new fields):**
+
 - Existing policies remain unchanged
 - New fields accessible via existing policies
 
@@ -299,6 +319,7 @@ export function isValidPillarKey(value: unknown): value is PillarKey
 - RLS policies can be extended for org isolation
 
 **Note:** Current implementation allows system-wide funnels (org_id = NULL) for simplicity. Org-specific scoping can be enabled by:
+
 1. Adding org_id checks to RLS policies
 2. Updating catalog endpoint to filter by user's org(s)
 3. Adding org_id to funnel creation/update logic
@@ -310,6 +331,7 @@ export function isValidPillarKey(value: unknown): value is PillarKey
 ### Breaking Changes: None
 
 All changes are additive:
+
 - New tables don't affect existing functionality
 - Extended funnels table with nullable fields
 - FunnelCard component supports both old and new props
@@ -319,6 +341,7 @@ All changes are additive:
 ### Migration Path
 
 For existing deployments:
+
 1. Run migration `20251231142000_create_funnel_catalog.sql`
 2. Optionally update existing funnels with catalog fields
 3. Create versions for existing funnels
@@ -375,6 +398,7 @@ npm run build
 ```
 
 **Expected Results:**
+
 - All tests pass (except 1 pre-existing redaction test failure)
 - Build completes successfully
 - No TypeScript errors

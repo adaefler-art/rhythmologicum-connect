@@ -22,7 +22,7 @@ Core goals:
 - Clinician Dashboard V2 for real-world usage with test patients
 - Technical cleanup and foundation for additional funnels (e.g., Sleep, Recovery)
 
-v0.4 is *not* about breadth of medical content; it is about **polish, structure, and stability** for early external tests.
+v0.4 is _not_ about breadth of medical content; it is about **polish, structure, and stability** for early external tests.
 
 ---
 
@@ -66,7 +66,7 @@ of prototypes.
 #### Suggested Issues for this Epic
 
 1. **Issue: Define v0.4 Design Tokens (Colors, Typography, Spacing)**  
-   Labels: `v0.4`, `design`, `frontend`, `V0.4-E1`  
+   Labels: `v0.4`, `design`, `frontend`, `V0.4-E1`
 
    **Description (for GitHub):**
    - Define a minimal set of design tokens for v0.4:
@@ -83,7 +83,7 @@ of prototypes.
    - [ ] Tokens are defined in one central file/location and not duplicated across components.
 
 2. **Issue: Implement Global App Layout (Header, Sidebar, Content Shell)**  
-   Labels: `v0.4`, `frontend`, `layout`, `V0.4-E1`  
+   Labels: `v0.4`, `frontend`, `layout`, `V0.4-E1`
 
    **Description**
    - Implement a global layout component used by clinician/admin routes.
@@ -100,7 +100,7 @@ of prototypes.
    - [ ] No route uses an old, ad-hoc layout wrapper.
 
 3. **Issue: Create Core UI Components (Button, Card, Table, Form Controls)**  
-   Labels: `v0.4`, `frontend`, `components`, `V0.4-E1`  
+   Labels: `v0.4`, `frontend`, `components`, `V0.4-E1`
 
    **Description**
    - Create a small UI component library in `components/ui`:
@@ -117,7 +117,7 @@ of prototypes.
    - [ ] No “random” styles override the base components without clear reason.
 
 4. **Issue: Harmonize Dark/Light Mode Behavior (Minimal Version)**  
-   Labels: `v0.4`, `frontend`, `design`, `V0.4-E1`  
+   Labels: `v0.4`, `frontend`, `design`, `V0.4-E1`
 
    **Description**
    - Decide on a primary mode for v0.4 (likely light with good contrast).
@@ -147,7 +147,7 @@ flow for the Stress & Resilience assessment.
 #### Suggested Issues
 
 1. **Issue: Design Patient Flow V2 Structure (Screens & States)**  
-   Labels: `v0.4`, `patient`, `UX`, `V0.4-E2`  
+   Labels: `v0.4`, `patient`, `UX`, `V0.4-E2`
 
    **Description**
    - Define the full Stress & Resilience journey:
@@ -162,12 +162,12 @@ flow for the Stress & Resilience assessment.
    - [x] Every screen has a clear purpose and “next step”.
    - [x] Mobile behavior is considered from the start (no desktop-only layout tricks).
 
-
    **Documentation:**
    - [PATIENT_FLOW_V2_STRUCTURE.md](PATIENT_FLOW_V2_STRUCTURE.md) - Complete flow description
    - [PATIENT_FLOW_V2_DIAGRAM.md](PATIENT_FLOW_V2_DIAGRAM.md) - Visual flow diagrams
+
 2. **Issue: Implement Patient Flow Renderer Component**  
-   Labels: `v0.4`, `patient`, `frontend`, `V0.4-E2`  
+   Labels: `v0.4`, `patient`, `frontend`, `V0.4-E2`
 
    **Description**
    - Implement a `PatientFlowRenderer` that:
@@ -182,7 +182,7 @@ flow for the Stress & Resilience assessment.
    - [ ] Flow can be completed end-to-end without dead-ends.
 
 3. **Issue: Build Responsive Patient Screens (Welcome, Question, Result)**  
-   Labels: `v0.4`, `patient`, `frontend`, `UX`, `V0.4-E2`  
+   Labels: `v0.4`, `patient`, `frontend`, `UX`, `V0.4-E2`
 
    **Description**
    - Implement modern screen layouts for:
@@ -197,7 +197,7 @@ flow for the Stress & Resilience assessment.
    - [ ] Result screen clearly shows outcome + next steps.
 
 4. **Issue: Clean Up Legacy Patient Demo Pages**  
-   Labels: `v0.4`, `cleanup`, `patient`, `V0.4-E2`  
+   Labels: `v0.4`, `cleanup`, `patient`, `V0.4-E2`
 
    **Description**
    - Identify old patient demo routes and flows.
@@ -227,7 +227,7 @@ or after question blocks.
 #### Suggested Issues
 
 1. **Issue: Extend DB Schema for Content Flow Mapping**  
-   Labels: `v0.4`, `backend`, `db`, `V0.4-E3`  
+   Labels: `v0.4`, `backend`, `db`, `V0.4-E3`
 
    **Description**
    - Add columns to `content_pages`:
@@ -243,7 +243,7 @@ or after question blocks.
    - [ ] Changes are documented in `docs/v0_4/ARCHITECTURE.md` (or similar).
 
 2. **Issue: Add CONTENT_PAGE Node Type to Funnel Engine**  
-   Labels: `v0.4`, `backend`, `patient`, `V0.4-E3`  
+   Labels: `v0.4`, `backend`, `patient`, `V0.4-E3`
 
    **Description**
    - Extend the funnel/flow engine types:
@@ -258,7 +258,7 @@ or after question blocks.
    - [ ] No breaking changes for existing QUESTION/RESULT nodes.
 
 3. **Issue: Implement Patient Content Screen Renderer**  
-   Labels: `v0.4`, `patient`, `frontend`, `V0.4-E3`  
+   Labels: `v0.4`, `patient`, `frontend`, `V0.4-E3`
 
    **Description**
    - Implement a screen component that:
@@ -272,7 +272,7 @@ or after question blocks.
    - [ ] No visual glitches between content and question/result screens.
 
 4. **Issue: Admin UI to Attach Content Pages to Funnel Steps**  
-   Labels: `v0.4`, `admin`, `frontend`, `V0.4-E3`  
+   Labels: `v0.4`, `admin`, `frontend`, `V0.4-E3`
 
    **Description**
    - Extend the content admin editor:
@@ -298,7 +298,7 @@ active funnels at a glance.
 #### Suggested Issues
 
 1. **Issue: Design Clinician Dashboard Layout & KPIs**  
-   Labels: `v0.4`, `clinician`, `UX`, `V0.4-E4`  
+   Labels: `v0.4`, `clinician`, `UX`, `V0.4-E4`
 
    **Description**
    - Define which metrics and lists a clinician sees on login:
@@ -312,7 +312,7 @@ active funnels at a glance.
    - [ ] Each widget has a clear purpose.
 
 2. **Issue: Implement Clinician Dashboard Components**  
-   Labels: `v0.4`, `clinician`, `frontend`, `V0.4-E4`  
+   Labels: `v0.4`, `clinician`, `frontend`, `V0.4-E4`
 
    **Description**
    - Build dashboard with cards, tables, and quick action buttons.
@@ -333,7 +333,7 @@ Make navigation and routing predictable and role-aware.
 #### Suggested Issues
 
 1. **Issue: Implement Role-Based Entry Routing (Patient/Clinician/Admin)**  
-   Labels: `v0.4`, `auth`, `routing`, `V0.4-E5`  
+   Labels: `v0.4`, `auth`, `routing`, `V0.4-E5`
 
    **Description**
    - After login, route users according to their role to:
@@ -347,7 +347,7 @@ Make navigation and routing predictable and role-aware.
    - [ ] No role sees the wrong landing page.
 
 2. **Issue: Unify Navigation Menus per Role**  
-   Labels: `v0.4`, `frontend`, `routing`, `V0.4-E5`  
+   Labels: `v0.4`, `frontend`, `routing`, `V0.4-E5`
 
    **Description**
    - Define navigation items for each role.
@@ -368,13 +368,13 @@ Ensure v0.4 is stable enough for external test patients.
 #### Suggested Issues
 
 1. **Issue: Consolidate Form Controls and Remove Duplicates**  
-   Labels: `v0.4`, `frontend`, `cleanup`, `V0.4-E6`  
+   Labels: `v0.4`, `frontend`, `cleanup`, `V0.4-E6`
 
 2. **Issue: Implement Basic Error Pages and Loading States**  
-   Labels: `v0.4`, `frontend`, `DX`, `V0.4-E6`  
+   Labels: `v0.4`, `frontend`, `DX`, `V0.4-E6`
 
 3. **Issue: Add Minimal Logging / Monitoring Hooks (e.g. console + TODOs)**  
-   Labels: `v0.4`, `backend`, `DX`, `V0.4-E6`  
+   Labels: `v0.4`, `backend`, `DX`, `V0.4-E6`
 
 ---
 
@@ -383,11 +383,11 @@ Ensure v0.4 is stable enough for external test patients.
 Rough estimate based on current working style:
 
 - E1 – UI & Design System: 2–3h
-- E2 – Patient Flow V2:     3–4h
-- E3 – Content Flow:        2h
+- E2 – Patient Flow V2: 3–4h
+- E3 – Content Flow: 2h
 - E4 – Clinician Dashboard: 1–2h
-- E5 – Navigation:          1h
-- E6 – Cleanup:             1–2h
+- E5 – Navigation: 1h
+- E6 – Cleanup: 1–2h
 
 **Total:** ~10–14 focused hours.
 

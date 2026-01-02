@@ -14,6 +14,7 @@ Implemented comprehensive DB determinism framework to prevent schema drift, enfo
 ### 1. Documentation Updates
 
 **`docs/canon/DB_MIGRATIONS.md`**
+
 - ✅ Added DB Stack Decision section documenting Supabase CLI as the official tool
 - ✅ Added Migration-first principle to core principles
 - ✅ Updated CI/CD Integration section with drift detection
@@ -21,6 +22,7 @@ Implemented comprehensive DB determinism framework to prevent schema drift, enfo
 - ✅ Included `Test-DbDeterminism` function for pre-commit verification
 
 **`README.md`**
+
 - ✅ Added DB Determinism & Type Safety section
 - ✅ Updated local development workflow with type generation
 - ✅ Added verification commands for CI checks
@@ -28,11 +30,13 @@ Implemented comprehensive DB determinism framework to prevent schema drift, enfo
 ### 2. Type Generation Infrastructure
 
 **`lib/types/supabase.ts`**
+
 - ✅ Created placeholder TypeScript types file
 - ✅ Added comments explaining auto-generation requirement
 - ✅ Structured to match Supabase CLI output format
 
 **`lib/types/README.md`**
+
 - ✅ Created comprehensive guide for type generation
 - ✅ Documented CI enforcement rules
 - ✅ Included usage examples and troubleshooting
@@ -41,6 +45,7 @@ Implemented comprehensive DB determinism framework to prevent schema drift, enfo
 
 **`package.json`**
 Added four new database management scripts:
+
 - `db:typegen` - Generate TypeScript types from local Supabase
 - `db:reset` - Reset and apply all migrations
 - `db:diff` - Check for schema drift
@@ -49,6 +54,7 @@ Added four new database management scripts:
 ### 4. Verification Scripts
 
 **`scripts/verify-db-determinism.sh`**
+
 - ✅ Comprehensive verification script for local development
 - ✅ Checks migration application, drift detection, and type sync
 - ✅ Used by npm script and CI workflow
@@ -57,6 +63,7 @@ Added four new database management scripts:
 ### 5. CI Workflow
 
 **`.github/workflows/db-determinism.yml`**
+
 - ✅ Runs on PR changes to migrations, types, or schema
 - ✅ Validates migration immutability using existing `lint:migrations` script
 - ✅ Starts local Supabase instance and applies migrations
@@ -68,12 +75,14 @@ Added four new database management scripts:
 ### 6. CODEOWNERS Updates
 
 **`.github/CODEOWNERS`**
+
 - ✅ Added `/lib/types/supabase.ts` to protected files
 - ✅ Requires review for type changes (should be auto-generated only)
 
 ### 7. Configuration Updates
 
 **`supabase/config.toml`**
+
 - ✅ Fixed project_id to use underscores instead of hyphens (DNS compatibility)
 
 ## Technical Details
@@ -101,6 +110,7 @@ The `db-determinism.yml` workflow enforces:
 ### PowerShell Runbook
 
 Added `Test-DbDeterminism` function in DB_MIGRATIONS.md that:
+
 - Resets database
 - Checks for drift
 - Generates types
@@ -110,6 +120,7 @@ Added `Test-DbDeterminism` function in DB_MIGRATIONS.md that:
 ### Developer Workflow
 
 **Creating a new migration:**
+
 ```bash
 # 1. Create migration file with timestamp
 timestamp=$(date +%Y%m%d%H%M%S)
@@ -136,32 +147,39 @@ git commit -m "feat: add new feature migration"
 ## Acceptance Criteria
 
 ✅ **PR without migration bei Schemaänderung = CI Fail**
+
 - Implemented via drift detection - if schema changes without migration, `supabase db diff` fails
 
 ✅ **Drift/Typegen = CI Fail**
+
 - Drift detection: `supabase db diff --exit-code` fails on manual changes
 - Typegen check: `git diff --exit-code lib/types/supabase.ts` fails if types outdated
 
 ✅ **Doku in docs/canon/DB_MIGRATIONS.md**
+
 - Added DB Stack Decision section
 - Added PowerShell runbook with `Test-DbDeterminism` function
 - Updated CI/CD integration section
 
 ✅ **DB Stack erkannt und dokumentiert**
+
 - Stack: Supabase CLI + PostgreSQL
 - Migration tool: Supabase CLI (`supabase db reset`, `supabase db push`)
 - Type generation: Supabase CLI (`supabase gen types typescript`)
 
 ✅ **Migration-first Regeln dokumentiert**
+
 - Core principle #5: "Migration-first - Schema changes must be defined in migrations"
 - Core principle #6: "Type-safe - Generated types must be kept in sync"
 - Workflow section updated with type generation steps
 
 ✅ **CI Job: Apply/Reset Migrations, Drift Check, Typegen + git diff**
+
 - All checks implemented in `.github/workflows/db-determinism.yml`
 - Runs on every PR affecting migrations, types, or schema
 
 ✅ **CODEOWNERS für Migrationsverzeichnis sicherstellen**
+
 - Already existed: `/supabase/migrations/** @*`
 - Added: `/lib/types/supabase.ts @*`
 
@@ -176,6 +194,7 @@ Due to Docker networking limitations in the current environment, actual Supabase
 5. ✅ File structure matches expected patterns
 
 The framework is ready for use. When developers run:
+
 - `supabase start` will work in proper development environments
 - `npm run db:typegen` will generate actual types
 - CI will enforce all checks on PRs
@@ -191,7 +210,7 @@ The framework is ready for use. When developers run:
 
 - `docs/canon/DB_MIGRATIONS.md` - Added DB stack, migration-first, and PowerShell runbook
 - `README.md` - Added DB determinism section
-- `package.json` - Added db:* npm scripts (using PowerShell for verify)
+- `package.json` - Added db:\* npm scripts (using PowerShell for verify)
 - `.github/CODEOWNERS` - Added types protection
 - `supabase/config.toml` - Fixed project_id naming
 
@@ -200,12 +219,14 @@ The framework is ready for use. When developers run:
 For developers using this framework:
 
 1. **First time setup:**
+
    ```powershell
    supabase start
    npm run db:typegen
    ```
 
 2. **After creating migration:**
+
    ```powershell
    supabase db reset
    npm run db:typegen
@@ -213,6 +234,7 @@ For developers using this framework:
    ```
 
 3. **Before committing:**
+
    ```powershell
    npm run db:verify
    ```

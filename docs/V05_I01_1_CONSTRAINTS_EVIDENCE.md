@@ -11,59 +11,74 @@
 All required unique constraints are present for retry-safe upsert operations:
 
 ### 1. funnels_catalog.slug
+
 ```sql
 CREATE TABLE IF NOT EXISTS public.funnels_catalog (
     slug TEXT NOT NULL UNIQUE,
     ...
 );
 ```
+
 **Index:** `idx_funnels_catalog_slug`  
 **Purpose:** Ensures funnel slugs are unique for URL routing
 
 ### 2. funnel_versions(funnel_id, version)
+
 ```sql
 UNIQUE(funnel_id, version)
 ```
+
 **Constraint Name:** `funnel_versions_funnel_id_version_key`  
 **Purpose:** Prevents duplicate versions per funnel, enables idempotent version creation
 
 ### 3. reports(assessment_id, report_version)
+
 ```sql
 ALTER TABLE public.reports
     ADD CONSTRAINT reports_assessment_version_unique
     UNIQUE(assessment_id, report_version);
 ```
+
 **Purpose:** One report per assessment+version, supports versioned report regeneration
 
 ### 4. report_sections(report_id, section_key)
+
 ```sql
 ALTER TABLE public.report_sections
     ADD CONSTRAINT report_sections_report_key_unique
     UNIQUE(report_id, section_key);
 ```
+
 **Purpose:** One section per report+key, enables modular section upserts
 
 ### 5. calculated_results(assessment_id, algorithm_version)
+
 ```sql
 ALTER TABLE public.calculated_results
     ADD CONSTRAINT calculated_results_assessment_version_unique
     UNIQUE(assessment_id, algorithm_version);
 ```
+
 **Purpose:** One result set per assessment+algorithm version, supports algorithm upgrades
 
 ### 6. user_org_membership(user_id, organization_id)
+
 ```sql
 UNIQUE(user_id, organization_id)
 ```
+
 **Purpose:** One membership per user per organization
 
 ### 7. assessment_answers(assessment_id, question_id)
+
 **Note:** Already exists in prior migration `20251208143813_add_assessment_answers_unique_constraint.sql`
+
 ```sql
 ALTER TABLE public.assessment_answers
-  ADD CONSTRAINT assessment_answers_assessment_question_unique 
+  ADD CONSTRAINT assessment_answers_assessment_question_unique
   UNIQUE (assessment_id, question_id);
 ```
+
 **Purpose:** One answer per question per assessment, supports save-on-tap upserts
 
 ---
@@ -73,19 +88,22 @@ ALTER TABLE public.assessment_answers
 ### Tables Extended (No Breaking Changes)
 
 #### 1. assessments table
+
 **Existing columns preserved:** All existing columns remain unchanged  
 **New columns added:**
+
 - `state` (assessment_state enum) - DEFAULT 'in_progress'  
   Migration strategy: Existing NULL values will receive default
-  
 - `current_step_id` (UUID NULLABLE)  
   Migration strategy: Existing rows will have NULL, no impact on existing queries
 
 **Impact:** ✅ Zero breaking changes. Existing queries continue to work.
 
 #### 2. reports table
+
 **Existing columns preserved:** All existing columns remain unchanged  
 **New columns added:**
+
 - `report_version` (TEXT) - DEFAULT '1.0'
 - `prompt_version` (TEXT) - NULLABLE
 - `status` (report_status enum) - DEFAULT 'pending'
@@ -100,6 +118,7 @@ ALTER TABLE public.assessment_answers
 ### New Tables (No Conflicts)
 
 All 13 new tables are created with `CREATE TABLE IF NOT EXISTS`:
+
 - organizations
 - user_profiles
 - user_org_membership
@@ -119,6 +138,7 @@ All 13 new tables are created with `CREATE TABLE IF NOT EXISTS`:
 ### Enums (Additive Only)
 
 All enums created with idempotent `DO $$ IF NOT EXISTS` pattern:
+
 - user_role
 - assessment_state
 - report_status
@@ -177,23 +197,24 @@ npm run build
 
 ## Constraints Summary Table
 
-| Table | Constraint | Type | Purpose |
-|-------|------------|------|---------|
-| funnels_catalog | slug | UNIQUE | URL routing |
-| funnel_versions | (funnel_id, version) | UNIQUE | Version uniqueness |
-| reports | (assessment_id, report_version) | UNIQUE | Versioned reports |
-| report_sections | (report_id, section_key) | UNIQUE | Modular sections |
-| calculated_results | (assessment_id, algorithm_version) | UNIQUE | Algorithm versioning |
-| user_org_membership | (user_id, organization_id) | UNIQUE | One membership per user/org |
-| assessment_answers* | (assessment_id, question_id) | UNIQUE | Save-on-tap upserts |
+| Table                | Constraint                         | Type   | Purpose                     |
+| -------------------- | ---------------------------------- | ------ | --------------------------- |
+| funnels_catalog      | slug                               | UNIQUE | URL routing                 |
+| funnel_versions      | (funnel_id, version)               | UNIQUE | Version uniqueness          |
+| reports              | (assessment_id, report_version)    | UNIQUE | Versioned reports           |
+| report_sections      | (report_id, section_key)           | UNIQUE | Modular sections            |
+| calculated_results   | (assessment_id, algorithm_version) | UNIQUE | Algorithm versioning        |
+| user_org_membership  | (user_id, organization_id)         | UNIQUE | One membership per user/org |
+| assessment_answers\* | (assessment_id, question_id)       | UNIQUE | Save-on-tap upserts         |
 
-*Constraint exists in prior migration
+\*Constraint exists in prior migration
 
 ---
 
 ## Index Coverage
 
 All foreign keys are indexed for query performance:
+
 - ✅ 34 indexes created
 - ✅ All FK columns have dedicated indexes
 - ✅ Status/state columns indexed for filtering

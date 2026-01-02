@@ -27,6 +27,7 @@ Implemented a **hard, machine-enforced guardrail** that blocks any PR introducin
 **Purpose:** Single source of truth for allowed schema objects
 
 **Structure:**
+
 ```json
 {
   "version": "0.5.0",
@@ -47,6 +48,7 @@ Implemented a **hard, machine-enforced guardrail** that blocks any PR introducin
 ```
 
 **Contents (V0.5):**
+
 - **28 canonical tables** (from v0.5 core schema + accepted migrations)
 - **7 canonical enums** (user_role, assessment_state, report_status, etc.)
 - **1 deprecated table** (legacy `funnels` → `funnels_catalog`)
@@ -60,6 +62,7 @@ Implemented a **hard, machine-enforced guardrail** that blocks any PR introducin
 **Purpose:** Validate migrations against canonical manifest
 
 **Features:**
+
 - Scans all `.sql` files in `supabase/migrations/`
 - Extracts `CREATE TABLE` and `CREATE TYPE` identifiers using regex
 - **Validates `ALTER TABLE` statements** to ensure tables being altered are canonical
@@ -69,6 +72,7 @@ Implemented a **hard, machine-enforced guardrail** that blocks any PR introducin
 - Deterministic exit codes for CI integration
 
 **Usage:**
+
 ```powershell
 # Direct execution
 .\scripts\db\lint-migrations.ps1
@@ -81,11 +85,13 @@ npm run lint:schema
 ```
 
 **Exit Codes:**
+
 - `0` = All checks passed
 - `1` = Non-canonical objects detected (blocks PR)
 - `2` = Script execution error
 
 **Output Example:**
+
 ```
 ❌ ERRORS (2 non-canonical objects detected):
 
@@ -105,12 +111,14 @@ npm run lint:schema
 **File:** `.github/workflows/db-determinism.yml`
 
 **Changes:**
+
 - Added **Check 0** before migration immutability check
 - Runs `pwsh -File scripts/db/lint-migrations.ps1`
 - Fails PR if non-canonical objects detected
 - Updated success summary
 
 **Workflow order:**
+
 1. **Check 0:** Schema manifest linting (NEW)
 2. **Check 1:** Migration immutability
 3. **Check 2:** Start Supabase & apply migrations
@@ -118,6 +126,7 @@ npm run lint:schema
 5. **Check 4:** TypeScript type synchronization
 
 **Triggers:**
+
 - Pull requests affecting `supabase/migrations/**`
 - Pull requests affecting `lib/types/supabase.ts`
 - Pull requests affecting `schema/**`
@@ -126,11 +135,13 @@ npm run lint:schema
 ### 4. Documentation
 
 **Updated files:**
+
 - `docs/canon/DB_MIGRATIONS.md` - Added Schema Manifest section
 - `scripts/db/README.md` - Script-specific documentation
 - `package.json` - Added `lint:schema` npm script
 
 **Key additions:**
+
 - Schema Manifest principle (#7 in Core Principles)
 - Validation workflow step (before db:verify)
 - Usage examples and integration guidelines
@@ -143,6 +154,7 @@ npm run lint:schema
 ### Manual Testing
 
 ✅ **Test 1: Compliant migrations**
+
 ```powershell
 PS> .\scripts\db\lint-migrations.ps1
 ✅ All migration objects are canonical!
@@ -150,6 +162,7 @@ PS> .\scripts\db\lint-migrations.ps1
 ```
 
 ✅ **Test 2: Non-canonical table**
+
 ```powershell
 # Created test migration with fake_table_one
 ❌ ERRORS (1 non-canonical objects detected):
@@ -160,6 +173,7 @@ PS> .\scripts\db\lint-migrations.ps1
 ```
 
 ✅ **Test 3: Multiple violations**
+
 ```powershell
 # Created test migration with 2 tables + 1 enum
 ❌ ERRORS (4 non-canonical objects detected):
@@ -170,6 +184,7 @@ PS> .\scripts\db\lint-migrations.ps1
 ```
 
 ✅ **Test 4: Deprecated warnings**
+
 ```powershell
 # Temporarily added 'funnels' to canonical list
 ⚠️  WARNINGS (1 deprecated objects detected):
@@ -182,30 +197,35 @@ PS> .\scripts\db\lint-migrations.ps1
 ### CI Testing
 
 The linter will be tested in the next PR that modifies migrations. Expected behavior:
+
 - ✅ Pass: PRs with canonical objects only
 - ❌ Fail: PRs introducing non-canonical objects
-- ⚠️  Warn: PRs using deprecated objects (doesn't block)
+- ⚠️ Warn: PRs using deprecated objects (doesn't block)
 
 ---
 
 ## Non-Negotiables Compliance
 
 ✅ **Migration-first discipline stays intact**
+
 - Linter validates migrations, doesn't generate them
 - Manifest is declarative, not generative
 - Workflow unchanged: create migration → validate → commit
 
 ✅ **PowerShell-only operational scripts**
+
 - Linter implemented in PowerShell (`.ps1`)
 - Works on Windows, Linux, macOS (PowerShell Core)
 - No Bash/Node.js dependencies for linting
 
 ✅ **Deterministic CI gates**
+
 - Exit code 0 = pass, 1 = fail (no manual judgment)
 - Clear error messages with file + line numbers
 - Automated enforcement via GitHub Actions
 
 ✅ **Actionable failure output**
+
 - Shows exact file, line number, and offending identifier
 - Provides clear fix instructions
 - Links to manifest and documentation
@@ -217,7 +237,9 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
 ### For Developers
 
 **Adding a new canonical table:**
+
 1. Create the migration file:
+
    ```sql
    CREATE TABLE IF NOT EXISTS public.new_table (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -226,6 +248,7 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
    ```
 
 2. Add to manifest:
+
    ```json
    {
      "tables": [
@@ -237,6 +260,7 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
    ```
 
 3. Validate:
+
    ```powershell
    npm run lint:schema
    ```
@@ -254,6 +278,7 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
    ```
 
 **Handling legacy/deprecated objects:**
+
 - If a table exists but shouldn't be used, add to `deprecated` section
 - Linter will warn but not block
 - Use for gradual migrations (e.g., `funnels` → `funnels_catalog`)
@@ -261,11 +286,13 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
 ### For Copilot/LLM
 
 **Before generating CREATE TABLE/TYPE:**
+
 1. Check if object exists in manifest
 2. If not, ask user to add to manifest first
 3. Never invent new schema objects without manifest update
 
 **When encountering linter errors:**
+
 1. Verify object name spelling
 2. Check if it's a typo of canonical name
 3. If legitimate new object, update manifest
@@ -278,11 +305,13 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
 ### Updating the Manifest
 
 **When to update:**
+
 - New canonical table/enum introduced
 - Existing object deprecated
 - Schema reorganization (rare)
 
 **How to update:**
+
 1. Edit `docs/canon/DB_SCHEMA_MANIFEST.json`
 2. Update `version` field (semver)
 3. Update `lastUpdated` field (ISO date)
@@ -290,6 +319,7 @@ The linter will be tested in the next PR that modifies migrations. Expected beha
 5. Document in `notes` if significant change
 
 **Validation:**
+
 ```powershell
 # Ensure JSON is valid
 Get-Content docs/canon/DB_SCHEMA_MANIFEST.json | ConvertFrom-Json
@@ -301,12 +331,14 @@ npm run lint:schema
 ### Schema Evolution
 
 **V0.5 → V0.6:**
+
 - Review all tables/enums in new core schema
 - Add to manifest
 - Mark old objects as deprecated if replaced
 - Update version to `0.6.0`
 
 **Backward compatibility:**
+
 - Deprecated objects don't block (warnings only)
 - Allows gradual migration
 - Remove from manifest only after full migration complete

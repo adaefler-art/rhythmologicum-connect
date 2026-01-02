@@ -34,14 +34,14 @@ Thomas' Standard Operating Procedure (SOP) is tier-driven, while the platform mo
 
 ```typescript
 type ProgramTierContract = {
-  tier: ProgramTier                      // Tier level (1, 2.5, 2)
-  version: string                        // Contract version
-  name: string                           // Human-readable name
-  description: string                    // Tier description
-  pillars: PillarConfig[]                // Active/inactive pillars
-  funnels: FunnelVersionConstraint[]     // Allowed funnels with versions
-  schedule?: ScheduleTouchpoint[]        // Optional touchpoint schedule
-  metadata?: Record<string, any>         // Optional metadata
+  tier: ProgramTier // Tier level (1, 2.5, 2)
+  version: string // Contract version
+  name: string // Human-readable name
+  description: string // Tier description
+  pillars: PillarConfig[] // Active/inactive pillars
+  funnels: FunnelVersionConstraint[] // Allowed funnels with versions
+  schedule?: ScheduleTouchpoint[] // Optional touchpoint schedule
+  metadata?: Record<string, any> // Optional metadata
 }
 ```
 
@@ -67,17 +67,20 @@ lib/contracts/
 ### 1. Contract Types (`lib/contracts/programTier.ts`)
 
 **Core Types**:
+
 - `ProgramTierContract`: Complete tier configuration
 - `PillarConfig`: Pillar activation with priority
 - `FunnelVersionConstraint`: Funnel with semver constraints
 - `ScheduleTouchpoint`: Touchpoint placeholder for scheduling
 
 **Validation**:
+
 - Zod schemas for runtime validation
 - Type guards for type safety
 - Helper functions for querying contracts
 
 **Helper Functions**:
+
 - `getActivePillars(contract)`: Get active pillars for a tier
 - `getRecommendedFunnels(contract)`: Get recommended funnels
 - `getAllowedFunnels(contract)`: Get all allowed funnels
@@ -95,7 +98,7 @@ export const PROGRAM_TIER = {
   TIER_2_COMPREHENSIVE: 'tier-2-comprehensive',
 } as const
 
-export type ProgramTier = typeof PROGRAM_TIER[keyof typeof PROGRAM_TIER]
+export type ProgramTier = (typeof PROGRAM_TIER)[keyof typeof PROGRAM_TIER]
 
 // Type guard
 export function isValidProgramTier(value: unknown): value is ProgramTier
@@ -147,6 +150,7 @@ const funnels = getRecommendedFunnels(TIER_1_ESSENTIAL)
 **Endpoint**: `GET /api/funnels/catalog?tier={tier-level}`
 
 **Behavior**:
+
 - Without `tier` param: Returns all active funnels (backward compatible)
 - With `tier` param: Filters to tier-allowed funnels and pillars
 - Invalid tier param: Ignores filter, returns all (fail-safe)
@@ -203,6 +207,7 @@ const { data } = await response.json()
 **File**: `lib/contracts/tiers/__tests__/programTier.test.ts`
 
 **Test Suites**:
+
 1. **Contract Validation** (9 tests)
    - Valid/invalid contract detection
    - Zod schema validation
@@ -380,12 +385,14 @@ type PillarConfig = {
 If your code currently doesn't use tiers:
 
 **Before**:
+
 ```typescript
 // Fetch all funnels
 const catalog = await fetch('/api/funnels/catalog')
 ```
 
 **After**:
+
 ```typescript
 // Still works (backward compatible)
 const catalog = await fetch('/api/funnels/catalog')
@@ -399,6 +406,7 @@ const catalog = await fetch('/api/funnels/catalog?tier=tier-1-essential')
 To add a new tier level (e.g., Tier 0 Screening):
 
 1. **Update Registry**:
+
 ```typescript
 // lib/contracts/registry.ts
 export const PROGRAM_TIER = {
@@ -408,6 +416,7 @@ export const PROGRAM_TIER = {
 ```
 
 2. **Create Configuration**:
+
 ```typescript
 // lib/contracts/tiers/tier0-screening.ts
 export const TIER_0_SCREENING: ProgramTierContract = {
@@ -420,6 +429,7 @@ export const TIER_0_SCREENING: ProgramTierContract = {
 ```
 
 3. **Update Index**:
+
 ```typescript
 // lib/contracts/tiers/index.ts
 export { TIER_0_SCREENING } from './tier0-screening'
@@ -448,6 +458,7 @@ All tier contracts are verified to contain **zero PHI/PII**:
 ### Versioning
 
 Contracts support versioning for:
+
 - Tracking changes over time
 - Rolling back problematic configurations
 - A/B testing tier effectiveness
@@ -460,17 +471,20 @@ Contracts support versioning for:
 ### Types
 
 See complete type definitions in:
+
 - `lib/contracts/programTier.ts` - Contract types and validation
 - `lib/contracts/registry.ts` - Tier level constants
 
 ### Functions
 
 **Validation**:
+
 - `validateProgramTierContract(contract)`: Boolean validation
 - `parseProgramTierContract(contract)`: Parse with error throwing
 - `safeParseProgramTierContract(contract)`: Safe parse returning null on error
 
 **Queries**:
+
 - `getActivePillars(contract)`: Extract active pillar keys
 - `getRecommendedFunnels(contract)`: Extract recommended funnel slugs
 - `getAllowedFunnels(contract)`: Extract all allowed funnel slugs
@@ -478,6 +492,7 @@ See complete type definitions in:
 - `isPillarActiveInTier(contract, key)`: Check pillar activation
 
 **Lookups**:
+
 - `getTierContract(tier)`: Get contract by tier level
 - `getDefaultTierContract()`: Get default tier (Tier 1)
 
@@ -524,6 +539,7 @@ The Program Tier Contract system successfully bridges Thomas' tier-driven SOP wi
 ✅ **Documentation** complete with usage guide and future extension plan
 
 The system is ready for:
+
 - Immediate use with Tier 1 (Essential)
 - Extension in V05 issues (Triage, Nurse, Settings)
 - Production deployment without breaking changes

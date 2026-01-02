@@ -10,6 +10,7 @@ This document tracks the migration of clinician and admin pages to use the share
 ## Migration Goal
 
 Replace raw HTML elements and inline styles with shared UI components for:
+
 - Better consistency across the application
 - Easier maintenance and updates
 - Compliance with v0.4 design system
@@ -20,6 +21,7 @@ Replace raw HTML elements and inline styles with shared UI components for:
 Location: `lib/ui/`
 
 Available components:
+
 - **Button** - All button variants (primary, secondary, outline, ghost, danger)
 - **Card** - Container with header/footer support
 - **Table** - Data tables with sorting
@@ -38,11 +40,10 @@ Documentation: `lib/ui/README.md`
 
 ### ✅ Completed
 
-1. **app/clinician/page.tsx** 
+1. **app/clinician/page.tsx**
    - Migrated: Button, Badge, Card components
    - Added: 4 statistical cards with icons
    - Status: Complete ✅
-   
 2. **app/clinician/funnels/page.tsx**
    - Migrated: Button, Badge, and Card components
    - Replaced: Raw button elements and inline styled divs
@@ -99,7 +100,7 @@ Documentation: `lib/ui/README.md`
 
 When migrating a page, ensure:
 
-- [ ] Replace `<button>` with `<Button variant="...">` 
+- [ ] Replace `<button>` with `<Button variant="...">`
 - [ ] Replace styled `<div>` containers with `<Card>` where appropriate
 - [ ] Replace raw `<input>` with `<Input>` or `<FormField>`
 - [ ] Replace raw `<select>` with `<Select>` or `<FormField>`
@@ -114,27 +115,26 @@ When migrating a page, ensure:
 
 When replacing raw buttons, use these variant mappings:
 
-| Old Pattern | New Component |
-|------------|---------------|
-| `bg-sky-600 hover:bg-sky-700` | `<Button variant="primary">` |
-| `bg-slate-100 hover:bg-slate-200` | `<Button variant="secondary">` |
-| `border-2 border-sky-600` | `<Button variant="outline">` |
-| `bg-transparent hover:bg-slate-100` | `<Button variant="ghost">` |
-| `bg-red-600 hover:bg-red-700` | `<Button variant="danger">` |
+| Old Pattern                         | New Component                  |
+| ----------------------------------- | ------------------------------ |
+| `bg-sky-600 hover:bg-sky-700`       | `<Button variant="primary">`   |
+| `bg-slate-100 hover:bg-slate-200`   | `<Button variant="secondary">` |
+| `border-2 border-sky-600`           | `<Button variant="outline">`   |
+| `bg-transparent hover:bg-slate-100` | `<Button variant="ghost">`     |
+| `bg-red-600 hover:bg-red-700`       | `<Button variant="danger">`    |
 
 ## Common Patterns
 
 ### Before: Raw Button
+
 ```tsx
-<button
-  onClick={handleClick}
-  className="px-6 py-3 rounded bg-sky-600 text-white hover:bg-sky-700"
->
+<button onClick={handleClick} className="px-6 py-3 rounded bg-sky-600 text-white hover:bg-sky-700">
   Save
 </button>
 ```
 
 ### After: Button Component
+
 ```tsx
 <Button variant="primary" onClick={handleClick}>
   Save
@@ -142,6 +142,7 @@ When replacing raw buttons, use these variant mappings:
 ```
 
 ### Before: Raw Card Container
+
 ```tsx
 <div className="bg-white border border-slate-200 rounded-lg p-6">
   <h3 className="font-bold mb-4">Title</h3>
@@ -150,6 +151,7 @@ When replacing raw buttons, use these variant mappings:
 ```
 
 ### After: Card Component
+
 ```tsx
 <Card header={<h3 className="font-bold">Title</h3>}>
   <p>Content</p>
@@ -168,6 +170,7 @@ When replacing raw buttons, use these variant mappings:
 ## Benefits Achieved
 
 After migration, pages will have:
+
 - ✅ Consistent styling across the application
 - ✅ Automatic accessibility support (ARIA attributes, keyboard navigation)
 - ✅ Touch-optimized interactive elements (44px minimum)

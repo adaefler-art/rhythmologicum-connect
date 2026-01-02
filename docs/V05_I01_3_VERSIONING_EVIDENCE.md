@@ -91,17 +91,20 @@ export async function computeInputsHash(inputs: unknown): Promise<string>
 ```
 
 **Purpose:**
+
 - Single source of truth for current versions
 - Deterministic report version generation (no date dependency)
 - SHA256 hashing for input equivalence detection
 
 **Version Pattern:**
+
 ```
 {funnelVersion}-{algorithmVersion}-{promptVersion}-{inputsHashPrefix}
 Example: 1.0.0-v1.0.0-1.0-abc12345
 ```
 
 **Inputs Hash includes:**
+
 - assessment_id
 - funnel_version_id (when available)
 - algorithm_version
@@ -113,6 +116,7 @@ Example: 1.0.0-v1.0.0-1.0-abc12345
 **File:** `app/api/amy/stress-report/route.ts`
 
 **Changes:**
+
 1. Import version utilities
 2. Compute `inputsHash` from normalized inputs (assessment_id + algorithm_version + prompt_version + answers)
 3. Generate `inputsHashPrefix` (first 8 characters)
@@ -123,6 +127,7 @@ Example: 1.0.0-v1.0.0-1.0-abc12345
    - `report_version`
 
 **Before:**
+
 ```typescript
 .insert({
   assessment_id: assessmentId,
@@ -132,6 +137,7 @@ Example: 1.0.0-v1.0.0-1.0-abc12345
 ```
 
 **After:**
+
 ```typescript
 // Compute inputs hash
 const inputsForHash = {
@@ -147,9 +153,7 @@ const reportVersion = generateReportVersion({
   algorithmVersion: CURRENT_ALGORITHM_VERSION,
   promptVersion: CURRENT_PROMPT_VERSION,
   inputsHashPrefix,
-})
-
-.insert({
+}).insert({
   assessment_id: assessmentId,
   score_numeric: stressScore,
   algorithm_version: CURRENT_ALGORITHM_VERSION,
@@ -164,6 +168,7 @@ const reportVersion = generateReportVersion({
 **File:** `lib/versioning/__tests__/constants.test.ts`
 
 Tests verify:
+
 - Version constants are well-formed
 - `generateReportVersion()` produces deterministic, dated versions
 - `computeInputsHash()` produces consistent SHA256 hashes
@@ -174,6 +179,7 @@ Tests verify:
 **File:** `docs/canon/CONTRACTS.md`
 
 Added comprehensive "Versioning Contract" section covering:
+
 - Overview and purpose
 - Version fields in each table
 - Version generation rules
@@ -243,7 +249,7 @@ await supabase.from('report_sections').insert([
 Query to reconstruct "what did the system know":
 
 ```sql
-SELECT 
+SELECT
   r.id,
   r.report_version,
   r.algorithm_version,
@@ -263,22 +269,26 @@ WHERE r.id = '{report_id}';
 ## Acceptance Criteria Status
 
 ✅ **All four version references exist and are persisted end-to-end**
+
 - `funnel_version` → via `funnel_version_id` FK
 - `algorithm_version` → TEXT field in calculated_results and reports
 - `prompt_version` → TEXT field in reports and report_sections
 - `report_version` → Composite TEXT field in reports
 
 ✅ **Reports are reproducible via stable version references**
+
 - All version fields are NOT NULL or have FKs
 - No implicit "latest" - everything is explicit
 - Functions created for deterministic version generation
 
 ✅ **Unique constraints guarantee retry-safety (idempotent re-runs)**
+
 - `calculated_results` → UNIQUE(assessment_id, algorithm_version)
 - `reports` → UNIQUE(assessment_id, report_version)
 - `report_sections` → UNIQUE(report_id, section_key)
 
 ✅ **Evidence: Migration + code implementation**
+
 - Migration file: `20251231093345_v05_i01_3_versioning_contract.sql`
 - Version utilities: `lib/versioning/constants.ts`
 - Processing integration: `app/api/amy/stress-report/route.ts`
@@ -288,6 +298,7 @@ WHERE r.id = '{report_id}';
 ## Next Steps
 
 When database is available:
+
 1. Run `npm run db:reset` to apply migration
 2. Run `npm run db:typegen` to regenerate TypeScript types
 3. Run `npm test` to verify version utilities work correctly

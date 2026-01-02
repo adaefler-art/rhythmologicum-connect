@@ -1,7 +1,7 @@
 /**
  * Tests for /api/health/env endpoint
  * TV05_03: Environment Self-Check Healthcheck
- * 
+ *
  * Tests:
  * - Authentication gating (401 for unauthenticated)
  * - Authorization gating (403 for non-admin)
@@ -28,7 +28,11 @@ jest.mock('@/lib/env', () => ({
 }))
 
 import { GET } from '../route'
-import { getCurrentUser, hasAdminOrClinicianRole, createServerSupabaseClient } from '@/lib/db/supabase.server'
+import {
+  getCurrentUser,
+  hasAdminOrClinicianRole,
+  createServerSupabaseClient,
+} from '@/lib/db/supabase.server'
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>
 const mockHasAdminOrClinicianRole = hasAdminOrClinicianRole as jest.MockedFunction<
@@ -121,14 +125,18 @@ describe('GET /api/health/env', () => {
         message: 'Valid URL format',
       })
 
-      const anonKeyCheck = json.data.checks.find((c: any) => c.name === 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      const anonKeyCheck = json.data.checks.find(
+        (c: any) => c.name === 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      )
       expect(anonKeyCheck).toEqual({
         name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
         pass: true,
         message: 'Valid key format',
       })
 
-      const serviceKeyCheck = json.data.checks.find((c: any) => c.name === 'SUPABASE_SERVICE_ROLE_KEY')
+      const serviceKeyCheck = json.data.checks.find(
+        (c: any) => c.name === 'SUPABASE_SERVICE_ROLE_KEY',
+      )
       expect(serviceKeyCheck).toEqual({
         name: 'SUPABASE_SERVICE_ROLE_KEY',
         pass: true,
@@ -149,7 +157,7 @@ describe('GET /api/health/env', () => {
 
       const json = await response.json()
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      
+
       expect(dbCheck).toBeDefined()
       expect(mockCreateServerSupabaseClient).toHaveBeenCalled()
     })
@@ -187,13 +195,13 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       json.data.checks.forEach((check: any) => {
         expect(check).toHaveProperty('name')
         expect(check).toHaveProperty('pass')
         expect(check).toHaveProperty('message')
         expect(Object.keys(check)).toHaveLength(3)
-        
+
         // Messages should be generic, not contain actual values
         expect(check.message).not.toContain('eyJ')
         expect(check.message).not.toContain('https://')
@@ -213,8 +221,8 @@ describe('GET /api/health/env', () => {
     it('detects database connectivity issues', async () => {
       mockCreateServerSupabaseClient.mockResolvedValue({
         from: jest.fn().mockReturnValue({
-          select: jest.fn().mockResolvedValue({ 
-            error: { message: 'Connection refused' }
+          select: jest.fn().mockResolvedValue({
+            error: { message: 'Connection refused' },
           }),
         }),
       } as any)
@@ -223,7 +231,7 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
       expect(dbCheck?.pass).toBe(false)
       expect(dbCheck?.message).toContain('Connection refused')
@@ -236,7 +244,7 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
       expect(dbCheck?.pass).toBe(false)
       expect(dbCheck?.message).toContain('Network error')
@@ -262,13 +270,13 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       expect(json).toHaveProperty('success', true)
       expect(json).toHaveProperty('data')
       expect(json.data).toHaveProperty('checks')
       expect(json.data).toHaveProperty('overallStatus')
       expect(json.data).toHaveProperty('timestamp')
-      
+
       expect(Array.isArray(json.data.checks)).toBe(true)
       expect(['pass', 'fail']).toContain(json.data.overallStatus)
     })
@@ -278,7 +286,7 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       json.data.checks.forEach((check: any) => {
         expect(check).toHaveProperty('name')
         expect(check).toHaveProperty('pass')
@@ -294,7 +302,7 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      
+
       const timestamp = new Date(json.data.timestamp)
       expect(timestamp.toISOString()).toBe(json.data.timestamp)
     })
@@ -307,7 +315,7 @@ describe('GET /api/health/env', () => {
         app_metadata: { role: 'admin' },
       } as any)
       mockHasAdminOrClinicianRole.mockResolvedValue(true)
-      
+
       // Force an error in database connectivity check
       mockCreateServerSupabaseClient.mockImplementation(() => {
         throw new Error('Catastrophic failure')
@@ -321,7 +329,7 @@ describe('GET /api/health/env', () => {
       const json = await response.json()
       expect(json.success).toBe(true)
       expect(json.data.overallStatus).toBe('fail')
-      
+
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
       expect(dbCheck?.pass).toBe(false)
       expect(dbCheck?.message).toContain('Catastrophic failure')

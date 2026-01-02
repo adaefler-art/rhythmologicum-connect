@@ -108,6 +108,7 @@ Static code search found zero references to `/api/amy/stress-summary`.
 #### Evidence
 
 No direct API calls found, but server action exists:
+
 - `lib/actions/onboarding.ts` exports `recordConsent()` function
 - This server action may be the canonical implementation
 
@@ -227,6 +228,7 @@ The following admin routes are implemented and functional but accessed primarily
 ### 2.1 Admin Funnel Management
 
 **Routes:**
+
 - `/api/admin/funnels` - GET (list), POST (create)
 - `/api/admin/funnels/[id]` - GET, PATCH
 - `/api/admin/funnel-steps` - POST
@@ -236,6 +238,7 @@ The following admin routes are implemented and functional but accessed primarily
 **Status:** ✅ **IN USE** - Accessed via `/clinician/funnels` pages
 
 **Evidence:**
+
 - `/clinician/funnels` page calls `/api/admin/funnels`
 - `/clinician/funnels/[id]` page calls detail endpoints
 - V05-I02.2 documents funnel management UI
@@ -247,6 +250,7 @@ The following admin routes are implemented and functional but accessed primarily
 ### 2.2 Admin Content Management
 
 **Routes:**
+
 - `/api/admin/content-pages` - GET, POST
 - `/api/admin/content-pages/[id]` - GET, PATCH, DELETE
 - `/api/admin/content-pages/[id]/sections` - GET, POST
@@ -255,6 +259,7 @@ The following admin routes are implemented and functional but accessed primarily
 **Status:** ✅ **IN USE** - Accessed via `/admin/content` pages
 
 **Evidence:**
+
 - `/admin/content` page exists
 - `/admin/content/new` page exists
 - `/admin/content/[id]` page exists
@@ -270,12 +275,12 @@ All page routes were analyzed for reachability via href links or programmatic na
 
 ### 3.1 Admin Pages
 
-| Route | Status | Evidence |
-|-------|--------|----------|
-| `/admin/content` | ✅ Active | 7 navigation calls found |
-| `/admin/content/new` | ✅ Active | Linked from content list |
-| `/admin/content/[id]` | ✅ Active | Dynamic, accessed from list |
-| `/admin/design-system` | ✅ Active | 1 navigation reference |
+| Route                  | Status    | Evidence                    |
+| ---------------------- | --------- | --------------------------- |
+| `/admin/content`       | ✅ Active | 7 navigation calls found    |
+| `/admin/content/new`   | ✅ Active | Linked from content list    |
+| `/admin/content/[id]`  | ✅ Active | Dynamic, accessed from list |
+| `/admin/design-system` | ✅ Active | 1 navigation reference      |
 
 **Conclusion:** All admin pages are reachable and functional.
 
@@ -283,13 +288,13 @@ All page routes were analyzed for reachability via href links or programmatic na
 
 ### 3.2 Clinician Pages
 
-| Route | Status | Evidence |
-|-------|--------|----------|
-| `/clinician` | ✅ Active | Main dashboard |
-| `/clinician/funnels` | ✅ Active | 2 href links, 1 navigation call |
-| `/clinician/funnels/[id]` | ✅ Active | Dynamic, accessed from list page |
+| Route                     | Status    | Evidence                                |
+| ------------------------- | --------- | --------------------------------------- |
+| `/clinician`              | ✅ Active | Main dashboard                          |
+| `/clinician/funnels`      | ✅ Active | 2 href links, 1 navigation call         |
+| `/clinician/funnels/[id]` | ✅ Active | Dynamic, accessed from list page        |
 | `/clinician/patient/[id]` | ✅ Active | Dynamic, row click handler in dashboard |
-| `/clinician/report/[id]` | ✅ Active | Dynamic, accessed from patient detail |
+| `/clinician/report/[id]`  | ✅ Active | Dynamic, accessed from patient detail   |
 
 **Conclusion:** All clinician pages are reachable. Dynamic routes are accessed programmatically (row clicks, etc.), which is correct behavior.
 
@@ -297,18 +302,18 @@ All page routes were analyzed for reachability via href links or programmatic na
 
 ### 3.3 Patient Pages
 
-| Route | Status | Evidence |
-|-------|--------|----------|
-| `/patient` | ✅ Active | Main patient entry |
-| `/patient/assessment` | ✅ Active | Redirected from `/patient` after onboarding |
-| `/patient/funnels` | ✅ Active | Funnel catalog |
-| `/patient/funnel/[slug]` | ✅ Active | Dynamic, funnel entry |
-| `/patient/funnel/[slug]/intro` | ✅ Active | Dynamic, accessed in funnel flow |
-| `/patient/funnel/[slug]/content/[pageSlug]` | ✅ Active | Dynamic, content pages |
-| `/patient/funnel/[slug]/result` | ✅ Active | Dynamic, result page |
-| `/patient/history` | ✅ Active | Assessment history |
-| `/patient/onboarding/consent` | ✅ Active | Onboarding flow (V05-I03.1) |
-| `/patient/onboarding/profile` | ✅ Active | Onboarding flow (V05-I03.1) |
+| Route                                       | Status    | Evidence                                    |
+| ------------------------------------------- | --------- | ------------------------------------------- |
+| `/patient`                                  | ✅ Active | Main patient entry                          |
+| `/patient/assessment`                       | ✅ Active | Redirected from `/patient` after onboarding |
+| `/patient/funnels`                          | ✅ Active | Funnel catalog                              |
+| `/patient/funnel/[slug]`                    | ✅ Active | Dynamic, funnel entry                       |
+| `/patient/funnel/[slug]/intro`              | ✅ Active | Dynamic, accessed in funnel flow            |
+| `/patient/funnel/[slug]/content/[pageSlug]` | ✅ Active | Dynamic, content pages                      |
+| `/patient/funnel/[slug]/result`             | ✅ Active | Dynamic, result page                        |
+| `/patient/history`                          | ✅ Active | Assessment history                          |
+| `/patient/onboarding/consent`               | ✅ Active | Onboarding flow (V05-I03.1)                 |
+| `/patient/onboarding/profile`               | ✅ Active | Onboarding flow (V05-I03.1)                 |
 
 **Conclusion:** All patient pages are properly integrated.
 
@@ -323,6 +328,7 @@ All server actions in `lib/actions/` were analyzed for usage.
 **File:** `lib/actions/onboarding.ts`
 
 **Functions:**
+
 - `recordConsent()` - ✅ Used in `/patient/onboarding/consent`
 - `saveBaselineProfile()` - ✅ Used in `/patient/onboarding/profile`
 - `getOnboardingStatus()` - ✅ Used in `/patient/assessment` and `/patient/page`
@@ -341,11 +347,11 @@ All contract files in `lib/contracts/` were analyzed.
 
 ### 5.1 Existing Contracts
 
-| Contract | File | Status | Usage |
-|----------|------|--------|-------|
-| Funnel Manifest | `funnelManifest.ts` | ✅ In Use | Used by funnel runtime (Epic B) |
-| Onboarding | `onboarding.ts` | ✅ In Use | Used by onboarding flow (V05-I03.1) |
-| Registry | `registry.ts` | ✅ In Use | Funnel slugs, types, registries |
+| Contract        | File                | Status    | Usage                               |
+| --------------- | ------------------- | --------- | ----------------------------------- |
+| Funnel Manifest | `funnelManifest.ts` | ✅ In Use | Used by funnel runtime (Epic B)     |
+| Onboarding      | `onboarding.ts`     | ✅ In Use | Used by onboarding flow (V05-I03.1) |
+| Registry        | `registry.ts`       | ✅ In Use | Funnel slugs, types, registries     |
 
 **Conclusion:** All contracts are actively used.
 
@@ -360,6 +366,7 @@ All contract files in `lib/contracts/` were analyzed.
 **Action:** Determine if AMY endpoints (`/api/amy/stress-report`, `/api/amy/stress-summary`) are still needed.
 
 **Steps:**
+
 1. Review v0.5 architecture documentation
 2. Check if funnel runtime replaced AMY
 3. If obsolete: Create removal task (V05-CLEANUP-1)
@@ -374,6 +381,7 @@ All contract files in `lib/contracts/` were analyzed.
 **Action:** Consolidate consent flow to use either API endpoints or server actions, not both.
 
 **Steps:**
+
 1. Determine canonical pattern (likely server actions based on V05-I03.1)
 2. Remove duplicate implementation
 3. Document chosen pattern in architecture docs
@@ -388,6 +396,7 @@ All contract files in `lib/contracts/` were analyzed.
 **Action:** Determine if `/api/content-resolver` and `/api/content/resolve` are duplicates.
 
 **Steps:**
+
 1. Review content engine architecture
 2. Determine canonical endpoint
 3. Remove duplicate if any
@@ -404,6 +413,7 @@ All contract files in `lib/contracts/` were analyzed.
 **Action:** Add documentation explaining that dynamic routes (e.g., `/clinician/patient/[id]`) are accessed programmatically.
 
 **Steps:**
+
 1. Create "Navigation Patterns" documentation
 2. Explain static vs dynamic routes
 3. Document row-click navigation pattern
@@ -420,6 +430,7 @@ All contract files in `lib/contracts/` were analyzed.
 **Action:** Add visible export button to clinician dashboard for patient measures.
 
 **Steps:**
+
 1. Add "Export" button to dashboard UI
 2. Wire to `/api/patient-measures/export` endpoint
 3. Test export functionality
@@ -440,6 +451,7 @@ The following items initially appeared unused but were heuristically verified as
 **Resolution:** These are accessed programmatically (e.g., `router.push(\`/patient/\${id}\`)`) which doesn't match simple string search patterns.
 
 **Verification (Heuristic):** Manual code review confirmed proper usage in:
+
 - Table row click handlers
 - Navigation callbacks
 - Funnel flow progression

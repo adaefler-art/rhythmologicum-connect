@@ -19,24 +19,24 @@ All form controls and UI components should use the shared components from `@/lib
 
 ### Form Controls
 
-| Deprecated (DO NOT USE) | Use Instead |
-|------------------------|-------------|
-| `docs/*/components/ui/input.tsx` | `@/lib/ui/Input` |
-| `docs/*/components/ui/textarea.tsx` | `@/lib/ui/Textarea` |
-| `docs/*/components/ui/select.tsx` | `@/lib/ui/Select` |
-| `docs/*/components/ui/label.tsx` | `@/lib/ui/Label` |
-| `docs/*/components/ui/form.tsx` | `@/lib/ui/FormField` |
+| Deprecated (DO NOT USE)             | Use Instead          |
+| ----------------------------------- | -------------------- |
+| `docs/*/components/ui/input.tsx`    | `@/lib/ui/Input`     |
+| `docs/*/components/ui/textarea.tsx` | `@/lib/ui/Textarea`  |
+| `docs/*/components/ui/select.tsx`   | `@/lib/ui/Select`    |
+| `docs/*/components/ui/label.tsx`    | `@/lib/ui/Label`     |
+| `docs/*/components/ui/form.tsx`     | `@/lib/ui/FormField` |
 
 ### Other Components
 
-| Deprecated (DO NOT USE) | Use Instead |
-|------------------------|-------------|
-| `docs/*/components/ui/button.tsx` | `@/lib/ui/Button` |
-| `docs/*/components/ui/card.tsx` | `@/lib/ui/Card` |
-| `docs/*/components/ui/badge.tsx` | `@/lib/ui/Badge` |
-| `docs/*/components/ui/table.tsx` | `@/lib/ui/Table` |
+| Deprecated (DO NOT USE)             | Use Instead         |
+| ----------------------------------- | ------------------- |
+| `docs/*/components/ui/button.tsx`   | `@/lib/ui/Button`   |
+| `docs/*/components/ui/card.tsx`     | `@/lib/ui/Card`     |
+| `docs/*/components/ui/badge.tsx`    | `@/lib/ui/Badge`    |
+| `docs/*/components/ui/table.tsx`    | `@/lib/ui/Table`    |
 | `docs/*/components/ui/progress.tsx` | `@/lib/ui/Progress` |
-| `docs/*/components/ui/tabs.tsx` | `@/lib/ui/Tabs` |
+| `docs/*/components/ui/tabs.tsx`     | `@/lib/ui/Tabs`     |
 
 ## Official Design System
 

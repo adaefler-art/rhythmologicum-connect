@@ -39,6 +39,7 @@ Design tokens are defined in **two locations** for maximum flexibility:
 **Purpose**: Programmatic access in React components and TypeScript code
 
 **Usage**:
+
 ```typescript
 import { spacing, typography, colors } from '@/lib/design-tokens'
 
@@ -48,6 +49,7 @@ import { spacing, typography, colors } from '@/lib/design-tokens'
 ```
 
 **Advantages**:
+
 - Type-safe with autocomplete
 - Can be used in calculations
 - Easy to import in any component
@@ -58,6 +60,7 @@ import { spacing, typography, colors } from '@/lib/design-tokens'
 **Purpose**: Global access in CSS and inline styles
 
 **Usage**:
+
 ```css
 .my-component {
   padding: var(--spacing-lg);
@@ -67,6 +70,7 @@ import { spacing, typography, colors } from '@/lib/design-tokens'
 ```
 
 **Advantages**:
+
 - No JavaScript required
 - Works in any CSS context
 - Easy to override for testing
@@ -95,18 +99,20 @@ Tokens are organized into **seven primary categories**:
 Main brand color used for primary actions, highlights, and interactive elements.
 
 **TypeScript**:
+
 ```typescript
 import { colors } from '@/lib/design-tokens'
 
-colors.primary[50]  // '#f0f9ff' - Lightest
+colors.primary[50] // '#f0f9ff' - Lightest
 colors.primary[500] // '#0ea5e9' - Primary brand color
 colors.primary[600] // '#0284c7' - Primary dark (hover states)
 colors.primary[900] // '#0c4a6e' - Darkest
 ```
 
 **CSS**:
+
 ```css
---color-primary-50:  #f0f9ff;
+--color-primary-50: #f0f9ff;
 --color-primary-100: #e0f2fe;
 --color-primary-200: #bae6fd;
 --color-primary-300: #7dd3fc;
@@ -119,6 +125,7 @@ colors.primary[900] // '#0c4a6e' - Darkest
 ```
 
 **Usage Examples**:
+
 ```tsx
 // Button primary color
 <Button style={{ backgroundColor: colors.primary[600] }}>
@@ -139,8 +146,9 @@ colors.primary[900] // '#0c4a6e' - Darkest
 Grayscale colors used for backgrounds, borders, and text.
 
 **TypeScript**:
+
 ```typescript
-colors.neutral[50]  // '#f8fafc' - Lightest background
+colors.neutral[50] // '#f8fafc' - Lightest background
 colors.neutral[100] // '#f1f5f9' - Light background
 colors.neutral[200] // '#e2e8f0' - Border light
 colors.neutral[300] // '#cbd5e1' - Border default
@@ -150,8 +158,9 @@ colors.neutral[900] // '#0f172a' - Darkest text
 ```
 
 **CSS**:
+
 ```css
---color-neutral-50:  #f8fafc;
+--color-neutral-50: #f8fafc;
 --color-neutral-100: #f1f5f9;
 --color-neutral-200: #e2e8f0;
 --color-neutral-300: #cbd5e1;
@@ -164,6 +173,7 @@ colors.neutral[900] // '#0f172a' - Darkest text
 ```
 
 **Usage Guidelines**:
+
 - **50-100**: Page backgrounds, card backgrounds
 - **200-300**: Borders, dividers
 - **400-500**: Disabled states, secondary text
@@ -175,14 +185,16 @@ colors.neutral[900] // '#0f172a' - Darkest text
 Contextual colors for states and feedback.
 
 **TypeScript**:
+
 ```typescript
 colors.semantic.success // '#10b981' - Green (success states)
 colors.semantic.warning // '#f59e0b' - Amber (warning states)
-colors.semantic.error   // '#ef4444' - Red (error states)
-colors.semantic.info    // '#3b82f6' - Blue (info states)
+colors.semantic.error // '#ef4444' - Red (error states)
+colors.semantic.info // '#3b82f6' - Blue (info states)
 ```
 
 **CSS**:
+
 ```css
 --color-success: #10b981;
 --color-success-light: #d1fae5;
@@ -195,11 +207,12 @@ colors.semantic.info    // '#3b82f6' - Blue (info states)
 ```
 
 **Usage Examples**:
+
 ```tsx
 // Success message
-<div style={{ 
+<div style={{
   backgroundColor: 'var(--color-success-light)',
-  color: colors.semantic.success 
+  color: colors.semantic.success
 }}>
   ✓ Changes saved successfully
 </div>
@@ -220,23 +233,27 @@ colors.semantic.info    // '#3b82f6' - Blue (info states)
 #### Background Colors
 
 **TypeScript**:
+
 ```typescript
-colors.background.light              // '#ffffff'
-colors.background.lightGradientFrom  // '#f0f9ff' (sky-50)
-colors.background.lightGradientTo    // '#ffffff'
-colors.background.dark               // '#0a0a0a'
-colors.background.darkGradientFrom   // '#1e293b' (slate-800)
-colors.background.darkGradientTo     // '#0f172a' (slate-900)
+colors.background.light // '#ffffff'
+colors.background.lightGradientFrom // '#f0f9ff' (sky-50)
+colors.background.lightGradientTo // '#ffffff'
+colors.background.dark // '#0a0a0a'
+colors.background.darkGradientFrom // '#1e293b' (slate-800)
+colors.background.darkGradientTo // '#0f172a' (slate-900)
 ```
 
 **Usage**:
+
 ```tsx
 // Page background with gradient
-<div style={{
-  background: `linear-gradient(to bottom, 
+<div
+  style={{
+    background: `linear-gradient(to bottom, 
     ${colors.background.lightGradientFrom}, 
-    ${colors.background.lightGradientTo})`
-}}>
+    ${colors.background.lightGradientTo})`,
+  }}
+>
   Page content
 </div>
 ```
@@ -250,32 +267,35 @@ colors.background.darkGradientTo     // '#0f172a' (slate-900)
 Consistent font size scale following a logical progression.
 
 **TypeScript**:
+
 ```typescript
 import { typography } from '@/lib/design-tokens'
 
-typography.fontSize.xs    // '0.75rem'   (12px) - Small labels, captions
-typography.fontSize.sm    // '0.875rem'  (14px) - Secondary text
-typography.fontSize.base  // '1rem'      (16px) - Body text, inputs
-typography.fontSize.lg    // '1.125rem'  (18px) - Emphasized text
-typography.fontSize.xl    // '1.25rem'   (20px) - Small headings
+typography.fontSize.xs // '0.75rem'   (12px) - Small labels, captions
+typography.fontSize.sm // '0.875rem'  (14px) - Secondary text
+typography.fontSize.base // '1rem'      (16px) - Body text, inputs
+typography.fontSize.lg // '1.125rem'  (18px) - Emphasized text
+typography.fontSize.xl // '1.25rem'   (20px) - Small headings
 typography.fontSize['2xl'] // '1.5rem'   (24px) - Section headings
 typography.fontSize['3xl'] // '1.875rem' (30px) - Page titles
 typography.fontSize['4xl'] // '2.25rem'  (36px) - Hero headings
 ```
 
 **CSS**:
+
 ```css
---font-size-xs:   0.75rem;   /* 12px */
---font-size-sm:   0.875rem;  /* 14px */
---font-size-base: 1rem;      /* 16px */
---font-size-lg:   1.125rem;  /* 18px */
---font-size-xl:   1.25rem;   /* 20px */
---font-size-2xl:  1.5rem;    /* 24px */
---font-size-3xl:  1.875rem;  /* 30px */
---font-size-4xl:  2.25rem;   /* 36px */
+--font-size-xs: 0.75rem; /* 12px */
+--font-size-sm: 0.875rem; /* 14px */
+--font-size-base: 1rem; /* 16px */
+--font-size-lg: 1.125rem; /* 18px */
+--font-size-xl: 1.25rem; /* 20px */
+--font-size-2xl: 1.5rem; /* 24px */
+--font-size-3xl: 1.875rem; /* 30px */
+--font-size-4xl: 2.25rem; /* 36px */
 ```
 
 **Usage Guidelines**:
+
 ```tsx
 // Hero heading
 <h1 style={{ fontSize: typography.fontSize['4xl'] }}>
@@ -306,19 +326,21 @@ typography.fontSize['4xl'] // '2.25rem'  (36px) - Hero headings
 #### Line Heights
 
 **TypeScript**:
+
 ```typescript
-typography.lineHeight.tight   // '1.25'   - Compact text (headings)
-typography.lineHeight.normal  // '1.5'    - Standard reading (body)
+typography.lineHeight.tight // '1.25'   - Compact text (headings)
+typography.lineHeight.normal // '1.5'    - Standard reading (body)
 typography.lineHeight.relaxed // '1.625'  - Comfortable reading
-typography.lineHeight.loose   // '2'      - Spacious text
+typography.lineHeight.loose // '2'      - Spacious text
 ```
 
 **Usage**:
+
 ```tsx
 // Heading with tight line height
-<h2 style={{ 
+<h2 style={{
   fontSize: typography.fontSize['2xl'],
-  lineHeight: typography.lineHeight.tight 
+  lineHeight: typography.lineHeight.tight
 }}>
   Multi-line Heading Text That Wraps
 </h2>
@@ -332,14 +354,16 @@ typography.lineHeight.loose   // '2'      - Spacious text
 #### Font Weights
 
 **TypeScript**:
+
 ```typescript
-typography.fontWeight.normal   // '400' - Regular text
-typography.fontWeight.medium   // '500' - Emphasized text
+typography.fontWeight.normal // '400' - Regular text
+typography.fontWeight.medium // '500' - Emphasized text
 typography.fontWeight.semibold // '600' - Strong emphasis
-typography.fontWeight.bold     // '700' - Headings
+typography.fontWeight.bold // '700' - Headings
 ```
 
 **Usage**:
+
 ```tsx
 // Button text
 <button style={{ fontWeight: typography.fontWeight.semibold }}>
@@ -359,27 +383,29 @@ typography.fontWeight.bold     // '700' - Headings
 Consistent spacing scale for margins, padding, and gaps.
 
 **TypeScript**:
+
 ```typescript
 import { spacing } from '@/lib/design-tokens'
 
-spacing.xs   // '0.5rem'  (8px)  - Minimal gaps
-spacing.sm   // '0.75rem' (12px) - Compact elements
-spacing.md   // '1rem'    (16px) - Default spacing
-spacing.lg   // '1.5rem'  (24px) - Sections, cards
-spacing.xl   // '2rem'    (32px) - Major sections
+spacing.xs // '0.5rem'  (8px)  - Minimal gaps
+spacing.sm // '0.75rem' (12px) - Compact elements
+spacing.md // '1rem'    (16px) - Default spacing
+spacing.lg // '1.5rem'  (24px) - Sections, cards
+spacing.xl // '2rem'    (32px) - Major sections
 spacing['2xl'] // '3rem'  (48px) - Page sections
 spacing['3xl'] // '4rem'  (64px) - Hero sections
 ```
 
 **CSS**:
+
 ```css
---spacing-xs:  0.5rem;   /* 8px */
---spacing-sm:  0.75rem;  /* 12px */
---spacing-md:  1rem;     /* 16px */
---spacing-lg:  1.5rem;   /* 24px */
---spacing-xl:  2rem;     /* 32px */
---spacing-2xl: 3rem;     /* 48px */
---spacing-3xl: 4rem;     /* 64px */
+--spacing-xs: 0.5rem; /* 8px */
+--spacing-sm: 0.75rem; /* 12px */
+--spacing-md: 1rem; /* 16px */
+--spacing-lg: 1.5rem; /* 24px */
+--spacing-xl: 2rem; /* 32px */
+--spacing-2xl: 3rem; /* 48px */
+--spacing-3xl: 4rem; /* 64px */
 ```
 
 **Usage Guidelines**:
@@ -396,7 +422,7 @@ spacing['3xl'] // '4rem'  (64px) - Hero sections
 </section>
 
 // Button padding
-<Button style={{ 
+<Button style={{
   paddingLeft: spacing.lg,
   paddingRight: spacing.lg,
   paddingTop: spacing.md,
@@ -406,9 +432,9 @@ spacing['3xl'] // '4rem'  (64px) - Hero sections
 </Button>
 
 // Flex gap
-<div style={{ 
+<div style={{
   display: 'flex',
-  gap: spacing.md 
+  gap: spacing.md
 }}>
   <Button>Cancel</Button>
   <Button>Save</Button>
@@ -416,6 +442,7 @@ spacing['3xl'] // '4rem'  (64px) - Hero sections
 ```
 
 **Common Patterns**:
+
 - **xs (8px)**: Tight gaps between icons and text
 - **sm (12px)**: Compact lists, small cards
 - **md (16px)**: Default padding, form field spacing
@@ -431,29 +458,32 @@ spacing['3xl'] // '4rem'  (64px) - Hero sections
 Rounded corner values for different component types.
 
 **TypeScript**:
+
 ```typescript
 import { radii } from '@/lib/design-tokens'
 
-radii.none  // '0'
-radii.sm    // '0.375rem' (6px)  - Subtle rounding
-radii.md    // '0.5rem'   (8px)  - Default buttons, inputs
-radii.lg    // '0.75rem'  (12px) - Cards, panels
-radii.xl    // '1rem'     (16px) - Prominent cards
+radii.none // '0'
+radii.sm // '0.375rem' (6px)  - Subtle rounding
+radii.md // '0.5rem'   (8px)  - Default buttons, inputs
+radii.lg // '0.75rem'  (12px) - Cards, panels
+radii.xl // '1rem'     (16px) - Prominent cards
 radii['2xl'] // '1.5rem'  (24px) - Mobile cards, hero elements
-radii.full  // '9999px'           - Pill shape, circles
+radii.full // '9999px'           - Pill shape, circles
 ```
 
 **CSS**:
+
 ```css
---radius-sm:   0.375rem;  /* 6px */
---radius-md:   0.5rem;    /* 8px */
---radius-lg:   0.75rem;   /* 12px */
---radius-xl:   1rem;      /* 16px */
---radius-2xl:  1.5rem;    /* 24px */
---radius-full: 9999px;    /* Pills/circles */
+--radius-sm: 0.375rem; /* 6px */
+--radius-md: 0.5rem; /* 8px */
+--radius-lg: 0.75rem; /* 12px */
+--radius-xl: 1rem; /* 16px */
+--radius-2xl: 1.5rem; /* 24px */
+--radius-full: 9999px; /* Pills/circles */
 ```
 
 **Usage Examples**:
+
 ```tsx
 // Button
 <button style={{ borderRadius: radii.md }}>
@@ -486,19 +516,21 @@ radii.full  // '9999px'           - Pill shape, circles
 Box shadow definitions for depth and elevation.
 
 **TypeScript**:
+
 ```typescript
 import { shadows } from '@/lib/design-tokens'
 
-shadows.none  // 'none'
-shadows.sm    // Subtle depth
-shadows.md    // Standard elevation
-shadows.lg    // Prominent cards
-shadows.xl    // Floating elements
+shadows.none // 'none'
+shadows.sm // Subtle depth
+shadows.md // Standard elevation
+shadows.lg // Prominent cards
+shadows.xl // Floating elements
 shadows['2xl'] // Maximum elevation
 shadows.inner // Inset shadow
 ```
 
 **CSS**:
+
 ```css
 --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -507,6 +539,7 @@ shadows.inner // Inset shadow
 ```
 
 **Usage Guidelines**:
+
 ```tsx
 // Subtle card
 <Card style={{ boxShadow: shadows.sm }}>
@@ -543,42 +576,46 @@ Animation durations and easing functions for consistent motion.
 #### Durations
 
 **TypeScript**:
+
 ```typescript
 import { motion } from '@/lib/design-tokens'
 
-motion.duration.instant  // '0ms'   - No animation
-motion.duration.fast     // '150ms' - Quick interactions
-motion.duration.normal   // '200ms' - Standard transitions
+motion.duration.instant // '0ms'   - No animation
+motion.duration.fast // '150ms' - Quick interactions
+motion.duration.normal // '200ms' - Standard transitions
 motion.duration.moderate // '300ms' - Comfortable animations
-motion.duration.slow     // '500ms' - Deliberate animations
+motion.duration.slow // '500ms' - Deliberate animations
 ```
 
 **CSS**:
+
 ```css
---duration-fast:     150ms;
---duration-normal:   200ms;
+--duration-fast: 150ms;
+--duration-normal: 200ms;
 --duration-moderate: 300ms;
---duration-slow:     500ms;
+--duration-slow: 500ms;
 ```
 
 #### Easing Functions
 
 **TypeScript**:
+
 ```typescript
-motion.easing.linear    // 'linear'
-motion.easing.ease      // 'ease'
-motion.easing.easeIn    // 'ease-in'
-motion.easing.easeOut   // 'ease-out'
+motion.easing.linear // 'linear'
+motion.easing.ease // 'ease'
+motion.easing.easeIn // 'ease-in'
+motion.easing.easeOut // 'ease-out'
 motion.easing.easeInOut // 'ease-in-out'
-motion.easing.smooth    // 'cubic-bezier(0.4, 0.0, 0.2, 1)' - Smooth, natural
-motion.easing.snappy    // 'cubic-bezier(0.4, 0.0, 0.6, 1)' - Quick start, slow end
-motion.easing.spring    // 'cubic-bezier(0.34, 1.56, 0.64, 1)' - Spring bounce
+motion.easing.smooth // 'cubic-bezier(0.4, 0.0, 0.2, 1)' - Smooth, natural
+motion.easing.snappy // 'cubic-bezier(0.4, 0.0, 0.6, 1)' - Quick start, slow end
+motion.easing.spring // 'cubic-bezier(0.34, 1.56, 0.64, 1)' - Spring bounce
 ```
 
 **CSS**:
+
 ```css
---easing-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
---easing-snappy: cubic-bezier(0.4, 0.0, 0.6, 1);
+--easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+--easing-snappy: cubic-bezier(0.4, 0, 0.6, 1);
 ```
 
 #### Usage Examples
@@ -610,18 +647,20 @@ motion.easing.spring    // 'cubic-bezier(0.34, 1.56, 0.64, 1)' - Spring bounce
 For animations using Framer Motion:
 
 **TypeScript**:
+
 ```typescript
 motion.spring.default // { type: 'spring', stiffness: 300, damping: 20 }
-motion.spring.gentle  // { type: 'spring', stiffness: 200, damping: 25 }
-motion.spring.bouncy  // { type: 'spring', stiffness: 400, damping: 15 }
+motion.spring.gentle // { type: 'spring', stiffness: 200, damping: 25 }
+motion.spring.bouncy // { type: 'spring', stiffness: 400, damping: 15 }
 ```
 
 **Usage**:
+
 ```tsx
 import { motion as framerMotion } from 'framer-motion'
 import { motion as motionTokens } from '@/lib/design-tokens'
 
-<framerMotion.div
+;<framerMotion.div
   initial={{ opacity: 0, y: 20 }}
   animate={{ opacity: 1, y: 0 }}
   transition={motionTokens.spring.default}
@@ -639,27 +678,31 @@ Pre-configured token combinations for common component patterns. These provide c
 #### Mobile Question Card
 
 **TypeScript**:
+
 ```typescript
 import { componentTokens } from '@/lib/design-tokens'
 
 const tokens = componentTokens.mobileQuestionCard
 
-tokens.borderRadius    // radii['2xl']
-tokens.padding         // spacing.lg
-tokens.shadow          // shadows.lg
-tokens.headerPaddingX  // spacing.md
-tokens.headerPaddingY  // spacing.md
+tokens.borderRadius // radii['2xl']
+tokens.padding // spacing.lg
+tokens.shadow // shadows.lg
+tokens.headerPaddingX // spacing.md
+tokens.headerPaddingY // spacing.md
 tokens.contentPaddingX // spacing.lg
 tokens.contentPaddingY // spacing.lg
 ```
 
 **Usage**:
+
 ```tsx
-<div style={{
-  borderRadius: tokens.borderRadius,
-  padding: tokens.padding,
-  boxShadow: tokens.shadow
-}}>
+<div
+  style={{
+    borderRadius: tokens.borderRadius,
+    padding: tokens.padding,
+    boxShadow: tokens.shadow,
+  }}
+>
   Mobile card content
 </div>
 ```
@@ -667,57 +710,61 @@ tokens.contentPaddingY // spacing.lg
 #### Answer Buttons
 
 **TypeScript**:
+
 ```typescript
 const tokens = componentTokens.answerButton
 
-tokens.borderRadius  // radii.xl
-tokens.paddingX      // spacing.md
-tokens.paddingY      // spacing.md
-tokens.minHeight     // '44px'
-tokens.minWidth      // '44px'
-tokens.gap           // '0.25rem'
-tokens.fontSize      // typography.fontSize.base
-tokens.fontWeight    // typography.fontWeight.semibold
-tokens.transition    // Combined duration + easing
+tokens.borderRadius // radii.xl
+tokens.paddingX // spacing.md
+tokens.paddingY // spacing.md
+tokens.minHeight // '44px'
+tokens.minWidth // '44px'
+tokens.gap // '0.25rem'
+tokens.fontSize // typography.fontSize.base
+tokens.fontWeight // typography.fontWeight.semibold
+tokens.transition // Combined duration + easing
 ```
 
 #### Navigation Buttons
 
 **TypeScript**:
+
 ```typescript
 const tokens = componentTokens.navigationButton
 
-tokens.borderRadius  // radii.xl
-tokens.paddingX      // spacing.lg
-tokens.paddingY      // spacing.md
-tokens.minHeight     // '56px' - Larger for primary actions
-tokens.fontSize      // typography.fontSize.base
-tokens.fontWeight    // typography.fontWeight.semibold
-tokens.shadow        // shadows.md
-tokens.transition    // Combined duration + easing
+tokens.borderRadius // radii.xl
+tokens.paddingX // spacing.lg
+tokens.paddingY // spacing.md
+tokens.minHeight // '56px' - Larger for primary actions
+tokens.fontSize // typography.fontSize.base
+tokens.fontWeight // typography.fontWeight.semibold
+tokens.shadow // shadows.md
+tokens.transition // Combined duration + easing
 ```
 
 #### Progress Bar
 
 **TypeScript**:
+
 ```typescript
 const tokens = componentTokens.progressBar
 
-tokens.height       // '0.5rem' (8px)
+tokens.height // '0.5rem' (8px)
 tokens.borderRadius // radii.full
-tokens.transition   // Width transition config
+tokens.transition // Width transition config
 ```
 
 #### Info Box
 
 **TypeScript**:
+
 ```typescript
 const tokens = componentTokens.infoBox
 
 tokens.borderRadius // radii.lg
-tokens.padding      // spacing.md
-tokens.fontSize     // typography.fontSize.sm
-tokens.lineHeight   // typography.lineHeight.relaxed
+tokens.padding // spacing.md
+tokens.fontSize // typography.fontSize.sm
+tokens.lineHeight // typography.lineHeight.relaxed
 ```
 
 ---
@@ -729,6 +776,7 @@ tokens.lineHeight   // typography.lineHeight.relaxed
 The design token system includes infrastructure for theme variants, supporting the `funnels.default_theme` database field.
 
 **TypeScript**:
+
 ```typescript
 export type ThemeVariant = 'default' | 'stress' | 'sleep' | 'custom'
 
@@ -744,10 +792,11 @@ export function getThemeColors(variant?: ThemeVariant) {
 The system is designed to support multiple themes:
 
 1. **Stress Theme** (default): Blue/Sky color scheme
-2. **Sleep Theme**: Purple/Indigo color scheme  
+2. **Sleep Theme**: Purple/Indigo color scheme
 3. **Custom Themes**: User-defined color schemes
 
 **Example Future Implementation**:
+
 ```typescript
 export function getThemeColors(variant: ThemeVariant = 'default') {
   switch (variant) {
@@ -776,20 +825,20 @@ export function getThemeColors(variant: ThemeVariant = 'default') {
 The design tokens are fully compatible with TailwindCSS 4:
 
 **In Tailwind Classes**:
+
 ```tsx
-<div className="p-6 rounded-xl shadow-lg">
-  {/* Uses Tailwind's built-in tokens */}
-</div>
+<div className="p-6 rounded-xl shadow-lg">{/* Uses Tailwind's built-in tokens */}</div>
 ```
 
 **In Inline Styles with Tokens**:
+
 ```tsx
-<div 
+<div
   className="flex items-center"
-  style={{ 
+  style={{
     padding: spacing.lg,
     borderRadius: radii.xl,
-    boxShadow: shadows.lg
+    boxShadow: shadows.lg,
   }}
 >
   {/* Combines Tailwind classes with design tokens */}
@@ -799,11 +848,13 @@ The design tokens are fully compatible with TailwindCSS 4:
 ### When to Use Each
 
 **Use Tailwind Classes When**:
+
 - Standard utility classes meet your needs
 - Rapid prototyping
 - Static values
 
 **Use Design Tokens When**:
+
 - Need programmatic access to values
 - Dynamic theming
 - Calculations based on token values
@@ -821,18 +872,22 @@ import { spacing, typography, colors, radii, shadows } from '@/lib/design-tokens
 
 export function MyCard({ children }) {
   return (
-    <div style={{
-      padding: spacing.lg,
-      borderRadius: radii.lg,
-      boxShadow: shadows.md,
-      backgroundColor: colors.background.light,
-    }}>
-      <h3 style={{
-        fontSize: typography.fontSize['2xl'],
-        fontWeight: typography.fontWeight.semibold,
-        marginBottom: spacing.md,
-        color: colors.neutral[900],
-      }}>
+    <div
+      style={{
+        padding: spacing.lg,
+        borderRadius: radii.lg,
+        boxShadow: shadows.md,
+        backgroundColor: colors.background.light,
+      }}
+    >
+      <h3
+        style={{
+          fontSize: typography.fontSize['2xl'],
+          fontWeight: typography.fontWeight.semibold,
+          marginBottom: spacing.md,
+          color: colors.neutral[900],
+        }}
+      >
         Title
       </h3>
       {children}
@@ -848,27 +903,33 @@ import { componentTokens } from '@/lib/design-tokens'
 
 export function QuestionCard({ question, children }) {
   const tokens = componentTokens.mobileQuestionCard
-  
+
   return (
-    <div style={{
-      borderRadius: tokens.borderRadius,
-      padding: tokens.padding,
-      boxShadow: tokens.shadow,
-    }}>
-      <div style={{
-        paddingLeft: tokens.headerPaddingX,
-        paddingRight: tokens.headerPaddingX,
-        paddingTop: tokens.headerPaddingY,
-        paddingBottom: tokens.headerPaddingY,
-      }}>
+    <div
+      style={{
+        borderRadius: tokens.borderRadius,
+        padding: tokens.padding,
+        boxShadow: tokens.shadow,
+      }}
+    >
+      <div
+        style={{
+          paddingLeft: tokens.headerPaddingX,
+          paddingRight: tokens.headerPaddingX,
+          paddingTop: tokens.headerPaddingY,
+          paddingBottom: tokens.headerPaddingY,
+        }}
+      >
         {question}
       </div>
-      <div style={{
-        paddingLeft: tokens.contentPaddingX,
-        paddingRight: tokens.contentPaddingX,
-        paddingTop: tokens.contentPaddingY,
-        paddingBottom: tokens.contentPaddingY,
-      }}>
+      <div
+        style={{
+          paddingLeft: tokens.contentPaddingX,
+          paddingRight: tokens.contentPaddingX,
+          paddingTop: tokens.contentPaddingY,
+          paddingBottom: tokens.contentPaddingY,
+        }}
+      >
         {children}
       </div>
     </div>
@@ -882,12 +943,10 @@ export function QuestionCard({ question, children }) {
 import { spacing, colors } from '@/lib/design-tokens'
 
 export function Alert({ type, message }) {
-  const bgColor = type === 'error' 
-    ? colors.semantic.error 
-    : colors.semantic.info
-    
+  const bgColor = type === 'error' ? colors.semantic.error : colors.semantic.info
+
   return (
-    <div 
+    <div
       className="flex items-center rounded-lg"
       style={{
         padding: spacing.md,
@@ -927,38 +986,42 @@ export function MyComponent() {
 ### DO ✅
 
 1. **Use tokens consistently**
+
    ```tsx
    // Good
    <div style={{ padding: spacing.lg }}>
-   
+
    // Bad
    <div style={{ padding: '24px' }}>
    ```
 
 2. **Import only what you need**
+
    ```tsx
    // Good
    import { spacing, colors } from '@/lib/design-tokens'
-   
+
    // Avoid
    import designTokens from '@/lib/design-tokens'
    ```
 
 3. **Use component tokens for common patterns**
+
    ```tsx
    // Good
    const tokens = componentTokens.navigationButton
    <button style={{ padding: `${tokens.paddingY} ${tokens.paddingX}` }}>
-   
+
    // Less ideal
    <button style={{ padding: `${spacing.md} ${spacing.lg}` }}>
    ```
 
 4. **Use semantic color names**
+
    ```tsx
    // Good
    <Alert color={colors.semantic.error}>
-   
+
    // Bad
    <Alert color="#ef4444">
    ```
@@ -976,43 +1039,47 @@ export function MyComponent() {
 ### DON'T ❌
 
 1. **Don't hardcode values when tokens exist**
+
    ```tsx
    // Bad
    <div style={{ padding: '16px', borderRadius: '8px' }}>
-   
+
    // Good
    <div style={{ padding: spacing.md, borderRadius: radii.md }}>
    ```
 
 2. **Don't create custom spacing without good reason**
+
    ```tsx
    // Bad
    <div style={{ padding: '18px' }}>
-   
+
    // Good - use closest token
    <div style={{ padding: spacing.lg }}>
    ```
 
 3. **Don't mix different naming conventions**
+
    ```tsx
    // Bad
-   <div style={{ 
+   <div style={{
      padding: spacing.lg,  // token
      margin: '24px'        // hardcoded
    }}>
-   
+
    // Good
-   <div style={{ 
+   <div style={{
      padding: spacing.lg,
      margin: spacing.lg
    }}>
    ```
 
 4. **Don't override token values inline without documentation**
+
    ```tsx
    // Bad
    const customSpacing = { ...spacing, lg: '28px' }
-   
+
    // Good - if needed, document why
    // Special case: Marketing page needs larger spacing
    const marketingSpacing = { ...spacing, lg: '28px' }
@@ -1037,6 +1104,7 @@ The v0.4 token system is an evolution of v0.3, with the following changes:
 #### Migration Steps
 
 **Step 1: Update Import Statements** (if needed)
+
 ```tsx
 // v0.3 (still works in v0.4)
 import { spacing } from '@/lib/design-tokens'
@@ -1046,12 +1114,13 @@ import { spacing, componentTokens } from '@/lib/design-tokens'
 ```
 
 **Step 2: Replace Magic Numbers**
+
 ```tsx
 // Before
 <div className="px-4 py-3 rounded-xl">
-  
+
 // After
-<div style={{ 
+<div style={{
   paddingLeft: spacing.md,
   paddingRight: spacing.md,
   paddingTop: spacing.sm,
@@ -1061,6 +1130,7 @@ import { spacing, componentTokens } from '@/lib/design-tokens'
 ```
 
 **Step 3: Use Component Tokens**
+
 ```tsx
 // Before
 <button style={{
@@ -1083,33 +1153,39 @@ const tokens = componentTokens.navigationButton
 ### From Hardcoded Values
 
 **Before**: Inline hardcoded styles
+
 ```tsx
-<div style={{
-  padding: '24px',
-  borderRadius: '12px',
-  fontSize: '16px',
-  color: '#334155',
-  backgroundColor: '#f8fafc',
-  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-  transition: 'all 0.2s ease'
-}}>
+<div
+  style={{
+    padding: '24px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    color: '#334155',
+    backgroundColor: '#f8fafc',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s ease',
+  }}
+>
   Content
 </div>
 ```
 
 **After**: Using design tokens
+
 ```tsx
 import { spacing, radii, typography, colors, shadows, motion } from '@/lib/design-tokens'
 
-<div style={{
-  padding: spacing.lg,
-  borderRadius: radii.lg,
-  fontSize: typography.fontSize.base,
-  color: colors.neutral[700],
-  backgroundColor: colors.neutral[50],
-  boxShadow: shadows.md,
-  transition: `all ${motion.duration.normal} ${motion.easing.smooth}`
-}}>
+;<div
+  style={{
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[700],
+    backgroundColor: colors.neutral[50],
+    boxShadow: shadows.md,
+    transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
+  }}
+>
   Content
 </div>
 ```
@@ -1182,8 +1258,8 @@ npm run dev
 // TypeScript will catch invalid tokens
 import { spacing } from '@/lib/design-tokens'
 
-spacing.lg     // ✓ Valid
-spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
+spacing.lg // ✓ Valid
+spacing.huge // ✗ TypeScript error: Property 'huge' does not exist
 ```
 
 ---
@@ -1194,7 +1270,8 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 
 **Problem**: Token values not updating in browser
 
-**Solution**: 
+**Solution**:
+
 - Hard refresh the page (Cmd+Shift+R / Ctrl+Shift+R)
 - Clear browser cache
 - Restart dev server
@@ -1202,6 +1279,7 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 **Problem**: CSS variables not working
 
 **Solution**:
+
 - Ensure CSS is imported in root layout
 - Check for typos in variable names
 - Verify variables are defined in `:root` selector
@@ -1209,6 +1287,7 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 **Problem**: TypeScript errors when importing tokens
 
 **Solution**:
+
 - Restart TypeScript server in VS Code
 - Check import path is correct: `@/lib/design-tokens`
 - Ensure tsconfig.json has path alias configured
@@ -1216,6 +1295,7 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 **Problem**: Spacing looks wrong on mobile
 
 **Solution**:
+
 - Test on actual device, not just browser resize
 - Check if parent container has conflicting styles
 - Verify responsive breakpoints are correct
@@ -1225,17 +1305,20 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 ## Resources
 
 ### Documentation
+
 - **Design System Overview**: `/docs/V0_4_DESIGN_SYSTEM.md`
 - **Implementation Summary**: `/docs/V0_4_E1_IMPLEMENTATION_SUMMARY.md`
 - **UI Component Guide**: Component JSDoc comments
 
 ### Code Files
+
 - **TypeScript Tokens**: `/lib/design-tokens.ts`
 - **CSS Variables**: `/app/globals.css`
 - **UI Components**: `/lib/ui/`
 - **Showcase Page**: `/app/admin/design-system/page.tsx`
 
 ### External References
+
 - [TailwindCSS Documentation](https://tailwindcss.com/docs)
 - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
 - [Material Design - Color System](https://material.io/design/color)
@@ -1246,6 +1329,7 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 ## Changelog
 
 ### v0.4.0 (2025-12-11)
+
 - ✅ Created comprehensive design token system
 - ✅ Defined color palette (primary, neutral, semantic)
 - ✅ Established typography scale (8 sizes)
@@ -1259,6 +1343,7 @@ spacing.huge   // ✗ TypeScript error: Property 'huge' does not exist
 - ✅ Comprehensive documentation
 
 ### Future Planned
+
 - [ ] Theme variant implementation (sleep, custom)
 - [ ] Dynamic theme switching
 - [ ] Additional component patterns

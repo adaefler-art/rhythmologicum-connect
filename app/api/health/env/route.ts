@@ -12,14 +12,14 @@ import { env } from '@/lib/env'
 /**
  * TV05_03: Environment Self-Check Healthcheck Endpoint
  * GET /api/health/env
- * 
+ *
  * Server-only, admin-gated endpoint that performs environment variable validation
  * and optional database connectivity checks.
- * 
+ *
  * Authentication:
  * - unauth → 401
  * - non-admin → 403
- * 
+ *
  * Response:
  * {
  *   "success": true,
@@ -182,11 +182,9 @@ function performEnvChecks(): HealthCheckResult[] {
 async function performDatabaseConnectivityCheck(): Promise<HealthCheckResult> {
   try {
     const supabase = await createServerSupabaseClient()
-    
+
     // Simple query to check connectivity - just count funnels (no PHI)
-    const { error } = await supabase
-      .from('funnels')
-      .select('id', { count: 'exact', head: true })
+    const { error } = await supabase.from('funnels').select('id', { count: 'exact', head: true })
 
     if (error) {
       return {
@@ -214,14 +212,14 @@ export async function GET(request: NextRequest) {
   try {
     // Auth gate: must be authenticated
     const user = await getCurrentUser()
-    
+
     if (!user) {
       return unauthorizedResponse()
     }
 
     // Authorization gate: must be admin or clinician
     const isAuthorized = await hasAdminOrClinicianRole()
-    
+
     if (!isAuthorized) {
       return forbiddenResponse()
     }

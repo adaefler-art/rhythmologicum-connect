@@ -156,6 +156,7 @@ This document visualizes the DB determinism enforcement flow in CI.
 **Detection:** `npm run lint:migrations` fails
 
 **Error Message:**
+
 ```
 ERROR: Existing migration files were modified:
   - supabase/migrations/20241203110000_init.sql
@@ -164,6 +165,7 @@ Create a new timestamped migration instead of editing old ones.
 ```
 
 **Fix:**
+
 1. Revert changes to existing migration
 2. Create new migration with your changes
 3. Commit both the revert and new migration
@@ -175,6 +177,7 @@ Create a new timestamped migration instead of editing old ones.
 **Detection:** `supabase db diff --exit-code` fails
 
 **Error Message:**
+
 ```
 ❌ Schema drift detected!
 This means there are database changes not captured in migrations.
@@ -182,6 +185,7 @@ Please create a new migration to capture these changes.
 ```
 
 **Fix:**
+
 1. Identify the manual changes (use `supabase db diff` to see them)
 2. Create a new migration with these changes
 3. Run `supabase db reset` to verify
@@ -194,6 +198,7 @@ Please create a new migration to capture these changes.
 **Detection:** `git diff --exit-code lib/types/supabase.ts` fails
 
 **Error Message:**
+
 ```
 ❌ Generated types differ from committed version!
 The database schema changed but types weren't regenerated.
@@ -204,6 +209,7 @@ To fix this:
 ```
 
 **Fix:**
+
 ```bash
 npm run db:typegen
 git add lib/types/supabase.ts
@@ -262,19 +268,20 @@ git commit -m "feat: add new feature with migration"
 
 ## Files Involved
 
-| File | Purpose | Owner |
-|------|---------|-------|
-| `supabase/migrations/*.sql` | Database schema changes | Reviewed (@*) |
-| `lib/types/supabase.ts` | Generated TypeScript types | Reviewed (@*) |
-| `.github/workflows/db-determinism.yml` | CI enforcement workflow | Protected |
-| `scripts/verify-db-determinism.sh` | Local verification | Tool |
-| `docs/canon/DB_MIGRATIONS.md` | Canonical documentation | Reviewed (@*) |
+| File                                   | Purpose                    | Owner          |
+| -------------------------------------- | -------------------------- | -------------- |
+| `supabase/migrations/*.sql`            | Database schema changes    | Reviewed (@\*) |
+| `lib/types/supabase.ts`                | Generated TypeScript types | Reviewed (@\*) |
+| `.github/workflows/db-determinism.yml` | CI enforcement workflow    | Protected      |
+| `scripts/verify-db-determinism.sh`     | Local verification         | Tool           |
+| `docs/canon/DB_MIGRATIONS.md`          | Canonical documentation    | Reviewed (@\*) |
 
 ---
 
 ## Summary
 
 The DB determinism framework ensures:
+
 1. **No silent changes** - All schema changes go through migrations
 2. **No drift** - Database state matches migration definitions
 3. **Type safety** - TypeScript types always reflect current schema

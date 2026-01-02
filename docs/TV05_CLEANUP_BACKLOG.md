@@ -37,6 +37,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Scope:** Determine if AMY (AI report generation) endpoints are still part of v0.5 architecture
 
 **Current State:**
+
 - Two AMY endpoints exist: `/api/amy/stress-report`, `/api/amy/stress-summary`
 - Both implement POST methods using Anthropic Claude API
 - Zero client-side references found in codebase
@@ -44,11 +45,13 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - Risk of unnecessary AI API costs if endpoints are unused
 
 **Root Cause:**
+
 - AMY was implemented in earlier versions
 - Funnel Runtime evolved to include report generation
 - Unclear if AMY is still canonical approach
 
 **Acceptance Criteria:**
+
 - [ ] Review v0.5 architecture documentation for AMY references
 - [ ] Check if Funnel Runtime includes report generation
 - [ ] Verify if `/api/funnels/[slug]/assessments/[assessmentId]/result` replaced AMY
@@ -57,6 +60,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - [ ] If KEEP: Add usage documentation and integrate into UI
 
 **Verification Steps:**
+
 1. Check `docs/V0_4_E2_*` and funnel runtime docs for report generation approach
 2. Review `/app/patient/funnel/[slug]/result/page.tsx` for report fetching
 3. Search git history for last AMY usage: `git log --all -S "/api/amy/stress-report"`
@@ -66,12 +70,14 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Implementation Tasks:**
 
 **If KEEP:**
+
 - Add AMY integration documentation
 - Create UI button/link to trigger report generation
 - Add error handling for Claude API failures
 - Document rate limits and costs
 
 **If REMOVE:**
+
 - Remove `app/api/amy/stress-report/route.ts`
 - Remove `app/api/amy/stress-summary/route.ts`
 - Remove `lib/amyFallbacks.ts` if not used elsewhere
@@ -81,6 +87,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Risk Level:** HIGH
 
 **Rationale:**
+
 - Unused AI integration represents cost risk
 - Anthropic API calls cost money per request
 - Unclear architecture creates maintenance burden
@@ -103,6 +110,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Scope:** Determine canonical consent implementation and remove duplicate
 
 **Current State:**
+
 - **API Endpoints exist:**
   - `/api/consent/record` (POST)
   - `/api/consent/status` (GET)
@@ -114,11 +122,13 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - API endpoints have zero client references
 
 **Root Cause:**
+
 - API endpoints implemented first
 - Server actions pattern introduced later
 - Migration incomplete
 
 **Acceptance Criteria:**
+
 - [ ] Verify onboarding pages use server actions (not API endpoints)
 - [ ] Check if any external code uses consent API endpoints
 - [ ] Document canonical pattern (likely server actions)
@@ -127,6 +137,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - [ ] Ensure audit logging still works after consolidation
 
 **Verification Steps:**
+
 1. Check `/app/patient/onboarding/consent/client.tsx` for `recordConsent` usage
 2. Search for API endpoint references: `grep -r "/api/consent" app/ lib/`
 3. Review consent flow diagram in docs
@@ -136,6 +147,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Implementation Tasks:**
 
 **If Server Actions are Canonical:**
+
 - Remove `app/api/consent/record/route.ts`
 - Remove `app/api/consent/status/route.ts`
 - Update `docs/canon/CONTRACTS.md` to specify server actions pattern
@@ -143,6 +155,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - Update any architecture diagrams
 
 **If API Endpoints are Canonical:**
+
 - Update onboarding pages to use API endpoints
 - Remove server action duplicates from `lib/actions/onboarding.ts`
 - Update documentation
@@ -150,6 +163,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Risk Level:** MEDIUM (Low user impact, but important for architecture consistency)
 
 **Rationale:**
+
 - Duplicate implementations create confusion
 - Maintenance burden of keeping both in sync
 - Unclear which is "source of truth"
@@ -172,6 +186,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Scope:** Determine if `/api/content-resolver` and `/api/content/resolve` are duplicates
 
 **Current State:**
+
 - `/api/content-resolver` - 0 references found
 - `/api/content/resolve` - 1 reference found
 - Both GET endpoints
@@ -179,10 +194,12 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - Content engine (F4) may use one or both
 
 **Root Cause:**
+
 - Content system evolved over time
 - Possible renaming or refactoring left orphaned endpoint
 
 **Acceptance Criteria:**
+
 - [ ] Review content engine architecture docs
 - [ ] Determine which endpoint is canonical
 - [ ] Search for dynamic string construction that might hide usage
@@ -191,6 +208,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - [ ] Update content page rendering docs
 
 **Verification Steps:**
+
 1. Check content engine code: `app/content/[slug]/page.tsx`
 2. Search for content resolver usage: `grep -r "content.*resolve" app/ lib/`
 3. Review F4 (content engine) implementation docs
@@ -198,6 +216,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 5. Check if content pages load correctly after removal
 
 **Implementation Tasks:**
+
 - Determine canonical endpoint via code review
 - Remove duplicate if found
 - Update `docs/V0_4_E3_CONTENT_FLOW_ENGINE.md` if needed
@@ -207,6 +226,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Risk Level:** LOW (Internal content system)
 
 **Rationale:**
+
 - Content system is core functionality
 - Duplicate endpoints add confusion
 - Single canonical endpoint is cleaner
@@ -228,6 +248,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Scope:** Make patient measures export feature discoverable in UI
 
 **Current State:**
+
 - API endpoint exists: `/api/patient-measures/export` (GET)
 - API endpoint exists: `/api/patient-measures/history` (GET)
 - No visible "Export" button in clinician dashboard
@@ -235,10 +256,12 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - Current "Export" button calls `window.print()`
 
 **Root Cause:**
+
 - API implemented but UI integration incomplete
 - Export button exists but uses print instead of API
 
 **Acceptance Criteria:**
+
 - [ ] Add "Export Data" button to clinician dashboard
 - [ ] Wire button to `/api/patient-measures/export` endpoint
 - [ ] Implement download of exported data (JSON or CSV)
@@ -249,6 +272,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - [ ] Document export feature in user guide
 
 **Verification Steps:**
+
 1. Click new "Export Data" button
 2. Verify file downloads with correct format
 3. Verify data completeness (all patient measures included)
@@ -256,7 +280,9 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 5. Verify error handling if API fails
 
 **Implementation Tasks:**
+
 1. **Update Clinician Dashboard** (`app/clinician/page.tsx`):
+
    ```typescript
    const handleExport = async () => {
      setExporting(true)
@@ -277,6 +303,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
    ```
 
 2. **Add Button:**
+
    ```tsx
    <Button
      variant="primary"
@@ -296,6 +323,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Risk Level:** LOW (Feature addition, no breaking changes)
 
 **Rationale:**
+
 - Existing feature is hidden from users
 - Clinicians may need data export for reports
 - Easy win for usability
@@ -317,17 +345,20 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 **Scope:** Create documentation explaining programmatic navigation patterns
 
 **Current State:**
+
 - Dynamic routes like `/clinician/patient/[id]` show low static reference counts
 - These are accessed programmatically via `router.push()` and row clicks
 - Audit flagged them as "potentially unreachable" (false positive)
 - No documentation explains this pattern
 
 **Root Cause:**
+
 - Static code search doesn't detect dynamic string construction
 - Template literals like `` `patient/${id}` `` don't match `/patient` search
 - Missing documentation on navigation patterns
 
 **Acceptance Criteria:**
+
 - [ ] Create `docs/NAVIGATION_PATTERNS.md` document
 - [ ] Explain static vs dynamic routes
 - [ ] Document programmatic navigation patterns
@@ -336,6 +367,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 - [ ] Include in developer onboarding materials
 
 **Verification Steps:**
+
 1. Review documentation for completeness
 2. Verify all navigation patterns are covered
 3. Share with team for feedback
@@ -345,7 +377,7 @@ This document outlines prioritized cleanup tasks identified during the V05 clean
 
 **Create `docs/NAVIGATION_PATTERNS.md`:**
 
-```markdown
+````markdown
 # Navigation Patterns in Rhythmologicum Connect
 
 ## Static Routes
@@ -357,13 +389,15 @@ Static routes have fixed paths without parameters:
 - `/admin/content` - Content management
 
 ### Usage
+
 ```tsx
 import Link from 'next/link'
 
-<Link href="/clinician">Dashboard</Link>
+;<Link href="/clinician">Dashboard</Link>
 // or
 router.push('/clinician')
 ```
+````
 
 ## Dynamic Routes
 
@@ -374,6 +408,7 @@ Dynamic routes have parameters in brackets:
 - `/clinician/report/[id]` - Report detail (id = report_id)
 
 ### Usage
+
 ```tsx
 // Template literal construction
 const patientId = "abc-123"
@@ -386,6 +421,7 @@ router.push(`/clinician/patient/${patientId}`)
 ## Navigation Events
 
 ### Row Click Navigation
+
 ```tsx
 const handleRowClick = (patient: Patient) => {
   router.push(`/clinician/patient/${patient.patient_id}`)
@@ -393,13 +429,13 @@ const handleRowClick = (patient: Patient) => {
 ```
 
 ### Button Navigation
+
 ```tsx
-<Button onClick={() => router.push('/clinician/funnels')}>
-  Manage Funnels
-</Button>
+<Button onClick={() => router.push('/clinician/funnels')}>Manage Funnels</Button>
 ```
 
 ### Conditional Redirects
+
 ```tsx
 if (!hasConsent) {
   router.push('/patient/onboarding/consent')
@@ -424,7 +460,8 @@ To verify a route is truly unreachable:
 2. Check for event handlers: `onClick`, `onRowClick`
 3. Check for conditional redirects: `router.push()` in `useEffect`
 4. Manual testing in browser (click through user flows)
-```
+
+````
 
 **Risk Level:** LOW (Documentation only)
 
@@ -546,9 +583,10 @@ Components include:
 - Tables (sortable, hoverable)
 - Forms (inputs, selects)
 - Badges, Spinners, Error States
-```
+````
 
 **Create `docs/DESIGN_SYSTEM_USAGE.md`:**
+
 - How to access design system
 - How to use each component
 - Design token reference
@@ -557,6 +595,7 @@ Components include:
 **Risk Level:** LOW (Documentation only)
 
 **Rationale:**
+
 - Improve developer onboarding
 - Make design system more discoverable
 - Encourage consistent UI patterns
@@ -578,16 +617,19 @@ Components include:
 **Scope:** Make funnel management more discoverable in clinician UI
 
 **Current State:**
+
 - `/clinician/funnels` page exists and is functional
 - Accessible via "Funnels verwalten" button on dashboard
 - Could be added to main navigation for better discoverability
 
 **Root Cause:**
+
 - Funnel management is secondary feature
 - Only accessible via dashboard button
 - Not in main navigation menu
 
 **Acceptance Criteria:**
+
 - [ ] Review if funnel management should be in main nav
 - [ ] If yes: Add to clinician layout navigation
 - [ ] If no: Document current navigation pattern
@@ -595,6 +637,7 @@ Components include:
 - [ ] Test navigation flow
 
 **Verification Steps:**
+
 1. Check clinician layout for navigation menu
 2. Decide if funnels deserve nav menu item
 3. If added: verify it appears in menu
@@ -603,12 +646,14 @@ Components include:
 **Implementation Tasks:**
 
 **If adding to navigation:**
+
 - Update `app/clinician/layout.tsx`
 - Add navigation item for funnels
 - Add icon (e.g., `ClipboardList`)
 - Test mobile navigation
 
 **If not adding:**
+
 - Document in `docs/NAVIGATION_PATTERNS.md`
 - Explain that funnel management is dashboard-launched
 - Add note about intentional design decision
@@ -616,6 +661,7 @@ Components include:
 **Risk Level:** LOW (UI enhancement)
 
 **Rationale:**
+
 - Improve feature discoverability
 - Consistent with other admin features
 - Low effort, moderate benefit
@@ -637,15 +683,18 @@ Components include:
 **Scope:** Ensure assessment validation API is properly integrated
 
 **Current State:**
+
 - API exists: `/api/assessment-validation/validate-step`
 - Single reference found in codebase
 - May be part of funnel runtime validation
 
 **Root Cause:**
+
 - Validation endpoint exists but usage unclear
 - Need to verify it's integrated into funnel flow
 
 **Acceptance Criteria:**
+
 - [ ] Review funnel step validation code
 - [ ] Verify validate-step API is called during funnel flow
 - [ ] Test required field validation works
@@ -654,6 +703,7 @@ Components include:
 - [ ] Add validation examples
 
 **Verification Steps:**
+
 1. Start stress assessment funnel
 2. Try to submit step without required fields
 3. Verify validation error appears
@@ -661,6 +711,7 @@ Components include:
 5. Test different validation scenarios
 
 **Implementation Tasks:**
+
 - Check funnel step component for validation calls
 - Review validation rules in database
 - Test required vs optional fields
@@ -670,6 +721,7 @@ Components include:
 **Risk Level:** LOW (Likely already working)
 
 **Rationale:**
+
 - Validation is critical for data quality
 - Should verify it's properly integrated
 - Low effort to confirm
@@ -691,16 +743,19 @@ Components include:
 **Scope:** Review and organize database seeding scripts
 
 **Current State:**
+
 - Multiple seed scripts in `supabase/migrations/`
 - Some may be development-only
 - Example data in migrations vs seed files
 - Need to separate production migrations from test data
 
 **Root Cause:**
+
 - Seed data mixed with schema migrations
 - Development convenience vs production cleanliness
 
 **Acceptance Criteria:**
+
 - [ ] Review all migration files for seed data
 - [ ] Separate schema migrations from seed data
 - [ ] Create dedicated `supabase/seed.sql` or `supabase/seeds/` directory
@@ -709,6 +764,7 @@ Components include:
 - [ ] Ensure `npm run db:reset` works correctly
 
 **Verification Steps:**
+
 1. List all migrations with seed data
 2. Determine if seed data is needed in production
 3. Separate into appropriate files
@@ -716,6 +772,7 @@ Components include:
 5. Test `supabase db seed` (if using separate seeds)
 
 **Implementation Tasks:**
+
 - Identify seed migrations:
   - `20251211070000_seed_stress_funnel_base_pages.sql`
   - `20260101110320_v05_i02_3_additional_funnels.sql` (contains funnel stubs)
@@ -728,6 +785,7 @@ Components include:
 **Risk Level:** LOW (Development tooling)
 
 **Rationale:**
+
 - Clean separation of schema vs data
 - Easier to understand migrations
 - Production databases shouldn't need example data

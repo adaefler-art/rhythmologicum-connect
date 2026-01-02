@@ -45,7 +45,7 @@ Authorization: Bearer {user-token}
 import FunnelCard from '@/app/components/FunnelCard'
 
 // Simple usage
-<FunnelCard
+;<FunnelCard
   slug="stress-assessment"
   title="Stress & Resilienz"
   subtitle="Stress-Assessment"
@@ -188,10 +188,10 @@ export default function FunnelSelectorClient() {
     const iconMap: Record<string, string> = {
       'stress-assessment': '🧘‍♀️',
       'sleep-assessment': '😴',
-      'nutrition': '🥗',
-      'af': '❤️',
-      'longevity': '🌱',
-      'recovery': '💪',
+      nutrition: '🥗',
+      af: '❤️',
+      longevity: '🌱',
+      recovery: '💪',
     }
     return iconMap[slug] || '📋'
   }
@@ -207,7 +207,7 @@ export default function FunnelSelectorClient() {
 
       <main className="flex-1 overflow-y-auto" style={{ padding: spacing.lg }}>
         {/* Loading, Error, Empty, and Content states... */}
-        
+
         {!loading && !error && funnels.length > 0 && (
           <div className="grid grid-cols-1 gap-4">
             {funnels.map((funnel) => (
@@ -248,17 +248,17 @@ This returns only funnels where `is_active = true`, ordered by creation date.
 ## 5. Styling with Design Tokens Example
 
 ### Before (Incorrect - using Tailwind classes)
+
 ```tsx
-<div className="bg-primary-100 border border-primary-200 rounded-xl p-6">
-  {content}
-</div>
+<div className="bg-primary-100 border border-primary-200 rounded-xl p-6">{content}</div>
 ```
 
 ### After (Correct - using design tokens)
+
 ```tsx
 import { spacing, colors, radii } from '@/lib/design-tokens'
 
-<div
+;<div
   className="border"
   style={{
     background: colors.primary[100],
@@ -301,6 +301,7 @@ User Journey:
 To add a new funnel to the system:
 
 ### Step 1: Add to database
+
 ```sql
 INSERT INTO funnels (slug, title, subtitle, description, is_active)
 VALUES (
@@ -313,6 +314,7 @@ VALUES (
 ```
 
 ### Step 2: (Optional) Add icon mapping
+
 ```typescript
 // In app/patient/assessment/client.tsx
 const getFunnelIcon = (slug: string): string => {
@@ -327,14 +329,17 @@ const getFunnelIcon = (slug: string): string => {
 ```
 
 ### Step 3: Create intro content (optional)
+
 Add a content page for `/patient/funnel/recovery-assessment/intro` if needed.
 
 ### Step 4: That's it!
+
 The funnel automatically appears in the selector because it queries `is_active = true`.
 
 ## 8. Responsive Behavior Example
 
 ### Mobile (360px)
+
 ```
 ┌─────────────────┐
 │                 │
@@ -350,6 +355,7 @@ The funnel automatically appears in the selector because it queries `is_active =
 ```
 
 ### Mobile Large (430px)
+
 ```
 ┌───────────────────┐
 │                   │
@@ -372,17 +378,17 @@ The funnel automatically appears in the selector because it queries `is_active =
 // In client.tsx
 try {
   const response = await fetch('/api/funnels/active')
-  
+
   if (!response.ok) {
     throw new Error('Failed to load funnels')
   }
-  
+
   const data = await response.json()
-  
+
   if (!data.success || !Array.isArray(data.data)) {
     throw new Error('Invalid response format')
   }
-  
+
   setFunnels(data.data)
 } catch (err) {
   console.error('Error loading funnels:', err)
@@ -391,6 +397,7 @@ try {
 ```
 
 ### Error displayed to user:
+
 ```
 ┌─────────────────────────┐
 │                         │
@@ -405,22 +412,27 @@ try {
 ## 10. Testing Scenarios
 
 ### Scenario 1: Authenticated user with active funnels
+
 - **Expected:** Funnel selector displays all active funnels as cards
 - **Actual:** ✅ Works as expected
 
 ### Scenario 2: Authenticated user with no active funnels
+
 - **Expected:** Empty state message displayed
 - **Actual:** ✅ Shows "Keine Assessments verfügbar"
 
 ### Scenario 3: Unauthenticated user
+
 - **Expected:** Redirect to /login
 - **Actual:** ✅ Server-side redirect to login page
 
 ### Scenario 4: API error
+
 - **Expected:** Error state with message
 - **Actual:** ✅ Shows "Fehler" message in red box
 
 ### Scenario 5: Clicking a funnel card
+
 - **Expected:** Navigate to /patient/funnel/{slug}/intro
 - **Actual:** ✅ Navigates correctly
 

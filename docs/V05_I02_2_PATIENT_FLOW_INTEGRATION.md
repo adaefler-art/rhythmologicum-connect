@@ -31,11 +31,12 @@ try {
   }
 } catch (error) {
   // Handle FunnelNotFoundError, ManifestValidationError, etc.
-  manifestError = "Error message"
+  manifestError = 'Error message'
 }
 ```
 
 **Key Features:**
+
 - ✅ Server-only (no client-side service keys exposed)
 - ✅ Canonical slug resolution via `loadFunnelVersion()`
 - ✅ Full Zod validation of JSONB manifest
@@ -45,6 +46,7 @@ try {
 #### 2. Client Component Display (`app/patient/funnel/[slug]/intro/client.tsx`)
 
 **New Props:**
+
 ```typescript
 type IntroPageClientProps = {
   funnelSlug: string
@@ -54,6 +56,7 @@ type IntroPageClientProps = {
 ```
 
 **Manifest Info Display:**
+
 - Shows funnel version (e.g., "1.0.0")
 - Displays algorithm bundle version (e.g., "v1.0.0")
 - Displays prompt version (e.g., "1.0")
@@ -62,6 +65,7 @@ type IntroPageClientProps = {
 - Content pages list from manifest
 
 **Error Display:**
+
 - Red banner showing manifest errors
 - User-friendly error messages
 - Non-blocking (user can still proceed to assessment)
@@ -69,6 +73,7 @@ type IntroPageClientProps = {
 #### 3. Integration Tests (`app/patient/funnel/__tests__/manifestIntegration.test.ts`)
 
 **Test Coverage:**
+
 1. ✅ Load stress-assessment manifest with valid structure
 2. ✅ Validate questionnaire_config with steps
 3. ✅ Validate content_manifest with pages
@@ -139,6 +144,7 @@ type IntroPageClientProps = {
 ### 1. User navigates to `/patient/funnel/stress-assessment/intro`
 
 ### 2. Server loads manifest
+
 ```typescript
 loadFunnelVersion('stress-assessment')
   ↓
@@ -158,8 +164,9 @@ Return typed LoadedFunnelVersion
 ```
 
 ### 3. Pass to client component
+
 ```typescript
-<IntroPageClient 
+<IntroPageClient
   funnelSlug="stress-assessment"
   manifestData={...}  // Typed, validated data
   manifestError={null}
@@ -167,6 +174,7 @@ Return typed LoadedFunnelVersion
 ```
 
 ### 4. Client renders
+
 - Welcome screen (existing)
 - Manifest info card (new)
 - Start button (existing)
@@ -178,21 +186,24 @@ Return typed LoadedFunnelVersion
 All manifest types come from registries:
 
 **Question Types (from QUESTION_TYPE registry):**
+
 - `radio`, `checkbox`, `text`, `textarea`, `number`, `scale`, `slider`
 
 **Section Types (from SECTION_TYPE constant):**
+
 - `hero`, `text`, `image`, `video`, `markdown`, `cta`, `divider`
 
 **Fantasy types are rejected:**
+
 ```typescript
 // ❌ This will throw ManifestValidationError
 {
-  type: "magic_input"  // Not in QUESTION_TYPE registry
+  type: 'magic_input' // Not in QUESTION_TYPE registry
 }
 
 // ✅ This is valid
 {
-  type: QUESTION_TYPE.SCALE  // "scale" from registry
+  type: QUESTION_TYPE.SCALE // "scale" from registry
 }
 ```
 
@@ -201,17 +212,20 @@ All manifest types come from registries:
 ## Error Handling
 
 ### FunnelNotFoundError
+
 - Thrown when slug doesn't match any funnel in catalog
 - Message: "Funnel nicht gefunden: {slug}"
 - Displayed in red error banner
 
 ### ManifestValidationError
+
 - Thrown when JSONB fails Zod validation
 - Message: "Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration"
 - Logged to console with details
 - User can still proceed to assessment (degraded mode)
 
 ### General Error
+
 - Fallback for unexpected errors
 - Message: "Fehler beim Laden der Funnel-Konfiguration"
 - Non-blocking
@@ -221,25 +235,33 @@ All manifest types come from registries:
 ## PowerShell Commands (As Requested)
 
 ### 1. Install Dependencies
+
 ```powershell
 npm ci
 ```
+
 **Output:** 802 packages installed, 0 vulnerabilities
 
 ### 2. Run Tests
+
 ```powershell
 npm test
 ```
-**Output:** 
+
+**Output:**
+
 - Test Suites: 12 total, 11 passed
 - Tests: 196 total, 195 passed
 - Manifest tests: 62/62 passing ✅
 
 ### 3. Build Project
+
 ```powershell
 npm run build
 ```
-**Output:** 
+
+**Output:**
+
 - ✓ Compiled successfully
 - All routes built including `/patient/funnel/[slug]/intro`
 - No TypeScript errors
@@ -263,13 +285,16 @@ npm run build
 ## File Changes
 
 ### New Files
+
 1. `app/patient/funnel/__tests__/manifestIntegration.test.ts` (235 lines)
 
 ### Modified Files
+
 1. `app/patient/funnel/[slug]/intro/page.tsx` (+32 lines)
 2. `app/patient/funnel/[slug]/intro/client.tsx` (+89 lines)
 
 ### Total Additions
+
 - +356 lines of code
 - 3 files changed
 - All changes minimal and focused

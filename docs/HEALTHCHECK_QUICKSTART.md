@@ -5,6 +5,7 @@ Quick reference for using the `/api/health/env` endpoint.
 ## Quick Start
 
 ### Prerequisites
+
 - Authenticated as admin or clinician user
 - Valid JWT token from authentication
 
@@ -73,7 +74,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
         "name": "NEXT_PUBLIC_SUPABASE_URL",
         "pass": false,
         "message": "Contains leading/trailing whitespace"
-      },
+      }
       // ... more checks
     ],
     "overallStatus": "fail",
@@ -85,28 +86,35 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
 ## Common Issues
 
 ### Issue: 401 Unauthorized
+
 **Cause**: Not authenticated or token expired  
 **Fix**: Login again and get fresh token
 
 ### Issue: 403 Forbidden
+
 **Cause**: User doesn't have admin/clinician role  
 **Fix**: Login with admin/clinician account
 
 ### Issue: Check fails with "Invalid URL format"
+
 **Cause**: NEXT_PUBLIC_SUPABASE_URL is not a valid URL  
 **Fix**: Check `.env.local` and ensure URL is correct (e.g., `https://xxx.supabase.co`)
 
 ### Issue: Check fails with "Contains leading/trailing whitespace"
+
 **Cause**: Environment variable has spaces before/after value  
 **Fix**: Remove spaces in `.env.local` and restart server
 
 ### Issue: Check fails with "Invalid key format"
+
 **Cause**: API key is too short or has invalid characters  
 **Fix**: Verify you copied the complete key from Supabase dashboard
 
 ### Issue: Database connectivity fails
+
 **Cause**: Cannot connect to database  
-**Fix**: 
+**Fix**:
+
 1. Verify Supabase URL is correct
 2. Verify API keys are valid
 3. Check network connectivity
