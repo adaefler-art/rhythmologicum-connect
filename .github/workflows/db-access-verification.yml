@@ -159,9 +159,16 @@ jobs:
 
           // Interim allowlist: ignore specific legacy lint-debt rules even on changed lines.
           // Keep this list minimal and delete it once repo-wide lint debt is resolved.
-          const IGNORED_RULE_IDS = new Set([
-            '@typescript-eslint/no-explicit-any',
-          ])
+          function normalizeRuleId(value) {
+            if (typeof value !== 'string') return ''
+            // Defensive normalization: CI logs can hide invisible characters.
+            return value
+              .trim()
+              .normalize('NFKC')
+              .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          }
+
+          const IGNORED_RULE_IDS = new Set([normalizeRuleId('@typescript-eslint/no-explicit-any')])
 
           function inRanges(file, line) {
             const list = ranges[file] || []
@@ -183,7 +190,7 @@ jobs:
             for (const msg of fileReport.messages || []) {
               if (msg.severity !== 2) continue
 
-              const ruleId = typeof msg.ruleId === 'string' ? msg.ruleId.trim() : ''
+              const ruleId = normalizeRuleId(msg.ruleId)
               if (ruleId && IGNORED_RULE_IDS.has(ruleId)) {
                 ignoredErrors++
                 continue
