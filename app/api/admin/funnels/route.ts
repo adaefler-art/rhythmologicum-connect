@@ -52,7 +52,6 @@ function jsonError(
     requestId,
   )
 }
-
 function dbErrorToResponse(args: {
   requestId: string
   operation: string
@@ -192,7 +191,7 @@ export async function GET(request: Request) {
 
     if (pillarsError && usingAdminClient) {
       const classified = classifySupabaseError(pillarsError)
-      if (classified.kind === 'CONFIGURATION_ERROR') {
+      if (classified.kind === 'CONFIGURATION_ERROR' || classified.kind === 'AUTH_OR_RLS') {
         // If the service-role key is misconfigured but anon auth works, fall back.
         logError({
           requestId,
@@ -234,7 +233,7 @@ export async function GET(request: Request) {
 
     if (funnelsError && usingAdminClient) {
       const classified = classifySupabaseError(funnelsError)
-      if (classified.kind === 'CONFIGURATION_ERROR') {
+      if (classified.kind === 'CONFIGURATION_ERROR' || classified.kind === 'AUTH_OR_RLS') {
         logError({
           requestId,
           operation: 'fetch_funnels_catalog_admin_fallback',
@@ -279,7 +278,7 @@ export async function GET(request: Request) {
 
       if (versionsError && usingAdminClient) {
         const classified = classifySupabaseError(versionsError)
-        if (classified.kind === 'CONFIGURATION_ERROR') {
+        if (classified.kind === 'CONFIGURATION_ERROR' || classified.kind === 'AUTH_OR_RLS') {
           logError({
             requestId,
             operation: 'fetch_funnel_versions_admin_fallback',

@@ -77,7 +77,10 @@ export async function GET(
     const maybeFallbackClient = async (operation: string, error: unknown) => {
       if (!usingAdminClient) return false
       const classified = classifySupabaseError(error)
-      if (classified.kind !== 'CONFIGURATION_ERROR') return false
+      // If the "admin" client isn't truly privileged (e.g. service key misconfigured to anon key),
+      // PostgREST will return AUTH/RLS errors. In that case, falling back to the auth client is the
+      // best effort to keep the endpoint working.
+      if (classified.kind !== 'CONFIGURATION_ERROR' && classified.kind !== 'AUTH_OR_RLS') return false
 
       logError({
         requestId,
@@ -391,7 +394,7 @@ export async function PATCH(
 
     if (error && usingAdminClient) {
       const classified = classifySupabaseError(error)
-      if (classified.kind === 'CONFIGURATION_ERROR') {
+      if (classified.kind === 'CONFIGURATION_ERROR' || classified.kind === 'AUTH_OR_RLS') {
         logError({ requestId, operation: 'update_funnel_admin_fallback', userId: user.id, error })
         usingAdminClient = false
         writeClient = authClient
