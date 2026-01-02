@@ -1,0 +1,71 @@
+name: ESLint Gate (Changed Files)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'eslint.config.mjs'
+      - 'package.json'
+      - 'tools/lint-changed-lines.mjs'
+  push:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'eslint.config.mjs'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-changed-files:
+    runs-on: ubuntu-latest
+    name: Lint Changed TS/TSX Files
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run changed-files lint gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          # Determine base and head SHAs based on event type
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            export BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            export HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            export BASE_SHA="${{ github.event.before }}"
+            export HEAD_SHA="${{ github.sha }}"
+          fi
+          
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA: $HEAD_SHA"
+          
+          # Run the lint gate tool
+          npm run lint:changed
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "✅ ESLint gate passed!"
+          echo ""
+          echo "Summary:"
+          echo "  - No ESLint errors on changed lines"
+          echo "  - Pre-existing errors outside changed ranges are ignored (interim policy)"
+          echo "  - See docs/LINT_POLICY.md for details"
