@@ -61,6 +61,28 @@ const eslintConfig = defineConfig([
       "no-restricted-syntax": "off",
     },
   },
+  // Override for scripts/tools - allow CommonJS require where it exists today.
+  {
+    files: ["scripts/**/*", "tools/**/*"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  // Override for tests - allow `any` in test scaffolding.
+  {
+    files: [
+      "**/__tests__/**/*",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.spec.ts",
+      "**/*.spec.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-restricted-syntax": "off",
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
   // Override for canonical DB client factories
   {
     files: ["lib/db/supabase.*.ts", "lib/audit/log.ts", "lib/utils/contentResolver.ts"],
@@ -105,6 +127,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Project docs contain design/reference code that is not shipped.
+    "docs/**",
+
+    // Legacy/unused file (not part of Next runtime)
+    "proxy.ts",
   ]),
 ]);
 

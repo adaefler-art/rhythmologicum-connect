@@ -102,6 +102,7 @@ function getRawClientEnv() {
     NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PHASE: process.env.NEXT_PHASE,
+    VERCEL_ENV: process.env.VERCEL_ENV,
   }
 }
 
@@ -159,37 +160,43 @@ function getDefaultEnv(): Env {
  */
 function parseEnv(): Env {
   try {
-    // Parse the environment variables
-    // - On the server we validate server-only variables too.
-    // - In the browser we only parse client-safe variables to avoid requiring secrets.
-    const parsed = isServerRuntime
-      ? serverOnlyEnvSchema.parse(process.env)
-      : baseEnvSchema.parse(getRawClientEnv())
+    if (isServerRuntime) {
+      const parsed = serverOnlyEnvSchema.parse(process.env)
+      return {
+        NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || parsed.SUPABASE_URL || '',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        SUPABASE_SERVICE_ROLE_KEY: parsed.SUPABASE_SERVICE_ROLE_KEY || parsed.SUPABASE_SERVICE_KEY || '',
+        ANTHROPIC_API_KEY: parsed.ANTHROPIC_API_KEY || parsed.ANTHROPIC_API_TOKEN,
+        ANTHROPIC_API_TOKEN: parsed.ANTHROPIC_API_TOKEN,
+        ANTHROPIC_MODEL: parsed.ANTHROPIC_MODEL,
+        NEXT_PUBLIC_FEATURE_AMY_ENABLED: parsed.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
+        NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
+          parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
+        NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+        SUPABASE_URL: parsed.SUPABASE_URL,
+        SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
+        NODE_ENV: parsed.NODE_ENV,
+        NEXT_PHASE: parsed.NEXT_PHASE,
+        VERCEL_ENV: parsed.VERCEL_ENV,
+      }
+    }
 
-    // Handle legacy/alternative variable names with fallbacks
+    const parsed = baseEnvSchema.parse(getRawClientEnv())
     return {
-      // Primary Supabase URL with fallback to alternative name
-      NEXT_PUBLIC_SUPABASE_URL: (parsed.NEXT_PUBLIC_SUPABASE_URL || (isServerRuntime ? (parsed as any).SUPABASE_URL : '') || '') as string,
-      // Primary anon key
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: (parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '') as string,
-      // Primary service role key with fallback to alternative name
-      SUPABASE_SERVICE_ROLE_KEY: isServerRuntime
-        ? (((parsed as any).SUPABASE_SERVICE_ROLE_KEY || (parsed as any).SUPABASE_SERVICE_KEY || '') as string)
-        : '',
-      // Primary Anthropic API key with fallback to alternative name
-      ANTHROPIC_API_KEY: isServerRuntime
-        ? ((parsed as any).ANTHROPIC_API_KEY || (parsed as any).ANTHROPIC_API_TOKEN)
-        : undefined,
-      ANTHROPIC_API_TOKEN: isServerRuntime ? (parsed as any).ANTHROPIC_API_TOKEN : undefined,
-      ANTHROPIC_MODEL: isServerRuntime ? (parsed as any).ANTHROPIC_MODEL : undefined,
+      NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || '',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+      ANTHROPIC_API_KEY: undefined,
+      ANTHROPIC_API_TOKEN: undefined,
+      ANTHROPIC_MODEL: undefined,
       NEXT_PUBLIC_FEATURE_AMY_ENABLED: parsed.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
       NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
       NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
-      SUPABASE_URL: isServerRuntime ? (parsed as any).SUPABASE_URL : undefined,
-      SUPABASE_SERVICE_KEY: isServerRuntime ? (parsed as any).SUPABASE_SERVICE_KEY : undefined,
+      SUPABASE_URL: undefined,
+      SUPABASE_SERVICE_KEY: undefined,
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
-      VERCEL_ENV: (parsed as any).VERCEL_ENV,
+      VERCEL_ENV: parsed.VERCEL_ENV,
     }
   } catch (error) {
     if (error instanceof z.ZodError) {

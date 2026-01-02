@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# Run the same lint gate as CI (changed lines only).
+# If this fails, the push is blocked.
+echo "[pre-push] Running lint:changed..."
+
+npm run -s lint:changed
+
+echo "[pre-push] OK"

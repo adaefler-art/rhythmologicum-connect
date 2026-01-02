@@ -5,7 +5,6 @@
  * Automatically records route usage with minimal code changes.
  */
 
-import { NextResponse } from 'next/server'
 import { recordUsage, getStatusCodeBucket } from './usageTracker'
 
 /**
@@ -26,11 +25,11 @@ import { recordUsage, getStatusCodeBucket } from './usageTracker'
  * )
  * ```
  */
-export function withUsageTracking<T extends (...args: any[]) => Promise<Response>>(
+export function withUsageTracking<T extends (...args: unknown[]) => Promise<Response>>(
   routeKey: string,
   handler: T,
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: Parameters<T>) => {
     let response: Response
     
     try {

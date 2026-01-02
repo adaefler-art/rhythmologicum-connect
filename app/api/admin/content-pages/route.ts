@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { Database } from '@/lib/types/supabase'
 
 /**
  * F1 API Endpoint: List all content pages for admin management
@@ -171,7 +172,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare insert data
-    const insertData: Record<string, unknown> = {
+    type ContentPageInsert = Database['public']['Tables']['content_pages']['Insert']
+    const insertData: ContentPageInsert = {
       title,
       slug,
       body_markdown,
@@ -190,7 +192,7 @@ export async function POST(request: NextRequest) {
     // Create content page
     const { data: newPage, error: insertError } = await supabase
       .from('content_pages')
-      .insert(insertData as any)
+      .insert(insertData)
       .select()
       .single()
 

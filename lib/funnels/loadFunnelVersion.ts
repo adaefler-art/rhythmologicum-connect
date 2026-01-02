@@ -11,7 +11,7 @@
  * DO NOT import this in client components!
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createPublicClient } from '@/lib/db/supabase.public'
 import {
   FunnelPluginManifestSchema,
   FunnelQuestionnaireConfigSchema,
@@ -108,14 +108,7 @@ export class ManifestValidationError extends Error {
  * Uses environment variables for auth
  */
 function getSupabaseServerClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return createClient(supabaseUrl, supabaseKey)
+  return createPublicClient()
 }
 
 // ============================================================

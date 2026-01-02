@@ -80,27 +80,39 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     const loadFunnels = async () => {
       try {
         const response = await fetch('/api/admin/funnels')
-        let data: any = null
+        type FunnelsApiEnvelope = {
+          success?: boolean
+          data?: {
+            pillars?: Array<{ funnels?: Funnel[] }>
+            uncategorized_funnels?: Funnel[]
+          }
+          error?: { message?: string; requestId?: string }
+        }
+
+        let data: unknown = null
         try {
           data = await response.json()
         } catch {
           // ignore
         }
 
+        const envelope: FunnelsApiEnvelope | null =
+          data && typeof data === 'object' ? (data as FunnelsApiEnvelope) : null
+
         const headerRequestId = response.headers.get('x-request-id')
-        const bodyRequestId = data?.error?.requestId
+        const bodyRequestId = envelope?.error?.requestId
         const requestId = bodyRequestId || headerRequestId
 
-        if (!response.ok || !data?.success) {
-          const message = data?.error?.message || 'Failed to load funnels'
+        if (!response.ok || !envelope?.success) {
+          const message = envelope?.error?.message || 'Failed to load funnels'
           const requestIdSuffix = requestId ? ` (requestId: ${requestId})` : ''
           throw new Error(`${message}${requestIdSuffix}`)
         }
 
-        const pillars = data?.data?.pillars || []
-        const uncategorized = data?.data?.uncategorized_funnels || []
+        const pillars = envelope.data?.pillars || []
+        const uncategorized = envelope.data?.uncategorized_funnels || []
         const flattened = [
-          ...pillars.flatMap((p: any) => p?.funnels || []),
+          ...pillars.flatMap((p) => p?.funnels || []),
           ...(uncategorized || []),
         ]
 

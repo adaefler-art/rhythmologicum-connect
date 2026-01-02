@@ -40,7 +40,6 @@ type Funnel = {
   id: string
   slug: string
   title: string
-  subtitle: string | null
   description: string | null
   is_active: boolean
   created_at: string
@@ -88,6 +87,16 @@ export default function FunnelDetailPage() {
   const [editingStep, setEditingStep] = useState<string | null>(null)
   const [editedStep, setEditedStep] = useState<Partial<Step>>({})
 
+  type Envelope<T> = {
+    success?: boolean
+    data?: T
+    error?: { message?: string; requestId?: string; details?: { requestId?: string } }
+  }
+
+  function asEnvelope<T>(value: unknown): Envelope<T> | null {
+    return value && typeof value === 'object' ? (value as Envelope<T>) : null
+  }
+
   const loadFunnelDetails = useCallback(async () => {
     try {
       setLoading(true)
@@ -100,9 +109,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to load funnel details'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -112,9 +122,10 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      const funnelData = json?.data?.funnel
-      const stepsData = json?.data?.steps
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel; steps?: Step[] }>(json)
+      const funnelData = envelope?.data?.funnel
+      const stepsData = envelope?.data?.steps
 
       setFunnel(funnelData ?? null)
       setSteps(Array.isArray(stepsData) ? stepsData : [])
@@ -146,9 +157,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to update funnel'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -158,8 +170,9 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      setFunnel(json?.data?.funnel ?? null)
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel }>(json)
+      setFunnel(envelope?.data?.funnel ?? null)
     } catch (err) {
       console.error('Error updating funnel:', err)
       alert(`Fehler beim Aktualisieren des Funnels: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
@@ -172,7 +185,6 @@ export default function FunnelDetailPage() {
     setEditingFunnel(true)
     setEditedFunnel({
       title: funnel?.title || '',
-      subtitle: funnel?.subtitle || '',
       description: funnel?.description || '',
     })
   }
@@ -196,12 +208,6 @@ export default function FunnelDetailPage() {
       return
     }
 
-    const subtitle = editedFunnel.subtitle?.trim() || ''
-    if (subtitle.length > 500) {
-      alert('Untertitel ist zu lang (maximal 500 Zeichen)')
-      return
-    }
-
     const description = editedFunnel.description?.trim() || ''
     if (description.length > 2000) {
       alert('Beschreibung ist zu lang (maximal 2000 Zeichen)')
@@ -215,7 +221,6 @@ export default function FunnelDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          subtitle,
           description,
         }),
       })
@@ -225,9 +230,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to update funnel'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -237,8 +243,9 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      setFunnel(json?.data?.funnel ?? null)
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel }>(json)
+      setFunnel(envelope?.data?.funnel ?? null)
       setEditingFunnel(false)
       setEditedFunnel({})
     } catch (err) {
@@ -428,20 +435,6 @@ export default function FunnelDetailPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="funnel-subtitle" className="block text-sm font-medium text-slate-700 mb-1">
-                      Untertitel
-                    </label>
-                    <Input
-                      id="funnel-subtitle"
-                      type="text"
-                      value={editedFunnel.subtitle || ''}
-                      onChange={(e) =>
-                        setEditedFunnel({ ...editedFunnel, subtitle: e.target.value })
-                      }
-                      inputSize="md"
-                    />
-                  </div>
-                  <div>
                     <label htmlFor="funnel-description" className="block text-sm font-medium text-slate-700 mb-1">
                       Beschreibung
                     </label>
@@ -477,9 +470,6 @@ export default function FunnelDetailPage() {
                   <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
                     {funnel.title}
                   </h1>
-                  {funnel.subtitle && (
-                    <p className="text-lg text-slate-600 dark:text-slate-300 mb-2">{funnel.subtitle}</p>
-                  )}
                   {funnel.description && (
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{funnel.description}</p>
                   )}

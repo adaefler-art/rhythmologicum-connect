@@ -15,11 +15,10 @@ import {
 import { logReportGenerated } from '@/lib/audit';
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin';
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper';
+import { env } from '@/lib/env';
 
-const anthropicApiKey =
-  process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_TOKEN;
-const MODEL =
-  process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929';
+const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN;
+const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929';
 
 const anthropic = anthropicApiKey
   ? new Anthropic({ apiKey: anthropicApiKey })
