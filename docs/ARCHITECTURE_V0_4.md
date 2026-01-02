@@ -4,6 +4,7 @@ This file is a placeholder for architecture decisions and diagrams for v0.4.
 It should be extended as implementation details evolve.
 
 Recommended sections:
+
 - Frontend layout & routing
 - Funnel engine v2 (node types, flow)
 - Content integration
@@ -44,4 +45,3 @@ The `content_pages` table has been extended to support mapping content into funn
 - **File**: `supabase/migrations/20251212220145_add_content_flow_mapping.sql`
 - **Date**: 2025-12-12
 - **Status**: ✅ Implemented
-

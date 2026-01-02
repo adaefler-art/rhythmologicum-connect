@@ -3,6 +3,7 @@
 ## Overview
 
 Implementation of deterministic toggle for Usage Telemetry that:
+
 - **Defaults to ON in development** (NODE_ENV=development)
 - **Defaults to OFF in production/preview** (NODE_ENV=production/test)
 - **Supports explicit override** via `USAGE_TELEMETRY_ENABLED` environment variable
@@ -16,6 +17,7 @@ Implementation of deterministic toggle for Usage Telemetry that:
 **File:** `lib/env.ts`
 
 Added `USAGE_TELEMETRY_ENABLED` to environment schema:
+
 - Type: `string` (optional)
 - Accepted values: "true", "1", "yes" (enable), "false", "0", "no" (disable)
 - Case-insensitive parsing
@@ -24,6 +26,7 @@ Added `USAGE_TELEMETRY_ENABLED` to environment schema:
 **File:** `.env.example`
 
 Added documentation section:
+
 ```bash
 # USAGE_TELEMETRY_ENABLED=true  # Override default behavior
 ```
@@ -33,19 +36,21 @@ Added documentation section:
 **File:** `lib/monitoring/config.ts` (NEW)
 
 Implements `isUsageTelemetryEnabled()`:
+
 ```typescript
 export function isUsageTelemetryEnabled(): boolean {
   // 1. Check for explicit override
   if (USAGE_TELEMETRY_ENABLED is set) {
     return parseBoolean(USAGE_TELEMETRY_ENABLED)
   }
-  
+
   // 2. Use environment-based default
   return NODE_ENV === 'development'
 }
 ```
 
 **Logic:**
+
 - Explicit override takes precedence over environment
 - Default ON in development (helps identify unused endpoints)
 - Default OFF in production/preview (avoids misleading data from ephemeral storage)
@@ -55,18 +60,20 @@ export function isUsageTelemetryEnabled(): boolean {
 **File:** `lib/monitoring/usageTracker.ts`
 
 Updated `recordUsage()`:
+
 ```typescript
 export async function recordUsage(params) {
   // Early return if telemetry is disabled
   if (!isUsageTelemetryEnabled()) {
     return
   }
-  
+
   // ... rest of recording logic
 }
 ```
 
 **Behavior:**
+
 - When disabled: No filesystem writes, function returns immediately
 - When enabled: Normal recording behavior
 - Errors: Always caught and logged as warnings (never throw)
@@ -76,6 +83,7 @@ export async function recordUsage(params) {
 **File:** `app/api/admin/usage/route.ts`
 
 Updated response to include `enabled` flag:
+
 ```typescript
 return successResponse({
   enabled: isUsageTelemetryEnabled(),
@@ -86,6 +94,7 @@ return successResponse({
 ```
 
 **Behavior:**
+
 - Authentication errors still return 401 (unauthenticated) or 403 (unauthorized)
 - Authorized requests return HTTP 200 (never 500 when telemetry is disabled)
 - `enabled: false` when telemetry is off
@@ -97,6 +106,7 @@ return successResponse({
 **File:** `lib/monitoring/__tests__/config.test.ts` (NEW)
 
 Tests for `isUsageTelemetryEnabled()`:
+
 - ✅ Default ON in development
 - ✅ Default OFF in production/test
 - ✅ Explicit override "true"/"1"/"yes" (case-insensitive)
@@ -109,6 +119,7 @@ Tests for `isUsageTelemetryEnabled()`:
 **File:** `lib/monitoring/__tests__/usageTracker.test.ts`
 
 Updated with telemetry toggle tests:
+
 - ✅ No recording when disabled
 - ✅ Normal recording when enabled
 - ✅ No filesystem writes when disabled
@@ -118,6 +129,7 @@ Updated with telemetry toggle tests:
 **File:** `app/api/admin/usage/__tests__/route.test.ts`
 
 Updated with enabled flag tests:
+
 - ✅ Returns 401 for unauthenticated requests
 - ✅ Returns 403 for unauthorized requests
 - ✅ Returns `enabled: true` when telemetry is on
@@ -215,6 +227,7 @@ env.USAGE_TELEMETRY_ENABLED = undefined
 ### AC4: When Disabled ✅
 
 **No Writes:**
+
 ```typescript
 // Telemetry disabled
 recordUsage({ routeKey: 'POST /api/test', statusCodeBucket: '2xx' })
@@ -225,6 +238,7 @@ getAggregatedUsage()
 ```
 
 **Admin Endpoint Still Works:**
+
 ```bash
 # Authorized request with telemetry disabled
 GET /api/admin/usage
@@ -276,17 +290,20 @@ export async function recordUsage(...): Promise<void> {
 ### Existing Deployments
 
 **No breaking changes:**
+
 - If `USAGE_TELEMETRY_ENABLED` is not set, behavior depends on `NODE_ENV`
 - Development environments: Telemetry continues working (ON by default)
 - Production environments: Telemetry automatically disabled (OFF by default)
 
 **To maintain current behavior:**
+
 - Development: No action needed (already ON by default)
 - Production: Set `USAGE_TELEMETRY_ENABLED=true` if you want to keep collecting data
 
 ### New Deployments
 
 **Recommended configuration:**
+
 - Development: Leave unset (defaults to ON)
 - Staging/Preview: Leave unset or set to `false` (ephemeral storage)
 - Production: Decide based on storage strategy:
@@ -303,11 +320,13 @@ export async function recordUsage(...): Promise<void> {
 ## Files Changed
 
 **New Files:**
+
 - `lib/monitoring/config.ts` - Telemetry configuration logic
 - `lib/monitoring/__tests__/config.test.ts` - Configuration tests
 - `docs/TV05_02_IMPLEMENTATION.md` - This file
 
 **Modified Files:**
+
 - `lib/env.ts` - Added `USAGE_TELEMETRY_ENABLED` to schema
 - `.env.example` - Documented telemetry toggle
 - `lib/monitoring/usageTracker.ts` - Early return when disabled
@@ -316,6 +335,7 @@ export async function recordUsage(...): Promise<void> {
 - `app/api/admin/usage/__tests__/route.test.ts` - Added enabled flag tests
 
 **Documentation:**
+
 - `docs/EXTERNAL_CLIENTS.md` - External client registry
 - `docs/API_ROUTE_OWNERSHIP.md` - Route ownership registry
 - `docs/CLEANUP_AUDIT_README.md` - Updated to reference registries

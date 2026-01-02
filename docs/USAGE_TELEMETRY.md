@@ -27,16 +27,17 @@ A minimal, PHI-free usage tracking system for API routes to support data-driven 
 
 ```typescript
 type AggregatedUsage = {
-  routeKey: string           // e.g., "POST /api/amy/stress-report"
-  count: number              // Total number of requests
-  lastSeenAt: string         // ISO timestamp of most recent request
-  statusBuckets: {           // Breakdown by HTTP status code bucket
+  routeKey: string // e.g., "POST /api/amy/stress-report"
+  count: number // Total number of requests
+  lastSeenAt: string // ISO timestamp of most recent request
+  statusBuckets: {
+    // Breakdown by HTTP status code bucket
     '2xx': number
     '3xx': number
     '4xx': number
     '5xx': number
   }
-  env: string                // Environment (development, production, etc.)
+  env: string // Environment (development, production, etc.)
 }
 ```
 
@@ -60,6 +61,7 @@ curl -H "Authorization: Bearer <token>" \
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -87,6 +89,7 @@ curl -H "Authorization: Bearer <token>" \
 ### Adding Tracking to a New Route
 
 **Option 1: Using trackUsage() manually**
+
 ```typescript
 import { NextResponse } from 'next/server'
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
@@ -95,10 +98,10 @@ export async function POST(req: Request) {
   try {
     // Your route logic here
     const response = NextResponse.json({ success: true })
-    
+
     // Track usage (fire and forget)
     trackUsage('POST /api/your-route', response)
-    
+
     return response
   } catch (error) {
     const response = NextResponse.json({ error: 'Error' }, { status: 500 })
@@ -109,16 +112,14 @@ export async function POST(req: Request) {
 ```
 
 **Option 2: Using withUsageTracking() wrapper**
+
 ```typescript
 import { withUsageTracking } from '@/lib/monitoring/usageTrackingWrapper'
 
-export const POST = withUsageTracking(
-  'POST /api/your-route',
-  async (req: Request) => {
-    // Your route logic here
-    return NextResponse.json({ success: true })
-  }
-)
+export const POST = withUsageTracking('POST /api/your-route', async (req: Request) => {
+  // Your route logic here
+  return NextResponse.json({ success: true })
+})
 ```
 
 ## Security & Compliance
@@ -135,6 +136,7 @@ The usage tracking system is **PHI-free** by design:
 ### Verified in Tests
 
 All PHI compliance is verified through automated tests:
+
 - `lib/monitoring/__tests__/usageTracker.test.ts` (PHI compliance suite)
 - `app/api/admin/usage/__tests__/route.test.ts` (PHI compliance suite)
 
@@ -152,7 +154,7 @@ All PHI compliance is verified through automated tests:
 
 - ✅ **Local Development**: Full persistence across restarts
 - ✅ **Staging/Dev**: Suitable for short-term usage analysis
-- ⚠️  **Vercel Production**: Filesystem is **ephemeral** and reset on each deployment
+- ⚠️ **Vercel Production**: Filesystem is **ephemeral** and reset on each deployment
   - Data is lost on redeploy, container restart, or region failover
   - Use only for development and staging analysis
   - **Not suitable for long-term production metrics**
@@ -162,6 +164,7 @@ All PHI compliance is verified through automated tests:
 ### Data Retention
 
 Currently, data persists in-memory/file until deployment or restart. Future enhancements should include:
+
 - Migration to Supabase table for production persistence
 - Automatic cleanup of old entries
 - Time-based aggregation (daily/weekly summaries)
@@ -171,6 +174,7 @@ Currently, data persists in-memory/file until deployment or restart. Future enha
 ### Test Coverage
 
 **Usage Tracker Tests** (17 tests):
+
 ```bash
 npm test -- lib/monitoring/__tests__/usageTracker.test.ts
 ```
@@ -182,6 +186,7 @@ npm test -- lib/monitoring/__tests__/usageTracker.test.ts
 - PHI compliance verification
 
 **Admin Endpoint Tests** (7 tests):
+
 ```bash
 npm test -- app/api/admin/usage/__tests__/route.test.ts
 ```
@@ -219,6 +224,7 @@ Run the verification script to check implementation:
 ```
 
 **Checks performed:**
+
 - ✅ All tests pass (287 tests including 24 new usage tracking tests)
 - ✅ Build completes successfully
 - ✅ All implementation files exist

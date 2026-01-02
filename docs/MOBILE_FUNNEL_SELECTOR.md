@@ -15,6 +15,7 @@ This document describes the implementation of the mobile funnel selector feature
 **Authentication:** Requires authenticated user (patient, clinician, or admin)
 
 **Response Format:**
+
 ```json
 {
   "success": true,
@@ -38,6 +39,7 @@ This document describes the implementation of the mobile funnel selector feature
 **Purpose:** Reusable card component for displaying individual funnel options.
 
 **Props:**
+
 - `slug`: Funnel slug for routing
 - `title`: Display name (e.g., "Stress & Resilienz")
 - `subtitle`: Short tagline (optional)
@@ -47,6 +49,7 @@ This document describes the implementation of the mobile funnel selector feature
 - `onClick`: Click handler function
 
 **Features:**
+
 - Touch-friendly design optimized for 360-430px viewports
 - Hover and active states using v0.4 design tokens
 - Accessible with ARIA labels and keyboard navigation
@@ -55,6 +58,7 @@ This document describes the implementation of the mobile funnel selector feature
 - Clear call-to-action arrow
 
 **Design Tokens Used:**
+
 - `spacing.*` for consistent padding and margins
 - `typography.*` for font sizes and line heights
 - `radii.*` for border radius
@@ -72,6 +76,7 @@ This document describes the implementation of the mobile funnel selector feature
 **Route:** `/patient/assessment`
 
 **Features:**
+
 - Authentication check (redirects to `/login` if not authenticated)
 - Fetches active funnels via API endpoint
 - Loading state with spinner
@@ -81,6 +86,7 @@ This document describes the implementation of the mobile funnel selector feature
 - Responsive design using v0.4 design system
 
 **User Flow:**
+
 1. Patient lands on `/patient` → redirects to `/patient/assessment`
 2. Selector page loads active funnels from database
 3. Patient sees available assessment options as cards
@@ -103,6 +109,7 @@ The selector automatically maps funnel slugs to appropriate emojis:
 ## Mobile-First Design
 
 All components are optimized for mobile viewports (360-430px):
+
 - Single-column grid layout
 - Large touch targets (minimum 44px height)
 - Clear visual hierarchy
@@ -113,6 +120,7 @@ All components are optimized for mobile viewports (360-430px):
 ## Integration Points
 
 ### Patient Homepage
+
 **Location:** `app/patient/page.tsx`
 
 **Change:** Updated redirect from `/patient/funnel/stress-assessment` to `/patient/assessment`
@@ -120,7 +128,9 @@ All components are optimized for mobile viewports (360-430px):
 This ensures patients always see the funnel selector first, unless they directly navigate to a specific funnel URL.
 
 ### Database Schema
+
 The implementation relies on the existing `funnels` table:
+
 ```sql
 CREATE TABLE public.funnels (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -153,6 +163,7 @@ Only funnels with `is_active = true` are shown in the selector.
 ## Testing Checklist
 
 ### Manual Testing
+
 - [ ] Navigate to `/patient` → should redirect to `/patient/assessment`
 - [ ] Verify authentication: Unauthenticated users → `/login`
 - [ ] Loading state displays while fetching funnels
@@ -166,6 +177,7 @@ Only funnels with `is_active = true` are shown in the selector.
 - [ ] Back button in header navigates correctly
 
 ### Integration Testing
+
 - [ ] API endpoint returns correct funnel data
 - [ ] Authentication properly enforced at API level
 - [ ] Database query correctly filters `is_active = true`
@@ -175,6 +187,7 @@ Only funnels with `is_active = true` are shown in the selector.
 ## Future Enhancements
 
 Potential improvements for future versions:
+
 - Add funnel categories or tags
 - Display estimated completion time per funnel
 - Show progress indicators for partially completed assessments
@@ -187,17 +200,20 @@ Potential improvements for future versions:
 ## Files Changed
 
 ### New Files
+
 - `app/api/funnels/active/route.ts` - API endpoint for active funnels
 - `app/components/FunnelCard.tsx` - Reusable funnel card component
 - `app/patient/assessment/page.tsx` - Server component for authentication
 - `app/patient/assessment/client.tsx` - Client component for UI
 
 ### Modified Files
+
 - `app/patient/page.tsx` - Updated redirect to point to `/patient/assessment`
 
 ## Dependencies
 
 No new dependencies were added. The implementation uses:
+
 - Next.js 16 App Router
 - React 19
 - Supabase (existing)

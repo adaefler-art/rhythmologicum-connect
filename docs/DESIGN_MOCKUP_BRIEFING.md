@@ -6,6 +6,7 @@ Provide a clear design briefing for a designer or a UI-focused Copilot/AI agent 
 mockups (Figma, image, or code) of the new Rhythmologicum Connect UI.
 
 The focus is on:
+
 - Modern clinician/admin interface
 - Clean patient flow screens
 - Consistent design language across the app

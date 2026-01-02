@@ -59,16 +59,19 @@
 ### Visual Elements
 
 **Header:**
+
 - Back button (←)
 - Title: "Funnel Katalog"
 - Subtitle: "Rhythmologicum Connect"
 - Gradient background: sky-50 → slate-50 → slate-100
 
 **Main Content:**
+
 - Heading: "Verfügbare Assessments" (2xl, bold)
 - Subtitle: "Wählen Sie ein Assessment aus, um zu starten"
 
 **Pillar Sections (Accordion):**
+
 1. **Stress & Belastung** (🧘‍♀️) - EXPANDED
    - White card with border
    - Icon on left, title in center, chevron on right
@@ -84,6 +87,7 @@
    - No funnels visible (empty state when expanded)
 
 **Funnel Card (Stress Assessment):**
+
 - White background with shadow
 - Gradient icon container (sky-100 → sky-50)
 - Pulsing heart icon (rose-600)
@@ -102,16 +106,19 @@
 ### Responsive Behavior
 
 **Mobile (< 768px):**
+
 - Single column layout
 - Full-width funnel cards
 - Pillars stack vertically
 - Touch-friendly 44px minimum tap targets
 
 **Tablet (768px - 1024px):**
+
 - 2-column grid for funnel cards
 - Pillars remain full-width accordions
 
 **Desktop (> 1024px):**
+
 - 3-column grid for funnel cards (if many funnels)
 - Max-width container (6xl)
 - Centered layout
@@ -119,19 +126,23 @@
 ### States
 
 **Loading State:**
+
 - Spinning circle (sky-500)
 - Text: "Lade Assessments..."
 
 **Error State:**
+
 - Red banner (red-50 bg, red-200 border)
 - Title: "Fehler"
 - Message: "Katalog konnte nicht geladen werden."
 
 **Empty State (per pillar):**
+
 - Gray text: "Keine Assessments in dieser Kategorie verfügbar"
 - Centered in pillar section
 
 **Empty State (all):**
+
 - Centered message: "Derzeit sind keine Assessments verfügbar"
 
 ### Interactions
@@ -154,6 +165,7 @@
 ### Dark Mode
 
 All elements support dark mode:
+
 - Background: slate-800 → slate-900 → slate-950
 - Cards: slate-800 with slate-700 borders
 - Text: slate-100 (headings), slate-300/400 (body)

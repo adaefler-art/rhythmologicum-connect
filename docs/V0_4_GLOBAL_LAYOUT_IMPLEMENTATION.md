@@ -18,6 +18,7 @@ Both the Clinician and Admin layouts were refactored to use the centralized `App
 #### Clinician Layout (`app/clinician/layout.tsx`)
 
 **Before:**
+
 - Custom header JSX with logo, subtitle, user info, sign out button
 - Custom navigation JSX with Link components
 - Custom footer JSX with legal info
@@ -25,12 +26,14 @@ Both the Clinician and Admin layouts were refactored to use the centralized `App
 - Duplicated styling and structure
 
 **After:**
+
 - Uses `<AppShell>` component with props
 - Active navigation state detection via `usePathname`
 - 109 lines of code (32% reduction)
 - Clean, maintainable implementation
 
 **Key Changes:**
+
 ```tsx
 // Before: Custom JSX for header, nav, footer
 <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -55,11 +58,13 @@ Both the Clinician and Admin layouts were refactored to use the centralized `App
 #### Admin Layout (`app/admin/layout.tsx`)
 
 **Before:**
+
 - Same custom JSX structure as clinician layout
 - 165 lines of code
 - Duplicated styling and structure
 
 **After:**
+
 - Uses `<AppShell>` component with props
 - Active navigation state detection via `usePathname`
 - 113 lines of code (31% reduction)
@@ -96,18 +101,21 @@ The AppShell component applies appropriate styling to active navigation items (s
 ## Benefits
 
 ### Code Quality
+
 - **DRY Principle**: No duplication between clinician and admin layouts
 - **Maintainability**: Changes to header/nav/footer only need to happen in AppShell
 - **Consistency**: Both layouts use identical structure and styling
 - **Readability**: Simplified layout files focus on auth logic, not UI
 
 ### Design System Compliance
+
 - **Design Tokens**: All spacing, colors, typography use v0.4 design tokens
 - **Component Library**: Uses the official AppShell component from `/lib/ui`
 - **Responsive**: Properly responsive on mobile, tablet, desktop
 - **Accessibility**: Keyboard navigation, proper ARIA labels, touch targets
 
 ### Code Reduction
+
 - **Clinician Layout**: 161 → 109 lines (52 lines removed, 32% reduction)
 - **Admin Layout**: 165 → 113 lines (52 lines removed, 31% reduction)
 - **Total**: 104 lines of code eliminated
@@ -117,6 +125,7 @@ The AppShell component applies appropriate styling to active navigation items (s
 ### Authentication Flow (Unchanged)
 
 Both layouts maintain their existing authentication logic:
+
 1. Check user session on mount
 2. Verify role-based access (clinician only, or clinician/admin)
 3. Redirect unauthorized users
@@ -126,11 +135,13 @@ Both layouts maintain their existing authentication logic:
 ### Navigation Structure
 
 Three main navigation items:
+
 1. **Dashboard** (`/clinician`) - Patient overview
 2. **Funnels** (`/clinician/funnels`) - Funnel management
 3. **Content** (`/admin/content`) - Content management
 
 Active state detection uses pathname matching:
+
 - Exact match for dashboard (`pathname === '/clinician'`)
 - Prefix match for sub-routes (`pathname?.startsWith('/clinician/funnels')`)
 
@@ -138,13 +149,13 @@ Active state detection uses pathname matching:
 
 ```tsx
 interface AppShellProps {
-  appTitle?: string          // App branding
-  subtitle?: string          // Area name (Clinician/Admin)
-  userEmail?: string         // Current user
-  onSignOut?: () => void     // Sign out handler
-  navItems?: NavItem[]       // Navigation menu
-  children: ReactNode        // Page content
-  footerContent?: ReactNode  // Optional custom footer
+  appTitle?: string // App branding
+  subtitle?: string // Area name (Clinician/Admin)
+  userEmail?: string // Current user
+  onSignOut?: () => void // Sign out handler
+  navItems?: NavItem[] // Navigation menu
+  children: ReactNode // Page content
+  footerContent?: ReactNode // Optional custom footer
 }
 ```
 
@@ -174,6 +185,7 @@ The AppShell provides a consistent layout structure:
 ## Build Status
 
 ✅ **Build Successful**
+
 - No TypeScript errors
 - No ESLint errors
 - Production build completes successfully

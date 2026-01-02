@@ -11,12 +11,14 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 **Purpose:** Identifies implemented but potentially unused or unintegrated code artifacts.
 
 **Contents:**
+
 - Unused API routes (4 identified)
 - Unreachable page routes (all heuristically verified as reachable)
 - Unused server actions (all heuristically verified as in use)
 - Recommendations with risk levels
 
 **Key Findings:**
+
 - ⚠️ AMY endpoints (`/api/amy/*`) - 0 usage references
 - ⚠️ Consent APIs (`/api/consent/*`) - may be superseded by server actions
 - ⚠️ Content resolvers - possible duplication
@@ -27,12 +29,14 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 **Purpose:** Maps V05 canonical issue IDs to their implementation in the repository.
 
 **Contents:**
+
 - 8 V05 issues tracked and mapped
 - 100% implementation rate
 - File-level mapping (migrations, docs, code)
 - Epic organization and quality metrics
 
 **Key Findings:**
+
 - ✅ All V05 issues fully implemented
 - ✅ 7/8 issues include database migrations
 - ✅ 8/8 issues have comprehensive documentation
@@ -43,12 +47,14 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 **Purpose:** Provides prioritized cleanup tasks derived from audit findings.
 
 **Contents:**
+
 - 10 cleanup items with detailed specifications
 - Priority levels (High: 3, Medium: 4, Low: 3)
 - Acceptance criteria and verification steps
 - Estimated effort (~18 hours total)
 
 **Top Priorities:**
+
 1. Verify AMY integration status (4h, HIGH)
 2. Consolidate consent flow implementation (2h, HIGH)
 3. Review content resolver consolidation (2h, HIGH)
@@ -60,16 +66,19 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 **Purpose:** Automated data collection for audit analysis (canonical script).
 
 **Usage:**
+
 ```powershell
 cd /path/to/rhythmologicum-connect
 .\scripts\tv05-cleanup-audit.ps1
 ```
 
 **Output:**
+
 - Terminal output with statistics
 - Data files in `docs/cleanup_audit_*.txt`
 
 **What it analyzes:**
+
 - API routes and their usage counts
 - Page routes and navigation references
 - Server actions and their callers
@@ -145,11 +154,13 @@ grep -r "/api/amy/stress-report" \
 ### Limitations
 
 **False Positives:**
+
 - Dynamic string construction may not be detected
 - Template literals (`` `api/${endpoint}` ``) miss exact matches
 - **External clients (mobile apps, scripts, integrations) won't show usage** - SEE `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
 
 **False Negatives:**
+
 - Commented code counted as "unused"
 - Build-time usage may not be detected
 - Programmatic route construction may be missed
@@ -159,6 +170,7 @@ grep -r "/api/amy/stress-report" \
 ### Verification
 
 All flagged items were manually reviewed to reduce false positives:
+
 - Dynamic routes verified via code inspection
 - Programmatic navigation confirmed
 - Git history reviewed for recent usage
@@ -175,6 +187,7 @@ All flagged items were manually reviewed to reduce false positives:
 ### How to Re-Run
 
 1. **Run Script:**
+
    ```powershell
    .\scripts\tv05-cleanup-audit.ps1
    ```
@@ -202,11 +215,13 @@ All flagged items were manually reviewed to reduce false positives:
 **Goal:** Make critical architectural decisions
 
 **Tasks:**
+
 - [ ] TV05-CLEANUP-1: Verify AMY integration status
 - [ ] TV05-CLEANUP-2: Consolidate consent flow
 - [ ] TV05-CLEANUP-3: Review content resolvers
 
 **Success Criteria:**
+
 - All architectural questions answered
 - Decisions documented
 - No duplicate implementations
@@ -216,11 +231,13 @@ All flagged items were manually reviewed to reduce false positives:
 **Goal:** Integrate features, consolidate APIs
 
 **Tasks:**
+
 - [ ] TV05-CLEANUP-4: Add export button
 - [ ] TV05-CLEANUP-5: Document navigation patterns
 - [ ] TV05-CLEANUP-6: Consolidate funnel result APIs
 
 **Success Criteria:**
+
 - Features fully integrated in UI
 - APIs consolidated
 - Documentation complete
@@ -230,12 +247,14 @@ All flagged items were manually reviewed to reduce false positives:
 **Goal:** Complete documentation and minor enhancements
 
 **Tasks:**
+
 - [ ] TV05-CLEANUP-7: Update design system docs
 - [ ] TV05-CLEANUP-8: Add funnel nav link
 - [ ] TV05-CLEANUP-9: Verify validation integration
 - [ ] TV05-CLEANUP-10: Clean up test data seeding
 
 **Success Criteria:**
+
 - All documentation updated
 - UI enhancements complete
 - Test data organized
@@ -277,11 +296,13 @@ All flagged items were manually reviewed to reduce false positives:
 ### Q: Are the flagged "unused" items actually unused?
 
 **A:** Not necessarily. The audit uses static code search which has limitations:
+
 - Dynamic routes are accessed programmatically (clicks, etc.)
 - Template literals may hide references
 - **External clients won't show in codebase** - Check `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
 
 Always manually verify before removing code:
+
 1. Check `docs/EXTERNAL_CLIENTS.md` for external client usage
 2. Check `docs/API_ROUTE_OWNERSHIP.md` for ownership and external access status
 3. Check `/api/admin/usage` for runtime telemetry data
@@ -291,6 +312,7 @@ Always manually verify before removing code:
 ### Q: Should I remove all unused code immediately?
 
 **A:** No. Follow this process:
+
 1. **Check registries first** - Review `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
 2. **Check telemetry** - Review `/api/admin/usage` for runtime usage data
 3. **Verify it's truly unused** - Manual testing and code review
@@ -303,6 +325,7 @@ Always manually verify before removing code:
 ### Q: How accurate is the issue mapping?
 
 **A:** Very accurate. V05 issues were manually reviewed and verified:
+
 - Migration files checked
 - Documentation reviewed
 - Code changes confirmed
@@ -311,6 +334,7 @@ Always manually verify before removing code:
 ### Q: What if I find a bug in the audit?
 
 **A:** Please update the reports:
+
 1. Fix the finding in the relevant report
 2. Document the correction
 3. Commit the update
@@ -319,6 +343,7 @@ Always manually verify before removing code:
 ### Q: How often should we run the audit?
 
 **A:** Recommended schedule:
+
 - **After major features:** Re-run audit
 - **Quarterly:** Regular maintenance check
 - **Before releases:** Ensure clean state
@@ -351,8 +376,9 @@ Same as main repository (Rhythmologicum Connect).
 ## Contact
 
 For questions about this audit:
+
 - Create GitHub issue with `cleanup-audit` label
-- Tag issue with relevant backlog item (TV05-CLEANUP-*)
+- Tag issue with relevant backlog item (TV05-CLEANUP-\*)
 - Reference specific report section
 
 ---

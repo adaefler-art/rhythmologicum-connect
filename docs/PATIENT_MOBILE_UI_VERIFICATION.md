@@ -10,12 +10,14 @@ This document verifies that all patient routes are correctly wired to use mobile
 ## Route Inventory
 
 ### 1. `/patient` (Root)
+
 - **File:** `app/patient/page.tsx`
 - **Type:** Server Component (Redirect)
 - **Behavior:** Redirects to `/patient/assessment`
 - **Mobile Handling:** N/A (redirect only)
 
 ### 2. `/patient/assessment` (Assessment Selector)
+
 - **Files:**
   - `app/patient/assessment/page.tsx` (Server Component)
   - `app/patient/assessment/client.tsx` (Client Component)
@@ -26,19 +28,21 @@ This document verifies that all patient routes are correctly wired to use mobile
 - **Layout:** Full-screen on mobile (layout header hidden)
 
 ### 3. `/patient/funnel/[slug]` (Assessment Flow)
+
 - **Files:**
   - `app/patient/funnel/[slug]/page.tsx` (Server Component)
   - `app/patient/funnel/[slug]/client.tsx` (Client Component)
 - **Mobile Components Used:**
   - ✅ `PatientFlowRenderer` from `@/app/components/PatientFlowRenderer`
   - ✅ `MobileQuestionScreen` (via QuestionStepRenderer)
-- **Mobile Handling:** 
+- **Mobile Handling:**
   - Uses `useIsMobile()` in `PatientFlowRenderer` (client component)
   - Renders `MobileQuestionScreen` on mobile for single-question steps
   - Full-screen adaptive layout
 - **Layout:** Full-screen on mobile (layout header hidden)
 
 ### 4. `/patient/funnel/[slug]/intro` (Funnel Intro)
+
 - **Files:**
   - `app/patient/funnel/[slug]/intro/page.tsx` (Server Component)
   - `app/patient/funnel/[slug]/intro/client.tsx` (Client Component)
@@ -48,6 +52,7 @@ This document verifies that all patient routes are correctly wired to use mobile
 - **Layout:** Full-screen on mobile (layout header hidden)
 
 ### 5. `/patient/funnel/[slug]/result` (Results)
+
 - **Files:**
   - `app/patient/funnel/[slug]/result/page.tsx` (Server Component)
   - `app/patient/funnel/[slug]/result/client.tsx` (Client Component)
@@ -58,6 +63,7 @@ This document verifies that all patient routes are correctly wired to use mobile
 - **Layout:** Full-screen on mobile (layout header hidden)
 
 ### 6. `/patient/funnel/[slug]/content/[pageSlug]` (Content Pages)
+
 - **Files:**
   - `app/patient/funnel/[slug]/content/[pageSlug]/page.tsx` (Server Component)
   - `app/patient/funnel/[slug]/content/[pageSlug]/client.tsx` (Client Component)
@@ -68,6 +74,7 @@ This document verifies that all patient routes are correctly wired to use mobile
 - **Layout:** Full-screen on mobile (layout header hidden)
 
 ### 7. `/patient/history` (Patient History)
+
 - **Files:**
   - `app/patient/history/page.tsx` (Server Component)
   - `app/patient/history/PatientHistoryClient.tsx` (Client Component)
@@ -81,6 +88,7 @@ This document verifies that all patient routes are correctly wired to use mobile
 ### ✅ Correct Imports (All Routes)
 
 All patient routes correctly import mobile components from:
+
 - `@/app/components/MobileHeader`
 - `@/app/components/MobileWelcomeScreen`
 - `@/app/components/FunnelCard`
@@ -95,13 +103,13 @@ No routes import from the removed `@/lib/ui/MobileHeader` path.
 
 ### ✅ All Usage is Correct
 
-| File | Component Type | Usage |
-|------|---------------|-------|
-| `app/patient/funnel/[slug]/result/client.tsx` | Client Component | ✅ Correct |
+| File                                                      | Component Type   | Usage      |
+| --------------------------------------------------------- | ---------------- | ---------- |
+| `app/patient/funnel/[slug]/result/client.tsx`             | Client Component | ✅ Correct |
 | `app/patient/funnel/[slug]/content/[pageSlug]/client.tsx` | Client Component | ✅ Correct |
-| `app/components/PatientFlowRenderer.tsx` | Client Component | ✅ Correct |
-| `app/components/QuestionStepRenderer.tsx` | Client Component | ✅ Correct |
-| `app/components/ResponsiveQuestionRouter.tsx` | Client Component | ✅ Correct |
+| `app/components/PatientFlowRenderer.tsx`                  | Client Component | ✅ Correct |
+| `app/components/QuestionStepRenderer.tsx`                 | Client Component | ✅ Correct |
+| `app/components/ResponsiveQuestionRouter.tsx`             | Client Component | ✅ Correct |
 
 **Result:** No `useIsMobile()` usage in server components. All usage is SSR-safe.
 
@@ -123,6 +131,7 @@ if (isFullScreenMobileRoute) {
 ```
 
 **Effect:**
+
 - ✅ On mobile + full-screen routes: Layout header/footer hidden
 - ✅ On desktop: Layout header/footer always shown
 - ✅ On mobile + other routes: Layout header/footer shown
@@ -133,6 +142,7 @@ if (isFullScreenMobileRoute) {
 **Breakpoint:** `< 640px` (Tailwind's `sm` breakpoint)
 
 **Consistent across:**
+
 - `useIsMobile()` hook: `window.matchMedia('(max-width: 639px)')`
 - Patient layout: `window.innerWidth < 640`
 - Tailwind classes: `sm:` prefix
@@ -161,6 +171,7 @@ if (isFullScreenMobileRoute) {
 ## Component Hierarchy
 
 ### Desktop Layout
+
 ```
 app/patient/layout.tsx (with header + footer)
 └── Route content
@@ -168,6 +179,7 @@ app/patient/layout.tsx (with header + footer)
 ```
 
 ### Mobile Full-Screen Routes Layout
+
 ```
 app/patient/layout.tsx (minimal wrapper, no header/footer)
 └── Route content (full viewport control)
@@ -177,6 +189,7 @@ app/patient/layout.tsx (minimal wrapper, no header/footer)
 ```
 
 ### Mobile Standard Routes Layout
+
 ```
 app/patient/layout.tsx (with header + footer)
 └── Route content
@@ -186,32 +199,39 @@ app/patient/layout.tsx (with header + footer)
 ## Build Verification
 
 ### Build Status
+
 ```bash
 npm run build
 ```
 
 **Result:** ✅ Successful build
+
 - No TypeScript errors
 - No missing imports
 - All routes compiled successfully
 
 ### Lint Status
+
 ```bash
 npm run lint
 ```
 
 **Result:** ✅ No errors in patient routes or changed files
+
 - Pre-existing errors in `docs/` directory (unrelated to this work)
 - All patient route files pass linting
 
 ## Breaking Changes
 
 ### Removed
+
 - ❌ `lib/ui/MobileHeader.tsx` - DELETED (duplicate, unused)
 - ❌ `MobileHeader` export from `lib/ui/index.ts` - REMOVED
 
 ### Migration Path
+
 If any code was importing from removed paths (none found):
+
 ```typescript
 // Old (no longer works)
 import { MobileHeader } from '@/lib/ui'
@@ -261,11 +281,13 @@ import MobileHeader from '@/app/components/MobileHeader'
 ## Recommendations
 
 ### ✅ Completed
+
 - Removed duplicate MobileHeader
 - Enhanced patient layout for mobile
 - Documented Single Source of Truth
 
 ### Future Improvements (Out of Scope)
+
 - Add automated tests for mobile viewport rendering
 - Create visual regression tests for mobile UI
 - Add performance monitoring for mobile routes

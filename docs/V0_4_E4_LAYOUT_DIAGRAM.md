@@ -161,16 +161,19 @@ DesktopLayout (from lib/ui)
 ## Interactive Elements
 
 ### Hover States
+
 - **KPI Cards:** `hover:shadow-lg` - Cards lift on hover
 - **Table Rows:** Background changes on hover (clickable)
 - **Buttons:** Color darkens on hover
 
 ### Click Actions
+
 - **Button "Funnels verwalten"** → Navigate to `/clinician/funnels`
 - **Button "Exportieren"** → Trigger `window.print()`
 - **Table Row** → Navigate to `/clinician/patient/{id}`
 
 ### Responsive Behavior
+
 - **< 640px:** 1 column grid, stacked buttons
 - **640px - 1024px:** 2x2 grid
 - **> 1024px:** 4 column grid, inline buttons
@@ -178,18 +181,21 @@ DesktopLayout (from lib/ui)
 ## Color Scheme
 
 ### KPI Card Icons
+
 - **Aktive Patienten:** `bg-primary-100` / `text-primary-600` (Blue)
 - **Offene Funnels:** `bg-teal-100` / `text-teal-700` (Teal)
 - **Aktuelle Assessments:** `bg-purple-100` / `text-purple-600` (Purple)
 - **Rote Flaggen:** `bg-red-100` / `text-red-600` (Red)
 
 ### Text Colors
+
 - **Headings:** `text-slate-900` (Dark)
 - **Body:** `text-slate-600` (Medium)
 - **Labels:** `text-slate-500` (Light)
 - **Small Text:** `text-xs text-slate-500` (Very Light)
 
 ### Badges
+
 - **Warning:** Yellow background (pending items)
 - **Info:** Blue background (today)
 - **Danger:** Red background (urgent)
@@ -244,4 +250,4 @@ The current structure supports easy addition of:
 
 ---
 
-*This visual documentation accompanies the implementation in `app/clinician/page.tsx`*
+_This visual documentation accompanies the implementation in `app/clinician/page.tsx`_

@@ -522,14 +522,14 @@ education-*   → General resources (linked from various places)
 
 ## Quick Reference: Routes & Purposes
 
-| Route | Purpose | Required Auth | State |
-|-------|---------|---------------|-------|
-| `/patient` | Patient home/dashboard | Yes (patient) | N/A |
-| `/patient/funnel/{slug}` | Main assessment flow | Yes (patient) | in_progress |
-| `/patient/funnel/{slug}/intro` | Welcome/explanation | Yes (patient) | pre-assessment |
-| `/patient/funnel/{slug}/content/{pageSlug}` | Educational content | Yes (patient) | contextual |
-| `/patient/funnel/{slug}/result` | Assessment results | Yes (patient) | completed |
-| `/patient/history` | Past assessments | Yes (patient) | N/A |
+| Route                                       | Purpose                | Required Auth | State          |
+| ------------------------------------------- | ---------------------- | ------------- | -------------- |
+| `/patient`                                  | Patient home/dashboard | Yes (patient) | N/A            |
+| `/patient/funnel/{slug}`                    | Main assessment flow   | Yes (patient) | in_progress    |
+| `/patient/funnel/{slug}/intro`              | Welcome/explanation    | Yes (patient) | pre-assessment |
+| `/patient/funnel/{slug}/content/{pageSlug}` | Educational content    | Yes (patient) | contextual     |
+| `/patient/funnel/{slug}/result`             | Assessment results     | Yes (patient) | completed      |
+| `/patient/history`                          | Past assessments       | Yes (patient) | N/A            |
 
 ---
 

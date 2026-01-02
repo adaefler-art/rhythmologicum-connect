@@ -64,7 +64,7 @@ import {
   logAssessmentStarted,
   logAssessmentCompleted,
   logStepNavigated,
-  logErrorDisplayed
+  logErrorDisplayed,
 } from '@/lib/logging/clientLogger'
 
 // Assessment lifecycle
@@ -132,13 +132,10 @@ Wrap API route handlers with monitoring:
 ```typescript
 import { withMonitoring } from '@/lib/monitoring/apiWrapper'
 
-export const GET = withMonitoring(
-  async (request, context) => {
-    // Your handler code
-    return NextResponse.json({ data: '...' })
-  },
-  'GET /api/funnels/[slug]/assessments'
-)
+export const GET = withMonitoring(async (request, context) => {
+  // Your handler code
+  return NextResponse.json({ data: '...' })
+}, 'GET /api/funnels/[slug]/assessments')
 ```
 
 ### Metrics Collected
@@ -235,12 +232,12 @@ import { logInfo, logError, logUnauthorized } from '@/lib/logging/logger'
 export async function GET(request: NextRequest) {
   try {
     const user = await getUser(request)
-    
+
     if (!user) {
       logUnauthorized({ endpoint: '/api/data' })
       return unauthorizedResponse()
     }
-    
+
     logInfo('Data fetched', { userId: user.id, endpoint: '/api/data' })
     return successResponse(data)
   } catch (error) {
@@ -261,18 +258,18 @@ export default function AssessmentClient() {
       try {
         const response = await fetch('/api/assessments')
         const { data } = await response.json()
-        
+
         // Log successful start
         logAssessmentStarted(data.assessmentId, data.funnelSlug)
       } catch (error) {
         // Log error
         logErrorDisplayed(
           error instanceof Error ? error.message : 'Unknown error',
-          'assessment_start'
+          'assessment_start',
         )
       }
     }
-    
+
     startAssessment()
   }, [])
 }

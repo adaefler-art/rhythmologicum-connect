@@ -2,7 +2,7 @@
 
 **Migration File:** `supabase/migrations/20251230211228_v05_core_schema_jsonb_fields.sql`  
 **Date:** 2025-12-30  
-**Issue:** V05-I01.1  
+**Issue:** V05-I01.1
 
 ---
 
@@ -11,6 +11,7 @@
 Successfully implemented the v0.5 core database schema migration with comprehensive JSONB fields, multi-tenant support, funnel versioning, document extraction, processing results, reports/sections, tasks/notifications, and audit logging.
 
 **Totals:**
+
 - **13 new tables** created
 - **9 columns** added to existing tables
 - **6 new enum types** defined
@@ -32,7 +33,7 @@ All enums created with idempotent `DO $$ IF NOT EXISTS` pattern:
 -- ✓ user_role
 CREATE TYPE public.user_role AS ENUM ('patient', 'clinician', 'nurse', 'admin');
 
--- ✓ assessment_state  
+-- ✓ assessment_state
 CREATE TYPE public.assessment_state AS ENUM ('draft', 'in_progress', 'completed', 'archived');
 
 -- ✓ report_status
@@ -55,14 +56,17 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 2. Identity & Access (3 tables)
 
 #### organizations
+
 **Purpose:** Multi-tenant foundation  
 **Key Columns:**
+
 - `id` (UUID primary key)
 - `slug` (TEXT unique)
 - `settings` (JSONB) - Org-specific configuration
 - `is_active` (BOOLEAN)
 
 **Indexes:**
+
 - `idx_organizations_slug`
 - `idx_organizations_is_active`
 
@@ -71,14 +75,17 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### user_profiles
+
 **Purpose:** Extended user profile information  
 **Key Columns:**
+
 - `id` (UUID primary key)
 - `user_id` (UUID unique → auth.users)
 - `organization_id` (UUID → organizations)
 - `metadata` (JSONB) - Extended user data
 
 **Indexes:**
+
 - `idx_user_profiles_user_id`
 - `idx_user_profiles_organization_id`
 
@@ -87,17 +94,21 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### user_org_membership
+
 **Purpose:** User-organization associations with roles  
 **Key Columns:**
+
 - `user_id` (UUID → auth.users)
 - `organization_id` (UUID → organizations)
 - `role` (user_role enum)
 - `is_active` (BOOLEAN)
 
 **Unique Constraint:**
+
 - `(user_id, organization_id)` - One membership per user per org
 
 **Indexes:**
+
 - `idx_user_org_membership_user_id`
 - `idx_user_org_membership_organization_id`
 - `idx_user_org_membership_role`
@@ -107,14 +118,17 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 3. Funnels / Versions / Sessions (3 tables)
 
 #### funnels_catalog
+
 **Purpose:** Master catalog of available funnels  
 **Key Columns:**
+
 - `id` (UUID primary key)
 - `slug` (TEXT unique)
 - `pillar_id` (TEXT) - Health pillar reference
 - `is_active` (BOOLEAN)
 
 **Indexes:**
+
 - `idx_funnels_catalog_slug`
 - `idx_funnels_catalog_is_active`
 
@@ -123,8 +137,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### funnel_versions
+
 **Purpose:** Versioned funnel configurations with JSONB  
 **Key Columns:**
+
 - `funnel_id` (UUID → funnels_catalog)
 - `version` (TEXT)
 - `questionnaire_config` (JSONB) - Questions, steps, validation
@@ -135,9 +151,11 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `rollout_percent` (INTEGER 0-100) - A/B testing support
 
 **Unique Constraint:**
+
 - `(funnel_id, version)` - Ensures version uniqueness per funnel
 
 **Indexes:**
+
 - `idx_funnel_versions_funnel_id`
 - `idx_funnel_versions_is_default`
 
@@ -146,14 +164,17 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### patient_funnels
+
 **Purpose:** Patient-specific funnel instances  
 **Key Columns:**
+
 - `patient_id` (UUID → patient_profiles)
 - `funnel_id` (UUID → funnels_catalog)
 - `active_version_id` (UUID → funnel_versions)
 - `status` (TEXT CHECK: active/paused/completed/archived)
 
 **Indexes:**
+
 - `idx_patient_funnels_patient_id`
 - `idx_patient_funnels_funnel_id`
 - `idx_patient_funnels_status`
@@ -165,13 +186,16 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 4. Assessments Extended (1 table + 2 columns)
 
 #### assessment_events
+
 **Purpose:** Event log for assessment lifecycle  
 **Key Columns:**
+
 - `assessment_id` (UUID → assessments)
 - `event_type` (TEXT) - started, step_completed, paused, resumed, completed
 - `payload` (JSONB) - Event-specific data
 
 **Indexes:**
+
 - `idx_assessment_events_assessment_id`
 - `idx_assessment_events_created_at`
 - `idx_assessment_events_event_type`
@@ -181,7 +205,9 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### assessments (extended)
+
 **Added Columns:**
+
 - `state` (assessment_state enum) - Replaces simple status tracking
 - `current_step_id` (UUID → funnel_steps) - If not already present
 
@@ -190,8 +216,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 5. Documents / Extraction (1 table)
 
 #### documents
+
 **Purpose:** Document storage with AI extraction results  
 **Key Columns:**
+
 - `assessment_id` (UUID → assessments)
 - `storage_path` (TEXT) - File location in storage
 - `doc_type` (TEXT) - lab_report, prescription, etc.
@@ -202,6 +230,7 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `confirmed_at` (TIMESTAMPTZ)
 
 **Indexes:**
+
 - `idx_documents_assessment_id`
 - `idx_documents_parsing_status`
 
@@ -212,8 +241,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 6. Calculated Results (1 table)
 
 #### calculated_results
+
 **Purpose:** Algorithm-calculated results with JSONB  
 **Key Columns:**
+
 - `assessment_id` (UUID → assessments)
 - `algorithm_version` (TEXT)
 - `scores` (JSONB) - Calculated scores (stress, resilience, etc.)
@@ -221,9 +252,11 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `priority_ranking` (JSONB) - Priority/urgency calculations
 
 **Unique Constraint:**
+
 - `(assessment_id, algorithm_version)` - One result per assessment+version
 
 **Indexes:**
+
 - `idx_calculated_results_assessment_id`
 - `idx_calculated_results_created_at`
 
@@ -234,7 +267,9 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 7. Reports / Sections (2 tables + 8 columns)
 
 #### reports (extended)
+
 **Added Columns:**
+
 - `report_version` (TEXT) - Version of report format
 - `prompt_version` (TEXT) - AI prompt version
 - `status` (report_status enum)
@@ -245,13 +280,16 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `citations_meta` (JSONB) - Citation metadata
 
 **Unique Constraint:**
+
 - `(assessment_id, report_version)` - Idempotent report generation
 
 ---
 
 #### report_sections
+
 **Purpose:** Sectioned reports for modular content  
 **Key Columns:**
+
 - `report_id` (UUID → reports)
 - `section_key` (TEXT) - summary, risk_analysis, recommendations
 - `prompt_version` (TEXT)
@@ -259,9 +297,11 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `citations_meta` (JSONB) - Section-specific citations
 
 **Unique Constraint:**
+
 - `(report_id, section_key)` - One section per report+key
 
 **Indexes:**
+
 - `idx_report_sections_report_id`
 - `idx_report_sections_section_key`
 
@@ -272,8 +312,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 8. Tasks / Notifications (2 tables)
 
 #### tasks
+
 **Purpose:** Task management with role-based assignment  
 **Key Columns:**
+
 - `patient_id` (UUID → patient_profiles)
 - `assessment_id` (UUID → assessments)
 - `created_by_role` (user_role enum)
@@ -284,6 +326,7 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `due_at` (TIMESTAMPTZ)
 
 **Indexes:**
+
 - `idx_tasks_patient_id`
 - `idx_tasks_assessment_id`
 - `idx_tasks_assigned_to_role_status_due` (composite for queries)
@@ -294,8 +337,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ---
 
 #### notifications
+
 **Purpose:** Notification queue with multi-channel support  
 **Key Columns:**
+
 - `user_id` (UUID → auth.users)
 - `channel` (TEXT) - email, sms, push, in_app
 - `template_key` (TEXT) - Template identifier
@@ -305,6 +350,7 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `status` (notification_status enum)
 
 **Indexes:**
+
 - `idx_notifications_user_id`
 - `idx_notifications_status`
 - `idx_notifications_scheduled_at`
@@ -316,8 +362,10 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 ### 9. Audit (1 table)
 
 #### audit_log
+
 **Purpose:** Comprehensive audit trail for system changes  
 **Key Columns:**
+
 - `actor_user_id` (UUID → auth.users, nullable for system)
 - `actor_role` (user_role enum)
 - `entity_type` (TEXT) - assessment, report, funnel, etc.
@@ -326,6 +374,7 @@ CREATE TYPE public.notification_status AS ENUM ('scheduled', 'sent', 'failed', '
 - `diff` (JSONB) - Before/after differences
 
 **Indexes:**
+
 - `idx_audit_log_entity_type_id` (composite for entity lookups)
 - `idx_audit_log_created_at`
 - `idx_audit_log_actor_user_id`
@@ -377,7 +426,7 @@ All migration statements use idempotent patterns:
 ✅ **Constraints:** `DO $$ IF NOT EXISTS (SELECT FROM information_schema.table_constraints...)`  
 ✅ **Indexes:** `CREATE INDEX IF NOT EXISTS`  
 ✅ **RLS Policies:** `DO $$ IF NOT EXISTS (SELECT FROM pg_policies...)`  
-✅ **Foreign Keys:** Conditional creation with auth.users existence check  
+✅ **Foreign Keys:** Conditional creation with auth.users existence check
 
 **Result:** Migration can be run multiple times safely without errors or duplicates.
 
@@ -414,6 +463,7 @@ All migration statements use idempotent patterns:
 **All 13 new tables** have RLS enabled with comprehensive policies:
 
 #### Patient Access Pattern
+
 ```sql
 -- View own data only
 USING (
@@ -425,12 +475,14 @@ USING (
 ```
 
 #### Clinician Access Pattern
+
 ```sql
 -- View all patient data
 USING (is_clinician())
 ```
 
 #### Service Role Pattern
+
 ```sql
 -- Backend operations
 USING (true) WITH CHECK (true)
@@ -438,20 +490,20 @@ USING (true) WITH CHECK (true)
 
 ### Access Summary
 
-| Table | Patient | Clinician | Service |
-|-------|---------|-----------|---------|
-| organizations | Read active | Read all | Full |
-| user_profiles | Own | All | Full |
-| funnels_catalog | Read active | Read active | Full |
-| funnel_versions | Read | Read | Full |
-| patient_funnels | Own | All | Full |
-| assessment_events | Own | All | Insert |
-| documents | Own | All | Full |
-| calculated_results | Own | All | Insert |
-| report_sections | Own | All | Full |
-| tasks | Own | All | Full |
-| notifications | Own | - | Full |
-| audit_log | - | - (Admin only) | Insert |
+| Table              | Patient     | Clinician      | Service |
+| ------------------ | ----------- | -------------- | ------- |
+| organizations      | Read active | Read all       | Full    |
+| user_profiles      | Own         | All            | Full    |
+| funnels_catalog    | Read active | Read active    | Full    |
+| funnel_versions    | Read        | Read           | Full    |
+| patient_funnels    | Own         | All            | Full    |
+| assessment_events  | Own         | All            | Insert  |
+| documents          | Own         | All            | Full    |
+| calculated_results | Own         | All            | Insert  |
+| report_sections    | Own         | All            | Full    |
+| tasks              | Own         | All            | Full    |
+| notifications      | Own         | -              | Full    |
+| audit_log          | -           | - (Admin only) | Insert  |
 
 ---
 
@@ -482,6 +534,7 @@ git diff lib/types/supabase.ts
 ### CI/CD Verification
 
 GitHub Actions workflow `.github/workflows/db-determinism.yml` automatically:
+
 1. ✅ Checks migration immutability (no edits to existing migrations)
 2. ✅ Applies all migrations cleanly
 3. ✅ Verifies no schema drift

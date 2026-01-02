@@ -74,6 +74,7 @@ export interface ContentPageStepDefinition extends BaseStepDefinition {
 ```
 
 Type guard function:
+
 ```typescript
 export function isContentPageStep(step: StepDefinition): step is ContentPageStepDefinition
 ```
@@ -94,19 +95,23 @@ export function isContentPageStep(step: StepDefinition): step is ContentPageStep
 ### 4. API Endpoints
 
 #### GET /api/funnels/[slug]/definition
+
 - Extended to include content_page data for content_page steps
 - Fetches associated content page when `type === 'content_page'`
 
 #### GET /api/admin/funnels/[id]
+
 - Extended to include content_page information
 - Returns content page metadata for admin UI
 
 #### PATCH /api/admin/funnel-steps/[id]
+
 - Supports updating `content_page_id`
 - Validates content page exists before assignment
 - Allows null to clear content page association
 
 #### POST /api/admin/funnel-steps (NEW)
+
 - Creates new funnel steps
 - Validates type-specific requirements
 - Ensures `content_page_id` is provided for `content_page` steps
@@ -126,12 +131,16 @@ export function isContentPageStep(step: StepDefinition): step is ContentPageStep
 ## Navigation & Validation
 
 ### Navigation Logic
+
 The existing navigation logic in `lib/navigation/assessmentNavigation.ts` works seamlessly with content_page steps:
+
 - Content page steps have no questions, so they don't block navigation
 - The system automatically moves to the next step with unanswered questions
 
 ### Validation Logic
+
 The existing validation logic in `lib/validation/requiredQuestions.ts`:
+
 - Returns `isValid: true` for steps with no required questions
 - Content page steps pass validation automatically
 
@@ -156,17 +165,18 @@ POST /api/admin/funnel-steps
 The new `flow_step` and `order_index` fields enable flexible content organization:
 
 #### Example 1: Intro Content Pages
+
 ```sql
 -- Create intro content pages for a funnel
-UPDATE content_pages 
-SET 
+UPDATE content_pages
+SET
   funnel_id = 'uuid-of-stress-funnel',
   flow_step = 'intro',
   order_index = 1
 WHERE slug = 'was-ist-stress';
 
-UPDATE content_pages 
-SET 
+UPDATE content_pages
+SET
   funnel_id = 'uuid-of-stress-funnel',
   flow_step = 'intro',
   order_index = 2
@@ -174,10 +184,11 @@ WHERE slug = 'ueber-das-assessment';
 ```
 
 #### Example 2: Post-Assessment Content
+
 ```sql
 -- Add content pages to show after assessment
-UPDATE content_pages 
-SET 
+UPDATE content_pages
+SET
   funnel_id = 'uuid-of-stress-funnel',
   flow_step = 'post-assessment',
   order_index = 1
@@ -185,6 +196,7 @@ WHERE slug = 'result-naechste-schritte';
 ```
 
 #### Example 3: Querying Content by Flow Step
+
 ```sql
 -- Get all intro content for a funnel, ordered
 SELECT id, title, slug, excerpt
@@ -195,6 +207,7 @@ ORDER BY order_index ASC NULLS LAST, created_at;
 ```
 
 #### Example 4: TypeScript/API Usage
+
 ```typescript
 // Fetch content pages for a specific flow step
 const { data: contentPages, error } = await supabase
@@ -216,6 +229,7 @@ const { data: contentPages, error } = await supabase
 ### Mobile Experience
 
 On mobile devices (<640px):
+
 - Full-screen layout using `MobileContentPage`
 - Sticky header with title
 - Scrollable content area
@@ -225,6 +239,7 @@ On mobile devices (<640px):
 ### Desktop Experience
 
 On desktop:
+
 - Card-based layout
 - Consistent styling with question steps
 - Clear visual hierarchy
@@ -282,6 +297,7 @@ Potential improvements for future versions:
 **File**: `supabase/migrations/20251212204909_add_content_page_steps.sql`
 
 To apply:
+
 ```bash
 # Local development
 supabase db reset
@@ -293,6 +309,7 @@ supabase db reset
 ## Breaking Changes
 
 None. This is a backward-compatible addition:
+
 - Existing funnel steps are not affected
 - New column is nullable
 - Constraint only applies to new content_page steps

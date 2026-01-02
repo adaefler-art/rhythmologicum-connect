@@ -4,7 +4,8 @@
 
 This document provides a comprehensive mapping of all API routes in Rhythmologicum Connect, documenting ownership, external access status, and maintenance notes.
 
-**Purpose:** 
+**Purpose:**
+
 - Establish clear ownership for each API endpoint
 - Document which endpoints are safe for external access
 - Provide context for cleanup and deprecation decisions
@@ -40,12 +41,14 @@ Each route entry follows this format:
 **Authentication Required:** Yes  
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
-**Used By:** 
+**Used By:**
+
 - Administrative monitoring scripts
 - Clinician dashboard (future)
 - Usage telemetry analysis tools
 
 **Notes:**
+
 - Returns aggregated usage metrics (PHI-free)
 - Critical for operational monitoring
 - Must remain accessible for cleanup audit decisions
@@ -60,10 +63,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Clinician dashboard funnel management UI
 - Internal admin tools
 
 **Notes:**
+
 - Lists all assessment funnels with metadata
 - Web app only
 
@@ -77,10 +82,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Clinician dashboard funnel editor
 - Funnel configuration tools
 
 **Notes:**
+
 - Update funnel metadata (name, active status, etc.)
 - Web app only
 
@@ -94,10 +101,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Clinician dashboard step management
 - Funnel configuration tools
 
 **Notes:**
+
 - Lists funnel steps with ordering
 - Web app only
 
@@ -111,10 +120,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Clinician dashboard step editor
 - Step reordering functionality
 
 **Notes:**
+
 - Update step order and configuration
 - Web app only
 
@@ -128,10 +139,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Clinician dashboard question editor
 - Question requirement toggle
 
 **Notes:**
+
 - Update question metadata (is_required, etc.)
 - Web app only
 
@@ -145,10 +158,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Content management UI
 - Clinician dashboard
 
 **Notes:**
+
 - Lists all content pages
 - Web app only
 
@@ -162,10 +177,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Content page editor
 - Clinician dashboard
 
 **Notes:**
+
 - Update content page metadata
 - Web app only
 
@@ -179,10 +196,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Content section editor
 - Clinician dashboard
 
 **Notes:**
+
 - Add new content sections
 - Web app only
 
@@ -196,10 +215,12 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - Content section editor
 - Clinician dashboard
 
 **Notes:**
+
 - Update content sections
 - Web app only
 
@@ -213,11 +234,13 @@ Each route entry follows this format:
 **Authorization:** Admin or Clinician role  
 **Status:** Active  
 **Used By:**
+
 - System health monitoring scripts
 - Admin dashboard
 - Automated alerts
 
 **Notes:**
+
 - Critical for database schema validation
 - Used by CI/CD pipelines
 - Must remain accessible
@@ -234,11 +257,13 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app patient flow
 - Mobile app funnel selector
 - External integrations (future)
 
 **Notes:**
+
 - Returns list of active assessment funnels
 - Critical for mobile app
 - High-priority endpoint (DO NOT REMOVE)
@@ -253,10 +278,12 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app catalog pages
 - Patient flow UI
 
 **Notes:**
+
 - Full funnel catalog with metadata
 - Web app only
 
@@ -270,10 +297,12 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app funnel detail pages
 - Patient flow UI
 
 **Notes:**
+
 - Single funnel details
 - Web app only
 
@@ -287,11 +316,13 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app assessment flow
 - Mobile app assessment start
 - Funnel Runtime system
 
 **Notes:**
+
 - Starts a new assessment session
 - Part of Funnel Runtime (Epic B)
 - Critical for mobile app
@@ -306,11 +337,13 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Web app assessment flow
 - Mobile app assessment resume
 - Funnel Runtime system
 
 **Notes:**
+
 - Get current assessment state and progress
 - Part of Funnel Runtime (Epic B)
 - Critical for mobile app
@@ -325,11 +358,13 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Web app step navigation
 - Mobile app step validation
 - Funnel Runtime system
 
 **Notes:**
+
 - Validate step before proceeding
 - Step-skipping prevention
 - Critical for mobile app
@@ -344,11 +379,13 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Web app assessment completion
 - Mobile app assessment completion
 - Funnel Runtime system
 
 **Notes:**
+
 - Finalizes assessment (makes read-only)
 - Part of Funnel Runtime (Epic B)
 - Critical for mobile app
@@ -363,11 +400,13 @@ Each route entry follows this format:
 **Authorization:** Assessment owner or clinician  
 **Status:** Active  
 **Used By:**
+
 - Web app results page
 - Mobile app results screen
 - Clinician dashboard
 
 **Notes:**
+
 - Get completed assessment results
 - Critical for mobile app
 - Used for report display
@@ -382,10 +421,12 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Funnel Runtime answer persistence
 - Mobile app answer saving
 
 **Notes:**
+
 - Alternative answer saving endpoint (Funnel Runtime specific)
 - May overlap with /api/assessment-answers/save
 
@@ -399,10 +440,12 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app content display
 - Funnel content pages
 
 **Notes:**
+
 - Lists content pages for a funnel
 - Web app only
 
@@ -416,10 +459,12 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app funnel renderer
 - Dynamic form generation
 
 **Notes:**
+
 - Returns complete funnel definition with steps and questions
 - Web app only
 
@@ -435,11 +480,13 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Mobile app answer submission
 - Web app answer persistence
 - Alternative to Funnel Runtime save endpoint
 
 **Notes:**
+
 - Original answer saving endpoint
 - Still used by mobile app
 - May be consolidated with Funnel Runtime endpoint in future
@@ -454,9 +501,11 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active (potentially redundant)  
 **Used By:**
+
 - Potentially unused (superseded by Funnel Runtime validation)
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify if superseded by /api/funnels/.../steps/.../route validation
 - See TV05_CLEANUP_BACKLOG.md
 
@@ -470,9 +519,11 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active (potentially redundant)  
 **Used By:**
+
 - Web app navigation (legacy)
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify if superseded by Funnel Runtime
 - May be consolidated
 
@@ -486,10 +537,12 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Web app step navigation
 - Progress tracking
 
 **Notes:**
+
 - Part of navigation system
 - Web app only
 
@@ -503,10 +556,12 @@ Each route entry follows this format:
 **Authorization:** Assessment owner only  
 **Status:** Active  
 **Used By:**
+
 - Web app assessment resumption
 - Session recovery
 
 **Notes:**
+
 - Resume incomplete assessment
 - Web app only
 
@@ -522,9 +577,11 @@ Each route entry follows this format:
 **Authorization:** Assessment owner or clinician  
 **Status:** Uncertain (potentially unused)  
 **Used By:**
+
 - **UNKNOWN** - No current references found
 
 **Notes:**
+
 - **CRITICAL ACTION REQUIRED:** Verify if this endpoint is still needed
 - Uses Anthropic Claude API (incurs costs)
 - May be superseded by Funnel Runtime report generation
@@ -542,9 +599,11 @@ Each route entry follows this format:
 **Authorization:** Assessment owner or clinician  
 **Status:** Uncertain (potentially unused)  
 **Used By:**
+
 - **UNKNOWN** - No current references found
 
 **Notes:**
+
 - **CRITICAL ACTION REQUIRED:** Verify if this endpoint is still needed
 - Companion endpoint to stress-report
 - Uses Anthropic Claude API (incurs costs)
@@ -564,9 +623,11 @@ Each route entry follows this format:
 **Authorization:** User recording own consent  
 **Status:** Uncertain (potentially deprecated)  
 **Used By:**
+
 - Potentially superseded by onboarding server actions
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify if deprecated
 - May be replaced by server-side consent flow in onboarding
 - See TV05_CLEANUP_AUDIT_UNUSED.md and TV05_CLEANUP_BACKLOG.md item #2
@@ -582,9 +643,11 @@ Each route entry follows this format:
 **Authorization:** User checking own status or clinician  
 **Status:** Uncertain (potentially deprecated)  
 **Used By:**
+
 - Potentially superseded by onboarding server actions
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify if deprecated
 - May be replaced by server-side consent status in onboarding
 - See TV05_CLEANUP_AUDIT_UNUSED.md and TV05_CLEANUP_BACKLOG.md item #2
@@ -601,10 +664,12 @@ Each route entry follows this format:
 **Authorization:** Any authenticated user  
 **Status:** Active  
 **Used By:**
+
 - Web app content pages
 - Dynamic content rendering
 
 **Notes:**
+
 - Fetches content page by slug
 - Web app only
 
@@ -618,9 +683,11 @@ Each route entry follows this format:
 **Authorization:** Uncertain  
 **Status:** Uncertain (potentially redundant)  
 **Used By:**
+
 - Uncertain - potentially duplicate of /api/content/resolve
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify if duplicate of content/resolve
 - See TV05_CLEANUP_AUDIT_UNUSED.md and TV05_CLEANUP_BACKLOG.md item #3
 - May be legacy endpoint
@@ -635,10 +702,12 @@ Each route entry follows this format:
 **Authorization:** Uncertain  
 **Status:** Active (potentially redundant)  
 **Used By:**
+
 - Content resolution system
 - Dynamic content loading
 
 **Notes:**
+
 - **ACTION REQUIRED:** Verify relationship with /api/content-resolver
 - See TV05_CLEANUP_AUDIT_UNUSED.md and TV05_CLEANUP_BACKLOG.md item #3
 - Consolidate if duplicate
@@ -655,11 +724,13 @@ Each route entry follows this format:
 **Authorization:** Patient (own data) or clinician  
 **Status:** Active  
 **Used By:**
+
 - Web app patient history
 - Mobile app patient history
 - Clinician dashboard
 
 **Notes:**
+
 - Returns patient assessment history
 - Critical for mobile app
 - PHI data - requires proper authorization
@@ -674,10 +745,12 @@ Each route entry follows this format:
 **Authorization:** Patient (own data) or clinician  
 **Status:** Active  
 **Used By:**
+
 - Mobile app data export (JSON format)
 - Web app export functionality (future)
 
 **Notes:**
+
 - Exports patient data as JSON
 - Critical for mobile app
 - PHI data - requires proper authorization
@@ -695,11 +768,13 @@ Each route entry follows this format:
 **Authorization:** N/A  
 **Status:** Active  
 **Used By:**
+
 - Supabase OAuth callback
 - Social login flows
 - Magic link authentication
 
 **Notes:**
+
 - Critical authentication endpoint
 - Required for Supabase Auth
 - **DO NOT REMOVE**

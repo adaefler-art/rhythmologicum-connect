@@ -17,18 +17,18 @@ All mobile UI components are located in the `app/components/` directory. This is
 
 ### Component Inventory
 
-| Component | Path | Purpose | Used By |
-|-----------|------|---------|---------|
-| `MobileHeader` | `app/components/MobileHeader.tsx` | Global mobile header with back button, title, and optional action | All patient mobile routes |
+| Component              | Path                                      | Purpose                                                                | Used By                       |
+| ---------------------- | ----------------------------------------- | ---------------------------------------------------------------------- | ----------------------------- |
+| `MobileHeader`         | `app/components/MobileHeader.tsx`         | Global mobile header with back button, title, and optional action      | All patient mobile routes     |
 | `MobileQuestionScreen` | `app/components/MobileQuestionScreen.tsx` | Full-screen mobile question layout with progress, content, and actions | Question steps in assessments |
-| `MobileQuestionCard` | `app/components/MobileQuestionCard.tsx` | Card-based question display | Legacy/multi-question steps |
-| `MobileWelcomeScreen` | `app/components/MobileWelcomeScreen.tsx` | Intro/welcome screen for funnels | Funnel intro pages |
-| `MobileContentPage` | `app/components/MobileContentPage.tsx` | Content page renderer | Info/result pages |
-| `MobileCard` | `app/components/MobileCard.tsx` | Generic mobile card component | Various pages |
-| `MobileProgress` | `app/components/MobileProgress.tsx` | Progress indicator | Assessment flows |
-| `MobileSectionTitle` | `app/components/MobileSectionTitle.tsx` | Section headers | Various pages |
-| `MobileAnswerButton` | `app/components/MobileAnswerButton.tsx` | Touch-optimized answer buttons | Question screens |
-| `FunnelCard` | `app/components/FunnelCard.tsx` | Funnel selection cards | Assessment selector |
+| `MobileQuestionCard`   | `app/components/MobileQuestionCard.tsx`   | Card-based question display                                            | Legacy/multi-question steps   |
+| `MobileWelcomeScreen`  | `app/components/MobileWelcomeScreen.tsx`  | Intro/welcome screen for funnels                                       | Funnel intro pages            |
+| `MobileContentPage`    | `app/components/MobileContentPage.tsx`    | Content page renderer                                                  | Info/result pages             |
+| `MobileCard`           | `app/components/MobileCard.tsx`           | Generic mobile card component                                          | Various pages                 |
+| `MobileProgress`       | `app/components/MobileProgress.tsx`       | Progress indicator                                                     | Assessment flows              |
+| `MobileSectionTitle`   | `app/components/MobileSectionTitle.tsx`   | Section headers                                                        | Various pages                 |
+| `MobileAnswerButton`   | `app/components/MobileAnswerButton.tsx`   | Touch-optimized answer buttons                                         | Question screens              |
+| `FunnelCard`           | `app/components/FunnelCard.tsx`           | Funnel selection cards                                                 | Assessment selector           |
 
 ### Component Exports
 
@@ -59,6 +59,7 @@ const isMobile = useIsMobile()
 ```
 
 **Key Rules:**
+
 - ✅ Only use in **client components** (`'use client'`)
 - ✅ Returns `false` on server-side (SSR-safe)
 - ✅ Automatically updates on window resize
@@ -75,6 +76,7 @@ The patient layout implements intelligent routing:
 - **Mobile on other routes:** Shows layout header/footer
 
 **Full-screen mobile routes:**
+
 - `/patient/funnel/*` (all funnel pages)
 - `/patient/assessment` (assessment selector)
 
@@ -228,14 +230,7 @@ export default function ResultPage() {
 All mobile components use the centralized design system:
 
 ```typescript
-import { 
-  spacing, 
-  typography, 
-  colors, 
-  radii, 
-  shadows,
-  componentTokens 
-} from '@/lib/design-tokens'
+import { spacing, typography, colors, radii, shadows, componentTokens } from '@/lib/design-tokens'
 ```
 
 ### Key Design Tokens
@@ -255,6 +250,7 @@ import {
 ## Changelog
 
 ### 2025-12-12 - Initial Documentation
+
 - Established Single Source of Truth for mobile components
 - Removed duplicate `lib/ui/MobileHeader.tsx`
 - Updated `lib/ui/index.ts` to remove MobileHeader export

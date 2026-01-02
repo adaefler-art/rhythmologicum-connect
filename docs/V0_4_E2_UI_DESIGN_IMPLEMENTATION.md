@@ -34,6 +34,7 @@ Eine neue Badge-Komponente wurde erstellt für Status-Labels und Kategorien:
   - Accessibility-konform
 
 **Verwendung**:
+
 ```tsx
 <Badge variant="success">Aktiv</Badge>
 <Badge variant="danger">Hohes Risiko</Badge>
@@ -47,12 +48,12 @@ Eine neue Badge-Komponente wurde erstellt für Status-Labels und Kategorien:
 Das Dashboard wurde vollständig überarbeitet:
 
 #### Neue Features:
+
 - **4 Statistische Karten (Stat Cards)**:
   1. Aktive Patient:innen - mit User-Icon
   2. Messungen (24h) - mit Clipboard-Icon
   3. Erhöhtes Risiko - mit Warning-Icon
   4. Hohes Risiko - mit Alert-Icon
-  
 - **Visuelle Verbesserungen**:
   - Farbige Icon-Hintergründe (sky, purple, amber, red)
   - Große, gut lesbare Zahlen
@@ -94,6 +95,7 @@ Vollständige Migration auf UI-Komponenten:
 ### 6. Dokumentation aktualisiert
 
 **Dateien**:
+
 - `/lib/ui/README.md` - Badge-Komponente dokumentiert
 - `/docs/UI_COMPONENT_MIGRATION_STATUS.md` - Migration-Status aktualisiert
 - `/tsconfig.json` - Design-Mockup-Ordner vom Build ausgeschlossen
@@ -103,6 +105,7 @@ Vollständige Migration auf UI-Komponenten:
 Alle Änderungen folgen dem v0.4 Design System:
 
 ### Verwendete Design Tokens:
+
 - **Colors**: Aus `colors.ts` - Primary (sky), Neutral (slate), Semantic (success, warning, danger)
 - **Spacing**: Konsistent `spacing.lg`, `spacing.md`, etc.
 - **Typography**: Font-Größen aus der definierten Scale
@@ -110,7 +113,9 @@ Alle Änderungen folgen dem v0.4 Design System:
 - **Shadows**: `shadows.md`, `shadows.lg`
 
 ### UI-Komponenten-Bibliothek:
+
 Alle Seiten verwenden jetzt konsistent:
+
 - `Button` - Für alle Aktionen
 - `Badge` - Für Status und Kategorien
 - `Card` - Für strukturierte Container
@@ -119,13 +124,16 @@ Alle Seiten verwenden jetzt konsistent:
 ## Technische Details
 
 ### Build-Status
+
 ✅ Erfolgreich - Keine Fehler, alle Routes kompilieren
 
 ### TypeScript-Konfiguration
+
 - Design-Mockup-Ordner ausgeschlossen: `/docs/clinician_dashboard` und `/docs/mobile`
 - Grund: Figma-Exporte sollten nicht im Produktiv-Build enthalten sein
 
 ### Responsive Design
+
 - Mobile-first Ansatz beibehalten
 - Grid-Layouts für Stat Cards: 1 Spalte (mobile), 2 Spalten (tablet), 4 Spalten (desktop)
 - Touch-optimierte Interaktionselemente (min 44px)
@@ -135,12 +143,14 @@ Alle Seiten verwenden jetzt konsistent:
 ### Clinician Dashboard
 
 **Vorher**:
+
 - Einfache Tabelle ohne Kontext
 - Keine statistischen Übersichten
 - Hardcodierte Badge-Styles
 - Kein visueller Fokus
 
 **Nachher**:
+
 - 4 Stat Cards mit wichtigen Metriken
 - Icons für visuelle Orientierung
 - Badge-Komponente mit semantischen Farben
@@ -150,20 +160,24 @@ Alle Seiten verwenden jetzt konsistent:
 ### Funnel-Liste
 
 **Vorher**:
+
 - Inline-Styles für Status-Badges
 - Inkonsistente Farbwahl
 
 **Nachher**:
+
 - Badge-Komponente mit Design-System-Farben
 - Konsistent mit Rest der Anwendung
 
 ### Patienten-Detail
 
 **Vorher**:
+
 - Gemischte Verwendung von rohen divs und Komponenten
 - Inkonsistente Status-Anzeigen
 
 **Nachher**:
+
 - Durchgängige Verwendung von UI-Komponenten
 - Badge für alle Status-Anzeigen
 - Card für alle Content-Bereiche
@@ -171,6 +185,7 @@ Alle Seiten verwenden jetzt konsistent:
 ## Migration Benefits
 
 ### Für Entwickler:
+
 - ✅ Konsistente Komponenten-API
 - ✅ Einfachere Wartung
 - ✅ Wiederverwendbare Patterns
@@ -178,12 +193,14 @@ Alle Seiten verwenden jetzt konsistent:
 - ✅ Weniger Code-Duplizierung
 
 ### Für Designer:
+
 - ✅ Konsistente visuelle Sprache
 - ✅ Design-Token-basiert
 - ✅ Einfache Theme-Anpassungen möglich
 - ✅ WCAG 2.1 AA konform
 
 ### Für Nutzer:innen:
+
 - ✅ Professionelles Erscheinungsbild
 - ✅ Bessere Lesbarkeit
 - ✅ Klarere Informationshierarchie
@@ -193,12 +210,14 @@ Alle Seiten verwenden jetzt konsistent:
 ## Testing
 
 ### Build-Tests
+
 - [x] TypeScript-Kompilierung erfolgreich
 - [x] Next.js Build erfolgreich
 - [x] Keine ESLint-Fehler
 - [x] Alle Routes generiert
 
 ### Manuelle Tests (empfohlen)
+
 - [ ] Clinician Dashboard: Stat Cards anzeigen und interagieren
 - [ ] Funnel-Liste: Status-Badges korrekt angezeigt
 - [ ] Patienten-Detail: Alle Sections mit Cards korrekt
@@ -227,10 +246,12 @@ Alle Seiten verwenden jetzt konsistent:
 ## Dateien geändert
 
 ### Neue Dateien:
+
 - `lib/ui/Badge.tsx` - Neue Badge-Komponente
 - `docs/V0_4_E2_UI_DESIGN_IMPLEMENTATION.md` - Diese Dokumentation
 
 ### Aktualisierte Dateien:
+
 - `app/clinician/page.tsx` - Dashboard mit Stat Cards
 - `app/clinician/funnels/page.tsx` - Badge-Integration
 - `app/clinician/patient/[id]/page.tsx` - Vollständige UI-Komponenten
@@ -245,6 +266,7 @@ Alle Seiten verwenden jetzt konsistent:
 Die Implementierung von V0.4-E2 ist erfolgreich abgeschlossen. Alle wichtigen Clinician- und Admin-Seiten verwenden jetzt das moderne UI-Design basierend auf dem v0.4 Design System.
 
 **Key Achievements**:
+
 - ✅ Badge-Komponente erstellt und integriert
 - ✅ Clinician Dashboard modernisiert mit Stat Cards
 - ✅ Konsistente Verwendung von UI-Komponenten

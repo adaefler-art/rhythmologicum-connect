@@ -27,30 +27,36 @@ npm run db:typegen
 ## Expected Outcomes
 
 ### 1. `npx supabase start`
+
 - Should start all Supabase services (PostgreSQL, Auth, Storage, etc.)
 - Should apply all migrations from `supabase/migrations/`
 - Should be accessible at http://localhost:54323
 
 ### 2. `npm run db:reset`
+
 - Drops and recreates the database
 - Applies all migrations in order
 - Seeds any initial data
 - Should complete without errors
 
 **Expected Tables Confirmed**:
+
 - `user_consents` - with columns: `id`, `user_id`, `consent_version`, `consented_at`, `ip_address`, `user_agent`
 - `patient_profiles` - with columns: `id`, `user_id`, `created_at`, `full_name`, `birth_year`, `sex` (TEXT type)
 
 **Expected Constraints**:
+
 - `unique_user_profile` on `patient_profiles(user_id)` - ensures idempotency
 - No unique constraint on `user_consents` for version (allows multiple versions per user)
 
 ### 3. `npm run db:diff`
+
 - Should show NO differences between migrations and actual schema
 - Confirms schema.sql is in sync with migrations
 - Empty output = success
 
 ### 4. `npm run db:typegen`
+
 - Generates TypeScript types in `lib/types/supabase.ts`
 - Should complete without errors
 - Types should match schema definitions
@@ -60,6 +66,7 @@ npm run db:typegen
 ### Sex Field Type Check
 
 From `schema/schema.sql`:
+
 ```sql
 CREATE TABLE public.patient_profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
@@ -76,45 +83,48 @@ CREATE TABLE public.patient_profiles (
 ### RLS Policies Verification
 
 Expected RLS policies on `patient_profiles`:
+
 ```sql
 -- Patients can view own profile
-CREATE POLICY "Patients can view own profile" 
-  ON public.patient_profiles FOR SELECT 
+CREATE POLICY "Patients can view own profile"
+  ON public.patient_profiles FOR SELECT
   USING ((user_id = auth.uid()));
 
 -- Patients can insert own profile
-CREATE POLICY "Patients can insert own profile" 
-  ON public.patient_profiles FOR INSERT 
+CREATE POLICY "Patients can insert own profile"
+  ON public.patient_profiles FOR INSERT
   WITH CHECK ((user_id = auth.uid()));
 
 -- Patients can update own profile
-CREATE POLICY "Patients can update own profile" 
-  ON public.patient_profiles FOR UPDATE 
-  USING ((user_id = auth.uid())) 
+CREATE POLICY "Patients can update own profile"
+  ON public.patient_profiles FOR UPDATE
+  USING ((user_id = auth.uid()))
   WITH CHECK ((user_id = auth.uid()));
 
 -- Clinicians can view all profiles
-CREATE POLICY "Clinicians can view all profiles" 
-  ON public.patient_profiles FOR SELECT 
+CREATE POLICY "Clinicians can view all profiles"
+  ON public.patient_profiles FOR SELECT
   USING (public.is_clinician());
 ```
 
 Expected RLS policies on `user_consents`:
+
 ```sql
 -- Users can view own consents
-CREATE POLICY "Users can view own consents" 
-  ON public.user_consents FOR SELECT 
+CREATE POLICY "Users can view own consents"
+  ON public.user_consents FOR SELECT
   USING ((auth.uid() = user_id));
 
 -- Users can insert own consents
-CREATE POLICY "Users can insert own consents" 
-  ON public.user_consents FOR INSERT 
+CREATE POLICY "Users can insert own consents"
+  ON public.user_consents FOR INSERT
   WITH CHECK ((auth.uid() = user_id));
 ```
 
 ## No Migration Required
 
 **Verification**: All required database objects already exist in the schema:
+
 - ✅ `user_consents` table exists with all required columns
 - ✅ `patient_profiles` table exists with all required columns
 - ✅ Unique constraint on `patient_profiles.user_id` ensures idempotency

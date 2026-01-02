@@ -3,6 +3,7 @@
 ## Desktop Layout - Before vs After
 
 ### BEFORE
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ ┌───────────────────────────────────────────┐   │
@@ -25,6 +26,7 @@
 ```
 
 ### AFTER
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ ┌───────────────────────────────────────────────┐   │
@@ -56,6 +58,7 @@
 ## Mobile Layout - Before vs After
 
 ### BEFORE
+
 ```
 ┌──────────────────────┐
 │ MobileContentPage    │
@@ -75,6 +78,7 @@
 ```
 
 ### AFTER
+
 ```
 ┌──────────────────────┐
 │ MobileContentPage    │
@@ -96,6 +100,7 @@
 ## Error State - Before vs After
 
 ### BEFORE
+
 ```
 ┌───────────────────────────┐
 │ Inhalt konnte nicht       │
@@ -106,6 +111,7 @@
 ```
 
 ### AFTER
+
 ```
 ┌──────────────────────────────────────┐
 │ ┌──────────────────────────────────┐ │
@@ -131,6 +137,7 @@
 ## Button Comparison
 
 ### Navigation Buttons - BEFORE
+
 ```
 ┌─────────────────────────────────────┐
 │ [Zurück]           [Weiter/Lädt...] │
@@ -141,6 +148,7 @@
 ```
 
 ### Navigation Buttons - AFTER
+
 ```
 ┌──────────────────────────────────────────────┐
 │ [← Zurück]              [Weiter → / 🔄 ...]  │
@@ -156,26 +164,29 @@
 ## Color Scheme Changes
 
 ### BEFORE
-| Element | Old Color | Theme |
-|---------|-----------|-------|
-| Excerpt | blue-50 | Generic |
-| Excerpt Border | blue-500 | Generic |
-| Button | blue-500/600 | Generic |
-| Text | gray-600/700/900 | Generic |
+
+| Element        | Old Color        | Theme   |
+| -------------- | ---------------- | ------- |
+| Excerpt        | blue-50          | Generic |
+| Excerpt Border | blue-500         | Generic |
+| Button         | blue-500/600     | Generic |
+| Text           | gray-600/700/900 | Generic |
 
 ### AFTER
-| Element | New Color | Theme |
-|---------|-----------|-------|
-| Header Background | sky-50 → blue-50 | App Sky Theme |
-| Excerpt | sky-50 | App Sky Theme |
-| Excerpt Border | sky-500 | App Sky Theme |
-| Button | sky-600/700/800 | App Sky Theme |
-| Text | slate-600/700/900 | Consistent Neutrals |
-| Footer | slate-50 | Professional |
+
+| Element           | New Color         | Theme               |
+| ----------------- | ----------------- | ------------------- |
+| Header Background | sky-50 → blue-50  | App Sky Theme       |
+| Excerpt           | sky-50            | App Sky Theme       |
+| Excerpt Border    | sky-500           | App Sky Theme       |
+| Button            | sky-600/700/800   | App Sky Theme       |
+| Text              | slate-600/700/900 | Consistent Neutrals |
+| Footer            | slate-50          | Professional        |
 
 ## Typography Improvements
 
 ### BEFORE
+
 ```
 Title:       text-2xl
 Description: text-sm
@@ -184,6 +195,7 @@ Buttons:     (default)
 ```
 
 ### AFTER
+
 ```
 Title:       text-xl sm:text-2xl md:text-3xl (responsive)
 Description: text-sm sm:text-base (responsive)
@@ -195,6 +207,7 @@ Line Height: leading-tight / leading-relaxed (improved)
 ## Spacing Improvements
 
 ### BEFORE
+
 ```
 Card padding: p-8 (uniform)
 Content:      (basic)
@@ -202,6 +215,7 @@ Buttons:      (basic gaps)
 ```
 
 ### AFTER
+
 ```
 Header:  px-6 sm:px-8 py-5 sm:py-6 (responsive)
 Content: px-6 sm:px-8 py-6 sm:py-8 (responsive)
@@ -213,6 +227,7 @@ Excerpt: mb-6 p-4 sm:p-5 (improved)
 ## Accessibility Enhancements
 
 ### BEFORE
+
 ```html
 <div className="mb-4 text-4xl">❌</div>
 <!-- No ARIA attributes -->
@@ -222,10 +237,9 @@ Excerpt: mb-6 p-4 sm:p-5 (improved)
 ```
 
 ### AFTER
+
 ```html
-<div className="mb-4 text-4xl" role="img" aria-label="Fehler">
-  ❌
-</div>
+<div className="mb-4 text-4xl" role="img" aria-label="Fehler">❌</div>
 <!-- Proper ARIA for screen readers -->
 
 <button>Bitte warten...</button>
@@ -235,28 +249,33 @@ Excerpt: mb-6 p-4 sm:p-5 (improved)
 ## Summary of Key Improvements
 
 ✅ **Visual Consistency**
+
 - Matches PatientFlowRenderer styling
 - Professional card design with gradients
 - Consistent color theme (sky-blue)
 
 ✅ **User Experience**
+
 - Clear visual hierarchy
 - Helpful error messages
 - Loading feedback
 - Directional arrows in buttons
 
 ✅ **Accessibility**
+
 - WCAG 2.1 Level AA compliant
 - 56px touch targets
 - Proper ARIA labels
 - Screen reader support
 
 ✅ **Responsive Design**
+
 - Mobile-first approach
 - Smooth scaling across devices
 - Consistent spacing and typography
 
 ✅ **Code Quality**
+
 - TypeScript strict mode
 - No linting errors
 - Zero security vulnerabilities
@@ -265,6 +284,7 @@ Excerpt: mb-6 p-4 sm:p-5 (improved)
 ---
 
 **Legend:**
+
 - 🌤️ Gradient background
 - 🎨 Styled section
 - ❌ Error icon with ARIA

@@ -13,6 +13,7 @@ This document summarizes the implementation of core UI components for the Rhythm
 ### Original Requirements
 
 From issue description:
+
 - ✅ Buttons (Primary/Secondary/Ghost/Destructive + States)
 - ✅ Inputs (Default/Focus/Error)
 - ✅ Cards (Base, Section, KPI)
@@ -37,6 +38,7 @@ From issue description:
 A versatile progress indicator for assessments and multi-step processes.
 
 **Features:**
+
 - Two variants: `bar` (horizontal) and `steps` (indicators)
 - Three size variants: `sm`, `md`, `lg`
 - Optional percentage display
@@ -46,6 +48,7 @@ A versatile progress indicator for assessments and multi-step processes.
 - Theme-aware colors
 
 **Usage:**
+
 ```tsx
 import { Progress } from '@/lib/ui'
 
@@ -71,6 +74,7 @@ import { Progress } from '@/lib/ui'
 ```
 
 **Design Token Integration:**
+
 - Uses `componentTokens.progressBar` for height and transitions
 - Uses `colors.primary[500]` for bar color (configurable)
 - Uses `typography.fontSize` for text sizing
@@ -81,6 +85,7 @@ import { Progress } from '@/lib/ui'
 A mobile-optimized header with navigation and title.
 
 **Features:**
+
 - Back button with ArrowLeft icon (from lucide-react)
 - Centered title with optional subtitle
 - Optional action button/content on right
@@ -89,6 +94,7 @@ A mobile-optimized header with navigation and title.
 - Consistent with design tokens
 
 **Usage:**
+
 ```tsx
 import { MobileHeader } from '@/lib/ui'
 import { useRouter } from 'next/navigation'
@@ -111,6 +117,7 @@ const router = useRouter()
 ```
 
 **Design Token Integration:**
+
 - Uses `spacing` tokens for padding
 - Uses `typography.fontSize` for responsive text
 - Follows color palette (slate, sky)
@@ -120,7 +127,9 @@ const router = useRouter()
 All existing components were reviewed and confirmed to have proper states:
 
 #### Button Component ✅
+
 **States:**
+
 - Default: Clean base styling
 - Hover: `hover:bg-*` for all variants
 - Active: `active:bg-*` with subtle scale transform
@@ -132,7 +141,9 @@ All existing components were reviewed and confirmed to have proper states:
 **Sizes:** sm, md, lg
 
 #### Input Component ✅
+
 **States:**
+
 - Default: `border-slate-300 bg-white`
 - Focus: `focus:ring-2 focus:ring-sky-500 focus:border-sky-500`
 - Error: `border-red-500 bg-red-50` with error message
@@ -141,7 +152,9 @@ All existing components were reviewed and confirmed to have proper states:
 **Features:** Helper text, error messages, three size variants
 
 #### Card Component ✅
+
 **Flexibility:**
+
 - Used for base content containers
 - Used for section containers
 - Used for KPI cards (with custom content)
@@ -152,12 +165,15 @@ All existing components were reviewed and confirmed to have proper states:
 **Note:** KPI cards don't need a specific variant. They use the Card component with custom content (large numbers, icons, badges) which provides better flexibility.
 
 #### Badge Component ✅
+
 **Variants:** default, success, warning, danger, info, secondary  
 **Sizes:** sm, md  
 **Usage:** Status labels, tags, categories
 
 #### AppShell Component ✅
+
 **Features:**
+
 - Desktop header with branding
 - Navigation bar with active states
 - User info and sign-out button
@@ -171,12 +187,14 @@ All existing components were reviewed and confirmed to have proper states:
 ### 1. Component Library Documentation
 
 **Updated:**
+
 - `/lib/ui/README.md` - Added Progress and MobileHeader documentation
 - `/lib/ui/index.ts` - Exported new components
 
 ### 2. Design System Documentation
 
 **Updated:**
+
 - `/docs/V0_4_DESIGN_SYSTEM.md` - Added Progress and MobileHeader sections
 - Added component checklist showing all implemented components
 - Updated future enhancements list
@@ -202,11 +220,13 @@ Our components follow shadcn/ui patterns:
 ### Key Differences
 
 **Note:** We don't use `clsx` and `tailwind-merge` utilities (the `cn` function from shadcn) because:
+
 1. Our design system uses inline styles with design tokens for precise control
 2. We have a hybrid approach (Tailwind classes + design token styles)
 3. This provides better theme-ability and consistency
 
 **This is acceptable** because:
+
 - Pattern compatibility is about API design, not implementation details
 - Our components provide the same developer experience
 - They're just as flexible and maintainable
@@ -216,22 +236,26 @@ Our components follow shadcn/ui patterns:
 ### Primary User-Facing Pages
 
 **Patient Portal:**
+
 - ✅ `/patient/*` - Uses AppShell, Progress (via MobileProgress), Card, Button
 - ✅ `/patient/funnel/[slug]/*` - Uses Progress indicators, navigation buttons
 - ✅ `/patient/history` - Uses Card, Button, Badge
 
 **Clinician Dashboard:**
+
 - ✅ `/clinician` - Uses AppShell, Card (for KPI cards), Badge, Button
 - ✅ `/clinician/funnels` - Uses Card, Badge, Button
 - ✅ `/clinician/patient/[id]` - Uses Card, Badge, Button
 
 **Admin Portal:**
+
 - ✅ `/admin/*` - Uses AppShell, Card, Table, Button, FormField
 - ✅ `/admin/design-system` - Showcase page for all components
 
 ### Component Usage Notes
 
 **Remaining Raw Buttons:**
+
 - Some pages still have raw `<button>` elements
 - These are primarily in:
   - Legacy demos (`/patient/_legacy/*`)
@@ -255,11 +279,13 @@ npm run build
 ```
 
 **Component Tests:**
+
 - All components compile without errors
 - TypeScript types are properly exported
 - Design tokens are correctly imported and used
 
 **Manual Testing Recommended:**
+
 1. Progress component in assessment flows
 2. MobileHeader in patient funnel pages
 3. All Button variants and states
@@ -273,6 +299,7 @@ npm run build
 **TypeScript:** Strict mode enabled, all components fully typed
 
 **Prettier:** Follows project conventions:
+
 - No semicolons
 - Single quotes
 - 100 character line width
@@ -281,6 +308,7 @@ npm run build
 **Design Tokens:** All spacing, colors, typography uses tokens from `/lib/design-tokens.ts`
 
 **Accessibility:**
+
 - All interactive elements have 44px+ minimum touch targets
 - Proper ARIA labels and roles
 - Keyboard navigation support
@@ -289,11 +317,13 @@ npm run build
 ## Files Changed
 
 ### New Files:
+
 - `lib/ui/Progress.tsx` - Progress indicator component
 - `lib/ui/MobileHeader.tsx` - Mobile header component
 - `docs/DESIGN_SYSTEM_COMPONENTS_SUMMARY.md` - This document
 
 ### Modified Files:
+
 - `lib/ui/index.ts` - Added exports for new components
 - `lib/ui/README.md` - Added documentation for new components
 - `docs/V0_4_DESIGN_SYSTEM.md` - Updated component list and documentation
@@ -303,18 +333,21 @@ npm run build
 All acceptance criteria have been met:
 
 ✅ **Komponenten 100% kompatibel mit shadcn/ui**
+
 - Components follow shadcn patterns and conventions
 - Typed variant APIs
 - Proper composition patterns
 - Full accessibility support
 
 ✅ **Variants sind sauber implementiert**
+
 - All variants clearly defined with TypeScript types
 - Consistent naming (primary, secondary, outline, ghost, danger)
 - Clean state management (hover, active, disabled, loading)
 - Design token integration throughout
 
 ✅ **Alle Seiten verwenden nur neue Komponenten**
+
 - All primary user-facing pages use standardized components
 - Design system is complete and documented
 - Components available for all new development
@@ -323,18 +356,21 @@ All acceptance criteria have been met:
 ### Impact
 
 **For Developers:**
+
 - ✅ Complete, documented component library
 - ✅ Type-safe component APIs
 - ✅ Consistent patterns across all components
 - ✅ Easy to extend and maintain
 
 **For Designers:**
+
 - ✅ Consistent visual language
 - ✅ All design tokens centralized
 - ✅ Easy to create new page layouts
 - ✅ Design system documentation up to date
 
 **For Users:**
+
 - ✅ Consistent UI across all pages
 - ✅ Accessible components with proper ARIA
 - ✅ Touch-optimized mobile experience

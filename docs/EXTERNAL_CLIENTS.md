@@ -21,6 +21,7 @@ This document tracks all external clients that access Rhythmologicum Connect API
 **API Base URL:** Same as web app (`NEXT_PUBLIC_SUPABASE_URL`)
 
 **Endpoints Used:**
+
 - `GET /api/funnels/active` - List available assessment funnels
 - `POST /api/funnels/[slug]/assessments` - Start new assessment
 - `GET /api/funnels/[slug]/assessments/[assessmentId]` - Get assessment state
@@ -32,6 +33,7 @@ This document tracks all external clients that access Rhythmologicum Connect API
 - `POST /api/patient-measures/export` - Export patient data
 
 **Notes:**
+
 - Mobile app shares authentication with web app
 - Uses same Supabase backend
 - All endpoints require authentication
@@ -47,10 +49,12 @@ This document tracks all external clients that access Rhythmologicum Connect API
 **API Base URL:** Production API URL
 
 **Endpoints Used:**
+
 - `GET /api/admin/usage` - Usage telemetry for monitoring (requires admin role)
 - `GET /api/admin/diagnostics/pillars-sot` - System diagnostics
 
 **Notes:**
+
 - Uses `SUPABASE_SERVICE_ROLE_KEY` for authentication
 - Runs on scheduled basis (cron jobs)
 - Critical for operational monitoring
@@ -66,10 +70,12 @@ This document tracks all external clients that access Rhythmologicum Connect API
 **API Base URL:** Internal use only
 
 **Endpoints Used:**
+
 - `POST /api/amy/stress-report` - Generate AI-powered stress assessment reports
 - `POST /api/amy/stress-summary` - Generate assessment summaries
 
 **Notes:**
+
 - Currently marked as potentially unused in cleanup audit (TV05_CLEANUP_AUDIT_UNUSED)
 - Uses Anthropic Claude API for report generation
 - **ACTION REQUIRED:** Verify if these endpoints are still needed or have been superseded by Funnel Runtime system
@@ -82,12 +88,14 @@ This document tracks all external clients that access Rhythmologicum Connect API
 **Owner:** Integration Team  
 **Contact:** [TBD]  
 **Environment:** TBD  
-**Authentication Method:** TBD  
+**Authentication Method:** TBD
 
 **Endpoints Used:**
+
 - TBD - To be documented when partnerships are established
 
 **Notes:**
+
 - Placeholder for future third-party integrations
 - Document here before going live
 
@@ -103,10 +111,12 @@ This document tracks all external clients that access Rhythmologicum Connect API
 **Replacement:** Onboarding server actions
 
 **Endpoints:**
+
 - `POST /api/consent/record` - Record user consent
 - `GET /api/consent/status` - Get consent status
 
 **Notes:**
+
 - Marked in cleanup audit as potentially superseded by onboarding server actions
 - **ACTION REQUIRED:** Confirm deprecation status before removal
 - See TV05_CLEANUP_BACKLOG.md item #2
@@ -123,19 +133,22 @@ This document tracks all external clients that access Rhythmologicum Connect API
    - Mark those endpoints in `API_ROUTE_OWNERSHIP.md` as `externalAllowed: yes`
 
 2. **Documentation Template:**
+
    ```markdown
    ### [Client Name]
-   
+
    **Owner:** [Team/Person]
    **Contact:** [Email/Slack]
    **Environment:** [Production/Preview/Development]
    **Authentication Method:** [Auth type]
    **API Base URL:** [URL]
-   
+
    **Endpoints Used:**
+
    - `[METHOD] /api/[route]` - [Description]
-   
+
    **Notes:**
+
    - [Any special considerations]
    ```
 
@@ -181,12 +194,12 @@ Before marking any API endpoint as "unused" or "safe to remove":
 
 **Cleanup Decision Matrix:**
 
-| Condition | Action |
-|-----------|--------|
-| Used by external client | **DO NOT REMOVE** - Keep endpoint |
-| Not in registry + zero usage telemetry | **VERIFY** - Check with team before removal |
-| Marked as deprecated + 6+ months old | **SAFE TO REMOVE** - Follow deprecation process |
-| Uncertain ownership | **ESCALATE** - Discuss in architecture review |
+| Condition                              | Action                                          |
+| -------------------------------------- | ----------------------------------------------- |
+| Used by external client                | **DO NOT REMOVE** - Keep endpoint               |
+| Not in registry + zero usage telemetry | **VERIFY** - Check with team before removal     |
+| Marked as deprecated + 6+ months old   | **SAFE TO REMOVE** - Follow deprecation process |
+| Uncertain ownership                    | **ESCALATE** - Discuss in architecture review   |
 
 ---
 

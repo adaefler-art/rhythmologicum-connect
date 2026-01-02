@@ -24,12 +24,14 @@ The V0.4 Design System provides a cohesive visual language and component library
 ## Design Tokens
 
 Design tokens are defined in two locations:
+
 - **TypeScript**: `/lib/design-tokens.ts` - For programmatic use
 - **CSS**: `/app/globals.css` - For global styles
 
 ### Color Palette
 
 #### Primary Colors (Sky Blue)
+
 Main brand color used for primary actions and highlights:
 
 ```
@@ -46,6 +48,7 @@ Main brand color used for primary actions and highlights:
 ```
 
 #### Neutral Colors (Slate)
+
 Used for backgrounds, borders, and text:
 
 ```
@@ -62,6 +65,7 @@ Used for backgrounds, borders, and text:
 ```
 
 #### Semantic Colors
+
 Contextual colors for states and feedback:
 
 ```
@@ -147,11 +151,13 @@ All components are located in `/lib/ui/` and can be imported from `@/lib/ui`.
 Versatile button component with multiple variants.
 
 **Import:**
+
 ```tsx
 import { Button } from '@/lib/ui'
 ```
 
 **Variants:**
+
 - `primary` - Main call-to-action (Sky blue background)
 - `secondary` - Secondary actions (Light gray background)
 - `outline` - Outlined style (Transparent with border)
@@ -159,11 +165,13 @@ import { Button } from '@/lib/ui'
 - `danger` - Destructive actions (Red background)
 
 **Sizes:**
+
 - `sm` - Small (36px min-height)
 - `md` - Medium/Default (56px min-height)
 - `lg` - Large (56px min-height)
 
 **Example:**
+
 ```tsx
 <Button variant="primary" size="md">
   Save Changes
@@ -183,11 +191,13 @@ import { Button } from '@/lib/ui'
 Flexible container for grouping related content.
 
 **Import:**
+
 ```tsx
 import { Card } from '@/lib/ui'
 ```
 
 **Props:**
+
 - `header` - Optional header content
 - `footer` - Optional footer content
 - `padding` - Size: `none | sm | md | lg`
@@ -197,6 +207,7 @@ import { Card } from '@/lib/ui'
 - `onClick` - Click handler
 
 **Example:**
+
 ```tsx
 <Card
   header={<h3 className="font-semibold">Card Title</h3>}
@@ -217,17 +228,20 @@ import { Card } from '@/lib/ui'
 Styled text input with error states.
 
 **Import:**
+
 ```tsx
 import { Input } from '@/lib/ui'
 ```
 
 **Props:**
+
 - `error` - Error state (boolean)
 - `errorMessage` - Error text to display
 - `helperText` - Helper text below input
 - `inputSize` - Size: `sm | md | lg`
 
 **Example:**
+
 ```tsx
 <Input
   type="email"
@@ -243,11 +257,13 @@ import { Input } from '@/lib/ui'
 Multi-line text input component.
 
 **Import:**
+
 ```tsx
 import { Textarea } from '@/lib/ui'
 ```
 
 **Example:**
+
 ```tsx
 <Textarea
   rows={4}
@@ -262,11 +278,13 @@ import { Textarea } from '@/lib/ui'
 Dropdown selection component.
 
 **Import:**
+
 ```tsx
 import { Select } from '@/lib/ui'
 ```
 
 **Example:**
+
 ```tsx
 <Select error={hasError} errorMessage="Please select an option">
   <option value="">Choose...</option>
@@ -280,20 +298,24 @@ import { Select } from '@/lib/ui'
 Versatile progress indicator for showing completion status.
 
 **Import:**
+
 ```tsx
 import { Progress } from '@/lib/ui'
 ```
 
 **Variants:**
+
 - `bar` - Horizontal progress bar (default)
 - `steps` - Step indicators for multi-step processes
 
 **Sizes:**
+
 - `sm` - Small (6px height)
 - `md` - Medium/Default (8px height)
 - `lg` - Large (12px height)
 
 **Example:**
+
 ```tsx
 <Progress value={60} />
 
@@ -318,17 +340,20 @@ import { Progress } from '@/lib/ui'
 Mobile-optimized header with back button and title.
 
 **Import:**
+
 ```tsx
 import { MobileHeader } from '@/lib/ui'
 ```
 
 **Features:**
+
 - Back button with icon
 - Title and optional subtitle
 - Optional action button
 - Touch-optimized
 
 **Example:**
+
 ```tsx
 import { useRouter } from 'next/navigation'
 
@@ -350,11 +375,13 @@ const router = useRouter()
 Form field label with required indicator.
 
 **Import:**
+
 ```tsx
 import { Label } from '@/lib/ui'
 ```
 
 **Example:**
+
 ```tsx
 <Label htmlFor="email" required>
   Email Address
@@ -367,11 +394,13 @@ import { Label } from '@/lib/ui'
 Wrapper that combines label, input, and helper text.
 
 **Import:**
+
 ```tsx
 import { FormField } from '@/lib/ui'
 ```
 
 **Example:**
+
 ```tsx
 <FormField
   label="Email Address"
@@ -388,11 +417,13 @@ import { FormField } from '@/lib/ui'
 Data display table with sorting support.
 
 **Import:**
+
 ```tsx
 import { Table } from '@/lib/ui'
 ```
 
 **Example:**
+
 ```tsx
 const columns = [
   { header: 'Name', accessor: (row) => row.name },
@@ -459,6 +490,7 @@ All components follow accessibility best practices:
 **Current Decision for v0.4**: Light mode only with forced white backgrounds for form fields.
 
 Form fields maintain white backgrounds even when system dark mode is active to ensure:
+
 - Maximum readability
 - Consistent experience across platforms
 - Clear visual feedback
@@ -486,12 +518,15 @@ Future versions may implement proper dark mode support.
 ## Implementation Examples
 
 ### Login Page (Existing)
+
 See `/app/page.tsx` for a well-implemented example using design tokens.
 
 ### Clinician Dashboard
+
 See `/app/clinician/layout.tsx` for header/navigation pattern.
 
 ### Content Management
+
 See `/app/admin/content/page.tsx` for table and filter usage.
 
 ## Migration Guide
@@ -505,17 +540,15 @@ When updating existing pages to use the new design system:
 5. **Use design tokens** for custom spacing/colors
 
 **Before:**
+
 ```tsx
-<button className="px-4 py-2 bg-blue-600 text-white rounded">
-  Save
-</button>
+<button className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
 ```
 
 **After:**
+
 ```tsx
-<Button variant="primary">
-  Save
-</Button>
+<Button variant="primary">Save</Button>
 ```
 
 ## Resources

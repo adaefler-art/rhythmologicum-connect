@@ -27,6 +27,7 @@ This is the safest way to get back to a deterministic, migration-first state.
    - Redeploy.
 
 ### Notes
+
 - **Auth users are not automatically migrated** between projects. Treat this as a true restart unless you explicitly export/import users.
 - If you need to preserve production data, do not use this approach without a data migration plan.
 

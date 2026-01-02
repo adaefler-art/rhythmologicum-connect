@@ -7,18 +7,21 @@ This document describes the implementation of predictable, role-aware navigation
 ## User Roles
 
 ### Patient
+
 - **Default role** for new users
 - Access to: `/patient/*` routes
 - Can view their own assessments and history
 - Limited access to clinician/admin features
 
 ### Clinician
+
 - **Healthcare provider** role
 - Access to: `/clinician/*` and `/admin/*` routes
 - Can view all patient data and manage assessments
 - Can configure funnels and content pages
 
 ### Admin
+
 - **Administrative** role (currently treated as equivalent to clinician)
 - Access to: `/clinician/*` and `/admin/*` routes
 - Same permissions as clinician
@@ -46,6 +49,7 @@ export interface RoleNavItem {
 #### Key Functions
 
 ##### `getUserRole(user: User | null): UserRole | null`
+
 Extracts the user's role from their metadata.
 
 ```typescript
@@ -54,6 +58,7 @@ const role = getUserRole(user)
 ```
 
 ##### `hasRole(user: User | null, requiredRole: UserRole): boolean`
+
 Checks if user has a specific role.
 
 ```typescript
@@ -63,6 +68,7 @@ if (hasRole(user, 'clinician')) {
 ```
 
 ##### `hasAnyRole(user: User | null, requiredRoles: UserRole[]): boolean`
+
 Checks if user has any of the specified roles.
 
 ```typescript
@@ -72,6 +78,7 @@ if (hasAnyRole(user, ['clinician', 'admin'])) {
 ```
 
 ##### `getRoleLandingPage(user: User | null): string`
+
 Returns the appropriate landing page after login based on role.
 
 ```typescript
@@ -80,6 +87,7 @@ const landingPage = getRoleLandingPage(user)
 ```
 
 ##### `getClinicianNavItems(pathname: string): RoleNavItem[]`
+
 Returns navigation items for clinician/admin roles.
 
 ```typescript
@@ -92,6 +100,7 @@ const navItems = getClinicianNavItems(pathname)
 ```
 
 ##### `getPatientNavItems(pathname: string): RoleNavItem[]`
+
 Returns navigation items for patient role.
 
 ```typescript
@@ -103,6 +112,7 @@ const navItems = getPatientNavItems(pathname)
 ```
 
 ##### `getRoleDisplayName(role: UserRole | null): string`
+
 Returns German display name for role.
 
 ```typescript
@@ -111,6 +121,7 @@ const displayName = getRoleDisplayName('clinician')
 ```
 
 ##### `canAccessRoute(user: User | null, route: string): boolean`
+
 Checks if user can access a specific route.
 
 ```typescript
@@ -143,6 +154,7 @@ if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
 ```
 
 **Landing Pages by Role:**
+
 - Patient → `/patient`
 - Clinician → `/clinician`
 - Admin → `/clinician`
@@ -150,17 +162,20 @@ if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
 ### 2. Clinician Layout (`app/clinician/layout.tsx`)
 
 The clinician layout:
+
 - Verifies user has `clinician` or `admin` role
 - Uses `DesktopLayout` component with sidebar navigation
 - Shows role indicator: "Angemeldet als: Clinician"
 - Provides consistent navigation across all clinician pages
 
 **Navigation Items:**
+
 - Dashboard (`/clinician`)
 - Funnels (`/clinician/funnels`)
 - Content (`/admin/content`)
 
 **Authentication Check:**
+
 ```typescript
 if (!hasAnyRole(user, ['clinician', 'admin'])) {
   router.push(ACCESS_DENIED_REDIRECT)
@@ -171,6 +186,7 @@ if (!hasAnyRole(user, ['clinician', 'admin'])) {
 ### 3. Admin Layout (`app/admin/layout.tsx`)
 
 The admin layout:
+
 - Identical to clinician layout (uses same navigation)
 - Verifies user has `clinician` or `admin` role
 - Shows role indicator: "Angemeldet als: Administrator"
@@ -179,16 +195,19 @@ The admin layout:
 ### 4. Patient Layout (`app/patient/layout.tsx`)
 
 The patient layout:
+
 - Custom mobile-first design with bottom tabs
 - Desktop header with user info and logout button
 - Shows role indicator in desktop view
 - Simpler navigation focused on assessment workflow
 
 **Navigation Items:**
+
 - Assessments (`/patient/assessment`)
 - Verlauf (`/patient/history`)
 
 **Features:**
+
 - Mobile bottom navigation with icons
 - Desktop top navigation with tabs
 - Logout button in desktop view
@@ -197,6 +216,7 @@ The patient layout:
 ## Navigation Menu Differences
 
 ### Desktop (Clinician/Admin)
+
 - **Sidebar Navigation** (collapsible)
 - Dashboard, Funnels, Content
 - User profile with email
@@ -204,12 +224,14 @@ The patient layout:
 - Logout button
 
 ### Desktop (Patient)
+
 - **Top Tab Navigation**
 - Assessments, Verlauf
 - User info with role
 - Logout button
 
 ### Mobile (Patient)
+
 - **Bottom Tab Navigation** (sticky)
 - Icon + label for each tab
 - Assessments, Verlauf
@@ -217,24 +239,27 @@ The patient layout:
 ## Route Protection
 
 ### Server-Side Protection
+
 Route protection is handled in layout files:
 
 ```typescript
 // Clinician/Admin routes
 useEffect(() => {
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) {
       router.push(AUTH_REQUIRED_REDIRECT)
       return
     }
-    
+
     if (!hasAnyRole(user, ['clinician', 'admin'])) {
       router.push(ACCESS_DENIED_REDIRECT)
       return
     }
-    
+
     setUser(user)
     setLoading(false)
   }
@@ -244,17 +269,18 @@ useEffect(() => {
 
 ### Route Access Matrix
 
-| Route Path | Patient | Clinician | Admin |
-|------------|---------|-----------|-------|
-| `/` (login) | ✅ | ✅ | ✅ |
-| `/datenschutz` | ✅ | ✅ | ✅ |
-| `/patient/*` | ✅ | ✅ | ✅ |
-| `/clinician/*` | ❌ | ✅ | ✅ |
-| `/admin/*` | ❌ | ✅ | ✅ |
+| Route Path     | Patient | Clinician | Admin |
+| -------------- | ------- | --------- | ----- |
+| `/` (login)    | ✅      | ✅        | ✅    |
+| `/datenschutz` | ✅      | ✅        | ✅    |
+| `/patient/*`   | ✅      | ✅        | ✅    |
+| `/clinician/*` | ❌      | ✅        | ✅    |
+| `/admin/*`     | ❌      | ✅        | ✅    |
 
 ## User Experience Flow
 
 ### New Patient Registration
+
 1. User signs up at `/`
 2. System assigns default `patient` role
 3. Patient profile created automatically
@@ -262,6 +288,7 @@ useEffect(() => {
 5. Sees Assessments and Verlauf tabs
 
 ### Clinician Login
+
 1. Clinician logs in at `/`
 2. System detects `clinician` role
 3. Redirected to `/clinician`
@@ -269,6 +296,7 @@ useEffect(() => {
 5. Sidebar shows: Dashboard, Funnels, Content
 
 ### Admin Login
+
 1. Admin logs in at `/`
 2. System detects `admin` role
 3. Redirected to `/clinician` (shared dashboard)
@@ -280,6 +308,7 @@ useEffect(() => {
 All layouts now show a role indicator for clarity:
 
 **Clinician/Admin Layouts:**
+
 ```html
 <div className="mb-4 text-xs text-slate-500">
   Angemeldet als: <span className="font-medium">Clinician</span>
@@ -287,6 +316,7 @@ All layouts now show a role indicator for clarity:
 ```
 
 **Patient Layout (Desktop):**
+
 ```html
 <div className="text-right">
   <p className="text-xs text-neutral-500">Angemeldet als</p>
@@ -297,6 +327,7 @@ All layouts now show a role indicator for clarity:
 ## Testing Scenarios
 
 ### Test 1: Patient Login
+
 1. Create patient account
 2. Login
 3. ✅ Redirected to `/patient`
@@ -307,6 +338,7 @@ All layouts now show a role indicator for clarity:
 8. ❌ Cannot access `/admin/content`
 
 ### Test 2: Clinician Login
+
 1. Login with clinician account
 2. ✅ Redirected to `/clinician`
 3. ✅ See Dashboard with patient overview
@@ -317,6 +349,7 @@ All layouts now show a role indicator for clarity:
 8. ✅ Can access patient data
 
 ### Test 3: Admin Login
+
 1. Login with admin account
 2. ✅ Redirected to `/clinician`
 3. ✅ See same dashboard as clinician
@@ -324,11 +357,13 @@ All layouts now show a role indicator for clarity:
 5. ✅ All clinician features accessible
 
 ### Test 4: Role-Based Redirect
+
 1. Patient tries to access `/clinician` directly
 2. ✅ Redirected to `/?error=access_denied`
 3. ✅ Error message displayed
 
 ### Test 5: Logout Flow
+
 1. Any role: Click "Abmelden"
 2. ✅ Logged out
 3. ✅ Redirected to `/`
@@ -337,26 +372,31 @@ All layouts now show a role indicator for clarity:
 ## Benefits of V2 Implementation
 
 ### 1. **Centralized Logic**
+
 - Single source of truth for role detection
 - Reusable utility functions across codebase
 - Easier to maintain and update
 
 ### 2. **Type Safety**
+
 - TypeScript types for roles
 - Compile-time checking of role strings
 - IDE autocomplete support
 
 ### 3. **Predictable Routing**
+
 - Consistent redirect behavior
 - Role-based landing pages
 - Clear access control rules
 
 ### 4. **Maintainability**
+
 - DRY principle: no duplicated role checks
 - Easy to add new roles in future
 - Navigation config in one place
 
 ### 5. **User Experience**
+
 - Clear role indication
 - Appropriate navigation for each role
 - Consistent logout experience
@@ -365,6 +405,7 @@ All layouts now show a role indicator for clarity:
 ## Future Enhancements
 
 ### Potential Improvements
+
 1. **Separate Admin Features**
    - Distinct admin dashboard
    - User management interface
@@ -393,15 +434,18 @@ All layouts now show a role indicator for clarity:
 ## Migration Notes
 
 ### Breaking Changes
+
 None - this is an enhancement that maintains backward compatibility.
 
 ### Files Modified
+
 - `app/page.tsx` - Login redirect logic
 - `app/clinician/layout.tsx` - Refactored to use utilities
 - `app/admin/layout.tsx` - Refactored to use utilities
 - `app/patient/layout.tsx` - Added logout and role display
 
 ### Files Created
+
 - `lib/utils/roleBasedRouting.ts` - Core routing utilities
 
 ## References

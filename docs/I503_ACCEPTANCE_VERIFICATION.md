@@ -5,6 +5,7 @@
 **Problem:** Schema-Drift und "stille" DB-Änderungen (lokal/remote) führen zu nicht reproduzierbaren Zuständen.
 
 **Goal:** CI blocks PRs when:
+
 - Migration fehlt (missing migration)
 - Drift entsteht (schema drift)
 - Generated types nicht aktuell sind (types out of date)
@@ -14,11 +15,13 @@
 ### ✅ AC1: PR ohne Migration bei Schemaänderung = CI Fail
 
 **Implementation:**
+
 - Drift detection via `supabase db diff --exit-code` in CI workflow
 - If schema changes exist that aren't captured in migrations, diff will fail
 - CI workflow: Step "Check for schema drift"
 
 **Verification:**
+
 ```yaml
 # .github/workflows/db-determinism.yml lines 60-71
 - name: Check for schema drift
@@ -40,16 +43,19 @@
 ### ✅ AC2: Drift/Typegen = CI Fail
 
 **Implementation - Drift:**
+
 - `supabase db diff --exit-code` fails on any drift
 - Error message guides developer to create migration
 - CI workflow: Step "Check for schema drift"
 
 **Implementation - Typegen:**
+
 - `npm run db:typegen` generates types from schema
 - `git diff --exit-code lib/types/supabase.ts` fails if types differ
 - CI workflow: Step "Check types are up to date"
 
 **Verification:**
+
 ```yaml
 # .github/workflows/db-determinism.yml lines 73-88
 - name: Generate TypeScript types
@@ -82,14 +88,15 @@
 Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 
 1. **DB Stack Decision** (lines 9-21)
+
    ```markdown
    ## DB Stack Decision
-   
+
    **Stack:** Supabase CLI + PostgreSQL
    **Migration Tool:** Supabase CLI
    **Type Generation:** Supabase CLI
    **Version Control:** Git-tracked migrations
-   
+
    **Rationale:** [5 key points]
    ```
 
@@ -110,6 +117,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
    - Clear failure scenarios
 
 **Verification Files:**
+
 - ✅ `docs/canon/DB_MIGRATIONS.md` - Updated with all requirements
 - ✅ `docs/I503_IMPLEMENTATION_SUMMARY.md` - Implementation details
 - ✅ `README.md` - Quick reference for developers
@@ -127,6 +135,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 **Documentation:** `docs/canon/DB_MIGRATIONS.md` lines 9-21
 
 **Rationale:**
+
 1. Native integration with Supabase platform
 2. Built-in type generation
 3. Drift detection capability
@@ -141,10 +150,12 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 **Documentation:** `docs/canon/DB_MIGRATIONS.md`
 
 **Core Principles Updated:**
+
 - Line 15: "Migration-first - Schema changes must be defined in migrations"
 - Line 16: "Type-safe - Generated types must be kept in sync"
 
 **Workflow Documentation:**
+
 - Creating migrations (lines 32-56)
 - Testing locally (lines 88-103)
 - Type generation (lines 105-124)
@@ -159,6 +170,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 **File:** `.github/workflows/db-determinism.yml`
 
 **CI Steps:**
+
 1. ✅ Check migration immutability (line 43-47)
 2. ✅ Start Supabase (line 50-51)
 3. ✅ Apply migrations via reset (line 53-54)
@@ -167,6 +179,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 6. ✅ Verify types match (line 76-88)
 
 **Triggers:**
+
 - Pull requests affecting migrations, types, or schema
 - Manual workflow dispatch
 
@@ -179,6 +192,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 **Documentation:** `docs/canon/DB_MIGRATIONS.md` lines 361-481
 
 **Contents:**
+
 1. ✅ Prerequisites (Supabase CLI installation)
 2. ✅ Local development workflow
 3. ✅ Pre-commit verification function `Test-DbDeterminism`
@@ -186,6 +200,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 5. ✅ Troubleshooting
 
 **PowerShell Function Features:**
+
 - Color-coded output (Red/Yellow/Green/Cyan)
 - Step-by-step verification
 - Clear error messages
@@ -200,10 +215,12 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 **File:** `.github/CODEOWNERS`
 
 **Protected Paths:**
+
 - ✅ `/supabase/migrations/** @*` (already existed)
 - ✅ `/lib/types/supabase.ts @*` (newly added)
 
 **Effect:**
+
 - All migration changes require review
 - All type file changes require review
 - Prevents accidental bypass of determinism
@@ -233,7 +250,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 ### Configuration Updates
 
 1. ✅ `supabase/config.toml` - Fixed project_id (underscore instead of hyphen)
-2. ✅ `package.json` - Added db:* scripts (using PowerShell for verify)
+2. ✅ `package.json` - Added db:\* scripts (using PowerShell for verify)
 3. ✅ `.github/CODEOWNERS` - Added types protection
 
 ---
@@ -241,6 +258,7 @@ Enhanced `docs/canon/DB_MIGRATIONS.md` with:
 ## Verification Commands
 
 **From Issue:**
+
 ```powershell
 supabase start
 supabase db reset
@@ -249,6 +267,7 @@ git diff --exit-code
 ```
 
 **Our Implementation:**
+
 ```powershell
 # Same workflow, RHYTHM-conform PowerShell
 supabase start

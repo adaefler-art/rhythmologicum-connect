@@ -35,15 +35,16 @@ getPatientNavItems(pathname: string): RoleNavItem[]
 ```
 
 **Navigation Items**:
+
 1. **Fragebogen starten** (`/patient/assessment`)
    - Start new stress/resilience assessments
    - Active when on assessment or funnel routes
-   
 2. **Mein Verlauf** (`/patient/history`)
    - View assessment history and results
    - Active when on history route
 
-**Layout**: 
+**Layout**:
+
 - Desktop: Header tabs
 - Mobile: Bottom navigation tabs with icons (📝, 📊)
 
@@ -59,19 +60,19 @@ getClinicianNavItems(pathname: string): RoleNavItem[]
 ```
 
 **Navigation Items**:
+
 1. **Übersicht** (`/clinician`)
    - Patient overview dashboard
    - Shows all patient assessments and risk levels
-   
 2. **Fragebögen** (`/clinician/funnels`)
    - Manage assessment questionnaires
    - Configure funnel steps and questions
-   
 3. **Inhalte** (`/admin/content`)
    - Content management
    - Edit educational content pages
 
-**Layout**: 
+**Layout**:
+
 - Desktop: Collapsible sidebar with icons
 - Mobile: Slide-out drawer menu
 
@@ -87,15 +88,13 @@ getAdminNavItems(pathname: string): RoleNavItem[]
 ```
 
 **Navigation Items**:
+
 1. **Übersicht** (`/clinician`)
    - Same as clinician dashboard
-   
 2. **Fragebögen** (`/clinician/funnels`)
    - Full assessment management
-   
 3. **Inhalte** (`/admin/content`)
    - Full content management
-   
 4. **Design System** (`/admin/design-system`)
    - Component showcase and testing
    - Visual regression reference
@@ -113,6 +112,7 @@ getAdminNavItems(pathname: string): RoleNavItem[]
 Reusable navigation component for patient layout supporting both desktop and mobile variants.
 
 **Props**:
+
 ```typescript
 interface PatientNavigationProps {
   navItems: RoleNavItem[]
@@ -121,6 +121,7 @@ interface PatientNavigationProps {
 ```
 
 **Usage**:
+
 ```tsx
 // Desktop header navigation
 <PatientNavigation navItems={navItems} variant="desktop" />
@@ -130,6 +131,7 @@ interface PatientNavigationProps {
 ```
 
 **Features**:
+
 - Automatic active state styling
 - Hover effects for desktop
 - Touch-friendly mobile tabs with icons
@@ -144,6 +146,7 @@ interface PatientNavigationProps {
 Used by clinician and admin layouts for sidebar navigation.
 
 **Props**:
+
 ```typescript
 interface DesktopLayoutProps {
   appTitle?: string
@@ -155,6 +158,7 @@ interface DesktopLayoutProps {
 ```
 
 **Features**:
+
 - Collapsible sidebar (64px collapsed, 256px expanded)
 - Automatic icon mapping based on route
 - Active state indication with accent dot
@@ -175,6 +179,7 @@ function getNavItemsForRole(user: User | null, pathname: string): RoleNavItem[]
 ```
 
 **Example**:
+
 ```tsx
 const navItems = getNavItemsForRole(user, pathname)
 ```
@@ -189,10 +194,10 @@ All navigation items follow a consistent structure:
 
 ```typescript
 interface RoleNavItem {
-  href: string        // Destination URL
-  label: string       // Display text (German, user-friendly)
-  icon?: ReactNode    // Optional icon component
-  active?: boolean    // Active state (auto-calculated)
+  href: string // Destination URL
+  label: string // Display text (German, user-friendly)
+  icon?: ReactNode // Optional icon component
+  active?: boolean // Active state (auto-calculated)
 }
 ```
 
@@ -216,11 +221,13 @@ const navItems = getPatientNavItems(pathname)
 ### Step 3: Render Navigation
 
 For patient layout:
+
 ```tsx
 <PatientNavigation navItems={navItems} variant="desktop" />
 ```
 
 For clinician/admin layout:
+
 ```tsx
 <DesktopLayout
   appTitle="Rhythmologicum Connect"
@@ -298,6 +305,7 @@ Navigation follows v0.4 design tokens:
 ### Adding a New Navigation Item
 
 1. **Update the appropriate function** in `roleBasedRouting.ts`:
+
    ```typescript
    {
      href: '/new/route',

@@ -12,6 +12,7 @@ This document defines the complete Stress & Resilience assessment journey from t
 ## Design Principles
 
 ### Mobile-First Approach
+
 - **Single column layout** with max-width for readability
 - **Short, clear text** - no desktop-only assumptions
 - **Touch-friendly controls** - minimum 44px tap targets
@@ -19,6 +20,7 @@ This document defines the complete Stress & Resilience assessment journey from t
 - **Progressive disclosure** - one concept at a time
 
 ### User Experience
+
 - **Clear progress indicators** - always know where you are
 - **Explicit navigation** - no ambiguous actions
 - **Error prevention** - validation before progression
@@ -26,6 +28,7 @@ This document defines the complete Stress & Resilience assessment journey from t
 - **Professional appearance** - builds trust
 
 ### Content Strategy
+
 - **Conversational tone** - warm but professional
 - **Plain language** - avoid medical jargon
 - **Scannable layout** - headings and whitespace
@@ -45,11 +48,13 @@ Login → [Intro] → Questions → Result → History
 ```
 
 ### State Management
+
 - **Assessment States:** `not_started`, `in_progress`, `completed`
 - **Step States:** `not_visited`, `current`, `completed`
 - **Answer States:** `unanswered`, `answered`, `validated`
 
 ### Navigation Rules
+
 1. **Forward:** Only after current step validates successfully
 2. **Backward:** Always allowed to previous completed steps
 3. **Skip:** Not allowed (ensures data completeness)
@@ -66,12 +71,14 @@ Login → [Intro] → Questions → Result → History
 **State:** Entry point before assessment
 
 #### Purpose
+
 - Explain what the assessment is about
 - Set expectations (duration, confidentiality)
 - Reduce anxiety and build trust
 - Provide "start" call-to-action
 
 #### Content Elements
+
 - **Hero Section**
   - Title: "Stress & Resilienz Assessment"
   - Subtitle: Brief description (1-2 sentences)
@@ -92,12 +99,14 @@ Login → [Intro] → Questions → Result → History
   - Secondary link: "Später fortsetzen" (back to patient home)
 
 #### Mobile Behavior
+
 - Stack cards vertically on small screens
 - Button spans full width on mobile (<640px)
 - Comfortable padding (p-6) for touch interactions
 - Readable font size (text-base minimum)
 
 #### Transitions
+
 - **Next:** → Question Screen (Step 1)
 - **Skip:** → Question Screen (if `?skipIntro=true` in URL)
 - **Back:** → Patient Home (`/patient`)
@@ -111,6 +120,7 @@ Login → [Intro] → Questions → Result → History
 **State:** `in_progress`
 
 #### Purpose
+
 - Collect patient responses to validated questions
 - Provide context and help when needed
 - Show progress to encourage completion
@@ -119,27 +129,32 @@ Login → [Intro] → Questions → Result → History
 #### Screen Anatomy
 
 **Progress Bar**
+
 - Visual indicator (colored bar)
 - Percentage or "Step X of Y" text
 - Always visible at top
 
 **Question Header**
+
 - Step title (from `funnel_steps.title`)
 - Optional description/context
 - Question number within step
 
 **Question Block(s)**
+
 - Question text (clear, specific)
 - Optional help text (subtle, below question)
 - Answer input (scale buttons, radio, etc.)
 - Validation error message (if shown)
 
 **Navigation Controls**
+
 - "Zurück" button (secondary style)
 - "Weiter" button (primary style, disabled until valid)
 - Both buttons equal width on mobile
 
 **Optional Content Links**
+
 - Inline link: "Mehr über Stress erfahren →"
 - Opens content page in flow context
 - Breadcrumb to return to question
@@ -147,6 +162,7 @@ Login → [Intro] → Questions → Result → History
 #### Question Types & Rendering
 
 **Likert Scale (Primary)**
+
 - 5-point scale: Nie → Selten → Manchmal → Oft → Sehr häufig
 - Rendered as horizontal buttons
 - Value: 0-4 (integer)
@@ -154,10 +170,12 @@ Login → [Intro] → Questions → Result → History
 - Touch targets: minimum 90px wide on mobile
 
 **Yes/No (Binary)**
+
 - Two clear buttons: "Ja" / "Nein"
 - Full-width on mobile, side-by-side on desktop
 
 **Multiple Choice**
+
 - Radio buttons with clear labels
 - Vertical stack for readability
 - Single selection only
@@ -187,6 +205,7 @@ Questions are grouped into steps by theme:
    - Resilience factors
 
 **Grouping Benefits:**
+
 - Reduces cognitive load
 - Provides natural breakpoints
 - Makes progress tangible
@@ -195,21 +214,25 @@ Questions are grouped into steps by theme:
 #### Validation States
 
 **Unanswered (Initial)**
+
 - Questions appear neutral
 - "Weiter" button disabled or shows helper text
 - No error styling
 
 **Invalid (After Attempt)**
+
 - Red border on required unanswered questions
 - Error message: "Bitte beantworten Sie diese Frage"
 - Scrolls to first invalid question
 
 **Valid**
+
 - "Weiter" button enabled
 - Green subtle checkmark (optional)
 - Smooth transition available
 
 #### Mobile Behavior
+
 - Single column layout (max-w-3xl)
 - Questions stack vertically
 - Scale buttons wrap if needed (flex-wrap)
@@ -218,6 +241,7 @@ Questions are grouped into steps by theme:
 - Typography scales up on larger screens
 
 #### Transitions
+
 - **Next:** → Next Question Step (after validation)
 - **Next:** → Result Screen (if last step)
 - **Back:** → Previous Question Step
@@ -234,6 +258,7 @@ Questions are grouped into steps by theme:
 **State:** Contextual (doesn't affect assessment progress)
 
 #### Purpose
+
 - Provide deeper explanation of concepts
 - Educate about stress and resilience
 - Answer common questions
@@ -242,12 +267,14 @@ Questions are grouped into steps by theme:
 #### Content Types
 
 **Info Pages** (available during assessment)
+
 - `info-was-ist-stress` - What is stress?
 - `info-stressbewaeltigung` - Stress management techniques
 - `info-resilienz` - Understanding resilience
 - Access via inline links in questions
 
 **Result-Related Pages** (shown after completion)
+
 - `result-naechste-schritte` - What to do next
 - `result-ressourcen` - Additional resources
 - Linked from result screen
@@ -255,22 +282,26 @@ Questions are grouped into steps by theme:
 #### Screen Anatomy
 
 **Header**
+
 - Back link/button to return to flow
 - Content title (H1)
 - Optional subtitle
 
 **Content Area**
+
 - Markdown-rendered content
 - Professional typography
 - Images/diagrams if appropriate
 - Comfortable line-height (1.6-1.8)
 
 **Navigation**
+
 - "Zurück zur Frage" (if from question)
 - "Weiter" (if part of flow sequence)
 - Clear breadcrumb context
 
 #### Mobile Behavior
+
 - Full-width content on mobile
 - Max-width (max-w-3xl) for readability on desktop
 - Images scale responsively
@@ -278,6 +309,7 @@ Questions are grouped into steps by theme:
 - Touch-friendly link sizing
 
 #### Transitions
+
 - **Back:** → Originating screen (question or result)
 - **Next:** → Next step in flow (if sequential)
 
@@ -290,6 +322,7 @@ Questions are grouped into steps by theme:
 **State:** `completed`
 
 #### Purpose
+
 - Show assessment outcome clearly
 - Provide AI-generated insights (AMY)
 - Suggest concrete next steps
@@ -298,35 +331,41 @@ Questions are grouped into steps by theme:
 #### Screen Anatomy
 
 **Header**
+
 - Completion icon/checkmark
 - "Assessment abgeschlossen"
 - Completion timestamp
 
 **Summary Card (Top)**
+
 - Overall stress score (if applicable)
 - Visual representation (gauge, bar, color)
 - Risk level indicator (low/medium/high)
 - Brief interpretation (1-2 sentences)
 
 **AMY Insights Section**
+
 - "Ihre persönliche Auswertung"
 - AI-generated summary (markdown)
 - Highlights of key findings
 - Personalized observations
 
 **Detail Sections (Expandable/Tabbed)**
+
 - Stress factors identified
 - Resilience strengths
 - Areas for attention
 - Comparison to baseline (if repeat assessment)
 
 **Next Steps Section**
+
 - Concrete action recommendations
 - Content page links for deeper exploration
 - Option to schedule follow-up
 - "Zu meiner Historie" button
 
 **Actions**
+
 - Primary: "Zur Historie" → `/patient/history`
 - Secondary: "Neues Assessment starten" → restart flow
 - Tertiary: Content links for learning
@@ -334,17 +373,20 @@ Questions are grouped into steps by theme:
 #### Dynamic Content Blocks
 
 Result pages can include database-driven content blocks:
+
 - Stored in `content_pages` with category `result-*`
 - Rendered dynamically based on funnel slug
 - Multiple blocks per result page
 - Markdown support for rich formatting
 
 **Example Blocks:**
+
 - "Was bedeutet Ihr Ergebnis?"
 - "Empfohlene Maßnahmen"
 - "Ressourcen und Unterstützung"
 
 #### Mobile Behavior
+
 - Sections stack vertically
 - Summary card full-width
 - Expandable sections instead of tabs on mobile
@@ -352,6 +394,7 @@ Result pages can include database-driven content blocks:
 - Comfortable reading width
 
 #### Transitions
+
 - **History:** → `/patient/history` (view past assessments)
 - **Restart:** → `/patient/funnel/stress-assessment` (new assessment)
 - **Content:** → Content pages for detailed topics
@@ -366,6 +409,7 @@ Result pages can include database-driven content blocks:
 **State:** N/A (no active assessment)
 
 #### Purpose
+
 - Show assessment history over time
 - Enable comparison of results
 - Provide access to past reports
@@ -374,10 +418,12 @@ Result pages can include database-driven content blocks:
 #### Screen Anatomy
 
 **Header**
+
 - Title: "Meine Assessments"
 - Optional summary stats (total completed, last date)
 
 **Assessment List**
+
 - Cards or table rows
 - Each shows:
   - Date completed
@@ -386,19 +432,23 @@ Result pages can include database-driven content blocks:
   - "Details ansehen" link
 
 **Empty State**
+
 - Friendly message if no history
 - Call to action to start first assessment
 
 **Actions**
+
 - "Neues Assessment" button
 - Individual "Ansehen" links for each past assessment
 
 #### Mobile Behavior
+
 - Cards stack on mobile
 - Table converts to card layout on small screens
 - Easy-to-tap "Ansehen" buttons
 
 #### Transitions
+
 - **View Result:** → Result screen for selected assessment
 - **New Assessment:** → `/patient/funnel/stress-assessment`
 
@@ -470,6 +520,7 @@ User continues from where they left off
 ### Viewport Breakpoints
 
 Following Tailwind CSS defaults:
+
 - **xs:** < 640px (mobile phones)
 - **sm:** ≥ 640px (large phones, small tablets)
 - **md:** ≥ 768px (tablets)
@@ -479,33 +530,37 @@ Following Tailwind CSS defaults:
 ### Responsive Patterns
 
 **Typography**
+
 ```tsx
 // Mobile-first scaling
-className="text-2xl md:text-3xl"        // Headings scale up
-className="text-base md:text-lg"        // Body text slightly larger on desktop
+className = 'text-2xl md:text-3xl' // Headings scale up
+className = 'text-base md:text-lg' // Body text slightly larger on desktop
 ```
 
 **Spacing**
+
 ```tsx
 // More breathing room on desktop
-className="p-6 md:p-8"                  // Padding
-className="gap-4 md:gap-6"              // Element spacing
+className = 'p-6 md:p-8' // Padding
+className = 'gap-4 md:gap-6' // Element spacing
 ```
 
 **Layout**
+
 ```tsx
 // Stack on mobile, side-by-side on desktop
-className="flex flex-col md:flex-row"  
+className = 'flex flex-col md:flex-row'
 
 // Full width on mobile, constrained on desktop
-className="w-full max-w-3xl mx-auto"   
+className = 'w-full max-w-3xl mx-auto'
 ```
 
 **Buttons**
+
 ```tsx
 // Touch-friendly on mobile, optimized on desktop
-className="min-w-[90px] sm:min-w-[100px]"
-className="w-full sm:w-auto"           // Full width mobile button
+className = 'min-w-[90px] sm:min-w-[100px]'
+className = 'w-full sm:w-auto' // Full width mobile button
 ```
 
 ### Touch Interactions
@@ -537,6 +592,7 @@ className="w-full sm:w-auto"           // Full width mobile button
 ### Validation Errors
 
 **Required Question Unanswered**
+
 ```
 ┌──────────────────────────────────┐
 │ ⚠️  Bitte beantworten Sie alle  │
@@ -555,6 +611,7 @@ className="w-full sm:w-auto"           // Full width mobile button
 ### Network Errors
 
 **Auto-save Failed**
+
 ```
 ┌──────────────────────────────────┐
 │ ⚠️  Verbindung unterbrochen      │
@@ -566,6 +623,7 @@ className="w-full sm:w-auto"           // Full width mobile button
 ```
 
 **Assessment Load Failed**
+
 ```
 ┌──────────────────────────────────┐
 │ ❌  Assessment konnte nicht      │
@@ -578,18 +636,22 @@ className="w-full sm:w-auto"           // Full width mobile button
 ### Session Edge Cases
 
 **Completed Assessment Accessed**
+
 - Redirect to result page immediately
 - No editing allowed
 
 **Invalid Assessment ID**
+
 - Redirect to funnel start
 - Show error message
 
 **Assessment From Different Funnel**
+
 - Redirect to correct funnel
 - Maintain state if same patient
 
 **Concurrent Assessments**
+
 - Allow multiple in-progress assessments
 - Clearly label which one is being resumed
 
@@ -598,18 +660,21 @@ className="w-full sm:w-auto"           // Full width mobile button
 ## Next Steps & Extensibility
 
 ### Short-Term Enhancements
+
 - Add visual illustrations to intro screen
 - Implement expandable help text for complex questions
 - Add "Save & Exit" explicit action
 - Progress celebration for milestones (e.g., "Halfway done!")
 
 ### Medium-Term Features
+
 - Offline support with Service Worker
 - Multi-language support (i18n)
 - Voice input for answers (accessibility)
 - Dark mode support
 
 ### Long-Term Vision
+
 - Adaptive questioning (skip based on previous answers)
 - Integration with wearable data
 - Longitudinal trend visualization
@@ -620,12 +685,14 @@ className="w-full sm:w-auto"           // Full width mobile button
 ## References
 
 ### Related Documentation
+
 - [V0.4-E2 Implementation Summary](V0_4_E2_PATIENT_FLOW_V2.md) - Technical implementation
 - [Design Mockup Briefing](DESIGN_MOCKUP_BRIEFING.md) - Visual design direction
 - [V0.4 Design Tokens](V0_4_DESIGN_TOKENS.md) - Colors, typography, spacing
 - [Epic B Consolidation](../docs/EPIC_B_CONSOLIDATION.md) - Funnel system architecture
 
 ### Technical Implementation
+
 - Route: `/app/patient/funnel/[slug]/page.tsx`
 - Client: `/app/patient/funnel/[slug]/client.tsx`
 - Intro: `/app/patient/funnel/[slug]/intro/`
@@ -633,6 +700,7 @@ className="w-full sm:w-auto"           // Full width mobile button
 - Content: `/app/patient/funnel/[slug]/content/[pageSlug]/`
 
 ### API Endpoints
+
 - `POST /api/funnels/{slug}/assessments` - Start assessment
 - `GET /api/funnels/{slug}/assessments/{id}` - Get status
 - `POST /api/funnels/{slug}/assessments/{id}/steps/{stepId}/validate` - Validate step
@@ -644,16 +712,19 @@ className="w-full sm:w-auto"           // Full width mobile button
 ## Acceptance Criteria Review
 
 ✅ **Flow description (screens + transitions) is documented in the repo.**
+
 - Complete screen descriptions with purposes
 - Clear state transitions and navigation rules
 - Documented in `docs/PATIENT_FLOW_V2_STRUCTURE.md`
 
 ✅ **Each screen has a clear purpose and a clear "next step".**
+
 - Every screen section includes purpose statement
 - Transitions clearly documented for each screen
 - Navigation controls explicitly defined
 
 ✅ **Mobile behavior is considered from the start (short text, no super-wide forms).**
+
 - Mobile-first design principles stated
 - Responsive patterns documented with code examples
 - Touch interaction guidelines specified

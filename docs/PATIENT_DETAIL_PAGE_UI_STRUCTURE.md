@@ -137,6 +137,7 @@
 ## Empty States
 
 ### No Assessments
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
@@ -151,6 +152,7 @@
 ```
 
 ### No AMY Insights
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
@@ -203,18 +205,21 @@ PatientDetailPage
 ## Responsive Behavior
 
 ### Desktop (> 1024px)
+
 - Summary stats: 3 columns
 - Charts: 2 columns side-by-side
 - Full tab labels visible
 - Generous spacing
 
 ### Tablet (768px - 1024px)
+
 - Summary stats: 3 columns
 - Charts: 2 columns side-by-side
 - Full tab labels visible
 - Moderate spacing
 
 ### Mobile (< 768px)
+
 - Summary stats: 1 column (stacked)
 - Charts: 1 column (stacked)
 - Scrollable tabs with overflow
@@ -224,12 +229,14 @@ PatientDetailPage
 ## Color Coding
 
 ### Risk Levels
+
 - **High**: Red border/badge (#ef4444)
 - **Moderate**: Amber border/badge (#f59e0b)
 - **Low**: Green border/badge (#10b981)
 - **Pending**: Gray border/badge (#94a3b8)
 
 ### Interactive States
+
 - **Hover**: Sky-400 border (#38bdf8)
 - **Active**: Sky-600 background (#0284c7)
 - **Focus**: Sky-500 ring (#0ea5e9)

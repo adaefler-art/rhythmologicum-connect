@@ -51,20 +51,24 @@ The dashboard design prioritizes rapid information scanning and immediate action
 ## Section 1: Page Header
 
 ### Layout
+
 - **Left:** Title and descriptive text
 - **Right:** Quick action buttons
 
 ### Purpose
+
 Provides context and immediate access to common administrative tasks without requiring navigation through multiple pages.
 
 ### Components
 
 #### Title
+
 - **Text:** "Dashboard"
 - **Style:** Large, bold heading (text-3xl)
 - **Purpose:** Clear page identification
 
 #### Description
+
 - **Text:** "Übersicht aller Patientinnen und Patienten mit aktuellen Assessments"
 - **Translation:** "Overview of all patients with current assessments"
 - **Purpose:** Explains what data is being displayed
@@ -84,6 +88,7 @@ Provides context and immediate access to common administrative tasks without req
    - **User Question:** "How do I export this data for records?"
 
 ### Responsive Behavior
+
 - Desktop: Buttons displayed inline to the right
 - Mobile: Buttons stack vertically below title
 
@@ -92,10 +97,13 @@ Provides context and immediate access to common administrative tasks without req
 ## Section 2: KPI Cards Grid
 
 ### Layout
+
 Four equally-sized cards in a responsive grid, displaying key performance indicators.
 
 ### Design Pattern
+
 Each card follows a consistent structure:
+
 - **Icon** (top-right): Visual category identifier with colored background
 - **Label** (top-left): Metric name
 - **Value** (center-left): Large, bold number
@@ -103,6 +111,7 @@ Each card follows a consistent structure:
 - **Subtitle** (bottom): Optional descriptive text
 
 ### Visual Enhancement
+
 - Hover effect: Shadow increases on hover for interactivity feedback
 - Color coding: Each card has a unique color for quick visual scanning
 
@@ -111,23 +120,28 @@ Each card follows a consistent structure:
 ### KPI Card 1: Active Patients
 
 #### Display
+
 - **Icon:** Users icon (blue background)
 - **Label:** "Aktive Patienten" (Active Patients)
 - **Value:** Count of unique patients with assessments
 - **Subtitle:** "Patienten mit Assessments" (Patients with assessments)
 
 #### Data Source
+
 - Unique `patient_id` count from all `patient_measures`
 
 #### User Question Answered
+
 **"How many patients am I currently managing?"**
 
 #### Purpose
+
 - Provides overall caseload visibility
 - Helps clinicians understand workload and resource needs
 - Indicates system usage and engagement
 
 #### Clinical Value
+
 - **High count:** May indicate need for additional resources or triage
 - **Low count:** May indicate need for patient outreach or onboarding
 - **Trending:** Clinician can mentally track growth over time
@@ -137,29 +151,35 @@ Each card follows a consistent structure:
 ### KPI Card 2: Open Funnels
 
 #### Display
+
 - **Icon:** ClipboardList icon (teal background)
 - **Label:** "Offene Funnels" (Open Funnels)
 - **Value:** Count of unique patients with active assessments
 - **Badge (conditional):** Yellow warning badge showing count of moderate-risk pending assessments
 
 #### Data Source
+
 - Unique patient count with any assessment records
 - Badge appears when `moderate` risk assessments exist
 
 #### User Question Answered
+
 **"How many active assessment workflows are in progress?"**
 
 #### Purpose
+
 - Shows current assessment activity across all patients
 - Warning badge alerts to moderate-risk cases requiring attention
 - Indicates workflow completion status
 
 #### Clinical Value
+
 - **Active funnels:** Indicates ongoing assessments that may need follow-up
 - **Pending badge:** Highlights cases in moderate risk that need review
 - **Workflow awareness:** Helps prioritize patient contact and follow-ups
 
 #### Badge Logic
+
 - Only appears when moderate-risk assessments exist
 - Text: "{count} pending"
 - Prompts clinician to review and act on moderate-risk cases
@@ -169,28 +189,34 @@ Each card follows a consistent structure:
 ### KPI Card 3: Recent Assessments
 
 #### Display
+
 - **Icon:** FileCheck icon (purple background)
 - **Label:** "Aktuelle Assessments" (Recent Assessments)
 - **Value:** Count of assessments completed in the last 24 hours
 - **Badge (conditional):** Blue info badge showing "Today"
 
 #### Data Source
+
 - All `patient_measures` where `created_at` is within the last 24 hours
 
 #### User Question Answered
+
 **"What assessment activity has happened recently?"**
 
 #### Purpose
+
 - Shows immediate system activity and patient engagement
 - Indicates daily workflow volume
 - Helps identify busy vs. quiet periods
 
 #### Clinical Value
+
 - **High count:** Active patient engagement, may need triage
 - **Zero count:** May indicate technical issues or patient disengagement
 - **Pattern recognition:** Clinicians can observe daily activity trends
 
 #### Badge Logic
+
 - Appears when count > 0
 - Simple "Today" indicator emphasizing recency
 
@@ -199,29 +225,35 @@ Each card follows a consistent structure:
 ### KPI Card 4: Red Flags (24h)
 
 #### Display
+
 - **Icon:** AlertTriangle icon (red background)
 - **Label:** "Rote Flaggen (24h)" (Red Flags 24h)
 - **Value:** Count of high-risk assessments in the last 24 hours
 - **Badge (conditional):** Red danger badge showing "Urgent"
 
 #### Data Source
+
 - All `patient_measures` where `risk_level = 'high'` AND `created_at` within last 24 hours
 
 #### User Question Answered
+
 **"Are there any critical cases requiring immediate attention?"**
 
 #### Purpose
+
 - **Critical alert system** for high-risk patients
 - Prioritizes clinical attention to most urgent cases
 - Provides situational awareness for emergency protocols
 
 #### Clinical Value
+
 - **Zero count:** All clear, normal operations
 - **Non-zero count:** Immediate action required
 - **Badge "Urgent":** Visual reinforcement of priority
 - **Time-bound (24h):** Focuses on recent critical events, not historical data
 
 #### Badge Logic
+
 - Only appears when count > 0
 - Red color (danger variant) maximizes visual urgency
 - Text: "Urgent" - clear action directive
@@ -256,18 +288,22 @@ Each card follows a consistent structure:
 ## Section 3: Patient Assessments Table
 
 ### Layout
+
 Full-width sortable table below KPI cards.
 
 ### Purpose
+
 Provides detailed patient-level information for review and drill-down into individual cases.
 
 ### Header
 
 #### Title
+
 - **Text:** "Recent Assessments"
 - **Style:** Large heading (text-xl)
 
 #### Subtitle
+
 - **Text:** "Aktuelle Messungen und Risikobewertungen"
 - **Translation:** "Current measurements and risk assessments"
 - **Purpose:** Clarifies table content
@@ -275,12 +311,14 @@ Provides detailed patient-level information for review and drill-down into indiv
 ### Table Columns
 
 #### Column 1: Patient:in (Patient)
+
 - **Data:** Patient's full name (or user ID if name unavailable)
 - **Sortable:** Yes (alphabetical)
 - **User Question:** "Which patient is this?"
 - **Style:** Bold font for emphasis
 
 #### Column 2: StressScore
+
 - **Data:** Latest stress score (0-100 scale)
 - **Sortable:** Yes (numeric)
 - **User Question:** "How severe is the patient's stress level?"
@@ -288,6 +326,7 @@ Provides detailed patient-level information for review and drill-down into indiv
 - **Clinical Value:** Quantitative measure for comparison and tracking
 
 #### Column 3: RiskLevel
+
 - **Data:** Risk assessment category
 - **Sortable:** Yes (by severity: high → moderate → low → pending)
 - **User Question:** "What's the urgency level?"
@@ -299,6 +338,7 @@ Provides detailed patient-level information for review and drill-down into indiv
 - **Clinical Value:** Visual triage indicator for rapid scanning
 
 #### Column 4: Letzte Messung (Last Measurement)
+
 - **Data:** Timestamp of most recent assessment
 - **Sortable:** Yes (chronological)
 - **User Question:** "How current is this data?"
@@ -306,6 +346,7 @@ Provides detailed patient-level information for review and drill-down into indiv
 - **Clinical Value:** Indicates data freshness and follow-up timing
 
 #### Column 5: Messungen (Measurements)
+
 - **Data:** Total count of assessments for this patient
 - **Sortable:** No
 - **User Question:** "How much historical data exists?"
@@ -314,16 +355,19 @@ Provides detailed patient-level information for review and drill-down into indiv
 ### Interaction
 
 #### Row Click
+
 - **Action:** Navigate to patient detail page (`/clinician/patient/{id}`)
 - **Purpose:** Deep dive into individual patient history and assessment details
 - **Visual Feedback:** Row background changes on hover
 
 #### Sorting
+
 - **Method:** Click column headers to sort
 - **Behavior:** Toggle between ascending/descending order
 - **Default:** Sorted by date (most recent first)
 
 #### Empty State
+
 - **Message:** "Noch keine Assessments vorhanden" (No assessments available yet)
 - **Purpose:** Clear feedback when no data exists
 
@@ -336,12 +380,14 @@ Provides detailed patient-level information for review and drill-down into indiv
 All colors follow the v0.4 design token system:
 
 #### KPI Card Colors
+
 - **Blue (Primary):** Trust, reliability, system-wide metrics
 - **Teal:** Activity, process, workflow indicators
 - **Purple:** Information, data, recent activity
 - **Red:** Urgency, alerts, critical attention
 
 #### Text Colors
+
 - **Slate-900:** Primary headings
 - **Slate-700:** Body text
 - **Slate-600:** Secondary text
@@ -366,6 +412,7 @@ All colors follow the v0.4 design token system:
 ### Components Used
 
 All components from `/lib/ui` design system:
+
 - **Card:** KPI containers with shadow, padding, radius
 - **Button:** Quick actions with variant and icon props
 - **Badge:** Status indicators with variant-based colors
@@ -504,15 +551,18 @@ All components from `/lib/ui` design system:
 ## Documentation References
 
 ### Implementation Docs
+
 - **V0_4_E4_CLINICIAN_DASHBOARD_V2.md** - Detailed implementation notes
 - **V0_4_E4_LAYOUT_DIAGRAM.md** - Visual layout specifications
 - **V0_4_E4_SUMMARY.md** - Epic completion summary
 
 ### Design System
+
 - **V0_4_DESIGN_SYSTEM.md** - Component library
 - **V0_4_DESIGN_TOKENS.md** - Color, spacing, typography standards
 
 ### Related Features
+
 - **PATIENT_FLOW_V2_STRUCTURE.md** - Patient assessment journey
 - **EPIC_B_CONSOLIDATION.md** - Funnel system architecture
 
