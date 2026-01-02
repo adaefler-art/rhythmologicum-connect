@@ -87,6 +87,16 @@ export default function FunnelDetailPage() {
   const [editingStep, setEditingStep] = useState<string | null>(null)
   const [editedStep, setEditedStep] = useState<Partial<Step>>({})
 
+  type Envelope<T> = {
+    success?: boolean
+    data?: T
+    error?: { message?: string; requestId?: string; details?: { requestId?: string } }
+  }
+
+  function asEnvelope<T>(value: unknown): Envelope<T> | null {
+    return value && typeof value === 'object' ? (value as Envelope<T>) : null
+  }
+
   const loadFunnelDetails = useCallback(async () => {
     try {
       setLoading(true)
@@ -99,9 +109,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to load funnel details'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -111,9 +122,10 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      const funnelData = json?.data?.funnel
-      const stepsData = json?.data?.steps
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel; steps?: Step[] }>(json)
+      const funnelData = envelope?.data?.funnel
+      const stepsData = envelope?.data?.steps
 
       setFunnel(funnelData ?? null)
       setSteps(Array.isArray(stepsData) ? stepsData : [])
@@ -145,9 +157,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to update funnel'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -157,8 +170,9 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      setFunnel(json?.data?.funnel ?? null)
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel }>(json)
+      setFunnel(envelope?.data?.funnel ?? null)
     } catch (err) {
       console.error('Error updating funnel:', err)
       alert(`Fehler beim Aktualisieren des Funnels: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
@@ -216,9 +230,10 @@ export default function FunnelDetailPage() {
         let message = 'Failed to update funnel'
 
         try {
-          const json = (await response.json()) as any
-          const errorMessage = json?.error?.message
-          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
           if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
           if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
         } catch {
@@ -228,8 +243,9 @@ export default function FunnelDetailPage() {
         throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const json = (await response.json()) as any
-      setFunnel(json?.data?.funnel ?? null)
+      const json: unknown = await response.json()
+      const envelope = asEnvelope<{ funnel?: Funnel }>(json)
+      setFunnel(envelope?.data?.funnel ?? null)
       setEditingFunnel(false)
       setEditedFunnel({})
     } catch (err) {

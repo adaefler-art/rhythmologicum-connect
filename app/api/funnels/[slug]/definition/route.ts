@@ -271,7 +271,7 @@ export async function GET(
     // Log full error server-side for diagnostics
     console.error('Error building funnel definition:', error)
 
-    const isDev = process.env.NODE_ENV !== 'production'
+    const isDev = env.NODE_ENV !== 'production'
     const payload: { error: string; message: string; details?: string; stack?: string } = {
       error: 'Internal server error',
       message: 'Funnel konnte nicht geladen werden.',

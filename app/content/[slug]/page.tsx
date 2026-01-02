@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import ContentPageClient from './client'
+import { env } from '@/lib/env'
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
 
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, '')}/rest/v1/content_pages`
+    const apiUrl = env.NEXT_PUBLIC_SUPABASE_URL
+      ? `${env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, '')}/rest/v1/content_pages`
       : null
 
     if (!apiUrl) {
@@ -34,8 +34,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const response = await fetch(queryUrl.toString(), {
       headers: {
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        Authorization: `Bearer ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
       },
       // Revalidate every hour
       next: { revalidate: 3600 },

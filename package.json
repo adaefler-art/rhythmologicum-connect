@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:changed": "node tools/lint-changed-lines.mjs",
     "lint:migrations": "bash scripts/check-migrations.sh",
     "lint:schema": "pwsh -File scripts/db/lint-migrations.ps1",
     "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",

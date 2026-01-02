@@ -214,12 +214,52 @@ export async function GET(
     // ADAPTER LAYER: Convert manifest to steps/questions format for backward compat UI
     // This allows the UI to continue working while we transition to manifest-based editing
     // IMPORTANT: Validates all types against registry - no fantasy types allowed
-    let steps: any[] = []
+    type ManifestQuestion = {
+      id?: string
+      key?: string
+      label?: string
+      helpText?: string
+      type?: string
+      required?: boolean
+    }
+    type ManifestStep = {
+      id?: string
+      title?: string
+      description?: string | null
+      questions?: ManifestQuestion[]
+    }
+    type QuestionnaireConfig = { steps?: ManifestStep[] }
+
+    type AdapterQuestion = {
+      id: string
+      key: string
+      label: string
+      help_text: string | null
+      question_type: string
+      funnel_step_question_id: string
+      is_required: boolean
+      order_index: number
+    }
+
+    type AdapterStep = {
+      id: string
+      funnel_id: string
+      order_index: number
+      title: string
+      description: string | null
+      type: 'question_step'
+      content_page_id: null
+      content_page: null
+      questions: AdapterQuestion[]
+    }
+
+    const steps: AdapterStep[] = []
     if (defaultVersion?.questionnaire_config) {
       try {
-        const config = typeof defaultVersion.questionnaire_config === 'string'
-          ? JSON.parse(defaultVersion.questionnaire_config)
-          : defaultVersion.questionnaire_config
+        const config: QuestionnaireConfig =
+          typeof defaultVersion.questionnaire_config === 'string'
+            ? (JSON.parse(defaultVersion.questionnaire_config) as QuestionnaireConfig)
+            : (defaultVersion.questionnaire_config as QuestionnaireConfig)
         
         if (config.steps && Array.isArray(config.steps)) {
           // Validate and map steps
@@ -228,18 +268,20 @@ export async function GET(
             const mappedQuestions = []
             
             // Validate and map questions
-            for (let qIndex = 0; qIndex < (step.questions || []).length; qIndex++) {
-              const q = step.questions[qIndex]
+            const stepQuestions = Array.isArray(step.questions) ? step.questions : []
+            for (let qIndex = 0; qIndex < stepQuestions.length; qIndex++) {
+              const q = stepQuestions[qIndex]
+              const questionType = typeof q.type === 'string' ? q.type : ''
               
               // Strict validation: question type must be in registry
-              if (!isValidQuestionType(q.type)) {
+              if (!isValidQuestionType(questionType)) {
                 logError({
                   requestId,
                   operation: 'adapter_validate_question_type',
                   userId: user.id,
                   error: {
                     code: 'INVALID_QUESTION_TYPE',
-                    message: `Invalid question type "${q.type}" in manifest (question: ${q.id || qIndex})`,
+                    message: `Invalid question type "${questionType}" in manifest (question: ${q.id || qIndex})`,
                     hint: `Valid types: ${Object.values(QUESTION_TYPE).join(', ')}`,
                   },
                 })
@@ -250,7 +292,7 @@ export async function GET(
                       success: false,
                       error: {
                         code: 'VALIDATION_ERROR',
-                        message: `Manifest contains invalid question type: "${q.type}". Valid types: ${Object.values(QUESTION_TYPE).join(', ')}`,
+                        message: `Manifest contains invalid question type: "${questionType}". Valid types: ${Object.values(QUESTION_TYPE).join(', ')}`,
                         requestId,
                       },
                     },
@@ -265,7 +307,7 @@ export async function GET(
                 key: q.key || '',
                 label: q.label || '',
                 help_text: q.helpText || null,
-                question_type: q.type, // Now validated against registry
+                question_type: questionType, // validated against registry
                 funnel_step_question_id: `fsq-${q.id}`,
                 is_required: q.required || false,
                 order_index: qIndex,

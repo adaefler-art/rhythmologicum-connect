@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState, useEffect } from 'react'
+import { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { componentTokens, typography, spacing, colors } from '@/lib/design-tokens'
 
@@ -44,19 +44,16 @@ const SliderAnswerComponent = memo(function SliderAnswerComponent({
   step = 1,
   showValue = true,
 }: SliderAnswerComponentProps) {
-  const [localValue, setLocalValue] = useState(value ?? minValue)
+  const [uncontrolledValue, setUncontrolledValue] = useState(value ?? minValue)
   const [isDragging, setIsDragging] = useState(false)
 
-  // Update local value when prop changes
-  useEffect(() => {
-    if (value !== undefined && value !== localValue) {
-      setLocalValue(value)
-    }
-  }, [value, localValue])
+  const localValue = value ?? uncontrolledValue
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseFloat(e.target.value)
-    setLocalValue(newValue)
+    if (value === undefined) {
+      setUncontrolledValue(newValue)
+    }
     onChange(newValue)
   }
 
