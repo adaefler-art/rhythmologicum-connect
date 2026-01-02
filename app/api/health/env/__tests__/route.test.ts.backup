@@ -7,8 +7,7 @@
  * - Authorization gating (403 for non-admin)
  * - Environment variable checks
  * - Secret redaction (no actual values in response)
- * - Database connectivity check using pillars table
- * - Fail-safe behavior (returns 200 + RED, not 500)
+ * - Database connectivity check
  */
 
 import { NextRequest } from 'next/server'
@@ -23,10 +22,8 @@ jest.mock('@/lib/db/supabase.server', () => ({
 jest.mock('@/lib/env', () => ({
   env: {
     NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjQyODQwMCwiZXhwIjoxOTU4MDA0NDAwfQ.test',
-    SUPABASE_SERVICE_ROLE_KEY:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyNDI4NDAwLCJleHAiOjE5NTgwMDQ0MDB9.service',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjQyODQwMCwiZXhwIjoxOTU4MDA0NDAwfQ.test',
+    SUPABASE_SERVICE_ROLE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyNDI4NDAwLCJleHAiOjE5NTgwMDQ0MDB9.service',
   },
 }))
 
@@ -110,7 +107,7 @@ describe('GET /api/health/env', () => {
       } as any)
     })
 
-    it('returns 200 with GREEN status when all checks pass', async () => {
+    it('returns 200 with all checks passing for valid environment', async () => {
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
@@ -118,19 +115,53 @@ describe('GET /api/health/env', () => {
 
       const json = await response.json()
       expect(json.success).toBe(true)
-      expect(json.data.status).toBe('GREEN')
-      expect(json.data.healthcheckVersion).toBe('1.0.0')
-      expect(json.data.requestId).toBeDefined()
+      expect(json.data.overallStatus).toBe('pass')
       expect(json.data.timestamp).toBeDefined()
       expect(json.data.checks).toHaveLength(4) // 3 env vars + 1 db check
+
+      // Check each environment variable
+      const urlCheck = json.data.checks.find((c: any) => c.name === 'NEXT_PUBLIC_SUPABASE_URL')
+      expect(urlCheck).toEqual({
+        name: 'NEXT_PUBLIC_SUPABASE_URL',
+        pass: true,
+        message: 'Valid URL format',
+      })
+
+      const anonKeyCheck = json.data.checks.find(
+        (c: any) => c.name === 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      )
+      expect(anonKeyCheck).toEqual({
+        name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        pass: true,
+        message: 'Valid key format',
+      })
+
+      const serviceKeyCheck = json.data.checks.find(
+        (c: any) => c.name === 'SUPABASE_SERVICE_ROLE_KEY',
+      )
+      expect(serviceKeyCheck).toEqual({
+        name: 'SUPABASE_SERVICE_ROLE_KEY',
+        pass: true,
+        message: 'Valid key format',
+      })
+
+      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
+      expect(dbCheck).toEqual({
+        name: 'Database Connectivity',
+        pass: true,
+        message: 'Successfully connected to database',
+      })
     })
 
-    it('uses pillars table for database connectivity check', async () => {
+    it('includes database connectivity check', async () => {
       const request = new NextRequest('http://localhost/api/health/env')
-      await GET(request)
+      const response = await GET(request)
 
-      const supabaseMock = await mockCreateServerSupabaseClient()
-      expect(supabaseMock.from).toHaveBeenCalledWith('pillars')
+      const json = await response.json()
+      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
+
+      expect(dbCheck).toBeDefined()
+      expect(mockCreateServerSupabaseClient).toHaveBeenCalled()
     })
   })
 
@@ -143,9 +174,7 @@ describe('GET /api/health/env', () => {
       mockHasAdminOrClinicianRole.mockResolvedValue(true)
       mockCreateServerSupabaseClient.mockResolvedValue({
         from: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({ error: null }),
-          }),
+          select: jest.fn().mockResolvedValue({ error: null }),
         }),
       } as any)
     })
@@ -159,9 +188,11 @@ describe('GET /api/health/env', () => {
 
       // Should not contain actual environment variable values
       expect(responseString).not.toContain('https://test.supabase.co')
+      expect(responseString).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test')
+      expect(responseString).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.service')
     })
 
-    it('includes ok field and optional hint field', async () => {
+    it('only includes check names, pass/fail status, and generic messages', async () => {
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
@@ -169,9 +200,13 @@ describe('GET /api/health/env', () => {
 
       json.data.checks.forEach((check: any) => {
         expect(check).toHaveProperty('name')
-        expect(check).toHaveProperty('ok')
+        expect(check).toHaveProperty('pass')
         expect(check).toHaveProperty('message')
-        expect(typeof check.ok).toBe('boolean')
+        expect(Object.keys(check)).toHaveLength(3)
+
+        // Messages should be generic, not contain actual values
+        expect(check.message).not.toContain('eyJ')
+        expect(check.message).not.toContain('https://')
       })
     })
   })
@@ -185,63 +220,11 @@ describe('GET /api/health/env', () => {
       mockHasAdminOrClinicianRole.mockResolvedValue(true)
     })
 
-    it('detects schema drift (relation does not exist)', async () => {
+    it('detects database connectivity issues', async () => {
       mockCreateServerSupabaseClient.mockResolvedValue({
         from: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({
-              error: { code: '42P01', message: 'relation "pillars" does not exist' },
-            }),
-          }),
-        }),
-      } as any)
-
-      const request = new NextRequest('http://localhost/api/health/env')
-      const response = await GET(request)
-
-      expect(response.status).toBe(200) // Fail-safe: not 500
-
-      const json = await response.json()
-      expect(json.data.status).toBe('RED')
-
-      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.message).toBe('Schema drift detected')
-      expect(dbCheck?.hint).toContain('migrations')
-    })
-
-    it('detects invalid API key (permission denied)', async () => {
-      mockCreateServerSupabaseClient.mockResolvedValue({
-        from: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({
-              error: { code: '42501', message: 'permission denied' },
-            }),
-          }),
-        }),
-      } as any)
-
-      const request = new NextRequest('http://localhost/api/health/env')
-      const response = await GET(request)
-
-      expect(response.status).toBe(200) // Fail-safe: not 500
-
-      const json = await response.json()
-      expect(json.data.status).toBe('RED')
-
-      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.message).toBe('Authentication/permission error')
-      expect(dbCheck?.hint).toContain('API key')
-    })
-
-    it('handles generic database errors', async () => {
-      mockCreateServerSupabaseClient.mockResolvedValue({
-        from: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({
-              error: { message: 'Connection refused' },
-            }),
+          select: jest.fn().mockResolvedValue({
+            error: { message: 'Connection refused' },
           }),
         }),
       } as any)
@@ -250,43 +233,23 @@ describe('GET /api/health/env', () => {
       const response = await GET(request)
 
       const json = await response.json()
-      expect(json.data.status).toBe('RED')
 
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.hint).toBe('Connection refused')
+      expect(dbCheck?.pass).toBe(false)
+      expect(dbCheck?.message).toContain('Connection refused')
     })
 
-    it('handles connection exceptions', async () => {
+    it('handles database connectivity exceptions', async () => {
       mockCreateServerSupabaseClient.mockRejectedValue(new Error('Network error'))
 
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
-      expect(response.status).toBe(200) // Fail-safe: not 500
-
       const json = await response.json()
-      expect(json.data.status).toBe('RED')
 
       const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.hint).toContain('Network error')
-    })
-
-    it('handles missing environment configuration', async () => {
-      mockCreateServerSupabaseClient.mockRejectedValue(
-        new Error('Supabase configuration missing'),
-      )
-
-      const request = new NextRequest('http://localhost/api/health/env')
-      const response = await GET(request)
-
-      const json = await response.json()
-      expect(json.data.status).toBe('RED')
-
-      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.message).toBe('Missing environment configuration')
+      expect(dbCheck?.pass).toBe(false)
+      expect(dbCheck?.message).toContain('Network error')
     })
   })
 
@@ -299,9 +262,7 @@ describe('GET /api/health/env', () => {
       mockHasAdminOrClinicianRole.mockResolvedValue(true)
       mockCreateServerSupabaseClient.mockResolvedValue({
         from: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue({ error: null }),
-          }),
+          select: jest.fn().mockResolvedValue({ error: null }),
         }),
       } as any)
     })
@@ -314,25 +275,28 @@ describe('GET /api/health/env', () => {
 
       expect(json).toHaveProperty('success', true)
       expect(json).toHaveProperty('data')
-      expect(json.data).toHaveProperty('healthcheckVersion', '1.0.0')
-      expect(json.data).toHaveProperty('status')
       expect(json.data).toHaveProperty('checks')
-      expect(json.data).toHaveProperty('requestId')
+      expect(json.data).toHaveProperty('overallStatus')
       expect(json.data).toHaveProperty('timestamp')
 
       expect(Array.isArray(json.data.checks)).toBe(true)
-      expect(['GREEN', 'RED']).toContain(json.data.status)
+      expect(['pass', 'fail']).toContain(json.data.overallStatus)
     })
 
-    it('requestId is a valid UUID', async () => {
+    it('each check has required fields', async () => {
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
       const json = await response.json()
 
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      expect(json.data.requestId).toMatch(uuidRegex)
+      json.data.checks.forEach((check: any) => {
+        expect(check).toHaveProperty('name')
+        expect(check).toHaveProperty('pass')
+        expect(check).toHaveProperty('message')
+        expect(typeof check.name).toBe('string')
+        expect(typeof check.pass).toBe('boolean')
+        expect(typeof check.message).toBe('string')
+      })
     })
 
     it('timestamp is valid ISO 8601 format', async () => {
@@ -346,15 +310,15 @@ describe('GET /api/health/env', () => {
     })
   })
 
-  describe('Fail-Safe Behavior', () => {
-    it('returns 200 with RED status on unexpected errors, not 500', async () => {
+  describe('Error Handling', () => {
+    it('handles errors gracefully in database check', async () => {
       mockGetCurrentUser.mockResolvedValue({
         id: 'admin-123',
         app_metadata: { role: 'admin' },
       } as any)
       mockHasAdminOrClinicianRole.mockResolvedValue(true)
 
-      // Force an unexpected error
+      // Force an error in database connectivity check
       mockCreateServerSupabaseClient.mockImplementation(() => {
         throw new Error('Catastrophic failure')
       })
@@ -362,16 +326,15 @@ describe('GET /api/health/env', () => {
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
-      expect(response.status).toBe(200) // Not 500!
+      expect(response.status).toBe(200)
 
       const json = await response.json()
       expect(json.success).toBe(true)
-      expect(json.data.status).toBe('RED')
+      expect(json.data.overallStatus).toBe('fail')
 
-      // Should still have valid structure
-      expect(json.data.healthcheckVersion).toBe('1.0.0')
-      expect(json.data.requestId).toBeDefined()
-      expect(json.data.checks).toHaveLength(4) // 3 env checks succeeded, DB check failed
+      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
+      expect(dbCheck?.pass).toBe(false)
+      expect(dbCheck?.message).toContain('Catastrophic failure')
     })
   })
 })

@@ -24,29 +24,34 @@ import { env } from '@/lib/env'
  * {
  *   "success": true,
  *   "data": {
+ *     "healthcheckVersion": "1.0.0",
+ *     "status": "GREEN" | "RED",
  *     "checks": [
  *       {
  *         "name": "NEXT_PUBLIC_SUPABASE_URL",
- *         "pass": true,
- *         "message": "Valid URL format"
- *       },
- *       // ... more checks
+ *         "ok": true,
+ *         "message": "Valid URL format",
+ *         "hint": "..." // optional, provided on failure
+ *       }
  *     ],
- *     "overallStatus": "pass" | "fail",
- *     "timestamp": "2026-01-02T18:43:14.296Z"
+ *     "requestId": "uuid",
+ *     "timestamp": "2026-01-02T19:00:00.000Z"
  *   }
  * }
  */
 
 type HealthCheckResult = {
   name: string
-  pass: boolean
+  ok: boolean
   message: string
+  hint?: string
 }
 
 type HealthCheckResponse = {
+  healthcheckVersion: string
+  status: 'GREEN' | 'YELLOW' | 'RED'
   checks: HealthCheckResult[]
-  overallStatus: 'pass' | 'fail'
+  requestId: string
   timestamp: string
 }
 
@@ -93,25 +98,28 @@ function performEnvChecks(): HealthCheckResult[] {
   if (!supabaseUrl) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_URL',
-      pass: false,
+      ok: false,
       message: 'Missing required environment variable',
+      hint: 'Set NEXT_PUBLIC_SUPABASE_URL in .env.local or environment',
     })
   } else if (hasWhitespace(supabaseUrl)) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_URL',
-      pass: false,
+      ok: false,
       message: 'Contains leading/trailing whitespace',
+      hint: 'Remove spaces before/after the URL value',
     })
   } else if (!isValidUrl(supabaseUrl)) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_URL',
-      pass: false,
+      ok: false,
       message: 'Invalid URL format',
+      hint: 'Expected format: https://your-project.supabase.co',
     })
   } else {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_URL',
-      pass: true,
+      ok: true,
       message: 'Valid URL format',
     })
   }
@@ -121,25 +129,28 @@ function performEnvChecks(): HealthCheckResult[] {
   if (!anonKey) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      pass: false,
+      ok: false,
       message: 'Missing required environment variable',
+      hint: 'Set NEXT_PUBLIC_SUPABASE_ANON_KEY from Supabase dashboard',
     })
   } else if (hasWhitespace(anonKey)) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      pass: false,
+      ok: false,
       message: 'Contains leading/trailing whitespace',
+      hint: 'Remove spaces before/after the key value',
     })
   } else if (!isValidSupabaseKeyFormat(anonKey)) {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      pass: false,
-      message: 'Invalid key format (expected long alphanumeric string)',
+      ok: false,
+      message: 'Invalid key format',
+      hint: 'Expected long alphanumeric string (JWT-like format)',
     })
   } else {
     checks.push({
       name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      pass: true,
+      ok: true,
       message: 'Valid key format',
     })
   }
@@ -149,25 +160,28 @@ function performEnvChecks(): HealthCheckResult[] {
   if (!serviceRoleKey) {
     checks.push({
       name: 'SUPABASE_SERVICE_ROLE_KEY',
-      pass: false,
-      message: 'Missing service role key (required for admin operations)',
+      ok: false,
+      message: 'Missing service role key',
+      hint: 'Required for admin operations - set from Supabase dashboard',
     })
   } else if (hasWhitespace(serviceRoleKey)) {
     checks.push({
       name: 'SUPABASE_SERVICE_ROLE_KEY',
-      pass: false,
+      ok: false,
       message: 'Contains leading/trailing whitespace',
+      hint: 'Remove spaces before/after the key value',
     })
   } else if (!isValidSupabaseKeyFormat(serviceRoleKey)) {
     checks.push({
       name: 'SUPABASE_SERVICE_ROLE_KEY',
-      pass: false,
-      message: 'Invalid key format (expected long alphanumeric string)',
+      ok: false,
+      message: 'Invalid key format',
+      hint: 'Expected long alphanumeric string (JWT-like format)',
     })
   } else {
     checks.push({
       name: 'SUPABASE_SERVICE_ROLE_KEY',
-      pass: true,
+      ok: true,
       message: 'Valid key format',
     })
   }
@@ -177,38 +191,79 @@ function performEnvChecks(): HealthCheckResult[] {
 
 /**
  * Optional: Tests database connectivity via authenticated server client
- * Uses a simple existence check on funnels table (no PHI)
+ * Uses canonical v0.5.x schema tables (pillars or funnels_catalog) - no PHI
  */
 async function performDatabaseConnectivityCheck(): Promise<HealthCheckResult> {
   try {
     const supabase = await createServerSupabaseClient()
 
-    // Simple query to check connectivity - just count funnels (no PHI)
-    const { error } = await supabase.from('funnels').select('id', { count: 'exact', head: true })
+    // Try pillars first (preferred canonical table)
+    const { error } = await supabase.from('pillars').select('id').limit(1)
 
     if (error) {
+      // Check error codes for specific failure types
+      const errorCode = (error as any).code
+
+      // 42P01 = relation does not exist (schema drift)
+      if (errorCode === '42P01') {
+        return {
+          name: 'Database Connectivity',
+          ok: false,
+          message: 'Schema drift detected',
+          hint: 'Table "pillars" does not exist - run migrations or verify schema',
+        }
+      }
+
+      // 42501 = permission denied / invalid API key
+      if (errorCode === '42501') {
+        return {
+          name: 'Database Connectivity',
+          ok: false,
+          message: 'Authentication/permission error',
+          hint: 'Invalid API key or insufficient permissions - check credentials',
+        }
+      }
+
+      // Other database errors
       return {
         name: 'Database Connectivity',
-        pass: false,
-        message: `Database query failed: ${error.message}`,
+        ok: false,
+        message: 'Database query failed',
+        hint: error.message,
       }
     }
 
     return {
       name: 'Database Connectivity',
-      pass: true,
+      ok: true,
       message: 'Successfully connected to database',
     }
   } catch (error) {
+    // Handle connection errors (network, invalid URL, etc.)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    // Check for common error patterns
+    if (errorMessage.includes('Supabase configuration missing')) {
+      return {
+        name: 'Database Connectivity',
+        ok: false,
+        message: 'Missing environment configuration',
+        hint: 'Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      }
+    }
+
     return {
       name: 'Database Connectivity',
-      pass: false,
-      message: `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      ok: false,
+      message: 'Connection error',
+      hint: errorMessage,
     }
   }
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = crypto.randomUUID()
+
   try {
     // Auth gate: must be authenticated
     const user = await getCurrentUser()
@@ -231,18 +286,41 @@ export async function GET(request: NextRequest) {
     const dbCheck = await performDatabaseConnectivityCheck()
     const allChecks = [...envChecks, dbCheck]
 
-    // Determine overall status
-    const overallStatus = allChecks.every((check) => check.pass) ? 'pass' : 'fail'
+    // Determine overall status based on check results
+    // GREEN: all checks ok
+    // RED: any check failed
+    // YELLOW: reserved for future use (warnings)
+    const status = allChecks.every((check) => check.ok) ? 'GREEN' : 'RED'
 
     const response: HealthCheckResponse = {
+      healthcheckVersion: '1.0.0',
+      status,
       checks: allChecks,
-      overallStatus,
+      requestId,
       timestamp: new Date().toISOString(),
     }
 
     return successResponse(response)
   } catch (error) {
-    console.error('[health/env] Error performing health check:', error)
-    return internalErrorResponse('Health check failed')
+    // Unexpected errors should still return 200 with RED status
+    // (not 500) to maintain fail-safe behavior
+    console.error('[health/env] Unexpected error:', error)
+
+    const response: HealthCheckResponse = {
+      healthcheckVersion: '1.0.0',
+      status: 'RED',
+      checks: [
+        {
+          name: 'Health Check Execution',
+          ok: false,
+          message: 'Unexpected error during health check',
+          hint: error instanceof Error ? error.message : 'Unknown error',
+        },
+      ],
+      requestId,
+      timestamp: new Date().toISOString(),
+    }
+
+    return successResponse(response)
   }
 }
