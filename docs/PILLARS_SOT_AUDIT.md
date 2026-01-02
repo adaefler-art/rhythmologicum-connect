@@ -10,13 +10,19 @@ The Pillars/Catalog Source-of-Truth (SOT) Audit endpoint provides a comprehensiv
 - Row counts and seed data verification
 - Stress funnel presence
 
+**Key Features**:
+- Uses secure RPC function for metadata queries (production-ready)
+- Returns status codes: GREEN, YELLOW, RED with detailed findings
+- PHI-free and deterministic responses
+- Includes requestId for troubleshooting
+
 ## Endpoint
 
 **URL**: `GET /api/admin/diagnostics/pillars-sot`
 
 **Authentication**: Required (Admin or Clinician role)
 
-**Response Format**: JSON (PHI-free, machine-readable)
+**Response Format**: JSON (PHI-free, machine-readable, versioned schema)
 
 ### Example Response
 
@@ -24,6 +30,9 @@ The Pillars/Catalog Source-of-Truth (SOT) Audit endpoint provides a comprehensiv
 {
   "success": true,
   "data": {
+    "diagnosticsVersion": "1.0.0",
+    "status": "GREEN",
+    "findings": [],
     "environment": {
       "supabaseUrl": "https://project.supabase.co",
       "envName": "production",
@@ -41,21 +50,11 @@ The Pillars/Catalog Source-of-Truth (SOT) Audit endpoint provides a comprehensiv
         "rowCount": 7
       },
       "funnels_catalog": {
-        "metadata": {
-          "exists": true,
-          "relkind": "r",
-          "relrowsecurity": true,
-          "policyCount": 3
-        },
+        "metadata": { "exists": true, "relkind": "r", "relrowsecurity": true, "policyCount": 3 },
         "rowCount": 5
       },
       "funnel_versions": {
-        "metadata": {
-          "exists": true,
-          "relkind": "r",
-          "relrowsecurity": true,
-          "policyCount": 2
-        },
+        "metadata": { "exists": true, "relkind": "r", "relrowsecurity": true, "policyCount": 2 },
         "rowCount": 3
       }
     },
@@ -64,10 +63,17 @@ The Pillars/Catalog Source-of-Truth (SOT) Audit endpoint provides a comprehensiv
       "pillarCount": 7,
       "expectedPillarCount": 7
     },
-    "generatedAt": "2026-01-02T12:00:00.000Z"
+    "generatedAt": "2026-01-02T12:00:00.000Z",
+    "requestId": "abc-123-def-456"
   }
 }
 ```
+
+### Response Status Codes
+
+- **GREEN**: All checks passed, system healthy
+- **YELLOW**: Warnings present (e.g., seed data incomplete), system functional
+- **RED**: Errors present (e.g., tables missing, RPC failure), system degraded
 
 ## Verification
 
@@ -89,30 +95,53 @@ Use the provided PowerShell script to verify the implementation:
 
 ## Troubleshooting
 
-### 🔴 "Table does not exist"
+### 🔴 "RPC_FUNCTION_ERROR"
 
-**Symptom**: `tables.pillars.metadata.exists = false` (or other tables)
+**Symptom**: `status: "RED"`, finding with code `RPC_FUNCTION_ERROR`
+
+**Cause**: Database function `diagnostics_pillars_sot` does not exist or failed to execute
+
+**Fix**:
+1. Check if migration has been applied:
+   ```powershell
+   supabase db status
+   ```
+
+2. Apply the migration:
+   ```powershell
+   supabase db push
+   ```
+
+3. Verify the migration file exists:
+   - `supabase/migrations/20260102140000_create_diagnostics_pillars_sot_function.sql`
+
+4. If using Supabase hosted instance, ensure migrations are deployed via Supabase CLI or dashboard
+
+### 🔴 "TABLE_MISSING_PILLARS" / "TABLE_MISSING_CATALOG" / "TABLE_MISSING_VERSIONS"
+
+**Symptom**: `status: "RED"`, findings indicate tables don't exist
 
 **Cause**: Database migrations have not been run or migration failed
 
 **Fix**:
+
 1. Check Supabase migration status:
-   ```bash
+   ```powershell
    supabase db status
    ```
 
 2. Run missing migrations:
-   ```bash
+   ```powershell
    supabase db push
    ```
 
-3. Verify migration `20251231142000_create_funnel_catalog.sql` was applied
+3. Verify key migrations were applied:
+   - `20251231142000_create_funnel_catalog.sql` (creates pillars table)
+   - `20251230211228_v05_core_schema_jsonb_fields.sql` (creates catalog/versions)
 
-4. If using Supabase hosted instance, ensure migrations are deployed via Supabase CLI or dashboard
+### 🔴 "MISSING_SERVICE_ROLE_KEY" / "MISSING_ANON_KEY"
 
-### 🔴 "Missing environment variables"
-
-**Symptom**: `environment.hasSupabaseServiceRoleKey = false` or `hasSupabaseAnonKey = false`
+**Symptom**: `status: "RED"`, `hasSupabaseServiceRoleKey: false` or `hasSupabaseAnonKey: false`
 
 **Cause**: Required environment variables not set
 
@@ -131,33 +160,41 @@ Use the provided PowerShell script to verify the implementation:
 2. Fill in Supabase project values
 3. Restart dev server
 
-### 🔴 "Seed data missing"
+### 🟡 "SEED_PILLAR_COUNT_MISMATCH"
 
-**Symptom**: `seeds.stressFunnelPresent = false` or `seeds.pillarCount != 7`
+**Symptom**: `status: "YELLOW"`, pillar count doesn't match expected (7)
 
 **Cause**: Seed data was not properly inserted by migrations
 
 **Fix**:
-1. Check if migrations completed successfully
+1. Check current pillar count in response: `data.seeds.pillarCount`
 2. Manually verify in Supabase Dashboard:
    ```sql
-   -- Check pillars
    SELECT * FROM public.pillars;
-   
-   -- Check stress funnel
-   SELECT * FROM public.funnels_catalog WHERE slug = 'stress-assessment';
    ```
 
 3. If missing, re-run migration:
-   ```bash
-   supabase db reset  # ⚠️ WARNING: Destructive in local dev only
+   ```powershell
+   # ⚠️ WARNING: Destructive in local dev only
+   supabase db reset
    ```
 
 4. For production, manually insert seed data via Supabase dashboard or create a data fix migration
 
-### 🔴 "RLS policies missing"
+### 🟡 "SEED_STRESS_FUNNEL_MISSING"
 
-**Symptom**: `tables.*.metadata.policyCount = 0` for tables that should have policies
+**Symptom**: `status: "YELLOW"`, stress funnel not found in catalog
+
+**Cause**: Canonical stress funnel (`slug: 'stress-assessment'`) missing from funnels_catalog
+
+**Fix**:
+1. Verify slug in registry: Should be `FUNNEL_SLUG.STRESS_ASSESSMENT` = `'stress-assessment'`
+2. Re-run migration `20251231142000_create_funnel_catalog.sql`
+3. Check for typos in slug (must be exact match)
+
+### 🟡 "RLS_POLICIES_MISSING_PILLARS"
+
+**Symptom**: `status: "YELLOW"`, `policyCount: 0` for tables that should have policies
 
 **Cause**: RLS migration not applied or policies were dropped
 
@@ -165,11 +202,11 @@ Use the provided PowerShell script to verify the implementation:
 1. Check RLS status in Supabase Dashboard → Database → Tables → [table] → Policies
 2. Verify migration `20251231093345_v05_i01_3_versioning_contract.sql` was applied
 3. Re-apply RLS policies if missing:
-   ```bash
+   ```powershell
    supabase db push --include-all
    ```
 
-### 🔴 "401 Unauthorized" when calling endpoint
+### 🔴 "401 Unauthorized"
 
 **Symptom**: API returns 401 status
 
@@ -180,7 +217,7 @@ Use the provided PowerShell script to verify the implementation:
 2. Check Supabase auth token in browser cookies (Application → Cookies → sb-*)
 3. Try logging out and logging back in
 
-### 🔴 "403 Forbidden" when calling endpoint
+### 🔴 "403 Forbidden"
 
 **Symptom**: API returns 403 status
 
@@ -189,9 +226,8 @@ Use the provided PowerShell script to verify the implementation:
 **Fix**:
 1. Verify user role in Supabase Dashboard → Authentication → Users
 2. User must have `app_metadata.role` set to `"admin"` or `"clinician"`
-3. Update user role using Supabase SQL:
+3. Update user role using Supabase SQL Editor:
    ```sql
-   -- In Supabase SQL Editor
    UPDATE auth.users
    SET raw_app_meta_data = jsonb_set(
      COALESCE(raw_app_meta_data, '{}'::jsonb),
@@ -201,15 +237,7 @@ Use the provided PowerShell script to verify the implementation:
    WHERE email = 'your-email@example.com';
    ```
 
-### 🔴 "Supabase project URL not set"
-
-**Symptom**: `environment.supabaseUrl = "NOT_SET"`
-
-**Cause**: `NEXT_PUBLIC_SUPABASE_URL` environment variable is missing
-
-**Fix**: See "Missing environment variables" above
-
-### 🟡 "Wrong Supabase project"
+### 🔴 "Wrong Supabase project"
 
 **Symptom**: Endpoint returns data but it's for the wrong project/environment
 
@@ -224,7 +252,8 @@ Use the provided PowerShell script to verify the implementation:
 
 ### Files
 - **Endpoint**: `app/api/admin/diagnostics/pillars-sot/route.ts`
-- **Tests**: `app/api/admin/diagnostics/pillars-sot/__tests__/route.test.ts`
+- **Tests**: `app/api/admin/diagnostics/pillars-sot/__tests__/route.test.ts` (12 tests)
+- **Migration**: `supabase/migrations/20260102140000_create_diagnostics_pillars_sot_function.sql`
 - **Verification Script**: `scripts/verify-pillars-sot-audit.ps1`
 - **Documentation**: `docs/PILLARS_SOT_AUDIT.md` (this file)
 
@@ -233,30 +262,42 @@ Use the provided PowerShell script to verify the implementation:
 - Requires authentication (enforced via middleware)
 - Requires admin or clinician role
 - Response is PHI-free (no user data, only system metadata)
-- Supabase URL is redacted to domain only
+- Supabase URL is redacted to domain only (no project refs or query params)
 - API keys are returned as boolean flags only (not actual values)
+- Uses SECURITY DEFINER RPC function for safe pg_* access
 
-### Dependencies
-- Uses `createAdminSupabaseClient` for unrestricted database access
-- Requires `SUPABASE_SERVICE_ROLE_KEY` environment variable
-- Bypasses RLS (necessary to query system tables)
+### Database Function
+- **Function**: `public.diagnostics_pillars_sot()`
+- **Returns**: JSONB with table metadata
+- **Security**: SECURITY DEFINER (runs with elevated privileges to query pg_* catalogs)
+- **Permissions**: Granted to `authenticated` role (API enforces admin/clinician check)
+
+### Deterministic Seed Checks
+- Uses canonical values from `@/lib/contracts/registry`:
+  - `FUNNEL_SLUG.STRESS_ASSESSMENT` = `'stress-assessment'`
+  - `PILLAR_KEY` = 7 canonical pillars
+- No hard-coded strings in seed verification
+- Registry-based approach prevents "fantasy names"
 
 ## Testing
 
 Run the test suite:
 
-```bash
+```powershell
 npm test -- app/api/admin/diagnostics/pillars-sot/__tests__/route.test.ts
 ```
 
 Tests cover:
-- Authentication and authorization
-- Successful audit data retrieval
+- Authentication and authorization (401/403)
+- Status codes (GREEN/YELLOW/RED)
+- RPC function usage
 - Missing tables handling
-- PHI compliance (no sensitive data in response)
+- Seed data verification
+- PHI compliance (no sensitive data exposure)
 - URL redaction
-- API key exposure prevention
-- Response schema stability
+- Secret exposure prevention
+- Response schema stability with version
+- Deterministic seed checks using registry
 
 ## Integration
 
@@ -266,32 +307,44 @@ This endpoint can be integrated into:
 - Diagnostic tools for support staff
 - Automated alerts for missing seed data
 
-### Example Usage in CI/CD
+### Example Usage in CI/CD (PowerShell)
 
-```bash
-# In a GitHub Actions workflow or similar
-response=$(curl -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://your-app.vercel.app/api/admin/diagnostics/pillars-sot)
+```powershell
+# In a CI pipeline
+$response = Invoke-RestMethod -Uri "https://your-app.vercel.app/api/admin/diagnostics/pillars-sot" `
+  -Headers @{ "Authorization" = "Bearer $authToken" }
 
-# Check if pillars table exists
-pillars_exists=$(echo $response | jq '.data.tables.pillars.metadata.exists')
-
-if [ "$pillars_exists" != "true" ]; then
-  echo "❌ Pillars table missing - deployment failed"
+# Check status
+if ($response.data.status -eq "RED") {
+  Write-Error "❌ Deployment failed: $($response.data.findings.Count) errors found"
   exit 1
-fi
+}
 
-# Check if seed data is present
-stress_present=$(echo $response | jq '.data.seeds.stressFunnelPresent')
+if ($response.data.status -eq "YELLOW") {
+  Write-Warning "⚠️ Deployment warning: $($response.data.findings.Count) warnings found"
+}
 
-if [ "$stress_present" != "true" ]; then
-  echo "⚠️  Warning: Stress funnel seed data missing"
-fi
+# Check specific conditions
+if (-not $response.data.seeds.stressFunnelPresent) {
+  Write-Warning "⚠️ Stress funnel seed data missing"
+}
+
+Write-Host "✓ Deployment health check passed (requestId: $($response.data.requestId))"
 ```
 
 ## Related Issues
 - **TV05_01B**: Pillar/Catalog Source-of-Truth Audit implementation
-- Related migrations: `20251231142000_create_funnel_catalog.sql`, `20251231145000_fix_catalog_schema.sql`
+- Related migrations:
+  - `20251231142000_create_funnel_catalog.sql` (pillars table + seed)
+  - `20260102140000_create_diagnostics_pillars_sot_function.sql` (RPC function)
 
 ## Changelog
-- **2026-01-02**: Initial implementation (TV05_01B)
+- **2026-01-02 (v2)**: 
+  - Added RPC function for production-ready pg_* access
+  - Added status codes (GREEN/YELLOW/RED) with findings
+  - Added `diagnosticsVersion` field for schema stability
+  - Added `requestId` for troubleshooting
+  - Switched to registry-based seed checks
+  - Fixed secret leak prevention (tests use REDACTED)
+  - Enhanced error semantics (200 with RED status instead of 500 for missing tables)
+- **2026-01-02 (v1)**: Initial implementation

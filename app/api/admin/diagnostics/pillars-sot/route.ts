@@ -9,6 +9,8 @@ import { hasAdminOrClinicianRole, getCurrentUser } from '@/lib/db/supabase.serve
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { env } from '@/lib/env'
 import { logInfo, logUnauthorized, logForbidden } from '@/lib/logging/logger'
+import { FUNNEL_SLUG, PILLAR_KEY } from '@/lib/contracts/registry'
+import { randomUUID } from 'crypto'
 
 /**
  * TV05_01B: Pillar/Catalog Source-of-Truth Audit Endpoint
@@ -24,7 +26,7 @@ import { logInfo, logUnauthorized, logForbidden } from '@/lib/logging/logger'
  * - unauth → 401
  * - non-admin/clinician → 403
  *
- * Response: PHI-free, machine-readable JSON
+ * Response: PHI-free, machine-readable JSON with stable schema
  */
 
 interface TableMetadata {
@@ -39,7 +41,17 @@ interface TableDiagnostics {
   rowCount?: number
 }
 
+interface DiagnosticsFinding {
+  type: 'error' | 'warning' | 'info'
+  code: string
+  message: string
+  suggestion?: string
+}
+
 interface PillarsSotAuditResponse {
+  diagnosticsVersion: string // Schema version for stability
+  status: 'GREEN' | 'YELLOW' | 'RED' // Overall health status
+  findings: DiagnosticsFinding[]
   environment: {
     supabaseUrl: string // redacted to domain only
     envName: string
@@ -57,11 +69,12 @@ interface PillarsSotAuditResponse {
     expectedPillarCount: number
   }
   generatedAt: string
+  requestId: string
 }
 
 /**
- * Redact URL to show only domain (PHI-free)
- * 
+ * Redact URL to show only domain (PHI-free, no project refs or tokens)
+ *
  * @param url - Full URL to redact
  * @returns string - Redacted URL showing only protocol and host
  */
@@ -69,6 +82,7 @@ function redactUrl(url: string | undefined): string {
   if (!url) return 'NOT_SET'
   try {
     const parsed = new URL(url)
+    // Only return protocol + host, no paths or query params that might contain tokens
     return `${parsed.protocol}//${parsed.host}`
   } catch {
     return 'INVALID_URL'
@@ -76,115 +90,8 @@ function redactUrl(url: string | undefined): string {
 }
 
 /**
- * Get table metadata using PostgreSQL system catalogs
- * 
- * @param tableName - Name of the table to check
- * @param schema - Database schema (default: 'public')
- * @returns Promise<TableMetadata> - Metadata about the table including existence, type, and policy count
- */
-async function getTableMetadata(
-  tableName: string,
-  schema: string = 'public',
-): Promise<TableMetadata> {
-  try {
-    const adminClient = createAdminSupabaseClient()
-
-    // Try to query the table directly to check existence
-    // Using count() with limit 0 is efficient and won't return actual data
-    const { error: tableError, count } = await adminClient
-      .from(tableName as any) // Type assertion needed for dynamic table names
-      .select('*', { count: 'exact', head: true })
-
-    if (tableError) {
-      // Table doesn't exist or we don't have access
-      return { exists: false }
-    }
-
-    // Table exists - now try to get additional metadata from information_schema
-    // Note: We can't directly query pg_class via Supabase client, so we use
-    // information_schema which is accessible via PostgREST
-    const { data: schemaData } = (await adminClient
-      .from('information_schema.tables' as any)
-      .select('table_type')
-      .eq('table_schema', schema)
-      .eq('table_name', tableName)
-      .maybeSingle()) as { data: { table_type: string } | null; error: any }
-
-    // Count policies by trying to query pg_policies view
-    const { data: policiesData, count: policyCount } = (await adminClient
-      .from('pg_policies' as any)
-      .select('*', { count: 'exact', head: true })
-      .eq('schemaname', schema)
-      .eq('tablename', tableName)) as { data: any; count: number | null; error: any }
-
-    return {
-      exists: true,
-      relkind: schemaData?.table_type === 'BASE TABLE' ? 'r' : 'v',
-      relrowsecurity: true, // Assume RLS is enabled for all tables in this project
-      policyCount: policyCount || 0,
-    }
-  } catch (error) {
-    console.error(`[pillars-sot] Error getting metadata for ${tableName}:`, error)
-    return { exists: false }
-  }
-}
-
-/**
- * Get row count for a table
- * 
- * @param tableName - Name of the table to count
- * @returns Promise<number> - Number of rows in the table
- */
-async function getRowCount(tableName: string): Promise<number> {
-  try {
-    const adminClient = createAdminSupabaseClient()
-
-    const { count, error } = await adminClient
-      .from(tableName as any) // Type assertion needed for dynamic table names
-      .select('*', { count: 'exact', head: true })
-
-    if (error) {
-      console.error(`[pillars-sot] Error getting row count for ${tableName}:`, error)
-      return 0
-    }
-
-    return count || 0
-  } catch (error) {
-    console.error(`[pillars-sot] Error getting row count for ${tableName}:`, error)
-    return 0
-  }
-}
-
-/**
- * Check if stress funnel exists in catalog
- * 
- * @returns Promise<boolean> - True if stress-assessment funnel exists in catalog
- */
-async function checkStressFunnelSeed(): Promise<boolean> {
-  try {
-    const adminClient = createAdminSupabaseClient()
-
-    const { data, error } = await adminClient
-      .from('funnels_catalog')
-      .select('id')
-      .eq('slug', 'stress-assessment')
-      .maybeSingle()
-
-    if (error) {
-      console.error('[pillars-sot] Error checking stress funnel seed:', error)
-      return false
-    }
-
-    return !!data
-  } catch (error) {
-    console.error('[pillars-sot] Error checking stress funnel seed:', error)
-    return false
-  }
-}
-
-/**
  * Get environment name from Vercel or other indicators
- * 
+ *
  * @returns string - Environment name (production, test, development)
  */
 function getEnvironmentName(): string {
@@ -197,13 +104,34 @@ function getEnvironmentName(): string {
   return 'development'
 }
 
+/**
+ * Calculate overall health status based on findings
+ */
+function calculateStatus(findings: DiagnosticsFinding[]): 'GREEN' | 'YELLOW' | 'RED' {
+  const hasErrors = findings.some((f) => f.type === 'error')
+  const hasWarnings = findings.some((f) => f.type === 'warning')
+
+  if (hasErrors) return 'RED'
+  if (hasWarnings) return 'YELLOW'
+  return 'GREEN'
+}
+
+/**
+ * Get expected pillar count from registry
+ */
+function getExpectedPillarCount(): number {
+  return Object.keys(PILLAR_KEY).length
+}
+
 export async function GET(request: NextRequest) {
+  const requestId = randomUUID()
+
   try {
     // Auth gate: must be authenticated
     const user = await getCurrentUser()
 
     if (!user) {
-      logUnauthorized({ endpoint: '/api/admin/diagnostics/pillars-sot' })
+      logUnauthorized({ endpoint: '/api/admin/diagnostics/pillars-sot', requestId })
       return unauthorizedResponse()
     }
 
@@ -212,11 +140,13 @@ export async function GET(request: NextRequest) {
 
     if (!isAuthorized) {
       logForbidden(
-        { endpoint: '/api/admin/diagnostics/pillars-sot', userId: user.id },
+        { endpoint: '/api/admin/diagnostics/pillars-sot', userId: user.id, requestId },
         'non-admin user',
       )
       return forbiddenResponse()
     }
+
+    const findings: DiagnosticsFinding[] = []
 
     // Gather environment information
     const environment = {
@@ -226,53 +156,185 @@ export async function GET(request: NextRequest) {
       hasSupabaseAnonKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     }
 
-    // Check table existence and metadata
-    const pillarsMetadata = await getTableMetadata('pillars')
-    const catalogMetadata = await getTableMetadata('funnels_catalog')
-    const versionsMetadata = await getTableMetadata('funnel_versions')
+    // Check for missing environment variables
+    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+      findings.push({
+        type: 'error',
+        code: 'MISSING_SERVICE_ROLE_KEY',
+        message: 'SUPABASE_SERVICE_ROLE_KEY environment variable is not set',
+        suggestion: 'Set SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables or .env.local',
+      })
+    }
 
-    // Get row counts (only if tables exist)
-    const pillarsRowCount = pillarsMetadata.exists ? await getRowCount('pillars') : 0
-    const catalogRowCount = catalogMetadata.exists ? await getRowCount('funnels_catalog') : 0
-    const versionsRowCount = versionsMetadata.exists ? await getRowCount('funnel_versions') : 0
+    if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      findings.push({
+        type: 'error',
+        code: 'MISSING_ANON_KEY',
+        message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is not set',
+        suggestion: 'Set NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables or .env.local',
+      })
+    }
 
-    // Check seed data
-    const stressFunnelPresent = catalogMetadata.exists ? await checkStressFunnelSeed() : false
+    // Query database diagnostics using RPC function
+    const adminClient = createAdminSupabaseClient()
+    const { data: dbDiagnostics, error: rpcError } = await adminClient.rpc('diagnostics_pillars_sot')
+
+    if (rpcError) {
+      findings.push({
+        type: 'error',
+        code: 'RPC_FUNCTION_ERROR',
+        message: `Failed to call diagnostics_pillars_sot RPC: ${rpcError.message}`,
+        suggestion: 'Ensure migration 20260102140000_create_diagnostics_pillars_sot_function.sql has been applied',
+      })
+
+      // Return 200 with RED status and findings (not 500)
+      return successResponse({
+        diagnosticsVersion: '1.0.0',
+        status: 'RED' as const,
+        findings,
+        environment,
+        tables: {
+          pillars: { metadata: { exists: false } },
+          funnels_catalog: { metadata: { exists: false } },
+          funnel_versions: { metadata: { exists: false } },
+        },
+        seeds: {
+          stressFunnelPresent: false,
+          pillarCount: 0,
+          expectedPillarCount: getExpectedPillarCount(),
+        },
+        generatedAt: new Date().toISOString(),
+        requestId,
+      })
+    }
+
+    // Parse database diagnostics
+    const pillarsData = dbDiagnostics.pillars || {}
+    const catalogData = dbDiagnostics.funnels_catalog || {}
+    const versionsData = dbDiagnostics.funnel_versions || {}
+
+    // Build table diagnostics
+    const tables = {
+      pillars: {
+        metadata: {
+          exists: pillarsData.exists || false,
+          relkind: pillarsData.relkind,
+          relrowsecurity: pillarsData.relrowsecurity,
+          policyCount: pillarsData.policyCount,
+        },
+        rowCount: pillarsData.exists ? pillarsData.rowCount : undefined,
+      },
+      funnels_catalog: {
+        metadata: {
+          exists: catalogData.exists || false,
+          relkind: catalogData.relkind,
+          relrowsecurity: catalogData.relrowsecurity,
+          policyCount: catalogData.policyCount,
+        },
+        rowCount: catalogData.exists ? catalogData.rowCount : undefined,
+      },
+      funnel_versions: {
+        metadata: {
+          exists: versionsData.exists || false,
+          relkind: versionsData.relkind,
+          relrowsecurity: versionsData.relrowsecurity,
+          policyCount: versionsData.policyCount,
+        },
+        rowCount: versionsData.exists ? versionsData.rowCount : undefined,
+      },
+    }
+
+    // Build seeds diagnostics (using canonical values from registry)
+    const expectedPillarCount = getExpectedPillarCount()
+    const pillarCount = pillarsData.rowCount || 0
+    const stressFunnelPresent = catalogData.stressFunnelExists || false
+
+    const seeds = {
+      stressFunnelPresent,
+      pillarCount,
+      expectedPillarCount,
+    }
+
+    // Add findings for missing tables
+    if (!tables.pillars.metadata.exists) {
+      findings.push({
+        type: 'error',
+        code: 'TABLE_MISSING_PILLARS',
+        message: 'Table public.pillars does not exist',
+        suggestion: 'Run migration: supabase db push or apply 20251231142000_create_funnel_catalog.sql',
+      })
+    }
+
+    if (!tables.funnels_catalog.metadata.exists) {
+      findings.push({
+        type: 'error',
+        code: 'TABLE_MISSING_CATALOG',
+        message: 'Table public.funnels_catalog does not exist',
+        suggestion: 'Run migration: supabase db push or apply V05 core schema migrations',
+      })
+    }
+
+    if (!tables.funnel_versions.metadata.exists) {
+      findings.push({
+        type: 'error',
+        code: 'TABLE_MISSING_VERSIONS',
+        message: 'Table public.funnel_versions does not exist',
+        suggestion: 'Run migration: supabase db push or apply V05 core schema migrations',
+      })
+    }
+
+    // Add findings for missing seed data
+    if (pillarCount !== expectedPillarCount) {
+      findings.push({
+        type: 'warning',
+        code: 'SEED_PILLAR_COUNT_MISMATCH',
+        message: `Expected ${expectedPillarCount} pillars, found ${pillarCount}`,
+        suggestion: 'Re-run migration 20251231142000_create_funnel_catalog.sql to seed canonical 7 pillars',
+      })
+    }
+
+    if (!stressFunnelPresent && tables.funnels_catalog.metadata.exists) {
+      findings.push({
+        type: 'warning',
+        code: 'SEED_STRESS_FUNNEL_MISSING',
+        message: `Stress funnel (slug: '${FUNNEL_SLUG.STRESS_ASSESSMENT}') not found in funnels_catalog`,
+        suggestion: 'Re-run migration 20251231142000_create_funnel_catalog.sql to seed stress funnel',
+      })
+    }
+
+    // Add findings for missing RLS policies
+    if (tables.pillars.metadata.exists && (tables.pillars.metadata.policyCount || 0) === 0) {
+      findings.push({
+        type: 'warning',
+        code: 'RLS_POLICIES_MISSING_PILLARS',
+        message: 'No RLS policies found for public.pillars',
+        suggestion: 'Apply RLS policies migration or check policy configuration',
+      })
+    }
 
     const response: PillarsSotAuditResponse = {
+      diagnosticsVersion: '1.0.0',
+      status: calculateStatus(findings),
+      findings,
       environment,
-      tables: {
-        pillars: {
-          metadata: pillarsMetadata,
-          rowCount: pillarsMetadata.exists ? pillarsRowCount : undefined,
-        },
-        funnels_catalog: {
-          metadata: catalogMetadata,
-          rowCount: catalogMetadata.exists ? catalogRowCount : undefined,
-        },
-        funnel_versions: {
-          metadata: versionsMetadata,
-          rowCount: versionsMetadata.exists ? versionsRowCount : undefined,
-        },
-      },
-      seeds: {
-        stressFunnelPresent,
-        pillarCount: pillarsRowCount,
-        expectedPillarCount: 7, // As per migration: 7 canonical pillars
-      },
+      tables,
+      seeds,
       generatedAt: new Date().toISOString(),
+      requestId,
     }
 
     logInfo('Pillars SOT audit accessed', {
       endpoint: '/api/admin/diagnostics/pillars-sot',
       userId: user.id,
-      pillarsExists: pillarsMetadata.exists,
-      catalogExists: catalogMetadata.exists,
+      requestId,
+      status: response.status,
+      findingsCount: findings.length,
     })
 
     return successResponse(response)
   } catch (error) {
-    console.error('[admin/diagnostics/pillars-sot] Error running audit:', error)
+    console.error('[admin/diagnostics/pillars-sot] Error running audit (requestId: ' + requestId + '):', error)
+    // Return 500 with no secrets/PHI
     return internalErrorResponse()
   }
 }
