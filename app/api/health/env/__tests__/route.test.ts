@@ -25,8 +25,6 @@ jest.mock('@/lib/env', () => ({
     NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjQyODQwMCwiZXhwIjoxOTU4MDA0NDAwfQ.test',
-    SUPABASE_SERVICE_ROLE_KEY:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyNDI4NDAwLCJleHAiOjE5NTgwMDQ0MDB9.service',
   },
 }))
 
@@ -122,7 +120,7 @@ describe('GET /api/health/env', () => {
       expect(json.data.healthcheckVersion).toBe('1.0.0')
       expect(json.data.requestId).toBeDefined()
       expect(json.data.timestamp).toBeDefined()
-      expect(json.data.checks).toHaveLength(4) // 3 env vars + 1 db check
+      expect(json.data.checks).toHaveLength(3) // 2 env vars + 1 db check
     })
 
     it('uses pillars table for database connectivity check', async () => {
@@ -371,7 +369,7 @@ describe('GET /api/health/env', () => {
       // Should still have valid structure
       expect(json.data.healthcheckVersion).toBe('1.0.0')
       expect(json.data.requestId).toBeDefined()
-      expect(json.data.checks).toHaveLength(4) // 3 env checks succeeded, DB check failed
+      expect(json.data.checks).toHaveLength(3) // 2 env checks + DB check
     })
   })
 })

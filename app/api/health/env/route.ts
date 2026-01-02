@@ -155,37 +155,6 @@ function performEnvChecks(): HealthCheckResult[] {
     })
   }
 
-  // Check SUPABASE_SERVICE_ROLE_KEY
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceRoleKey) {
-    checks.push({
-      name: 'SUPABASE_SERVICE_ROLE_KEY',
-      ok: false,
-      message: 'Missing service role key',
-      hint: 'Required for admin operations - set from Supabase dashboard',
-    })
-  } else if (hasWhitespace(serviceRoleKey)) {
-    checks.push({
-      name: 'SUPABASE_SERVICE_ROLE_KEY',
-      ok: false,
-      message: 'Contains leading/trailing whitespace',
-      hint: 'Remove spaces before/after the key value',
-    })
-  } else if (!isValidSupabaseKeyFormat(serviceRoleKey)) {
-    checks.push({
-      name: 'SUPABASE_SERVICE_ROLE_KEY',
-      ok: false,
-      message: 'Invalid key format',
-      hint: 'Expected long alphanumeric string (JWT-like format)',
-    })
-  } else {
-    checks.push({
-      name: 'SUPABASE_SERVICE_ROLE_KEY',
-      ok: true,
-      message: 'Valid key format',
-    })
-  }
-
   return checks
 }
 
