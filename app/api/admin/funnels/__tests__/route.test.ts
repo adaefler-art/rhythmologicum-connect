@@ -212,7 +212,7 @@ describe('GET /api/admin/funnels', () => {
       }),
     )
 
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(403)
     expect(res.headers.get('x-request-id')).toBe('rid-403')
 
     const json = (await res.json()) as unknown as {
@@ -220,11 +220,11 @@ describe('GET /api/admin/funnels', () => {
       error: { code: string; message: string; requestId: string }
     }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.code).toBe('FORBIDDEN')
     expect(json.error.requestId).toBe('rid-403')
   })
 
-  it('missing relation 42P01 => 500 INTERNAL_ERROR (requestId in body)', async () => {
+  it('missing relation 42P01 => 503 SCHEMA_NOT_READY (requestId in body)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -259,7 +259,7 @@ describe('GET /api/admin/funnels', () => {
       }),
     )
 
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(503)
     expect(res.headers.get('x-request-id')).toBe('rid-503')
 
     const json = (await res.json()) as unknown as {
@@ -267,7 +267,7 @@ describe('GET /api/admin/funnels', () => {
       error: { code: string; requestId: string }
     }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.code).toBe('SCHEMA_NOT_READY')
     expect(json.error.requestId).toBe('rid-503')
   })
 
@@ -326,7 +326,7 @@ describe('GET /api/admin/funnels', () => {
     expect(mockClient.from).not.toHaveBeenCalledWith('funnel_versions')
   })
 
-  it('schema cache missing relation (PGRST205) => 500 INTERNAL_ERROR (requestId in body)', async () => {
+  it('schema cache missing relation (PGRST205) => 503 SCHEMA_NOT_READY (requestId in body)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -355,10 +355,10 @@ describe('GET /api/admin/funnels', () => {
 
     const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-pgrst205' } }))
 
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(503)
     const json = (await res.json()) as unknown as { success: boolean; error: { code: string; requestId: string } }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.code).toBe('SCHEMA_NOT_READY')
     expect(json.error.requestId).toBe('rid-pgrst205')
     expect(res.headers.get('x-request-id')).toBe('rid-pgrst205')
   })
