@@ -109,7 +109,6 @@ export function classifySupabaseError(error: unknown): ClassifiedError {
   // Authentication/RLS errors
   if (
     code === '42501' || // insufficient_privilege
-    code === 'PGRST116' || // jwt_invalid
     code === 'PGRST301' || // row_level_security
     code === 'PGRST302' || // insufficient_permission
     message.includes('permission denied') ||

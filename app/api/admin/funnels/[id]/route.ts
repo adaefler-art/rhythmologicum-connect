@@ -111,6 +111,12 @@ export async function GET(
 
     if (funnelError) {
       const safeErr = sanitizeSupabaseError(funnelError)
+
+      // PGRST116: .single() could not coerce result (usually 0 rows for eq(id)).
+      // This is not an auth/RLS failure and should be treated as "not found" here.
+      if (safeErr.code === 'PGRST116') {
+        return withRequestId(notFoundResponse('Funnel'), requestId)
+      }
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
@@ -136,11 +142,6 @@ export async function GET(
           ),
           requestId,
         )
-      }
-
-      // PGRST116 means no rows found
-      if (safeErr.code === 'PGRST116') {
-        return withRequestId(notFoundResponse('Funnel'), requestId)
       }
 
       logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
