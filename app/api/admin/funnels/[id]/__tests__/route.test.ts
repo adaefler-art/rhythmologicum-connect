@@ -73,7 +73,10 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
   jest.doMock('@/lib/db/supabase.admin', () => ({ createAdminSupabaseClient: jest.fn() }))
 
   const mod = await import('../route')
-  return mod as { GET: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response> }
+  return mod as { 
+    GET: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response>,
+    PATCH: (request: Request, ctx: { params: Promise<{ id: string }> }) => Promise<Response>
+  }
 }
 
 function getMocks() {
@@ -244,5 +247,303 @@ describe('GET /api/admin/funnels/[id]', () => {
 
     expect(json.success).toBe(false)
     expect(json.error.code).toBe('NOT_FOUND')
+  })
+
+  it('UUID not found => 404 (no slug fallback)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const funnelBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: 'PGRST116', message: 'No rows returned' },
+    })
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'funnels_catalog') return funnelBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    // UUID-shaped parameter should be treated as UUID, not slug
+    const uuidParam = '550e8400-e29b-41d4-a716-446655440000'
+    const res = await GET(
+      new Request(`http://localhost/api/admin/funnels/${uuidParam}`, {
+        headers: { 'x-request-id': 'rid-uuid-404' },
+      }),
+      { params: Promise.resolve({ id: uuidParam }) },
+    )
+
+    expect(res.status).toBe(404)
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; message: string }
+    }
+
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('NOT_FOUND')
+    expect(json.error.message).toContain('UUID')
+  })
+
+  it('invalid question type in manifest => 422', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const funnelBuilder = makeThenableBuilder({
+      data: {
+        id: 'f1',
+        slug: 'test-funnel',
+        title: 'Test',
+        description: null,
+        pillar_id: null,
+        est_duration_min: 10,
+        outcomes: [],
+        is_active: true,
+        default_version_id: 'v1',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      },
+      error: null,
+    })
+
+    const pillarBuilder = makeThenableBuilder({ data: null, error: null })
+
+    const versionsBuilder = makeThenableBuilder({
+      data: [
+        {
+          id: 'v1',
+          funnel_id: 'f1',
+          version: '1.0.0',
+          is_default: true,
+          rollout_percent: 100,
+          questionnaire_config: {
+            steps: [
+              {
+                id: 's1',
+                title: 'Step 1',
+                questions: [
+                  {
+                    id: 'q1',
+                    key: 'test',
+                    label: 'Test',
+                    type: 'invalid_fantasy_type', // Invalid type not in registry
+                  },
+                ],
+              },
+            ],
+          },
+          content_manifest: {},
+          algorithm_bundle_version: '1.0',
+          prompt_version: '1.0',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: null,
+        },
+      ],
+      error: null,
+    })
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'funnels_catalog') return funnelBuilder
+        if (table === 'pillars') return pillarBuilder
+        if (table === 'funnel_versions') return versionsBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    const res = await GET(
+      new Request('http://localhost/api/admin/funnels/test-funnel', {
+        headers: { 'x-request-id': 'rid-invalid-type' },
+      }),
+      { params: Promise.resolve({ id: 'test-funnel' }) },
+    )
+
+    expect(res.status).toBe(422)
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; message: string }
+    }
+
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('VALIDATION_ERROR')
+    expect(json.error.message).toContain('invalid_fantasy_type')
+  })
+})
+
+describe('PATCH /api/admin/funnels/[id]', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('unauthenticated => 401', async () => {
+    const { PATCH } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+      },
+      from: jest.fn(() => {
+        throw new Error('should not query database when unauthenticated')
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    const res = await PATCH(
+      new Request('http://localhost/api/admin/funnels/test', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'rid-unauth' },
+        body: JSON.stringify({ is_active: true }),
+      }),
+      { params: Promise.resolve({ id: 'test' }) },
+    )
+
+    expect(res.status).toBe(401)
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string }
+    }
+
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('UNAUTHORIZED')
+  })
+
+  it('non-clinician/admin => 403', async () => {
+    const { PATCH } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'patient' } } } }),
+      },
+      from: jest.fn(() => {
+        throw new Error('should not query database when forbidden')
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    const res = await PATCH(
+      new Request('http://localhost/api/admin/funnels/test', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'rid-forbidden' },
+        body: JSON.stringify({ is_active: true }),
+      }),
+      { params: Promise.resolve({ id: 'test' }) },
+    )
+
+    expect(res.status).toBe(403)
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string }
+    }
+
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('FORBIDDEN')
+  })
+
+  it('clinician/admin can update via admin client => 200', async () => {
+    const { PATCH } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+    })
+
+    setupCookieStore()
+
+    const updateBuilder = makeThenableBuilder({
+      data: {
+        id: 'f1',
+        slug: 'test-funnel',
+        title: 'Updated Title',
+        description: null,
+        is_active: false,
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-02T00:00:00Z',
+      },
+      error: null,
+    })
+
+    const adminClient = {
+      from: jest.fn((table: string) => {
+        if (table === 'funnels_catalog') return updateBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn(() => {
+        throw new Error('should use admin client, not auth client')
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+
+    const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+      createAdminSupabaseClient: jest.Mock
+    }
+    createAdminSupabaseClient.mockReturnValue(adminClient)
+
+    const res = await PATCH(
+      new Request('http://localhost/api/admin/funnels/test-funnel', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-request-id': 'rid-update' },
+        body: JSON.stringify({ title: 'Updated Title', is_active: false }),
+      }),
+      { params: Promise.resolve({ id: 'test-funnel' }) },
+    )
+
+    expect(res.status).toBe(200)
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      data: { funnel: { title: string; is_active: boolean } }
+    }
+
+    expect(json.success).toBe(true)
+    expect(json.data.funnel.title).toBe('Updated Title')
+    expect(json.data.funnel.is_active).toBe(false)
+    expect(createAdminSupabaseClient).toHaveBeenCalled()
   })
 })

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import {
   configurationErrorResponse,
   databaseErrorResponse,
@@ -11,14 +11,40 @@ import {
   validationErrorResponse,
 } from '@/lib/api/responses'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank, logError } from '@/lib/db/errors'
 import { env } from '@/lib/env'
+import { QUESTION_TYPE, type QuestionType } from '@/lib/contracts/registry'
+
+/**
+ * UUID v4 regex pattern for strict validation
+ * Matches: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx where x is [0-9a-f] and y is [89ab]
+ */
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+/**
+ * Determines if a string is a valid UUID v4
+ */
+function isUuid(value: string): boolean {
+  return UUID_V4_PATTERN.test(value.trim())
+}
+
+/**
+ * Type guard to check if a value is a valid question type from registry
+ */
+function isValidQuestionType(value: unknown): value is QuestionType {
+  return typeof value === 'string' && Object.values(QUESTION_TYPE).includes(value as QuestionType)
+}
 
 /**
  * B7 API Endpoint: Get funnel details with version manifest
  * GET /api/admin/funnels/[id]
  * 
- * [id] can be either a slug or UUID for backward compatibility
+ * [id] can be either a slug or UUID (strict disambiguation)
+ * - UUID-shaped strings are always treated as UUIDs
+ * - If UUID lookup fails → 404 (no silent fallback to slug)
+ * - Otherwise treated as slug
+ * 
  * Returns complete funnel structure from catalog + funnel_versions.manifest
  */
 export async function GET(
@@ -57,20 +83,39 @@ export async function GET(
       return withRequestId(forbiddenResponse(), requestId)
     }
 
-    // Fetch funnel from catalog (try slug first, then UUID for backward compat)
-    let { data: funnel, error: funnelError } = await authClient
-      .from('funnels_catalog')
-      .select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
-      .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
-      .single()
+    // Determine if parameter is UUID or slug (strict disambiguation)
+    const isUuidParam = isUuid(slugOrId)
+    
+    // Fetch funnel from catalog
+    let funnel
+    let funnelError
+    
+    if (isUuidParam) {
+      // UUID path: query by ID only, no fallback
+      ;({ data: funnel, error: funnelError } = await authClient
+        .from('funnels_catalog')
+        .select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
+        .eq('id', slugOrId)
+        .single())
+    } else {
+      // Slug path: query by slug only
+      ;({ data: funnel, error: funnelError } = await authClient
+        .from('funnels_catalog')
+        .select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
+        .eq('slug', slugOrId)
+        .single())
+    }
 
     if (funnelError) {
       const safeErr = sanitizeSupabaseError(funnelError)
 
-      // PGRST116: .single() could not coerce result (usually 0 rows).
-      // This is not an auth/RLS failure and should be treated as "not found" here.
+      // PGRST116: .single() could not coerce result (0 rows found)
       if (safeErr.code === 'PGRST116') {
-        return withRequestId(notFoundResponse('Funnel', `Funnel with identifier "${slugOrId}" not found`), requestId)
+        const paramType = isUuidParam ? 'UUID' : 'slug'
+        return withRequestId(
+          notFoundResponse('Funnel', `Funnel not found with ${paramType}: "${slugOrId}"`),
+          requestId,
+        )
       }
       const classified = classifySupabaseError(safeErr)
 
@@ -104,7 +149,11 @@ export async function GET(
     }
 
     if (!funnel) {
-      return withRequestId(notFoundResponse('Funnel', `Funnel with identifier "${slugOrId}" not found`), requestId)
+      const paramType = isUuidParam ? 'UUID' : 'slug'
+      return withRequestId(
+        notFoundResponse('Funnel', `Funnel not found with ${paramType}: "${slugOrId}"`),
+        requestId,
+      )
     }
 
     // Fetch pillar information if funnel has a pillar_id
@@ -164,6 +213,7 @@ export async function GET(
 
     // ADAPTER LAYER: Convert manifest to steps/questions format for backward compat UI
     // This allows the UI to continue working while we transition to manifest-based editing
+    // IMPORTANT: Validates all types against registry - no fantasy types allowed
     let steps: any[] = []
     if (defaultVersion?.questionnaire_config) {
       try {
@@ -172,28 +222,76 @@ export async function GET(
           : defaultVersion.questionnaire_config
         
         if (config.steps && Array.isArray(config.steps)) {
-          steps = config.steps.map((step: any, index: number) => ({
-            id: step.id || `step-${index}`,
-            funnel_id: funnel.id,
-            order_index: index,
-            title: step.title || '',
-            description: step.description || null,
-            type: 'question_step', // manifest steps are question steps
-            content_page_id: null,
-            content_page: null,
-            questions: (step.questions || []).map((q: any, qIndex: number) => ({
-              id: q.id || `q-${index}-${qIndex}`,
-              key: q.key || '',
-              label: q.label || '',
-              help_text: q.helpText || null,
-              question_type: q.type || 'text',
-              funnel_step_question_id: `fsq-${q.id}`,
-              is_required: q.required || false,
-              order_index: qIndex,
-            })),
-          }))
+          // Validate and map steps
+          for (let index = 0; index < config.steps.length; index++) {
+            const step = config.steps[index]
+            const mappedQuestions = []
+            
+            // Validate and map questions
+            for (let qIndex = 0; qIndex < (step.questions || []).length; qIndex++) {
+              const q = step.questions[qIndex]
+              
+              // Strict validation: question type must be in registry
+              if (!isValidQuestionType(q.type)) {
+                logError({
+                  requestId,
+                  operation: 'adapter_validate_question_type',
+                  userId: user.id,
+                  error: {
+                    code: 'INVALID_QUESTION_TYPE',
+                    message: `Invalid question type "${q.type}" in manifest (question: ${q.id || qIndex})`,
+                    hint: `Valid types: ${Object.values(QUESTION_TYPE).join(', ')}`,
+                  },
+                })
+                // Return 422 for invalid manifest data
+                return withRequestId(
+                  NextResponse.json(
+                    {
+                      success: false,
+                      error: {
+                        code: 'VALIDATION_ERROR',
+                        message: `Manifest contains invalid question type: "${q.type}". Valid types: ${Object.values(QUESTION_TYPE).join(', ')}`,
+                        requestId,
+                      },
+                    },
+                    { status: 422 },
+                  ),
+                  requestId,
+                )
+              }
+              
+              mappedQuestions.push({
+                id: q.id || `q-${index}-${qIndex}`,
+                key: q.key || '',
+                label: q.label || '',
+                help_text: q.helpText || null,
+                question_type: q.type, // Now validated against registry
+                funnel_step_question_id: `fsq-${q.id}`,
+                is_required: q.required || false,
+                order_index: qIndex,
+              })
+            }
+            
+            steps.push({
+              id: step.id || `step-${index}`,
+              funnel_id: funnel.id,
+              order_index: index,
+              title: step.title || '',
+              description: step.description || null,
+              type: 'question_step', // manifest steps are question steps
+              content_page_id: null,
+              content_page: null,
+              questions: mappedQuestions,
+            })
+          }
         }
       } catch (err) {
+        logError({
+          requestId,
+          operation: 'adapter_parse_manifest',
+          userId: user.id,
+          error: err,
+        })
         console.warn('Failed to parse questionnaire_config for adapter:', err)
       }
     }
@@ -223,7 +321,10 @@ export async function GET(
  * B7 API Endpoint: Update funnel is_active status or content fields
  * PATCH /api/admin/funnels/[id]
  * 
- * [id] can be either a slug or UUID for backward compatibility
+ * [id] can be either a slug or UUID (strict disambiguation)
+ * - UUID-shaped strings are always treated as UUIDs
+ * - Uses admin/service client for cross-user writes
+ * 
  * Body: { is_active?: boolean, title?: string, description?: string }
  */
 export async function PATCH(
@@ -234,7 +335,6 @@ export async function PATCH(
   
   try {
     const { id: slugOrId } = await params
-    const body = await request.json()
 
     // Check Supabase configuration
     if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
@@ -256,12 +356,15 @@ export async function PATCH(
       return withRequestId(unauthorizedResponse(), requestId)
     }
 
-    // Authorization gate (clinician/admin)
+    // Authorization gate (clinician/admin) - MUST happen before DB write
     const role = user.app_metadata?.role || user.user_metadata?.role
     const isAuthorized = role === 'clinician' || role === 'admin'
     if (!isAuthorized) {
       return withRequestId(forbiddenResponse(), requestId)
     }
+
+    // Parse and validate body
+    const body = await request.json()
 
     // Build update object with only provided fields
     const updateData: Record<string, unknown> = {
@@ -298,13 +401,79 @@ export async function PATCH(
       updateData.description = trimmedDescription || null
     }
 
-    // Update funnel catalog (try slug first, then UUID for backward compat)
-    let { data, error } = await authClient
-      .from('funnels_catalog')
-      .update(updateData)
-      .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
-      .select()
-      .single()
+    // Use admin/service client for cross-user writes to metadata tables
+    // Justification: Clinicians need to manage all funnels, not just their own
+    let writeClient
+    let usingAdminClient = false
+    try {
+      writeClient = createAdminSupabaseClient()
+      usingAdminClient = true
+    } catch (err) {
+      logError({
+        requestId,
+        operation: 'create_admin_client_for_write',
+        userId: user.id,
+        error: err,
+      })
+      // Fallback to auth client if admin client unavailable
+      writeClient = authClient
+    }
+
+    // Determine if parameter is UUID or slug (strict disambiguation)
+    const isUuidParam = isUuid(slugOrId)
+    
+    // Update funnel catalog
+    let data
+    let error
+    
+    if (isUuidParam) {
+      // UUID path: update by ID only
+      ;({ data, error } = await writeClient
+        .from('funnels_catalog')
+        .update(updateData)
+        .eq('id', slugOrId)
+        .select()
+        .single())
+    } else {
+      // Slug path: update by slug only
+      ;({ data, error } = await writeClient
+        .from('funnels_catalog')
+        .update(updateData)
+        .eq('slug', slugOrId)
+        .select()
+        .single())
+    }
+
+    // If admin client failed with auth/config error, retry with auth client
+    if (error && usingAdminClient) {
+      const classified = classifySupabaseError(error)
+      if (classified.kind === 'CONFIGURATION_ERROR' || classified.kind === 'AUTH_OR_RLS') {
+        logError({
+          requestId,
+          operation: 'update_funnel_admin_fallback',
+          userId: user.id,
+          error,
+        })
+        usingAdminClient = false
+        writeClient = authClient
+        
+        if (isUuidParam) {
+          ;({ data, error } = await writeClient
+            .from('funnels_catalog')
+            .update(updateData)
+            .eq('id', slugOrId)
+            .select()
+            .single())
+        } else {
+          ;({ data, error } = await writeClient
+            .from('funnels_catalog')
+            .update(updateData)
+            .eq('slug', slugOrId)
+            .select()
+            .single())
+        }
+      }
+    }
 
     if (error) {
       const safeErr = sanitizeSupabaseError(error)
@@ -337,7 +506,11 @@ export async function PATCH(
 
       // PGRST116 means no rows found
       if (safeErr.code === 'PGRST116') {
-        return withRequestId(notFoundResponse('Funnel', `Funnel with identifier "${slugOrId}" not found`), requestId)
+        const paramType = isUuidParam ? 'UUID' : 'slug'
+        return withRequestId(
+          notFoundResponse('Funnel', `Funnel not found with ${paramType}: "${slugOrId}"`),
+          requestId,
+        )
       }
 
       logError({ requestId, operation: 'update_funnel_catalog', userId: user.id, error: safeErr })
