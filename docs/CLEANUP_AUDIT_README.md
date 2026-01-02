@@ -6,14 +6,14 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 
 ## Generated Reports
 
-### 1. V05_CLEANUP_AUDIT_UNUSED.md
+### 1. TV05_CLEANUP_AUDIT_UNUSED.md
 
 **Purpose:** Identifies implemented but potentially unused or unintegrated code artifacts.
 
 **Contents:**
 - Unused API routes (4 identified)
-- Unreachable page routes (all verified as reachable)
-- Unused server actions (all verified as in use)
+- Unreachable page routes (all heuristically verified as reachable)
+- Unused server actions (all heuristically verified as in use)
 - Recommendations with risk levels
 
 **Key Findings:**
@@ -22,7 +22,7 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 - ⚠️ Content resolvers - possible duplication
 - ✅ All pages properly integrated (false positives clarified)
 
-### 2. V05_CLEANUP_AUDIT_ISSUE_MAP.md
+### 2. TV05_CLEANUP_AUDIT_ISSUE_MAP.md
 
 **Purpose:** Maps V05 canonical issue IDs to their implementation in the repository.
 
@@ -38,7 +38,7 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 - ✅ 8/8 issues have comprehensive documentation
 - ✅ Production-ready quality across all issues
 
-### 3. V05_CLEANUP_BACKLOG.md
+### 3. TV05_CLEANUP_BACKLOG.md
 
 **Purpose:** Provides prioritized cleanup tasks derived from audit findings.
 
@@ -55,14 +55,14 @@ This directory contains the comprehensive cleanup audit for Rhythmologicum Conne
 
 ## Audit Scripts
 
-### scripts/cleanup-audit.sh (Bash)
+### scripts/tv05-cleanup-audit.ps1 (PowerShell)
 
-**Purpose:** Automated data collection for audit analysis.
+**Purpose:** Automated data collection for audit analysis (canonical script).
 
 **Usage:**
-```bash
+```powershell
 cd /path/to/rhythmologicum-connect
-bash scripts/cleanup-audit.sh
+.\scripts\tv05-cleanup-audit.ps1
 ```
 
 **Output:**
@@ -75,28 +75,16 @@ bash scripts/cleanup-audit.sh
 - Server actions and their callers
 - V05 issue IDs and their file locations
 
-### scripts/cleanup-audit.ps1 (PowerShell)
-
-**Purpose:** Same as bash script but for PowerShell environments.
-
-**Usage:**
-```powershell
-cd C:\path\to\rhythmologicum-connect
-pwsh -File scripts/cleanup-audit.ps1
-```
-
-**Note:** May have platform-specific issues on Linux/macOS. Use bash script instead if encountering errors.
-
 ## How to Use This Audit
 
 ### For Project Managers
 
-1. **Read V05_CLEANUP_AUDIT_ISSUE_MAP.md first**
+1. **Read TV05_CLEANUP_AUDIT_ISSUE_MAP.md first**
    - Understand what has been implemented
    - Verify all V05 issues are complete
    - Celebrate 100% implementation rate!
 
-2. **Review V05_CLEANUP_BACKLOG.md**
+2. **Review TV05_CLEANUP_BACKLOG.md**
    - Understand cleanup priorities
    - Plan sprint capacity for cleanup tasks
    - Create GitHub issues from backlog items
@@ -108,7 +96,7 @@ pwsh -File scripts/cleanup-audit.ps1
 
 ### For Developers
 
-1. **Read V05_CLEANUP_AUDIT_UNUSED.md first**
+1. **Read TV05_CLEANUP_AUDIT_UNUSED.md first**
    - Understand what code may be unused
    - Review recommendations for your area
    - Investigate flagged items before removing
@@ -184,9 +172,9 @@ All flagged items were manually reviewed to reduce false positives:
 
 ### How to Re-Run
 
-1. **Run Scripts:**
-   ```bash
-   bash scripts/cleanup-audit.sh
+1. **Run Script:**
+   ```powershell
+   .\scripts\tv05-cleanup-audit.ps1
    ```
 
 2. **Review Output:**
@@ -200,8 +188,8 @@ All flagged items were manually reviewed to reduce false positives:
    - Update BACKLOG with new tasks
 
 4. **Commit Changes:**
-   ```bash
-   git add docs/V05_CLEANUP_*.md
+   ```powershell
+   git add docs/TV05_CLEANUP_*.md
    git commit -m "Update cleanup audit reports"
    ```
 

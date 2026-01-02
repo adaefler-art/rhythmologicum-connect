@@ -14,9 +14,9 @@ This report identifies implemented code artifacts that are potentially unused or
 ### Statistics
 
 - **API Routes:** 35 total, 4 potentially unused, 2 with low usage
-- **Page Routes:** 22 total, 0 truly unreachable (dynamic routes verified as used)
-- **Server Actions:** 6 total, 0 unused (all onboarding actions are used)
-- **Contracts:** 3 total, all in use
+- **Page Routes:** 22 total, 0 truly unreachable (dynamic routes heuristically verified as used)
+- **Server Actions:** 6 total, 0 unused (all onboarding actions heuristically verified as used)
+- **Contracts:** 3 total, all heuristically verified as in use
 
 ### Key Findings
 
@@ -431,7 +431,7 @@ All contract files in `lib/contracts/` were analyzed.
 
 ## 7. False Positives / Clarifications
 
-The following items initially appeared unused but were verified as correctly implemented:
+The following items initially appeared unused but were heuristically verified as correctly implemented through manual code inspection:
 
 ### 7.1 Dynamic Routes
 
@@ -439,7 +439,7 @@ The following items initially appeared unused but were verified as correctly imp
 
 **Resolution:** These are accessed programmatically (e.g., `router.push(\`/patient/\${id}\`)`) which doesn't match simple string search patterns.
 
-**Verification:** Manual code review confirmed proper usage in:
+**Verification (Heuristic):** Manual code review confirmed proper usage in:
 - Table row click handlers
 - Navigation callbacks
 - Funnel flow progression
@@ -452,7 +452,7 @@ The following items initially appeared unused but were verified as correctly imp
 
 **Resolution:** Admin navigation uses programmatic routing (`router.push()`) rather than static `<Link href="">` components.
 
-**Verification:** All admin pages are accessible via navigation calls from admin dashboard or content management UI.
+**Verification (Heuristic):** All admin pages are accessible via navigation calls from admin dashboard or content management UI.
 
 ---
 
