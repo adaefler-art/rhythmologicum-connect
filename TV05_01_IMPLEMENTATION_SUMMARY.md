@@ -33,7 +33,7 @@ app/api/admin/usage/
     └── route.test.ts         # 7 auth & compliance tests
 
 .usage-telemetry/
-└── usage-data.json          # File-based storage (gitignored)
+└── usage-data.json          # File-based storage (gitignored, ephemeral on Vercel)
 ```
 
 ### Data Model
@@ -52,6 +52,19 @@ type AggregatedUsage = {
   env: string                // Environment name
 }
 ```
+
+### ⚠️ Deployment Considerations
+
+**File-based telemetry is best-effort and ephemeral on Vercel:**
+
+- ✅ **Local Development**: Full persistence across restarts
+- ✅ **Staging/Dev Environments**: Suitable for short-term usage analysis
+- ⚠️  **Vercel Production**: Filesystem is **ephemeral** and resets on:
+  - Each deployment
+  - Container restarts
+  - Region failover
+  
+**Primary Use Case**: Development and staging analysis only. For production metrics, migrate to database-backed storage (Supabase table) in future enhancements.
 
 ## Implementation Details
 
@@ -194,16 +207,12 @@ npm run build
 
 ## Verification
 
-### Automated Verification
+### Automated Verification (PowerShell)
 
 Run the verification script:
 
-```bash
-# Bash (Linux/Mac)
-bash scripts/verify-usage-telemetry.sh
-
-# PowerShell (Windows)
-pwsh scripts/verify-usage-telemetry.ps1
+```powershell
+.\scripts\verify-usage-telemetry.ps1
 ```
 
 **Output:**
@@ -237,7 +246,6 @@ See `docs/USAGE_TELEMETRY.md` for detailed manual testing instructions.
 - `TV05_01_IMPLEMENTATION_SUMMARY.md` (this file)
 
 ### Scripts
-- `scripts/verify-usage-telemetry.sh` (bash verification)
 - `scripts/verify-usage-telemetry.ps1` (PowerShell verification)
 
 ### Configuration

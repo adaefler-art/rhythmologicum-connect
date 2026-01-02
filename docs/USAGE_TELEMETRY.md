@@ -144,14 +144,26 @@ All PHI compliance is verified through automated tests:
 
 - **Location**: `.usage-telemetry/usage-data.json`
 - **Format**: JSON array of aggregated usage records
-- **Persistence**: Survives process restarts
 - **Gitignore**: Added to `.gitignore` to prevent commits
+
+### ⚠️ Deployment Considerations
+
+**Important**: File-based telemetry is **best-effort and ephemeral** in serverless environments:
+
+- ✅ **Local Development**: Full persistence across restarts
+- ✅ **Staging/Dev**: Suitable for short-term usage analysis
+- ⚠️  **Vercel Production**: Filesystem is **ephemeral** and reset on each deployment
+  - Data is lost on redeploy, container restart, or region failover
+  - Use only for development and staging analysis
+  - **Not suitable for long-term production metrics**
+
+**Recommendation**: For production usage tracking, migrate to database-backed storage (Supabase table) in a future enhancement.
 
 ### Data Retention
 
-Currently, data persists indefinitely in the file. Future enhancements could include:
+Currently, data persists in-memory/file until deployment or restart. Future enhancements should include:
+- Migration to Supabase table for production persistence
 - Automatic cleanup of old entries
-- Migration to database table
 - Time-based aggregation (daily/weekly summaries)
 
 ## Testing
@@ -195,6 +207,39 @@ npm run build
 ```
 
 Build completes successfully with all routes compiled.
+
+## Verification
+
+### Automated Verification (PowerShell)
+
+Run the verification script to check implementation:
+
+```powershell
+.\scripts\verify-usage-telemetry.ps1
+```
+
+**Checks performed:**
+- ✅ All tests pass (287 tests including 24 new usage tracking tests)
+- ✅ Build completes successfully
+- ✅ All implementation files exist
+- ✅ All tracked routes have tracking hooks
+- ✅ PHI compliance verified
+
+### Manual Verification
+
+```bash
+# Run tests
+npm test
+
+# Build project
+npm run build
+
+# Start dev server (optional)
+npm run dev
+
+# Access admin endpoint (requires auth as admin/clinician)
+curl http://localhost:3000/api/admin/usage
+```
 
 ## Future Enhancements
 
