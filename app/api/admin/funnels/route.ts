@@ -1,15 +1,12 @@
 import { env } from '@/lib/env'
 import {
-  configurationErrorResponse,
-  forbiddenResponse,
-  internalErrorResponse,
-  schemaNotReadyResponse,
   successResponse,
-  unauthorizedResponse,
 } from '@/lib/api/responses'
-import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
-import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { NextResponse } from 'next/server'
+import { ErrorCode } from '@/lib/api/responseTypes'
 
 /**
  * B7 API Endpoint: List all funnels for admin/clinician management
@@ -17,6 +14,45 @@ import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequest
  * 
  * Returns all funnels with basic metadata for overview page
  */
+
+function getSupabaseErrorFields(error: unknown): {
+  code?: unknown
+  message?: unknown
+  details?: unknown
+  hint?: unknown
+} {
+  if (!error || typeof error !== 'object') return {}
+  const record = error as Record<string, unknown>
+  return {
+    code: record.code,
+    message: record.message,
+    details: record.details,
+    hint: record.hint,
+  }
+}
+
+function jsonError(
+  status: number,
+  code: ErrorCode,
+  message: string,
+  requestId: string,
+) {
+  return withRequestId(
+    NextResponse.json(
+      {
+        success: false,
+        error: {
+          code,
+          message,
+          requestId,
+        },
+      },
+      { status },
+    ),
+    requestId,
+  )
+}
+
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
 
@@ -25,27 +61,50 @@ export async function GET(request: Request) {
     const publicSupabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (isBlank(publicSupabaseUrl) || isBlank(publicSupabaseAnonKey)) {
-      return withRequestId(
-        configurationErrorResponse(
-          'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
-        ),
+      console.error('[DB_ERROR]', {
+        requestId,
+        operation: 'env_check',
+        error: {
+          code: 'CONFIG',
+          message: 'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+          details: null,
+          hint: null,
+        },
+      })
+
+      return jsonError(
+        500,
+        ErrorCode.INTERNAL_ERROR,
+        'Failed to load admin funnels.',
         requestId,
       )
     }
 
-    // Check authentication and authorization using canonical helpers
     const authClient = await createServerSupabaseClient()
-    
-    if (!(await hasClinicianRole())) {
-      const {
-        data: { user },
-      } = await authClient.auth.getUser()
-      
-      if (!user) {
-        return withRequestId(unauthorizedResponse(), requestId)
-      }
-      
-      return withRequestId(forbiddenResponse(), requestId)
+
+    // Auth gate (must run before any DB calls)
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+
+    if (!user) {
+      return jsonError(
+        401,
+        ErrorCode.UNAUTHORIZED,
+        'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
+        requestId,
+      )
+    }
+
+    // Authorization gate (reuse canonical clinician/admin check)
+    const isAuthorized = await hasAdminOrClinicianRole()
+    if (!isAuthorized) {
+      return jsonError(
+        403,
+        ErrorCode.FORBIDDEN,
+        'Sie haben keine Berechtigung für diese Aktion.',
+        requestId,
+      )
     }
 
     // Use admin client for cross-user query (metadata tables only)
@@ -67,21 +126,14 @@ export async function GET(request: Request) {
       .order('id', { ascending: true })
 
     if (pillarsError) {
-      const safeErr = sanitizeSupabaseError(pillarsError)
-      const classified = classifySupabaseError(safeErr)
+      console.error('[DB_ERROR]', {
+        requestId,
+        operation: 'fetch_pillars',
+        userId: user.id,
+        error: getSupabaseErrorFields(pillarsError),
+      })
 
-      if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error({ requestId, supabaseError: safeErr })
-        return withRequestId(schemaNotReadyResponse(), requestId)
-      }
-
-      if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn({ requestId, supabaseError: safeErr })
-        return withRequestId(forbiddenResponse(), requestId)
-      }
-
-      console.error({ requestId, supabaseError: safeErr })
-      return withRequestId(internalErrorResponse('Failed to fetch pillars.'), requestId)
+      return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
     }
 
     const { data: funnels, error: funnelsError } = await readClient
@@ -93,21 +145,14 @@ export async function GET(request: Request) {
       .order('slug', { ascending: true })
 
     if (funnelsError) {
-      const safeErr = sanitizeSupabaseError(funnelsError)
-      const classified = classifySupabaseError(safeErr)
+      console.error('[DB_ERROR]', {
+        requestId,
+        operation: 'fetch_funnels_catalog',
+        userId: user.id,
+        error: getSupabaseErrorFields(funnelsError),
+      })
 
-      if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error({ requestId, supabaseError: safeErr })
-        return withRequestId(schemaNotReadyResponse(), requestId)
-      }
-
-      if (classified.kind === 'AUTH_OR_RLS') {
-        console.warn({ requestId, supabaseError: safeErr })
-        return withRequestId(forbiddenResponse(), requestId)
-      }
-
-      console.error({ requestId, supabaseError: safeErr })
-      return withRequestId(internalErrorResponse('Failed to fetch funnels.'), requestId)
+      return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
     }
 
     const funnelIds = (funnels ?? []).map((f) => f.id)
@@ -121,21 +166,14 @@ export async function GET(request: Request) {
         .order('id', { ascending: true })
 
       if (versionsError) {
-        const safeErr = sanitizeSupabaseError(versionsError)
-        const classified = classifySupabaseError(safeErr)
+        console.error('[DB_ERROR]', {
+          requestId,
+          operation: 'fetch_funnel_versions',
+          userId: user.id,
+          error: getSupabaseErrorFields(versionsError),
+        })
 
-        if (classified.kind === 'SCHEMA_NOT_READY') {
-          console.error({ requestId, supabaseError: safeErr })
-          return withRequestId(schemaNotReadyResponse(), requestId)
-        }
-
-        if (classified.kind === 'AUTH_OR_RLS') {
-          console.warn({ requestId, supabaseError: safeErr })
-          return withRequestId(forbiddenResponse(), requestId)
-        }
-
-        console.error({ requestId, supabaseError: safeErr })
-        return withRequestId(internalErrorResponse('Failed to fetch funnel versions.'), requestId)
+        return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
       }
 
       ;(versions ?? []).forEach((v) => {
@@ -186,8 +224,12 @@ export async function GET(request: Request) {
       requestId,
     )
   } catch (error) {
-    const safeErr = sanitizeSupabaseError(error)
-    console.error({ requestId, supabaseError: safeErr })
-    return withRequestId(internalErrorResponse(), requestId)
+    console.error('[DB_ERROR]', {
+      requestId,
+      operation: 'get_admin_funnels',
+      error: getSupabaseErrorFields(error),
+    })
+
+    return jsonError(500, ErrorCode.INTERNAL_ERROR, 'Failed to load admin funnels.', requestId)
   }
 }

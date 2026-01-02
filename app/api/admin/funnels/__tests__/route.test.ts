@@ -212,15 +212,19 @@ describe('GET /api/admin/funnels', () => {
       }),
     )
 
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(500)
     expect(res.headers.get('x-request-id')).toBe('rid-403')
 
-    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; message: string; requestId: string }
+    }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('FORBIDDEN')
+    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.requestId).toBe('rid-403')
   })
 
-  it('missing relation 42P01 => 503 SCHEMA_NOT_READY', async () => {
+  it('missing relation 42P01 => 500 INTERNAL_ERROR (requestId in body)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -255,15 +259,19 @@ describe('GET /api/admin/funnels', () => {
       }),
     )
 
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(500)
     expect(res.headers.get('x-request-id')).toBe('rid-503')
 
-    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; requestId: string }
+    }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('SCHEMA_NOT_READY')
+    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.requestId).toBe('rid-503')
   })
 
-  it('blank env => 500 CONFIGURATION_ERROR (no client construction)', async () => {
+  it('blank env => 500 INTERNAL_ERROR (no client construction)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
@@ -280,7 +288,7 @@ describe('GET /api/admin/funnels', () => {
 
     const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('CONFIGURATION_ERROR')
+    expect(json.error.code).toBe('INTERNAL_ERROR')
   })
 
   it('no funnels => does not query funnel_versions (avoid .in([]))', async () => {
@@ -318,7 +326,7 @@ describe('GET /api/admin/funnels', () => {
     expect(mockClient.from).not.toHaveBeenCalledWith('funnel_versions')
   })
 
-  it('returns 503 SCHEMA_NOT_READY when schema cache is missing relation (PGRST205)', async () => {
+  it('schema cache missing relation (PGRST205) => 500 INTERNAL_ERROR (requestId in body)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
@@ -347,10 +355,11 @@ describe('GET /api/admin/funnels', () => {
 
     const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-pgrst205' } }))
 
-    expect(res.status).toBe(503)
-    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    expect(res.status).toBe(500)
+    const json = (await res.json()) as unknown as { success: boolean; error: { code: string; requestId: string } }
     expect(json.success).toBe(false)
-    expect(json.error.code).toBe('SCHEMA_NOT_READY')
+    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.requestId).toBe('rid-pgrst205')
     expect(res.headers.get('x-request-id')).toBe('rid-pgrst205')
   })
 
@@ -380,8 +389,90 @@ describe('GET /api/admin/funnels', () => {
     expect(res.status).toBe(401)
     expect(res.headers.get('x-request-id')).toBe('rid-401')
 
-    const json = (await res.json()) as unknown as { success: boolean; error: { code: string } }
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; requestId: string }
+    }
     expect(json.success).toBe(false)
     expect(json.error.code).toBe('UNAUTHORIZED')
+    expect(json.error.requestId).toBe('rid-401')
+  })
+
+  it('authenticated but not clinician/admin => 403 FORBIDDEN (requestId in body)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'patient' } } } }),
+      },
+      from: jest.fn(() => {
+        throw new Error('should not query database when forbidden')
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-forbidden' } }))
+
+    expect(res.status).toBe(403)
+    expect(res.headers.get('x-request-id')).toBe('rid-forbidden')
+
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; requestId: string }
+    }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('FORBIDDEN')
+    expect(json.error.requestId).toBe('rid-forbidden')
+  })
+
+  it('pillars db error => 500 INTERNAL_ERROR includes deterministic requestId in body', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: '',
+    })
+
+    setupCookieStore()
+
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: { code: 'XX000', message: 'boom', details: 'full details', hint: 'try again' },
+    })
+
+    const mockClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
+      }),
+    }
+
+    const { createServerClient } = getMocks()
+    createServerClient.mockReturnValue(mockClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-500' } }))
+
+    expect(res.status).toBe(500)
+    expect(res.headers.get('x-request-id')).toBe('rid-500')
+
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      error: { code: string; message: string; requestId: string }
+    }
+    expect(json.success).toBe(false)
+    expect(json.error.code).toBe('INTERNAL_ERROR')
+    expect(json.error.requestId).toBe('rid-500')
   })
 })
