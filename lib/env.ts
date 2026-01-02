@@ -34,10 +34,14 @@ const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 const isProdRuntime = process.env.NODE_ENV === 'production'
 const requireServerSecrets = isServerRuntime && isProdRuntime && !isBuildTime
 
+function trimIfString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : value
+}
+
 const baseEnvSchema = z.object({
   // Client-safe vars (may be inlined at build time by Next.js)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(trimIfString, z.string().url().optional()),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(trimIfString, z.string().optional()),
 
   // OPTIONAL: Feature Flags
   NEXT_PUBLIC_FEATURE_AMY_ENABLED: z.string().optional(),
@@ -52,8 +56,11 @@ const baseEnvSchema = z.object({
 const serverOnlyEnvSchema = baseEnvSchema.extend({
   // REQUIRED (server runtime only): Supabase Admin
   SUPABASE_SERVICE_ROLE_KEY: requireServerSecrets
-    ? z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required')
-    : z.string().optional(),
+    ? z.preprocess(
+        trimIfString,
+        z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+      )
+    : z.preprocess(trimIfString, z.string().optional()),
 
   // OPTIONAL: Anthropic AI Configuration
   ANTHROPIC_API_KEY: z.string().optional(),
@@ -61,8 +68,8 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   ANTHROPIC_MODEL: z.string().optional(),
 
   // OPTIONAL: Legacy/Alternative Variable Names
-  SUPABASE_URL: z.string().url().optional(), // Alternative to NEXT_PUBLIC_SUPABASE_URL
-  SUPABASE_SERVICE_KEY: z.string().optional(), // Alternative to SUPABASE_SERVICE_ROLE_KEY
+  SUPABASE_URL: z.preprocess(trimIfString, z.string().url().optional()), // Alternative to NEXT_PUBLIC_SUPABASE_URL
+  SUPABASE_SERVICE_KEY: z.preprocess(trimIfString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
 })
 
 function getRawClientEnv() {

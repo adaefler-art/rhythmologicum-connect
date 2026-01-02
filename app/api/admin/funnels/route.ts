@@ -99,7 +99,7 @@ function dbErrorToResponse(args: {
     return jsonError(
       500,
       ErrorCode.CONFIGURATION_ERROR,
-      'Server-Konfigurationsfehler.',
+      'Server-Konfigurationsfehler (Supabase). Bitte prüfen Sie URL/Keys (gleiches Projekt, keine Leerzeichen/Zeilenumbrüche) und deployen Sie erneut.',
       args.requestId,
     )
   }
