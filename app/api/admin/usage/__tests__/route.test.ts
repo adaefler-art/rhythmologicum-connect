@@ -1,6 +1,7 @@
 /**
  * Tests for admin usage endpoint
  * TV05_01: Verify auth gating and PHI-free response
+ * TV05_02: Verify enabled flag in response
  */
 
 import { NextRequest } from 'next/server'
@@ -15,6 +16,10 @@ jest.mock('@/lib/monitoring/usageTracker', () => ({
   getAggregatedUsage: jest.fn(),
 }))
 
+jest.mock('@/lib/monitoring/config', () => ({
+  isUsageTelemetryEnabled: jest.fn(() => true), // Default to enabled
+}))
+
 jest.mock('@/lib/logging/logger', () => ({
   logInfo: jest.fn(),
   logUnauthorized: jest.fn(),
@@ -24,6 +29,7 @@ jest.mock('@/lib/logging/logger', () => ({
 import { GET } from '../route'
 import { getCurrentUser, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { getAggregatedUsage } from '@/lib/monitoring/usageTracker'
+import { isUsageTelemetryEnabled } from '@/lib/monitoring/config'
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>
 const mockHasAdminOrClinicianRole = hasAdminOrClinicianRole as jest.MockedFunction<
@@ -31,6 +37,9 @@ const mockHasAdminOrClinicianRole = hasAdminOrClinicianRole as jest.MockedFuncti
 >
 const mockGetAggregatedUsage = getAggregatedUsage as jest.MockedFunction<
   typeof getAggregatedUsage
+>
+const mockIsUsageTelemetryEnabled = isUsageTelemetryEnabled as jest.MockedFunction<
+  typeof isUsageTelemetryEnabled
 >
 
 describe('GET /api/admin/usage', () => {
@@ -121,6 +130,7 @@ describe('GET /api/admin/usage', () => {
 
     const json = await response.json()
     expect(json.success).toBe(true)
+    expect(json.data.enabled).toBe(true)
     expect(json.data.routes).toHaveLength(2)
     expect(json.data.totalRoutes).toBe(2)
     expect(json.data.generatedAt).toBeDefined()
@@ -154,6 +164,7 @@ describe('GET /api/admin/usage', () => {
 
     const json = await response.json()
     expect(json.success).toBe(true)
+    expect(json.data.enabled).toBe(true)
     expect(json.data.routes).toEqual([])
     expect(json.data.totalRoutes).toBe(0)
   })
@@ -256,6 +267,62 @@ describe('GET /api/admin/usage', () => {
         'routeKey',
         'statusBuckets',
       ])
+    })
+  })
+
+  describe('TV05_02: Telemetry enabled flag', () => {
+    it('includes enabled:true when telemetry is enabled', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-123',
+        app_metadata: { role: 'admin' },
+      } as any)
+      mockHasAdminOrClinicianRole.mockResolvedValue(true)
+      mockGetAggregatedUsage.mockResolvedValue([])
+      mockIsUsageTelemetryEnabled.mockReturnValue(true)
+
+      const request = new NextRequest('http://localhost/api/admin/usage')
+      const response = await GET(request)
+
+      const json = await response.json()
+      expect(json.success).toBe(true)
+      expect(json.data.enabled).toBe(true)
+    })
+
+    it('includes enabled:false when telemetry is disabled', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-123',
+        app_metadata: { role: 'admin' },
+      } as any)
+      mockHasAdminOrClinicianRole.mockResolvedValue(true)
+      mockGetAggregatedUsage.mockResolvedValue([])
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      const request = new NextRequest('http://localhost/api/admin/usage')
+      const response = await GET(request)
+
+      const json = await response.json()
+      expect(json.success).toBe(true)
+      expect(json.data.enabled).toBe(false)
+      expect(json.data.routes).toEqual([])
+    })
+
+    it('returns 200 and enabled:false when telemetry is disabled (not 500)', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-123',
+        app_metadata: { role: 'admin' },
+      } as any)
+      mockHasAdminOrClinicianRole.mockResolvedValue(true)
+      mockGetAggregatedUsage.mockResolvedValue([])
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      const request = new NextRequest('http://localhost/api/admin/usage')
+      const response = await GET(request)
+
+      expect(response.status).toBe(200)
+
+      const json = await response.json()
+      expect(json.success).toBe(true)
+      expect(json.data.enabled).toBe(false)
     })
   })
 })

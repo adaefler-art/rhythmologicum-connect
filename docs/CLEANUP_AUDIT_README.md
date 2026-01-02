@@ -147,12 +147,14 @@ grep -r "/api/amy/stress-report" \
 **False Positives:**
 - Dynamic string construction may not be detected
 - Template literals (`` `api/${endpoint}` ``) miss exact matches
-- External clients (mobile apps, etc.) won't show usage
+- **External clients (mobile apps, scripts, integrations) won't show usage** - SEE `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
 
 **False Negatives:**
 - Commented code counted as "unused"
 - Build-time usage may not be detected
 - Programmatic route construction may be missed
+
+**CRITICAL:** The audit scripts can ONLY detect usage within the repository codebase. External clients (mobile apps, admin scripts, future integrations) will NOT appear in the audit results. **Always check `docs/EXTERNAL_CLIENTS.md` and `docs/API_ROUTE_OWNERSHIP.md` before removing any endpoint.**
 
 ### Verification
 
@@ -277,18 +279,26 @@ All flagged items were manually reviewed to reduce false positives:
 **A:** Not necessarily. The audit uses static code search which has limitations:
 - Dynamic routes are accessed programmatically (clicks, etc.)
 - Template literals may hide references
-- External clients won't show in codebase
+- **External clients won't show in codebase** - Check `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
 
-Always manually verify before removing code. Check the "Evidence & Analysis" sections in the UNUSED report.
+Always manually verify before removing code:
+1. Check `docs/EXTERNAL_CLIENTS.md` for external client usage
+2. Check `docs/API_ROUTE_OWNERSHIP.md` for ownership and external access status
+3. Check `/api/admin/usage` for runtime telemetry data
+4. Review "Evidence & Analysis" sections in the UNUSED report
+5. Contact the listed owner before removal
 
 ### Q: Should I remove all unused code immediately?
 
 **A:** No. Follow this process:
-1. Verify it's truly unused (manual testing)
-2. Check git history for recent usage
-3. Ask team if anyone is using it
-4. Create issue for removal with deprecation period
-5. Remove only after consensus
+1. **Check registries first** - Review `EXTERNAL_CLIENTS.md` and `API_ROUTE_OWNERSHIP.md`
+2. **Check telemetry** - Review `/api/admin/usage` for runtime usage data
+3. **Verify it's truly unused** - Manual testing and code review
+4. **Check git history** - Look for recent usage patterns
+5. **Contact owner** - Ask the listed owner in `API_ROUTE_OWNERSHIP.md`
+6. **Ask team** - Discuss in architecture review if uncertain
+7. **Create deprecation issue** - Document removal plan with deprecation period
+8. **Remove only after consensus** - All stakeholders agree it's safe
 
 ### Q: How accurate is the issue mapping?
 

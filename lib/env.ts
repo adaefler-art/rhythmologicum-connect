@@ -71,6 +71,9 @@ const baseEnvSchema = z.object({
 
   // Hosting provider (optional)
   VERCEL_ENV: z.string().optional(),
+
+  // OPTIONAL: Usage Telemetry Toggle
+  USAGE_TELEMETRY_ENABLED: z.string().optional(),
 })
 
 const serverOnlyEnvSchema = baseEnvSchema.extend({
@@ -103,6 +106,7 @@ function getRawClientEnv() {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
   }
 }
 
@@ -129,6 +133,7 @@ export type Env = {
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
   VERCEL_ENV?: string
+  USAGE_TELEMETRY_ENABLED?: string
 }
 
 /**
@@ -151,6 +156,7 @@ function getDefaultEnv(): Env {
     NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test' | undefined,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
   }
 }
 
@@ -178,6 +184,7 @@ function parseEnv(): Env {
         NODE_ENV: parsed.NODE_ENV,
         NEXT_PHASE: parsed.NEXT_PHASE,
         VERCEL_ENV: parsed.VERCEL_ENV,
+        USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
       }
     }
 
@@ -197,6 +204,7 @@ function parseEnv(): Env {
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
       VERCEL_ENV: parsed.VERCEL_ENV,
+      USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
     }
   } catch (error) {
     if (error instanceof z.ZodError) {

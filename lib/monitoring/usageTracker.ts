@@ -1,8 +1,14 @@
 /**
  * TV05_01: Runtime Usage Telemetry (PHI-free)
+ * TV05_02: Usage Telemetry Toggle (Dev ON / Prod OFF)
  * 
  * Minimal, PHI-free usage tracker for API routes and operations.
  * Tracks usage metrics to help identify truly unused endpoints.
+ * 
+ * Telemetry Toggle:
+ * - Default ON in development (NODE_ENV=development)
+ * - Default OFF in production/preview
+ * - Override with USAGE_TELEMETRY_ENABLED env var (true/false)
  * 
  * Storage: File-based aggregation (deterministic, low-risk)
  * No PHI: Only tracks routeKey, statusCodeBucket, env, count, lastSeenAt
@@ -12,6 +18,7 @@ import fs from 'fs/promises'
 import path from 'path'
 
 import { env } from '@/lib/env'
+import { isUsageTelemetryEnabled } from './config'
 
 export type StatusCodeBucket = '2xx' | '3xx' | '4xx' | '5xx'
 
@@ -92,6 +99,9 @@ async function saveUsageData(data: Map<string, AggregatedUsage>): Promise<void> 
 /**
  * Record a usage event for an API route
  * 
+ * If telemetry is disabled (via USAGE_TELEMETRY_ENABLED or environment defaults),
+ * this function returns early without recording anything.
+ * 
  * @param params - Usage event parameters
  * @param params.routeKey - Route identifier (e.g., 'POST /api/amy/stress-report')
  * @param params.statusCodeBucket - HTTP status code bucket ('2xx', '3xx', '4xx', '5xx')
@@ -111,6 +121,11 @@ export async function recordUsage(params: {
   statusCodeBucket: StatusCodeBucket
   env?: string
 }): Promise<void> {
+  // Early return if telemetry is disabled
+  if (!isUsageTelemetryEnabled()) {
+    return
+  }
+
   const env = params.env || getEnvironment()
   const timestamp = new Date().toISOString()
 
@@ -144,7 +159,7 @@ export async function recordUsage(params: {
     await saveUsageData(data)
   } catch (error) {
     // Don't fail the request if telemetry fails
-    console.error('[usageTracker] Failed to record usage:', error)
+    console.warn('[usageTracker] Failed to record usage:', error)
   }
 }
 

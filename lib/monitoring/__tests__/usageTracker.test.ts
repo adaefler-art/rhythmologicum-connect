@@ -1,6 +1,7 @@
 /**
  * Tests for usageTracker utility
  * TV05_01: Verify PHI-free usage tracking
+ * TV05_02: Verify telemetry toggle behavior
  */
 
 import { env } from '@/lib/env'
@@ -11,15 +12,29 @@ import {
   getStatusCodeBucket,
 } from '../usageTracker'
 
+// Mock the config module
+jest.mock('../config', () => ({
+  isUsageTelemetryEnabled: jest.fn(() => true), // Default to enabled for most tests
+}))
+
+import { isUsageTelemetryEnabled } from '../config'
+
+const mockIsUsageTelemetryEnabled = isUsageTelemetryEnabled as jest.MockedFunction<
+  typeof isUsageTelemetryEnabled
+>
+
 describe('usageTracker', () => {
   beforeEach(async () => {
     // Clean up before each test
     await clearUsageData()
+    // Reset mock to default (enabled)
+    mockIsUsageTelemetryEnabled.mockReturnValue(true)
   })
 
   afterEach(async () => {
     // Clean up after each test
     await clearUsageData()
+    jest.clearAllMocks()
   })
 
   describe('getStatusCodeBucket', () => {
@@ -311,6 +326,100 @@ describe('usageTracker', () => {
 
       // No other properties
       expect(Object.keys(usage).length).toBe(5)
+    })
+  })
+
+  describe('TV05_02: Telemetry toggle behavior', () => {
+    it('does not record usage when telemetry is disabled', async () => {
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      await recordUsage({
+        routeKey: 'POST /api/test',
+        statusCodeBucket: '2xx',
+        env: 'production',
+      })
+
+      const data = await getAggregatedUsage()
+      expect(data).toHaveLength(0)
+    })
+
+    it('records usage when telemetry is enabled', async () => {
+      mockIsUsageTelemetryEnabled.mockReturnValue(true)
+
+      await recordUsage({
+        routeKey: 'POST /api/test',
+        statusCodeBucket: '2xx',
+        env: 'development',
+      })
+
+      const data = await getAggregatedUsage()
+      expect(data).toHaveLength(1)
+      expect(data[0].routeKey).toBe('POST /api/test')
+    })
+
+    it('does not write to filesystem when disabled', async () => {
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      // Record multiple events
+      await recordUsage({
+        routeKey: 'POST /api/test1',
+        statusCodeBucket: '2xx',
+        env: 'production',
+      })
+      await recordUsage({
+        routeKey: 'POST /api/test2',
+        statusCodeBucket: '4xx',
+        env: 'production',
+      })
+      await recordUsage({
+        routeKey: 'POST /api/test3',
+        statusCodeBucket: '5xx',
+        env: 'production',
+      })
+
+      // Should have no data
+      const data = await getAggregatedUsage()
+      expect(data).toEqual([])
+    })
+
+    it('can switch from enabled to disabled mid-session', async () => {
+      // Start enabled
+      mockIsUsageTelemetryEnabled.mockReturnValue(true)
+
+      await recordUsage({
+        routeKey: 'POST /api/test',
+        statusCodeBucket: '2xx',
+        env: 'test',
+      })
+
+      let data = await getAggregatedUsage()
+      expect(data).toHaveLength(1)
+
+      // Switch to disabled
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      await recordUsage({
+        routeKey: 'POST /api/test',
+        statusCodeBucket: '2xx',
+        env: 'test',
+      })
+
+      // Should still have only 1 entry (no new recording)
+      data = await getAggregatedUsage()
+      expect(data).toHaveLength(1)
+      expect(data[0].count).toBe(1) // Count should not have increased
+    })
+
+    it('does not throw errors when disabled', async () => {
+      mockIsUsageTelemetryEnabled.mockReturnValue(false)
+
+      await expect(
+        recordUsage({
+          routeKey: 'POST /api/test',
+          statusCodeBucket: '2xx',
+          env: 'production',
+        }),
+      ).resolves.not.toThrow()
     })
   })
 })
