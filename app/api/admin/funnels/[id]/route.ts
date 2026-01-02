@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import {
   configurationErrorResponse,
+  databaseErrorResponse,
   forbiddenResponse,
   internalErrorResponse,
   notFoundResponse,
@@ -9,9 +10,9 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
 } from '@/lib/api/responses'
-import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
-import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
+import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank, logError } from '@/lib/db/errors'
 import { env } from '@/lib/env'
 
 /**
@@ -39,38 +40,99 @@ export async function GET(
       )
     }
 
-    // Check authentication and authorization using canonical helpers
-    if (!(await hasClinicianRole())) {
-      const authClient = await createServerSupabaseClient()
-      const {
-        data: { user },
-      } = await authClient.auth.getUser()
-      
-      if (!user) {
-        return withRequestId(unauthorizedResponse(), requestId)
-      }
-      
+    // Auth gate (must run before any DB calls)
+    const authClient = await createServerSupabaseClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+
+    if (!user) {
+      return withRequestId(unauthorizedResponse(), requestId)
+    }
+
+    // Authorization gate (clinician/admin)
+    const role = user.app_metadata?.role || user.user_metadata?.role
+    const isAuthorized = role === 'clinician' || role === 'admin'
+    if (!isAuthorized) {
       return withRequestId(forbiddenResponse(), requestId)
     }
 
-    // Use admin client for cross-user query (metadata tables only)
-    // Justification: Clinicians need to view/manage all funnels, not just their own
-    const adminClient = createAdminSupabaseClient()
+    // Prefer admin client for cross-user metadata queries, but fall back to auth client
+    // if the service role key is missing/invalid.
+    let readClient: ReturnType<typeof createAdminSupabaseClient> | Awaited<ReturnType<typeof createServerSupabaseClient>>
+    let usingAdminClient = false
+    try {
+      readClient = createAdminSupabaseClient()
+      usingAdminClient = true
+    } catch (err) {
+      logError({
+        requestId,
+        operation: 'create_admin_client',
+        userId: user.id,
+        error: err,
+      })
+      readClient = authClient
+    }
+
+    const maybeFallbackClient = async (operation: string, error: unknown) => {
+      if (!usingAdminClient) return false
+      const classified = classifySupabaseError(error)
+      if (classified.kind !== 'CONFIGURATION_ERROR') return false
+
+      logError({
+        requestId,
+        operation,
+        userId: user.id,
+        error,
+      })
+
+      usingAdminClient = false
+      readClient = authClient
+      return true
+    }
 
     // Fetch funnel
-    const { data: funnel, error: funnelError } = await adminClient
+    let { data: funnel, error: funnelError } = await readClient
       .from('funnels')
       .select('*')
       .eq('id', id)
       .single()
+
+    if (funnelError && (await maybeFallbackClient('fetch_funnel_admin_fallback', funnelError))) {
+      ;({ data: funnel, error: funnelError } = await readClient
+        .from('funnels')
+        .select('*')
+        .eq('id', id)
+        .single())
+    }
 
     if (funnelError) {
       const safeErr = sanitizeSupabaseError(funnelError)
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error({ requestId, supabaseError: safeErr })
+        logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      if (classified.kind === 'AUTH_OR_RLS') {
+        logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
+      if (classified.kind === 'TRANSIENT') {
+        logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
+        return withRequestId(databaseErrorResponse(), requestId)
+      }
+
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
+        return withRequestId(
+          configurationErrorResponse(
+            'Server-Konfigurationsfehler (Supabase). Bitte prüfen Sie URL/Keys (gleiches Projekt, keine Anführungszeichen, keine Leerzeichen/Zeilenumbrüche) und deployen Sie erneut.',
+          ),
+          requestId,
+        )
       }
 
       // PGRST116 means no rows found
@@ -78,7 +140,7 @@ export async function GET(
         return withRequestId(notFoundResponse('Funnel'), requestId)
       }
 
-      console.error({ requestId, operation: 'fetch_funnel', supabaseError: safeErr })
+      logError({ requestId, operation: 'fetch_funnel', userId: user.id, error: safeErr })
       return withRequestId(internalErrorResponse('Failed to fetch funnel.'), requestId)
     }
 
@@ -87,22 +149,50 @@ export async function GET(
     }
 
     // Fetch funnel steps
-    const { data: steps, error: stepsError } = await adminClient
+    let { data: steps, error: stepsError } = await readClient
       .from('funnel_steps')
       .select('*')
       .eq('funnel_id', id)
       .order('order_index', { ascending: true })
+
+    if (stepsError && (await maybeFallbackClient('fetch_steps_admin_fallback', stepsError))) {
+      ;({ data: steps, error: stepsError } = await readClient
+        .from('funnel_steps')
+        .select('*')
+        .eq('funnel_id', id)
+        .order('order_index', { ascending: true }))
+    }
 
     if (stepsError) {
       const safeErr = sanitizeSupabaseError(stepsError)
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error({ requestId, supabaseError: safeErr })
+        logError({ requestId, operation: 'fetch_steps', userId: user.id, error: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
 
-      console.error({ requestId, operation: 'fetch_steps', supabaseError: safeErr })
+      if (classified.kind === 'AUTH_OR_RLS') {
+        logError({ requestId, operation: 'fetch_steps', userId: user.id, error: safeErr })
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
+      if (classified.kind === 'TRANSIENT') {
+        logError({ requestId, operation: 'fetch_steps', userId: user.id, error: safeErr })
+        return withRequestId(databaseErrorResponse(), requestId)
+      }
+
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        logError({ requestId, operation: 'fetch_steps', userId: user.id, error: safeErr })
+        return withRequestId(
+          configurationErrorResponse(
+            'Server-Konfigurationsfehler (Supabase). Bitte prüfen Sie URL/Keys (gleiches Projekt, keine Anführungszeichen, keine Leerzeichen/Zeilenumbrüche) und deployen Sie erneut.',
+          ),
+          requestId,
+        )
+      }
+
+      logError({ requestId, operation: 'fetch_steps', userId: user.id, error: safeErr })
       return withRequestId(internalErrorResponse('Failed to fetch steps.'), requestId)
     }
 
@@ -112,7 +202,7 @@ export async function GET(
         // Fetch content page if this is a content_page step
         let contentPage = null
         if (step.type === 'content_page' && step.content_page_id) {
-          const { data: cpData } = await adminClient
+          const { data: cpData } = await readClient
             .from('content_pages')
             .select('id, slug, title, excerpt, status')
             .eq('id', step.content_page_id)
@@ -120,7 +210,7 @@ export async function GET(
           contentPage = cpData
         }
 
-        const { data: stepQuestions, error: stepQuestionsError } = await adminClient
+        const { data: stepQuestions, error: stepQuestionsError } = await readClient
           .from('funnel_step_questions')
           .select('*')
           .eq('funnel_step_id', step.id)
@@ -138,7 +228,7 @@ export async function GET(
           return { ...step, questions: [], content_page: contentPage }
         }
 
-        const { data: questions, error: questionsError } = await adminClient
+        const { data: questions, error: questionsError } = await readClient
           .from('questions')
           .select('*')
           .in('id', questionIds)
@@ -212,17 +302,20 @@ export async function PATCH(
       )
     }
 
-    // Check authentication and authorization using canonical helpers
-    if (!(await hasClinicianRole())) {
-      const authClient = await createServerSupabaseClient()
-      const {
-        data: { user },
-      } = await authClient.auth.getUser()
-      
-      if (!user) {
-        return withRequestId(unauthorizedResponse(), requestId)
-      }
-      
+    // Auth gate (must run before any DB calls)
+    const authClient = await createServerSupabaseClient()
+    const {
+      data: { user },
+    } = await authClient.auth.getUser()
+
+    if (!user) {
+      return withRequestId(unauthorizedResponse(), requestId)
+    }
+
+    // Authorization gate (clinician/admin)
+    const role = user.app_metadata?.role || user.user_metadata?.role
+    const isAuthorized = role === 'clinician' || role === 'admin'
+    if (!isAuthorized) {
       return withRequestId(forbiddenResponse(), requestId)
     }
 
@@ -273,23 +366,71 @@ export async function PATCH(
 
     // Use admin client for cross-user update (metadata tables only)
     // Justification: Clinicians need to manage all funnels, not just their own
-    const adminClient = createAdminSupabaseClient()
+    let writeClient: ReturnType<typeof createAdminSupabaseClient> | Awaited<ReturnType<typeof createServerSupabaseClient>>
+    let usingAdminClient = false
+    try {
+      writeClient = createAdminSupabaseClient()
+      usingAdminClient = true
+    } catch (err) {
+      logError({
+        requestId,
+        operation: 'create_admin_client',
+        userId: user.id,
+        error: err,
+      })
+      writeClient = authClient
+    }
 
     // Update funnel
-    const { data, error } = await adminClient
+    let { data, error } = await writeClient
       .from('funnels')
       .update(updateData)
       .eq('id', id)
       .select()
       .single()
 
+    if (error && usingAdminClient) {
+      const classified = classifySupabaseError(error)
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        logError({ requestId, operation: 'update_funnel_admin_fallback', userId: user.id, error })
+        usingAdminClient = false
+        writeClient = authClient
+        ;({ data, error } = await writeClient
+          .from('funnels')
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single())
+      }
+    }
+
     if (error) {
       const safeErr = sanitizeSupabaseError(error)
       const classified = classifySupabaseError(safeErr)
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        console.error({ requestId, supabaseError: safeErr })
+        logError({ requestId, operation: 'update_funnel', userId: user.id, error: safeErr })
         return withRequestId(schemaNotReadyResponse(), requestId)
+      }
+
+      if (classified.kind === 'AUTH_OR_RLS') {
+        logError({ requestId, operation: 'update_funnel', userId: user.id, error: safeErr })
+        return withRequestId(forbiddenResponse(), requestId)
+      }
+
+      if (classified.kind === 'TRANSIENT') {
+        logError({ requestId, operation: 'update_funnel', userId: user.id, error: safeErr })
+        return withRequestId(databaseErrorResponse(), requestId)
+      }
+
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        logError({ requestId, operation: 'update_funnel', userId: user.id, error: safeErr })
+        return withRequestId(
+          configurationErrorResponse(
+            'Server-Konfigurationsfehler (Supabase). Bitte prüfen Sie URL/Keys (gleiches Projekt, keine Anführungszeichen, keine Leerzeichen/Zeilenumbrüche) und deployen Sie erneut.',
+          ),
+          requestId,
+        )
       }
 
       // PGRST116 means no rows found
@@ -297,7 +438,7 @@ export async function PATCH(
         return withRequestId(notFoundResponse('Funnel'), requestId)
       }
 
-      console.error({ requestId, operation: 'update_funnel', supabaseError: safeErr })
+      logError({ requestId, operation: 'update_funnel', userId: user.id, error: safeErr })
       return withRequestId(internalErrorResponse('Failed to update funnel.'), requestId)
     }
 

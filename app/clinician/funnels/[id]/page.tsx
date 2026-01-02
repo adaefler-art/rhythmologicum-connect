@@ -96,15 +96,31 @@ export default function FunnelDetailPage() {
       const response = await fetch(`/api/admin/funnels/${funnelId}`)
 
       if (!response.ok) {
-        throw new Error('Failed to load funnel details')
+        let requestId = response.headers.get('x-request-id')
+        let message = 'Failed to load funnel details'
+
+        try {
+          const json = (await response.json()) as any
+          const errorMessage = json?.error?.message
+          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
+          if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
+        } catch {
+          // ignore json parse errors
+        }
+
+        throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const data = await response.json()
-      setFunnel(data.funnel)
-      setSteps(data.steps || [])
+      const json = (await response.json()) as any
+      const funnelData = json?.data?.funnel
+      const stepsData = json?.data?.steps
+
+      setFunnel(funnelData ?? null)
+      setSteps(Array.isArray(stepsData) ? stepsData : [])
     } catch (err) {
       console.error('Error loading funnel details:', err)
-      setError('Fehler beim Laden der Funnel-Details')
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Funnel-Details')
     } finally {
       setLoading(false)
     }
@@ -126,14 +142,27 @@ export default function FunnelDetailPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update funnel')
+        let requestId = response.headers.get('x-request-id')
+        let message = 'Failed to update funnel'
+
+        try {
+          const json = (await response.json()) as any
+          const errorMessage = json?.error?.message
+          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
+          if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
+        } catch {
+          // ignore
+        }
+
+        throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const data = await response.json()
-      setFunnel(data.funnel)
+      const json = (await response.json()) as any
+      setFunnel(json?.data?.funnel ?? null)
     } catch (err) {
       console.error('Error updating funnel:', err)
-      alert('Fehler beim Aktualisieren des Funnels')
+      alert(`Fehler beim Aktualisieren des Funnels: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
     } finally {
       setSaving(false)
     }
@@ -192,12 +221,24 @@ export default function FunnelDetailPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update funnel')
+        let requestId = response.headers.get('x-request-id')
+        let message = 'Failed to update funnel'
+
+        try {
+          const json = (await response.json()) as any
+          const errorMessage = json?.error?.message
+          const errorRequestId = json?.error?.requestId || json?.error?.details?.requestId
+          if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
+          if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
+        } catch {
+          // ignore
+        }
+
+        throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
       }
 
-      const data = await response.json()
-      setFunnel(data.funnel)
+      const json = (await response.json()) as any
+      setFunnel(json?.data?.funnel ?? null)
       setEditingFunnel(false)
       setEditedFunnel({})
     } catch (err) {
