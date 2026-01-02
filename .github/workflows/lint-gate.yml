@@ -1,0 +1,112 @@
+name: ESLint Gate (Changed Files)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'eslint.config.mjs'
+      - 'package.json'
+      - 'tools/lint-changed-lines.mjs'
+  push:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - 'eslint.config.mjs'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-changed-files:
+    runs-on: ubuntu-latest
+    name: Lint Changed TS/TSX Files
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run changed-files lint gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          # Determine base and head SHAs based on event type
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          fi
+          
+          # Validate HEAD_SHA (always required)
+          if [ -z "$HEAD_SHA" ]; then
+            echo "❌ HEAD_SHA is empty. Cannot proceed (fail-closed)."
+            exit 1
+          fi
+          
+          # Validate BASE_SHA and provide fallback
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+            echo "⚠️  BASE_SHA is empty or invalid: '$BASE_SHA'"
+            echo "Attempting fallback: fetch default branch and compute merge-base..."
+            
+            # Fetch main branch to ensure we have it
+            git fetch origin main --depth=50 || {
+              echo "❌ Failed to fetch origin/main. Cannot determine base (fail-closed)."
+              exit 1
+            }
+            
+            # Compute merge-base with main (try origin/main, fallback to FETCH_HEAD)
+            BASE_SHA=$(git merge-base "$HEAD_SHA" origin/main 2>/dev/null || git merge-base "$HEAD_SHA" FETCH_HEAD) || {
+              echo "❌ Failed to compute merge-base with origin/main or FETCH_HEAD (fail-closed)."
+              exit 1
+            }
+            
+            echo "✓ Fallback BASE_SHA computed: $BASE_SHA"
+          fi
+          
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA: $HEAD_SHA"
+          
+          # Final validation: ensure both SHAs are valid git objects
+          if ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+            echo "❌ BASE_SHA is not a valid git object: $BASE_SHA (fail-closed)."
+            exit 1
+          fi
+          
+          if ! git cat-file -e "$HEAD_SHA" 2>/dev/null; then
+            echo "❌ HEAD_SHA is not a valid git object: $HEAD_SHA (fail-closed)."
+            exit 1
+          fi
+          
+          # Export for lint:changed tool
+          export BASE_SHA
+          export HEAD_SHA
+          
+          # Run the lint gate tool
+          npm run lint:changed
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "✅ ESLint gate passed!"
+          echo ""
+          echo "Summary:"
+          echo "  - No ESLint errors on changed lines"
+          echo "  - Pre-existing errors outside changed ranges are ignored (interim policy)"
+          echo "  - See docs/LINT_POLICY.md for details"
