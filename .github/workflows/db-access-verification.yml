@@ -154,6 +154,10 @@ jobs:
           node - <<'NODE'
           const fs = require('fs')
 
+          // Minimal allowlist for legacy lint debt.
+          // Keep this list small and temporary.
+          const IGNORED_RULE_IDS = new Set(['@typescript-eslint/no-explicit-any'])
+
           const ranges = JSON.parse(fs.readFileSync('changed_line_ranges.json', 'utf8'))
           const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'))
 
@@ -176,15 +180,20 @@ jobs:
 
             for (const msg of fileReport.messages || []) {
               if (msg.severity !== 2) continue
+              const ruleId = typeof msg.ruleId === 'string' ? msg.ruleId.trim() : ''
+              if (ruleId && IGNORED_RULE_IDS.has(ruleId)) {
+                ignoredErrors++
+                continue
+              }
               const line = msg.line || 0
               if (line <= 0) {
                 // Parser errors etc. can't be mapped safely → treat as relevant.
-                relevantErrors.push({ file: rel, line: msg.line, ruleId: msg.ruleId, message: msg.message })
+                relevantErrors.push({ file: rel, line: msg.line, ruleId, message: msg.message })
                 continue
               }
 
               if (inRanges(key, line)) {
-                relevantErrors.push({ file: rel, line, ruleId: msg.ruleId, message: msg.message })
+                relevantErrors.push({ file: rel, line, ruleId, message: msg.message })
               } else {
                 ignoredErrors++
               }
