@@ -75,6 +75,13 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Git Hooks (Optional)
+
+This repo ships a pre-push hook that runs the same lint gate as CI (only ESLint **errors** on PR-changed lines).
+
+- Enable hooks once per clone: `npm run -s hooks:install`
+- On push: the hook runs `npm run -s lint:changed` and blocks if it fails
+
 ## Authentication & Access Control
 
 This application uses Supabase for authentication with role-based access control.
