@@ -4,6 +4,10 @@
  * Tests that the stress funnel intro page loads and displays manifest data
  */
 
+// Set environment variables BEFORE any imports to ensure Supabase client can be created
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+
 import { loadFunnelVersion, FunnelNotFoundError, validateQuestionnaireConfig, validateContentManifest } from '@/lib/funnels/loadFunnelVersion'
 import { QUESTION_TYPE } from '@/lib/contracts/registry'
 import { SECTION_TYPE } from '@/lib/contracts/funnelManifest'
@@ -104,10 +108,6 @@ jest.mock('@supabase/supabase-js', () => ({
     })),
   })),
 }))
-
-// Set environment variables for tests
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 
 describe('Manifest Integration - Stress Funnel', () => {
   it('should load stress-assessment manifest with valid structure', async () => {

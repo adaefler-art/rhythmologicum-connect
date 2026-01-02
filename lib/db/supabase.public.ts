@@ -52,9 +52,28 @@ export function createPublicClient() {
 }
 
 /**
- * Singleton public client instance
+ * Singleton public client instance (lazy-initialized)
  * 
  * Use this for client-side operations where you don't need a fresh instance.
  * For most use cases, prefer server-side data fetching with createServerSupabaseClient.
+ * 
+ * Lazy initialization ensures tests can mock before client creation.
  */
-export const supabasePublic = createPublicClient()
+let _supabasePublic: ReturnType<typeof createPublicClient> | null = null
+
+export function getSupabasePublic() {
+  if (!_supabasePublic) {
+    _supabasePublic = createPublicClient()
+  }
+  return _supabasePublic
+}
+
+/**
+ * @deprecated Use getSupabasePublic() instead for lazy initialization
+ * This is kept for backward compatibility but will be removed in future versions
+ */
+export const supabasePublic = new Proxy({} as ReturnType<typeof createPublicClient>, {
+  get(target, prop) {
+    return getSupabasePublic()[prop as keyof ReturnType<typeof createPublicClient>]
+  }
+})
