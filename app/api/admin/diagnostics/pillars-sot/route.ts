@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server'
 import {
   successResponse,
   unauthorizedResponse,
@@ -72,6 +71,31 @@ interface PillarsSotAuditResponse {
   requestId: string
 }
 
+type DiagnosticsPillarsSotRpcResult = {
+  pillars?: {
+    exists?: boolean
+    relkind?: string
+    relrowsecurity?: boolean
+    policyCount?: number
+    rowCount?: number
+  }
+  funnels_catalog?: {
+    exists?: boolean
+    relkind?: string
+    relrowsecurity?: boolean
+    policyCount?: number
+    rowCount?: number
+    stressFunnelExists?: boolean
+  }
+  funnel_versions?: {
+    exists?: boolean
+    relkind?: string
+    relrowsecurity?: boolean
+    policyCount?: number
+    rowCount?: number
+  }
+}
+
 /**
  * Redact URL to show only domain (PHI-free, no project refs or tokens)
  *
@@ -95,7 +119,7 @@ function redactUrl(url: string | undefined): string {
  * @returns string - Environment name (production, test, development)
  */
 function getEnvironmentName(): string {
-  const vercelEnv = process.env.VERCEL_ENV
+  const vercelEnv = env.VERCEL_ENV
   if (vercelEnv) return vercelEnv
 
   const nodeEnv = env.NODE_ENV
@@ -123,7 +147,7 @@ function getExpectedPillarCount(): number {
   return Object.keys(PILLAR_KEY).length
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const requestId = randomUUID()
 
   try {
@@ -177,7 +201,13 @@ export async function GET(request: NextRequest) {
 
     // Query database diagnostics using RPC function
     const adminClient = createAdminSupabaseClient()
-    const { data: dbDiagnostics, error: rpcError } = await adminClient.rpc('diagnostics_pillars_sot')
+    const rpc = (adminClient as unknown as {
+      rpc: (
+        fn: string,
+      ) => Promise<{ data: DiagnosticsPillarsSotRpcResult | null; error: { message: string } | null }>
+    }).rpc
+
+    const { data: dbDiagnostics, error: rpcError } = await rpc('diagnostics_pillars_sot')
 
     if (rpcError) {
       findings.push({
@@ -209,15 +239,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse database diagnostics
-    const pillarsData = dbDiagnostics.pillars || {}
-    const catalogData = dbDiagnostics.funnels_catalog || {}
-    const versionsData = dbDiagnostics.funnel_versions || {}
+    const diagnostics = dbDiagnostics ?? {}
+    const pillarsData = diagnostics.pillars ?? {}
+    const catalogData = diagnostics.funnels_catalog ?? {}
+    const versionsData = diagnostics.funnel_versions ?? {}
 
     // Build table diagnostics
     const tables = {
       pillars: {
         metadata: {
-          exists: pillarsData.exists || false,
+          exists: pillarsData.exists ?? false,
           relkind: pillarsData.relkind,
           relrowsecurity: pillarsData.relrowsecurity,
           policyCount: pillarsData.policyCount,
@@ -226,7 +257,7 @@ export async function GET(request: NextRequest) {
       },
       funnels_catalog: {
         metadata: {
-          exists: catalogData.exists || false,
+          exists: catalogData.exists ?? false,
           relkind: catalogData.relkind,
           relrowsecurity: catalogData.relrowsecurity,
           policyCount: catalogData.policyCount,
@@ -235,7 +266,7 @@ export async function GET(request: NextRequest) {
       },
       funnel_versions: {
         metadata: {
-          exists: versionsData.exists || false,
+          exists: versionsData.exists ?? false,
           relkind: versionsData.relkind,
           relrowsecurity: versionsData.relrowsecurity,
           policyCount: versionsData.policyCount,
@@ -247,7 +278,7 @@ export async function GET(request: NextRequest) {
     // Build seeds diagnostics (using canonical values from registry)
     const expectedPillarCount = getExpectedPillarCount()
     const pillarCount = pillarsData.rowCount || 0
-    const stressFunnelPresent = catalogData.stressFunnelExists || false
+    const stressFunnelPresent = catalogData.stressFunnelExists ?? false
 
     const seeds = {
       stressFunnelPresent,
