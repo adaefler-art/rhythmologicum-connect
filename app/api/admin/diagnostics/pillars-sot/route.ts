@@ -61,6 +61,9 @@ interface PillarsSotAuditResponse {
 
 /**
  * Redact URL to show only domain (PHI-free)
+ * 
+ * @param url - Full URL to redact
+ * @returns string - Redacted URL showing only protocol and host
  */
 function redactUrl(url: string | undefined): string {
   if (!url) return 'NOT_SET'
@@ -74,6 +77,10 @@ function redactUrl(url: string | undefined): string {
 
 /**
  * Get table metadata using PostgreSQL system catalogs
+ * 
+ * @param tableName - Name of the table to check
+ * @param schema - Database schema (default: 'public')
+ * @returns Promise<TableMetadata> - Metadata about the table including existence, type, and policy count
  */
 async function getTableMetadata(
   tableName: string,
@@ -85,7 +92,7 @@ async function getTableMetadata(
     // Try to query the table directly to check existence
     // Using count() with limit 0 is efficient and won't return actual data
     const { error: tableError, count } = await adminClient
-      .from(tableName)
+      .from(tableName as any) // Type assertion needed for dynamic table names
       .select('*', { count: 'exact', head: true })
 
     if (tableError) {
@@ -96,19 +103,19 @@ async function getTableMetadata(
     // Table exists - now try to get additional metadata from information_schema
     // Note: We can't directly query pg_class via Supabase client, so we use
     // information_schema which is accessible via PostgREST
-    const { data: schemaData } = await adminClient
+    const { data: schemaData } = (await adminClient
       .from('information_schema.tables' as any)
       .select('table_type')
       .eq('table_schema', schema)
       .eq('table_name', tableName)
-      .maybeSingle()
+      .maybeSingle()) as { data: { table_type: string } | null; error: any }
 
     // Count policies by trying to query pg_policies view
-    const { data: policiesData, count: policyCount } = await adminClient
+    const { data: policiesData, count: policyCount } = (await adminClient
       .from('pg_policies' as any)
       .select('*', { count: 'exact', head: true })
       .eq('schemaname', schema)
-      .eq('tablename', tableName)
+      .eq('tablename', tableName)) as { data: any; count: number | null; error: any }
 
     return {
       exists: true,
@@ -124,13 +131,16 @@ async function getTableMetadata(
 
 /**
  * Get row count for a table
+ * 
+ * @param tableName - Name of the table to count
+ * @returns Promise<number> - Number of rows in the table
  */
 async function getRowCount(tableName: string): Promise<number> {
   try {
     const adminClient = createAdminSupabaseClient()
 
     const { count, error } = await adminClient
-      .from(tableName)
+      .from(tableName as any) // Type assertion needed for dynamic table names
       .select('*', { count: 'exact', head: true })
 
     if (error) {
@@ -147,6 +157,8 @@ async function getRowCount(tableName: string): Promise<number> {
 
 /**
  * Check if stress funnel exists in catalog
+ * 
+ * @returns Promise<boolean> - True if stress-assessment funnel exists in catalog
  */
 async function checkStressFunnelSeed(): Promise<boolean> {
   try {
@@ -172,6 +184,8 @@ async function checkStressFunnelSeed(): Promise<boolean> {
 
 /**
  * Get environment name from Vercel or other indicators
+ * 
+ * @returns string - Environment name (production, test, development)
  */
 function getEnvironmentName(): string {
   const vercelEnv = process.env.VERCEL_ENV
