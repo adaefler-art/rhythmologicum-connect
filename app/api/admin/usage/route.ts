@@ -7,10 +7,12 @@ import {
 } from '@/lib/api/responses'
 import { hasAdminOrClinicianRole, getCurrentUser } from '@/lib/db/supabase.server'
 import { getAggregatedUsage } from '@/lib/monitoring/usageTracker'
+import { isUsageTelemetryEnabled } from '@/lib/monitoring/config'
 import { logInfo, logUnauthorized, logForbidden } from '@/lib/logging/logger'
 
 /**
  * TV05_01: Admin Usage Telemetry Endpoint
+ * TV05_02: Telemetry Toggle (enabled flag in response)
  * GET /api/admin/usage
  * 
  * Returns aggregated usage metrics for tracked API routes.
@@ -23,6 +25,7 @@ import { logInfo, logUnauthorized, logForbidden } from '@/lib/logging/logger'
  * {
  *   "success": true,
  *   "data": {
+ *     "enabled": true,  // Whether telemetry is currently enabled
  *     "routes": [
  *       {
  *         "routeKey": "POST /api/amy/stress-report",
@@ -55,14 +58,17 @@ export async function GET(request: NextRequest) {
 
     // Get aggregated usage data
     const routes = await getAggregatedUsage()
+    const enabled = isUsageTelemetryEnabled()
 
     logInfo('Admin usage data accessed', {
       endpoint: '/api/admin/usage',
       userId: user.id,
       routeCount: routes.length,
+      telemetryEnabled: enabled,
     })
 
     return successResponse({
+      enabled,
       routes,
       generatedAt: new Date().toISOString(),
       totalRoutes: routes.length,
