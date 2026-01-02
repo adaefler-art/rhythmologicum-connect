@@ -228,7 +228,7 @@ export async function validateRequiredQuestionsExtended(
     // Continue without rules - backward compatibility
   }
 
-  const activeRules: QuestionRule[] = (rules as QuestionRule[]) || []
+  const activeRules: QuestionRule[] = (rules as unknown as QuestionRule[]) || []
 
   // Track missing questions with reason
   const missingQuestions: MissingQuestionWithReason[] = []

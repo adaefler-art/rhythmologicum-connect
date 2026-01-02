@@ -1,62 +1,29 @@
 # DB Access Pattern Audit Report
 
-Generated: 2026-01-01T17:35:53.302Z
+Generated: 2026-01-02T06:56:58.815Z
 
 ## Summary
 
-- Total files scanned: 313
-- Direct createClient calls: 16
-- createServerClient calls: 42
-- Service role key usage: 74
+- Total files scanned: 314
+- Direct createClient calls: 2
+- createServerClient calls: 2
+- Service role key usage: 42
 - Existing helper usage: 8
 
 ## Client Creation Patterns
 
-### API Routes (45)
+### API Routes (1)
 
-- `app/api/admin/content-pages/[id]/route.ts:25` - createServerClient
-- `app/api/admin/content-pages/[id]/route.ts:60` - createClient
-- `app/api/admin/content-pages/[id]/route.ts:163` - createServerClient
-- `app/api/admin/content-pages/[id]/route.ts:198` - createClient
-- `app/api/admin/content-pages/[id]/route.ts:304` - createClient
-- `app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts:27` - createServerClient
-- `app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts:103` - createServerClient
-- `app/api/admin/content-pages/[id]/sections/route.ts:26` - createServerClient
-- `app/api/admin/content-pages/[id]/sections/route.ts:90` - createServerClient
-- `app/api/admin/content-pages/route.ts:23` - createServerClient
-- `app/api/admin/content-pages/route.ts:140` - createServerClient
-- `app/api/admin/funnel-step-questions/[id]/route.ts:22` - createServerClient
-- `app/api/admin/funnel-step-questions/[id]/route.ts:68` - createClient
-- `app/api/admin/funnel-steps/[id]/route.ts:22` - createServerClient
-- `app/api/admin/funnel-steps/[id]/route.ts:92` - createClient
-- `app/api/admin/funnel-steps/route.ts:25` - createServerClient
-- `app/api/admin/funnel-steps/route.ts:93` - createClient
-- `app/api/admin/funnels/[id]/route.ts:21` - createServerClient
-- `app/api/admin/funnels/[id]/route.ts:62` - createClient
-- `app/api/admin/funnels/[id]/route.ts:179` - createServerClient
-  _... and 25 more_
+- `app/api/auth/callback/route.ts:9` - createServerClient
 
-### App Pages/Components (5)
+### Library/Utilities (2)
 
-- `app/patient/funnel/[slug]/content/[pageSlug]/page.tsx:16` - createServerClient
-- `app/patient/funnel/[slug]/intro/page.tsx:17` - createServerClient
-- `app/patient/funnel/[slug]/page.tsx:19` - createServerClient
-- `app/patient/funnel/[slug]/result/page.tsx:23` - createServerClient
-- `app/patient/funnels/page.tsx:18` - createServerClient
-
-### Library/Utilities (7)
-
-- `lib/actions/onboarding.ts:44` - createServerClient
-- `lib/api/authHelpers.ts:37` - createServerClient
 - `lib/funnels/loadFunnelVersion.ts:118` - createClient
 - `lib/utils/contentResolver.ts:51` - createClient
-- `lib/validation/requiredQuestions.ts:40` - createServerClient
-- `lib/validation/requiredQuestions.ts:139` - createServerClient
-- `lib/validation/requiredQuestions.ts:203` - createServerClient
 
 ### Other (1)
 
-- `proxy.ts:41` - createServerClient
+- `proxy.ts:42` - createServerClient
 
 ## Table Access Patterns
 
@@ -85,25 +52,10 @@ Generated: 2026-01-01T17:35:53.302Z
 
 ## Environment Variable Usage (process.env)
 
-Found direct process.env usage in 37 files:
+Found direct process.env usage in 5 files:
 
-- app/api/admin/content-pages/[id]/route.ts
-- app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts
-- app/api/admin/content-pages/[id]/sections/route.ts
-- app/api/admin/content-pages/route.ts
-- app/api/admin/funnel-step-questions/[id]/route.ts
-- app/api/admin/funnel-steps/[id]/route.ts
-- app/api/admin/funnel-steps/route.ts
-- app/api/admin/funnels/[id]/route.ts
-- app/api/amy/stress-report/route.ts
-- app/api/assessment-answers/save/route.ts
-- app/api/assessment-validation/validate-step/route.ts
-- app/api/assessments/[id]/current-step/route.ts
-- app/api/assessments/[id]/navigation/route.ts
-- app/api/assessments/[id]/resume/route.ts
-- app/api/auth/callback/route.ts
-- app/api/consent/record/route.ts
-- app/api/consent/status/route.ts
-- app/api/content-pages/[slug]/route.ts
-- app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts
-- app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts
+- app/content/[slug]/page.tsx
+- app/patient/funnel/__tests__/manifestIntegration.test.ts
+- lib/__tests__/env.test.ts
+- lib/env.ts
+- lib/funnels/loadFunnelVersion.ts

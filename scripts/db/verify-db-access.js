@@ -36,7 +36,7 @@ const ALLOWED_ADMIN_USAGE = [
   // API routes
   'app/api/admin/',
   'app/api/funnels/catalog/',
-  'app/api/funnels/',  // Includes funnel-related routes like [slug]/content-pages
+  'app/api/funnels/[slug]/content-pages/route.ts',  // Specific file only - content metadata
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',
