@@ -14,6 +14,7 @@ import {
 } from '@/lib/versioning/constants';
 import { logReportGenerated } from '@/lib/audit';
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin';
+import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper';
 
 const anthropicApiKey =
   process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_TOKEN;
@@ -419,7 +420,7 @@ export async function POST(req: Request) {
       riskLevel,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       report: reportRow,
       scores: {
         stressScore,
@@ -427,6 +428,11 @@ export async function POST(req: Request) {
         riskLevel,
       },
     });
+    
+    // Track usage (fire and forget)
+    trackUsage('POST /api/amy/stress-report', response);
+    
+    return response;
   } catch (err: unknown) {
     const totalDuration = Date.now() - requestStartTime;
     const error = err as { message?: string };
@@ -441,13 +447,18 @@ export async function POST(req: Request) {
       err
     );
     
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         error: 'Interner Fehler bei der Erstellung des Reports.',
         message: error?.message ?? String(err),
       },
       { status: 500 }
     );
+    
+    // Track usage (fire and forget)
+    trackUsage('POST /api/amy/stress-report', response);
+    
+    return response;
   }
 }
 

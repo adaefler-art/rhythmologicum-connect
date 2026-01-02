@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
 
 // PostgreSQL error codes
 const PG_ERROR_UNIQUE_VIOLATION = '23505'
@@ -44,7 +45,9 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       console.error('Authentication error in consent/record:', authError)
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      trackUsage('POST /api/consent/record', response)
+      return response
     }
 
     // Parse request body
@@ -52,10 +55,12 @@ export async function POST(request: NextRequest) {
     const { consentVersion } = body
 
     if (!consentVersion || typeof consentVersion !== 'string') {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing or invalid consentVersion' },
         { status: 400 },
       )
+      trackUsage('POST /api/consent/record', response)
+      return response
     }
 
     // Get client IP address for audit trail
@@ -89,22 +94,26 @@ export async function POST(request: NextRequest) {
         console.log(
           `Consent already recorded for user ${user.id}, version ${consentVersion}`,
         )
-        return NextResponse.json(
+        const response = NextResponse.json(
           { error: 'Consent already recorded for this version' },
           { status: 409 },
         )
+        trackUsage('POST /api/consent/record', response)
+        return response
       }
 
       console.error('Error recording consent:', error)
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Failed to record consent' },
         { status: 500 },
       )
+      trackUsage('POST /api/consent/record', response)
+      return response
     }
 
     console.log(`Consent recorded: user ${user.id}, version ${consentVersion}`)
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         consent: {
@@ -115,11 +124,15 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 },
     )
+    trackUsage('POST /api/consent/record', response)
+    return response
   } catch (error) {
     console.error('Unexpected error in consent/record:', error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },
     )
+    trackUsage('POST /api/consent/record', response)
+    return response
   }
 }
