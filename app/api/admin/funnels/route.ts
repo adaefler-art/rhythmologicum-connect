@@ -166,8 +166,10 @@ export async function GET(request: Request) {
     // Justification: Clinicians need to view/manage all funnels, not just their own
     // Try to use admin client if service key is available, otherwise fall back to auth client
     let readClient
+    let usingAdminClient = false
     try {
       readClient = createAdminSupabaseClient()
+      usingAdminClient = true
     } catch (err) {
       // Service key not configured (or admin client failed), fall back to auth client.
       logError({
@@ -179,11 +181,36 @@ export async function GET(request: Request) {
       readClient = authClient
     }
 
-    const { data: pillars, error: pillarsError } = await readClient
+    let {
+      data: pillars,
+      error: pillarsError,
+    } = await readClient
       .from('pillars')
       .select('id,key,title,description,sort_order')
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true })
+
+    if (pillarsError && usingAdminClient) {
+      const classified = classifySupabaseError(pillarsError)
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        // If the service-role key is misconfigured but anon auth works, fall back.
+        logError({
+          requestId,
+          operation: 'fetch_pillars_admin_fallback',
+          userId: user.id,
+          error: pillarsError,
+        })
+
+        usingAdminClient = false
+        readClient = authClient
+
+        ;({ data: pillars, error: pillarsError } = await readClient
+          .from('pillars')
+          .select('id,key,title,description,sort_order')
+          .order('sort_order', { ascending: true })
+          .order('id', { ascending: true }))
+      }
+    }
 
     if (pillarsError) {
       return dbErrorToResponse({
@@ -194,13 +221,39 @@ export async function GET(request: Request) {
       })
     }
 
-    const { data: funnels, error: funnelsError } = await readClient
+    let {
+      data: funnels,
+      error: funnelsError,
+    } = await readClient
       .from('funnels_catalog')
       .select(
         'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
       )
       .order('title', { ascending: true })
       .order('slug', { ascending: true })
+
+    if (funnelsError && usingAdminClient) {
+      const classified = classifySupabaseError(funnelsError)
+      if (classified.kind === 'CONFIGURATION_ERROR') {
+        logError({
+          requestId,
+          operation: 'fetch_funnels_catalog_admin_fallback',
+          userId: user.id,
+          error: funnelsError,
+        })
+
+        usingAdminClient = false
+        readClient = authClient
+
+        ;({ data: funnels, error: funnelsError } = await readClient
+          .from('funnels_catalog')
+          .select(
+            'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
+          )
+          .order('title', { ascending: true })
+          .order('slug', { ascending: true }))
+      }
+    }
 
     if (funnelsError) {
       return dbErrorToResponse({
@@ -215,11 +268,35 @@ export async function GET(request: Request) {
 
     const defaultVersionLookup = new Map<string, string>()
     if (funnelIds.length > 0) {
-      const { data: versions, error: versionsError } = await readClient
+      let {
+        data: versions,
+        error: versionsError,
+      } = await readClient
         .from('funnel_versions')
         .select('id,version,funnel_id')
         .in('funnel_id', funnelIds)
         .order('id', { ascending: true })
+
+      if (versionsError && usingAdminClient) {
+        const classified = classifySupabaseError(versionsError)
+        if (classified.kind === 'CONFIGURATION_ERROR') {
+          logError({
+            requestId,
+            operation: 'fetch_funnel_versions_admin_fallback',
+            userId: user.id,
+            error: versionsError,
+          })
+
+          usingAdminClient = false
+          readClient = authClient
+
+          ;({ data: versions, error: versionsError } = await readClient
+            .from('funnel_versions')
+            .select('id,version,funnel_id')
+            .in('funnel_id', funnelIds)
+            .order('id', { ascending: true }))
+        }
+      }
 
       if (versionsError) {
         return dbErrorToResponse({

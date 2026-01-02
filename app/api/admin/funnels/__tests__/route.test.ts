@@ -519,4 +519,98 @@ describe('GET /api/admin/funnels', () => {
     expect(json.error.code).toBe('CONFIGURATION_ERROR')
     expect(json.error.requestId).toBe('rid-badkey')
   })
+
+  it('invalid service role key => falls back to auth client (200)', async () => {
+    const { GET } = await importRouteWithEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: 'service-role',
+    })
+
+    setupCookieStore()
+
+    // Admin client (service role) fails
+    const adminPillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: {
+        message: 'Invalid API key',
+        hint: 'Double check your Supabase `anon` or `service_role` API key.',
+      },
+    })
+
+    const adminClient: Pick<MockSupabaseClient, 'from'> = {
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return adminPillarsBuilder
+        throw new Error(`admin should only be used for pillars in this test: ${table}`)
+      }),
+    }
+
+    // Auth client succeeds
+    const authPillarsBuilder = makeThenableBuilder({
+      data: [
+        {
+          id: 'p1',
+          key: 'movement',
+          title: 'Movement',
+          description: null,
+          sort_order: 1,
+        },
+      ],
+      error: null,
+    })
+
+    const authFunnelsBuilder = makeThenableBuilder({
+      data: [
+        {
+          id: 'f1',
+          slug: 'a',
+          title: 'A',
+          description: null,
+          pillar_id: 'p1',
+          est_duration_min: 10,
+          outcomes: [],
+          is_active: true,
+          default_version_id: 'v1',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    })
+
+    const authVersionsBuilder = makeThenableBuilder({
+      data: [
+        {
+          id: 'v1',
+          version: 'v1',
+          funnel_id: 'f1',
+        },
+      ],
+      error: null,
+    })
+
+    const authClient: MockSupabaseClient = {
+      auth: {
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return authPillarsBuilder
+        if (table === 'funnels_catalog') return authFunnelsBuilder
+        if (table === 'funnel_versions') return authVersionsBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const { createServerClient, createClient } = getMocks()
+    createServerClient.mockReturnValue(authClient)
+    createClient.mockReturnValue(adminClient)
+
+    const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-fallback' } }))
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-request-id')).toBe('rid-fallback')
+    expect(createClient).toHaveBeenCalled()
+  })
 })
