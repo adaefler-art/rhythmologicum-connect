@@ -49,3 +49,6 @@ next-env.d.ts
 
 # usage telemetry data (runtime-generated)
 .usage-telemetry/
+
+# local lint artifacts
+.lint-artifacts/

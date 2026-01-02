@@ -46,12 +46,17 @@ if (changedFiles.length === 0) {
 console.log(`Linting ${changedFiles.length} changed files (report only):`) 
 for (const file of changedFiles) console.log(`- ${file}`)
 
+const artifactsDir = path.join(process.cwd(), '.lint-artifacts')
+fs.mkdirSync(artifactsDir, { recursive: true })
+const eslintReportPath = path.join(artifactsDir, 'eslint-report.json')
+const changedRangesPath = path.join(artifactsDir, 'changed_line_ranges.json')
+
 // Run eslint in JSON mode, but never fail this step directly.
 try {
   const eslintEntrypoint = path.join(process.cwd(), 'node_modules', 'eslint', 'bin', 'eslint.js')
   execFileSync(
     process.execPath,
-    [eslintEntrypoint, '-f', 'json', '-o', 'eslint-report.json', ...changedFiles],
+    [eslintEntrypoint, '-f', 'json', '-o', eslintReportPath, ...changedFiles],
     { stdio: 'inherit' },
   )
 } catch (error) {
@@ -60,7 +65,7 @@ try {
   // eslint exits non-zero when it finds errors; we post-process the report.
 }
 
-if (!fs.existsSync('eslint-report.json') || fs.statSync('eslint-report.json').size === 0) {
+if (!fs.existsSync(eslintReportPath) || fs.statSync(eslintReportPath).size === 0) {
   console.error('eslint-report.json missing or empty; failing to avoid silent bypass')
   process.exit(1)
 }
@@ -83,10 +88,10 @@ for (const file of changedFiles) {
   rangeMap[file] = ranges
 }
 
-fs.writeFileSync('changed_line_ranges.json', JSON.stringify(rangeMap, null, 2) + '\n')
+fs.writeFileSync(changedRangesPath, JSON.stringify(rangeMap, null, 2) + '\n')
 
 const ranges = rangeMap
-const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'))
+const report = JSON.parse(fs.readFileSync(eslintReportPath, 'utf8'))
 
 function inRanges(file, line) {
   const list = ranges[file] || []
