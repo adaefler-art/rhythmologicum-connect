@@ -9,7 +9,6 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import {
   classifySupabaseError,
   getRequestId,
@@ -18,17 +17,52 @@ import {
 } from '@/lib/db/errors'
 import {
   successResponse,
-  unauthorizedResponse,
-  forbiddenResponse,
-  internalErrorResponse,
-  configurationErrorResponse,
-  schemaNotReadyResponse,
 } from '@/lib/api/responses'
 import type { FunnelCatalogResponse, PillarWithFunnels, CatalogFunnel } from '@/lib/types/catalog'
 import { env } from '@/lib/env'
+import { NextResponse } from 'next/server'
+import { ErrorCode } from '@/lib/api/responseTypes'
 
 function isBlank(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0
+}
+
+function errorResponseWithRequestId(
+  code: ErrorCode,
+  message: string,
+  status: number,
+  requestId: string,
+) {
+  return withRequestId(
+    NextResponse.json(
+      {
+        success: false,
+        error: {
+          code,
+          message,
+        },
+        requestId,
+      },
+      { status },
+    ),
+    requestId,
+  )
+}
+
+function getSupabaseErrorLogFields(error: unknown): {
+  code?: unknown
+  message?: unknown
+  details?: unknown
+  hint?: unknown
+} {
+  if (!error || typeof error !== 'object') return {}
+  const record = error as Record<string, unknown>
+  return {
+    code: record.code,
+    message: record.message,
+    details: record.details,
+    hint: record.hint,
+  }
 }
 
 /**
@@ -52,8 +86,10 @@ export async function GET(request: Request) {
   try {
     // Early deterministic configuration guard (do not construct clients)
     if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
-      return withRequestId(
-        configurationErrorResponse('Supabase Konfiguration fehlt oder ist leer.'),
+      return errorResponseWithRequestId(
+        ErrorCode.CONFIGURATION_ERROR,
+        'Supabase Konfiguration fehlt oder ist leer.',
+        500,
         requestId,
       )
     }
@@ -65,28 +101,17 @@ export async function GET(request: Request) {
     } = await serverClient.auth.getUser()
 
     if (!user) {
-      return withRequestId(unauthorizedResponse(), requestId)
+      return errorResponseWithRequestId(
+        ErrorCode.UNAUTHORIZED,
+        'Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.',
+        401,
+        requestId,
+      )
     }
 
-    /**
-     * Admin client usage - DOCUMENTED JUSTIFICATION
-     * 
-     * Purpose: Fetch funnel catalog metadata
-     * Justification: All authenticated users need to see available funnels
-     *                regardless of ownership (public metadata)
-     * Scope: funnels_catalog, pillars, funnel_versions (metadata only)
-     * Mitigation: Only active funnels shown, no PHI in these tables
-     */
-    // Prefer admin client for metadata reads when available; fallback to server client otherwise.
-    let dataClient = serverClient
-    try {
-      dataClient = createAdminSupabaseClient()
-    } catch (e) {
-      const classified = classifySupabaseError(e)
-      if (classified.kind !== 'CONFIGURATION_ERROR') {
-        throw e
-      }
-    }
+    // IMPORTANT: Only use the authenticated cookie/JWT server client.
+    // RLS remains active and auth.role() should be authenticated.
+    const dataClient = serverClient
 
     // Fetch all pillars ordered by sort_order
     const { data: pillars, error: pillarsError } = await dataClient
@@ -97,21 +122,39 @@ export async function GET(request: Request) {
 
     if (pillarsError) {
       const classified = classifySupabaseError(pillarsError)
+
+      // Requirement: full server-side error logging with code/message/details/hint.
       logError({
         requestId,
         operation: 'fetch_pillars',
         error: pillarsError,
         userId: user.id,
+        supabase: getSupabaseErrorLogFields(pillarsError),
       })
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        return withRequestId(schemaNotReadyResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.SCHEMA_NOT_READY,
+          'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+          503,
+          requestId,
+        )
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        return withRequestId(forbiddenResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.FORBIDDEN,
+          'Sie haben keine Berechtigung für diese Aktion.',
+          403,
+          requestId,
+        )
       }
 
-      return withRequestId(internalErrorResponse('Failed to fetch pillars.'), requestId)
+      return errorResponseWithRequestId(
+        ErrorCode.INTERNAL_ERROR,
+        'Failed to fetch pillars.',
+        500,
+        requestId,
+      )
     }
 
     // Fetch all active funnels with their pillar information
@@ -139,16 +182,32 @@ export async function GET(request: Request) {
         operation: 'fetch_funnels_catalog',
         error: funnelsError,
         userId: user.id,
+        supabase: getSupabaseErrorLogFields(funnelsError),
       })
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        return withRequestId(schemaNotReadyResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.SCHEMA_NOT_READY,
+          'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+          503,
+          requestId,
+        )
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        return withRequestId(forbiddenResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.FORBIDDEN,
+          'Sie haben keine Berechtigung für diese Aktion.',
+          403,
+          requestId,
+        )
       }
 
-      return withRequestId(internalErrorResponse('Failed to fetch catalog funnels'), requestId)
+      return errorResponseWithRequestId(
+        ErrorCode.INTERNAL_ERROR,
+        'Failed to fetch catalog funnels',
+        500,
+        requestId,
+      )
     }
 
     // Fetch default versions for funnels
@@ -170,13 +229,24 @@ export async function GET(request: Request) {
         operation: 'fetch_funnel_versions',
         error: versionsResult.error,
         userId: user.id,
+        supabase: getSupabaseErrorLogFields(versionsResult.error),
       })
 
       if (classified.kind === 'SCHEMA_NOT_READY') {
-        return withRequestId(schemaNotReadyResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.SCHEMA_NOT_READY,
+          'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+          503,
+          requestId,
+        )
       }
       if (classified.kind === 'AUTH_OR_RLS') {
-        return withRequestId(forbiddenResponse(), requestId)
+        return errorResponseWithRequestId(
+          ErrorCode.FORBIDDEN,
+          'Sie haben keine Berechtigung für diese Aktion.',
+          403,
+          requestId,
+        )
       }
 
       // Non-critical: continue without version info
@@ -234,7 +304,13 @@ export async function GET(request: Request) {
       requestId,
       operation: 'get_funnel_catalog',
       error,
+      supabase: getSupabaseErrorLogFields(error),
     })
-    return withRequestId(internalErrorResponse(), requestId)
+    return errorResponseWithRequestId(
+      ErrorCode.INTERNAL_ERROR,
+      'Ein unerwarteter Fehler ist aufgetreten.',
+      500,
+      requestId,
+    )
   }
 }

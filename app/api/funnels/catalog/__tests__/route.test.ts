@@ -1,3 +1,5 @@
+export {}
+
 type SupabaseQueryResult<T> = { data: T | null; error: unknown }
 
 type MockSupabaseClient = {
@@ -43,10 +45,6 @@ jest.mock('@/lib/db/supabase.server', () => ({
   createServerSupabaseClient: jest.fn(),
 }))
 
-jest.mock('@/lib/db/supabase.admin', () => ({
-  createAdminSupabaseClient: jest.fn(),
-}))
-
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
@@ -75,11 +73,11 @@ function getMocks() {
   const { createServerSupabaseClient } = jest.requireMock('@/lib/db/supabase.server') as {
     createServerSupabaseClient: jest.Mock
   }
-  const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
-    createAdminSupabaseClient: jest.Mock
-  }
 
-  return { cookies, createServerSupabaseClient, createAdminSupabaseClient }
+  return {
+    cookies,
+    createServerSupabaseClient,
+  }
 }
 
 function setupCookieStore() {
@@ -146,13 +144,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error(
-        'Admin client unavailable (service role key not configured).',
-      )
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -185,7 +178,12 @@ describe('GET /api/funnels/catalog', () => {
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
     expect(res.status).toBe(401)
-    expect(res.headers.get('x-request-id')).toBeTruthy()
+    const headerRequestId = res.headers.get('x-request-id')
+    expect(headerRequestId).toBeTruthy()
+
+    const json = (await res.json()) as unknown as { success: boolean; requestId?: string }
+    expect(json.success).toBe(false)
+    expect(json.requestId).toBe(headerRequestId)
   })
 
   it('returns 503 SCHEMA_NOT_READY when pillars relation is missing', async () => {
@@ -210,11 +208,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -247,11 +242,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -316,11 +308,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -356,17 +345,19 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
     expect(res.status).toBe(200)
-    const json = (await res.json()) as unknown as { success: boolean }
+    const json = (await res.json()) as unknown as {
+      success: boolean
+      data: { pillars: unknown[]; uncategorized_funnels: unknown[] }
+    }
     expect(json.success).toBe(true)
+    expect(json.data.pillars).toEqual([])
+    expect(json.data.uncategorized_funnels).toEqual([])
     expect(mockClient.from).toHaveBeenCalledWith('pillars')
     expect(mockClient.from).toHaveBeenCalledWith('funnels_catalog')
     expect(mockClient.from).not.toHaveBeenCalledWith('funnel_versions')
@@ -396,11 +387,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -456,11 +444,8 @@ describe('GET /api/funnels/catalog', () => {
       }),
     }
 
-    const { createServerSupabaseClient, createAdminSupabaseClient } = getMocks()
+    const { createServerSupabaseClient } = getMocks()
     createServerSupabaseClient.mockResolvedValue(mockClient)
-    createAdminSupabaseClient.mockImplementation(() => {
-      throw new Error('Admin client unavailable (service role key not configured).')
-    })
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
@@ -471,40 +456,45 @@ describe('GET /api/funnels/catalog', () => {
     expect(res.headers.get('x-request-id')).toBeTruthy()
   })
 
-  it('uses service-role client for catalog reads when configured', async () => {
+
+  it('returns 500 with requestId in body when pillars query fails (non-RLS, non-schema)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      adminServiceKey: 'service',
+      adminServiceKey: '',
     })
 
     setupCookieStore()
 
-    const serviceClient: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn((table: string) => {
-        if (table === 'pillars') return makeThenableBuilder({ data: [], error: null })
-        if (table === 'funnels_catalog') return makeThenableBuilder({ data: [], error: null })
-        throw new Error(`unexpected table: ${table}`)
-      }),
-    }
+    const pillarsBuilder = makeThenableBuilder({
+      data: null,
+      error: {
+        code: 'XX000',
+        message: 'boom',
+        details: 'full details',
+        hint: 'try again',
+      },
+    })
 
-    const authClient: MockSupabaseClient = {
+    const mockClient: MockSupabaseClient = {
       auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
-      from: jest.fn(() => {
-        throw new Error('auth client should not be used for data reads when service key present')
+      from: jest.fn((table: string) => {
+        if (table === 'pillars') return pillarsBuilder
+        throw new Error(`should not query table after pillars error: ${table}`)
       }),
     }
 
-    const { createAdminSupabaseClient, createServerSupabaseClient } = getMocks()
-    createAdminSupabaseClient.mockReturnValue(serviceClient)
-    createServerSupabaseClient.mockResolvedValue(authClient)
+    const { createServerSupabaseClient } = getMocks()
+    createServerSupabaseClient.mockResolvedValue(mockClient)
 
     const res = await GET(new Request('http://localhost/api/funnels/catalog'))
 
-    expect(res.status).toBe(200)
-    expect(createAdminSupabaseClient).toHaveBeenCalled()
-    expect(serviceClient.from).toHaveBeenCalledWith('pillars')
-    expect(serviceClient.from).toHaveBeenCalledWith('funnels_catalog')
+    expect(res.status).toBe(500)
+    const headerRequestId = res.headers.get('x-request-id')
+    expect(headerRequestId).toBeTruthy()
+
+    const json = (await res.json()) as unknown as { success: boolean; requestId?: string }
+    expect(json.success).toBe(false)
+    expect(json.requestId).toBe(headerRequestId)
   })
 })
