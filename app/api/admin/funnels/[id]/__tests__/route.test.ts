@@ -12,6 +12,7 @@ type MockSupabaseClient = {
 type ThenableBuilder<T> = {
   select: jest.Mock
   eq: jest.Mock
+  or: jest.Mock
   in: jest.Mock
   order: jest.Mock
   update: jest.Mock
@@ -29,6 +30,7 @@ function makeThenableBuilder<T>(result: SupabaseQueryResult<T>): ThenableBuilder
 
   builder.select = jest.fn(() => builder)
   builder.eq = jest.fn(() => builder)
+  builder.or = jest.fn(() => builder)
   builder.in = jest.fn(() => builder)
   builder.order = jest.fn(() => builder)
   builder.update = jest.fn(() => builder)
