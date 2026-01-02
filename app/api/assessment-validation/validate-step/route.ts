@@ -75,8 +75,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create Supabase server client with cookies
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

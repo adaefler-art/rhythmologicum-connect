@@ -78,8 +78,7 @@ export async function POST(
       return invalidInputResponse('Der Wert answerValue muss eine ganze Zahl sein.')
     }
 
-    // Create Supabase server client with cookies
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

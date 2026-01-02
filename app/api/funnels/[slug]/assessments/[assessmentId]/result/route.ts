@@ -13,11 +13,12 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  const { slug, assessmentId } = await context.params
+  try {
+    const { slug, assessmentId } = await context.params
 
-  if (!slug || !assessmentId) {
-    return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
-  }
+    if (!slug || !assessmentId) {
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
+    }
 
     const supabase = await createServerSupabaseClient()
 
@@ -74,13 +75,17 @@ export async function GET(
     return internalErrorResponse('Fehler beim Laden des Funnels.')
   }
 
-  return NextResponse.json(
-    successResponse({
-      id: assessment.id,
-      funnel: assessment.funnel,
-      completedAt: assessment.completed_at,
-      status: assessment.status,
-      funnelTitle: funnelRow?.title ?? null,
-    }),
-  )
+    return NextResponse.json(
+      successResponse({
+        id: assessment.id,
+        funnel: assessment.funnel,
+        completedAt: assessment.completed_at,
+        status: assessment.status,
+        funnelTitle: funnelRow?.title ?? null,
+      }),
+    )
+  } catch (error) {
+    console.error('Error in GET /api/funnels/[slug]/assessments/[assessmentId]/result:', error)
+    return internalErrorResponse('Internal server error')
+  }
 }

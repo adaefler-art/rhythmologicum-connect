@@ -53,8 +53,7 @@ export async function GET(
       return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
     }
 
-    // Create Supabase server client
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

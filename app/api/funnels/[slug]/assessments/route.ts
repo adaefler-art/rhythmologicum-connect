@@ -46,8 +46,7 @@ export async function POST(
       return missingFieldsResponse('Funnel-Slug fehlt.')
     }
 
-    // Create Supabase server client
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

@@ -42,8 +42,7 @@ export async function GET(
       )
     }
 
-    // Create Supabase server client with cookies
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

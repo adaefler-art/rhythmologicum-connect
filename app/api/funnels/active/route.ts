@@ -9,7 +9,6 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
  */
 export async function GET() {
   try {
-    // Create Supabase server client
     const supabase = await createServerSupabaseClient()
 
     // Check authentication
@@ -33,9 +32,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch funnels' }, { status: 500 })
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      data: funnels || [] 
+      data: funnels || [],
     })
   } catch (error) {
     console.error('Error in GET /api/funnels/active:', error)

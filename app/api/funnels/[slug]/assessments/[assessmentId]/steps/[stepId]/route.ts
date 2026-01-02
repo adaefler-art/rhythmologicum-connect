@@ -63,8 +63,7 @@ export async function POST(
       return missingFieldsResponse('Fehlende Parameter.')
     }
 
-    // Create Supabase server client
-        const supabase = await createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {
