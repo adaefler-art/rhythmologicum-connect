@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { env } from '@/lib/env'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import type {
@@ -48,31 +47,7 @@ export async function GET(
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
     }
 
-    // Create Supabase server client consistent with other endpoints (uses NEXT_PUBLIC_* keys + cookies)
-    const cookieStore = await cookies()
-    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Supabase configuration missing: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY expected')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 },
-      )
-    }
-
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
-          )
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     // 1. Fetch funnel by slug - selective fields for performance
     const { data: funnel, error: funnelError } = await supabase

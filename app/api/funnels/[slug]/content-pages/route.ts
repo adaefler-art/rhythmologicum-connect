@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPage } from '@/lib/types/content'
-import { env } from '@/lib/env'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 
 /**
@@ -24,21 +23,8 @@ export async function GET(
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase configuration missing')
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 },
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    })
+    // Use admin client for published content pages (RLS bypass for public metadata)
+    const supabase = createAdminSupabaseClient()
 
     // 1. Fetch funnel by slug to get funnel_id
     const { data: funnel, error: funnelError } = await supabase

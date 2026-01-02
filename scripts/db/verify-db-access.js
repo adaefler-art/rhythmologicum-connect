@@ -27,6 +27,8 @@ const ALLOWED_DIRECT_USAGE = [
   'lib/audit/log.ts',
   'lib/utils/contentResolver.ts',
   'lib/funnels/loadFunnelVersion.ts', // Legacy, to be refactored
+  'proxy.ts', // Middleware requires special cookie handling
+  'app/api/auth/callback/route.ts', // Auth callback needs custom cookie manipulation
 ]
 
 // Files that are allowed to import admin client
@@ -34,6 +36,7 @@ const ALLOWED_ADMIN_USAGE = [
   // API routes
   'app/api/admin/',
   'app/api/funnels/catalog/',
+  'app/api/funnels/[slug]/content-pages/route.ts',  // Specific file only - content metadata
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',

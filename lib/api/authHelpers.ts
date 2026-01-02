@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { NextResponse } from 'next/server'
 import { User } from '@supabase/supabase-js'
 import { env } from '@/lib/env'
@@ -22,28 +21,7 @@ export interface AuthCheckResult {
  */
 export async function requireAuth(): Promise<AuthCheckResult> {
   try {
-    const cookieStore = await cookies()
-    const publicSupabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-    const publicSupabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!publicSupabaseUrl || !publicSupabaseAnonKey) {
-      console.error('Supabase URL or anon key not configured')
-      return {
-        user: null,
-        error: NextResponse.json({ error: 'Server configuration error' }, { status: 500 }),
-      }
-    }
-
-    const supabase = createServerClient(publicSupabaseUrl, publicSupabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        },
-      },
-    })
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
