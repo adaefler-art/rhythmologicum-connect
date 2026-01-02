@@ -73,7 +73,7 @@ export default function FunnelListPage() {
       setFunnels(flattened)
     } catch (err) {
       console.error('Error loading funnels:', err)
-      setError('Fehler beim Laden der Funnels')
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Funnels')
     } finally {
       setLoading(false)
     }
