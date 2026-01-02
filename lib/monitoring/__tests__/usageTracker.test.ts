@@ -3,19 +3,13 @@
  * TV05_01: Verify PHI-free usage tracking
  */
 
-import fs from 'fs/promises'
-import path from 'path'
+import { env } from '@/lib/env'
 import {
   recordUsage,
   getAggregatedUsage,
   clearUsageData,
   getStatusCodeBucket,
-  type StatusCodeBucket,
-  type AggregatedUsage,
 } from '../usageTracker'
-
-const USAGE_DATA_DIR = path.join(process.cwd(), '.usage-telemetry')
-const USAGE_DATA_FILE = path.join(USAGE_DATA_DIR, 'usage-data.json')
 
 describe('usageTracker', () => {
   beforeEach(async () => {
@@ -172,8 +166,8 @@ describe('usageTracker', () => {
     })
 
     it('uses NODE_ENV when env not specified', async () => {
-      const originalEnv = process.env.NODE_ENV
-      process.env.NODE_ENV = 'production'
+      const originalNodeEnv = env.NODE_ENV
+      env.NODE_ENV = 'production'
 
       await recordUsage({
         routeKey: 'POST /api/test',
@@ -183,7 +177,7 @@ describe('usageTracker', () => {
       const data = await getAggregatedUsage()
       expect(data[0].env).toBe('production')
 
-      process.env.NODE_ENV = originalEnv
+      env.NODE_ENV = originalNodeEnv
     })
 
     it('does not throw on file system errors', async () => {

@@ -11,6 +11,8 @@
 import fs from 'fs/promises'
 import path from 'path'
 
+import { env } from '@/lib/env'
+
 export type StatusCodeBucket = '2xx' | '3xx' | '4xx' | '5xx'
 
 export type UsageEvent = {
@@ -45,7 +47,7 @@ export function getStatusCodeBucket(statusCode: number): StatusCodeBucket {
  * Get current environment (development, production, etc.)
  */
 function getEnvironment(): string {
-  return process.env.NODE_ENV || 'development'
+  return env.NODE_ENV || 'development'
 }
 
 /**
@@ -68,7 +70,7 @@ async function loadUsageData(): Promise<Map<string, AggregatedUsage>> {
     const data = await fs.readFile(USAGE_DATA_FILE, 'utf-8')
     const parsed = JSON.parse(data) as AggregatedUsage[]
     return new Map(parsed.map((item) => [item.routeKey, item]))
-  } catch (error) {
+  } catch {
     // File doesn't exist yet or is corrupted, return empty map
     return new Map()
   }
@@ -165,7 +167,7 @@ export async function getAggregatedUsage(): Promise<AggregatedUsage[]> {
 export async function clearUsageData(): Promise<void> {
   try {
     await fs.unlink(USAGE_DATA_FILE)
-  } catch (error) {
+  } catch {
     // File might not exist, ignore error
   }
 }
