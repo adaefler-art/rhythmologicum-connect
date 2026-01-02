@@ -34,14 +34,31 @@ const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 const isProdRuntime = process.env.NODE_ENV === 'production'
 const requireServerSecrets = isServerRuntime && isProdRuntime && !isBuildTime
 
-function trimIfString(value: unknown) {
-  return typeof value === 'string' ? value.trim() : value
+function sanitizeEnvString(value: unknown) {
+  if (typeof value !== 'string') return value
+
+  let v = value.trim()
+
+  // Common deployment UI pitfall: values pasted with wrapping quotes/backticks.
+  // Remove exactly one wrapping pair to avoid breaking legitimate inner quotes.
+  const first = v[0]
+  const last = v[v.length - 1]
+  const isWrapped =
+    (first === '"' && last === '"') ||
+    (first === "'" && last === "'") ||
+    (first === '`' && last === '`')
+
+  if (isWrapped && v.length >= 2) {
+    v = v.slice(1, -1).trim()
+  }
+
+  return v
 }
 
 const baseEnvSchema = z.object({
   // Client-safe vars (may be inlined at build time by Next.js)
-  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(trimIfString, z.string().url().optional()),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(trimIfString, z.string().optional()),
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(sanitizeEnvString, z.string().optional()),
 
   // OPTIONAL: Feature Flags
   NEXT_PUBLIC_FEATURE_AMY_ENABLED: z.string().optional(),
@@ -57,10 +74,10 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   // REQUIRED (server runtime only): Supabase Admin
   SUPABASE_SERVICE_ROLE_KEY: requireServerSecrets
     ? z.preprocess(
-        trimIfString,
+        sanitizeEnvString,
         z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
       )
-    : z.preprocess(trimIfString, z.string().optional()),
+    : z.preprocess(sanitizeEnvString, z.string().optional()),
 
   // OPTIONAL: Anthropic AI Configuration
   ANTHROPIC_API_KEY: z.string().optional(),
@@ -68,8 +85,8 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   ANTHROPIC_MODEL: z.string().optional(),
 
   // OPTIONAL: Legacy/Alternative Variable Names
-  SUPABASE_URL: z.preprocess(trimIfString, z.string().url().optional()), // Alternative to NEXT_PUBLIC_SUPABASE_URL
-  SUPABASE_SERVICE_KEY: z.preprocess(trimIfString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
+  SUPABASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()), // Alternative to NEXT_PUBLIC_SUPABASE_URL
+  SUPABASE_SERVICE_KEY: z.preprocess(sanitizeEnvString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
 })
 
 function getRawClientEnv() {
