@@ -332,3 +332,40 @@ export function isValidAuditAction(value: unknown): value is AuditAction {
 export function isValidAuditSource(value: unknown): value is AuditSource {
   return typeof value === 'string' && Object.values(AUDIT_SOURCE).includes(value as AuditSource)
 }
+
+// ============================================================
+// Program Tier Levels (TV05_01D)
+// ============================================================
+
+/**
+ * Valid program tier levels based on Thomas' journey model
+ * These map the 3-tier patient journey to platform capabilities
+ */
+export const PROGRAM_TIER = {
+  /**
+   * Tier 1 (Essential): Basic stress/resilience assessment
+   * Focus: Initial assessment, baseline data collection
+   */
+  TIER_1_ESSENTIAL: 'tier-1-essential',
+  
+  /**
+   * Tier 2.5 (Enhanced): Extended monitoring with nurse touchpoints
+   * Focus: Regular check-ins, progress tracking
+   */
+  TIER_2_5_ENHANCED: 'tier-2-5-enhanced',
+  
+  /**
+   * Tier 2 (Comprehensive): Full program with intensive support
+   * Focus: Comprehensive care, multiple pillars, frequent touchpoints
+   */
+  TIER_2_COMPREHENSIVE: 'tier-2-comprehensive',
+} as const
+
+export type ProgramTier = typeof PROGRAM_TIER[keyof typeof PROGRAM_TIER]
+
+/**
+ * Type guard to check if a value is a valid program tier
+ */
+export function isValidProgramTier(value: unknown): value is ProgramTier {
+  return typeof value === 'string' && Object.values(PROGRAM_TIER).includes(value as ProgramTier)
+}

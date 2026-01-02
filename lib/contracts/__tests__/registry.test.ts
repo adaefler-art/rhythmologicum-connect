@@ -4,10 +4,12 @@ import {
   isValidAssessmentStatus,
   isValidContentStatus,
   isValidNodeType,
+  isValidProgramTier,
   ASSESSMENT_STATUS,
   CONTENT_STATUS,
   USER_ROLE,
   NODE_TYPE,
+  PROGRAM_TIER,
 } from '../registry'
 
 describe('getCanonicalFunnelSlug', () => {
@@ -150,5 +152,32 @@ describe('Constants', () => {
     expect(NODE_TYPE.SUMMARY).toBe('summary')
     expect(NODE_TYPE.OTHER).toBe('other')
     expect(Object.keys(NODE_TYPE)).toHaveLength(7)
+  })
+
+  it('PROGRAM_TIER has expected values', () => {
+    expect(PROGRAM_TIER.TIER_1_ESSENTIAL).toBe('tier-1-essential')
+    expect(PROGRAM_TIER.TIER_2_5_ENHANCED).toBe('tier-2-5-enhanced')
+    expect(PROGRAM_TIER.TIER_2_COMPREHENSIVE).toBe('tier-2-comprehensive')
+    expect(Object.keys(PROGRAM_TIER)).toHaveLength(3)
+  })
+})
+
+describe('isValidProgramTier', () => {
+  it('accepts valid program tiers', () => {
+    expect(isValidProgramTier('tier-1-essential')).toBe(true)
+    expect(isValidProgramTier('tier-2-5-enhanced')).toBe(true)
+    expect(isValidProgramTier('tier-2-comprehensive')).toBe(true)
+  })
+
+  it('rejects unknown tier values', () => {
+    expect(isValidProgramTier('tier-3')).toBe(false)
+    expect(isValidProgramTier('TIER-1-ESSENTIAL')).toBe(false) // case-sensitive
+    expect(isValidProgramTier('')).toBe(false)
+  })
+
+  it('rejects non-string values', () => {
+    expect(isValidProgramTier(null)).toBe(false)
+    expect(isValidProgramTier(undefined)).toBe(false)
+    expect(isValidProgramTier(123)).toBe(false)
   })
 })

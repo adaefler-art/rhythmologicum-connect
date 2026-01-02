@@ -22,6 +22,8 @@ import type { FunnelCatalogResponse, PillarWithFunnels, CatalogFunnel } from '@/
 import { env } from '@/lib/env'
 import { NextResponse } from 'next/server'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { getTierContract } from '@/lib/contracts/tiers'
+import { getActivePillars, getAllowedFunnels } from '@/lib/contracts/programTier'
 
 function isBlank(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0
@@ -71,17 +73,25 @@ function getSupabaseErrorLogFields(error: unknown): {
  * Returns all active funnels organized by pillar for the catalog view.
  * Requires authentication but no special role.
  * 
+ * Query Parameters:
+ * - tier (optional): Filter by program tier (e.g., 'tier-1-essential')
+ * 
  * Response structure:
  * {
  *   success: true,
  *   data: {
  *     pillars: [{ pillar: {...}, funnels: [...] }],
- *     uncategorized_funnels: [...]
+ *     uncategorized_funnels: [...],
+ *     tier: 'tier-1-essential' (if tier filter applied)
  *   }
  * }
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
+  
+  // Parse query parameters
+  const url = new URL(request.url)
+  const tierParam = url.searchParams.get('tier')
 
   try {
     // Early deterministic configuration guard (do not construct clients)
@@ -112,6 +122,20 @@ export async function GET(request: Request) {
     // IMPORTANT: Only use the authenticated cookie/JWT server client.
     // RLS remains active and auth.role() should be authenticated.
     const dataClient = serverClient
+
+    // Check if tier filtering is requested
+    let tierContract = null
+    let activePillarKeys: string[] | null = null
+    let allowedFunnelSlugs: string[] | null = null
+    
+    if (tierParam) {
+      tierContract = getTierContract(tierParam)
+      if (tierContract) {
+        activePillarKeys = getActivePillars(tierContract)
+        allowedFunnelSlugs = getAllowedFunnels(tierContract)
+      }
+      // If tier param provided but contract not found, ignore filter (backward compatible)
+    }
 
     // Fetch all pillars ordered by sort_order
     const { data: pillars, error: pillarsError } = await dataClient
@@ -264,9 +288,14 @@ export async function GET(request: Request) {
     const pillarMap = new Map<string, PillarWithFunnels>()
     const uncategorizedFunnels: CatalogFunnel[] = []
 
-    // Initialize pillar map
+    // Initialize pillar map (filter by tier if specified)
     if (!pillarsError && pillars) {
       pillars.forEach((pillar) => {
+        // If tier filtering is active, only include active pillars
+        if (activePillarKeys && !activePillarKeys.includes(pillar.key)) {
+          return // Skip inactive pillars for this tier
+        }
+        
         pillarMap.set(pillar.id, {
           pillar,
           funnels: [],
@@ -277,6 +306,11 @@ export async function GET(request: Request) {
     // Distribute funnels to pillars or uncategorized
     if (funnels) {
       funnels.forEach((funnel) => {
+        // If tier filtering is active, only include allowed funnels
+        if (allowedFunnelSlugs && !allowedFunnelSlugs.includes(funnel.slug)) {
+          return // Skip funnels not allowed in this tier
+        }
+        
         const catalogFunnel: CatalogFunnel = {
           ...funnel,
           subtitle: null, // funnels_catalog doesn't have subtitle
@@ -293,9 +327,14 @@ export async function GET(request: Request) {
     }
 
     // Convert map to array, preserving sort order
-    const catalogData: FunnelCatalogResponse = {
+    const catalogData: FunnelCatalogResponse & { tier?: string } = {
       pillars: Array.from(pillarMap.values()),
       uncategorized_funnels: uncategorizedFunnels,
+    }
+    
+    // Include tier in response if filtering was applied
+    if (tierParam && tierContract) {
+      catalogData.tier = tierParam
     }
 
     return withRequestId(successResponse(catalogData), requestId)
