@@ -24,6 +24,7 @@ import { NextResponse } from 'next/server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { getTierContract } from '@/lib/contracts/tiers'
 import { getActivePillars, getAllowedFunnels } from '@/lib/contracts/programTier'
+import { isValidProgramTier } from '@/lib/contracts/registry'
 
 function isBlank(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0
@@ -129,12 +130,21 @@ export async function GET(request: Request) {
     let allowedFunnelSlugs: string[] | null = null
     
     if (tierParam) {
+      // Validate tier parameter
+      if (!isValidProgramTier(tierParam)) {
+        return errorResponseWithRequestId(
+          ErrorCode.VALIDATION_FAILED,
+          `Ungültiger Tier-Parameter: '${tierParam}'. Erlaubte Werte: tier-1-essential, tier-2-5-enhanced, tier-2-comprehensive`,
+          422,
+          requestId,
+        )
+      }
+      
       tierContract = getTierContract(tierParam)
       if (tierContract) {
         activePillarKeys = getActivePillars(tierContract)
         allowedFunnelSlugs = getAllowedFunnels(tierContract)
       }
-      // If tier param provided but contract not found, ignore filter (backward compatible)
     }
 
     // Fetch all pillars ordered by sort_order

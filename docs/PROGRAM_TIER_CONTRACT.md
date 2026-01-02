@@ -226,7 +226,7 @@ const { data } = await response.json()
 
 ### Running Tests
 
-```bash
+```powershell
 npm test -- lib/contracts/tiers/__tests__/programTier.test.ts
 npm test -- lib/contracts/__tests__/registry.test.ts
 ```

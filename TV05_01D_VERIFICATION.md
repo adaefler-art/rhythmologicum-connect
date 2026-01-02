@@ -53,12 +53,12 @@ safeParseProgramTierContract(contract) // Safe parse returning null on error
 - ✅ Backward compatible - works without tier param
 
 **Behavior**:
-```bash
+```powershell
 # Without tier (returns all)
-GET /api/funnels/catalog
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog"
 
 # With tier (returns filtered)
-GET /api/funnels/catalog?tier=tier-1-essential
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-1-essential"
 # => Only mental-health pillar + stress-assessment funnel
 
 # Invalid tier (ignores filter, fail-safe)
@@ -123,7 +123,7 @@ it('contains no PHI/PII', () => {
 - All new functionality covered
 
 **Test Execution**:
-```bash
+```powershell
 npm test -- lib/contracts/tiers/__tests__/programTier.test.ts
 # => PASS: 44/44 tests ✅
 
@@ -135,7 +135,7 @@ npm test -- app/api/funnels/catalog/__tests__/catalog.test.ts
 ```
 
 **Full Test Suite**:
-```bash
+```powershell
 npm test
 # => 328 tests passed (2 pre-existing failures unrelated to this issue)
 ```
@@ -261,9 +261,9 @@ const funnels = getAllowedFunnels(TIER_1_ESSENTIAL)
 ```
 
 ### API Usage
-```bash
+```powershell
 # Fetch catalog filtered to Tier 1
-curl "/api/funnels/catalog?tier=tier-1-essential"
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-1-essential"
 
 # Response:
 {

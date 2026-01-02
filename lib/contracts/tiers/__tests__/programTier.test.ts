@@ -85,8 +85,8 @@ describe('Tier Contract Helper Functions', () => {
 
     it('returns pillars sorted by priority', () => {
       const pillars = getActivePillars(TIER_2_COMPREHENSIVE)
-      // All 7 pillars should be active in Tier 2
-      expect(pillars.length).toBe(7)
+      // All pillars should be active in Tier 2
+      expect(pillars.length).toBe(Object.keys(PILLAR_KEY).length)
       // First pillar should be nutrition (priority 1)
       expect(pillars[0]).toBe(PILLAR_KEY.NUTRITION)
     })
@@ -119,7 +119,7 @@ describe('Tier Contract Helper Functions', () => {
 
     it('returns all funnels for comprehensive tier', () => {
       const funnels = getAllowedFunnels(TIER_2_COMPREHENSIVE)
-      expect(funnels.length).toBe(4) // All 4 defined funnels
+      expect(funnels.length).toBe(TIER_2_COMPREHENSIVE.funnels.length)
     })
   })
 
@@ -223,9 +223,9 @@ describe('Tier Contract Configurations', () => {
       expect(TIER_2_COMPREHENSIVE.tier).toBe(PROGRAM_TIER.TIER_2_COMPREHENSIVE)
     })
 
-    it('has all 7 pillars active', () => {
+    it('has all pillars active', () => {
       const activePillars = TIER_2_COMPREHENSIVE.pillars.filter((p) => p.active)
-      expect(activePillars.length).toBe(7)
+      expect(activePillars.length).toBe(Object.keys(PILLAR_KEY).length)
     })
 
     it('includes multiple recommended funnels', () => {

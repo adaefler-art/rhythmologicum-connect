@@ -83,12 +83,12 @@ Successfully implemented the Program Tier Contract system that bridges Thomas' 3
 - **Backward compatible**: Works without tier param (returns all)
 
 **Example Usage**:
-```bash
+```powershell
 # Without tier (all content)
-GET /api/funnels/catalog
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog"
 
 # With tier (filtered)
-GET /api/funnels/catalog?tier=tier-1-essential
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-1-essential"
 # Returns only mental-health pillar + stress-assessment funnel
 ```
 
@@ -192,8 +192,8 @@ const pillars = getActivePillars(TIER_1_ESSENTIAL)
 - ✅ Tested with 4 new test cases
 
 **Example**:
-```bash
-curl "/api/funnels/catalog?tier=tier-1-essential"
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-1-essential"
 # Returns only mental-health pillar + stress-assessment funnel
 ```
 
@@ -475,18 +475,18 @@ import { PROGRAM_TIER, PILLAR_KEY, FUNNEL_SLUG } from '@/lib/contracts/registry'
 ```
 
 ### Catalog API
-```bash
+```powershell
 # No tier (all content)
-GET /api/funnels/catalog
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog"
 
 # With tier (filtered)
-GET /api/funnels/catalog?tier=tier-1-essential
-GET /api/funnels/catalog?tier=tier-2-5-enhanced
-GET /api/funnels/catalog?tier=tier-2-comprehensive
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-1-essential"
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-2-5-enhanced"
+Invoke-RestMethod -Uri "http://localhost:3000/api/funnels/catalog?tier=tier-2-comprehensive"
 ```
 
 ### Run Tests
-```bash
+```powershell
 # Tier contract tests
 npm test -- lib/contracts/tiers/__tests__/programTier.test.ts
 
