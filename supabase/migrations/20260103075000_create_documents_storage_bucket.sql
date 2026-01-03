@@ -41,9 +41,6 @@ COMMENT ON TABLE storage.buckets IS 'V05-I04.1: Private storage bucket for patie
 -- SECTION 2: STORAGE RLS POLICIES
 -- =============================================================================
 
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 -- Policy: Patients can upload documents to their own folders
 -- Folder structure: {user_id}/{assessment_id}/{filename}
 -- Strict enforcement: EXACTLY matches auth.uid() as first path component
