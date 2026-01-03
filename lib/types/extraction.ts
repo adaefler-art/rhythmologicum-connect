@@ -206,8 +206,8 @@ export type FieldStatus = typeof FIELD_STATUS[keyof typeof FIELD_STATUS]
  */
 export const FieldConfirmationSchema = z.object({
   status: z.enum(['accepted', 'edited', 'rejected']),
-  original_value: z.union([z.string(), z.number(), z.record(z.any()), z.array(z.any())]).optional(),
-  confirmed_value: z.union([z.string(), z.number(), z.record(z.any()), z.array(z.any())]).optional(),
+  original_value: z.any().optional(),
+  confirmed_value: z.any().optional(),
   confirmed_at: z.string(),
 })
 

@@ -21,6 +21,7 @@ import {
   type SaveConfirmationRequest,
 } from '@/lib/types/extraction'
 import { logAuditEvent } from '@/lib/audit'
+import { AUDIT_ENTITY_TYPE, AUDIT_ACTION, AUDIT_SOURCE } from '@/lib/contracts/registry'
 
 // ============================================================
 // Helper: Get Authenticated Supabase Client
@@ -161,11 +162,13 @@ export async function saveDocumentConfirmation(
 
     // Log audit event (PHI-free)
     await logAuditEvent({
-      entity_type: 'document',
+      source: AUDIT_SOURCE.API,
+      entity_type: AUDIT_ENTITY_TYPE.DOCUMENT,
       entity_id: document_id,
-      action: 'confirmation_saved',
-      actor_id: user.id,
+      action: AUDIT_ACTION.UPDATE,
+      actor_user_id: user.id,
       metadata: {
+        operation: 'confirmation_saved',
         field_count: Object.keys(confirmed_data.field_confirmations || {}).length,
         has_edits: Object.values(confirmed_data.field_confirmations || {}).some(
           fc => fc.status === 'edited',
@@ -180,7 +183,7 @@ export async function saveDocumentConfirmation(
       success: true,
       data: {
         document_id: updatedDoc.id,
-        confirmed_at: updatedDoc.confirmed_at,
+        confirmed_at: updatedDoc.confirmed_at || new Date().toISOString(),
       },
     }
   } catch (error) {
