@@ -155,7 +155,7 @@ export async function getReportsForCurrentUser(): Promise<{
 
     return { data: data as ReportWithAssessment[], error: null }
   } catch (err) {
-    console.error('Unexpected error fetching user reports:', { userId: user.id })
+    console.error('Unexpected error fetching user reports')
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
