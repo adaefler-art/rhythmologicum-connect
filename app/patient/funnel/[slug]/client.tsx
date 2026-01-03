@@ -661,6 +661,17 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   }
 
   // Render using PatientFlowRenderer
+  // TypeScript narrowing: At this point, funnel, assessmentStatus, and currentStep are guaranteed to be non-null
+  // because we've returned early for all error/loading cases above
+  if (!funnel || !assessmentStatus || !currentStep) {
+    // This should never happen due to the checks above, but satisfies TypeScript
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
+        <LoadingSpinner size="lg" text="Laden..." centered />
+      </main>
+    )
+  }
+
   return (
     <>
       {/* Content Page Links - Show above the main flow */}
