@@ -55,9 +55,12 @@ export default function FunnelCatalogClient() {
     loadCatalog()
   }, [])
 
-  const handleFunnelClick = (slug: string) => {
-    // Navigate to funnel intro page
-    router.push(`/patient/funnel/${slug}/intro`)
+  const handleFunnelClick = (slug: string, availability?: 'available' | 'coming_soon' | 'not_available') => {
+    // Only navigate if funnel is available
+    if (availability === 'available' || !availability) {
+      // Navigate to funnel intro page
+      router.push(`/patient/funnel/${slug}/intro`)
+    }
   }
 
   const togglePillar = (pillarId: string) => {
@@ -198,10 +201,11 @@ export default function FunnelCatalogClient() {
                               default_theme: null,
                             }}
                             icon={getFunnelIcon(funnel.slug)}
-                            onClick={() => handleFunnelClick(funnel.slug)}
+                            onClick={() => handleFunnelClick(funnel.slug, funnel.availability)}
                             estimatedDuration={funnel.est_duration_min}
                             outcomes={funnel.outcomes}
                             version={funnel.default_version}
+                            availability={funnel.availability}
                           />
                         ))}
                       </div>
@@ -236,10 +240,11 @@ export default function FunnelCatalogClient() {
                             default_theme: null,
                           }}
                           icon={getFunnelIcon(funnel.slug)}
-                          onClick={() => handleFunnelClick(funnel.slug)}
+                          onClick={() => handleFunnelClick(funnel.slug, funnel.availability)}
                           estimatedDuration={funnel.est_duration_min}
                           outcomes={funnel.outcomes}
                           version={funnel.default_version}
+                          availability={funnel.availability}
                         />
                       ))}
                     </div>

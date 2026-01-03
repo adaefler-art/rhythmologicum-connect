@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import FunnelCatalogClient from './client'
 
+// V05-FIXOPT-01: Prevent static generation for authenticated page
+export const dynamic = 'force-dynamic'
+
 /**
  * Patient Funnel Catalog Page (V05-I02.1)
  * 

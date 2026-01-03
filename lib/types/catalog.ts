@@ -26,6 +26,11 @@ export type FunnelVersion = {
 }
 
 /**
+ * FunnelAvailability represents the availability status of a funnel
+ */
+export type FunnelAvailability = 'available' | 'coming_soon' | 'not_available'
+
+/**
  * CatalogFunnel represents a funnel in the catalog
  */
 export type CatalogFunnel = {
@@ -42,6 +47,7 @@ export type CatalogFunnel = {
   is_active: boolean
   default_version_id: string | null
   default_version?: string | null
+  availability?: FunnelAvailability
 }
 
 /**

@@ -40,6 +40,8 @@ export type FunnelCardProps = {
   outcomes?: string[]
   /** Version string */
   version?: string | null
+  /** Availability status (V05-FIXOPT-01) */
+  availability?: 'available' | 'coming_soon' | 'not_available'
   /** Click handler */
   onClick: () => void
 }
@@ -79,6 +81,7 @@ export default function FunnelCard({
   estimatedDuration,
   outcomes,
   version,
+  availability = 'available',
   onClick,
 }: FunnelCardProps) {
   // Support both funnel object and individual props
@@ -92,18 +95,26 @@ export default function FunnelCard({
   const isStressFunnel = STRESS_FUNNEL_SLUGS.includes(slug)
   const shouldUseHeartIcon = useIconComponent || isStressFunnel
 
+  // V05-FIXOPT-01: Disable card if not available
+  const isDisabled = availability === 'coming_soon' || availability === 'not_available'
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-xl active:scale-[0.98] text-left transition-colors duration-150"
+      disabled={isDisabled}
+      className={`w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-left transition-colors duration-150 ${
+        isDisabled
+          ? 'opacity-60 cursor-not-allowed'
+          : 'hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-xl active:scale-[0.98]'
+      }`}
       style={{
         padding: spacing.lg,
         borderRadius: radii.xl,
         boxShadow: shadows.md,
         transition: `all ${motion.duration.normal} ${motion.easing.smooth}`,
       }}
-      aria-label={`${title} Assessment starten`}
+      aria-label={`${title} Assessment ${isDisabled ? '(In Kürze verfügbar)' : 'starten'}`}
     >
       {/* Icon/Emoji */}
       <div className="mb-4 flex items-center justify-center">
@@ -223,8 +234,10 @@ export default function FunnelCard({
 
       {/* CTA Arrow */}
       <div className="mt-4 flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold">
-        <span style={{ fontSize: typography.fontSize.sm }}>Assessment starten</span>
-        <span>→</span>
+        <span style={{ fontSize: typography.fontSize.sm }}>
+          {isDisabled ? 'In Kürze verfügbar' : 'Assessment starten'}
+        </span>
+        {!isDisabled && <span>→</span>}
       </div>
     </button>
   )

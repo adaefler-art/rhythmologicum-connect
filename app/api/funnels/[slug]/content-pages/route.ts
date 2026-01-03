@@ -27,13 +27,37 @@ export async function GET(
     const supabase = createAdminSupabaseClient()
 
     // 1. Fetch funnel by slug to get funnel_id
+    // V05-FIXOPT-01: First try funnels_catalog, then funnels table
+    let funnelId: string | null = null
+    
+    // Try funnels table first (fully defined funnels)
     const { data: funnel, error: funnelError } = await supabase
       .from('funnels')
       .select('id')
       .eq('slug', effectiveSlug)
       .single()
 
-    if (funnelError || !funnel) {
+    if (funnel) {
+      funnelId = funnel.id
+    } else if (funnelError?.code === 'PGRST116') {
+      // Not found in funnels table - try funnels_catalog
+      const { data: catalogFunnel, error: catalogError } = await supabase
+        .from('funnels_catalog')
+        .select('id')
+        .eq('slug', effectiveSlug)
+        .single()
+      
+      if (catalogFunnel) {
+        // Funnel exists in catalog but not fully defined yet
+        // Return empty array instead of 404 (V05-FIXOPT-01)
+        return NextResponse.json([])
+      }
+      
+      // Not found in either table
+      console.error('Funnel not found in funnels or catalog:', catalogError)
+      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+    } else {
+      // Other error querying funnels table
       console.error('Error fetching funnel:', funnelError)
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
     }
@@ -42,7 +66,7 @@ export async function GET(
     const { data: contentPages, error: pagesError } = await supabase
       .from('content_pages')
       .select('*')
-      .eq('funnel_id', funnel.id)
+      .eq('funnel_id', funnelId)
       .eq('status', 'published')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -53,7 +77,7 @@ export async function GET(
         const { data: fallbackPages, error: fallbackError } = await supabase
           .from('content_pages')
           .select('*')
-          .eq('funnel_id', funnel.id)
+          .eq('funnel_id', funnelId)
           .eq('status', 'published')
           .order('created_at', { ascending: false })
 
