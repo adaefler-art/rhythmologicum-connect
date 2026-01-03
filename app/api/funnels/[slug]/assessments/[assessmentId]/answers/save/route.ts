@@ -162,6 +162,13 @@ export async function POST(
     )
 
     if (!stepBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
       return forbiddenResponse(stepBelongsValidation.error!.message)
     }
 
@@ -173,6 +180,13 @@ export async function POST(
     )
 
     if (!questionBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios
+      if (
+        questionBelongsValidation.error!.code === 'QUESTION_NOT_FOUND' ||
+        questionBelongsValidation.error!.code === 'QUESTION_NOT_IN_STEP'
+      ) {
+        return notFoundResponse('Frage', questionBelongsValidation.error!.message)
+      }
       return invalidInputResponse(questionBelongsValidation.error!.message)
     }
 
@@ -186,6 +200,13 @@ export async function POST(
     )
 
     if (!stepValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
+      if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
+      if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
       if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
         return forbiddenResponse(stepValidation.error!.message)
       }
@@ -222,6 +243,30 @@ export async function POST(
         upsertError,
       )
       return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
+    }
+
+    // V05-I03.3: Update current_step_id for save/resume functionality
+    // This ensures the user can resume from the current step even if they only answered
+    // questions without explicitly navigating to the next step
+    // IMPORTANT: Only update after all validations passed (fail-closed)
+    const { error: updateError } = await supabase
+      .from('assessments')
+      .update({ current_step_id: stepId })
+      .eq('id', assessmentId)
+      .eq('patient_id', patientProfile.id) // Double-check ownership
+
+    if (updateError) {
+      logDatabaseError(
+        {
+          userId: user.id,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+        },
+        updateError,
+      )
+      // Note: Answer was saved successfully, but current_step_id update failed
+      // This is non-critical - resume will still work based on answered questions
     }
 
     // Success response with standardized format

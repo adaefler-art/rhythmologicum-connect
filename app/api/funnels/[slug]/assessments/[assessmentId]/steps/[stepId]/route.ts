@@ -143,6 +143,13 @@ export async function POST(
     )
 
     if (!stepBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
       return forbiddenResponse(stepBelongsValidation.error!.message)
     }
 
@@ -161,6 +168,13 @@ export async function POST(
         requestedStepId: stepId,
         error: stepValidation.error,
       })
+      // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
+      if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
+      if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
       if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
         return forbiddenResponse(stepValidation.error!.message)
       }
@@ -223,6 +237,30 @@ export async function POST(
           }
         }
       }
+    }
+
+    // V05-I03.3: Persist current_step_id for save/resume functionality
+    // Update current_step_id to the next step (or keep current if no next step)
+    // IMPORTANT: Only update after all validations passed (fail-closed)
+    const stepToSave = nextStep ? nextStep.stepId : stepId
+    const { error: updateError } = await supabase
+      .from('assessments')
+      .update({ current_step_id: stepToSave })
+      .eq('id', assessmentId)
+      .eq('patient_id', patientProfile.id) // Double-check ownership
+
+    if (updateError) {
+      logDatabaseError(
+        {
+          userId: user.id,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}`,
+        },
+        updateError,
+      )
+      // Note: Validation passed, but current_step_id update failed
+      // This is non-critical - resume will still work based on getCurrentStep logic
     }
 
     // Success response with standardized format
