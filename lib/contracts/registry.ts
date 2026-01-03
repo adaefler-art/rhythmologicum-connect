@@ -263,6 +263,7 @@ export const AUDIT_ENTITY_TYPE = {
   USER_ORG_MEMBERSHIP: 'user_org_membership',
   CLINICIAN_ASSIGNMENT: 'clinician_assignment',
   DOCUMENT: 'document', // V05-I04.3: Document confirmation tracking
+  PROCESSING_JOB: 'processing_job', // V05-I05.1: Processing job orchestration
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
@@ -402,4 +403,53 @@ export const CURRENT_EXTRACTOR_VERSION = EXTRACTOR_VERSION.V1_0_0
  */
 export function isValidExtractorVersion(value: unknown): value is ExtractorVersion {
   return typeof value === 'string' && Object.values(EXTRACTOR_VERSION).includes(value as ExtractorVersion)
+}
+
+// ============================================================
+// Processing Stages & Status (V05-I05.1)
+// ============================================================
+
+/**
+ * Valid processing stages for job orchestrator
+ * Jobs progress deterministically through these stages
+ */
+export const PROCESSING_STAGE = {
+  PENDING: 'pending',
+  RISK: 'risk',
+  RANKING: 'ranking',
+  CONTENT: 'content',
+  VALIDATION: 'validation',
+  REVIEW: 'review',
+  PDF: 'pdf',
+  DELIVERY: 'delivery',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const
+
+export type ProcessingStage = typeof PROCESSING_STAGE[keyof typeof PROCESSING_STAGE]
+
+/**
+ * Valid processing statuses for job orchestrator
+ */
+export const PROCESSING_STATUS = {
+  QUEUED: 'queued',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const
+
+export type ProcessingStatus = typeof PROCESSING_STATUS[keyof typeof PROCESSING_STATUS]
+
+/**
+ * Type guard to check if a value is a valid processing stage
+ */
+export function isValidProcessingStage(value: unknown): value is ProcessingStage {
+  return typeof value === 'string' && Object.values(PROCESSING_STAGE).includes(value as ProcessingStage)
+}
+
+/**
+ * Type guard to check if a value is a valid processing status
+ */
+export function isValidProcessingStatus(value: unknown): value is ProcessingStatus {
+  return typeof value === 'string' && Object.values(PROCESSING_STATUS).includes(value as ProcessingStatus)
 }
