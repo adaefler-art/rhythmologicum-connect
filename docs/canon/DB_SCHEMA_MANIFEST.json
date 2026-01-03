@@ -26,10 +26,12 @@
     "patient_measures",
     "patient_profiles",
     "pillars",
+    "priority_rankings",
     "processing_jobs",
     "questions",
     "report_sections",
     "reports",
+    "risk_bundles",
     "rls_test_results",
     "tasks",
     "user_consents",
@@ -155,6 +157,31 @@
       "completed_at",
       "errors",
       "schema_version"
+    ],
+    "risk_bundles": [
+      "id",
+      "job_id",
+      "assessment_id",
+      "risk_bundle_version",
+      "algorithm_version",
+      "funnel_version",
+      "calculated_at",
+      "created_at",
+      "updated_at",
+      "bundle_data"
+    ],
+    "priority_rankings": [
+      "id",
+      "job_id",
+      "risk_bundle_id",
+      "ranking_version",
+      "algorithm_version",
+      "registry_version",
+      "program_tier",
+      "ranked_at",
+      "created_at",
+      "updated_at",
+      "ranking_data"
     ]
   },
   "constraints": {
@@ -178,6 +205,12 @@
     ],
     "processing_jobs": [
       "processing_jobs_assessment_correlation_version_unique"
+    ],
+    "risk_bundles": [
+      "risk_bundles_job_id_unique"
+    ],
+    "priority_rankings": [
+      "priority_rankings_job_version_unique"
     ]
   },
   "notes": {
