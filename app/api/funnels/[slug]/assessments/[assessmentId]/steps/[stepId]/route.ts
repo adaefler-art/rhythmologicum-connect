@@ -143,6 +143,13 @@ export async function POST(
     )
 
     if (!stepBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
       return forbiddenResponse(stepBelongsValidation.error!.message)
     }
 
@@ -161,6 +168,13 @@ export async function POST(
         requestedStepId: stepId,
         error: stepValidation.error,
       })
+      // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
+      if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
+      if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
       if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
         return forbiddenResponse(stepValidation.error!.message)
       }

@@ -241,8 +241,9 @@ describe('V05-I03.3 Hardening: Fail-Closed current_step_id Updates', () => {
       const response = await POST(request, context)
       const data = await response.json()
 
-      expect(response.status).toBe(403) // Currently returns 403 for validation failures
+      expect(response.status).toBe(404) // V05-I03.3: Not found should return 404
       expect(data.success).toBe(false)
+      expect(data.error.code).toBe('NOT_FOUND')
 
       // Verify NO update to current_step_id
       expect(mockUpdateBuilder.update).not.toHaveBeenCalled()
@@ -348,6 +349,75 @@ describe('V05-I03.3 Hardening: Fail-Closed current_step_id Updates', () => {
 
       expect(response.status).toBe(403)
       expect(data.success).toBe(false)
+
+      // Verify NO update to current_step_id
+      expect(mockUpdateBuilder.update).not.toHaveBeenCalled()
+    })
+
+    it('should return 404 when step not found', async () => {
+      const { ensureStepBelongsToFunnel } = jest.requireMock('@/lib/validation/stepValidation')
+
+      const mockUpdateBuilder = makeThenableBuilder({ data: null, error: null })
+      const mockSupabase = {
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: { user: { id: 'user-123' } },
+            error: null,
+          }),
+        },
+        from: jest.fn((table: string) => {
+          if (table === 'patient_profiles') {
+            return makeThenableBuilder({ data: { id: 'patient-123' }, error: null })
+          }
+          if (table === 'assessments') {
+            return makeThenableBuilder({
+              data: {
+                id: 'assessment-123',
+                patient_id: 'patient-123',
+                funnel: 'stress',
+                funnel_id: 'funnel-123',
+                status: 'in_progress',
+              },
+              error: null,
+            })
+          }
+          return mockUpdateBuilder
+        }),
+      } as MockSupabaseClient
+
+      // Mock step validation to return NOT FOUND
+      ensureStepBelongsToFunnel.mockResolvedValue({
+        valid: false,
+        error: { code: 'STEP_NOT_FOUND', message: 'Schritt nicht gefunden.' },
+      })
+
+      ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
+
+      const { POST } = await import(
+        '../[slug]/assessments/[assessmentId]/steps/[stepId]/route'
+      )
+
+      const request = new Request(
+        'http://localhost/api/funnels/stress/assessments/assessment-123/steps/step-invalid',
+        {
+          method: 'POST',
+        }
+      )
+
+      const context = {
+        params: Promise.resolve({
+          slug: 'stress',
+          assessmentId: 'assessment-123',
+          stepId: 'step-invalid',
+        }),
+      }
+
+      const response = await POST(request, context)
+      const data = await response.json()
+
+      expect(response.status).toBe(404) // V05-I03.3: Not found should return 404
+      expect(data.success).toBe(false)
+      expect(data.error.code).toBe('NOT_FOUND')
 
       // Verify NO update to current_step_id
       expect(mockUpdateBuilder.update).not.toHaveBeenCalled()

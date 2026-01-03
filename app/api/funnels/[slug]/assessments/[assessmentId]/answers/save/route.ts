@@ -162,6 +162,13 @@ export async function POST(
     )
 
     if (!stepBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
+      if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
+        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+      }
       return forbiddenResponse(stepBelongsValidation.error!.message)
     }
 
@@ -173,6 +180,13 @@ export async function POST(
     )
 
     if (!questionBelongsValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found" scenarios
+      if (
+        questionBelongsValidation.error!.code === 'QUESTION_NOT_FOUND' ||
+        questionBelongsValidation.error!.code === 'QUESTION_NOT_IN_STEP'
+      ) {
+        return notFoundResponse('Frage', questionBelongsValidation.error!.message)
+      }
       return invalidInputResponse(questionBelongsValidation.error!.message)
     }
 
@@ -186,6 +200,13 @@ export async function POST(
     )
 
     if (!stepValidation.valid) {
+      // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
+      if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
+      if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
+        return notFoundResponse('Schritt', stepValidation.error!.message)
+      }
       if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
         return forbiddenResponse(stepValidation.error!.message)
       }
