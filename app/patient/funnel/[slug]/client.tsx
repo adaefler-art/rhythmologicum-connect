@@ -219,6 +219,14 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     const loadFunnelData = async () => {
       try {
         const response = await fetch(`/api/funnels/${slug}/definition`)
+        
+        // V05-FIXOPT-01: Handle 404 gracefully for "coming soon" funnels
+        if (response.status === 404) {
+          setError('not_available')
+          setLoading(false)
+          return
+        }
+        
         if (!response.ok) {
           throw new Error('Funnel konnte nicht geladen werden.')
         }
@@ -233,8 +241,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     loadFunnelData()
   }, [slug])
 
-  // Load content pages for this funnel
+  // Load content pages for this funnel (V05-FIXOPT-01: Only if funnel definition exists)
   useEffect(() => {
+    // Skip loading content pages if funnel is not available
+    if (error === 'not_available') return
+    
     const loadContentPages = async () => {
       try {
         const response = await fetch(`/api/funnels/${slug}/content-pages`)
@@ -242,13 +253,14 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           const pages: ContentPage[] = await response.json()
           setContentPages(pages)
         }
+        // V05-FIXOPT-01: Don't log 404 as error - content pages are optional
       } catch (err) {
         console.error('Error loading content pages:', err)
         // Non-critical error, don't block the funnel
       }
     }
     loadContentPages()
-  }, [slug])
+  }, [slug, error])
 
   // Handle page visibility changes for better recovery
   // When user returns to tab, refresh status to ensure consistency
@@ -591,7 +603,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers])
 
   // Loading state
-  if (loading || !funnel || !assessmentStatus || !currentStep) {
+  if (loading || (!error && (!funnel || !assessmentStatus || !currentStep))) {
     return (
       <main className="flex flex-col items-center justify-center bg-slate-50 py-20 px-4">
         <LoadingSpinner
@@ -599,6 +611,27 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           text={recovery.isRecovering ? recovery.recoveryMessage || 'Laden...' : 'Fragebogen wird geladen…'}
           centered
         />
+      </main>
+    )
+  }
+
+  // V05-FIXOPT-01: Not available state (funnel exists in catalog but not fully defined)
+  if (error === 'not_available') {
+    return (
+      <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-4 text-6xl">🚧</div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-4">In Kürze verfügbar</h1>
+          <p className="text-slate-600 mb-6">
+            Dieses Assessment ist derzeit noch in Vorbereitung und wird bald verfügbar sein.
+          </p>
+          <button
+            onClick={() => router.push('/patient/funnels')}
+            className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            ← Zurück zur Übersicht
+          </button>
+        </div>
       </main>
     )
   }

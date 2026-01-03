@@ -244,6 +244,24 @@ export async function GET(request: Request) {
       )
     }
 
+    // V05-FIXOPT-01: Check which funnels have full definitions in the funnels table
+    // This determines availability status (available vs coming_soon)
+    const funnelSlugs = (funnels || []).map((f) => f.slug)
+    const definedFunnelsResult =
+      funnelSlugs.length > 0
+        ? await dataClient
+            .from('funnels')
+            .select('slug')
+            .in('slug', funnelSlugs)
+        : { data: null, error: null }
+
+    const definedSlugs = new Set<string>()
+    if (definedFunnelsResult.data) {
+      definedFunnelsResult.data.forEach((f) => {
+        definedSlugs.add(f.slug)
+      })
+    }
+
     // Fetch default versions for funnels
     const funnelIds = (funnels || []).map((f) => f.id)
     const versionsResult =
@@ -321,11 +339,15 @@ export async function GET(request: Request) {
           return // Skip funnels not allowed in this tier
         }
         
+        // V05-FIXOPT-01: Determine availability based on whether funnel has full definition
+        const availability = definedSlugs.has(funnel.slug) ? 'available' : 'coming_soon'
+        
         const catalogFunnel: CatalogFunnel = {
           ...funnel,
           subtitle: null, // funnels_catalog doesn't have subtitle
           outcomes: Array.isArray(funnel.outcomes) ? (funnel.outcomes as string[]) : [],
           default_version: versionMap.get(funnel.id) || null,
+          availability,
         }
 
         if (funnel.pillar_id && pillarMap.has(funnel.pillar_id)) {
