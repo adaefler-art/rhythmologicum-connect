@@ -405,12 +405,16 @@ export type Database = {
         Row: {
           assessment_id: string | null
           confidence: Json | null
+          confidence_json: Json | null
           confirmed_at: string | null
           confirmed_data: Json | null
           created_at: string
           doc_type: string | null
           extracted_data: Json | null
+          extracted_json: Json | null
+          extractor_version: string | null
           id: string
+          input_hash: string | null
           parsing_status: Database["public"]["Enums"]["parsing_status"]
           storage_path: string
           updated_at: string | null
@@ -418,12 +422,16 @@ export type Database = {
         Insert: {
           assessment_id?: string | null
           confidence?: Json | null
+          confidence_json?: Json | null
           confirmed_at?: string | null
           confirmed_data?: Json | null
           created_at?: string
           doc_type?: string | null
           extracted_data?: Json | null
+          extracted_json?: Json | null
+          extractor_version?: string | null
           id?: string
+          input_hash?: string | null
           parsing_status?: Database["public"]["Enums"]["parsing_status"]
           storage_path: string
           updated_at?: string | null
@@ -431,12 +439,16 @@ export type Database = {
         Update: {
           assessment_id?: string | null
           confidence?: Json | null
+          confidence_json?: Json | null
           confirmed_at?: string | null
           confirmed_data?: Json | null
           created_at?: string
           doc_type?: string | null
           extracted_data?: Json | null
+          extracted_json?: Json | null
+          extractor_version?: string | null
           id?: string
+          input_hash?: string | null
           parsing_status?: Database["public"]["Enums"]["parsing_status"]
           storage_path?: string
           updated_at?: string | null

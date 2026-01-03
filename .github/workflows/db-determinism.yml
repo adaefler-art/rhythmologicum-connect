@@ -88,7 +88,6 @@ jobs:
       - name: Lint new migrations for idempotency
         run: |
           echo "🔍 Linting new migrations for idempotency guard rails..."
-          git fetch origin ${{ github.base_ref }} --depth=1 || true
           bash scripts/lint-new-migrations-idempotency.sh "origin/${{ github.base_ref }}"
       
       # Check 2: Start Supabase with clear lifecycle

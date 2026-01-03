@@ -369,3 +369,36 @@ export type ProgramTier = typeof PROGRAM_TIER[keyof typeof PROGRAM_TIER]
 export function isValidProgramTier(value: unknown): value is ProgramTier {
   return typeof value === 'string' && Object.values(PROGRAM_TIER).includes(value as ProgramTier)
 }
+
+// ============================================================
+// Document Extraction Versions (V05-I04.2)
+// ============================================================
+
+/**
+ * Valid extractor versions for AI document extraction
+ * Format: vMAJOR.MINOR.PATCH
+ * Update when extraction logic or prompts change
+ */
+export const EXTRACTOR_VERSION = {
+  /**
+   * v1.0.0: Initial extraction pipeline
+   * - Basic lab value extraction
+   * - Medication list extraction
+   * - Confidence scoring
+   */
+  V1_0_0: 'v1.0.0',
+} as const
+
+export type ExtractorVersion = typeof EXTRACTOR_VERSION[keyof typeof EXTRACTOR_VERSION]
+
+/**
+ * Current extractor version (latest)
+ */
+export const CURRENT_EXTRACTOR_VERSION = EXTRACTOR_VERSION.V1_0_0
+
+/**
+ * Type guard to check if a value is a valid extractor version
+ */
+export function isValidExtractorVersion(value: unknown): value is ExtractorVersion {
+  return typeof value === 'string' && Object.values(EXTRACTOR_VERSION).includes(value as ExtractorVersion)
+}
