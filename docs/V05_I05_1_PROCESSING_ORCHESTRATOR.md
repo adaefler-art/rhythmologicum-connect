@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Processing Orchestrator provides a reliable, idempotent, and deterministic job execution system for transforming completed assessments through multiple processing stages.
+The Processing Orchestrator provides a reliable, idempotent, and deterministic **job tracking and status system** for assessment processing pipelines.
+
+**IMPORTANT SCOPE NOTE:** This implementation provides **job creation, status tracking, and idempotency only**. Actual stage execution/workers are handled separately in I05.2-I05.9. This is purely a tracking and coordination layer.
 
 ## Architecture
 
@@ -14,23 +16,25 @@ The Processing Orchestrator provides a reliable, idempotent, and deterministic j
    - Deterministic stage progression
 
 2. **Database Schema** (`supabase/migrations/20260103150000_v05_i05_1_create_processing_jobs.sql`)
-   - `processing_jobs` table with idempotency constraint
-   - RLS policies for patient/clinician access
+   - `processing_jobs` table with idempotency constraint (assessment_id, correlation_id, schema_version)
+   - RLS policies for patient/clinician access (relationship-based)
    - Comprehensive indexes
 
 3. **API Routes**
-   - `POST /api/processing/start` - Create/retrieve job
+   - `POST /api/processing/start` - Create/retrieve job (tracking only, no execution)
    - `GET /api/processing/jobs/[jobId]` - Query job status
 
 ### Processing Stages
 
-Jobs progress deterministically through these stages:
+Jobs track progress through these deterministic stages:
 
 ```
 PENDING → RISK → RANKING → CONTENT → VALIDATION → REVIEW → PDF → DELIVERY → COMPLETED
                                                                                     ↓
                                                                                  FAILED
 ```
+
+**Note:** Stage transitions are recorded in this tracking system but executed by separate workers (I05.2-I05.9).
 
 ## API Usage
 
@@ -148,10 +152,18 @@ If a job with the same `assessmentId` and `correlationId` already exists:
 - Can only view status of their own jobs
 - Ownership verified via `patient_profiles` → `assessments` join
 
-### Clinician/Admin Role
-- Can start jobs for any completed assessment
-- Can view status of any job
+### Clinician Role
+- Can start jobs for assessments of **assigned patients only**
+- Can view status of jobs for **assigned patients only**
+- Assignment verified via `clinician_patient_assignments` table
 - Role checked via `auth.users.raw_app_meta_data.role`
+
+### Admin Role
+- Can start jobs for any assessment
+- Can view status of any job
+- No assignment check required
+
+**Security Note:** Both API routes and RLS policies enforce relationship-based access. Clinicians without an assignment to a patient will receive 404 (no existence disclosure).
 
 ## Idempotency
 
@@ -194,12 +206,34 @@ async function startProcessingJob(assessmentId: string) {
 
 ## PHI Protection
 
-All error logging is PHI-free:
-- UUIDs are redacted as `[REDACTED-UUID]`
-- Email addresses are redacted as `[REDACTED-EMAIL]`
-- Dates are redacted as `[REDACTED-DATE]`
+**CRITICAL:** This implementation uses structured logging with strict PHI prevention.
+
+### What IS Redacted
+- UUIDs are replaced with `[REDACTED-UUID]`
+- Email addresses are replaced with `[REDACTED-EMAIL]`
+- Dates are replaced with `[REDACTED-DATE]`
 - Error messages are truncated to 500 characters max
-- No patient identifiers or clinical data in error logs
+
+### What is NEVER Logged
+- Request bodies or payloads
+- Response data
+- Extracted medical content (labs, diagnoses, medications, clinical notes)
+- Patient demographics beyond allowed identifiers (assessmentId, jobId)
+- Free-text user inputs
+
+### Structured Logging Only
+Errors are logged with controlled fields only:
+```json
+{
+  "op": "operation_name",
+  "requestId": "correlation_id",
+  "jobId": "job_uuid",
+  "code": "ERROR_CODE",
+  "stage": "processing_stage"
+}
+```
+
+**No medical facts or patient data are logged, even without identifiers.**
 
 ## Database Schema
 

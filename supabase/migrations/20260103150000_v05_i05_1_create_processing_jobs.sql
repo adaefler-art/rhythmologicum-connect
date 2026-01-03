@@ -1,6 +1,8 @@
 -- Migration: V05-I05.1 - Processing Orchestrator Tables
 -- Description: Creates tables for processing job orchestration and status tracking
 --              Funnel-independent, deterministic, idempotent processing pipeline
+--              NOTE: This migration provides job tracking and status only.
+--              Actual stage execution/workers are handled separately (I05.2-I05.9).
 -- Date: 2026-01-03
 -- Issue: V05-I05.1
 
@@ -79,15 +81,18 @@ CREATE TABLE IF NOT EXISTS public.processing_jobs (
     schema_version TEXT NOT NULL DEFAULT 'v1',
     
     -- Constraints
-    CONSTRAINT processing_jobs_assessment_correlation_unique 
-        UNIQUE (assessment_id, correlation_id)
+    -- Idempotency: (assessment_id, correlation_id, schema_version)
+    -- This allows re-runs when schema/algorithm versions change
+    CONSTRAINT processing_jobs_assessment_correlation_version_unique 
+        UNIQUE (assessment_id, correlation_id, schema_version)
 );
 
 -- Table and column comments
 COMMENT ON TABLE public.processing_jobs IS 'V05-I05.1: Processing orchestrator jobs - tracks assessment processing pipeline';
 COMMENT ON COLUMN public.processing_jobs.id IS 'Job unique identifier';
 COMMENT ON COLUMN public.processing_jobs.assessment_id IS 'Assessment being processed (soft reference, no FK)';
-COMMENT ON COLUMN public.processing_jobs.correlation_id IS 'Idempotency key for preventing duplicate jobs';
+COMMENT ON COLUMN public.processing_jobs.correlation_id IS 'Idempotency key for preventing duplicate jobs (combined with schema_version)';
+COMMENT ON COLUMN public.processing_jobs.schema_version IS 'Contract version - allows re-runs when algorithm/schema changes';
 COMMENT ON COLUMN public.processing_jobs.status IS 'Overall job status (queued, in_progress, completed, failed)';
 COMMENT ON COLUMN public.processing_jobs.stage IS 'Current processing stage (deterministic progression)';
 COMMENT ON COLUMN public.processing_jobs.attempt IS 'Current attempt number (1-indexed)';
@@ -165,15 +170,19 @@ CREATE POLICY processing_jobs_patient_select ON public.processing_jobs
         )
     );
 
--- Policy: Clinicians can view all jobs
+-- Policy: Clinicians can view jobs for their assigned patients only
+-- This enforces that clinicians must have an explicit relationship via clinician_patient_assignments
 DROP POLICY IF EXISTS processing_jobs_clinician_select ON public.processing_jobs;
 CREATE POLICY processing_jobs_clinician_select ON public.processing_jobs
     FOR SELECT
     USING (
         EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE id = auth.uid()
-              AND (raw_app_meta_data->>'role' IN ('clinician', 'admin'))
+            SELECT 1 FROM auth.users u
+            JOIN public.clinician_patient_assignments cpa ON cpa.clinician_user_id = u.id
+            JOIN public.assessments a ON a.patient_id = cpa.patient_id
+            WHERE u.id = auth.uid()
+              AND a.id = processing_jobs.assessment_id
+              AND (u.raw_app_meta_data->>'role' IN ('clinician', 'admin'))
         )
     );
 

@@ -47,13 +47,9 @@ export async function GET(
   try {
     const { jobId } = await context.params
 
-    if (!jobId) {
-      return notFoundResponse('Job ID fehlt.')
-    }
-
     const supabase = await createServerSupabaseClient()
 
-    // Check authentication
+    // Check authentication FIRST (before any other operations)
     const {
       data: { user },
       error: authError,
@@ -62,9 +58,12 @@ export async function GET(
     if (authError || !user) {
       logUnauthorized({
         endpoint: `/api/processing/jobs/${jobId}`,
-        jobId,
       })
       return unauthorizedResponse()
+    }
+
+    if (!jobId) {
+      return notFoundResponse('Job ID fehlt.')
     }
 
     // Get user role for RBAC
@@ -95,12 +94,13 @@ export async function GET(
         },
         jobError,
       )
+      // 404 for no existence disclosure
       return notFoundResponse('Processing Job')
     }
 
-    // Verify ownership for patients
+    // Verify ownership/access for all users
     if (userRole === 'patient') {
-      // Get patient profile
+      // Patients: verify they own the assessment
       const { data: patientProfile } = await supabase
         .from('patient_profiles')
         .select('id')
@@ -116,7 +116,8 @@ export async function GET(
           },
           'Patient profile not found',
         )
-        return forbiddenResponse('Sie haben keine Berechtigung, diesen Job anzuzeigen.')
+        // Return 404 to avoid existence disclosure
+        return notFoundResponse('Processing Job')
       }
 
       // Load assessment to verify ownership
@@ -135,9 +136,43 @@ export async function GET(
           },
           'Patient does not own assessment',
         )
-        return forbiddenResponse('Sie haben keine Berechtigung, diesen Job anzuzeigen.')
+        // Return 404 to avoid existence disclosure
+        return notFoundResponse('Processing Job')
+      }
+    } else if (userRole === 'clinician') {
+      // Clinicians: verify they are assigned to the patient
+      const { data: assessment } = await supabase
+        .from('assessments')
+        .select('patient_id')
+        .eq('id', job.assessment_id)
+        .single()
+
+      if (!assessment) {
+        // Return 404 to avoid existence disclosure
+        return notFoundResponse('Processing Job')
+      }
+
+      const { data: assignment } = await supabase
+        .from('clinician_patient_assignments')
+        .select('id')
+        .eq('clinician_user_id', user.id)
+        .eq('patient_id', assessment.patient_id)
+        .single()
+
+      if (!assignment) {
+        logForbidden(
+          {
+            userId: user.id,
+            jobId,
+            endpoint: `/api/processing/jobs/${jobId}`,
+          },
+          'Clinician not assigned to patient',
+        )
+        // Return 404 to avoid existence disclosure
+        return notFoundResponse('Processing Job')
       }
     }
+    // Admins can access any job (no additional check needed)
 
     // Return job details
     return successResponse({

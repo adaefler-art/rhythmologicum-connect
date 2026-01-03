@@ -54,7 +54,22 @@ import { env } from '@/lib/env'
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate request body
+    const supabase = await createServerSupabaseClient()
+
+    // Check authentication FIRST (before any parsing/validation)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      logUnauthorized({
+        endpoint: '/api/processing/start',
+      })
+      return unauthorizedResponse()
+    }
+
+    // Parse and validate request body AFTER auth check
     const body = await request.json()
     const parseResult = CreateProcessingJobInputSchema.safeParse(body)
 
@@ -68,22 +83,6 @@ export async function POST(request: NextRequest) {
 
     // Generate correlation ID if not provided
     const correlationId = inputCorrelationId || generateCorrelationId(assessmentId)
-
-    const supabase = await createServerSupabaseClient()
-
-    // Check authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      logUnauthorized({
-        endpoint: '/api/processing/start',
-        assessmentId,
-      })
-      return unauthorizedResponse()
-    }
 
     // Get user role for RBAC
     const userRole = user.app_metadata?.role || 'patient'
@@ -104,6 +103,7 @@ export async function POST(request: NextRequest) {
         },
         assessmentError,
       )
+      // 404 for no existence disclosure
       return notFoundResponse('Assessment')
     }
 
@@ -117,8 +117,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify ownership for patients
+    // Verify ownership/access for all users
     if (userRole === 'patient') {
+      // Patients: verify they own the assessment
       const { data: patientProfile } = await supabase
         .from('patient_profiles')
         .select('id')
@@ -134,11 +135,32 @@ export async function POST(request: NextRequest) {
           },
           'Patient does not own assessment',
         )
-        return forbiddenResponse(
-          'Sie haben keine Berechtigung, dieses Assessment zu verarbeiten.',
+        // Return 404 instead of 403 to avoid existence disclosure
+        return notFoundResponse('Assessment')
+      }
+    } else if (userRole === 'clinician') {
+      // Clinicians: verify they are assigned to this patient
+      const { data: assignment } = await supabase
+        .from('clinician_patient_assignments')
+        .select('id')
+        .eq('clinician_user_id', user.id)
+        .eq('patient_id', assessment.patient_id)
+        .single()
+
+      if (!assignment) {
+        logForbidden(
+          {
+            userId: user.id,
+            assessmentId,
+            endpoint: '/api/processing/start',
+          },
+          'Clinician not assigned to patient',
         )
+        // Return 404 to avoid existence disclosure
+        return notFoundResponse('Assessment')
       }
     }
+    // Admins can access any assessment (no additional check needed)
 
     // Use service role client for job creation (bypasses RLS)
     const serviceClient = createClient(
@@ -149,12 +171,13 @@ export async function POST(request: NextRequest) {
       },
     )
 
-    // Check for existing job (idempotency)
+    // Check for existing job (idempotency - by assessment_id, correlation_id, schema_version)
     const { data: existingJobs, error: existingError } = await serviceClient
       .from('processing_jobs')
       .select('*')
       .eq('assessment_id', assessmentId)
       .eq('correlation_id', correlationId)
+      .eq('schema_version', 'v1')
       .order('created_at', { ascending: false })
       .limit(1)
 

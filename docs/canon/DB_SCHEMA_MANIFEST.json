@@ -177,7 +177,7 @@
       "report_sections_report_key_unique"
     ],
     "processing_jobs": [
-      "processing_jobs_assessment_correlation_unique"
+      "processing_jobs_assessment_correlation_version_unique"
     ]
   },
   "notes": {
