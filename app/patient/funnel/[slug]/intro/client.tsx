@@ -27,12 +27,14 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   const [error, setError] = useState<string | null>(null)
   const [introPage, setIntroPage] = useState<ContentPage | null>(null)
   const [funnelTitle, setFunnelTitle] = useState<string>('')
+  const [isMissingContent, setIsMissingContent] = useState(false)
 
   useEffect(() => {
     const loadIntroContent = async () => {
       try {
         setLoading(true)
         setError(null)
+        setIsMissingContent(false)
 
         // Load funnel definition to get title
         const funnelResponse = await fetch(`/api/funnels/${funnelSlug}/definition`)
@@ -47,24 +49,24 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
         )
 
         if (!response.ok) {
-          // No intro page found - redirect directly to assessment
-          router.push(`/patient/funnel/${funnelSlug}`)
+          // Missing content is optional: show a friendly state instead of error/redirect loops.
+          setIsMissingContent(true)
+          setIntroPage(null)
           return
         }
 
         const data = await response.json()
 
-        if (!data.page) {
-          // No intro page - redirect to assessment
-          router.push(`/patient/funnel/${funnelSlug}`)
+        if (data?.status === 'missing_content' || !data.page) {
+          setIsMissingContent(true)
+          setIntroPage(null)
           return
         }
 
         setIntroPage(data.page)
       } catch (err) {
-        console.error('Error loading intro page:', err)
-        // On error, redirect to assessment
-        router.push(`/patient/funnel/${funnelSlug}`)
+        console.error('[INTRO_PAGE_LOAD_FAILED]')
+        setError('Intro-Inhalt konnte nicht geladen werden.')
       } finally {
         setLoading(false)
       }
@@ -98,7 +100,9 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
           }}
         >
           <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
-            Intro-Seite konnte nicht geladen werden.
+            {isMissingContent
+              ? 'Inhalt ist noch nicht verfügbar.'
+              : error || 'Intro-Seite konnte nicht geladen werden.'}
           </p>
           <button
             onClick={handleStartAssessment}

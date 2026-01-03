@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getContentPage } from '@/lib/utils/contentResolver'
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
+import { randomUUID } from 'crypto'
 
 /**
  * F6 API Endpoint: Content Resolver
@@ -18,6 +19,7 @@ import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
  * GET /api/content/resolve?funnel=stress&category=intro
  */
 export async function GET(request: NextRequest) {
+  const requestId = randomUUID()
   try {
     const searchParams = request.nextUrl.searchParams
     const funnel = searchParams.get('funnel')
@@ -25,17 +27,42 @@ export async function GET(request: NextRequest) {
     const slug = searchParams.get('slug') || undefined
     const includeDrafts = searchParams.get('includeDrafts') === 'true'
 
+    const allowedCategories = ['intro', 'info', 'result']
+
     // Validate required parameters
     if (!funnel) {
       const response = NextResponse.json(
         { 
           success: false,
+          requestId,
           error: { 
             code: 'MISSING_PARAMETER', 
-            message: 'Funnel parameter is required' 
-          } 
+            message: 'Funnel parameter is required',
+            allowedValues: {
+              category: allowedCategories,
+              includeDrafts: ['true', 'false'],
+            },
+          },
         },
-        { status: 400 },
+        { status: 422 },
+      )
+      trackUsage('GET /api/content/resolve', response)
+      return response
+    }
+
+    if (category && !allowedCategories.includes(category)) {
+      const response = NextResponse.json(
+        {
+          success: false,
+          requestId,
+          error: {
+            code: 'INVALID_PARAMETER',
+            message: 'Invalid category value',
+            field: 'category',
+            allowedValues: allowedCategories,
+          },
+        },
+        { status: 422 },
       )
       trackUsage('GET /api/content/resolve', response)
       return response
@@ -53,6 +80,10 @@ export async function GET(request: NextRequest) {
     if (result.page) {
       const response = NextResponse.json({
         success: true,
+        version: 'v1',
+        requestId,
+        status: 'ok',
+        content: result.page,
         page: result.page,
         strategy: result.strategy,
       })
@@ -60,28 +91,50 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    // No page found
-    const notFoundResponse = NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'NOT_FOUND',
-          message: result.error || 'No matching content page found',
+    // No page found.
+    // Contract: missing content is optional => return 200 with a versioned response.
+    // Keep 404 only for truly unknown funnels.
+    const isUnknownFunnel = result.error === 'FUNNEL_NOT_FOUND'
+
+    if (isUnknownFunnel) {
+      const notFoundResponse = NextResponse.json(
+        {
+          success: false,
+          requestId,
+          error: {
+            code: 'FUNNEL_NOT_FOUND',
+            message: 'Funnel not found',
+          },
         },
+        { status: 404 },
+      )
+      trackUsage('GET /api/content/resolve', notFoundResponse)
+      return notFoundResponse
+    }
+
+    const missingResponse = NextResponse.json(
+      {
+        success: true,
+        version: 'v1',
+        requestId,
+        status: 'missing_content',
+        content: null,
+        page: null,
         strategy: result.strategy,
       },
-      { status: 404 },
+      { status: 200 },
     )
-    trackUsage('GET /api/content/resolve', notFoundResponse)
-    return notFoundResponse
+    trackUsage('GET /api/content/resolve', missingResponse)
+    return missingResponse
   } catch (error) {
-    console.error('Error in content resolver API:', error)
+    console.error('[CONTENT_RESOLVE_API_ERROR]', { requestId })
     const errorResponse = NextResponse.json(
       {
         success: false,
+        requestId,
         error: {
           code: 'INTERNAL_ERROR',
-          message: error instanceof Error ? error.message : 'Internal server error',
+          message: 'Internal server error',
         },
       },
       { status: 500 },

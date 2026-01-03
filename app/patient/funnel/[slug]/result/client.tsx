@@ -54,6 +54,7 @@ export default function ResultClient({
   const [error, setError] = useState<string | null>(null)
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
+  const [contentUnavailable, setContentUnavailable] = useState(false)
 
   const canonicalSlug = assessment?.funnel ?? slug
   const funnelTitle = assessment?.funnelTitle ?? ''
@@ -92,9 +93,15 @@ export default function ResultClient({
           if (pagesRes.ok) {
             const pages: ContentPage[] = await pagesRes.json()
             setContentPages(pages)
+            setContentUnavailable(pages.length === 0)
+          } else {
+            setContentPages([])
+            setContentUnavailable(true)
           }
         } catch (err) {
           console.error('Error loading content pages:', err)
+          setContentPages([])
+          setContentUnavailable(true)
         }
 
         setLoading(false)
@@ -317,6 +324,23 @@ Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. W
                     </a>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content missing (non-error state) */}
+        {contentUnavailable && resultPages.length === 0 && infoPages.length === 0 && (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl flex-shrink-0">📚</span>
+              <div className="flex-1">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                  Inhalte noch nicht verfügbar
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600">
+                  Für dieses Assessment sind aktuell noch keine zusätzlichen Inhalte hinterlegt.
+                </p>
               </div>
             </div>
           </div>
