@@ -131,3 +131,17 @@ export function schemaNotReadyResponse(
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.SCHEMA_NOT_READY, message, 503)
 }
+
+export function unsupportedMediaTypeResponse(
+  message: string,
+  details?: Record<string, unknown>,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.UNSUPPORTED_MEDIA_TYPE, message, 415, details)
+}
+
+export function payloadTooLargeResponse(
+  message: string,
+  details?: Record<string, unknown>,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.PAYLOAD_TOO_LARGE, message, 413, details)
+}
