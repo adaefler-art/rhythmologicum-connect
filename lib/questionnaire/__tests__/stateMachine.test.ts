@@ -4,6 +4,7 @@
 
 import {
   initQuestionnaireState,
+  initQuestionnaireStateWithResume,
   updateAnswer,
   goToNextStep,
   goToPreviousStep,
@@ -288,6 +289,141 @@ describe('Questionnaire State Machine', () => {
       const steps2 = state2.visibleSteps.map((s) => s.id)
 
       expect(steps1).toEqual(steps2)
+    })
+  })
+
+  describe('Deterministic Resume', () => {
+    it('resumes at first incomplete step when partially answered', () => {
+      const initialAnswers = {
+        q1: 25, // Step 1 complete (age >= 18, so step2 will be visible)
+        // Step 2 (q2) not answered
+      }
+
+      const state = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Should be on step2 (index 1) since step1 is complete
+      expect(state.currentStepIndex).toBe(1)
+      expect(state.visibleSteps[1].id).toBe('step2')
+      expect(state.answers).toEqual(initialAnswers)
+    })
+
+    it('resumes at correct step with branch A', () => {
+      const initialAnswers = {
+        q1: 15, // Age < 18, step2 will be hidden
+      }
+
+      const state = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Visible steps should be: step1, step3 (step2 hidden)
+      expect(state.visibleSteps).toHaveLength(2)
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['step1', 'step3'])
+
+      // Should be on step3 (index 1 in visible steps) since step1 is complete
+      expect(state.currentStepIndex).toBe(1)
+      expect(getCurrentStep(state)?.id).toBe('step3')
+    })
+
+    it('resumes at correct step with branch B', () => {
+      const initialAnswers = {
+        q1: 25, // Age >= 18, step2 will be visible
+        q2: 'Engineer', // Step 2 complete
+      }
+
+      const state = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Visible steps should be: step1, step2, step3 (all visible)
+      expect(state.visibleSteps).toHaveLength(3)
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['step1', 'step2', 'step3'])
+
+      // Should be on step3 (index 2) since step1 and step2 are complete
+      expect(state.currentStepIndex).toBe(2)
+      expect(getCurrentStep(state)?.id).toBe('step3')
+    })
+
+    it('resume is deterministic - same answers produce same position', () => {
+      const initialAnswers = {
+        q1: 25,
+        q2: 'Engineer',
+      }
+
+      // Run 1
+      const state1 = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Run 2
+      const state2 = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Should produce identical states
+      expect(state1.currentStepIndex).toBe(state2.currentStepIndex)
+      expect(state1.visibleSteps.map((s) => s.id)).toEqual(state2.visibleSteps.map((s) => s.id))
+      expect(state1.answers).toEqual(state2.answers)
+    })
+
+    it('stays on last step when all complete', () => {
+      const initialAnswers = {
+        q1: 25,
+        q2: 'Engineer',
+        q3: 'Some comment',
+      }
+
+      const state = initQuestionnaireStateWithResume(mockConfig, initialAnswers)
+
+      // Should be on last step
+      expect(state.currentStepIndex).toBe(2)
+      expect(getCurrentStep(state)?.id).toBe('step3')
+    })
+  })
+
+  describe('Downstream answer invalidation on step hide', () => {
+    it('preserves downstream answers when step becomes hidden', () => {
+      let state = initQuestionnaireState(mockConfig)
+
+      // Answer all questions
+      state = updateAnswer(state, 'q1', 25) // Makes step2 visible
+      state = updateAnswer(state, 'q2', 'Engineer')
+      state = updateAnswer(state, 'q3', 'Comment')
+
+      expect(state.answers).toEqual({
+        q1: 25,
+        q2: 'Engineer',
+        q3: 'Comment',
+      })
+
+      // Change q1 to hide step2
+      state = updateAnswer(state, 'q1', 15)
+
+      // Downstream answer (q2) should still be in answers (preserved)
+      // but step2 is no longer visible
+      expect(state.answers).toEqual({
+        q1: 15,
+        q2: 'Engineer', // Preserved
+        q3: 'Comment',
+      })
+
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['step1', 'step3'])
+    })
+
+    it('recalculates current step deterministically when current step becomes hidden', () => {
+      let state = initQuestionnaireState(mockConfig)
+
+      // Go to step2
+      state = updateAnswer(state, 'q1', 25)
+      state = goToNextStep(state)
+
+      expect(state.currentStepIndex).toBe(1)
+      expect(getCurrentStep(state)?.id).toBe('step2')
+
+      // Answer q2
+      state = updateAnswer(state, 'q2', 'Engineer')
+
+      // Now change q1 to hide step2 (current step)
+      state = updateAnswer(state, 'q1', 15)
+
+      // Current step should be recalculated to valid position
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['step1', 'step3'])
+
+      // Should be on step3 (index 1) since step1 was already complete
+      expect(state.currentStepIndex).toBe(1)
+      expect(getCurrentStep(state)?.id).toBe('step3')
     })
   })
 })

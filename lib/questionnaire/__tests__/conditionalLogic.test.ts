@@ -8,6 +8,7 @@ import {
   evaluateConditionalLogic,
   isStepVisible,
   getVisibleSteps,
+  UnknownOperatorError,
   type AnswersMap,
 } from '../conditionalLogic'
 import type { ConditionalLogic, QuestionnaireStep } from '@/lib/contracts/funnelManifest'
@@ -328,6 +329,39 @@ describe('Conditional Logic Evaluator', () => {
       expect(result1).toBe(result2)
       expect(result2).toBe(result3)
       expect(result1).toBe(true)
+    })
+  })
+
+  // Test Case 9: Strict error handling for unknown operators
+  describe('Error handling', () => {
+    it('throws UnknownOperatorError for unknown operator', () => {
+      const logic: ConditionalLogic = {
+        type: 'show',
+        conditions: [
+          { questionId: 'q1', operator: 'unknown_op' as any, value: 'yes' },
+        ],
+        logic: 'and',
+      }
+
+      const answers: AnswersMap = {
+        q1: 'yes',
+      }
+
+      expect(() => evaluateConditionalLogic(logic, answers)).toThrow(UnknownOperatorError)
+      expect(() => evaluateConditionalLogic(logic, answers)).toThrow(
+        'Unknown conditional operator: "unknown_op" for question "q1"',
+      )
+    })
+
+    it('handles missing question gracefully (returns false)', () => {
+      const logic: ConditionalLogic = {
+        type: 'show',
+        conditions: [{ questionId: 'nonexistent', operator: 'eq', value: 'yes' }],
+        logic: 'and',
+      }
+
+      // Missing question should return false, not throw
+      expect(evaluateConditionalLogic(logic, {})).toBe(false)
     })
   })
 })

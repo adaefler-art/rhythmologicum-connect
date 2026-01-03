@@ -13,7 +13,31 @@ import type { ConditionalLogic } from '@/lib/contracts/funnelManifest'
 export type AnswersMap = Record<string, string | number | boolean | string[]>
 
 /**
+ * Error thrown when an unknown operator is encountered
+ */
+export class UnknownOperatorError extends Error {
+  constructor(
+    public operator: string,
+    public questionId: string,
+  ) {
+    super(`Unknown conditional operator: "${operator}" for question "${questionId}"`)
+    this.name = 'UnknownOperatorError'
+  }
+}
+
+/**
+ * Error thrown when a referenced question ID doesn't exist in answers
+ */
+export class UnknownQuestionError extends Error {
+  constructor(public questionId: string) {
+    super(`Referenced question not found: "${questionId}"`)
+    this.name = 'UnknownQuestionError'
+  }
+}
+
+/**
  * Evaluates a single condition against provided answers
+ * @throws {UnknownOperatorError} When operator is not recognized
  */
 function evaluateCondition(
   condition: ConditionalLogic['conditions'][0],
@@ -59,11 +83,8 @@ function evaluateCondition(
       }
       return false
     default:
-      // Unknown operator - fail safely by returning false
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(`Unknown operator: ${operator}`)
-      }
-      return false
+      // Unknown operator - throw error for strict validation
+      throw new UnknownOperatorError(operator, questionId)
   }
 }
 

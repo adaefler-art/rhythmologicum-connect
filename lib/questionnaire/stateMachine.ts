@@ -41,8 +41,63 @@ export function initQuestionnaireState(
 }
 
 /**
+ * Initializes questionnaire state with resume capability
+ * Deterministically computes visible steps and finds first incomplete step
+ * 
+ * @param config - Questionnaire configuration
+ * @param initialAnswers - Previously saved answers to resume from
+ * @returns State with deterministic current step position
+ */
+export function initQuestionnaireStateWithResume(
+  config: FunnelQuestionnaireConfig,
+  initialAnswers: AnswersMap,
+): QuestionnaireState {
+  // Compute visible steps based on initial answers (deterministic)
+  const visibleSteps = getVisibleSteps(config.steps, initialAnswers)
+  
+  // Find first incomplete visible step (deterministic)
+  let currentStepIndex = 0
+  for (let i = 0; i < visibleSteps.length; i++) {
+    const step = visibleSteps[i]
+    const requiredQuestions = step.questions.filter((q) => q.required)
+    
+    // Check if all required questions in this step are answered
+    const allAnswered = requiredQuestions.every((q) => {
+      const answer = initialAnswers[q.id]
+      if (answer === undefined || answer === null) {
+        return false
+      }
+      if (Array.isArray(answer) && answer.length === 0) {
+        return false
+      }
+      return true
+    })
+    
+    if (!allAnswered) {
+      // This is the first incomplete step
+      currentStepIndex = i
+      break
+    }
+    
+    // If all steps completed, stay on last step
+    if (i === visibleSteps.length - 1) {
+      currentStepIndex = i
+    }
+  }
+  
+  return {
+    currentStepIndex,
+    allSteps: config.steps,
+    visibleSteps,
+    answers: initialAnswers,
+    isComplete: false,
+  }
+}
+
+/**
  * Updates questionnaire state with new answer
  * Recalculates visible steps based on updated answers
+ * Downstream answers (in now-hidden steps) are preserved but ignored in visible step calculation
  */
 export function updateAnswer(
   state: QuestionnaireState,
@@ -54,12 +109,22 @@ export function updateAnswer(
     [questionId]: value,
   }
 
+  // Recompute visible steps deterministically
   const newVisibleSteps = getVisibleSteps(state.allSteps, newAnswers)
 
-  // Ensure current step is still valid
-  let newCurrentStepIndex = state.currentStepIndex
-  if (newCurrentStepIndex >= newVisibleSteps.length) {
-    newCurrentStepIndex = Math.max(0, newVisibleSteps.length - 1)
+  // Find current step in new visible steps (deterministic positioning)
+  const currentStepId = state.visibleSteps[state.currentStepIndex]?.id
+  let newCurrentStepIndex = 0
+  
+  if (currentStepId) {
+    const foundIndex = newVisibleSteps.findIndex((s) => s.id === currentStepId)
+    if (foundIndex >= 0) {
+      // Current step still visible - stay on it
+      newCurrentStepIndex = foundIndex
+    } else {
+      // Current step hidden - move to nearest valid step (deterministic)
+      newCurrentStepIndex = Math.min(state.currentStepIndex, Math.max(0, newVisibleSteps.length - 1))
+    }
   }
 
   return {

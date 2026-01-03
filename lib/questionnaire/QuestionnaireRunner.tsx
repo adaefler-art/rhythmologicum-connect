@@ -12,6 +12,7 @@ import { useState, useCallback, useMemo } from 'react'
 import type { FunnelQuestionnaireConfig, QuestionConfig } from '@/lib/contracts/funnelManifest'
 import {
   initQuestionnaireState,
+  initQuestionnaireStateWithResume,
   updateAnswer,
   goToNextStep,
   goToPreviousStep,
@@ -45,18 +46,12 @@ export default function QuestionnaireRunner({
   onAnswersChange,
   title,
 }: QuestionnaireRunnerProps) {
-  // Initialize state
+  // Initialize state with deterministic resume if initial answers provided
   const [state, setState] = useState<QuestionnaireState>(() => {
-    const initial = initQuestionnaireState(config)
-    // Apply initial answers if provided
     if (Object.keys(initialAnswers).length > 0) {
-      let updatedState = initial
-      for (const [questionId, value] of Object.entries(initialAnswers)) {
-        updatedState = updateAnswer(updatedState, questionId, value)
-      }
-      return updatedState
+      return initQuestionnaireStateWithResume(config, initialAnswers)
     }
-    return initial
+    return initQuestionnaireState(config)
   })
 
   const [validationErrors, setValidationErrors] = useState<QuestionConfig[]>([])

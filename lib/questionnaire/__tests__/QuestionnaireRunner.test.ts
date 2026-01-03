@@ -6,6 +6,7 @@
 
 import {
   initQuestionnaireState,
+  initQuestionnaireStateWithResume,
   updateAnswer,
   goToNextStep,
   goToPreviousStep,
@@ -213,6 +214,115 @@ describe('Complete Questionnaire Flow Integration', () => {
 
       state = goToPreviousStep(state)
       expect(state.currentStepIndex).toBe(1)
+    })
+  })
+
+  describe('Manifest compatibility', () => {
+    it('loads manifest shaped exactly like funnel_versions.questionnaire_config', () => {
+      // This manifest structure exactly matches the schema from funnelManifest.ts
+      // which is what gets stored in funnel_versions.questionnaire_config JSONB
+      const manifestFromDB: FunnelQuestionnaireConfig = {
+        version: '1.0',
+        steps: [
+          {
+            id: 'demographics',
+            title: 'Demographics',
+            description: 'Basic information',
+            questions: [
+              {
+                id: 'age_q',
+                key: 'age',
+                type: QUESTION_TYPE.NUMBER,
+                label: 'Age?',
+                required: true,
+                validation: { min: 18, max: 120 },
+              },
+            ],
+          },
+          {
+            id: 'conditional_step',
+            title: 'Adult Only',
+            questions: [
+              {
+                id: 'job_q',
+                key: 'job',
+                type: QUESTION_TYPE.TEXT,
+                label: 'Job?',
+                required: true,
+              },
+            ],
+            conditionalLogic: {
+              type: 'show',
+              conditions: [{ questionId: 'age_q', operator: 'gte', value: 18 }],
+              logic: 'and',
+            },
+          },
+        ],
+        metadata: {
+          created_at: '2026-01-03T00:00:00Z',
+          created_by: 'system',
+        },
+      }
+
+      // Initialize from manifest
+      let state = initQuestionnaireState(manifestFromDB)
+
+      // Verify structure
+      expect(state.allSteps).toHaveLength(2)
+      expect(state.visibleSteps).toHaveLength(2)
+
+      // Answer and verify conditional logic works
+      state = updateAnswer(state, 'age_q', 25)
+
+      // Step order should be stable
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['demographics', 'conditional_step'])
+
+      // Change answer to hide conditional step
+      state = updateAnswer(state, 'age_q', 15)
+      expect(state.visibleSteps.map((s) => s.id)).toEqual(['demographics'])
+    })
+
+    it('deterministically processes manifest with metadata', () => {
+      const manifest: FunnelQuestionnaireConfig = {
+        version: '1.0',
+        steps: [
+          {
+            id: 's1',
+            title: 'Step 1',
+            questions: [
+              {
+                id: 'q1',
+                key: 'q1',
+                type: QUESTION_TYPE.RADIO,
+                label: 'Question 1',
+                required: true,
+                options: [
+                  { value: 'a', label: 'A' },
+                  { value: 'b', label: 'B' },
+                ],
+              },
+            ],
+          },
+        ],
+        metadata: {
+          funnel_id: 'stress-assessment',
+          version_number: 2,
+        },
+      }
+
+      // Run 1
+      const state1 = initQuestionnaireState(manifest)
+      const state1WithAnswer = updateAnswer(state1, 'q1', 'a')
+
+      // Run 2
+      const state2 = initQuestionnaireState(manifest)
+      const state2WithAnswer = updateAnswer(state2, 'q1', 'a')
+
+      // Deterministic result
+      expect(state1WithAnswer.visibleSteps.map((s) => s.id)).toEqual(
+        state2WithAnswer.visibleSteps.map((s) => s.id),
+      )
+      expect(state1WithAnswer.currentStepIndex).toBe(state2WithAnswer.currentStepIndex)
     })
   })
 })
