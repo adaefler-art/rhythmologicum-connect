@@ -169,9 +169,10 @@ async function generateSection(
   const prompt = getPrompt(promptId, promptVersion) || getLatestPrompt(promptId)
   
   if (!prompt) {
+    // Fail-closed: explicit error when prompt not found
     return {
       success: false,
-      error: `No prompt found for section ${sectionKey}`,
+      error: `No prompt found for section ${sectionKey} (promptId: ${promptId}, version: ${promptVersion})`,
     }
   }
   
@@ -295,7 +296,12 @@ function generateTemplateContent(
       content = `**Risiko-Zusammenfassung**\n\nGesamt-Score: ${riskScore}/100\nRisiko-Level: ${riskLevel}\n\n`
       if (riskBundle.riskScore.factors && riskBundle.riskScore.factors.length > 0) {
         content += '**Faktoren:**\n'
-        for (const factor of riskBundle.riskScore.factors) {
+        // Sort factors deterministically (score desc, then key asc for tie-breaker)
+        const sortedFactors = [...riskBundle.riskScore.factors].sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score
+          return a.key.localeCompare(b.key)
+        })
+        for (const factor of sortedFactors) {
           content += `- ${factor.key}: ${factor.score}\n`
         }
       }
