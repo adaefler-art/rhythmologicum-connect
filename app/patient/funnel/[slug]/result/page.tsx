@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import {
+  getReportsForAssessment,
+  getKeyOutcomesForAssessment,
+} from '@/lib/db/queries/reports'
 import ResultClient from './client'
 
 type PageProps = {
@@ -56,6 +60,17 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
     redirect(`/patient/funnel/${slug}`)
   }
 
-  // Render result client
-  return <ResultClient slug={slug} assessmentId={assessmentId} />
+  // Fetch reports and key outcomes for this assessment
+  const { data: reports } = await getReportsForAssessment(assessmentId)
+  const { data: keyOutcomes } = await getKeyOutcomesForAssessment(assessmentId)
+
+  // Render result client with reports data
+  return (
+    <ResultClient
+      slug={slug}
+      assessmentId={assessmentId}
+      reports={reports || []}
+      keyOutcomes={keyOutcomes}
+    />
+  )
 }
