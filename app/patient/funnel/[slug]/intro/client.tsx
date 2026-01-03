@@ -93,7 +93,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (error || !introPage) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <div className="max-w-md border-2 rounded-xl p-6"
+        <div className="w-full max-w-md border-2 rounded-xl p-6"
           style={{
             backgroundColor: 'var(--background)',
             borderColor: 'var(--color-neutral-200)',
