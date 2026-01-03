@@ -58,24 +58,46 @@ export type SignalCode = typeof SIGNAL_CODE[keyof typeof SIGNAL_CODE]
 // ============================================================
 
 /**
- * Impact score with reasoning
+ * Structured signal with optional metadata
+ * No free-text reasoning allowed - only structured codes and bounded metadata
+ */
+export const StructuredSignalSchema = z.object({
+  code: z.string(),
+  weight: z.number().optional(),
+  meta: z.record(
+    z.string().max(50), // Key max length
+    z.union([
+      z.string().max(80), // String values max 80 chars
+      z.number(),
+      z.boolean(),
+    ])
+  ).optional().refine(
+    (meta) => !meta || Object.keys(meta).length <= 10,
+    { message: 'Meta object cannot have more than 10 keys' }
+  ),
+}).strict() // Reject unknown fields
+
+export type StructuredSignal = z.infer<typeof StructuredSignalSchema>
+
+/**
+ * Impact score with structured signals only
+ * No free-text reasoning field allowed
  */
 export const ImpactScoreSchema = z.object({
   score: z.number().min(0).max(100),
-  signals: z.array(z.string()), // Signal codes
-  reasoning: z.string().optional(), // Optional human-readable summary
-})
+  signals: z.array(StructuredSignalSchema),
+}).strict()
 
 export type ImpactScore = z.infer<typeof ImpactScoreSchema>
 
 /**
- * Feasibility score with reasoning
+ * Feasibility score with structured signals only
+ * No free-text reasoning field allowed
  */
 export const FeasibilityScoreSchema = z.object({
   score: z.number().min(0).max(100),
-  signals: z.array(z.string()), // Signal codes
-  reasoning: z.string().optional(), // Optional human-readable summary
-})
+  signals: z.array(StructuredSignalSchema),
+}).strict()
 
 export type FeasibilityScore = z.infer<typeof FeasibilityScoreSchema>
 
@@ -134,6 +156,20 @@ export const RankedInterventionSchema = z.object({
 export type RankedIntervention = z.infer<typeof RankedInterventionSchema>
 
 // ============================================================
+// Version Constants
+// ============================================================
+
+/**
+ * Priority ranking schema version
+ */
+export const PRIORITY_RANKING_SCHEMA_VERSION = 'v1' as const
+
+/**
+ * Priority ranker algorithm version
+ */
+export const PRIORITY_RANKER_VERSION = '1.0.0' as const
+
+// ============================================================
 // Priority Ranking V1 Schema
 // ============================================================
 
@@ -143,8 +179,9 @@ export type RankedIntervention = z.infer<typeof RankedInterventionSchema>
  */
 export const PriorityRankingV1Schema = z.object({
   // Version tracking
-  rankingVersion: z.literal('v1').default('v1'),
-  algorithmVersion: z.string(), // e.g., "v1.0.0"
+  rankingVersion: z.literal(PRIORITY_RANKING_SCHEMA_VERSION).default(PRIORITY_RANKING_SCHEMA_VERSION),
+  algorithmVersion: z.string(), // e.g., "1.0.0"
+  registryVersion: z.string().optional(), // Intervention registry version or hash
   rankedAt: z.string().datetime(),
   
   // Input references (for reproducibility)

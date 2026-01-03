@@ -13,9 +13,10 @@ CREATE TABLE IF NOT EXISTS public.priority_rankings (
   job_id UUID NOT NULL REFERENCES public.processing_jobs(id) ON DELETE CASCADE,
   risk_bundle_id UUID NOT NULL REFERENCES public.risk_bundles(id) ON DELETE CASCADE,
   
-  -- Version tracking
+  -- Version tracking (all required for determinism)
   ranking_version TEXT NOT NULL DEFAULT 'v1',
   algorithm_version TEXT NOT NULL,
+  registry_version TEXT NOT NULL, -- Registry hash or version
   
   -- Optional program tier constraint
   program_tier TEXT,
@@ -28,15 +29,16 @@ CREATE TABLE IF NOT EXISTS public.priority_rankings (
   -- Ranking data (JSONB for complete priority ranking)
   ranking_data JSONB NOT NULL,
   
-  -- Constraints
-  CONSTRAINT priority_rankings_job_id_unique UNIQUE (job_id)
+  -- Constraints: Support versioned reruns with different algorithm/registry versions
+  CONSTRAINT priority_rankings_job_version_unique UNIQUE (job_id, ranking_version, registry_version)
 );
 
 -- Add comments
 COMMENT ON TABLE public.priority_rankings IS 'V05-I05.3: Deterministic priority rankings (Impact x Feasibility) tied to processing jobs';
 COMMENT ON COLUMN public.priority_rankings.ranking_data IS 'Complete PriorityRankingV1 JSON structure';
-COMMENT ON COLUMN public.priority_rankings.algorithm_version IS 'Ranking algorithm version (e.g., v1.0.0)';
+COMMENT ON COLUMN public.priority_rankings.algorithm_version IS 'Ranking algorithm version (e.g., 1.0.0)';
 COMMENT ON COLUMN public.priority_rankings.ranking_version IS 'Priority ranking schema version (e.g., v1)';
+COMMENT ON COLUMN public.priority_rankings.registry_version IS 'Intervention registry version or deterministic hash';
 COMMENT ON COLUMN public.priority_rankings.program_tier IS 'Optional program tier constraint for filtering interventions';
 
 -- Indexes for performance

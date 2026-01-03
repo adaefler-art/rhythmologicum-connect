@@ -187,3 +187,49 @@ export function isCompatibleWithTier(topicId: string, tier: string): boolean {
   const topic = INTERVENTION_TOPICS[topicId]
   return topic ? topic.compatibleTiers.includes(tier) : false
 }
+
+// ============================================================
+// Version & Hash
+// ============================================================
+
+/**
+ * Intervention registry version
+ */
+export const INTERVENTION_REGISTRY_VERSION = '1.0.0' as const
+
+/**
+ * Compute deterministic hash of intervention registry
+ * Uses canonical JSON stringification with stable key order
+ */
+export function getRegistryHash(): string {
+  // Create a stable representation of the registry
+  const stableRegistry = Object.keys(INTERVENTION_TOPICS)
+    .sort()
+    .reduce((acc, key) => {
+      const topic = INTERVENTION_TOPICS[key]
+      acc[key] = {
+        topicId: topic.topicId,
+        topicLabel: topic.topicLabel,
+        pillarKey: topic.pillarKey || null,
+        contentKey: topic.contentKey || null,
+        targetRiskFactors: [...topic.targetRiskFactors].sort(),
+        baselineImpact: topic.baselineImpact,
+        baselineFeasibility: topic.baselineFeasibility,
+        compatibleTiers: [...topic.compatibleTiers].sort(),
+      }
+      return acc
+    }, {} as Record<string, any>)
+
+  // Create deterministic JSON string
+  const canonicalJson = JSON.stringify(stableRegistry)
+  
+  // Simple hash function (FNV-1a)
+  let hash = 2166136261
+  for (let i = 0; i < canonicalJson.length; i++) {
+    hash ^= canonicalJson.charCodeAt(i)
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)
+  }
+  
+  // Convert to hex string
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}

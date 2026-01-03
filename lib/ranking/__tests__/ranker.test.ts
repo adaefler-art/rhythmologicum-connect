@@ -154,14 +154,14 @@ describe('Priority Ranker', () => {
         expect(firstIntervention.impactScore.signals.length).toBeGreaterThan(0)
         
         // Should have reasoning (optional but expected)
-        expect(firstIntervention.impactScore.reasoning).toBeDefined()
+        // Impact score has structured signals (no reasoning field)
         
         // Feasibility score should have signals
         expect(firstIntervention.feasibilityScore.signals).toBeDefined()
         expect(firstIntervention.feasibilityScore.signals.length).toBeGreaterThan(0)
         
         // Should have reasoning
-        expect(firstIntervention.feasibilityScore.reasoning).toBeDefined()
+        // Feasibility score has structured signals (no reasoning field)
       }
     })
 
@@ -279,7 +279,8 @@ describe('Priority Ranker', () => {
         
         // Should include tier in feasibility reasoning
         const firstIntervention = result.data.rankedInterventions[0]
-        expect(firstIntervention.feasibilityScore.reasoning).toContain('tier-1-essential')
+        const hasTierSignal = firstIntervention.feasibilityScore.signals.some((s: any) => s.code === 'tier_1_recommended')
+        expect(hasTierSignal).toBe(true)
       }
     })
 
@@ -355,7 +356,7 @@ describe('Priority Ranker', () => {
       if (result.success) {
         // Check that tier-1 recommended signal is present
         const hasT1Signal = result.data.rankedInterventions.some((i) =>
-          i.feasibilityScore.signals.includes('tier_1_recommended')
+          i.feasibilityScore.signals.some((s: any) => s.code === 'tier_1_recommended')
         )
         expect(hasT1Signal).toBe(true)
       }
@@ -529,6 +530,81 @@ describe('Priority Ranker', () => {
           .map((i) => i.topic.topicId)
         expect(topIds).toEqual(rankedTopIds)
       }
+    })
+  })
+
+  // ============================================================
+  // Tie-Breaking Determinism Test
+  // ============================================================
+
+  describe('Tie-Breaking Determinism', () => {
+    it('should use topic ID as tie-breaker for equal priority scores', () => {
+      // Create a mock registry with interventions that will have same score
+      const input: PriorityRankingInput = {
+        riskBundleId: '123e4567-e89b-12d3-a456-426614174000',
+        riskBundle: {
+          riskScore: {
+            overall: 50,
+            riskLevel: RISK_LEVEL.MODERATE,
+            factors: [
+              {
+                key: 'stress',
+                label: 'Stress',
+                score: 50,
+                weight: 1.0,
+                riskLevel: RISK_LEVEL.MODERATE,
+              },
+            ],
+          },
+        },
+        algorithmVersion: 'v1.0.0',
+      }
+
+      const result = rankInterventions(input)
+      expect(result.success).toBe(true)
+
+      if (result.success) {
+        // Check for interventions with same score
+        const scores = result.data.rankedInterventions.map((i) => i.priorityScore)
+        const hasTies = scores.some((score, idx) => scores.indexOf(score) !== idx)
+
+        if (hasTies) {
+          // Find tied interventions
+          const tiedGroups = scores.reduce((acc, score, idx) => {
+            if (!acc[score]) acc[score] = []
+            acc[score].push(result.data.rankedInterventions[idx])
+            return acc
+          }, {} as Record<number, any[]>)
+
+          // Check each tied group is sorted by topic ID
+          Object.values(tiedGroups).forEach((group) => {
+            if (group.length > 1) {
+              const topicIds = group.map((i) => i.topic.topicId)
+              const sortedIds = [...topicIds].sort()
+              expect(topicIds).toEqual(sortedIds)
+            }
+          })
+        }
+      }
+    })
+  })
+})
+
+describe('Intervention Registry', () => {
+  describe('Registry Hash Determinism', () => {
+    it('should produce same hash for same registry', () => {
+      const { getRegistryHash } = require('../interventionRegistry')
+      const hash1 = getRegistryHash()
+      const hash2 = getRegistryHash()
+      expect(hash1).toBe(hash2)
+      expect(hash1).toBeTruthy()
+      expect(typeof hash1).toBe('string')
+    })
+
+    it('should produce 8-character hex hash', () => {
+      const { getRegistryHash } = require('../interventionRegistry')
+      const hash = getRegistryHash()
+      expect(hash).toMatch(/^[0-9a-f]{8}$/)
     })
   })
 })

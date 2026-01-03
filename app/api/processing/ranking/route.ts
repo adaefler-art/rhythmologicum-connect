@@ -37,11 +37,9 @@ import { processRankingStage } from '@/lib/processing/rankingStageProcessor'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Create Supabase clients
+    // Auth check FIRST - before reading request body
     const publicClient = await createServerSupabaseClient()
-    const adminClient = await createAdminSupabaseClient() // Admin client for DB operations
 
-    // Auth check
     const {
       data: { user },
       error: authError,
@@ -59,13 +57,14 @@ export async function POST(request: NextRequest) {
     const isAuthorized = role === USER_ROLE.CLINICIAN || role === USER_ROLE.ADMIN
 
     if (!isAuthorized) {
+      // Return 404 for unauthorized access (no existence disclosure)
       return NextResponse.json(
-        { success: false, error: 'Forbidden: Requires clinician or admin role' },
-        { status: 403 }
+        { success: false, error: 'Not Found' },
+        { status: 404 }
       )
     }
 
-    // Parse request body
+    // Only NOW read request body (after auth confirmed)
     const body = await request.json()
     const { jobId, riskBundleId, programTier, topN } = body
 
@@ -101,7 +100,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process ranking stage
+    // Create admin client for DB operations
+    const adminClient = await createAdminSupabaseClient()
+
+    // Process ranking stage (no logging of request body or ranking data)
     const result = await processRankingStage(
       adminClient,
       jobId,
@@ -117,11 +119,21 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: result.error || 'Ranking processing failed',
-          details: result.details,
+          // Do NOT include details that might contain PHI
         },
         { status: statusCode }
       )
     }
+
+    // Load ranking to get version fields for response
+    const { loadPriorityRanking } = await import('@/lib/ranking/persistence')
+    const loadResult = await loadPriorityRanking(adminClient, jobId)
+    
+    const versionInfo = loadResult.success && loadResult.ranking ? {
+      rankingVersion: loadResult.ranking.rankingVersion,
+      algorithmVersion: loadResult.ranking.algorithmVersion,
+      registryVersion: loadResult.ranking.registryVersion,
+    } : undefined
 
     return NextResponse.json(
       {
@@ -129,15 +141,16 @@ export async function POST(request: NextRequest) {
         data: {
           rankingId: result.rankingId,
           isNewRanking: result.isNewRanking,
+          ...versionInfo, // Include version identity in response
         },
       },
       { status: result.isNewRanking ? 201 : 200 }
     )
   } catch (error) {
-    console.error('[API] Error processing ranking stage:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
+    // Log error code/type only - never log error details that might contain PHI
+    console.error('[API] Error processing ranking stage - error type:', error?.constructor?.name || 'Unknown')
     return NextResponse.json(
-      { success: false, error: `Internal server error: ${message}` },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

@@ -21,23 +21,28 @@ import {
   type RankedIntervention,
   type ImpactScore,
   type FeasibilityScore,
+  type StructuredSignal,
   calculatePriorityScore,
   successResult,
   errorResult,
   SIGNAL_CODE,
+  PRIORITY_RANKER_VERSION,
+  PRIORITY_RANKING_SCHEMA_VERSION,
 } from '@/lib/contracts/priorityRanking'
 import {
   type InterventionTopicDefinition,
   getInterventionsForRiskFactor,
   getInterventionsForTier,
   getAllInterventionTopics,
+  getRegistryHash,
+  INTERVENTION_REGISTRY_VERSION,
 } from './interventionRegistry'
 
 // ============================================================
 // Constants
 // ============================================================
 
-const ALGORITHM_VERSION = 'v1.0.0'
+const ALGORITHM_VERSION = PRIORITY_RANKER_VERSION
 
 // Impact multipliers based on risk level
 const IMPACT_MULTIPLIERS = {
@@ -83,8 +88,15 @@ export function rankInterventions(input: PriorityRankingInput): PriorityRankingR
       scoreIntervention(candidate, riskBundle, programTier)
     )
 
-    // Step 3: Sort by priority score (descending)
-    const sorted = scoredCandidates.sort((a, b) => b.priorityScore - a.priorityScore)
+    // Step 3: Sort by priority score (descending) with deterministic tie-breaking
+    const sorted = scoredCandidates.sort((a, b) => {
+      // Primary: priority score (descending)
+      if (b.priorityScore !== a.priorityScore) {
+        return b.priorityScore - a.priorityScore
+      }
+      // Tie-breaker: topic ID (ascending, alphabetical)
+      return a.topic.topicId.localeCompare(b.topic.topicId)
+    })
 
     // Step 4: Assign ranks
     const ranked = sorted.map((item, index) => ({
@@ -95,10 +107,11 @@ export function rankInterventions(input: PriorityRankingInput): PriorityRankingR
     // Step 5: Extract top N
     const topInterventions = ranked.slice(0, topN)
 
-    // Build ranking bundle
+    // Build ranking bundle with version tracking
     const ranking: PriorityRankingV1 = {
-      rankingVersion: 'v1',
+      rankingVersion: PRIORITY_RANKING_SCHEMA_VERSION,
       algorithmVersion: ALGORITHM_VERSION,
+      registryVersion: getRegistryHash(), // Deterministic registry hash
       rankedAt: new Date().toISOString(),
       riskBundleId: input.riskBundleId,
       jobId: input.jobId,
@@ -188,7 +201,7 @@ function calculateImpact(
   intervention: InterventionTopicDefinition,
   riskBundle: any
 ): ImpactScore {
-  const signals: string[] = []
+  const signals: StructuredSignal[] = []
   let score = intervention.baselineImpact
 
   // Get overall risk level
@@ -197,10 +210,10 @@ function calculateImpact(
 
   // Apply risk level multiplier
   if (riskLevel === 'critical') {
-    signals.push(SIGNAL_CODE.CRITICAL_RISK_LEVEL)
-    signals.push(SIGNAL_CODE.HIGH_IMPACT_POTENTIAL)
+    signals.push({ code: SIGNAL_CODE.CRITICAL_RISK_LEVEL })
+    signals.push({ code: SIGNAL_CODE.HIGH_IMPACT_POTENTIAL })
   } else if (riskLevel === 'high') {
-    signals.push(SIGNAL_CODE.HIGH_IMPACT_POTENTIAL)
+    signals.push({ code: SIGNAL_CODE.HIGH_IMPACT_POTENTIAL })
   }
 
   // Count matching risk factors
@@ -209,7 +222,10 @@ function calculateImpact(
   )
 
   if (matchingFactors.length > 1) {
-    signals.push(SIGNAL_CODE.MULTIPLE_RISK_FACTORS)
+    signals.push({ 
+      code: SIGNAL_CODE.MULTIPLE_RISK_FACTORS,
+      meta: { count: matchingFactors.length }
+    })
     score *= 1.1 // Small boost for multi-factor interventions
   }
 
@@ -222,7 +238,6 @@ function calculateImpact(
   return {
     score,
     signals,
-    reasoning: `Impact based on ${matchingFactors.length} matching risk factor(s) with ${riskLevel} risk level`,
   }
 }
 
@@ -240,7 +255,7 @@ function calculateFeasibility(
   intervention: InterventionTopicDefinition,
   programTier?: string
 ): FeasibilityScore {
-  const signals: string[] = []
+  const signals: StructuredSignal[] = []
   let score = intervention.baselineFeasibility
 
   // Apply tier boost if applicable
@@ -250,23 +265,23 @@ function calculateFeasibility(
 
     if (intervention.compatibleTiers.includes(programTier)) {
       if (programTier === 'tier-1-essential') {
-        signals.push(SIGNAL_CODE.TIER_1_RECOMMENDED)
+        signals.push({ code: SIGNAL_CODE.TIER_1_RECOMMENDED })
       } else if (programTier === 'tier-2-5-enhanced') {
-        signals.push(SIGNAL_CODE.TIER_2_5_RECOMMENDED)
+        signals.push({ code: SIGNAL_CODE.TIER_2_5_RECOMMENDED })
       } else if (programTier === 'tier-2-comprehensive') {
-        signals.push(SIGNAL_CODE.TIER_2_RECOMMENDED)
+        signals.push({ code: SIGNAL_CODE.TIER_2_RECOMMENDED })
       }
     }
   }
 
   // Baseline feasibility signals
   if (intervention.baselineFeasibility >= 80) {
-    signals.push(SIGNAL_CODE.EASY_TO_IMPLEMENT)
-    signals.push(SIGNAL_CODE.REQUIRES_MINIMAL_TIME)
-    signals.push(SIGNAL_CODE.LOW_BARRIER)
+    signals.push({ code: SIGNAL_CODE.EASY_TO_IMPLEMENT })
+    signals.push({ code: SIGNAL_CODE.REQUIRES_MINIMAL_TIME })
+    signals.push({ code: SIGNAL_CODE.LOW_BARRIER })
   } else if (intervention.baselineFeasibility < 60) {
-    signals.push(SIGNAL_CODE.HIGH_BARRIER)
-    signals.push(SIGNAL_CODE.REQUIRES_SUPPORT)
+    signals.push({ code: SIGNAL_CODE.HIGH_BARRIER })
+    signals.push({ code: SIGNAL_CODE.REQUIRES_SUPPORT })
   }
 
   // Clamp to 0-100
@@ -275,6 +290,5 @@ function calculateFeasibility(
   return {
     score,
     signals,
-    reasoning: `Feasibility based on baseline ${intervention.baselineFeasibility}${programTier ? ` for ${programTier}` : ''}`,
   }
 }

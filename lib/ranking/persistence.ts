@@ -16,7 +16,7 @@ import type { PriorityRankingV1 } from '@/lib/contracts/priorityRanking'
 
 /**
  * Save priority ranking to database
- * Idempotent - upserts based on job_id
+ * Idempotent - upserts based on (job_id, ranking_version, registry_version)
  */
 export async function savePriorityRanking(
   supabase: SupabaseClient,
@@ -32,13 +32,14 @@ export async function savePriorityRanking(
           risk_bundle_id: ranking.riskBundleId,
           ranking_version: ranking.rankingVersion,
           algorithm_version: ranking.algorithmVersion,
+          registry_version: ranking.registryVersion || '', // Required field
           program_tier: ranking.programTier || null,
           ranked_at: ranking.rankedAt,
           ranking_data: ranking, // Store complete ranking as JSONB
           updated_at: new Date().toISOString(),
         },
         {
-          onConflict: 'job_id',
+          onConflict: 'job_id,ranking_version,registry_version',
         }
       )
       .select('id')
