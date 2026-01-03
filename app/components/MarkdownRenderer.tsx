@@ -44,9 +44,25 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         ${className}
       `}
     >
-      <div className="overflow-x-auto">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-      </div>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          table: ({ children, ...props }) => (
+            <div className="overflow-x-auto">
+              <table className="min-w-full w-max" {...props}>
+                {children}
+              </table>
+            </div>
+          ),
+          th: ({ children, ...props }) => (
+            <th className="whitespace-nowrap" {...props}>
+              {children}
+            </th>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   )
 }
