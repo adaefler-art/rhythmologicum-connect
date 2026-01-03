@@ -13,7 +13,25 @@ if ! git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
   exit 1
 fi
 
-MERGE_BASE=$(git merge-base "$BASE_REF" HEAD)
+MERGE_BASE=""
+if ! MERGE_BASE=$(git merge-base "$BASE_REF" HEAD 2>/dev/null); then
+  echo "WARN: Could not compute merge-base between '$BASE_REF' and HEAD (possibly shallow git history)." >&2
+  echo "WARN: Attempting to deepen git history and retry..." >&2
+
+  if git rev-parse --is-shallow-repository >/dev/null 2>&1 && [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+    git fetch --unshallow --quiet || true
+  else
+    # Even non-shallow repos can lack enough history for the base ref in CI.
+    git fetch --depth=200 --quiet || true
+  fi
+
+  MERGE_BASE=$(git merge-base "$BASE_REF" HEAD 2>/dev/null || true)
+fi
+
+if [[ -z "$MERGE_BASE" ]]; then
+  echo "ERROR: Could not compute merge-base between '$BASE_REF' and HEAD. Ensure the checkout has sufficient git history." >&2
+  exit 1
+fi
 
 # Only scan new migrations.
 mapfile -t NEW_MIGRATIONS < <(git diff --name-status "$MERGE_BASE...HEAD" -- supabase/migrations/*.sql | awk '$1 ~ /^A/ {print $2}')
