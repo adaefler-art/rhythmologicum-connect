@@ -96,6 +96,44 @@ export async function updateDocumentParsingStatus(
 }
 
 /**
+ * Sanitizes filename to prevent path traversal and control characters
+ * - Removes path separators (/, \)
+ * - Removes parent directory references (..)
+ * - Removes control characters (0x00-0x1F, 0x7F)
+ * - Replaces spaces and special chars with underscore
+ * - Limits length to 200 characters
+ */
+export function sanitizeFilename(filename: string): string {
+  // Remove any path components (just get the basename)
+  const basename = filename.split(/[/\\]/).pop() || 'unnamed'
+  
+  // Remove control characters and problematic chars
+  let sanitized = basename
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars
+    .replace(/\.\./g, '') // Remove parent dir references
+    .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars
+  
+  // Ensure it doesn't start with a dot or dash (hidden files)
+  if (sanitized.startsWith('.') || sanitized.startsWith('-')) {
+    sanitized = 'file_' + sanitized
+  }
+  
+  // Limit length (keep extension if present)
+  if (sanitized.length > 200) {
+    const parts = sanitized.split('.')
+    if (parts.length > 1) {
+      const ext = parts.pop()
+      const name = parts.join('.')
+      sanitized = name.substring(0, 200 - ext!.length - 1) + '.' + ext
+    } else {
+      sanitized = sanitized.substring(0, 200)
+    }
+  }
+  
+  return sanitized || 'unnamed'
+}
+
+/**
  * Generates storage path for document
  * Format: {userId}/{assessmentId}/{timestamp}_{filename}
  */
@@ -105,7 +143,7 @@ export function generateStoragePath(
   filename: string,
 ): string {
   const timestamp = Date.now()
-  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const sanitizedFilename = sanitizeFilename(filename)
   return `${userId}/${assessmentId}/${timestamp}_${sanitizedFilename}`
 }
 
@@ -170,6 +208,29 @@ export async function uploadToStorage(
   return {
     success: true,
     path: data.path,
+  }
+}
+
+/**
+ * Deletes a file from storage (cleanup on failure)
+ * 
+ * @param storagePath - Path to file in storage bucket
+ * @returns Success boolean
+ */
+export async function deleteFromStorage(storagePath: string): Promise<boolean> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { error } = await supabase.storage.from('documents').remove([storagePath])
+    
+    if (error) {
+      console.error('[STORAGE_CLEANUP_FAILED]', { path: storagePath, error: error.message })
+      return false
+    }
+    
+    return true
+  } catch (error) {
+    console.error('[STORAGE_CLEANUP_ERROR]', { path: storagePath })
+    return false
   }
 }
 

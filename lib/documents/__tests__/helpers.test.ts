@@ -134,6 +134,58 @@ describe('Document Upload Helpers', () => {
       expect(path).toContain('my_test_file__1_.pdf')
     })
 
+    it('should remove path traversal attempts', () => {
+      const userId = 'user-123'
+      const assessmentId = 'assessment-456'
+      const filename = '../../../etc/passwd'
+
+      const path = generateStoragePath(userId, assessmentId, filename)
+
+      // Should not contain .. or /
+      expect(path).not.toContain('..')
+      // The sanitizer extracts basename, removes .., and results in 'passwd'
+      expect(path).toMatch(/^user-123\/assessment-456\/\d+_passwd$/)
+    })
+
+    it('should remove control characters from filename', () => {
+      const userId = 'user-123'
+      const assessmentId = 'assessment-456'
+      const filename = 'test\x00\x1F\x7F.pdf'
+
+      const path = generateStoragePath(userId, assessmentId, filename)
+
+      // Should not contain control chars
+      expect(path).toMatch(/^user-123\/assessment-456\/\d+_test\.pdf$/)
+    })
+
+    it('should handle filenames starting with dot or dash', () => {
+      const userId = 'user-123'
+      const assessmentId = 'assessment-456'
+      const filename1 = '.hidden'
+      const filename2 = '-dash'
+
+      const path1 = generateStoragePath(userId, assessmentId, filename1)
+      const path2 = generateStoragePath(userId, assessmentId, filename2)
+
+      expect(path1).toContain('file_.hidden')
+      expect(path2).toContain('file_-dash')
+    })
+
+    it('should limit filename length', () => {
+      const userId = 'user-123'
+      const assessmentId = 'assessment-456'
+      const longFilename = 'a'.repeat(300) + '.pdf'
+
+      const path = generateStoragePath(userId, assessmentId, longFilename)
+
+      const pathParts = path.split('/')
+      const filename = pathParts[pathParts.length - 1]
+      const filenameWithoutTimestamp = filename.substring(filename.indexOf('_') + 1)
+
+      expect(filenameWithoutTimestamp.length).toBeLessThanOrEqual(200)
+      expect(filenameWithoutTimestamp).toMatch(/\.pdf$/) // Extension preserved
+    })
+
     it('should preserve allowed characters in filename', () => {
       const userId = 'user-123'
       const assessmentId = 'assessment-456'
@@ -160,6 +212,17 @@ describe('Document Upload Helpers', () => {
       const now = Date.now()
       expect(timestamp).toBeGreaterThan(now - 1000) // Within last second
       expect(timestamp).toBeLessThanOrEqual(now)
+    })
+
+    it('should handle backslash path separators', () => {
+      const userId = 'user-123'
+      const assessmentId = 'assessment-456'
+      const filename = 'folder\\subfolder\\file.pdf'
+
+      const path = generateStoragePath(userId, assessmentId, filename)
+
+      // Should only use the basename
+      expect(path).toMatch(/^user-123\/assessment-456\/\d+_file\.pdf$/)
     })
   })
 

@@ -13,9 +13,11 @@ import {
   generateStoragePath,
   uploadToStorage,
   verifyAssessmentOwnership,
+  deleteFromStorage,
 } from '@/lib/documents/helpers'
 import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES, DocumentUploadResponse } from '@/lib/types/documents'
 import { logUnauthorized, logForbidden } from '@/lib/logging/logger'
+import { randomUUID } from 'crypto'
 
 /**
  * API Route: Upload Document
@@ -41,15 +43,19 @@ import { logUnauthorized, logForbidden } from '@/lib/logging/logger'
  * - Validates user owns the assessment (403 if not)
  * - Validates file type and size
  * - RLS policies enforce row-level security
+ * - Fail-closed: validates before writing, cleans up on failure
  */
 
 export async function POST(request: NextRequest) {
+  const requestId = randomUUID()
+  
   try {
     // Check authentication
     const user = await getCurrentUser()
     if (!user) {
       logUnauthorized({
         endpoint: '/api/documents/upload',
+        requestId,
       })
       return unauthorizedResponse('Authentifizierung erforderlich. Bitte melden Sie sich an.')
     }
@@ -65,6 +71,7 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse('Datei ist erforderlich.', {
         field: 'file',
         message: 'Keine Datei hochgeladen',
+        requestId,
       })
     }
 
@@ -72,6 +79,7 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse('Assessment-ID ist erforderlich.', {
         field: 'assessmentId',
         message: 'Assessment-ID fehlt',
+        requestId,
       })
     }
 
@@ -81,10 +89,38 @@ export async function POST(request: NextRequest) {
       return validationErrorResponse('Ungültige Assessment-ID.', {
         field: 'assessmentId',
         message: 'Assessment-ID muss eine gültige UUID sein',
+        requestId,
       })
     }
 
-    // Verify user owns the assessment
+    // Validate file type BEFORE ownership check (fail fast)
+    if (!isValidMimeType(file.type)) {
+      return validationErrorResponse(
+        `Ungültiger Dateityp. Erlaubte Typen: PDF, JPEG, PNG, HEIC`,
+        {
+          field: 'file',
+          message: 'Dateityp nicht erlaubt',
+          allowedTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/heic'],
+          requestId,
+        },
+      )
+    }
+
+    // Validate file size BEFORE ownership check (fail fast)
+    if (!isValidFileSize(file.size)) {
+      const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024)
+      return validationErrorResponse(
+        `Datei ist zu groß. Maximale Größe: ${maxSizeMB} MB`,
+        {
+          field: 'file',
+          message: 'Dateigröße überschreitet Maximum',
+          maxSizeMB,
+          requestId,
+        },
+      )
+    }
+
+    // Verify user owns the assessment (after basic validation)
     const ownershipCheck = await verifyAssessmentOwnership(assessmentId, user.id)
     if (!ownershipCheck.valid) {
       logForbidden(
@@ -92,6 +128,7 @@ export async function POST(request: NextRequest) {
           endpoint: '/api/documents/upload',
           userId: user.id,
           resource: `assessment:${assessmentId}`,
+          requestId,
         },
         ownershipCheck.error || 'Assessment ownership verification failed',
       )
@@ -100,32 +137,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file type
-    if (!isValidMimeType(file.type)) {
-      return validationErrorResponse(
-        `Ungültiger Dateityp. Erlaubte Typen: ${ALLOWED_MIME_TYPES.join(', ')}`,
-        {
-          field: 'file',
-          message: `Dateityp ${file.type} ist nicht erlaubt`,
-          allowedTypes: ALLOWED_MIME_TYPES,
-        },
-      )
-    }
-
-    // Validate file size
-    if (!isValidFileSize(file.size)) {
-      const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024)
-      return validationErrorResponse(
-        `Datei ist zu groß. Maximale Größe: ${maxSizeMB} MB`,
-        {
-          field: 'file',
-          message: `Dateigröße ${file.size} überschreitet Maximum von ${MAX_FILE_SIZE} Bytes`,
-          maxSize: MAX_FILE_SIZE,
-        },
-      )
-    }
-
-    // Generate storage path
+    // Generate storage path with sanitized filename
     const storagePath = generateStoragePath(user.id, assessmentId, file.name)
 
     // Convert file to buffer
@@ -143,12 +155,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (!uploadResult.success) {
-      return internalErrorResponse(
-        `Fehler beim Hochladen der Datei: ${uploadResult.error}`,
-      )
+      console.error('[UPLOAD_FAILED]', {
+        requestId,
+        userId: user.id,
+        assessmentId,
+        error: 'Storage upload failed',
+      })
+      return internalErrorResponse('Fehler beim Hochladen der Datei.')
     }
 
-    // Create database record
+    // Create database record (fail-closed: if this fails, cleanup storage)
     const supabase = await createServerSupabaseClient()
     const { data: document, error: dbError } = await supabase
       .from('documents')
@@ -162,9 +178,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (dbError || !document) {
-      // If DB insert fails, we should ideally delete the uploaded file
-      // For now, log the error - cleanup can be added later
-      console.error('Failed to create document record after upload:', dbError)
+      // Cleanup: Delete uploaded file since DB record creation failed
+      console.error('[DB_INSERT_FAILED]', {
+        requestId,
+        userId: user.id,
+        assessmentId,
+        storagePath,
+        error: 'Database record creation failed',
+      })
+      
+      // Attempt cleanup (don't fail request if cleanup fails)
+      await deleteFromStorage(storagePath)
+      
       return internalErrorResponse('Fehler beim Erstellen des Dokument-Datensatzes.')
     }
 
@@ -182,7 +207,10 @@ export async function POST(request: NextRequest) {
 
     return successResponse(response, 201)
   } catch (error) {
-    console.error('Unexpected error in document upload:', error)
+    console.error('[UPLOAD_UNEXPECTED_ERROR]', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
     return internalErrorResponse('Ein unerwarteter Fehler ist aufgetreten.')
   }
 }

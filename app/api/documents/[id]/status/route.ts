@@ -9,6 +9,7 @@ import {
 import { updateDocumentParsingStatus } from '@/lib/documents/helpers'
 import { ParsingStatus } from '@/lib/types/documents'
 import { logUnauthorized } from '@/lib/logging/logger'
+import { randomUUID } from 'crypto'
 
 /**
  * API Route: Update Document Parsing Status
@@ -33,8 +34,9 @@ import { logUnauthorized } from '@/lib/logging/logger'
  * 
  * Security:
  * - Requires authentication (service role or authenticated user)
- * - Validates status transitions via state machine
+ * - Validates status transitions via state machine (422 for invalid transitions)
  * - Logs all status changes for audit trail
+ * - Fail-closed: validates before writing
  */
 
 type RouteParams = {
@@ -46,6 +48,7 @@ type RouteParams = {
 export async function PATCH(request: NextRequest, props: RouteParams) {
   const params = await props.params
   const documentId = params.id
+  const requestId = randomUUID()
 
   try {
     // Check authentication
@@ -53,6 +56,7 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
     if (!user) {
       logUnauthorized({
         endpoint: '/api/documents/[id]/status',
+        requestId,
       })
       return unauthorizedResponse('Authentifizierung erforderlich.')
     }
@@ -75,6 +79,7 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
         {
           field: 'status',
           allowedValues: validStatuses,
+          requestId,
         },
       )
     }
@@ -85,16 +90,51 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
       return validationErrorResponse('Ungültige Dokument-ID.', {
         field: 'id',
         message: 'Dokument-ID muss eine gültige UUID sein',
+        requestId,
       })
     }
 
-    // Update status with validation
+    // Update status with validation (returns 422 for invalid transitions)
     const result = await updateDocumentParsingStatus(documentId, newStatus)
 
     if (!result.success) {
+      // Use 422 for invalid state transitions (business logic error)
+      const isTransitionError = result.error?.includes('Invalid status transition')
+      
+      console.error('[STATUS_UPDATE_FAILED]', {
+        requestId,
+        documentId,
+        newStatus,
+        error: result.error,
+        userId: user.id,
+      })
+      
+      if (isTransitionError) {
+        // Return 422 Unprocessable Entity for invalid state transitions
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'VALIDATION_FAILED',
+              message: result.error,
+              details: {
+                field: 'status',
+                requestId,
+              },
+            },
+          }),
+          {
+            status: 422,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
+      }
+      
+      // Return 400 for other validation errors
       return validationErrorResponse(result.error || 'Status-Update fehlgeschlagen.', {
         field: 'status',
         message: result.error,
+        requestId,
       })
     }
 
@@ -104,7 +144,11 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
       status: newStatus,
     })
   } catch (error) {
-    console.error('Unexpected error updating document status:', error)
+    console.error('[STATUS_UPDATE_UNEXPECTED_ERROR]', {
+      requestId,
+      documentId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
     return internalErrorResponse('Ein unerwarteter Fehler ist aufgetreten.')
   }
 }

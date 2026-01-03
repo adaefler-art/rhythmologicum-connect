@@ -46,6 +46,7 @@ ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Patients can upload documents to their own folders
 -- Folder structure: {user_id}/{assessment_id}/{filename}
+-- Strict enforcement: EXACTLY matches auth.uid() as first path component
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -61,11 +62,15 @@ BEGIN
             WITH CHECK (
                 bucket_id = 'documents'
                 AND (storage.foldername(name))[1] = auth.uid()::text
+                AND name NOT LIKE '%../%'  -- Prevent parent directory traversal
+                AND name NOT LIKE '../%'   -- Prevent parent directory traversal
+                AND name !~ '[\x00-\x1F\x7F]'  -- Prevent control characters
             );
     END IF;
 END $$;
 
 -- Policy: Patients can read their own documents
+-- Strict enforcement: EXACTLY matches auth.uid() as first path component
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -116,6 +121,7 @@ BEGIN
 END $$;
 
 -- Policy: Patients can delete their own documents (optional - can be restricted if needed)
+-- Strict enforcement: EXACTLY matches auth.uid() as first path component
 DO $$
 BEGIN
     IF NOT EXISTS (
