@@ -156,7 +156,7 @@ describe('Complete Questionnaire Flow Integration', () => {
 
   describe('Validation across complete flow', () => {
     it('blocks navigation when required questions not answered', () => {
-      let state = initQuestionnaireState(mockConfig)
+      const state = initQuestionnaireState(mockConfig)
 
       const validation = validateCurrentStep(state)
       expect(validation.isValid).toBe(false)
