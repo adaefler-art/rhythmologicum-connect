@@ -32,6 +32,7 @@ export type KeyOutcomes = {
 /**
  * Fetch all reports for a specific assessment
  * Uses RLS - only returns reports user has access to
+ * Deterministic ordering: created_at DESC, then id DESC for tie-breaking
  */
 export async function getReportsForAssessment(
   assessmentId: string,
@@ -60,15 +61,16 @@ export async function getReportsForAssessment(
       )
       .eq('assessment_id', assessmentId)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
 
     if (error) {
-      console.error('Error fetching reports for assessment:', error)
+      console.error('Error fetching reports for assessment:', { assessmentId, errorMessage: error.message })
       return { data: null, error: new Error(error.message) }
     }
 
     return { data: data as ReportWithAssessment[], error: null }
   } catch (err) {
-    console.error('Unexpected error fetching reports:', err)
+    console.error('Unexpected error fetching reports:', { assessmentId })
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
@@ -122,6 +124,7 @@ export async function getReportsForCurrentUser(): Promise<{
     const assessmentIds = assessments.map((a) => a.id)
 
     // Fetch all reports for these assessments
+    // Deterministic ordering: created_at DESC, then id DESC for tie-breaking
     const { data, error } = await supabase
       .from('reports')
       .select(
@@ -143,22 +146,24 @@ export async function getReportsForCurrentUser(): Promise<{
       )
       .in('assessment_id', assessmentIds)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
 
     if (error) {
-      console.error('Error fetching reports for current user:', error)
+      console.error('Error fetching reports for current user:', { userId: user.id, errorMessage: error.message })
       return { data: null, error: new Error(error.message) }
     }
 
     return { data: data as ReportWithAssessment[], error: null }
   } catch (err) {
-    console.error('Unexpected error fetching user reports:', err)
+    console.error('Unexpected error fetching user reports:', { userId: user.id })
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
 
 /**
  * Get key outcomes summary for an assessment
- * Returns aggregated data from the most recent report
+ * Returns aggregated data from the most recent report (deterministic: latest by created_at, then id)
+ * All fields come from existing reports table columns - no fantasy fields
  */
 export async function getKeyOutcomesForAssessment(
   assessmentId: string,
@@ -173,7 +178,7 @@ export async function getKeyOutcomesForAssessment(
       }
     }
 
-    // Use most recent report for key outcomes
+    // Use most recent report for key outcomes (deterministically ordered by created_at DESC, id DESC)
     const latestReport = reports[0]
 
     return {
@@ -186,7 +191,7 @@ export async function getKeyOutcomesForAssessment(
       error: null,
     }
   } catch (err) {
-    console.error('Unexpected error getting key outcomes:', err)
+    console.error('Unexpected error getting key outcomes:', { assessmentId })
     return { data: null, error: err instanceof Error ? err : new Error('Unknown error') }
   }
 }
