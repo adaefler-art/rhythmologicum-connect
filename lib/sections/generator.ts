@@ -212,6 +212,10 @@ function validateContext(context: SectionGenerationContext): string | null {
   if (!context.jobId) return 'Missing jobId'
   if (!context.riskBundle) return 'Missing riskBundle'
   if (!context.riskBundle.riskScore) return 'Missing riskScore in bundle'
+  if (typeof context.riskBundle.riskScore.overall !== 'number') {
+    return 'Missing or invalid overall score in riskScore'
+  }
+  if (!context.riskBundle.riskScore.riskLevel) return 'Missing riskLevel in riskScore'
   return null
 }
 

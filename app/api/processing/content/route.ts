@@ -61,7 +61,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
     
-    const userRole = userData?.role || user.app_metadata?.role || user.user_metadata?.role
+    // Only trust app_metadata for authorization (user_metadata is user-modifiable)
+    const userRole = userData?.role || user.app_metadata?.role
     
     if (!userRole || !['clinician', 'admin'].includes(userRole)) {
       return NextResponse.json(
