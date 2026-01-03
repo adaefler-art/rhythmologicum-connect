@@ -227,11 +227,27 @@ export async function POST(
 
     // V05-I03.3: Persist current_step_id for save/resume functionality
     // Update current_step_id to the next step (or keep current if no next step)
+    // IMPORTANT: Only update after all validations passed (fail-closed)
     const stepToSave = nextStep ? nextStep.stepId : stepId
-    await supabase
+    const { error: updateError } = await supabase
       .from('assessments')
       .update({ current_step_id: stepToSave })
       .eq('id', assessmentId)
+      .eq('patient_id', patientProfile.id) // Double-check ownership
+
+    if (updateError) {
+      logDatabaseError(
+        {
+          userId: user.id,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}`,
+        },
+        updateError,
+      )
+      // Note: Validation passed, but current_step_id update failed
+      // This is non-critical - resume will still work based on getCurrentStep logic
+    }
 
     // Success response with standardized format
     return successResponse({

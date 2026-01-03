@@ -227,10 +227,26 @@ export async function POST(
     // V05-I03.3: Update current_step_id for save/resume functionality
     // This ensures the user can resume from the current step even if they only answered
     // questions without explicitly navigating to the next step
-    await supabase
+    // IMPORTANT: Only update after all validations passed (fail-closed)
+    const { error: updateError } = await supabase
       .from('assessments')
       .update({ current_step_id: stepId })
       .eq('id', assessmentId)
+      .eq('patient_id', patientProfile.id) // Double-check ownership
+
+    if (updateError) {
+      logDatabaseError(
+        {
+          userId: user.id,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+        },
+        updateError,
+      )
+      // Note: Answer was saved successfully, but current_step_id update failed
+      // This is non-critical - resume will still work based on answered questions
+    }
 
     // Success response with standardized format
     return successResponse(
