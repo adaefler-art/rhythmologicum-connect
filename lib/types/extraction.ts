@@ -185,3 +185,97 @@ export const EXTRACTION_ERROR = {
 } as const
 
 export type ExtractionErrorCode = typeof EXTRACTION_ERROR[keyof typeof EXTRACTION_ERROR]
+
+// ============================================================
+// Confirmation Types (V05-I04.3)
+// ============================================================
+
+/**
+ * Status for a confirmed field
+ */
+export const FIELD_STATUS = {
+  ACCEPTED: 'accepted', // Patient accepted extracted value as-is
+  EDITED: 'edited', // Patient corrected the extracted value
+  REJECTED: 'rejected', // Patient marked field as not applicable/unknown
+} as const
+
+export type FieldStatus = typeof FIELD_STATUS[keyof typeof FIELD_STATUS]
+
+/**
+ * Per-field confirmation metadata
+ */
+export const FieldConfirmationSchema = z.object({
+  status: z.enum(['accepted', 'edited', 'rejected']),
+  original_value: z.union([z.string(), z.number(), z.record(z.any()), z.array(z.any())]).optional(),
+  confirmed_value: z.union([z.string(), z.number(), z.record(z.any()), z.array(z.any())]).optional(),
+  confirmed_at: z.string(),
+})
+
+export type FieldConfirmation = z.infer<typeof FieldConfirmationSchema>
+
+/**
+ * Complete confirmation data structure
+ * Mirrors extracted_data but adds per-field status tracking
+ */
+export const ConfirmationDataSchema = z.object({
+  lab_values: z.array(LabValueSchema).optional(),
+  medications: z.array(MedicationSchema).optional(),
+  vital_signs: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+  diagnoses: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+  // Per-field confirmation metadata
+  field_confirmations: z.record(z.string(), FieldConfirmationSchema),
+})
+
+export type ConfirmationData = z.infer<typeof ConfirmationDataSchema>
+
+/**
+ * Request schema for saving confirmations
+ */
+export const SaveConfirmationRequestSchema = z.object({
+  document_id: z.string().uuid(),
+  confirmed_data: ConfirmationDataSchema,
+})
+
+export type SaveConfirmationRequest = z.infer<typeof SaveConfirmationRequestSchema>
+
+/**
+ * Response schema for confirmation operations
+ */
+export const ConfirmationResponseSchema = z.object({
+  success: z.boolean(),
+  data: z
+    .object({
+      document_id: z.string().uuid(),
+      confirmed_at: z.string(),
+    })
+    .optional(),
+  error: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+    })
+    .optional(),
+})
+
+export type ConfirmationResponse = z.infer<typeof ConfirmationResponseSchema>
+
+/**
+ * Helper to determine if a field has low confidence
+ */
+export function isLowConfidence(score: number, threshold = 0.7): boolean {
+  return score < threshold
+}
+
+/**
+ * Helper to get confirmation status summary
+ */
+export function getConfirmationSummary(confirmations: Record<string, FieldConfirmation>) {
+  const statuses = Object.values(confirmations)
+  return {
+    total: statuses.length,
+    accepted: statuses.filter(c => c.status === FIELD_STATUS.ACCEPTED).length,
+    edited: statuses.filter(c => c.status === FIELD_STATUS.EDITED).length,
+    rejected: statuses.filter(c => c.status === FIELD_STATUS.REJECTED).length,
+  }
+}
