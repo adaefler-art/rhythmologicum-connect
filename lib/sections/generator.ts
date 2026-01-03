@@ -179,7 +179,7 @@ async function generateSection(
   const inputs = prepareSectionInputs(context, sectionKey)
   const method = options.method || prompt.metadata.modelConfig?.provider || 'template'
   let draft = ''
-  let usedLLM = false
+  const usedLLM = false
   let usedFallback = false
   
   if (method === 'template' || method === 'hybrid') {

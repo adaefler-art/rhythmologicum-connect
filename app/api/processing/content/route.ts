@@ -3,24 +3,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { processContentStage } from '@/lib/processing/contentStageProcessor'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 
 export async function POST(request: NextRequest) {
   try {
     // Auth check BEFORE parsing body (DoS prevention)
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: () => {},
-        },
-      },
-    )
+    const supabase = await createServerSupabaseClient()
     
     const {
       data: { user },
@@ -79,7 +69,11 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const { data: job, error: jobError } = await supabase
+    // Use admin client for pipeline reads/writes (processing is system-level and
+    // not tied to end-user RLS once auth/RBAC has been verified).
+    const admin = createAdminSupabaseClient()
+
+    const { data: job, error: jobError } = await admin
       .from('processing_jobs')
       .select('id, assessment_id')
       .eq('id', jobId)
@@ -98,7 +92,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const result = await processContentStage(supabase, jobId, programTier)
+    const result = await processContentStage(admin, jobId, programTier)
     
     if (!result.success) {
       return NextResponse.json(
