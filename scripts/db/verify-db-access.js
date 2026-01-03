@@ -40,6 +40,10 @@ const ALLOWED_ADMIN_USAGE = [
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',
+  // Processing: creating jobs requires service role because INSERT/UPDATE are restricted
+  // to service_role (RLS guardrail) and the API must be able to enqueue work after
+  // auth/RBAC checks.
+  'app/api/processing/',
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
