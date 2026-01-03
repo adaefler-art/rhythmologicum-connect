@@ -20,10 +20,11 @@ describe('Audit Constants', () => {
       expect(AUDIT_ENTITY_TYPE.ORGANIZATION).toBe('organization')
       expect(AUDIT_ENTITY_TYPE.USER_ORG_MEMBERSHIP).toBe('user_org_membership')
       expect(AUDIT_ENTITY_TYPE.CLINICIAN_ASSIGNMENT).toBe('clinician_assignment')
+      expect(AUDIT_ENTITY_TYPE.DOCUMENT).toBe('document') // V05-I04.3
     })
 
-    it('has exactly 10 entity types', () => {
-      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(10)
+    it('has exactly 11 entity types', () => {
+      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(11)
     })
   })
 
@@ -71,6 +72,7 @@ describe('Audit Type Guards', () => {
       expect(isValidAuditEntityType('funnel_version')).toBe(true)
       expect(isValidAuditEntityType('config')).toBe(true)
       expect(isValidAuditEntityType('consent')).toBe(true)
+      expect(isValidAuditEntityType('document')).toBe(true) // V05-I04.3
     })
 
     it('rejects unknown entity types', () => {
