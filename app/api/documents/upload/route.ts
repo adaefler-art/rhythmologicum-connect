@@ -6,6 +6,8 @@ import {
   forbiddenResponse,
   validationErrorResponse,
   internalErrorResponse,
+  unsupportedMediaTypeResponse,
+  payloadTooLargeResponse,
 } from '@/lib/api/responses'
 import {
   isValidMimeType,
@@ -100,12 +102,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type (fail fast - check before expensive operations)
+    // Returns 415 Unsupported Media Type for authenticated users
     if (!isValidMimeType(file.type)) {
-      return validationErrorResponse(
+      return unsupportedMediaTypeResponse(
         `Ungültiger Dateityp. Erlaubte Typen: PDF, JPEG, PNG, HEIC`,
         {
           field: 'file',
-          message: 'Dateityp nicht erlaubt',
+          mimeType: file.type,
           allowedTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/heic'],
           requestId,
         },
@@ -113,13 +116,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file size (fail fast - check before expensive operations)
+    // Returns 413 Payload Too Large for authenticated users
     if (!isValidFileSize(file.size)) {
       const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024)
-      return validationErrorResponse(
+      return payloadTooLargeResponse(
         `Datei ist zu groß. Maximale Größe: ${maxSizeMB} MB`,
         {
           field: 'file',
-          message: 'Dateigröße überschreitet Maximum',
+          size: file.size,
+          maxSize: MAX_FILE_SIZE,
           maxSizeMB,
           requestId,
         },

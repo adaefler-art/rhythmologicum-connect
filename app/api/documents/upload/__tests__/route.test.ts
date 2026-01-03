@@ -113,7 +113,7 @@ describe('POST /api/documents/upload - Authentication-First Behavior', () => {
     expect(isValidFileSize).not.toHaveBeenCalled()
   })
 
-  it('returns 400 for authenticated user with invalid MIME type', async () => {
+  it('returns 415 for authenticated user with invalid MIME type', async () => {
     // Mock: Authenticated user
     getCurrentUser.mockResolvedValue({ id: 'user-123', email: 'test@example.com' })
     
@@ -132,16 +132,17 @@ describe('POST /api/documents/upload - Authentication-First Behavior', () => {
     const response = await POST(request)
     const json = await response.json()
 
-    // For authenticated user, validation errors return 400
-    expect(response.status).toBe(400)
+    // For authenticated user, invalid MIME returns 415 Unsupported Media Type
+    expect(response.status).toBe(415)
     expect(json.success).toBe(false)
+    expect(json.error.code).toBe('UNSUPPORTED_MEDIA_TYPE')
     expect(json.error.message).toContain('Ungültiger Dateityp')
     
     // Verify MIME validation WAS called (because auth passed)
     expect(isValidMimeType).toHaveBeenCalledWith('text/plain')
   })
 
-  it('returns 400 for authenticated user with file size exceeding limit', async () => {
+  it('returns 413 for authenticated user with file size exceeding limit', async () => {
     // Mock: Authenticated user
     getCurrentUser.mockResolvedValue({ id: 'user-123', email: 'test@example.com' })
     
@@ -162,9 +163,10 @@ describe('POST /api/documents/upload - Authentication-First Behavior', () => {
     const response = await POST(request)
     const json = await response.json()
 
-    // For authenticated user, validation errors return 400
-    expect(response.status).toBe(400)
+    // For authenticated user, file too large returns 413 Payload Too Large
+    expect(response.status).toBe(413)
     expect(json.success).toBe(false)
+    expect(json.error.code).toBe('PAYLOAD_TOO_LARGE')
     expect(json.error.message).toContain('zu groß')
     
     // Verify size validation WAS called (because auth passed)
