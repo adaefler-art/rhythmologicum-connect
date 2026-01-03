@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
+import type { ReportWithAssessment, KeyOutcomes } from '@/lib/db/queries/reports'
 import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { LoadingSpinner, ErrorState } from '@/lib/ui'
@@ -14,6 +15,8 @@ import {
   StressDistributionBar,
   FollowUpActions,
   AmyTextSection,
+  ReportLibrary,
+  KeyOutcomesCard,
 } from './components'
 
 const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
@@ -21,6 +24,8 @@ const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
 type ResultClientProps = {
   slug: string
   assessmentId: string
+  reports: ReportWithAssessment[]
+  keyOutcomes: KeyOutcomes | null
 }
 
 type AssessmentResult = {
@@ -37,7 +42,12 @@ type ResultResponse = {
   error?: { message: string }
 }
 
-export default function ResultClient({ slug, assessmentId }: ResultClientProps) {
+export default function ResultClient({
+  slug,
+  assessmentId,
+  reports,
+  keyOutcomes,
+}: ResultClientProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
@@ -215,14 +225,28 @@ export default function ResultClient({ slug, assessmentId }: ResultClientProps) 
           </p>
         </div>
 
-        {/* Score Card - Prominent Result Display */}
-        <ScoreCard
-          score={undefined}
-          maxScore={100}
-          level="medium"
-          label="Abgeschlossen"
-          description="Ihre Antworten wurden gespeichert"
-        />
+        {/* Key Outcomes - Show real data if available */}
+        <KeyOutcomesCard outcomes={keyOutcomes} />
+
+        {/* Report Library */}
+        <ReportLibrary reports={reports} />
+
+        {/* Score Card - Only if we have outcome data */}
+        {keyOutcomes && keyOutcomes.score_numeric !== null && (
+          <ScoreCard
+            score={keyOutcomes.score_numeric}
+            maxScore={100}
+            level={
+              keyOutcomes.risk_level === 'low'
+                ? 'low'
+                : keyOutcomes.risk_level === 'high'
+                  ? 'high'
+                  : 'medium'
+            }
+            label="Stress-Level"
+            description="Ihre Gesamtbewertung"
+          />
+        )}
 
         {/* AMY Text Section - Personalized Insights */}
         <AmyTextSection
