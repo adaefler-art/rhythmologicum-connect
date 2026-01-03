@@ -4,8 +4,8 @@
  * Server-side helpers for document upload and status management (V05-I04.1)
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import {
   ParsingStatus,
   PARSING_STATUS_TRANSITIONS,
@@ -47,11 +47,10 @@ export function isValidParsingStatusTransition(
  * @returns Success boolean and error if any
  */
 export async function updateDocumentParsingStatus(
+  supabase: SupabaseClient,
   documentId: string,
   newStatus: ParsingStatus,
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createAdminSupabaseClient()
-
   // Get current document
   const { data: document, error: fetchError } = await supabase
     .from('documents')

@@ -6,6 +6,7 @@ import {
   validationErrorResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { updateDocumentParsingStatus } from '@/lib/documents/helpers'
 import { ParsingStatus } from '@/lib/types/documents'
 import { logUnauthorized } from '@/lib/logging/logger'
@@ -95,7 +96,8 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
     }
 
     // Update status with validation (returns 422 for invalid transitions)
-    const result = await updateDocumentParsingStatus(documentId, newStatus)
+  const adminClient = createAdminSupabaseClient()
+  const result = await updateDocumentParsingStatus(adminClient, documentId, newStatus)
 
     if (!result.success) {
       // Use 422 for invalid state transitions (business logic error)
