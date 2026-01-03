@@ -122,17 +122,19 @@ export default function ConfirmationClient({ documentId, initialData }: Props) {
       }
     })
 
-    // Accept all vital signs
+    // Accept all vital signs - sort keys for deterministic ordering
     if (initialData.extracted_data.vital_signs) {
-      Object.entries(initialData.extracted_data.vital_signs).forEach(([vitalKey, value]) => {
-        const key = `vital_signs.${vitalKey}`
-        newConfirmations[key] = {
-          status: FIELD_STATUS.ACCEPTED,
-          original_value: value,
-          confirmed_value: value,
-          confirmed_at: new Date().toISOString(),
-        }
-      })
+      Object.entries(initialData.extracted_data.vital_signs)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([vitalKey, value]) => {
+          const key = `vital_signs.${vitalKey}`
+          newConfirmations[key] = {
+            status: FIELD_STATUS.ACCEPTED,
+            original_value: value,
+            confirmed_value: value,
+            confirmed_at: new Date().toISOString(),
+          }
+        })
     }
 
     // Accept all diagnoses
@@ -414,11 +416,14 @@ function VitalSignsSection({
   onEdit,
   onReject,
 }: SectionProps & { vitalSigns: Record<string, string | number> }) {
+  // Sort vital signs by key for deterministic ordering
+  const sortedVitalSigns = Object.entries(vitalSigns).sort(([a], [b]) => a.localeCompare(b))
+
   return (
     <div className="border rounded-lg p-4">
       <h2 className="text-lg font-semibold mb-3">Vital Signs</h2>
       <div className="space-y-3">
-        {Object.entries(vitalSigns).map(([vitalKey, value]) => {
+        {sortedVitalSigns.map(([vitalKey, value]) => {
           const key = `vital_signs.${vitalKey}`
           const confidence = getConfidenceScore(key)
           const isLow = confidence !== undefined && isLowConfidence(confidence)

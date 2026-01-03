@@ -98,7 +98,19 @@ export async function saveDocumentConfirmation(
   request: SaveConfirmationRequest,
 ): Promise<ConfirmationResponse> {
   try {
-    // Validate input
+    // Auth-first: Get authenticated user BEFORE any parsing or validation
+    const { supabase, user, error: authError } = await getAuthenticatedClient()
+    if (authError || !supabase || !user) {
+      return {
+        success: false,
+        error: {
+          code: 'AUTHENTICATION_REQUIRED',
+          message: 'You must be logged in to confirm documents',
+        },
+      }
+    }
+
+    // Validate input after auth check
     const validationResult = SaveConfirmationRequestSchema.safeParse(request)
     if (!validationResult.success) {
       const firstError = validationResult.error.issues[0]
@@ -112,18 +124,6 @@ export async function saveDocumentConfirmation(
     }
 
     const { document_id, confirmed_data } = validationResult.data
-
-    // Get authenticated user
-    const { supabase, user, error: authError } = await getAuthenticatedClient()
-    if (authError || !supabase || !user) {
-      return {
-        success: false,
-        error: {
-          code: 'AUTHENTICATION_REQUIRED',
-          message: 'You must be logged in to confirm documents',
-        },
-      }
-    }
 
     // Verify document ownership
     const ownershipCheck = await verifyDocumentOwnership(supabase, document_id, user.id)
@@ -150,7 +150,11 @@ export async function saveDocumentConfirmation(
       .single()
 
     if (updateError || !updatedDoc) {
-      console.error('[saveDocumentConfirmation] Update failed:', updateError)
+      // PHI-safe logging: only document ID and error code, no error details
+      console.error('[saveDocumentConfirmation] Update failed', {
+        documentId: document_id,
+        errorCode: updateError?.code,
+      })
       return {
         success: false,
         error: {
@@ -187,7 +191,10 @@ export async function saveDocumentConfirmation(
       },
     }
   } catch (error) {
-    console.error('[saveDocumentConfirmation] Unexpected error:', error)
+    // PHI-safe logging: only operation name, no error details
+    console.error('[saveDocumentConfirmation] Unexpected error', {
+      operation: 'confirmation_save',
+    })
     return {
       success: false,
       error: {
@@ -270,7 +277,10 @@ export async function getDocumentForConfirmation(documentId: string): Promise<{
       },
     }
   } catch (error) {
-    console.error('[getDocumentForConfirmation] Unexpected error:', error)
+    // PHI-safe logging: only operation name, no error details
+    console.error('[getDocumentForConfirmation] Unexpected error', {
+      operation: 'fetch_document',
+    })
     return {
       success: false,
       error: {
