@@ -6,6 +6,8 @@ import {
   validationErrorResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
+// Justification: status updates may be performed by server-side processing (no user cookies).
+// Using the admin client allows controlled writes even when RLS would block background jobs.
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { updateDocumentParsingStatus } from '@/lib/documents/helpers'
 import { ParsingStatus } from '@/lib/types/documents'

@@ -40,6 +40,9 @@ const ALLOWED_ADMIN_USAGE = [
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',
+  // Documents: server-side upload/processing pipelines may need service role to update status
+  // without depending on end-user cookies or RLS in background jobs.
+  'app/api/documents/',
   // Lib modules that need it
   'lib/audit/log.ts',
   'lib/utils/contentResolver.ts',
