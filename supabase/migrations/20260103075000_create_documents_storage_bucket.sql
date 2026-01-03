@@ -35,7 +35,9 @@ ON CONFLICT (id) DO UPDATE SET
         'image/heif'
     ];
 
-COMMENT ON TABLE storage.buckets IS 'V05-I04.1: Private storage bucket for patient document uploads';
+-- Note: Avoid COMMENT ON TABLE storage.buckets here.
+-- In hosted/CI environments, the migration role may not own Supabase-managed storage tables,
+-- causing "must be owner of table" failures.
 
 -- =============================================================================
 -- SECTION 2: STORAGE RLS POLICIES
