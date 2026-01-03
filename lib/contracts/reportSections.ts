@@ -237,7 +237,7 @@ export function validateReportSections(data: unknown): SectionGenerationResult {
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid report sections schema',
-          details: error.errors,
+          details: error.issues,
         },
       }
     }

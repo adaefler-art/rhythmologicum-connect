@@ -92,7 +92,7 @@ export async function generateSections(
       try {
         const sectionResult = await generateSection(context, sectionKey, options)
         
-        if (sectionResult.success) {
+        if (sectionResult.success && sectionResult.section) {
           sections.push(sectionResult.section)
           if (sectionResult.usedLLM) llmCallCount++
           if (sectionResult.usedFallback) fallbackCount++
@@ -254,7 +254,7 @@ function prepareSectionInputs(
     scores: {} as Record<string, number>,
   }
   
-  inputs.scores.risk = context.riskBundle.riskScore.score
+  inputs.scores.risk = context.riskBundle.riskScore.overall
   
   if (context.riskBundle.riskScore.factors) {
     for (const factor of context.riskBundle.riskScore.factors) {
@@ -262,7 +262,7 @@ function prepareSectionInputs(
     }
   }
   
-  inputs.signals.push(`risk_level_${context.riskBundle.riskScore.level}`)
+  inputs.signals.push(`risk_level_${context.riskBundle.riskScore.riskLevel}`)
   
   return inputs
 }
@@ -273,8 +273,8 @@ function generateTemplateContent(
   template: string,
 ): string {
   const { riskBundle, ranking, programTier } = context
-  const riskScore = riskBundle.riskScore.score
-  const riskLevel = riskBundle.riskScore.level
+  const riskScore = riskBundle.riskScore.overall
+  const riskLevel = riskBundle.riskScore.riskLevel
   
   let content = ''
   
