@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     if (!parseResult.success) {
       return validationErrorResponse('Ungültige Eingabedaten.', {
-        errors: parseResult.error.errors,
+        errors: parseResult.error.issues,
       })
     }
 
