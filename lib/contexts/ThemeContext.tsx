@@ -4,7 +4,6 @@ import {
   createContext, 
   useContext, 
   useEffect, 
-  useLayoutEffect,
   useState, 
   type ReactNode 
 } from 'react'
@@ -19,23 +18,12 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-// Helper to get initial theme from storage/system
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light'
-  
-  try {
-    const stored = localStorage.getItem('theme') as Theme | null
-    if (stored) return stored
-    
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    return prefersDark ? 'dark' : 'light'
-  } catch {
-    return 'light'
-  }
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme)
+  // IMPORTANT: Keep the initial render deterministic across SSR + hydration.
+  // Reading localStorage/matchMedia during the initial client render can cause React hydration
+  // error #418 if the server-rendered HTML differs from the client's first render.
+  const [theme, setThemeState] = useState<Theme>('light')
+  const [isInitialized, setIsInitialized] = useState(false)
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement
@@ -48,10 +36,33 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Use layoutEffect to apply theme synchronously before paint
-  useLayoutEffect(() => {
+  // Resolve initial theme after mount (prefer DOM class set by the inline script in app/layout.tsx).
+  useEffect(() => {
+    try {
+      const root = document.documentElement
+      const domTheme: Theme | null = root.classList.contains('dark')
+        ? 'dark'
+        : root.classList.contains('light')
+          ? 'light'
+          : null
+
+      const stored = (localStorage.getItem('theme') as Theme | null) || null
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const resolved: Theme = stored || domTheme || (prefersDark ? 'dark' : 'light')
+
+      setThemeState(resolved)
+    } catch {
+      // keep default
+    } finally {
+      setIsInitialized(true)
+    }
+  }, [])
+
+  // Apply theme only after initialization to avoid fighting the pre-hydration inline script.
+  useEffect(() => {
+    if (!isInitialized) return
     applyTheme(theme)
-  }, [theme])
+  }, [isInitialized, theme])
 
   // Listen for system preference changes
   useEffect(() => {

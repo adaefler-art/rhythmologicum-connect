@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
 
 /**
  * Custom hook to detect if the viewport is mobile-sized
@@ -22,31 +22,22 @@ import { useState, useEffect } from 'react'
  * ```
  */
 export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(() => {
-    // Initialize state with media query check (SSR-safe)
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(max-width: 639px)').matches
-    }
-    return false
-  })
+  const query = '(max-width: 639px)'
 
-  useEffect(() => {
-    // Media query for mobile detection (<640px)
-    const mediaQuery = window.matchMedia('(max-width: 639px)')
-    
-    // Handler for media query changes
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches)
-    }
-    
-    // Add listener (modern browsers)
-    mediaQuery.addEventListener('change', handleChange)
-    
-    // Cleanup
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange)
-    }
-  }, [])
-
-  return isMobile
+  // useSyncExternalStore is the recommended way to read external mutable sources (like matchMedia)
+  // while staying consistent across SSR + hydration.
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === 'undefined') return () => {}
+      const mediaQuery = window.matchMedia(query)
+      const handler = () => onStoreChange()
+      mediaQuery.addEventListener('change', handler)
+      return () => mediaQuery.removeEventListener('change', handler)
+    },
+    () => {
+      if (typeof window === 'undefined') return false
+      return window.matchMedia(query).matches
+    },
+    () => false,
+  )
 }
