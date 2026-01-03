@@ -8,8 +8,7 @@ import {
   internalErrorResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
-import { createClient } from '@supabase/supabase-js'
-import { env } from '@/lib/env'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 
 /**
  * V05-I05.1: Get Processing Job Status
@@ -70,13 +69,7 @@ export async function GET(
     const userRole = user.app_metadata?.role || 'patient'
 
     // Use service role client to read job (bypasses RLS for initial fetch)
-    const serviceClient = createClient(
-      env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || '',
-      env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY || '',
-      {
-        auth: { persistSession: false },
-      },
-    )
+    const serviceClient = createAdminSupabaseClient()
 
     // Load job
     const { data: job, error: jobError } = await serviceClient

@@ -179,9 +179,10 @@ CREATE POLICY processing_jobs_clinician_select ON public.processing_jobs
         EXISTS (
             SELECT 1 FROM auth.users u
             JOIN public.clinician_patient_assignments cpa ON cpa.clinician_user_id = u.id
-            JOIN public.assessments a ON a.patient_id = cpa.patient_id
+            JOIN public.assessments a ON a.id = processing_jobs.assessment_id
+            JOIN public.patient_profiles pp ON pp.id = a.patient_id
+                AND pp.user_id = cpa.patient_user_id
             WHERE u.id = auth.uid()
-              AND a.id = processing_jobs.assessment_id
               AND (u.raw_app_meta_data->>'role' IN ('clinician', 'admin'))
         )
     );

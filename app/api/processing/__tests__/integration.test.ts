@@ -6,14 +6,6 @@
  * 
  * Run with: npm test -- app/api/processing/__tests__/integration.test.ts
  */
-
-import { createClient } from '@supabase/supabase-js'
-
-// Mock Supabase client for demonstration
-// In real tests, this would connect to a test database
-const mockSupabaseUrl = 'https://test.supabase.co'
-const mockSupabaseKey = 'test-key'
-
 describe('Processing Orchestrator API - Integration Tests', () => {
   describe('POST /api/processing/start', () => {
     it('should create a new processing job for completed assessment', async () => {

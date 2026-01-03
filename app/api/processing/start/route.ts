@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/responses'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import {
   CreateProcessingJobInputSchema,
   generateCorrelationId,
@@ -18,8 +19,6 @@ import {
   PROCESSING_STATUS,
   type ProcessingJobV1,
 } from '@/lib/contracts/processingJob'
-import { createClient } from '@supabase/supabase-js'
-import { env } from '@/lib/env'
 
 /**
  * V05-I05.1: Start Processing Job
@@ -163,13 +162,7 @@ export async function POST(request: NextRequest) {
     // Admins can access any assessment (no additional check needed)
 
     // Use service role client for job creation (bypasses RLS)
-    const serviceClient = createClient(
-      env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || '',
-      env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY || '',
-      {
-        auth: { persistSession: false },
-      },
-    )
+    const serviceClient = createAdminSupabaseClient()
 
     // Check for existing job (idempotency - by assessment_id, correlation_id, schema_version)
     const { data: existingJobs, error: existingError } = await serviceClient

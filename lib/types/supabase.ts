@@ -975,6 +975,54 @@ export type Database = {
         }
         Relationships: []
       }
+      processing_jobs: {
+        Row: {
+          assessment_id: string
+          attempt: number
+          completed_at: string | null
+          correlation_id: string
+          created_at: string
+          errors: Json | null
+          id: string
+          max_attempts: number
+          schema_version: string
+          stage: Database["public"]["Enums"]["processing_stage"]
+          started_at: string | null
+          status: Database["public"]["Enums"]["processing_status"]
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          attempt?: number
+          completed_at?: string | null
+          correlation_id: string
+          created_at?: string
+          errors?: Json | null
+          id?: string
+          max_attempts?: number
+          schema_version?: string
+          stage?: Database["public"]["Enums"]["processing_stage"]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["processing_status"]
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          attempt?: number
+          completed_at?: string | null
+          correlation_id?: string
+          created_at?: string
+          errors?: Json | null
+          id?: string
+          max_attempts?: number
+          schema_version?: string
+          stage?: Database["public"]["Enums"]["processing_stage"]
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["processing_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           created_at: string
@@ -1372,6 +1420,18 @@ export type Database = {
         | "completed"
         | "failed"
         | "partial"
+      processing_stage:
+        | "pending"
+        | "risk"
+        | "ranking"
+        | "content"
+        | "validation"
+        | "review"
+        | "pdf"
+        | "delivery"
+        | "completed"
+        | "failed"
+      processing_status: "queued" | "in_progress" | "completed" | "failed"
       report_status: "pending" | "generating" | "completed" | "failed"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
@@ -1515,6 +1575,19 @@ export const Constants = {
         "failed",
         "partial",
       ],
+      processing_stage: [
+        "pending",
+        "risk",
+        "ranking",
+        "content",
+        "validation",
+        "review",
+        "pdf",
+        "delivery",
+        "completed",
+        "failed",
+      ],
+      processing_status: ["queued", "in_progress", "completed", "failed"],
       report_status: ["pending", "generating", "completed", "failed"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],
