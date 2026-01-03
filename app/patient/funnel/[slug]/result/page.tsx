@@ -1,10 +1,21 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import {
   getReportsForAssessment,
   getKeyOutcomesForAssessment,
 } from '@/lib/db/queries/reports'
 import ResultClient from './client'
+
+function getFunnelSlugCandidates(slug: string): string[] {
+  const normalized = slug.toLowerCase().trim()
+  const canonical = getCanonicalFunnelSlug(normalized)
+  const legacySlugsForCanonical = Object.entries(FUNNEL_SLUG_ALIASES)
+    .filter(([, canonicalSlug]) => canonicalSlug === canonical)
+    .map(([legacySlug]) => legacySlug)
+
+  return Array.from(new Set([normalized, canonical, ...legacySlugsForCanonical]))
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -44,11 +55,13 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
     redirect('/login')
   }
 
+  const funnelCandidates = getFunnelSlugCandidates(slug)
+
   const { data: assessment } = await supabase
     .from('assessments')
     .select('id, patient_id, funnel, status, completed_at')
     .eq('id', assessmentId)
-    .eq('funnel', slug)
+    .in('funnel', funnelCandidates)
     .single()
 
   if (!assessment || assessment.patient_id !== patientProfile.id) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPage } from '@/lib/types/content'
-import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 
 /**
  * D1 API Endpoint: List Content Pages for a Funnel
@@ -20,45 +20,65 @@ export async function GET(
     const effectiveSlug = getCanonicalFunnelSlug(slug)
 
     if (!effectiveSlug) {
-      return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Funnel slug is required',
+          },
+        },
+        { status: 422 },
+      )
     }
 
     // Use admin client for published content pages (RLS bypass for public metadata)
     const supabase = createAdminSupabaseClient()
 
     // 1. Fetch funnel by slug to get funnel_id
-    // V05-FIXOPT-01: First try funnels_catalog, then funnels table
-    let funnelId: string | null = null
-    
-    // Try funnels table first (fully defined funnels)
-    const { data: funnel, error: funnelError } = await supabase
-      .from('funnels')
-      .select('id')
-      .eq('slug', effectiveSlug)
-      .single()
+    // V0.5: canonical slugs may be backed by legacy funnel rows. We treat missing content pages
+    // as optional and only 404 for truly unknown slugs.
+    const legacySlugs = Object.entries(FUNNEL_SLUG_ALIASES)
+      .filter(([, canonical]) => canonical === effectiveSlug)
+      .map(([legacy]) => legacy)
 
-    if (funnel) {
-      funnelId = funnel.id
-    } else if (funnelError?.code === 'PGRST116') {
+    const candidateSlugs = Array.from(new Set([effectiveSlug, ...legacySlugs]))
+    let funnelId: string | null = null
+
+    for (const candidate of candidateSlugs) {
+      const { data: funnel } = await supabase
+        .from('funnels')
+        .select('id')
+        .eq('slug', candidate)
+        .maybeSingle()
+
+      if (funnel?.id) {
+        funnelId = funnel.id
+        break
+      }
+    }
+
+    if (!funnelId) {
       // Not found in funnels table - try funnels_catalog
       const { data: catalogFunnel, error: catalogError } = await supabase
         .from('funnels_catalog')
         .select('id')
         .eq('slug', effectiveSlug)
-        .single()
-      
-      if (catalogFunnel) {
+        .maybeSingle()
+
+      if (catalogError) {
+        // Avoid dumping details; no secrets/PHI.
+        console.error('[CONTENT_PAGES_CATALOG_LOOKUP_FAILED]')
+        return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
+      }
+
+      if (catalogFunnel?.id) {
         // Funnel exists in catalog but not fully defined yet
-        // Return empty array instead of 404 (V05-FIXOPT-01)
+        // Return empty array instead of 404.
         return NextResponse.json([])
       }
-      
+
       // Not found in either table
-      console.error('Funnel not found in funnels or catalog:', catalogError)
-      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
-    } else {
-      // Other error querying funnels table
-      console.error('Error fetching funnel:', funnelError)
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
     }
 
@@ -99,9 +119,10 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(contentPages as ContentPage[])
+    return NextResponse.json((contentPages ?? []) as ContentPage[])
   } catch (error) {
-    console.error('Error loading content pages:', error)
+    // Avoid dumping raw errors; no secrets/PHI.
+    console.error('[CONTENT_PAGES_UNEXPECTED_ERROR]')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },

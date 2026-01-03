@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import {
   unauthorizedResponse,
   forbiddenResponse,
@@ -8,6 +9,16 @@ import {
   successResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
+
+function getFunnelSlugCandidates(slug: string): string[] {
+  const normalized = slug.toLowerCase().trim()
+  const canonical = getCanonicalFunnelSlug(normalized)
+  const legacySlugsForCanonical = Object.entries(FUNNEL_SLUG_ALIASES)
+    .filter(([, canonicalSlug]) => canonicalSlug === canonical)
+    .map(([legacySlug]) => legacySlug)
+
+  return Array.from(new Set([normalized, canonical, ...legacySlugsForCanonical]))
+}
 
 export async function GET(
   request: NextRequest,
@@ -47,7 +58,7 @@ export async function GET(
     .from('assessments')
     .select('id, patient_id, funnel, completed_at, status')
     .eq('id', assessmentId)
-    .eq('funnel', slug)
+    .in('funnel', getFunnelSlugCandidates(slug))
     .single()
 
   if (assessmentError) {
@@ -67,8 +78,8 @@ export async function GET(
   const { data: funnelRow, error: funnelError } = await supabase
     .from('funnels')
     .select('title')
-    .eq('slug', slug)
-    .single()
+    .eq('slug', assessment.funnel)
+    .maybeSingle()
 
   if (funnelError) {
     logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` }, funnelError)

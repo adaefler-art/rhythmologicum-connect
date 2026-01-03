@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import { env } from '@/lib/env'
 
 /**
@@ -68,6 +69,9 @@ type FunnelQueryResult = {
   id: string
 }
 
+const FUNNEL_NOT_FOUND = 'FUNNEL_NOT_FOUND'
+const FUNNEL_CATALOG_ONLY = 'FUNNEL_CATALOG_ONLY'
+
 /**
  * Resolve funnel slug or UUID to funnel ID
  */
@@ -79,20 +83,31 @@ async function resolveFunnelId(supabase: SupabaseClient<any>, funnelIdentifier: 
       return funnelIdentifier
     }
 
-    // Otherwise, look up by slug
-    const { data: funnel, error } = await supabase
-      .from('funnels')
-      .select('id')
-      .eq('slug', funnelIdentifier)
-      .single()
+    // Otherwise, look up by slug.
+    // Canonical slugs may be backed by legacy funnel rows in the DB.
+    const normalized = funnelIdentifier.toLowerCase().trim()
+    const canonical = getCanonicalFunnelSlug(normalized)
+    const legacySlugs = Object.entries(FUNNEL_SLUG_ALIASES)
+      .filter(([, mapped]) => mapped === canonical)
+      .map(([legacy]) => legacy)
 
-    if (error || !funnel) {
-      return null
+    const candidates = Array.from(new Set([normalized, canonical, ...legacySlugs]))
+
+    for (const candidate of candidates) {
+      const { data: funnel } = await supabase
+        .from('funnels')
+        .select('id')
+        .eq('slug', candidate)
+        .maybeSingle()
+
+      if (funnel?.id) {
+        return (funnel as FunnelQueryResult).id
+      }
     }
 
-    return (funnel as FunnelQueryResult).id
+    return null
   } catch (error) {
-    console.error('Error resolving funnel ID:', error)
+    console.error('[CONTENT_RESOLVER_RESOLVE_FUNNEL_ID_FAILED]')
     return null
   }
 }
@@ -142,10 +157,30 @@ export async function getContentPage(
     // Resolve funnel to UUID
     const funnelId = await resolveFunnelId(supabase, funnel)
     if (!funnelId) {
+      // If the funnel exists in funnels_catalog but isn't fully defined in funnels yet,
+      // treat this as "no content" rather than "unknown funnel".
+      if (!isUUID(funnel)) {
+        const normalized = funnel.toLowerCase().trim()
+        const canonical = getCanonicalFunnelSlug(normalized)
+        const { data: catalogFunnel } = await supabase
+          .from('funnels_catalog')
+          .select('id')
+          .eq('slug', canonical)
+          .maybeSingle()
+
+        if (catalogFunnel?.id) {
+          return {
+            page: null,
+            strategy: 'not-found',
+            error: FUNNEL_CATALOG_ONLY,
+          }
+        }
+      }
+
       return {
         page: null,
         strategy: 'not-found',
-        error: `Funnel not found: ${funnel}`,
+        error: FUNNEL_NOT_FOUND,
       }
     }
 
@@ -217,11 +252,11 @@ export async function getContentPage(
     }
   } catch (error) {
     // Graceful error handling - never crash
-    console.error('Content Resolver error:', error)
+    console.error('[CONTENT_RESOLVER_ERROR]')
     return {
       page: null,
       strategy: 'not-found',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: 'INTERNAL_ERROR',
     }
   }
 }
