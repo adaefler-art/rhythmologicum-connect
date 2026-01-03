@@ -225,6 +225,14 @@ export async function POST(
       }
     }
 
+    // V05-I03.3: Persist current_step_id for save/resume functionality
+    // Update current_step_id to the next step (or keep current if no next step)
+    const stepToSave = nextStep ? nextStep.stepId : stepId
+    await supabase
+      .from('assessments')
+      .update({ current_step_id: stepToSave })
+      .eq('id', assessmentId)
+
     // Success response with standardized format
     return successResponse({
       isValid: true,

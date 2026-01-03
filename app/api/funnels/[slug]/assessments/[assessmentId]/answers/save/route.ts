@@ -224,6 +224,14 @@ export async function POST(
       return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
     }
 
+    // V05-I03.3: Update current_step_id for save/resume functionality
+    // This ensures the user can resume from the current step even if they only answered
+    // questions without explicitly navigating to the next step
+    await supabase
+      .from('assessments')
+      .update({ current_step_id: stepId })
+      .eq('id', assessmentId)
+
     // Success response with standardized format
     return successResponse(
       {
