@@ -134,12 +134,19 @@ describe('GET /api/funnels/catalog', () => {
 
     const versionsBuilder = makeThenableBuilder({ data: null, error: null })
 
+    // V05-FIXOPT-01: Mock for checking defined funnels (availability)
+    const definedFunnelsBuilder = makeThenableBuilder({
+      data: [{ slug: 'a' }],
+      error: null,
+    })
+
     const mockClient: MockSupabaseClient = {
       auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
       from: jest.fn((table: string) => {
         if (table === 'pillars') return pillarsBuilder
         if (table === 'funnels_catalog') return funnelsBuilder
         if (table === 'funnel_versions') return versionsBuilder
+        if (table === 'funnels') return definedFunnelsBuilder
         throw new Error(`unexpected table: ${table}`)
       }),
     }
@@ -298,12 +305,19 @@ describe('GET /api/funnels/catalog', () => {
       error: { message: 'timeout' },
     })
 
+    // V05-FIXOPT-01: Mock for checking defined funnels (availability)
+    const definedFunnelsBuilder = makeThenableBuilder({
+      data: [{ slug: 'a' }],
+      error: null,
+    })
+
     const mockClient: MockSupabaseClient = {
       auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
       from: jest.fn((table: string) => {
         if (table === 'pillars') return pillarsBuilder
         if (table === 'funnels_catalog') return funnelsBuilder
         if (table === 'funnel_versions') return versionsBuilder
+        if (table === 'funnels') return definedFunnelsBuilder
         throw new Error(`unexpected table: ${table}`)
       }),
     }
