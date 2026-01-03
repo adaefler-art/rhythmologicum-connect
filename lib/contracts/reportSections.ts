@@ -54,7 +54,7 @@ export const SectionCitationSchema = z.object({
   
   /** Optional human-readable label */
   refLabel: z.string().min(1).max(500).optional(),
-})
+}).strict() // Reject unknown keys for PHI safety
 
 export type SectionCitation = z.infer<typeof SectionCitationSchema>
 
@@ -87,7 +87,7 @@ export const SectionInputsSchema = z.object({
   
   /** Numeric scores only (no text) */
   scores: z.record(z.string(), z.number()).optional(),
-})
+}).strict() // Reject unknown keys for PHI safety
 
 export type SectionInputs = z.infer<typeof SectionInputsSchema>
 
@@ -122,7 +122,7 @@ export const ReportSectionSchema = z.object({
   
   /** Timestamp when section was generated */
   generatedAt: z.string().datetime(),
-})
+}).strict() // Reject unknown keys for security
 
 export type ReportSection = z.infer<typeof ReportSectionSchema>
 

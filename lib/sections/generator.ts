@@ -310,7 +310,12 @@ function generateTemplateContent(
     case SECTION_KEY.RECOMMENDATIONS:
       if (ranking && ranking.topInterventions.length > 0) {
         content = '**Empfohlene Maßnahmen**\n\n'
-        for (const intervention of ranking.topInterventions.slice(0, 5)) {
+        // Sort interventions deterministically (priorityScore desc, then topicId asc for tie-breaker)
+        const sortedInterventions = [...ranking.topInterventions].sort((a, b) => {
+          if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore
+          return a.topic.topicId.localeCompare(b.topic.topicId)
+        })
+        for (const intervention of sortedInterventions.slice(0, 5)) {
           content += `${intervention.rank}. ${intervention.topic.topicLabel} (Priorität: ${intervention.priorityScore})\n`
         }
       } else {
@@ -321,7 +326,12 @@ function generateTemplateContent(
     case SECTION_KEY.TOP_INTERVENTIONS:
       if (ranking && ranking.topInterventions.length > 0) {
         content = '**Top-Interventionen**\n\n'
-        for (const intervention of ranking.topInterventions.slice(0, 3)) {
+        // Sort interventions deterministically (priorityScore desc, then topicId asc for tie-breaker)
+        const sortedTopInterventions = [...ranking.topInterventions].sort((a, b) => {
+          if (b.priorityScore !== a.priorityScore) return b.priorityScore - a.priorityScore
+          return a.topic.topicId.localeCompare(b.topic.topicId)
+        })
+        for (const intervention of sortedTopInterventions.slice(0, 3)) {
           content += `${intervention.rank}. ${intervention.topic.topicLabel}\n`
           content += `   - Priorität: ${intervention.priorityScore}/100\n`
           content += `   - Säule: ${intervention.topic.pillarKey}\n\n`

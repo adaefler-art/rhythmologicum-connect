@@ -32,7 +32,7 @@ export interface LoadSectionsResult {
 
 /**
  * Save report sections to database
- * Idempotent: Upsert based on job_id
+ * Idempotent: Checks for existing version, creates new version if prompt changed
  * 
  * @param supabase - Supabase client (service role required)
  * @param jobId - Processing job ID
@@ -48,6 +48,43 @@ export async function saveReportSections(
     // Extract metadata for top-level columns
     const metadata = sections.metadata || {}
     
+    // Build prompt bundle version string for tracking
+    const promptBundleVersion = sections.sections
+      .map((s) => `${s.sectionKey}:${s.promptVersion}`)
+      .sort()
+      .join(',')
+    
+    // Check for existing sections with same prompt bundle version
+    const { data: existing, error: checkError } = await supabase
+      .from('report_sections')
+      .select('id, content_version, prompt_bundle_version')
+      .eq('job_id', jobId)
+      .order('content_version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('[ReportSectionsPersistence] Check error:', checkError.message)
+      return {
+        success: false,
+        error: `Failed to check existing sections: ${checkError.message}`,
+      }
+    }
+    
+    // Determine content version
+    let contentVersion = 1
+    if (existing) {
+      if (existing.prompt_bundle_version === promptBundleVersion) {
+        // Same prompts - return existing
+        return {
+          success: true,
+          sectionsId: existing.id,
+        }
+      }
+      // Different prompts - increment version
+      contentVersion = (existing.content_version || 0) + 1
+    }
+    
     // Prepare row data
     const row = {
       job_id: jobId,
@@ -60,14 +97,14 @@ export async function saveReportSections(
       llm_call_count: metadata.llmCallCount || 0,
       fallback_count: metadata.fallbackCount || 0,
       generated_at: sections.generatedAt,
+      prompt_bundle_version: promptBundleVersion,
+      content_version: contentVersion,
     }
     
-    // Upsert (insert or update)
+    // Insert new version (not upsert)
     const { data, error } = await supabase
       .from('report_sections')
-      .upsert(row, {
-        onConflict: 'job_id',
-      })
+      .insert(row)
       .select('id')
       .single()
     
