@@ -23,8 +23,8 @@ describe('Audit Constants', () => {
       expect(AUDIT_ENTITY_TYPE.DOCUMENT).toBe('document') // V05-I04.3
     })
 
-    it('has exactly 11 entity types', () => {
-      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(11)
+    it('has exactly 12 entity types', () => {
+      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(12)
     })
   })
 
