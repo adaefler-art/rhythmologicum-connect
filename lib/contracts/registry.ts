@@ -262,6 +262,7 @@ export const AUDIT_ENTITY_TYPE = {
   ORGANIZATION: 'organization',
   USER_ORG_MEMBERSHIP: 'user_org_membership',
   CLINICIAN_ASSIGNMENT: 'clinician_assignment',
+  DOCUMENT: 'document', // V05-I04.3: Document confirmation tracking
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
