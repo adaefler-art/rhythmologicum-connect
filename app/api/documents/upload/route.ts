@@ -50,7 +50,9 @@ export async function POST(request: NextRequest) {
   const requestId = randomUUID()
   
   try {
-    // Check authentication
+    // ============================================================================
+    // STEP 1: Authentication Check (MUST be first - 401 before any other status)
+    // ============================================================================
     const user = await getCurrentUser()
     if (!user) {
       logUnauthorized({
@@ -60,6 +62,10 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse('Authentifizierung erforderlich. Bitte melden Sie sich an.')
     }
 
+    // ============================================================================
+    // STEP 2: Parse and validate request data (after auth confirmed)
+    // ============================================================================
+    
     // Parse multipart form data
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -93,7 +99,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Validate file type BEFORE ownership check (fail fast)
+    // Validate file type (fail fast - check before expensive operations)
     if (!isValidMimeType(file.type)) {
       return validationErrorResponse(
         `Ungültiger Dateityp. Erlaubte Typen: PDF, JPEG, PNG, HEIC`,
@@ -106,7 +112,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size BEFORE ownership check (fail fast)
+    // Validate file size (fail fast - check before expensive operations)
     if (!isValidFileSize(file.size)) {
       const maxSizeMB = MAX_FILE_SIZE / (1024 * 1024)
       return validationErrorResponse(
@@ -120,7 +126,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify user owns the assessment (after basic validation)
+    // ============================================================================
+    // STEP 3: Authorization Check (verify user owns the assessment)
+    // ============================================================================
     const ownershipCheck = await verifyAssessmentOwnership(assessmentId, user.id)
     if (!ownershipCheck.valid) {
       logForbidden(
@@ -137,6 +145,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ============================================================================
+    // STEP 4: Upload to storage and create DB record (fail-closed)
+    // ============================================================================
+    
     // Generate storage path with sanitized filename
     const storagePath = generateStoragePath(user.id, assessmentId, file.name)
 
