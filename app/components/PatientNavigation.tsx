@@ -25,7 +25,7 @@ export function PatientNavigation({ navItems, variant = 'desktop' }: PatientNavi
   if (variant === 'mobile') {
     return (
       <nav 
-        className="md:hidden fixed inset-x-0 bottom-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-around transition-colors duration-150"
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-around transition-colors duration-150"
         style={{
           boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.1)',
           paddingBottom: 'calc(0.625rem + env(safe-area-inset-bottom, 0px))',

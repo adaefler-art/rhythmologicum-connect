@@ -5,6 +5,11 @@ import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 export const metadata: Metadata = {
   title: 'Rhythmologicum Connect',
   description: 'Stress- & Resilienz-Assessment Plattform',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover', // Required for safe-area-inset support on iOS
+  },
 }
 
 export default function RootLayout({
