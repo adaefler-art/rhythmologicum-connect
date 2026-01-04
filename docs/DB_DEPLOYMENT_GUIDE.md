@@ -148,16 +148,25 @@ psql $env:SUPABASE_DB_URL -c "INSERT INTO supabase_migrations.schema_migrations(
 
 ## Workflow Architecture
 
-### Current Workflows
+### Current Workflow Safety Features
 
-1. **`apply-migrations.yml`** - Applies migrations to remote DB when merged to `main`
-   - Triggered on: Push to `main` (when migrations change)
-   - Triggered on: Manual workflow dispatch
-   - Actions:
+1. **`apply-migrations.yml`** - Production-grade migration deployment
+   - **Triggers**:
+     - Push to `main` (when `supabase/migrations/**` changes)
+     - Manual workflow dispatch
+   - **Safety Controls**:
+     - ✅ Actor guard: Skips execution if triggered by `github-actions[bot]` (prevents CI loops)
+     - ✅ Concurrency control: Only one migration run at a time (prevents race conditions)
+     - ✅ `[skip ci]` in auto-commits: Prevents infinite loop on type regeneration
+     - ✅ Permission validation: Least-privilege `contents: write` for auto-commits
+     - ✅ Secret format validation: Rejects invalid token formats
+   - **Actions**:
      - Links to Supabase project
-     - Shows migration status
+     - Shows migration status (local vs remote)
      - Applies pending migrations
-     - Verifies completion
+     - Auto-regenerates TypeScript types from remote schema
+     - Auto-commits types if changed (prevents type drift)
+     - Queries remote migration history for verification
 
 2. **`db-determinism.yml`** - Enforces migration discipline in PRs
    - Triggered on: Pull requests (when DB files change)
@@ -169,12 +178,24 @@ psql $env:SUPABASE_DB_URL -c "INSERT INTO supabase_migrations.schema_migrations(
 
 3. **`update-schema-on-merge.yml`** - Updates canonical schema after merge
    - Triggered on: Push to `main`
+   - Actor guard: Skips if triggered by bot
    - Actions:
      - Dumps remote schema
      - Updates `schema/schema.sql`
      - Commits changes
 
-### Improved Workflow (Proposed)
+### Safety Guarantees
+
+| Risk | Mitigation | Implementation |
+|------|-----------|----------------|
+| CI Loop (auto-commit triggers workflow) | `[skip ci]` + actor guard | Workflow line 216, 42-47 |
+| Race condition (parallel runs) | Concurrency group | Workflow line 35-37 |
+| Permission escalation | Least-privilege permissions | Workflow line 32-33 |
+| Wrong environment deployment | Environment-based secrets | See "Environment Setup" below |
+| Type drift after deployment | Auto-regenerate types | Workflow line 189-218 |
+| Partial migration state | Supabase transactional | Built-in Supabase feature |
+
+### Workflow Enhancement (Completed)
 
 Add a post-migration type regeneration step to `apply-migrations.yml`:
 
@@ -249,12 +270,54 @@ Write-Host "`n=== Verification Complete ===" -ForegroundColor Cyan
 
 ### Usage
 
+**Local Development (Informational)**:
 ```powershell
-# Save the above script as scripts/verify-migration-sync.ps1
-pwsh -File scripts/verify-migration-sync.ps1
+# Basic check (always exits 0, informational only)
+npm run db:verify-sync
+
+# Detailed output with migration list
+npm run db:verify-sync -- -Verbose
+
+# Don't auto-start local Supabase
+npm run db:verify-sync -- -NoAutoStart
+```
+
+**CI/Automated Checks (Strict)**:
+```powershell
+# Strict mode - fails if types out of sync or project not linked
+npm run db:verify-sync -- -CI
+
+# CI mode with verbose output
+npm run db:verify-sync -- -CI -Verbose
+
+# Example in CI workflow:
+# - run: npm run db:verify-sync -- -CI
+#   This will exit 1 if types are out of sync
+```
+
+**Expected Output (Success)**:
+```
+=== Migration Sync Verification ===
+[1/6] Counting local migrations...
+  ✓ Found 20 local migrations
+[2/6] Identifying latest local migration...
+  ✓ Latest local migration: 20260104163022_v05_i05_9_add_idempotency_constraints
+[3/6] Checking Supabase CLI...
+  ✓ Supabase CLI is installed: 2.63.1
+[4/6] Checking remote migration status...
+  ✓ Project is linked
+  ✓ Latest migration is applied remotely
+[5/6] Verifying TypeScript types...
+  ✓ Types are in sync with migrations
+[6/6] Checking for schema drift...
+  ✓ No schema drift detected
+
+=== Verification Complete ===
 ```
 
 ## Required Secrets
+
+### Current Setup (Single Environment)
 
 Ensure these GitHub Secrets are configured:
 
@@ -270,6 +333,53 @@ Ensure these GitHub Secrets are configured:
 3. **`SUPABASE_DB_URL`** - Direct database connection string (for repair operations)
    - Format: `postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres`
    - Location: Supabase Dashboard → Project Settings → Database → Connection string (Transaction pooling mode)
+
+### Recommended Setup (Multi-Environment)
+
+For production safety, use GitHub Environments to separate staging and production:
+
+#### Step 1: Create Environments
+
+1. Go to: Repository Settings → Environments
+2. Create two environments:
+   - **`staging`** (no protection rules - auto-deploy)
+   - **`production`** (protection rules - manual approval required)
+
+#### Step 2: Configure Environment Secrets
+
+**Staging Environment** secrets:
+- `SUPABASE_ACCESS_TOKEN` → Your staging project token
+- `SUPABASE_PROJECT_REF` → Staging project ref
+- `SUPABASE_DB_URL` → Staging DB connection string
+
+**Production Environment** secrets:
+- `SUPABASE_ACCESS_TOKEN` → Your production project token
+- `SUPABASE_PROJECT_REF` → Production project ref
+- `SUPABASE_DB_URL` → Production DB connection string
+
+#### Step 3: Update Workflow (Optional)
+
+To use environments, update `.github/workflows/apply-migrations.yml`:
+
+```yaml
+workflow_dispatch:
+  inputs:
+    environment:
+      description: 'Target environment'
+      required: true
+      default: 'staging'
+      type: choice
+      options:
+        - staging
+        - production
+
+jobs:
+  apply-migrations:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+```
+
+This ensures production deployments require manual approval.
 
 ## Troubleshooting
 

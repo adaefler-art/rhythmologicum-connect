@@ -3,7 +3,9 @@
 # Usage: pwsh -File scripts/verify-migration-sync.ps1
 
 param(
-    [switch]$Verbose
+    [switch]$Verbose,
+    [switch]$CI,
+    [switch]$NoAutoStart
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,6 +54,12 @@ try {
     
     if ($migrationListOutput -match "not linked") {
         Write-Host "  ⚠️  Project not linked to remote" -ForegroundColor Yellow
+        
+        if ($CI) {
+            Write-Host "  ❌ CI Mode: Project must be linked" -ForegroundColor Red
+            exit 1
+        }
+        
         Write-Host "  Run: supabase link --project-ref <your-project-ref>" -ForegroundColor Yellow
         Write-Host "  Skipping remote checks..." -ForegroundColor Gray
         $isLinked = $false
@@ -84,6 +92,17 @@ try {
     # Check if local Supabase is running
     $supabaseStatus = supabase status 2>&1
     if ($supabaseStatus -match "not running" -or $supabaseStatus -match "No local") {
+        if ($CI -or $NoAutoStart) {
+            Write-Host "  ❌ Local Supabase is not running (auto-start disabled)" -ForegroundColor Red
+            if ($CI) {
+                Write-Host "  CI Mode: Failing fast" -ForegroundColor Red
+                exit 1
+            } else {
+                Write-Host "  Run 'supabase start' to start local Supabase" -ForegroundColor Yellow
+                Write-Host "  Skipping type verification..." -ForegroundColor Gray
+                throw "Local Supabase not running"
+            }
+        }
         Write-Host "  ⚠️  Local Supabase is not running" -ForegroundColor Yellow
         Write-Host "  Starting local Supabase..." -ForegroundColor Gray
         supabase start | Out-Null
@@ -99,7 +118,9 @@ try {
     
     # Check for differences
     $typesDiff = git diff lib/types/supabase.ts
+    $script:typesOutOfSync = $false
     if ($typesDiff) {
+        $script:typesOutOfSync = $true
         Write-Host "  ❌ Types are out of sync with database!" -ForegroundColor Red
         Write-Host "`n  Suggested fix:" -ForegroundColor Yellow
         Write-Host "    npm run db:typegen" -ForegroundColor Yellow
@@ -153,7 +174,22 @@ if ($isLinked) {
 }
 
 Write-Host "`n=== Verification Complete ===" -ForegroundColor Cyan
-Write-Host "Run with -Verbose flag for detailed output`n" -ForegroundColor Gray
+Write-Host "Run with -Verbose flag for detailed output" -ForegroundColor Gray
+Write-Host "Run with -CI flag to enforce strict checks in CI`n" -ForegroundColor Gray
 
-# Exit with success if no critical errors
-exit 0
+# Determine exit code based on CI mode
+if ($CI) {
+    # In CI mode, fail if types are out of sync or critical checks failed
+    if ($script:typesOutOfSync) {
+        Write-Host "`n❌ CI Mode: Types out of sync - failing build" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "`n✅ CI Mode: All strict checks passed" -ForegroundColor Green
+    exit 0
+} else {
+    # In local mode, always exit 0 (informational only)
+    if ($script:typesOutOfSync) {
+        Write-Host "`n⚠️  Local Mode: Issues found but exiting successfully (informational)" -ForegroundColor Yellow
+    }
+    exit 0
+}
