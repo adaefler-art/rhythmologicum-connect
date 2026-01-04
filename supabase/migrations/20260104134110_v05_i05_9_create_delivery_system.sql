@@ -164,6 +164,30 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     )
 );
 
+-- If the table already existed (CREATE TABLE IF NOT EXISTS), ensure newer columns exist.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'job_id'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN job_id UUID;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'assessment_id'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN assessment_id UUID;
+    END IF;
+END $$;
+
 -- Table and column comments
 COMMENT ON TABLE public.notifications IS 'V05-I05.9: Notification delivery system (in-app + email infrastructure)';
 COMMENT ON COLUMN public.notifications.id IS 'Notification unique identifier';
