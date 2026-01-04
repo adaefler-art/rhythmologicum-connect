@@ -1436,6 +1436,99 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_check_results: {
+        Row: {
+          check_data: Json
+          completion_tokens: number | null
+          created_at: string
+          critical_findings_count: number
+          evaluated_at: string
+          evaluation_key_hash: string | null
+          evaluation_time_ms: number
+          fallback_used: boolean
+          findings_count: number
+          high_findings_count: number
+          id: string
+          job_id: string
+          llm_call_count: number
+          low_findings_count: number
+          medium_findings_count: number
+          model_max_tokens: number | null
+          model_name: string | null
+          model_provider: string
+          model_temperature: number | null
+          overall_action: Database["public"]["Enums"]["safety_action"]
+          overall_severity: string
+          prompt_tokens: number | null
+          prompt_version: string
+          safety_score: number
+          safety_version: string
+          sections_id: string
+          total_tokens: number | null
+          updated_at: string
+        }
+        Insert: {
+          check_data: Json
+          completion_tokens?: number | null
+          created_at?: string
+          critical_findings_count?: number
+          evaluated_at: string
+          evaluation_key_hash?: string | null
+          evaluation_time_ms?: number
+          fallback_used?: boolean
+          findings_count?: number
+          high_findings_count?: number
+          id?: string
+          job_id: string
+          llm_call_count?: number
+          low_findings_count?: number
+          medium_findings_count?: number
+          model_max_tokens?: number | null
+          model_name?: string | null
+          model_provider: string
+          model_temperature?: number | null
+          overall_action: Database["public"]["Enums"]["safety_action"]
+          overall_severity: string
+          prompt_tokens?: number | null
+          prompt_version: string
+          safety_score: number
+          safety_version?: string
+          sections_id: string
+          total_tokens?: number | null
+          updated_at?: string
+        }
+        Update: {
+          check_data?: Json
+          completion_tokens?: number | null
+          created_at?: string
+          critical_findings_count?: number
+          evaluated_at?: string
+          evaluation_key_hash?: string | null
+          evaluation_time_ms?: number
+          fallback_used?: boolean
+          findings_count?: number
+          high_findings_count?: number
+          id?: string
+          job_id?: string
+          llm_call_count?: number
+          low_findings_count?: number
+          medium_findings_count?: number
+          model_max_tokens?: number | null
+          model_name?: string | null
+          model_provider?: string
+          model_temperature?: number | null
+          overall_action?: Database["public"]["Enums"]["safety_action"]
+          overall_severity?: string
+          prompt_tokens?: number | null
+          prompt_version?: string
+          safety_score?: number
+          safety_version?: string
+          sections_id?: string
+          total_tokens?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assessment_id: string | null
@@ -1602,6 +1695,10 @@ export type Database = {
     }
     Functions: {
       compute_inputs_hash: { Args: { p_inputs: Json }; Returns: string }
+      compute_safety_evaluation_key_hash: {
+        Args: { p_prompt_version: string; p_sections_id: string }
+        Returns: string
+      }
       current_user_role: {
         Args: { org_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1661,6 +1758,7 @@ export type Database = {
         | "failed"
       processing_status: "queued" | "in_progress" | "completed" | "failed"
       report_status: "pending" | "generating" | "completed" | "failed"
+      safety_action: "PASS" | "FLAG" | "BLOCK" | "UNKNOWN"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
@@ -1818,6 +1916,7 @@ export const Constants = {
       ],
       processing_status: ["queued", "in_progress", "completed", "failed"],
       report_status: ["pending", "generating", "completed", "failed"],
+      safety_action: ["PASS", "FLAG", "BLOCK", "UNKNOWN"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],
