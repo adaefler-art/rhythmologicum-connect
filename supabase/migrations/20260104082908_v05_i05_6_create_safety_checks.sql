@@ -156,7 +156,7 @@ BEGIN
                     SELECT 1 FROM public.processing_jobs pj
                     JOIN public.assessments a ON a.id = pj.assessment_id
                     WHERE pj.id = safety_check_results.job_id
-                    AND a.user_id = auth.uid()
+                    AND a.patient_id = auth.uid()
                 )
             );
     END IF;
@@ -227,12 +227,19 @@ END $$;
 -- ============================================================
 
 -- Auto-update updated_at timestamp
-DROP TRIGGER IF EXISTS update_safety_check_results_updated_at ON public.safety_check_results;
+CREATE OR REPLACE FUNCTION update_safety_check_results_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_safety_check_results_updated_at ON public.safety_check_results;
 CREATE TRIGGER update_safety_check_results_updated_at
-    BEFORE UPDATE ON public.safety_check_results
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+        BEFORE UPDATE ON public.safety_check_results
+        FOR EACH ROW
+        EXECUTE FUNCTION update_safety_check_results_updated_at();
 
 -- ============================================================
 -- SECTION 6: CREATE HELPER FUNCTIONS
@@ -266,7 +273,6 @@ COMMENT ON FUNCTION public.compute_safety_evaluation_key_hash IS 'V05-I05.6: Com
 -- Grant necessary permissions
 GRANT SELECT ON public.safety_check_results TO anon, authenticated;
 GRANT INSERT, UPDATE ON public.safety_check_results TO service_role;
-GRANT USAGE ON SEQUENCE safety_check_results_id_seq TO service_role;
 
 -- ============================================================
 -- END OF MIGRATION
