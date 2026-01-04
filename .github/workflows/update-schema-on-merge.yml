@@ -34,6 +34,41 @@ jobs:
             echo "SUPABASE_DB_URL secret is not set. Aborting."
             exit 1
           fi
+          # Fail fast if the connection string is missing a host.
+          # When libpq gets a URL like postgresql://user:pass@/dbname it silently falls back to
+          # local socket connections (e.g. /var/run/postgresql/.s.PGSQL.5432), which is confusing in CI.
+          host=""
+          db=""
+          if echo "$PG_CONN" | grep -Eq '^postgres(ql)?://'; then
+            conn_no_scheme="${PG_CONN#postgresql://}"
+            conn_no_scheme="${conn_no_scheme#postgres://}"
+            host_and_port="${conn_no_scheme#*@}"
+            host_and_port="${host_and_port%%/*}"
+            db_part="${conn_no_scheme#*/}"
+            db_part="${db_part%%\?*}"
+            host="$host_and_port"
+            db="$db_part"
+
+            if [ -z "$host" ] || echo "$PG_CONN" | grep -Eq '@/?'; then
+              echo "ERROR: SUPABASE_DB_URL looks like a URL but does not include a host."
+              echo "Expected format: postgresql://user:***@host:5432/dbname?sslmode=require"
+              exit 1
+            fi
+          else
+            # Keyword/value connection string support (e.g. host=... user=... dbname=...)
+            host="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])host=([^[:space:]]+).*/\2/p')"
+            db="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])dbname=([^[:space:]]+).*/\2/p')"
+
+            if [ -z "$host" ]; then
+              echo "ERROR: SUPABASE_DB_URL must include a host (URL form or host=... form)."
+              exit 1
+            fi
+          fi
+
+          echo "Using database host: $host"
+          if [ -n "$db" ]; then
+            echo "Using database name: $db"
+          fi
           pg_dump --dbname="$PG_CONN" -s --no-owner --no-privileges -f schema_new.sql
 
       - name: Normalize schemas and diff
