@@ -975,6 +975,63 @@ export type Database = {
         }
         Relationships: []
       }
+      priority_rankings: {
+        Row: {
+          algorithm_version: string
+          created_at: string
+          id: string
+          job_id: string
+          program_tier: string | null
+          ranked_at: string
+          ranking_data: Json
+          ranking_version: string
+          registry_version: string
+          risk_bundle_id: string
+          updated_at: string
+        }
+        Insert: {
+          algorithm_version: string
+          created_at?: string
+          id?: string
+          job_id: string
+          program_tier?: string | null
+          ranked_at: string
+          ranking_data: Json
+          ranking_version?: string
+          registry_version: string
+          risk_bundle_id: string
+          updated_at?: string
+        }
+        Update: {
+          algorithm_version?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          program_tier?: string | null
+          ranked_at?: string
+          ranking_data?: Json
+          ranking_version?: string
+          registry_version?: string
+          risk_bundle_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priority_rankings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "processing_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_rankings_risk_bundle_id_fkey"
+            columns: ["risk_bundle_id"]
+            isOneToOne: false
+            referencedRelation: "risk_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processing_jobs: {
         Row: {
           assessment_id: string
@@ -1060,6 +1117,60 @@ export type Database = {
         Relationships: []
       }
       report_sections: {
+        Row: {
+          content_version: number
+          created_at: string
+          fallback_count: number | null
+          generated_at: string
+          generation_time_ms: number | null
+          id: string
+          job_id: string
+          llm_call_count: number | null
+          program_tier: string | null
+          prompt_bundle_version: string | null
+          ranking_id: string | null
+          risk_bundle_id: string
+          sections_data: Json
+          sections_version: string
+          updated_at: string
+        }
+        Insert: {
+          content_version?: number
+          created_at?: string
+          fallback_count?: number | null
+          generated_at: string
+          generation_time_ms?: number | null
+          id?: string
+          job_id: string
+          llm_call_count?: number | null
+          program_tier?: string | null
+          prompt_bundle_version?: string | null
+          ranking_id?: string | null
+          risk_bundle_id: string
+          sections_data: Json
+          sections_version?: string
+          updated_at?: string
+        }
+        Update: {
+          content_version?: number
+          created_at?: string
+          fallback_count?: number | null
+          generated_at?: string
+          generation_time_ms?: number | null
+          id?: string
+          job_id?: string
+          llm_call_count?: number | null
+          program_tier?: string | null
+          prompt_bundle_version?: string | null
+          ranking_id?: string | null
+          risk_bundle_id?: string
+          sections_data?: Json
+          sections_version?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      report_sections_legacy: {
         Row: {
           citations_meta: Json | null
           content: string
@@ -1171,6 +1282,60 @@ export type Database = {
             columns: ["funnel_version_id"]
             isOneToOne: false
             referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_bundles: {
+        Row: {
+          algorithm_version: string
+          assessment_id: string
+          bundle_data: Json
+          calculated_at: string
+          created_at: string
+          funnel_version: string | null
+          id: string
+          job_id: string
+          risk_bundle_version: string
+          updated_at: string
+        }
+        Insert: {
+          algorithm_version: string
+          assessment_id: string
+          bundle_data: Json
+          calculated_at: string
+          created_at?: string
+          funnel_version?: string | null
+          id?: string
+          job_id: string
+          risk_bundle_version?: string
+          updated_at?: string
+        }
+        Update: {
+          algorithm_version?: string
+          assessment_id?: string
+          bundle_data?: Json
+          calculated_at?: string
+          created_at?: string
+          funnel_version?: string | null
+          id?: string
+          job_id?: string
+          risk_bundle_version?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_bundles_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_bundles_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
           },
         ]
