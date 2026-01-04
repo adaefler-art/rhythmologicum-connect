@@ -76,11 +76,21 @@ CREATE TYPE "public"."notification_status" AS ENUM (
     'scheduled',
     'sent',
     'failed',
-    'cancelled'
+    'cancelled',
+    'PENDING',
+    'SENT',
+    'DELIVERED',
+    'READ',
+    'FAILED',
+    'CANCELLED'
 );
 
 
 ALTER TYPE "public"."notification_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."notification_status" IS 'V05-I05.9: Notification delivery status';
+
 
 
 CREATE TYPE "public"."parsing_status" AS ENUM (
@@ -670,6 +680,19 @@ CREATE OR REPLACE FUNCTION "public"."update_medical_validation_results_updated_a
 
 
 ALTER FUNCTION "public"."update_medical_validation_results_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_notifications_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_notifications_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_processing_jobs_updated_at"() RETURNS "trigger"
@@ -1348,18 +1371,43 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "scheduled_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "sent_at" timestamp with time zone,
     "status" "public"."notification_status" DEFAULT 'scheduled'::"public"."notification_status" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "job_id" "uuid",
+    "assessment_id" "uuid",
+    "notification_type" "text",
+    "priority" "text" DEFAULT 'medium'::"text",
+    "subject" "text",
+    "message" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "consent_verified" boolean DEFAULT false,
+    "consent_version" "text",
+    "follow_up_at" timestamp with time zone,
+    "follow_up_completed" boolean DEFAULT false,
+    "expires_at" timestamp with time zone,
+    "delivered_at" timestamp with time zone,
+    "read_at" timestamp with time zone,
+    "failed_at" timestamp with time zone,
+    "error_message" "text",
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
 
 ALTER TABLE "public"."notifications" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."notifications" IS 'V0.5: Notification queue with multi-channel support';
+COMMENT ON TABLE "public"."notifications" IS 'V05-I05.9: Notification delivery system (in-app + email infrastructure)';
 
 
 
-COMMENT ON COLUMN "public"."notifications"."channel" IS 'Notification channel (email, sms, push, in_app)';
+COMMENT ON COLUMN "public"."notifications"."id" IS 'Notification unique identifier';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."user_id" IS 'Recipient user ID';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."channel" IS 'Delivery channel (in_app, email, sms)';
 
 
 
@@ -1368,6 +1416,58 @@ COMMENT ON COLUMN "public"."notifications"."template_key" IS 'Template identifie
 
 
 COMMENT ON COLUMN "public"."notifications"."payload" IS 'JSONB: Template variables and notification data';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."status" IS 'Delivery status (PENDING → SENT → DELIVERED → READ)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."job_id" IS 'Related processing job (optional)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."assessment_id" IS 'Related assessment (optional)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."notification_type" IS 'Type: REPORT_READY, REVIEW_REQUESTED, ACTION_REQUIRED, etc.';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."priority" IS 'Priority level (low, medium, high, urgent)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."subject" IS 'PHI-free notification subject';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."message" IS 'PHI-free notification message body';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."metadata" IS 'PHI-free metadata (links, actions, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."consent_verified" IS 'Was user consent verified before sending?';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."consent_version" IS 'Version of consent that was verified';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."follow_up_at" IS 'When to trigger follow-up action (NULL if no follow-up)';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."follow_up_completed" IS 'Has follow-up been completed?';
+
+
+
+COMMENT ON COLUMN "public"."notifications"."expires_at" IS 'When notification expires (optional)';
 
 
 
@@ -1549,7 +1649,13 @@ CREATE TABLE IF NOT EXISTS "public"."processing_jobs" (
     "pdf_path" "text",
     "pdf_metadata" "jsonb",
     "pdf_generated_at" timestamp with time zone,
+    "delivery_status" "text" DEFAULT 'NOT_READY'::"text" NOT NULL,
+    "delivery_timestamp" timestamp with time zone,
+    "delivery_metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "delivery_attempt" integer DEFAULT 0 NOT NULL,
     CONSTRAINT "processing_jobs_attempt_check" CHECK ((("attempt" >= 1) AND ("attempt" <= 10))),
+    CONSTRAINT "processing_jobs_delivery_attempt_check" CHECK ((("delivery_attempt" >= 0) AND ("delivery_attempt" <= 5))),
+    CONSTRAINT "processing_jobs_delivery_status_check" CHECK (("delivery_status" = ANY (ARRAY['NOT_READY'::"text", 'READY'::"text", 'DELIVERED'::"text", 'FAILED'::"text"]))),
     CONSTRAINT "processing_jobs_max_attempts_check" CHECK ((("max_attempts" >= 1) AND ("max_attempts" <= 10)))
 );
 
@@ -1606,6 +1712,22 @@ COMMENT ON COLUMN "public"."processing_jobs"."pdf_metadata" IS 'V05-I05.8: PDF g
 
 
 COMMENT ON COLUMN "public"."processing_jobs"."pdf_generated_at" IS 'V05-I05.8: Timestamp when PDF was generated (for cache/cleanup tracking)';
+
+
+
+COMMENT ON COLUMN "public"."processing_jobs"."delivery_status" IS 'V05-I05.9: Delivery state (NOT_READY, READY, DELIVERED, FAILED)';
+
+
+
+COMMENT ON COLUMN "public"."processing_jobs"."delivery_timestamp" IS 'V05-I05.9: When delivery was completed (NULL if not delivered)';
+
+
+
+COMMENT ON COLUMN "public"."processing_jobs"."delivery_metadata" IS 'V05-I05.9: PHI-free delivery metadata (notification IDs, errors)';
+
+
+
+COMMENT ON COLUMN "public"."processing_jobs"."delivery_attempt" IS 'V05-I05.9: Delivery retry attempt counter (0-5)';
 
 
 
@@ -2240,6 +2362,15 @@ ALTER TABLE ONLY "public"."medical_validation_results"
 
 
 ALTER TABLE ONLY "public"."notifications"
+    ADD CONSTRAINT "notifications_idempotency_key" UNIQUE ("user_id", "job_id", "notification_type", "channel");
+
+
+
+COMMENT ON CONSTRAINT "notifications_idempotency_key" ON "public"."notifications" IS 'V05-I05.9: Idempotency constraint - prevents duplicate notifications for same user+job+type+channel';
+
+
+
+ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
 
 
@@ -2666,11 +2797,51 @@ CREATE INDEX "idx_medical_validation_results_validated_at" ON "public"."medical_
 
 
 
+CREATE INDEX "idx_notifications_follow_up" ON "public"."notifications" USING "btree" ("follow_up_at") WHERE (("follow_up_at" IS NOT NULL) AND ("follow_up_completed" = false));
+
+
+
+COMMENT ON INDEX "public"."idx_notifications_follow_up" IS 'V05-I05.9: Find notifications needing follow-up';
+
+
+
+CREATE INDEX "idx_notifications_idempotency" ON "public"."notifications" USING "btree" ("user_id", "job_id", "notification_type", "channel") WHERE ("job_id" IS NOT NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_notifications_idempotency" IS 'V05-I05.9: Fast idempotency lookup for notification creation';
+
+
+
+CREATE INDEX "idx_notifications_job_id" ON "public"."notifications" USING "btree" ("job_id") WHERE ("job_id" IS NOT NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_notifications_job_id" IS 'V05-I05.9: Find notifications for a specific job';
+
+
+
+CREATE INDEX "idx_notifications_pending" ON "public"."notifications" USING "btree" ("status", "created_at");
+
+
+
+COMMENT ON INDEX "public"."idx_notifications_pending" IS 'V05-I05.9: Find pending notifications to process';
+
+
+
 CREATE INDEX "idx_notifications_scheduled_at" ON "public"."notifications" USING "btree" ("scheduled_at");
 
 
 
 CREATE INDEX "idx_notifications_status" ON "public"."notifications" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_notifications_user_created" ON "public"."notifications" USING "btree" ("user_id", "created_at" DESC);
+
+
+
+COMMENT ON INDEX "public"."idx_notifications_user_created" IS 'V05-I05.9: Fast lookup of user notifications by recency';
 
 
 
@@ -2734,11 +2905,35 @@ CREATE INDEX "idx_processing_jobs_created_at" ON "public"."processing_jobs" USIN
 
 
 
+CREATE INDEX "idx_processing_jobs_delivery_status" ON "public"."processing_jobs" USING "btree" ("delivery_status") WHERE ("delivery_status" = ANY (ARRAY['READY'::"text", 'DELIVERED'::"text"]));
+
+
+
+COMMENT ON INDEX "public"."idx_processing_jobs_delivery_status" IS 'V05-I05.9: Fast lookup of jobs by delivery status';
+
+
+
+CREATE INDEX "idx_processing_jobs_delivery_timestamp" ON "public"."processing_jobs" USING "btree" ("delivery_timestamp" DESC) WHERE ("delivery_timestamp" IS NOT NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_processing_jobs_delivery_timestamp" IS 'V05-I05.9: Find recently delivered jobs';
+
+
+
 CREATE INDEX "idx_processing_jobs_pdf_generated" ON "public"."processing_jobs" USING "btree" ("pdf_generated_at" DESC) WHERE ("pdf_generated_at" IS NOT NULL);
 
 
 
 CREATE INDEX "idx_processing_jobs_pdf_path" ON "public"."processing_jobs" USING "btree" ("pdf_path") WHERE ("pdf_path" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_processing_jobs_ready_for_delivery" ON "public"."processing_jobs" USING "btree" ("status", "stage", "delivery_status") WHERE (("status" = 'completed'::"public"."processing_status") AND ("stage" = 'completed'::"public"."processing_stage") AND ("delivery_status" = 'NOT_READY'::"text"));
+
+
+
+COMMENT ON INDEX "public"."idx_processing_jobs_ready_for_delivery" IS 'V05-I05.9: Find completed jobs ready for delivery';
 
 
 
@@ -2939,6 +3134,10 @@ CREATE OR REPLACE TRIGGER "report_sections_updated_at" BEFORE UPDATE ON "public"
 
 
 CREATE OR REPLACE TRIGGER "trg_enforce_clinician_patient_same_org" BEFORE INSERT OR UPDATE ON "public"."clinician_patient_assignments" FOR EACH ROW EXECUTE FUNCTION "public"."enforce_clinician_patient_same_org"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_notifications_updated_at" BEFORE UPDATE ON "public"."notifications" FOR EACH ROW EXECUTE FUNCTION "public"."update_notifications_updated_at"();
 
 
 
@@ -3683,6 +3882,20 @@ CREATE POLICY "medical_validation_results_system_update" ON "public"."medical_va
 ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "notifications_select_clinician" ON "public"."notifications" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("auth"."uid"() = "users"."id") AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
+
+
+
+CREATE POLICY "notifications_select_own" ON "public"."notifications" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "notifications_update_own" ON "public"."notifications" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4126,6 +4339,12 @@ GRANT ALL ON FUNCTION "public"."update_medical_validation_results_updated_at"() 
 
 
 
+GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "service_role";
@@ -4270,6 +4489,18 @@ GRANT ALL ON TABLE "public"."medical_validation_results" TO "service_role";
 GRANT ALL ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";
 GRANT ALL ON TABLE "public"."notifications" TO "service_role";
+
+
+
+GRANT UPDATE("status") ON TABLE "public"."notifications" TO "authenticated";
+
+
+
+GRANT UPDATE("read_at") ON TABLE "public"."notifications" TO "authenticated";
+
+
+
+GRANT UPDATE("updated_at") ON TABLE "public"."notifications" TO "authenticated";
 
 
 
