@@ -4,7 +4,6 @@
 
 import {
   evaluateForQueue,
-  getDefaultSamplingConfig,
   type QueueEvaluationContext,
 } from '@/lib/review/queueHelper'
 import { QUEUE_REASON } from '@/lib/contracts/reviewRecord'
@@ -258,6 +257,7 @@ describe('Review Queue Helper', () => {
     })
 
     it('should return default config', () => {
+      const { getDefaultSamplingConfig } = require('@/lib/review/queueHelper')
       const config = getDefaultSamplingConfig()
 
       expect(config.percentage).toBe(10)
@@ -267,6 +267,7 @@ describe('Review Queue Helper', () => {
 
     it('should use env var for percentage', () => {
       process.env.REVIEW_SAMPLING_PERCENTAGE = '25'
+      const { getDefaultSamplingConfig } = require('@/lib/review/queueHelper')
 
       const config = getDefaultSamplingConfig()
 
@@ -275,6 +276,7 @@ describe('Review Queue Helper', () => {
 
     it('should use env var for salt', () => {
       process.env.REVIEW_SAMPLING_SALT = 'custom-salt'
+      const { getDefaultSamplingConfig } = require('@/lib/review/queueHelper')
 
       const config = getDefaultSamplingConfig()
 
@@ -283,12 +285,17 @@ describe('Review Queue Helper', () => {
 
     it('should clamp percentage to 0-100 range', () => {
       process.env.REVIEW_SAMPLING_PERCENTAGE = '-10'
+      let { getDefaultSamplingConfig } = require('@/lib/review/queueHelper')
       expect(getDefaultSamplingConfig().percentage).toBe(0)
 
+      jest.resetModules()
       process.env.REVIEW_SAMPLING_PERCENTAGE = '150'
+      ;({ getDefaultSamplingConfig } = require('@/lib/review/queueHelper'))
       expect(getDefaultSamplingConfig().percentage).toBe(100)
 
+      jest.resetModules()
       process.env.REVIEW_SAMPLING_PERCENTAGE = '50'
+      ;({ getDefaultSamplingConfig } = require('@/lib/review/queueHelper'))
       expect(getDefaultSamplingConfig().percentage).toBe(50)
     })
   })
