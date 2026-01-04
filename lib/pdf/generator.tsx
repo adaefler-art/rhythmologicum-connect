@@ -12,9 +12,10 @@ import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-p
 import type { ReportSectionsV1 } from '@/lib/contracts/reportSections'
 import type { PdfGenerationInput, PdfMetadata } from '@/lib/contracts/pdfGeneration'
 import { computePdfHash } from './storage'
+import { PDF_TEMPLATE_VERSION } from './templates'
 
-// PDF version for tracking algorithm changes
-const PDF_VERSION = 'v1.0.0'
+// PDF generator algorithm version (for tracking rendering changes)
+const PDF_GENERATOR_VERSION = 'v1.0.0'
 
 /**
  * PDF Styles
@@ -221,7 +222,7 @@ export async function generatePdf(input: PdfGenerationInput): Promise<{
     const metadata: PdfMetadata = {
       fileSizeBytes: buffer.length,
       generatedAt: new Date().toISOString(),
-      version: PDF_VERSION,
+      version: `template:${PDF_TEMPLATE_VERSION}|generator:${PDF_GENERATOR_VERSION}`,
       contentHash,
       pageCount: estimatedPageCount,
       sectionsVersion: sections.sectionsVersion,

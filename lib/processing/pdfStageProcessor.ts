@@ -13,8 +13,9 @@ import {
   generatePdfStoragePath,
   uploadPdfToStorage,
   deletePdfFromStorage,
-  computePdfHash,
 } from '@/lib/pdf/storage'
+import { computeCanonicalPdfHash } from '@/lib/pdf/canonicalHash'
+import { PDF_TEMPLATE_VERSION } from '@/lib/pdf/templates'
 import type { PdfGenerationInput, PdfGenerationResult } from '@/lib/contracts/pdfGeneration'
 import type { ReportSectionsV1 } from '@/lib/contracts/reportSections'
 
@@ -100,9 +101,13 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     // ============================================================================
     // STEP 2.5: Idempotency Check - Return existing PDF if content unchanged
     // ============================================================================
-    // Compute hash of current sections to check for changes
-    const sectionsJson = JSON.stringify(sections)
-    const currentContentHash = computePdfHash(Buffer.from(sectionsJson))
+    // Compute canonical hash of current sections to check for changes
+    // Hash includes: template version + sections version + sections data
+    const currentContentHash = computeCanonicalPdfHash({
+      pdfTemplateVersion: PDF_TEMPLATE_VERSION,
+      sectionsVersion: sections.sectionsVersion,
+      sectionsData: sections,
+    })
 
     // If PDF already exists and content hash matches, return existing metadata
     if (
@@ -127,15 +132,14 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
       }
     }
 
-    // If PDF exists but content changed, delete old PDF before creating new one
-    if (jobWithPdf.pdf_path) {
+    // Store old path for cleanup AFTER successful update (fail-closed)
+    const oldPdfPath = jobWithPdf.pdf_path
+    if (oldPdfPath) {
       console.log('[PDF_CONTENT_CHANGED]', {
         jobId,
-        oldPath: jobWithPdf.pdf_path,
-        message: 'Content changed, will replace PDF',
+        oldPath: oldPdfPath,
+        message: 'Content changed, will replace PDF after new upload succeeds',
       })
-      // Best-effort delete of old PDF (don't fail if it doesn't exist)
-      await deletePdfFromStorage(jobWithPdf.pdf_path)
     }
 
     // ============================================================================
@@ -231,10 +235,11 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     // ============================================================================
     // STEP 6: Update processing job with PDF metadata (including content hash)
     // ============================================================================
-    // Add sectionsContentHash to metadata for idempotency checks
+    // Add sectionsContentHash and pdfTemplateVersion to metadata for idempotency checks
     const metadataWithHash = {
       ...pdfResult.metadata,
       sectionsContentHash: currentContentHash,
+      pdfTemplateVersion: PDF_TEMPLATE_VERSION,
     }
 
     // Type assertion for new columns (until types are regenerated)
@@ -251,7 +256,7 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
       .eq('id', jobId)
 
     if (updateError) {
-      // Cleanup uploaded PDF on DB update failure
+      // Cleanup uploaded PDF on DB update failure (fail-closed)
       await deletePdfFromStorage(storagePath)
 
       return {
@@ -264,7 +269,29 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     }
 
     // ============================================================================
-    // STEP 7: Return success
+    // STEP 7: Cleanup old PDF AFTER successful DB update (fail-closed)
+    // ============================================================================
+    // Only delete old PDF after new one is safely persisted to DB
+    if (oldPdfPath && oldPdfPath !== storagePath) {
+      console.log('[PDF_CLEANUP_OLD]', {
+        jobId,
+        oldPath: oldPdfPath,
+        newPath: storagePath,
+        message: 'Cleaning up old PDF after successful update',
+      })
+      // Best-effort delete - failure here should not fail the request
+      const deleteSuccess = await deletePdfFromStorage(oldPdfPath)
+      if (!deleteSuccess) {
+        console.warn('[PDF_CLEANUP_FAILED]', {
+          jobId,
+          oldPath: oldPdfPath,
+          message: 'Failed to delete old PDF (non-fatal)',
+        })
+      }
+    }
+
+    // ============================================================================
+    // STEP 8: Return success
     // ============================================================================
     const generationTimeMs = Date.now() - startTime
 
