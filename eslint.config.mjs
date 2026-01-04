@@ -120,6 +120,39 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Override for server-only lib modules - allow admin client with documentation requirement
+  {
+    files: ["lib/**/*.server.ts", "lib/**/*.server.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@supabase/supabase-js",
+              importNames: ["createClient"],
+              message:
+                "Direct createClient import is forbidden. Use canonical factories from @/lib/db/supabase.* instead.",
+            },
+            {
+              name: "@supabase/ssr",
+              importNames: ["createServerClient"],
+              message:
+                "Direct createServerClient import is forbidden. Use createServerSupabaseClient from @/lib/db/supabase.server instead.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["*supabase*"],
+              importNames: ["createClient", "createServerClient"],
+              message:
+                "Direct Supabase client imports (including aliases) are forbidden. Use canonical factories from @/lib/db/supabase.* instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

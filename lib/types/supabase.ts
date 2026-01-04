@@ -814,36 +814,87 @@ export type Database = {
       }
       notifications: {
         Row: {
+          assessment_id: string | null
           channel: string
+          consent_verified: boolean | null
+          consent_version: string | null
           created_at: string
+          delivered_at: string | null
+          error_message: string | null
+          expires_at: string | null
+          failed_at: string | null
+          follow_up_at: string | null
+          follow_up_completed: boolean | null
           id: string
+          job_id: string | null
+          message: string | null
+          metadata: Json | null
+          notification_type: string | null
           payload: Json
+          priority: string | null
+          read_at: string | null
           scheduled_at: string
           sent_at: string | null
           status: Database["public"]["Enums"]["notification_status"]
+          subject: string | null
           template_key: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          assessment_id?: string | null
           channel: string
+          consent_verified?: boolean | null
+          consent_version?: string | null
           created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          failed_at?: string | null
+          follow_up_at?: string | null
+          follow_up_completed?: boolean | null
           id?: string
+          job_id?: string | null
+          message?: string | null
+          metadata?: Json | null
+          notification_type?: string | null
           payload?: Json
+          priority?: string | null
+          read_at?: string | null
           scheduled_at?: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["notification_status"]
+          subject?: string | null
           template_key: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          assessment_id?: string | null
           channel?: string
+          consent_verified?: boolean | null
+          consent_version?: string | null
           created_at?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          failed_at?: string | null
+          follow_up_at?: string | null
+          follow_up_completed?: boolean | null
           id?: string
+          job_id?: string | null
+          message?: string | null
+          metadata?: Json | null
+          notification_type?: string | null
           payload?: Json
+          priority?: string | null
+          read_at?: string | null
           scheduled_at?: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["notification_status"]
+          subject?: string | null
           template_key?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1102,6 +1153,10 @@ export type Database = {
           completed_at: string | null
           correlation_id: string
           created_at: string
+          delivery_attempt: number
+          delivery_metadata: Json | null
+          delivery_status: string
+          delivery_timestamp: string | null
           errors: Json | null
           id: string
           max_attempts: number
@@ -1120,6 +1175,10 @@ export type Database = {
           completed_at?: string | null
           correlation_id: string
           created_at?: string
+          delivery_attempt?: number
+          delivery_metadata?: Json | null
+          delivery_status?: string
+          delivery_timestamp?: string | null
           errors?: Json | null
           id?: string
           max_attempts?: number
@@ -1138,6 +1197,10 @@ export type Database = {
           completed_at?: string | null
           correlation_id?: string
           created_at?: string
+          delivery_attempt?: number
+          delivery_metadata?: Json | null
+          delivery_status?: string
+          delivery_timestamp?: string | null
           errors?: Json | null
           id?: string
           max_attempts?: number
@@ -1822,7 +1885,17 @@ export type Database = {
     Enums: {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
-      notification_status: "scheduled" | "sent" | "failed" | "cancelled"
+      notification_status:
+        | "scheduled"
+        | "sent"
+        | "failed"
+        | "cancelled"
+        | "PENDING"
+        | "SENT"
+        | "DELIVERED"
+        | "READ"
+        | "FAILED"
+        | "CANCELLED"
       parsing_status:
         | "pending"
         | "processing"
@@ -1979,7 +2052,18 @@ export const Constants = {
     Enums: {
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
-      notification_status: ["scheduled", "sent", "failed", "cancelled"],
+      notification_status: [
+        "scheduled",
+        "sent",
+        "failed",
+        "cancelled",
+        "PENDING",
+        "SENT",
+        "DELIVERED",
+        "READ",
+        "FAILED",
+        "CANCELLED",
+      ],
       parsing_status: [
         "pending",
         "processing",
