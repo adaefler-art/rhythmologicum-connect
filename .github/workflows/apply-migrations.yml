@@ -185,3 +185,55 @@ jobs:
           echo "✓ Migrations applied successfully"
           echo "Checking for any pending migrations..."
           supabase migration list || echo "Migration list command not available"
+
+      - name: Regenerate TypeScript types from remote schema
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "🔧 Regenerating TypeScript types from remote schema..."
+          supabase gen types typescript --linked > lib/types/supabase.ts
+          echo "✓ Types generated from remote schema"
+
+      - name: Check if types need to be committed
+        id: check_types
+        run: |
+          if ! git diff --exit-code lib/types/supabase.ts; then
+            echo "types_changed=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Types changed after migration deployment"
+            echo "This suggests types were not regenerated before merge"
+          else
+            echo "types_changed=false" >> $GITHUB_OUTPUT
+            echo "✓ Types are already in sync with remote schema"
+          fi
+
+      - name: Commit regenerated types
+        if: steps.check_types.outputs.types_changed == 'true'
+        run: |
+          echo "Committing regenerated types..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/types/supabase.ts
+          git commit -m "chore: regenerate types after migration deployment [skip ci]"
+          git push origin HEAD:main
+          echo "✓ Types committed and pushed"
+
+      - name: Query remote migration history
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "📊 Querying remote migration history..."
+          
+          if [ -n "$SUPABASE_DB_URL" ]; then
+            echo "Installing psql..."
+            sudo apt-get update -y
+            sudo apt-get install -y postgresql-client
+            
+            echo "Last 5 applied migrations:"
+            psql "$SUPABASE_DB_URL" -c "SELECT version, name, inserted_at FROM supabase_migrations.schema_migrations ORDER BY version DESC LIMIT 5;" || echo "Could not query migration history"
+          else
+            echo "⚠️  SUPABASE_DB_URL not set, skipping direct DB query"
+          fi
+          
+          echo ""
+          echo "✅ Migration deployment complete"
