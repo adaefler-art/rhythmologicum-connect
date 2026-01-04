@@ -264,6 +264,7 @@ export const AUDIT_ENTITY_TYPE = {
   CLINICIAN_ASSIGNMENT: 'clinician_assignment',
   DOCUMENT: 'document', // V05-I04.3: Document confirmation tracking
   PROCESSING_JOB: 'processing_job', // V05-I05.1: Processing job orchestration
+  REVIEW_RECORD: 'review_record', // V05-I05.7: Medical review records
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
@@ -282,6 +283,7 @@ export const AUDIT_ACTION = {
   DELETE: 'delete',
   APPROVE: 'approve',
   REJECT: 'reject',
+  REQUEST_CHANGES: 'request_changes', // V05-I05.7: Review workflow
   GENERATE: 'generate',
   FLAG: 'flag',
   ASSIGN: 'assign',
