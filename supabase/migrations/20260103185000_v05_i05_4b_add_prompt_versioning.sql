@@ -28,11 +28,11 @@ DROP INDEX IF EXISTS public.idx_report_sections_job_id;
 
 -- Create new composite unique index: (job_id, content_version)
 -- This allows multiple versions per job when prompt changes
-CREATE UNIQUE INDEX idx_report_sections_job_content_version 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_report_sections_job_content_version 
 ON public.report_sections(job_id, content_version);
 
 -- Add index on job_id for lookups (non-unique now)
-CREATE INDEX idx_report_sections_job_id_lookup 
+CREATE INDEX IF NOT EXISTS idx_report_sections_job_id_lookup 
 ON public.report_sections(job_id);
 
 -- ============================================================

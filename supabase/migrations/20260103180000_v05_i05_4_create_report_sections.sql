@@ -46,24 +46,24 @@ CREATE TABLE IF NOT EXISTS public.report_sections (
 -- ============================================================
 
 -- Primary lookup by job_id (unique per job)
-CREATE UNIQUE INDEX idx_report_sections_job_id 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_report_sections_job_id 
 ON public.report_sections(job_id);
 
 -- Lookup by risk_bundle_id
-CREATE INDEX idx_report_sections_risk_bundle_id 
+CREATE INDEX IF NOT EXISTS idx_report_sections_risk_bundle_id 
 ON public.report_sections(risk_bundle_id);
 
 -- Lookup by ranking_id (for reports with rankings)
-CREATE INDEX idx_report_sections_ranking_id 
+CREATE INDEX IF NOT EXISTS idx_report_sections_ranking_id 
 ON public.report_sections(ranking_id)
 WHERE ranking_id IS NOT NULL;
 
 -- Time-based queries (e.g., recent reports)
-CREATE INDEX idx_report_sections_generated_at 
+CREATE INDEX IF NOT EXISTS idx_report_sections_generated_at 
 ON public.report_sections(generated_at DESC);
 
 -- Program tier filtering
-CREATE INDEX idx_report_sections_program_tier 
+CREATE INDEX IF NOT EXISTS idx_report_sections_program_tier 
 ON public.report_sections(program_tier)
 WHERE program_tier IS NOT NULL;
 
@@ -75,6 +75,7 @@ ALTER TABLE public.report_sections ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Patients can read their own report sections
 -- Via: report_sections -> risk_bundles -> assessments -> auth.users
+DROP POLICY IF EXISTS report_sections_select_own ON public.report_sections;
 CREATE POLICY report_sections_select_own
 ON public.report_sections
 FOR SELECT
@@ -88,6 +89,7 @@ USING (
 );
 
 -- Policy: Clinicians can read all report sections
+DROP POLICY IF EXISTS report_sections_select_clinician ON public.report_sections;
 CREATE POLICY report_sections_select_clinician
 ON public.report_sections
 FOR SELECT
@@ -101,11 +103,13 @@ USING (
 
 -- Policy: Service role can insert/update (via processing pipeline)
 -- Note: Service role bypasses RLS, but this is for documentation
+DROP POLICY IF EXISTS report_sections_insert_service ON public.report_sections;
 CREATE POLICY report_sections_insert_service
 ON public.report_sections
 FOR INSERT
 WITH CHECK (auth.jwt() ->> 'role' = 'service_role');
 
+DROP POLICY IF EXISTS report_sections_update_service ON public.report_sections;
 CREATE POLICY report_sections_update_service
 ON public.report_sections
 FOR UPDATE
@@ -124,6 +128,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS report_sections_updated_at ON public.report_sections;
 CREATE TRIGGER report_sections_updated_at
 BEFORE UPDATE ON public.report_sections
 FOR EACH ROW
