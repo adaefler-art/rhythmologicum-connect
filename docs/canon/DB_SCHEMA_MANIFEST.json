@@ -20,6 +20,7 @@
     "funnel_versions",
     "funnels",
     "funnels_catalog",
+    "medical_validation_results",
     "notifications",
     "organizations",
     "patient_funnels",
@@ -47,7 +48,8 @@
     "processing_status",
     "report_status",
     "task_status",
-    "user_role"
+    "user_role",
+    "validation_status"
   ],
   "deprecated": {
     "tables": [
@@ -182,6 +184,26 @@
       "created_at",
       "updated_at",
       "ranking_data"
+    ],
+    "medical_validation_results": [
+      "id",
+      "job_id",
+      "sections_id",
+      "validation_version",
+      "engine_version",
+      "ruleset_hash",
+      "overall_status",
+      "overall_passed",
+      "validation_data",
+      "flags_raised_count",
+      "critical_flags_count",
+      "warning_flags_count",
+      "info_flags_count",
+      "rules_evaluated_count",
+      "validation_time_ms",
+      "validated_at",
+      "created_at",
+      "updated_at"
     ]
   },
   "constraints": {
@@ -211,6 +233,9 @@
     ],
     "priority_rankings": [
       "priority_rankings_job_version_unique"
+    ],
+    "medical_validation_results": [
+      "medical_validation_results_job_version_hash_unique"
     ]
   },
   "notes": {

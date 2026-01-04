@@ -749,6 +749,69 @@ export type Database = {
           },
         ]
       }
+      medical_validation_results: {
+        Row: {
+          created_at: string
+          critical_flags_count: number
+          engine_version: string
+          flags_raised_count: number
+          id: string
+          info_flags_count: number
+          job_id: string
+          overall_passed: boolean
+          overall_status: Database["public"]["Enums"]["validation_status"]
+          rules_evaluated_count: number
+          ruleset_hash: string
+          sections_id: string | null
+          updated_at: string
+          validated_at: string
+          validation_data: Json
+          validation_time_ms: number
+          validation_version: string
+          warning_flags_count: number
+        }
+        Insert: {
+          created_at?: string
+          critical_flags_count?: number
+          engine_version: string
+          flags_raised_count?: number
+          id?: string
+          info_flags_count?: number
+          job_id: string
+          overall_passed: boolean
+          overall_status: Database["public"]["Enums"]["validation_status"]
+          rules_evaluated_count?: number
+          ruleset_hash: string
+          sections_id?: string | null
+          updated_at?: string
+          validated_at: string
+          validation_data: Json
+          validation_time_ms?: number
+          validation_version?: string
+          warning_flags_count?: number
+        }
+        Update: {
+          created_at?: string
+          critical_flags_count?: number
+          engine_version?: string
+          flags_raised_count?: number
+          id?: string
+          info_flags_count?: number
+          job_id?: string
+          overall_passed?: boolean
+          overall_status?: Database["public"]["Enums"]["validation_status"]
+          rules_evaluated_count?: number
+          ruleset_hash?: string
+          sections_id?: string | null
+          updated_at?: string
+          validated_at?: string
+          validation_data?: Json
+          validation_time_ms?: number
+          validation_version?: string
+          warning_flags_count?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           channel: string
@@ -1600,6 +1663,7 @@ export type Database = {
       report_status: "pending" | "generating" | "completed" | "failed"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
+      validation_status: "pass" | "flag" | "fail"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1756,6 +1820,7 @@ export const Constants = {
       report_status: ["pending", "generating", "completed", "failed"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],
+      validation_status: ["pass", "flag", "fail"],
     },
   },
 } as const
