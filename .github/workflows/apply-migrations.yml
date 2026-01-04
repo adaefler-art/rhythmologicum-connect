@@ -171,10 +171,32 @@ jobs:
               printf "y\n" | supabase db push --include-all
             fi
           else
+            echo "Running standard migration apply (no --include-all)"
+
+            set +e
             if [ "$SUPPORTS_YES" = "1" ]; then
-              supabase db push --yes
+              OUT=$(supabase db push --yes 2>&1)
+              CODE=$?
             else
-              printf "y\n" | supabase db push
+              OUT=$(printf "y\n" | supabase db push 2>&1)
+              CODE=$?
+            fi
+            set -e
+
+            echo "$OUT"
+
+            if [ "$CODE" -ne 0 ]; then
+              if echo "$OUT" | grep -q "Rerun the command with --include-all"; then
+                echo "Detected out-of-order local migrations vs remote. Retrying once with --include-all..."
+                if [ "$SUPPORTS_YES" = "1" ]; then
+                  supabase db push --include-all --yes
+                else
+                  printf "y\n" | supabase db push --include-all
+                fi
+              else
+                echo "supabase db push failed"
+                exit "$CODE"
+              fi
             fi
           fi
 
