@@ -30,12 +30,15 @@ jest.mock('@/lib/audit/log', () => ({
 }))
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import {
   listReviewQueue,
   loadReviewRecordById,
   updateReviewDecision,
 } from '@/lib/review/persistence'
+
+const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+  createAdminSupabaseClient: jest.Mock
+}
 
 describe('Review Queue API - HTTP Semantics', () => {
   beforeEach(() => {
