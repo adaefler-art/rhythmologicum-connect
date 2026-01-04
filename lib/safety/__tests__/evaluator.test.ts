@@ -5,6 +5,9 @@
 import { SAFETY_ACTION, SAFETY_SEVERITY } from '@/lib/contracts/safetyCheck'
 import type { ReportSectionsV1 } from '@/lib/contracts/reportSections'
 
+// Create a shared mock for messages.create
+const mockCreate = jest.fn()
+
 // Mock env module first
 jest.mock('@/lib/env', () => ({
   env: {
@@ -13,24 +16,17 @@ jest.mock('@/lib/env', () => ({
   },
 }))
 
-// Mock Anthropic SDK with jest.fn() directly in the factory
+// Mock Anthropic SDK - return the same mock instance every time
 jest.mock('@anthropic-ai/sdk', () => {
   return jest.fn().mockImplementation(() => ({
     messages: {
-      create: jest.fn(),
+      create: mockCreate,
     },
   }))
 })
 
 // Import evaluator after mocks are set up
 import { evaluateSafety, isSafetyCheckPassing, requiresReview } from '@/lib/safety/evaluator'
-import Anthropic from '@anthropic-ai/sdk'
-
-// Get the mock instance to use in tests
-const getMockCreate = () => {
-  const anthropicInstance = new Anthropic({ apiKey: 'test' })
-  return (anthropicInstance as any).messages.create
-}
 
 describe('Safety Check Evaluator', () => {
   const mockSections: ReportSectionsV1 = {
@@ -77,8 +73,6 @@ describe('Safety Check Evaluator', () => {
 
   describe('evaluateSafety', () => {
     it('should successfully evaluate safe content', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
@@ -118,8 +112,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should handle LLM response in markdown code block', async () => {
-      const mockCreate = getMockCreate()
-      
       const jsonResponse = {
         safetyScore: 90,
         overallSeverity: 'none',
@@ -151,8 +143,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should identify critical safety issues', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
@@ -192,8 +182,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should fail-closed when LLM API call fails', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockRejectedValueOnce(new Error('API rate limit exceeded'))
 
       const result = await evaluateSafety({ sections: mockSections })
@@ -209,8 +197,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should fail-closed when LLM response cannot be parsed', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
@@ -250,8 +236,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should use provided model config', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
@@ -289,8 +273,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should record token usage in metadata', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
@@ -322,8 +304,6 @@ describe('Safety Check Evaluator', () => {
     })
 
     it('should validate result against schema', async () => {
-      const mockCreate = getMockCreate()
-      
       mockCreate.mockResolvedValueOnce({
         content: [
           {
