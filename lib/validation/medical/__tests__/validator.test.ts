@@ -110,9 +110,10 @@ describe('Medical Validation Validator', () => {
       expect(result3.success).toBe(true)
       
       if (result1.success && result2.success && result3.success) {
-        const ruleIds1 = result1.data.flags.map(f => f.ruleId).sort()
-        const ruleIds2 = result2.data.flags.map(f => f.ruleId).sort()
-        const ruleIds3 = result3.data.flags.map(f => f.ruleId).sort()
+        // Verify exact flag order is identical (no sorting needed)
+        const ruleIds1 = result1.data.flags.map(f => f.ruleId)
+        const ruleIds2 = result2.data.flags.map(f => f.ruleId)
+        const ruleIds3 = result3.data.flags.map(f => f.ruleId)
         
         // All runs should produce same rules in same order
         expect(ruleIds1).toEqual(ruleIds2)

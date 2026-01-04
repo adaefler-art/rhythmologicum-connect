@@ -349,18 +349,63 @@ export function validateReportSections(
         undefined
       )
       
+      // Sort section flags for deterministic output
+      const severityOrder = {
+        [VALIDATION_SEVERITY.CRITICAL]: 0,
+        [VALIDATION_SEVERITY.WARNING]: 1,
+        [VALIDATION_SEVERITY.INFO]: 2,
+      }
+      
+      const sortedSectionFlags = [...sectionFlags].sort((a, b) => {
+        // Primary: ruleId
+        const ruleCompare = a.ruleId.localeCompare(b.ruleId)
+        if (ruleCompare !== 0) return ruleCompare
+        
+        // Secondary: severity (critical first)
+        const severityCompare = severityOrder[a.severity] - severityOrder[b.severity]
+        if (severityCompare !== 0) return severityCompare
+        
+        // Tertiary: sectionKey (handle undefined)
+        const aSection = a.sectionKey || ''
+        const bSection = b.sectionKey || ''
+        return aSection.localeCompare(bSection)
+      })
+      
       sectionResults.push({
         sectionKey: section.sectionKey,
         passed: sectionFlags.filter(f => f.severity === VALIDATION_SEVERITY.CRITICAL).length === 0,
-        flags: sectionFlags,
+        flags: sortedSectionFlags,
         maxSeverity,
       })
     }
     
+    // Sort flags deterministically for stable output
+    // Sort by: ruleId ASC, severity (critical > warning > info), sectionKey ASC
+    const severityOrder = {
+      [VALIDATION_SEVERITY.CRITICAL]: 0,
+      [VALIDATION_SEVERITY.WARNING]: 1,
+      [VALIDATION_SEVERITY.INFO]: 2,
+    }
+    
+    const sortedFlags = [...allFlags].sort((a, b) => {
+      // Primary: ruleId
+      const ruleCompare = a.ruleId.localeCompare(b.ruleId)
+      if (ruleCompare !== 0) return ruleCompare
+      
+      // Secondary: severity (critical first)
+      const severityCompare = severityOrder[a.severity] - severityOrder[b.severity]
+      if (severityCompare !== 0) return severityCompare
+      
+      // Tertiary: sectionKey (handle undefined)
+      const aSection = a.sectionKey || ''
+      const bSection = b.sectionKey || ''
+      return aSection.localeCompare(bSection)
+    })
+    
     // Calculate metadata
-    const criticalFlags = allFlags.filter(f => f.severity === VALIDATION_SEVERITY.CRITICAL)
-    const warningFlags = allFlags.filter(f => f.severity === VALIDATION_SEVERITY.WARNING)
-    const infoFlags = allFlags.filter(f => f.severity === VALIDATION_SEVERITY.INFO)
+    const criticalFlags = sortedFlags.filter(f => f.severity === VALIDATION_SEVERITY.CRITICAL)
+    const warningFlags = sortedFlags.filter(f => f.severity === VALIDATION_SEVERITY.WARNING)
+    const infoFlags = sortedFlags.filter(f => f.severity === VALIDATION_SEVERITY.INFO)
     
     const overallPassed = criticalFlags.length === 0
     
@@ -382,12 +427,12 @@ export function validateReportSections(
       sectionsId: undefined, // Will be set by persistence layer
       overallStatus,
       sectionResults,
-      flags: allFlags,
+      flags: sortedFlags,
       overallPassed,
       metadata: {
         validationTimeMs,
         rulesEvaluatedCount: allRules.length,
-        flagsRaisedCount: allFlags.length,
+        flagsRaisedCount: sortedFlags.length,
         criticalFlagsCount: criticalFlags.length,
         warningFlagsCount: warningFlags.length,
         infoFlagsCount: infoFlags.length,
