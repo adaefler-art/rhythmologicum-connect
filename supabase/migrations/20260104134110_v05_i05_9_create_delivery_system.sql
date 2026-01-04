@@ -416,6 +416,78 @@ BEGIN
         ALTER TABLE public.notifications
         ADD COLUMN expires_at TIMESTAMPTZ;
     END IF;
+
+    -- Delivery tracking timestamps (nullable)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'sent_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN sent_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'delivered_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN delivered_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'read_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN read_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'failed_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN failed_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'error_message'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN error_message TEXT;
+    END IF;
+
+    -- Timestamps used by app queries + updated_at trigger
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'created_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    END IF;
 END $$;
 
 -- Apply a safe default for new inserts when possible.
