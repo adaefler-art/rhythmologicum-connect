@@ -226,7 +226,24 @@ WHERE job_id IS NOT NULL;
 -- ============================================================
 
 -- Enable RLS on notifications table
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relname = 'notifications'
+          AND c.relrowsecurity = FALSE
+    ) THEN
+        ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
+
+-- Make policies rerunnable
+DROP POLICY IF EXISTS notifications_select_own ON public.notifications;
+DROP POLICY IF EXISTS notifications_select_clinician ON public.notifications;
+DROP POLICY IF EXISTS notifications_update_own ON public.notifications;
 
 -- Policy: Users can view their own notifications
 CREATE POLICY notifications_select_own 
