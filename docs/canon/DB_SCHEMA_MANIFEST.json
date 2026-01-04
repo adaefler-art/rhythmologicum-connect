@@ -162,7 +162,14 @@
       "started_at",
       "completed_at",
       "errors",
-      "schema_version"
+      "schema_version",
+      "pdf_path",
+      "pdf_metadata",
+      "pdf_generated_at",
+      "delivery_status",
+      "delivery_timestamp",
+      "delivery_metadata",
+      "delivery_attempt"
     ],
     "risk_bundles": [
       "id",
@@ -208,6 +215,31 @@
       "validated_at",
       "created_at",
       "updated_at"
+    ],
+    "notifications": [
+      "id",
+      "user_id",
+      "job_id",
+      "assessment_id",
+      "notification_type",
+      "status",
+      "channel",
+      "priority",
+      "subject",
+      "message",
+      "metadata",
+      "consent_verified",
+      "consent_version",
+      "sent_at",
+      "delivered_at",
+      "read_at",
+      "failed_at",
+      "error_message",
+      "follow_up_at",
+      "follow_up_completed",
+      "created_at",
+      "updated_at",
+      "expires_at"
     ],
     "review_records": [
       "id",
