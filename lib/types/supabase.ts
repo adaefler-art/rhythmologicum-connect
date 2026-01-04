@@ -1105,6 +1105,9 @@ export type Database = {
           errors: Json | null
           id: string
           max_attempts: number
+          pdf_generated_at: string | null
+          pdf_metadata: Json | null
+          pdf_path: string | null
           schema_version: string
           stage: Database["public"]["Enums"]["processing_stage"]
           started_at: string | null
@@ -1120,6 +1123,9 @@ export type Database = {
           errors?: Json | null
           id?: string
           max_attempts?: number
+          pdf_generated_at?: string | null
+          pdf_metadata?: Json | null
+          pdf_path?: string | null
           schema_version?: string
           stage?: Database["public"]["Enums"]["processing_stage"]
           started_at?: string | null
@@ -1135,6 +1141,9 @@ export type Database = {
           errors?: Json | null
           id?: string
           max_attempts?: number
+          pdf_generated_at?: string | null
+          pdf_metadata?: Json | null
+          pdf_path?: string | null
           schema_version?: string
           stage?: Database["public"]["Enums"]["processing_stage"]
           started_at?: string | null
