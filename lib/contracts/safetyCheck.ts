@@ -275,7 +275,7 @@ export function hasAnyFindings(result: SafetyCheckResultV1): boolean {
 export function getMaxSeverity(result: SafetyCheckResultV1): SafetySeverity {
   if (result.findings.length === 0) return SAFETY_SEVERITY.NONE
   
-  const severityOrder = [
+  const severityOrder: SafetySeverity[] = [
     SAFETY_SEVERITY.NONE,
     SAFETY_SEVERITY.LOW,
     SAFETY_SEVERITY.MEDIUM,
@@ -283,10 +283,10 @@ export function getMaxSeverity(result: SafetyCheckResultV1): SafetySeverity {
     SAFETY_SEVERITY.CRITICAL,
   ]
   
-  let maxSeverity = SAFETY_SEVERITY.NONE
+  let maxSeverity: SafetySeverity = SAFETY_SEVERITY.NONE
   for (const finding of result.findings) {
     if (severityOrder.indexOf(finding.severity) > severityOrder.indexOf(maxSeverity)) {
-      maxSeverity = finding.severity
+      maxSeverity = finding.severity as SafetySeverity
     }
   }
   
