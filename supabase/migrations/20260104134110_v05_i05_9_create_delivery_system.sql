@@ -479,8 +479,7 @@ ON public.notifications(user_id, created_at DESC);
 
 -- Index for pending notifications (for processing)
 CREATE INDEX IF NOT EXISTS idx_notifications_pending 
-ON public.notifications(status, created_at) 
-WHERE status::text = 'PENDING';
+ON public.notifications(status, created_at);
 
 -- Index for follow-up notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_follow_up 
