@@ -124,10 +124,12 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
 export function getPatientNavItems(pathname: string): RoleNavItem[] {
   return [
     {
-      href: '/patient/assessment',
+      href: '/patient/funnels',
       label: 'Fragebogen starten',
       active:
-        pathname?.startsWith('/patient/assessment') || pathname?.startsWith('/patient/funnel') || false,
+        pathname?.startsWith('/patient/assessment') || 
+        pathname?.startsWith('/patient/funnel') || 
+        false,
     },
     {
       href: '/patient/history',

@@ -50,6 +50,38 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col transition-colors duration-150">
+      {/* Mobile Top Header - Fixed */}
+      <header className="md:hidden fixed inset-x-0 top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 transition-colors duration-150"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+        }}
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
+                Rhythmologicum Connect
+              </p>
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                Stress &amp; Resilienz Pilot
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              {user && (
+                <button
+                  onClick={handleSignOut}
+                  className="px-2 py-1 text-xs font-medium rounded-md transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
+                  aria-label="Abmelden"
+                >
+                  Abmelden
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Desktop Header */}
       <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hidden md:block transition-colors duration-150">
         <div className="max-w-6xl mx-auto px-4 py-3">
@@ -85,9 +117,9 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 md:pb-0" style={{
-        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
-      }}>{children}</main>
+      <main 
+        className="flex-1 pt-[calc(4rem+env(safe-area-inset-top,0px))] md:pt-0 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0"
+      >{children}</main>
 
       {/* Desktop Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hidden md:block transition-colors duration-150">
