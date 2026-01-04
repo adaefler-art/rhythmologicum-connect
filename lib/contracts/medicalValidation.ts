@@ -165,6 +165,9 @@ export const MedicalValidationResultV1Schema = z.object({
   /** Validation rules engine version */
   engineVersion: z.string().min(1).max(50),
   
+  /** Deterministic hash of active ruleset */
+  rulesetHash: z.string().length(32),
+  
   /** Processing job ID reference */
   jobId: z.string().uuid(),
   

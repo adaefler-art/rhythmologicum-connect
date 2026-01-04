@@ -10,6 +10,7 @@
  * @module lib/validation/medical/ruleRegistry
  */
 
+import { createHash } from 'crypto'
 import {
   VALIDATION_SEVERITY,
   VALIDATION_FLAG_TYPE,
@@ -363,6 +364,7 @@ export function listRules(): ValidationRule[] {
 export function listActiveRules(): ValidationRule[] {
   return Object.values(VALIDATION_RULE_REGISTRY)
     .filter(rule => rule.metadata.isActive)
+    .sort((a, b) => a.metadata.ruleId.localeCompare(b.metadata.ruleId))
 }
 
 /**
@@ -374,6 +376,7 @@ export function listRulesBySection(sectionKey: string): ValidationRule[] {
       rule.metadata.isActive && 
       (rule.metadata.sectionKey === sectionKey || rule.metadata.sectionKey === 'all')
     )
+    .sort((a, b) => a.metadata.ruleId.localeCompare(b.metadata.ruleId))
 }
 
 /**
@@ -419,4 +422,33 @@ export function getRegistryVersion(): string {
   )[0]
   
   return latestRule.metadata.version
+}
+
+/**
+ * Get deterministic ruleset hash
+ * Uniquely identifies the active ruleset content using SHA-256
+ * 
+ * @returns Deterministic hash of active rules (32 char hex)
+ */
+export function getRulesetHash(): string {
+  const activeRules = listActiveRules()
+  
+  if (activeRules.length === 0) {
+    // No active rules - return deterministic zero hash
+    return '00000000000000000000000000000000'
+  }
+  
+  // Build canonical string: sorted list of ruleId:version
+  const canonicalString = activeRules
+    .map(r => `${r.metadata.ruleId}:${r.metadata.version}`)
+    .sort()
+    .join('|')
+  
+  // Generate SHA-256 hash and return first 32 hex chars
+  const hash = createHash('sha256')
+    .update(canonicalString, 'utf8')
+    .digest('hex')
+    .substring(0, 32)
+  
+  return hash
 }

@@ -13,6 +13,7 @@ import {
   listRuleIds,
   getRuleMetadata,
   getRegistryVersion,
+  getRulesetHash,
 } from '@/lib/validation/medical/ruleRegistry'
 import {
   VALIDATION_SEVERITY,
@@ -272,6 +273,59 @@ describe('Medical Validation Rule Registry', () => {
         expect(rule.logic.minValue).toBe(0)
         expect(rule.logic.maxValue).toBe(100)
       }
+    })
+  })
+
+  describe('Determinism', () => {
+    it('should return rules in stable order from listActiveRules', () => {
+      const rules1 = listActiveRules()
+      const rules2 = listActiveRules()
+      
+      const ruleIds1 = rules1.map(r => r.metadata.ruleId)
+      const ruleIds2 = rules2.map(r => r.metadata.ruleId)
+      
+      expect(ruleIds1).toEqual(ruleIds2)
+      
+      // Verify sorted order
+      const sorted = [...ruleIds1].sort()
+      expect(ruleIds1).toEqual(sorted)
+    })
+
+    it('should return rules in stable order from listRulesBySection', () => {
+      const rules1 = listRulesBySection('recommendations')
+      const rules2 = listRulesBySection('recommendations')
+      
+      const ruleIds1 = rules1.map(r => r.metadata.ruleId)
+      const ruleIds2 = rules2.map(r => r.metadata.ruleId)
+      
+      expect(ruleIds1).toEqual(ruleIds2)
+      
+      // Verify sorted order
+      const sorted = [...ruleIds1].sort()
+      expect(ruleIds1).toEqual(sorted)
+    })
+  })
+
+  describe('getRulesetHash', () => {
+    it('should return deterministic hash', () => {
+      const hash1 = getRulesetHash()
+      const hash2 = getRulesetHash()
+      
+      expect(hash1).toBe(hash2)
+    })
+
+    it('should return 32 character hex string', () => {
+      const hash = getRulesetHash()
+      
+      expect(hash).toMatch(/^[0-9a-f]{32}$/)
+      expect(hash.length).toBe(32)
+    })
+
+    it('should be stable across multiple calls', () => {
+      const hashes = Array(10).fill(null).map(() => getRulesetHash())
+      const uniqueHashes = new Set(hashes)
+      
+      expect(uniqueHashes.size).toBe(1)
     })
   })
 

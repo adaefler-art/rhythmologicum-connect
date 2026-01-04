@@ -63,6 +63,7 @@ export async function saveMedicalValidation(
       sections_id: validation.sectionsId || null,
       validation_version: validation.validationVersion,
       engine_version: validation.engineVersion,
+      ruleset_hash: validation.rulesetHash,
       overall_status: validation.overallStatus,
       overall_passed: validation.overallPassed,
       validation_data: validation, // Store complete structure
@@ -75,11 +76,13 @@ export async function saveMedicalValidation(
       validated_at: validation.validatedAt,
     }
 
-    // Check if validation already exists
+    // Check if validation already exists with same ruleset
     const { data: existing, error: checkError } = await supabase
       .from('medical_validation_results')
       .select('id')
       .eq('job_id', jobId)
+      .eq('validation_version', validation.validationVersion)
+      .eq('ruleset_hash', validation.rulesetHash)
       .maybeSingle()
 
     if (checkError && checkError.code !== 'PGRST116') {
@@ -92,11 +95,11 @@ export async function saveMedicalValidation(
 
     const isNewValidation = !existing
 
-    // Upsert validation result
+    // Upsert validation result using composite key
     const { data, error: upsertError } = await supabase
       .from('medical_validation_results')
       .upsert(row, {
-        onConflict: 'job_id',
+        onConflict: 'job_id,validation_version,ruleset_hash',
         ignoreDuplicates: false,
       })
       .select('id')

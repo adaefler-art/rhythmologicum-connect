@@ -43,6 +43,7 @@ describe('Validation Stage Processor', () => {
   const mockValidationResult = {
     validationVersion: 'v1' as const,
     engineVersion: 'v1.0.0',
+    rulesetHash: '12345678901234567890123456789012',
     jobId,
     overallStatus: VALIDATION_STATUS.PASS,
     sectionResults: [],

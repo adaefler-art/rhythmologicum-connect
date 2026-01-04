@@ -30,6 +30,7 @@ import {
   listActiveRules,
   listRulesBySection,
   getRegistryVersion,
+  getRulesetHash,
   type ValidationRule,
   type RuleLogic,
   type PatternRule,
@@ -376,6 +377,7 @@ export function validateReportSections(
     const result: MedicalValidationResultV1 = {
       validationVersion: 'v1',
       engineVersion: engineVersion || getRegistryVersion(),
+      rulesetHash: getRulesetHash(),
       jobId: sections.jobId,
       sectionsId: undefined, // Will be set by persistence layer
       overallStatus,

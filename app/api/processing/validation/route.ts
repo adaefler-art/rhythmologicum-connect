@@ -34,19 +34,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Role is stored in auth.users.raw_app_meta_data.role and surfaced to the app as app_metadata.role
-    // (user_metadata is user-modifiable, but we keep it as a fallback for legacy/dev cases).
-    const userRole = user.app_metadata?.role || user.user_metadata?.role
+    const userRole = user.app_metadata?.role
     
     if (!userRole || !['clinician', 'admin'].includes(userRole)) {
+      // Return 404 instead of 403 to avoid resource existence disclosure
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'AUTHORIZATION_FAILED',
-            message: 'Only clinicians and admins can trigger validation',
+            code: 'NOT_FOUND',
+            message: 'Resource not found',
           },
         },
-        { status: 403 }
+        { status: 404 }
       )
     }
     

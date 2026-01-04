@@ -112,6 +112,7 @@ describe('Medical Validation Contract', () => {
     const validResult: MedicalValidationResultV1 = {
       validationVersion: 'v1',
       engineVersion: 'v1.0.0',
+      rulesetHash: '12345678901234567890123456789012',
       jobId: '323e4567-e89b-12d3-a456-426614174000',
       sectionsId: '423e4567-e89b-12d3-a456-426614174000',
       overallStatus: VALIDATION_STATUS.FAIL,
@@ -195,6 +196,7 @@ describe('Medical Validation Contract', () => {
     const validData: MedicalValidationResultV1 = {
       validationVersion: 'v1',
       engineVersion: 'v1.0.0',
+      rulesetHash: '12345678901234567890123456789012',
       jobId: '323e4567-e89b-12d3-a456-426614174000',
       overallStatus: VALIDATION_STATUS.PASS,
       sectionResults: [],
@@ -233,6 +235,7 @@ describe('Medical Validation Contract', () => {
     const testResult: MedicalValidationResultV1 = {
       validationVersion: 'v1',
       engineVersion: 'v1.0.0',
+      rulesetHash: '12345678901234567890123456789012',
       jobId: '323e4567-e89b-12d3-a456-426614174000',
       overallStatus: VALIDATION_STATUS.FLAG,
       sectionResults: [

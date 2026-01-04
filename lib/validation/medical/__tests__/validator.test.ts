@@ -71,6 +71,55 @@ describe('Medical Validation Validator', () => {
       if (result1.success && result2.success) {
         expect(result1.data.overallPassed).toBe(result2.data.overallPassed)
         expect(result1.data.flags.length).toBe(result2.data.flags.length)
+        
+        // Verify flag ordering is stable (ruleId order)
+        const ruleIds1 = result1.data.flags.map(f => f.ruleId)
+        const ruleIds2 = result2.data.flags.map(f => f.ruleId)
+        expect(ruleIds1).toEqual(ruleIds2)
+        
+        // Verify rulesetHash is deterministic
+        expect(result1.data.rulesetHash).toBe(result2.data.rulesetHash)
+        expect(result1.data.rulesetHash).toMatch(/^[0-9a-f]{32}$/)
+      }
+    })
+
+    it('should produce stable flag order with multiple violations', () => {
+      // Create sections that trigger multiple rules
+      const sections = createMockSections({
+        sections: [
+          {
+            sectionKey: 'overview',
+            inputs: { 
+              riskBundleId: '123e4567-e89b-12d3-a456-426614174000',
+              scores: { riskScore: 150 } // Out of bounds
+            },
+            draft: 'You have been diagnosed with stress and we guarantee 100% recovery.', // Multiple violations
+            promptVersion: 'v1.0.0',
+            generationMethod: 'template',
+            generatedAt: '2026-01-04T06:00:00.000Z',
+          },
+        ],
+      })
+
+      const result1 = validateReportSections({ sections })
+      const result2 = validateReportSections({ sections })
+      const result3 = validateReportSections({ sections })
+
+      expect(result1.success).toBe(true)
+      expect(result2.success).toBe(true)
+      expect(result3.success).toBe(true)
+      
+      if (result1.success && result2.success && result3.success) {
+        const ruleIds1 = result1.data.flags.map(f => f.ruleId).sort()
+        const ruleIds2 = result2.data.flags.map(f => f.ruleId).sort()
+        const ruleIds3 = result3.data.flags.map(f => f.ruleId).sort()
+        
+        // All runs should produce same rules in same order
+        expect(ruleIds1).toEqual(ruleIds2)
+        expect(ruleIds2).toEqual(ruleIds3)
+        
+        // Should have multiple flags
+        expect(result1.data.flags.length).toBeGreaterThan(1)
       }
     })
   })
