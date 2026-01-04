@@ -12,7 +12,13 @@
 -- Notification status enum for tracking delivery state
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_status') THEN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'notification_status'
+          AND n.nspname = 'public'
+    ) THEN
         CREATE TYPE public.notification_status AS ENUM (
             'PENDING',
             'SENT',
@@ -21,6 +27,79 @@ BEGIN
             'FAILED',
             'CANCELLED'
         );
+    ELSE
+        -- Ensure enum contains all expected values (idempotent upgrade for existing DBs)
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'PENDING'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'PENDING';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'SENT'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'SENT';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'DELIVERED'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'DELIVERED';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'READ'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'READ';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'FAILED'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'FAILED';
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_type t
+            JOIN pg_namespace n ON n.oid = t.typnamespace
+            JOIN pg_enum e ON e.enumtypid = t.oid
+            WHERE n.nspname = 'public'
+              AND t.typname = 'notification_status'
+              AND e.enumlabel = 'CANCELLED'
+        ) THEN
+            ALTER TYPE public.notification_status ADD VALUE 'CANCELLED';
+        END IF;
     END IF;
 END $$;
 
