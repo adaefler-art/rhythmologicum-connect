@@ -1349,6 +1349,69 @@ export type Database = {
           },
         ]
       }
+      review_records: {
+        Row: {
+          audit_metadata: Json | null
+          created_at: string
+          decided_at: string | null
+          decision_notes: string | null
+          decision_reason_code: string | null
+          id: string
+          is_sampled: boolean
+          job_id: string
+          queue_reasons: string[]
+          review_iteration: number
+          reviewer_role: string | null
+          reviewer_user_id: string | null
+          safety_check_id: string | null
+          sampling_config_version: string | null
+          sampling_hash: string | null
+          status: Database["public"]["Enums"]["review_status"]
+          updated_at: string
+          validation_result_id: string | null
+        }
+        Insert: {
+          audit_metadata?: Json | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          decision_reason_code?: string | null
+          id?: string
+          is_sampled?: boolean
+          job_id: string
+          queue_reasons?: string[]
+          review_iteration?: number
+          reviewer_role?: string | null
+          reviewer_user_id?: string | null
+          safety_check_id?: string | null
+          sampling_config_version?: string | null
+          sampling_hash?: string | null
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+          validation_result_id?: string | null
+        }
+        Update: {
+          audit_metadata?: Json | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          decision_reason_code?: string | null
+          id?: string
+          is_sampled?: boolean
+          job_id?: string
+          queue_reasons?: string[]
+          review_iteration?: number
+          reviewer_role?: string | null
+          reviewer_user_id?: string | null
+          safety_check_id?: string | null
+          sampling_config_version?: string | null
+          sampling_hash?: string | null
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+          validation_result_id?: string | null
+        }
+        Relationships: []
+      }
       risk_bundles: {
         Row: {
           algorithm_version: string
@@ -1699,6 +1762,10 @@ export type Database = {
         Args: { p_prompt_version: string; p_sections_id: string }
         Returns: string
       }
+      compute_sampling_hash: {
+        Args: { p_job_id: string; p_salt?: string }
+        Returns: string
+      }
       current_user_role: {
         Args: { org_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1734,6 +1801,14 @@ export type Database = {
         Args: { user_email: string; user_role: string }
         Returns: undefined
       }
+      should_sample_job: {
+        Args: {
+          p_job_id: string
+          p_salt?: string
+          p_sampling_percentage?: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
@@ -1758,6 +1833,7 @@ export type Database = {
         | "failed"
       processing_status: "queued" | "in_progress" | "completed" | "failed"
       report_status: "pending" | "generating" | "completed" | "failed"
+      review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
       safety_action: "PASS" | "FLAG" | "BLOCK" | "UNKNOWN"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
@@ -1916,6 +1992,7 @@ export const Constants = {
       ],
       processing_status: ["queued", "in_progress", "completed", "failed"],
       report_status: ["pending", "generating", "completed", "failed"],
+      review_status: ["PENDING", "APPROVED", "REJECTED", "CHANGES_REQUESTED"],
       safety_action: ["PASS", "FLAG", "BLOCK", "UNKNOWN"],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],

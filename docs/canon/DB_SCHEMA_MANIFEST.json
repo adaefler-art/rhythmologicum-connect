@@ -30,6 +30,7 @@
     "priority_rankings",
     "processing_jobs",
     "questions",
+    "review_records",
     "report_sections",
     "reports",
     "risk_bundles",
@@ -48,6 +49,7 @@
     "processing_stage",
     "processing_status",
     "report_status",
+    "review_status",
     "safety_action",
     "task_status",
     "user_role",
@@ -207,6 +209,26 @@
       "created_at",
       "updated_at"
     ],
+    "review_records": [
+      "id",
+      "job_id",
+      "review_iteration",
+      "status",
+      "queue_reasons",
+      "is_sampled",
+      "sampling_hash",
+      "sampling_config_version",
+      "validation_result_id",
+      "safety_check_id",
+      "reviewer_user_id",
+      "reviewer_role",
+      "decision_reason_code",
+      "decision_notes",
+      "decided_at",
+      "audit_metadata",
+      "created_at",
+      "updated_at"
+    ],
     "safety_check_results": [
       "id",
       "job_id",
@@ -268,6 +290,11 @@
     ],
     "medical_validation_results": [
       "medical_validation_results_job_version_hash_unique"
+    ],
+    "review_records": [
+      "review_records_job_iteration_unique",
+      "review_records_decision_notes_length",
+      "review_records_reviewer_required"
     ],
     "safety_check_results": [
       "safety_check_results_job_id_unique",

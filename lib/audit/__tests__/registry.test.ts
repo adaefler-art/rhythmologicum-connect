@@ -21,10 +21,12 @@ describe('Audit Constants', () => {
       expect(AUDIT_ENTITY_TYPE.USER_ORG_MEMBERSHIP).toBe('user_org_membership')
       expect(AUDIT_ENTITY_TYPE.CLINICIAN_ASSIGNMENT).toBe('clinician_assignment')
       expect(AUDIT_ENTITY_TYPE.DOCUMENT).toBe('document') // V05-I04.3
+      expect(AUDIT_ENTITY_TYPE.PROCESSING_JOB).toBe('processing_job') // V05-I05.1
+      expect(AUDIT_ENTITY_TYPE.REVIEW_RECORD).toBe('review_record') // V05-I05.7
     })
 
-    it('has exactly 12 entity types', () => {
-      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(12)
+    it('has exactly 13 entity types', () => {
+      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(13)
     })
   })
 
@@ -35,6 +37,7 @@ describe('Audit Constants', () => {
       expect(AUDIT_ACTION.DELETE).toBe('delete')
       expect(AUDIT_ACTION.APPROVE).toBe('approve')
       expect(AUDIT_ACTION.REJECT).toBe('reject')
+      expect(AUDIT_ACTION.REQUEST_CHANGES).toBe('request_changes') // V05-I05.7
       expect(AUDIT_ACTION.GENERATE).toBe('generate')
       expect(AUDIT_ACTION.FLAG).toBe('flag')
       expect(AUDIT_ACTION.ASSIGN).toBe('assign')
@@ -44,8 +47,8 @@ describe('Audit Constants', () => {
       expect(AUDIT_ACTION.COMPLETE).toBe('complete')
     })
 
-    it('has exactly 12 actions', () => {
-      expect(Object.keys(AUDIT_ACTION)).toHaveLength(12)
+    it('has exactly 13 actions', () => {
+      expect(Object.keys(AUDIT_ACTION)).toHaveLength(13)
     })
   })
 

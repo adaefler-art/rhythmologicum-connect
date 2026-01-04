@@ -40,6 +40,8 @@ const ALLOWED_ADMIN_USAGE = [
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',
+  // Review queue: cross-user clinician/admin workflows (RLS-bypass after RBAC gate)
+  'app/api/review/',
   // Processing: creating jobs requires service role because INSERT/UPDATE are restricted
   // to service_role (RLS guardrail) and the API must be able to enqueue work after
   // auth/RBAC checks.
