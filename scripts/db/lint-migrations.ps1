@@ -9,7 +9,14 @@
 
 param(
     [switch]$Verbose,
-    [string]$Path = ""
+    [string]$Path = "",
+    # When enabled, deprecated-object warnings are only emitted for migrations newly
+    # added in the current git diff (PR/CI context). This keeps CI logs clean while
+    # still preventing new deprecated usage.
+    [bool]$WarnDeprecatedOnlyForNewMigrations = $true,
+    # Base ref used to compute "new" migrations. In GitHub Actions PR runs,
+    # GITHUB_BASE_REF is preferred automatically.
+    [string]$BaseRef = "origin/main"
 )
 
 $ErrorActionPreference = "Stop"
@@ -90,6 +97,86 @@ Write-Host "   Found $($migrationFiles.Count) migration files" -ForegroundColor 
 Write-Host ""
 
 # ============================================================
+# DETERMINE "NEW" MIGRATIONS (for deprecated warnings)
+# ============================================================
+
+$newMigrationFileNames = New-Object 'System.Collections.Generic.HashSet[string]'
+$computedNewMigrations = $false
+
+function Add-NewMigrationFileNamesFromGit {
+    param(
+        [string]$ResolvedBaseRef
+    )
+
+    try {
+        $mergeBase = (git merge-base $ResolvedBaseRef HEAD 2>$null).Trim()
+        if ([string]::IsNullOrWhiteSpace($mergeBase)) {
+            return
+        }
+
+        $script:computedNewMigrations = $true
+
+        # Only consider newly added migration files.
+        $diffLines = git diff --name-status "$mergeBase...HEAD" -- supabase/migrations/*.sql 2>$null
+        foreach ($line in $diffLines) {
+            # Format is typically: A\tpath
+            if ($line -match '^(?<status>[A-Z])\s+(?<path>supabase/migrations/.+\.sql)$') {
+                if ($Matches['status'] -eq 'A') {
+                    $fileName = [System.IO.Path]::GetFileName($Matches['path'])
+                    if (-not [string]::IsNullOrWhiteSpace($fileName)) {
+                        [void]$newMigrationFileNames.Add($fileName)
+                    }
+                }
+            }
+        }
+    } catch {
+        # Best-effort only; if git isn't available, we fall back to warning on all files.
+        return
+    }
+}
+
+if ($WarnDeprecatedOnlyForNewMigrations -and -not $Path) {
+    $resolvedBaseRef = $BaseRef
+
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_BASE_REF)) {
+        $candidate = "origin/$($env:GITHUB_BASE_REF)"
+
+        $refExists = $false
+        try {
+            git rev-parse --verify $candidate *> $null
+            $refExists = ($LASTEXITCODE -eq 0)
+        } catch {
+            $refExists = $false
+        }
+
+        $resolvedBaseRef = if ($refExists) { $candidate } else { $env:GITHUB_BASE_REF }
+    }
+
+    Add-NewMigrationFileNamesFromGit -ResolvedBaseRef $resolvedBaseRef
+
+    if (-not $computedNewMigrations) {
+        # We couldn't compute a merge-base/diff (e.g., shallow checkout or missing refs).
+        # Falling back to warning on all deprecated usage avoids missing new deprecated objects.
+        $WarnDeprecatedOnlyForNewMigrations = $false
+
+        if ($Verbose) {
+            Write-Host "⚠️  Could not determine new migrations via git; deprecated warnings will apply to ALL migrations." -ForegroundColor Yellow
+            Write-Host "   Tip: ensure base ref '$resolvedBaseRef' is available (fetch-depth 0 or fetch base branch)." -ForegroundColor Yellow
+            Write-Host "" -ForegroundColor Yellow
+        }
+    }
+
+    if ($Verbose) {
+        if ($WarnDeprecatedOnlyForNewMigrations) {
+            Write-Host "🧪 Deprecated warnings scope: only NEW migrations" -ForegroundColor Gray
+            Write-Host "   Base ref: $resolvedBaseRef" -ForegroundColor Gray
+            Write-Host "   New migrations detected: $($newMigrationFileNames.Count)" -ForegroundColor Gray
+            Write-Host "" -ForegroundColor Gray
+        }
+    }
+}
+
+# ============================================================
 # EXTRACT IDENTIFIERS FROM MIGRATIONS
 # ============================================================
 
@@ -130,6 +217,7 @@ foreach ($file in $migrationFiles) {
         # Check against canonical list
         $isCanonical = $manifest.tables -contains $tableName
         $isDeprecated = $manifest.deprecated.tables | Where-Object { $_.name -eq $tableName }
+        $isNewMigration = $newMigrationFileNames.Contains($relativePath)
         
         if (-not $isCanonical) {
             $violations += @{
@@ -140,7 +228,7 @@ foreach ($file in $migrationFiles) {
                 Reason = "Not in canonical manifest"
                 Severity = "ERROR"
             }
-        } elseif ($isDeprecated) {
+        } elseif ($isDeprecated -and (-not $WarnDeprecatedOnlyForNewMigrations -or $isNewMigration)) {
             $violations += @{
                 Type = "TABLE"
                 Name = $tableName
@@ -186,6 +274,7 @@ foreach ($file in $migrationFiles) {
         # Check against canonical list
         $isCanonical = $manifest.tables -contains $tableName
         $isDeprecated = $manifest.deprecated.tables | Where-Object { $_.name -eq $tableName }
+        $isNewMigration = $newMigrationFileNames.Contains($relativePath)
         
         if (-not $isCanonical) {
             $violations += @{
@@ -196,7 +285,7 @@ foreach ($file in $migrationFiles) {
                 Reason = "Table not in canonical manifest"
                 Severity = "ERROR"
             }
-        } elseif ($isDeprecated) {
+        } elseif ($isDeprecated -and (-not $WarnDeprecatedOnlyForNewMigrations -or $isNewMigration)) {
             $violations += @{
                 Type = "ALTER TABLE"
                 Name = $tableName
