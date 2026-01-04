@@ -18,16 +18,50 @@ export type PageRendererProps = {
 
 /**
  * Renders a content page with optional title/description
- * Sections rendered in manifest order (deterministic)
+ * Sections rendered in deterministic order with stable sorting
+ * 
+ * V05-I06.2 Hardening: Stable sort with explicit tie-breakers
+ * - Primary: orderIndex (ascending)
+ * - Secondary: original array index (ascending)
+ * - Tertiary: section key (lexicographic)
  */
 export function PageRenderer({ page, onBlockTypeError }: PageRendererProps) {
-  // Sort sections by orderIndex if present, otherwise preserve manifest order
-  const sections = [...page.sections].sort((a, b) => {
-    if (a.orderIndex !== undefined && b.orderIndex !== undefined) {
-      return a.orderIndex - b.orderIndex
+  // Create sections with original index for stable sorting
+  const sectionsWithIndex = page.sections.map((section, originalIndex) => ({
+    section,
+    originalIndex,
+  }))
+
+  // Stable deterministic sort
+  const sortedSections = [...sectionsWithIndex].sort((a, b) => {
+    const aOrder = a.section.orderIndex
+    const bOrder = b.section.orderIndex
+
+    // Both have orderIndex: sort by orderIndex
+    if (aOrder !== undefined && bOrder !== undefined) {
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder
+      }
+      // Tie-breaker 1: original index
+      if (a.originalIndex !== b.originalIndex) {
+        return a.originalIndex - b.originalIndex
+      }
+      // Tie-breaker 2: key (lexicographic)
+      return a.section.key.localeCompare(b.section.key)
     }
-    // If orderIndex not present, maintain original order
-    return 0
+
+    // Only a has orderIndex: a comes first
+    if (aOrder !== undefined) {
+      return -1
+    }
+
+    // Only b has orderIndex: b comes first
+    if (bOrder !== undefined) {
+      return 1
+    }
+
+    // Neither has orderIndex: preserve original order
+    return a.originalIndex - b.originalIndex
   })
 
   return (
@@ -48,7 +82,7 @@ export function PageRenderer({ page, onBlockTypeError }: PageRendererProps) {
 
       {/* Sections stack */}
       <div className="content-sections-stack space-y-4">
-        {sections.map((section) => (
+        {sortedSections.map(({ section }) => (
           <SectionRenderer
             key={section.key}
             section={section}

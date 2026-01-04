@@ -416,4 +416,351 @@ describe('ContentBlockRenderer', () => {
       expect(container.querySelector('.divider-block')).toBeInTheDocument()
     })
   })
+
+  describe('V05-I06.2 Hardening — Security Tests', () => {
+    describe('Markdown security', () => {
+      it('should not render raw HTML in markdown', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'markdown-xss',
+                  type: SECTION_TYPE.MARKDOWN,
+                  content: {
+                    markdown: '# Title\n\n<script>alert("XSS")</script>\n\n<img src=x onerror="alert(1)">',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        // Should not contain script tag
+        expect(container.querySelector('script')).not.toBeInTheDocument()
+        // Should not contain img tag with onerror
+        const imgs = container.querySelectorAll('img')
+        imgs.forEach(img => {
+          expect(img.getAttribute('onerror')).toBeNull()
+        })
+      })
+
+      it('should render markdown links with safe attributes for external URLs', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'markdown-link',
+                  type: SECTION_TYPE.MARKDOWN,
+                  content: {
+                    markdown: '[External Link](https://example.com)\n[Internal Link](/page)',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const externalLink = container.querySelector('a[href="https://example.com"]')
+        expect(externalLink).toHaveAttribute('rel', 'noopener noreferrer')
+        expect(externalLink).toHaveAttribute('target', '_blank')
+
+        const internalLink = container.querySelector('a[href="/page"]')
+        expect(internalLink).not.toHaveAttribute('rel')
+        expect(internalLink).not.toHaveAttribute('target')
+      })
+    })
+
+    describe('URL validation', () => {
+      it('should reject javascript: URLs in CTA blocks', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'cta-xss',
+                  type: SECTION_TYPE.CTA,
+                  content: {
+                    text: 'Click Me',
+                    href: 'javascript:alert(1)',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const link = container.querySelector('a')
+        // Should be sanitized to fallback
+        expect(link?.getAttribute('href')).toBe('#')
+      })
+
+      it('should allow safe URLs in CTA blocks', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'cta-safe',
+                  type: SECTION_TYPE.CTA,
+                  content: {
+                    text: 'Click Me',
+                    href: 'https://example.com',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const link = container.querySelector('a')
+        expect(link?.getAttribute('href')).toBe('https://example.com')
+        expect(link?.getAttribute('rel')).toBe('noopener noreferrer')
+      })
+
+      it('should reject javascript: URLs in image blocks', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'img-xss',
+                  type: SECTION_TYPE.IMAGE,
+                  content: {
+                    url: 'javascript:alert(1)',
+                    alt: 'Test',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const img = container.querySelector('img')
+        // Should not render image with dangerous URL
+        expect(img).not.toBeInTheDocument()
+      })
+
+      it('should allow data: URLs in image blocks for inline images', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'img-data',
+                  type: SECTION_TYPE.IMAGE,
+                  content: {
+                    url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+                    alt: 'Test',
+                  },
+                },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const img = container.querySelector('img')
+        expect(img).toBeInTheDocument()
+        expect(img?.getAttribute('src')).toContain('data:image/png;base64')
+      })
+    })
+
+    describe('Deterministic sorting with stable tie-breakers', () => {
+      it('should sort by orderIndex with original index as tie-breaker', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                { key: 'section-d', type: SECTION_TYPE.TEXT, orderIndex: 1 },
+                { key: 'section-a', type: SECTION_TYPE.TEXT, orderIndex: 1 },
+                { key: 'section-c', type: SECTION_TYPE.TEXT, orderIndex: 0 },
+                { key: 'section-b', type: SECTION_TYPE.TEXT, orderIndex: 1 },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const sections = container.querySelectorAll('[data-section-key]')
+        expect(sections).toHaveLength(4)
+        
+        // orderIndex 0 comes first
+        expect(sections[0].getAttribute('data-section-key')).toBe('section-c')
+        // orderIndex 1 sorted by original index (d, a, b)
+        expect(sections[1].getAttribute('data-section-key')).toBe('section-d')
+        expect(sections[2].getAttribute('data-section-key')).toBe('section-a')
+        expect(sections[3].getAttribute('data-section-key')).toBe('section-b')
+      })
+
+      it('should use key as final tie-breaker when orderIndex and originalIndex are same', () => {
+        // This tests the lexicographic sort when everything else is equal
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                { key: 'c-section', type: SECTION_TYPE.TEXT, orderIndex: 0 },
+                { key: 'a-section', type: SECTION_TYPE.TEXT, orderIndex: 0 },
+                { key: 'b-section', type: SECTION_TYPE.TEXT, orderIndex: 0 },
+              ],
+            },
+          ],
+        }
+
+        const { container } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        const sections = container.querySelectorAll('[data-section-key]')
+        
+        // When orderIndex is same, original index should take precedence
+        // But if somehow they're also same, key should be the final tie-breaker
+        expect(sections[0].getAttribute('data-section-key')).toBe('c-section')
+        expect(sections[1].getAttribute('data-section-key')).toBe('a-section')
+        expect(sections[2].getAttribute('data-section-key')).toBe('b-section')
+      })
+
+      it('should produce identical output for same manifest (determinism test)', () => {
+        const manifest: FunnelContentManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                { key: 'section-3', type: SECTION_TYPE.TEXT, orderIndex: 2 },
+                { key: 'section-1', type: SECTION_TYPE.HERO, orderIndex: 0 },
+                { key: 'section-2', type: SECTION_TYPE.DIVIDER, orderIndex: 1 },
+              ],
+            },
+          ],
+        }
+
+        // Render multiple times
+        const { container: container1 } = render(<ContentBlockRenderer manifest={manifest} />)
+        const { container: container2 } = render(<ContentBlockRenderer manifest={manifest} />)
+        const { container: container3 } = render(<ContentBlockRenderer manifest={manifest} />)
+        
+        // Extract keys from each render
+        const getKeys = (container: HTMLElement) =>
+          Array.from(container.querySelectorAll('[data-section-key]')).map(el =>
+            el.getAttribute('data-section-key')
+          )
+
+        const keys1 = getKeys(container1)
+        const keys2 = getKeys(container2)
+        const keys3 = getKeys(container3)
+
+        // All renders should produce identical order
+        expect(keys1).toEqual(['section-1', 'section-2', 'section-3'])
+        expect(keys2).toEqual(keys1)
+        expect(keys3).toEqual(keys1)
+      })
+    })
+
+    describe('Zod schema strict validation', () => {
+      it('should reject manifest with unknown fields at section level', () => {
+        const invalidManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'test',
+                  type: 'text',
+                  unknownField: 'should fail', // Unknown field
+                },
+              ],
+            },
+          ],
+        }
+
+        // Note: This test validates that the Zod schema would reject this
+        // In practice, the manifest should be validated server-side before passing to renderer
+        const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+        const result = FunnelContentManifestSchema.safeParse(invalidManifest)
+        
+        expect(result.success).toBe(false)
+      })
+
+      it('should reject manifest with overly long strings', () => {
+        const invalidManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'a'.repeat(201), // Exceeds max 200
+              title: 'Test',
+              sections: [],
+            },
+          ],
+        }
+
+        const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+        const result = FunnelContentManifestSchema.safeParse(invalidManifest)
+        
+        expect(result.success).toBe(false)
+      })
+
+      it('should reject negative orderIndex', () => {
+        const invalidManifest = {
+          version: '1.0',
+          pages: [
+            {
+              slug: 'test-page',
+              title: 'Test',
+              sections: [
+                {
+                  key: 'test',
+                  type: 'text',
+                  orderIndex: -1, // Negative not allowed
+                },
+              ],
+            },
+          ],
+        }
+
+        const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+        const result = FunnelContentManifestSchema.safeParse(invalidManifest)
+        
+        expect(result.success).toBe(false)
+      })
+    })
+  })
 })

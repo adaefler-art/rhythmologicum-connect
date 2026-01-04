@@ -2,12 +2,17 @@
  * Video Block Renderer (V05-I06.2)
  * 
  * Renders video content block
+ * 
+ * V05-I06.2 Hardening: URL security validation
+ * - Validates video URLs to prevent XSS
+ * - Validates poster URLs
  */
 
 'use client'
 
 import React from 'react'
 import { type ContentSection } from '@/lib/contracts/funnelManifest'
+import { sanitizeUrl } from '@/lib/utils/urlSecurity'
 
 export type VideoBlockRendererProps = {
   section: ContentSection
@@ -21,6 +26,10 @@ export type VideoBlockRendererProps = {
  * - caption?: string (optional)
  * - poster?: string (optional thumbnail)
  * - controls?: boolean (optional, default true)
+ * 
+ * Security:
+ * - URLs are validated to prevent XSS attacks
+ * - Dangerous protocols (javascript:, data:) are rejected
  */
 export function VideoBlockRenderer({ section }: VideoBlockRendererProps) {
   const content = section.content || {}
@@ -29,16 +38,20 @@ export function VideoBlockRenderer({ section }: VideoBlockRendererProps) {
   const poster = content.poster as string | undefined
   const controls = (content.controls as boolean | undefined) ?? true
 
+  // Sanitize URLs (no data: URLs for video sources)
+  const safeUrl = sanitizeUrl(url, '', false)
+  const safePoster = poster ? sanitizeUrl(poster, '', true) : undefined
+
   return (
     <div
       className="video-block bg-white dark:bg-slate-800 rounded-lg p-4"
       data-section-key={section.key}
     >
-      {url && (
+      {safeUrl && (
         <>
           <video
-            src={url}
-            poster={poster}
+            src={safeUrl}
+            poster={safePoster}
             controls={controls}
             className="w-full h-auto rounded"
             preload="metadata"

@@ -2,6 +2,10 @@
  * CTA (Call-to-Action) Block Renderer (V05-I06.2)
  * 
  * Renders call-to-action button/link
+ * 
+ * V05-I06.2 Hardening: URL security validation
+ * - Validates URLs to prevent XSS (javascript:, data:, etc.)
+ * - External links get rel="noopener noreferrer"
  */
 
 'use client'
@@ -9,6 +13,7 @@
 import React from 'react'
 import { type ContentSection } from '@/lib/contracts/funnelManifest'
 import Link from 'next/link'
+import { getSafeLinkProps } from '@/lib/utils/urlSecurity'
 
 export type CTABlockRendererProps = {
   section: ContentSection
@@ -22,6 +27,11 @@ export type CTABlockRendererProps = {
  * - href: string (required) - link destination
  * - variant?: 'primary' | 'secondary' | 'outline' (optional, default 'primary')
  * - alignment?: 'left' | 'center' | 'right' (optional, default 'center')
+ * 
+ * Security:
+ * - URLs are validated to prevent XSS attacks
+ * - Dangerous protocols (javascript:, data:) are rejected
+ * - External links get rel="noopener noreferrer"
  */
 export function CTABlockRenderer({ section }: CTABlockRendererProps) {
   const content = section.content || {}
@@ -42,19 +52,29 @@ export function CTABlockRenderer({ section }: CTABlockRendererProps) {
     right: 'justify-end',
   }[alignment] || 'justify-center'
 
+  if (!text || !href) {
+    return (
+      <div
+        className={`cta-block flex ${alignmentClass} py-4`}
+        data-section-key={section.key}
+      />
+    )
+  }
+
+  // Get safe link props with URL validation
+  const linkProps = getSafeLinkProps(href)
+
   return (
     <div
       className={`cta-block flex ${alignmentClass} py-4`}
       data-section-key={section.key}
     >
-      {text && href && (
-        <Link
-          href={href}
-          className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${variantClasses}`}
-        >
-          {text}
-        </Link>
-      )}
+      <Link
+        {...linkProps}
+        className={`px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${variantClasses}`}
+      >
+        {text}
+      </Link>
     </div>
   )
 }

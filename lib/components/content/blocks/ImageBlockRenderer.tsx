@@ -2,12 +2,17 @@
  * Image Block Renderer (V05-I06.2)
  * 
  * Renders image content block
+ * 
+ * V05-I06.2 Hardening: URL security validation
+ * - Validates image URLs to prevent XSS
+ * - Allows data: URLs for inline images
  */
 
 'use client'
 
 import React from 'react'
 import { type ContentSection } from '@/lib/contracts/funnelManifest'
+import { sanitizeUrl } from '@/lib/utils/urlSecurity'
 
 export type ImageBlockRendererProps = {
   section: ContentSection
@@ -22,6 +27,11 @@ export type ImageBlockRendererProps = {
  * - caption?: string (optional)
  * - width?: number (optional)
  * - height?: number (optional)
+ * 
+ * Security:
+ * - URLs are validated to prevent XSS attacks
+ * - data: URLs are allowed for inline images
+ * - Dangerous protocols (javascript:) are rejected
  */
 export function ImageBlockRenderer({ section }: ImageBlockRendererProps) {
   const content = section.content || {}
@@ -31,15 +41,18 @@ export function ImageBlockRenderer({ section }: ImageBlockRendererProps) {
   const width = content.width as number | undefined
   const height = content.height as number | undefined
 
+  // Sanitize URL (allow data: URLs for inline images)
+  const safeUrl = sanitizeUrl(url, '', true)
+
   return (
     <div
       className="image-block bg-white dark:bg-slate-800 rounded-lg p-4"
       data-section-key={section.key}
     >
-      {url && (
+      {safeUrl && (
         <>
           <img
-            src={url}
+            src={safeUrl}
             alt={alt}
             width={width}
             height={height}

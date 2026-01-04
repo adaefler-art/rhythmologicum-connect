@@ -134,56 +134,90 @@ export type SectionType = typeof SECTION_TYPE[keyof typeof SECTION_TYPE]
 
 /**
  * Content section within a page
+ * 
+ * V05-I06.2 Hardening: Added strict bounds and validation
+ * - key: max 200 chars (prevent DoS)
+ * - contentRef: max 2048 chars (URL/path length limit)
+ * - orderIndex: non-negative integer (deterministic sorting)
+ * - No unknown keys allowed (strict mode via .strict())
  */
-export const ContentSectionSchema = z.object({
-  key: z.string(),
-  type: z.enum([
-    SECTION_TYPE.HERO,
-    SECTION_TYPE.TEXT,
-    SECTION_TYPE.IMAGE,
-    SECTION_TYPE.VIDEO,
-    SECTION_TYPE.MARKDOWN,
-    SECTION_TYPE.CTA,
-    SECTION_TYPE.DIVIDER,
-  ] as [SectionType, ...SectionType[]]),
-  contentRef: z.string().optional(),
-  content: z.record(z.string(), z.any()).optional(),
-  orderIndex: z.number().optional(),
-})
+export const ContentSectionSchema = z
+  .object({
+    key: z.string().min(1).max(200),
+    type: z.enum([
+      SECTION_TYPE.HERO,
+      SECTION_TYPE.TEXT,
+      SECTION_TYPE.IMAGE,
+      SECTION_TYPE.VIDEO,
+      SECTION_TYPE.MARKDOWN,
+      SECTION_TYPE.CTA,
+      SECTION_TYPE.DIVIDER,
+    ] as [SectionType, ...SectionType[]]),
+    contentRef: z.string().max(2048).optional(),
+    content: z.record(z.string(), z.any()).optional(),
+    orderIndex: z.number().int().nonnegative().optional(),
+  })
+  .strict()
 
 export type ContentSection = z.infer<typeof ContentSectionSchema>
 
 /**
  * Content page definition
+ * 
+ * V05-I06.2 Hardening: Added strict bounds
+ * - slug: max 200 chars, alphanumeric + hyphens
+ * - title: max 500 chars
+ * - description: max 2000 chars
+ * - sections: max 100 sections per page
+ * - No unknown keys allowed (strict mode)
  */
-export const ContentPageSchema = z.object({
-  slug: z.string(),
-  title: z.string(),
-  description: z.string().optional(),
-  sections: z.array(ContentSectionSchema),
-  metadata: z.record(z.string(), z.any()).optional(),
-})
+export const ContentPageSchema = z
+  .object({
+    slug: z
+      .string()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric with hyphens'),
+    title: z.string().min(1).max(500),
+    description: z.string().max(2000).optional(),
+    sections: z.array(ContentSectionSchema).max(100),
+    metadata: z.record(z.string(), z.any()).optional(),
+  })
+  .strict()
 
 export type ContentPage = z.infer<typeof ContentPageSchema>
 
 /**
  * Complete content manifest
+ * 
+ * V05-I06.2 Hardening: Added strict bounds
+ * - version: max 20 chars
+ * - pages: max 50 pages per manifest
+ * - assets: max 200 assets per manifest
+ * - asset key: max 200 chars
+ * - asset url: max 2048 chars
+ * - No unknown keys allowed (strict mode)
  */
-export const FunnelContentManifestSchema = z.object({
-  version: z.string().default('1.0'),
-  pages: z.array(ContentPageSchema),
-  assets: z
-    .array(
-      z.object({
-        key: z.string(),
-        type: z.enum(['image', 'video', 'audio', 'document']),
-        url: z.string(),
-        metadata: z.record(z.string(), z.any()).optional(),
-      }),
-    )
-    .optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-})
+export const FunnelContentManifestSchema = z
+  .object({
+    version: z.string().max(20).default('1.0'),
+    pages: z.array(ContentPageSchema).max(50),
+    assets: z
+      .array(
+        z
+          .object({
+            key: z.string().min(1).max(200),
+            type: z.enum(['image', 'video', 'audio', 'document']),
+            url: z.string().min(1).max(2048),
+            metadata: z.record(z.string(), z.any()).optional(),
+          })
+          .strict(),
+      )
+      .max(200)
+      .optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
+  })
+  .strict()
 
 export type FunnelContentManifest = z.infer<typeof FunnelContentManifestSchema>
 
