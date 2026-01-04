@@ -27,8 +27,26 @@ BEGIN
             'FAILED',
             'CANCELLED'
         );
+        PERFORM set_config('rc.notification_status_type_created', 'true', true);
     ELSE
         -- Ensure enum contains all expected values (idempotent upgrade for existing DBs)
+        PERFORM set_config(
+            'rc.notification_status_had_pending',
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM pg_type t
+                    JOIN pg_namespace n ON n.oid = t.typnamespace
+                    JOIN pg_enum e ON e.enumtypid = t.oid
+                    WHERE n.nspname = 'public'
+                      AND t.typname = 'notification_status'
+                      AND e.enumlabel = 'PENDING'
+                ) THEN 'true'
+                ELSE 'false'
+            END,
+            true
+        );
+
         IF NOT EXISTS (
             SELECT 1
             FROM pg_type t
@@ -185,7 +203,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     notification_type TEXT NOT NULL,
     
     -- Status (PENDING → SENT/DELIVERED → READ)
-    status public.notification_status NOT NULL DEFAULT 'PENDING',
+    status public.notification_status NOT NULL,
     
     -- Channel (in-app, email, sms - MVP is in-app only)
     channel TEXT NOT NULL DEFAULT 'in_app' CHECK (channel IN ('in_app', 'email', 'sms')),
@@ -226,22 +244,35 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     
     -- Constraints
     CHECK (
-        (status = 'SENT' AND sent_at IS NOT NULL) OR 
-        (status != 'SENT')
+        (status::text = 'SENT' AND sent_at IS NOT NULL) OR
+        (status::text IS DISTINCT FROM 'SENT')
     ),
     CHECK (
-        (status = 'DELIVERED' AND delivered_at IS NOT NULL) OR 
-        (status != 'DELIVERED')
+        (status::text = 'DELIVERED' AND delivered_at IS NOT NULL) OR
+        (status::text IS DISTINCT FROM 'DELIVERED')
     ),
     CHECK (
-        (status = 'READ' AND read_at IS NOT NULL) OR 
-        (status != 'READ')
+        (status::text = 'READ' AND read_at IS NOT NULL) OR
+        (status::text IS DISTINCT FROM 'READ')
     ),
     CHECK (
-        (status = 'FAILED' AND failed_at IS NOT NULL AND error_message IS NOT NULL) OR 
-        (status != 'FAILED')
+        (status::text = 'FAILED' AND failed_at IS NOT NULL AND error_message IS NOT NULL) OR
+        (status::text IS DISTINCT FROM 'FAILED')
     )
 );
+
+-- Only set default to PENDING when it is safe in this transaction.
+-- If the enum existed but PENDING was added via ALTER TYPE in this migration,
+-- Postgres can error with SQLSTATE 55P04 (“unsafe use of new value”).
+DO $$
+BEGIN
+    IF current_setting('rc.notification_status_type_created', true) = 'true'
+       OR current_setting('rc.notification_status_had_pending', true) = 'true'
+    THEN
+        ALTER TABLE public.notifications
+        ALTER COLUMN status SET DEFAULT 'PENDING';
+    END IF;
+END $$;
 
 -- If the table already existed (CREATE TABLE IF NOT EXISTS), ensure newer columns exist.
 DO $$
@@ -283,7 +314,7 @@ BEGIN
           AND column_name = 'status'
     ) THEN
         ALTER TABLE public.notifications
-        ADD COLUMN status public.notification_status DEFAULT 'PENDING';
+        ADD COLUMN status public.notification_status;
     END IF;
 
     IF NOT EXISTS (
@@ -387,6 +418,23 @@ BEGIN
     END IF;
 END $$;
 
+-- Apply a safe default for new inserts when possible.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'status'
+    ) AND (
+        current_setting('rc.notification_status_type_created', true) = 'true'
+        OR current_setting('rc.notification_status_had_pending', true) = 'true'
+    ) THEN
+        ALTER TABLE public.notifications
+        ALTER COLUMN status SET DEFAULT 'PENDING';
+    END IF;
+END $$;
+
 -- Table and column comments
 COMMENT ON TABLE public.notifications IS 'V05-I05.9: Notification delivery system (in-app + email infrastructure)';
 COMMENT ON COLUMN public.notifications.id IS 'Notification unique identifier';
@@ -432,7 +480,7 @@ ON public.notifications(user_id, created_at DESC);
 -- Index for pending notifications (for processing)
 CREATE INDEX IF NOT EXISTS idx_notifications_pending 
 ON public.notifications(status, created_at) 
-WHERE status = 'PENDING';
+WHERE status::text = 'PENDING';
 
 -- Index for follow-up notifications
 CREATE INDEX IF NOT EXISTS idx_notifications_follow_up 
