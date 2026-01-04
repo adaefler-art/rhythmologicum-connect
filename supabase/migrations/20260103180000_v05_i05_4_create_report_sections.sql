@@ -8,6 +8,39 @@
 -- Table: report_sections
 -- ============================================================
 
+-- NOTE: V0.5 core schema already introduced a legacy `public.report_sections` table
+-- (per-report/per-section rows with `report_id`, `section_key`, `content`).
+-- This issue introduces a different model (one bundle per processing job).
+-- To avoid a schema collision, we rename the legacy table when detected.
+
+DO $$
+BEGIN
+  -- Legacy schema signature: has report_id, does NOT have job_id
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'report_sections'
+  )
+  AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'report_sections' AND column_name = 'report_id'
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'report_sections' AND column_name = 'job_id'
+  )
+  THEN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'report_sections_legacy'
+    ) THEN
+      -- Safety guard: refuse to auto-clobber if someone already created a legacy table.
+      RAISE EXCEPTION 'Cannot rename legacy report_sections: public.report_sections_legacy already exists';
+    END IF;
+
+    ALTER TABLE public.report_sections RENAME TO report_sections_legacy;
+  END IF;
+END $$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS public.report_sections (
   -- Primary key
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -84,7 +117,7 @@ USING (
     SELECT 1 FROM public.risk_bundles rb
     JOIN public.assessments a ON a.id = rb.assessment_id
     WHERE rb.id = report_sections.risk_bundle_id
-    AND a.user_id = auth.uid()
+    AND a.patient_id = auth.uid()
   )
 );
 
