@@ -128,7 +128,7 @@ export function getPatientNavItems(pathname: string): RoleNavItem[] {
       label: 'Fragebogen starten',
       active:
         pathname?.startsWith('/patient/assessment') || 
-        pathname?.startsWith('/patient/funnel') || 
+        pathname?.startsWith('/patient/funnel/') || 
         false,
     },
     {
