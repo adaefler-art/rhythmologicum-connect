@@ -26,50 +26,77 @@ jobs:
       - name: Install pg client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       - name: Dump schema
         env:
           PG_CONN: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_ID || secrets.SUPABASE_PROJECT_REF }}
         run: |
-          if [ -z "$PG_CONN" ]; then
-            echo "SUPABASE_DB_URL secret is not set. Aborting."
+          set -euo pipefail
+
+          can_use_pg_conn=0
+          if [ -n "${PG_CONN:-}" ]; then
+            # Determine whether PG_CONN includes a host. If not, pg_dump may fall back to local sockets.
+            host=""
+            db=""
+            if echo "$PG_CONN" | grep -Eq '^postgres(ql)?://'; then
+              conn_no_scheme="${PG_CONN#postgresql://}"
+              conn_no_scheme="${conn_no_scheme#postgres://}"
+              host_and_port="${conn_no_scheme#*@}"
+              host_and_port="${host_and_port%%/*}"
+              db_part="${conn_no_scheme#*/}"
+              db_part="${db_part%%\?*}"
+              host="$host_and_port"
+              db="$db_part"
+              if [ -n "$host" ] && ! echo "$PG_CONN" | grep -Eq '@/?'; then
+                can_use_pg_conn=1
+              fi
+            else
+              host="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])host=([^[:space:]]+).*/\2/p')"
+              db="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])dbname=([^[:space:]]+).*/\2/p')"
+              if [ -n "$host" ]; then
+                can_use_pg_conn=1
+              fi
+            fi
+
+            if [ "$can_use_pg_conn" -eq 1 ]; then
+              echo "Using database host: $host"
+              if [ -n "$db" ]; then
+                echo "Using database name: $db"
+              fi
+              pg_dump --dbname="$PG_CONN" -s --no-owner --no-privileges -f schema_new.sql
+              exit 0
+            fi
+
+            echo "WARNING: SUPABASE_DB_URL is set but missing a host; skipping direct pg_dump."
+            echo "Expected format: postgresql://user:***@host:5432/dbname?sslmode=require"
+          fi
+
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "ERROR: SUPABASE_ACCESS_TOKEN secret is not set"
+            echo "Fix: GitHub repo settings -> Secrets -> Actions -> SUPABASE_ACCESS_TOKEN"
             exit 1
           fi
-          # Fail fast if the connection string is missing a host.
-          # When libpq gets a URL like postgresql://user:pass@/dbname it silently falls back to
-          # local socket connections (e.g. /var/run/postgresql/.s.PGSQL.5432), which is confusing in CI.
-          host=""
-          db=""
-          if echo "$PG_CONN" | grep -Eq '^postgres(ql)?://'; then
-            conn_no_scheme="${PG_CONN#postgresql://}"
-            conn_no_scheme="${conn_no_scheme#postgres://}"
-            host_and_port="${conn_no_scheme#*@}"
-            host_and_port="${host_and_port%%/*}"
-            db_part="${conn_no_scheme#*/}"
-            db_part="${db_part%%\?*}"
-            host="$host_and_port"
-            db="$db_part"
+          if [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+            echo "ERROR: Missing Supabase project ref secret"
+            echo "Please set either SUPABASE_PROJECT_ID or SUPABASE_PROJECT_REF"
+            exit 1
+          fi
 
-            if [ -z "$host" ] || echo "$PG_CONN" | grep -Eq '@/?'; then
-              echo "ERROR: SUPABASE_DB_URL looks like a URL but does not include a host."
-              echo "Expected format: postgresql://user:***@host:5432/dbname?sslmode=require"
-              exit 1
-            fi
+          echo "Dumping schema via Supabase CLI (linked project)..."
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+          if supabase db dump --help 2>/dev/null | grep -q -- '--schema-only'; then
+            supabase db dump --linked --schema-only --file schema_new.sql
           else
-            # Keyword/value connection string support (e.g. host=... user=... dbname=...)
-            host="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])host=([^[:space:]]+).*/\2/p')"
-            db="$(echo "$PG_CONN" | sed -nE 's/.*(^|[[:space:]])dbname=([^[:space:]]+).*/\2/p')"
-
-            if [ -z "$host" ]; then
-              echo "ERROR: SUPABASE_DB_URL must include a host (URL form or host=... form)."
-              exit 1
-            fi
+            # Older CLI fallback: dump entire DB but keep downstream normalization as-is.
+            supabase db dump --linked --file schema_new.sql
           fi
-
-          echo "Using database host: $host"
-          if [ -n "$db" ]; then
-            echo "Using database name: $db"
-          fi
-          pg_dump --dbname="$PG_CONN" -s --no-owner --no-privileges -f schema_new.sql
 
       - name: Normalize schemas and diff
         run: |
