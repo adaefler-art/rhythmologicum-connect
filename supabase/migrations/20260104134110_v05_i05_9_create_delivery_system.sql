@@ -186,6 +186,126 @@ BEGIN
         ALTER TABLE public.notifications
         ADD COLUMN assessment_id UUID;
     END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'notification_type'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN notification_type TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'status'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN status public.notification_status DEFAULT 'PENDING';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'channel'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN channel TEXT DEFAULT 'in_app';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'priority'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN priority TEXT DEFAULT 'medium';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'subject'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN subject TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'message'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN message TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'metadata'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN metadata JSONB DEFAULT '{}'::jsonb;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'consent_verified'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN consent_verified BOOLEAN DEFAULT FALSE;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'consent_version'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN consent_version TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'follow_up_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN follow_up_at TIMESTAMPTZ;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'follow_up_completed'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN follow_up_completed BOOLEAN DEFAULT FALSE;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'notifications'
+          AND column_name = 'expires_at'
+    ) THEN
+        ALTER TABLE public.notifications
+        ADD COLUMN expires_at TIMESTAMPTZ;
+    END IF;
 END $$;
 
 -- Table and column comments
