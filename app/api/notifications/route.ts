@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     // Build query
     let query = supabase
-      .from('notifications')
+      .from('notifications' as any) // Type will be correct after db:typegen
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
@@ -85,7 +85,11 @@ export async function GET(request: NextRequest) {
       query = query.is('read_at', null)
     }
 
-    const { data: notifications, error, count } = await query
+    const { data: notifications, error, count } = (await query) as {
+      data: any[] | null
+      error: any
+      count: number | null
+    }
 
     if (error) {
       console.error('Error fetching notifications:', error)
@@ -95,12 +99,12 @@ export async function GET(request: NextRequest) {
     // ============================================================================
     // STEP 4: Get unread count
     // ============================================================================
-    const { count: unreadCount } = await supabase
-      .from('notifications')
+    const { count: unreadCount } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .is('read_at', null)
-      .neq('status', 'CANCELLED')
+      .neq('status', 'CANCELLED')) as { count: number | null }
 
     // ============================================================================
     // STEP 5: Return response

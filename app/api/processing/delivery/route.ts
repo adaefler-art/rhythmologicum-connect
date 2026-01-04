@@ -84,19 +84,24 @@ export async function POST(request: NextRequest) {
     const result = await processDeliveryStage(jobId)
 
     if (!result.success) {
-      return {
-        status: result.retryable ? 500 : 400,
-        body: JSON.stringify({
+      const statusCode = result.retryable ? 500 : 400
+      const errorCode = result.retryable ? 'DELIVERY_ERROR' : 'DELIVERY_INELIGIBLE'
+      
+      return new Response(
+        JSON.stringify({
           success: false,
           error: {
-            code: result.retryable ? 'DELIVERY_ERROR' : 'DELIVERY_INELIGIBLE',
+            code: errorCode,
             message: result.error,
           },
         }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+        {
+          status: statusCode,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     }
 
     // ============================================================================

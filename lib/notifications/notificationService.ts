@@ -70,8 +70,7 @@ export async function createNotification(
       })
 
       if (existing) {
-        logInfo({
-          message: 'Notification already exists (idempotent)',
+        logInfo('Notification already exists (idempotent)', {
           notificationId: existing.id,
           userId: input.userId,
           jobId: input.jobId,
@@ -106,8 +105,8 @@ export async function createNotification(
     }
 
     // Insert notification record
-    const { data, error } = await supabase
-      .from('notifications')
+    const { data, error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .insert({
         user_id: input.userId,
         job_id: input.jobId || null,
@@ -122,25 +121,20 @@ export async function createNotification(
         consent_version: consentVersion || null,
         follow_up_at: input.followUpAt || null,
         expires_at: input.expiresAt || null,
-        status: 'PENDING',
+        status: 'PENDING' as any, // Type will be correct after db:typegen
       })
       .select('id')
-      .single()
+      .single()) as { data: { id: string } | null; error: any }
 
     if (error || !data) {
-      logError(
-        {
-          message: 'Failed to create notification',
-          userId: input.userId,
-          jobId: input.jobId,
-        },
-        error
-      )
+      logError('Failed to create notification', {
+        userId: input.userId,
+        jobId: input.jobId,
+      }, error)
       return { success: false, error: 'Failed to create notification' }
     }
 
-    logInfo({
-      message: 'Notification created',
+    logInfo('Notification created', {
       notificationId: data.id,
       userId: input.userId,
       channel: input.channel,
@@ -149,13 +143,9 @@ export async function createNotification(
 
     return { success: true, notificationId: data.id }
   } catch (err) {
-    logError(
-      {
-        message: 'Error in createNotification',
-        userId: input.userId,
-      },
-      err
-    )
+    logError('Error in createNotification', {
+      userId: input.userId,
+    }, err)
     return { success: false, error: 'Internal error' }
   }
 }
@@ -173,22 +163,22 @@ export async function markNotificationSent(
   const supabase = createAdminSupabaseClient()
 
   try {
-    const { error } = await supabase
-      .from('notifications')
+    const { error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .update({
-        status: 'SENT',
+        status: 'SENT' as any, // Type will be correct after db:typegen
         sent_at: new Date().toISOString(),
       })
-      .eq('id', notificationId)
+      .eq('id', notificationId)) as { error: any }
 
     if (error) {
-      logError({ message: 'Failed to mark notification as sent', notificationId }, error)
+      logError('Failed to mark notification as sent', { notificationId }, error)
       return { success: false }
     }
 
     return { success: true }
   } catch (err) {
-    logError({ message: 'Error in markNotificationSent', notificationId }, err)
+    logError('Error in markNotificationSent', { notificationId }, err)
     return { success: false }
   }
 }
@@ -202,25 +192,22 @@ export async function markNotificationDelivered(
   const supabase = createAdminSupabaseClient()
 
   try {
-    const { error } = await supabase
-      .from('notifications')
+    const { error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .update({
-        status: 'DELIVERED',
+        status: 'DELIVERED' as any, // Type will be correct after db:typegen
         delivered_at: new Date().toISOString(),
       })
-      .eq('id', notificationId)
+      .eq('id', notificationId)) as { error: any }
 
     if (error) {
-      logError(
-        { message: 'Failed to mark notification as delivered', notificationId },
-        error
-      )
+      logError('Failed to mark notification as delivered', { notificationId }, error)
       return { success: false }
     }
 
     return { success: true }
   } catch (err) {
-    logError({ message: 'Error in markNotificationDelivered', notificationId }, err)
+    logError('Error in markNotificationDelivered', { notificationId }, err)
     return { success: false }
   }
 }
@@ -235,23 +222,23 @@ export async function markNotificationFailed(
   const supabase = createAdminSupabaseClient()
 
   try {
-    const { error } = await supabase
-      .from('notifications')
+    const { error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .update({
-        status: 'FAILED',
+        status: 'FAILED' as any, // Type will be correct after db:typegen
         failed_at: new Date().toISOString(),
         error_message: errorMessage,
       })
-      .eq('id', notificationId)
+      .eq('id', notificationId)) as { error: any }
 
     if (error) {
-      logError({ message: 'Failed to mark notification as failed', notificationId }, error)
+      logError('Failed to mark notification as failed', { notificationId }, error)
       return { success: false }
     }
 
     return { success: true }
   } catch (err) {
-    logError({ message: 'Error in markNotificationFailed', notificationId }, err)
+    logError('Error in markNotificationFailed', { notificationId }, err)
     return { success: false }
   }
 }
@@ -280,7 +267,7 @@ async function verifyUserConsent(
       .maybeSingle()
 
     if (error) {
-      logError({ message: 'Error checking user consent', userId }, error)
+      logError('Error checking user consent', { userId }, error)
       // Fail-closed: no consent on error
       return {
         hasConsent: false,
@@ -303,7 +290,7 @@ async function verifyUserConsent(
       canSendSms: false, // SMS not implemented yet
     }
   } catch (err) {
-    logError({ message: 'Exception in verifyUserConsent', userId }, err)
+    logError('Exception in verifyUserConsent', { userId }, err)
     // Fail-closed
     return {
       hasConsent: false,
@@ -330,25 +317,22 @@ async function findExistingNotification(
   }
 ): Promise<NotificationRecord | null> {
   try {
-    const { data, error } = await supabase
-      .from('notifications')
+    const { data, error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .select('*')
       .eq('user_id', criteria.userId)
       .eq('job_id', criteria.jobId)
       .eq('notification_type', criteria.notificationType)
-      .maybeSingle()
+      .maybeSingle()) as { data: any; error: any }
 
     if (error) {
-      logError(
-        { message: 'Error finding existing notification', userId: criteria.userId },
-        error
-      )
+      logError('Error finding existing notification', { userId: criteria.userId }, error)
       return null
     }
 
     return data as NotificationRecord | null
   } catch (err) {
-    logError({ message: 'Exception in findExistingNotification' }, err)
+    logError('Exception in findExistingNotification', {}, err)
     return null
   }
 }
@@ -360,21 +344,21 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
   const supabase = createAdminSupabaseClient()
 
   try {
-    const { count, error } = await supabase
-      .from('notifications')
+    const { count, error } = (await supabase
+      .from('notifications' as any) // Type will be correct after db:typegen
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .is('read_at', null)
-      .neq('status', 'CANCELLED')
+      .neq('status', 'CANCELLED')) as { count: number | null; error: any }
 
     if (error) {
-      logError({ message: 'Error getting unread count', userId }, error)
+      logError('Error getting unread count', { userId }, error)
       return 0
     }
 
     return count || 0
   } catch (err) {
-    logError({ message: 'Exception in getUnreadNotificationCount', userId }, err)
+    logError('Exception in getUnreadNotificationCount', { userId }, err)
     return 0
   }
 }

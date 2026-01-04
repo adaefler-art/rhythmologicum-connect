@@ -52,16 +52,16 @@ export async function PATCH(
 
     const readAt = new Date().toISOString()
 
-    const { data, error } = await supabase
+    const { data, error } = (await supabase
       .from('notifications')
       .update({
-        status: 'READ',
+        status: 'READ' as any, // Type will be correct after db:typegen
         read_at: readAt,
       })
       .eq('id', id)
       .eq('user_id', user.id) // Ownership check
       .select('id, read_at')
-      .single()
+      .single()) as { data: { id: string; read_at: string } | null; error: any }
 
     if (error || !data) {
       console.error('Error marking notification as read:', error)

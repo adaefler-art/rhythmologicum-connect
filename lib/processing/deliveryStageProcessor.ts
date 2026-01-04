@@ -30,7 +30,7 @@ import {
   generateReportReadyNotification,
 } from '@/lib/notifications/notificationService'
 import { NotificationType, NotificationChannel } from '@/lib/contracts/delivery'
-import { logInfo, logError, logWarning } from '@/lib/logging/logger'
+import { logInfo, logError, logWarn } from '@/lib/logging/logger'
 
 // ============================================================
 // TYPES
@@ -71,15 +71,14 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
       .single()
 
     if (jobError || !job) {
-      logError({ message: 'Job not found for delivery', jobId }, jobError)
+      logError('Job not found for delivery', { jobId }, jobError)
       return { success: false, error: 'Job not found', retryable: false }
     }
 
     // Check delivery eligibility
     const eligibility = checkDeliveryEligibility(job)
     if (!eligibility.eligible) {
-      logWarning({
-        message: 'Job not eligible for delivery',
+      logWarn('Job not eligible for delivery', {
         jobId,
         reasons: eligibility.reasons,
       })
@@ -91,8 +90,8 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
     }
 
     // Check if already delivered (idempotency)
-    if (job.delivery_status === 'DELIVERED') {
-      logInfo({ message: 'Job already delivered (idempotent)', jobId })
+    if ((job as any).delivery_status === 'DELIVERED') {
+      logInfo('Job already delivered (idempotent)', { jobId })
       return { success: true, jobId, notificationIds: [] }
     }
 
@@ -107,13 +106,15 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
     let signedUrl: string | null = null
     let expiresAt: string | null = null
 
-    if (job.pdf_path) {
+    if ((job as any).pdf_path) {
       try {
-        const urlResult = await generateSignedUrl(job.pdf_path, 3600) // 1 hour expiry
-        signedUrl = urlResult.signedUrl
-        expiresAt = new Date(Date.now() + 3600 * 1000).toISOString()
+        const urlResult = await generateSignedUrl((job as any).pdf_path, 3600) // 1 hour expiry
+        if (urlResult.success && urlResult.url) {
+          signedUrl = urlResult.url
+          expiresAt = new Date(Date.now() + 3600 * 1000).toISOString()
+        }
       } catch (err) {
-        logWarning({ message: 'Failed to generate signed URL', jobId }, err)
+        logWarn('Failed to generate signed URL', { jobId, error: String(err) })
         // Continue without signed URL (user can get it later)
       }
     }
@@ -152,14 +153,12 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
       await markNotificationSent(notificationResult.notificationId)
       await markNotificationDelivered(notificationResult.notificationId)
 
-      logInfo({
-        message: 'In-app notification created and delivered',
+      logInfo('In-app notification created and delivered', {
         jobId,
         notificationId: notificationResult.notificationId,
       })
     } else {
-      logWarning({
-        message: 'Failed to create notification',
+      logWarn('Failed to create notification', {
         jobId,
         error: notificationResult.error,
       })
@@ -171,15 +170,14 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
       deliveredAt: new Date().toISOString(),
     })
 
-    logInfo({
-      message: 'Delivery completed',
+    logInfo('Delivery completed', {
       jobId,
       notificationCount: notificationIds.length,
     })
 
     return { success: true, jobId, notificationIds }
   } catch (err) {
-    logError({ message: 'Error in processDeliveryStage', jobId }, err)
+    logError('Error in processDeliveryStage', { jobId }, err)
 
     // Mark delivery as failed (will be retried)
     await updateDeliveryStatus(jobId, 'FAILED', {
@@ -266,7 +264,7 @@ async function updateDeliveryStatus(
         .single()
 
       if (job) {
-        updates.delivery_attempt = (job.delivery_attempt || 0) + 1
+        updates.delivery_attempt = ((job as any).delivery_attempt || 0) + 1
       }
     }
 
@@ -279,7 +277,7 @@ async function updateDeliveryStatus(
         .eq('id', jobId)
         .single()
 
-      const existingMetadata = job?.delivery_metadata || {}
+      const existingMetadata = (job as any)?.delivery_metadata || {}
       updates.delivery_metadata = {
         ...existingMetadata,
         ...metadata,
@@ -289,10 +287,10 @@ async function updateDeliveryStatus(
     const { error } = await supabase.from('processing_jobs').update(updates).eq('id', jobId)
 
     if (error) {
-      logError({ message: 'Failed to update delivery status', jobId, status }, error)
+      logError('Failed to update delivery status', { jobId, status }, error)
     }
   } catch (err) {
-    logError({ message: 'Exception in updateDeliveryStatus', jobId, status }, err)
+    logError('Exception in updateDeliveryStatus', { jobId, status }, err)
   }
 }
 
@@ -326,11 +324,11 @@ export async function processPendingDeliveries(limit = 10): Promise<{
       .limit(limit)
 
     if (error || !jobs) {
-      logError({ message: 'Failed to fetch pending deliveries' }, error)
+      logError('Failed to fetch pending deliveries', {}, error)
       return { processed: 0, succeeded: 0, failed: 0 }
     }
 
-    logInfo({ message: 'Processing pending deliveries', count: jobs.length })
+    logInfo('Processing pending deliveries', { count: jobs.length })
 
     let succeeded = 0
     let failed = 0
@@ -345,8 +343,7 @@ export async function processPendingDeliveries(limit = 10): Promise<{
       }
     }
 
-    logInfo({
-      message: 'Pending deliveries processed',
+    logInfo('Pending deliveries processed', {
       processed: jobs.length,
       succeeded,
       failed,
@@ -358,7 +355,7 @@ export async function processPendingDeliveries(limit = 10): Promise<{
       failed,
     }
   } catch (err) {
-    logError({ message: 'Error in processPendingDeliveries' }, err)
+    logError('Error in processPendingDeliveries', {}, err)
     return { processed: 0, succeeded: 0, failed: 0 }
   }
 }
