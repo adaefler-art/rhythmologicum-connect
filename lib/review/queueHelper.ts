@@ -9,6 +9,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/supabase'
+import { env } from '@/lib/env'
 import {
   createReviewRecord,
   shouldSampleJob,
@@ -197,12 +198,13 @@ export async function addToQueueIfNeeded(
  * Can be overridden via environment variables
  */
 export function getDefaultSamplingConfig(): SamplingConfig {
-  const percentage = process.env.REVIEW_SAMPLING_PERCENTAGE 
-    ? parseInt(process.env.REVIEW_SAMPLING_PERCENTAGE, 10) 
+  const parsedPercentage = env.REVIEW_SAMPLING_PERCENTAGE
+    ? parseInt(env.REVIEW_SAMPLING_PERCENTAGE, 10)
     : 10
 
-  const salt = process.env.REVIEW_SAMPLING_SALT 
-    ?? 'v05-i05-7-default-salt'
+  const percentage = Number.isFinite(parsedPercentage) ? parsedPercentage : 10
+
+  const salt = env.REVIEW_SAMPLING_SALT ?? 'v05-i05-7-default-salt'
 
   return {
     percentage: Math.max(0, Math.min(100, percentage)), // Clamp 0-100
