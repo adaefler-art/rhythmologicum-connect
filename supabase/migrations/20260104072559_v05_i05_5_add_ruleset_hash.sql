@@ -40,12 +40,12 @@ DROP INDEX IF EXISTS idx_medical_validation_results_job_id;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_medical_validation_results_job_version_hash
   ON public.medical_validation_results(job_id, validation_version, ruleset_hash);
 
+COMMENT ON INDEX idx_medical_validation_results_job_version_hash IS 'Composite uniqueness: allows versioned reruns with different rulesets';
+
 -- Add constraint using the index
 ALTER TABLE public.medical_validation_results
 ADD CONSTRAINT medical_validation_results_job_version_hash_unique 
   UNIQUE USING INDEX idx_medical_validation_results_job_version_hash;
-
-COMMENT ON INDEX idx_medical_validation_results_job_version_hash IS 'Composite uniqueness: allows versioned reruns with different rulesets';
 
 -- ============================================================
 -- SECTION 3: ADD NON-UNIQUE INDEX FOR JOB_ID QUERIES
