@@ -227,46 +227,86 @@ COMMENT ON FUNCTION public.should_sample_job IS 'V05-I05.7: Deterministic sampli
 ALTER TABLE public.review_records ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Clinicians and admins can read all review records
-CREATE POLICY review_records_clinician_read 
-    ON public.review_records
-    FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE auth.users.id = auth.uid()
-            AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'review_records'
+          AND policyname = 'review_records_clinician_read'
+    ) THEN
+        CREATE POLICY review_records_clinician_read 
+            ON public.review_records
+            FOR SELECT
+            USING (
+                EXISTS (
+                    SELECT 1 FROM auth.users
+                    WHERE auth.users.id = auth.uid()
+                    AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
+                )
+            );
+    END IF;
+END $$;
 
 -- Policy: Clinicians and admins can insert review records
-CREATE POLICY review_records_clinician_insert 
-    ON public.review_records
-    FOR INSERT
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE auth.users.id = auth.uid()
-            AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'review_records'
+          AND policyname = 'review_records_clinician_insert'
+    ) THEN
+        CREATE POLICY review_records_clinician_insert 
+            ON public.review_records
+            FOR INSERT
+            WITH CHECK (
+                EXISTS (
+                    SELECT 1 FROM auth.users
+                    WHERE auth.users.id = auth.uid()
+                    AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
+                )
+            );
+    END IF;
+END $$;
 
 -- Policy: Clinicians and admins can update review records (for approve/reject)
-CREATE POLICY review_records_clinician_update 
-    ON public.review_records
-    FOR UPDATE
-    USING (
-        EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE auth.users.id = auth.uid()
-            AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'review_records'
+          AND policyname = 'review_records_clinician_update'
+    ) THEN
+        CREATE POLICY review_records_clinician_update 
+            ON public.review_records
+            FOR UPDATE
+            USING (
+                EXISTS (
+                    SELECT 1 FROM auth.users
+                    WHERE auth.users.id = auth.uid()
+                    AND auth.users.raw_app_meta_data->>'role' IN ('clinician', 'admin')
+                )
+            );
+    END IF;
+END $$;
 
 -- Policy: Service role can do anything (for system operations)
-CREATE POLICY review_records_service_all 
-    ON public.review_records
-    FOR ALL
-    USING (auth.jwt()->>'role' = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'review_records'
+          AND policyname = 'review_records_service_all'
+    ) THEN
+        CREATE POLICY review_records_service_all 
+            ON public.review_records
+            FOR ALL
+            USING (auth.jwt()->>'role' = 'service_role');
+    END IF;
+END $$;
 
 -- ============================================================
 -- SECTION 6: CREATE TRIGGERS
@@ -283,6 +323,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS update_review_records_updated_at ON public.review_records;
 CREATE TRIGGER update_review_records_updated_at
     BEFORE UPDATE ON public.review_records
     FOR EACH ROW
