@@ -40,6 +40,9 @@ const ALLOWED_ADMIN_USAGE = [
   'app/api/content-pages/',
   'app/api/amy/stress-report/',
   'app/api/patient-measures/',
+  // Notifications: server-side, PHI-free delivery notifications (MVP). Uses admin client for
+  // background/system workflows where end-user cookies may not be present.
+  'app/api/notifications/',
   // Review queue: cross-user clinician/admin workflows (RLS-bypass after RBAC gate)
   'app/api/review/',
   // Processing: creating jobs requires service role because INSERT/UPDATE are restricted
@@ -53,6 +56,9 @@ const ALLOWED_ADMIN_USAGE = [
   'lib/audit/log.ts',
   'lib/utils/contentResolver.ts',
   'lib/funnels/loadFunnelVersion.ts', // Legacy, to be refactored
+  // Notifications pipeline (server-only modules)
+  'lib/notifications/notificationService.server.ts',
+  'lib/processing/deliveryStageProcessor.server.ts',
 ]
 
 const violations = []
