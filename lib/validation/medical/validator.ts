@@ -139,7 +139,7 @@ function evaluateKeywordRule(
       reason: logic.reason,
       context: {
         sectionKey: section.sectionKey,
-        foundKeywords: foundKeywords.slice(0, 5), // Limit to first 5
+        foundKeywordsCount: foundKeywords.length,
       },
       flaggedAt: new Date().toISOString(),
     }
@@ -174,6 +174,10 @@ function evaluateContraIndicationRule(
   )
   
   if (hasConflict) {
+    const detectedSignals = signals.filter(s =>
+      logic.riskSignals.some(rs => s.toLowerCase().includes(rs.toLowerCase()))
+    )
+    
     return {
       flagId: randomUUID(),
       ruleId: rule.metadata.ruleId,
@@ -184,10 +188,7 @@ function evaluateContraIndicationRule(
       reason: logic.reason,
       context: {
         sectionKey: section.sectionKey,
-        riskSignals: logic.riskSignals,
-        detectedSignals: signals.filter(s =>
-          logic.riskSignals.some(rs => s.toLowerCase().includes(rs.toLowerCase()))
-        ),
+        detectedSignalsCount: detectedSignals.length,
       },
       flaggedAt: new Date().toISOString(),
     }
@@ -229,8 +230,8 @@ function evaluateOutOfBoundsRule(
         sectionKey: section.sectionKey,
         field: logic.field,
         value,
-        minValue: logic.minValue,
-        maxValue: logic.maxValue,
+        ...(logic.minValue !== undefined && { minValue: logic.minValue }),
+        ...(logic.maxValue !== undefined && { maxValue: logic.maxValue }),
       },
       flaggedAt: new Date().toISOString(),
     }
@@ -363,7 +364,7 @@ export function validateReportSections(
     const overallPassed = criticalFlags.length === 0
     
     // Determine overall status
-    let overallStatus = VALIDATION_STATUS.PASS
+    let overallStatus: typeof VALIDATION_STATUS[keyof typeof VALIDATION_STATUS] = VALIDATION_STATUS.PASS
     if (criticalFlags.length > 0) {
       overallStatus = VALIDATION_STATUS.FAIL
     } else if (warningFlags.length > 0 || infoFlags.length > 0) {
