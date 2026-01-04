@@ -191,30 +191,60 @@ describe('Delivery Contracts - Type Guards', () => {
   })
 })
 
-describe('Delivery Contracts - Enums', () => {
-  it('should have correct delivery status values', () => {
-    expect(DeliveryStatus.NOT_READY).toBe('NOT_READY')
-    expect(DeliveryStatus.READY).toBe('READY')
-    expect(DeliveryStatus.DELIVERED).toBe('DELIVERED')
-    expect(DeliveryStatus.FAILED).toBe('FAILED')
+describe('Delivery Contracts - Strict Schema Validation', () => {
+  it('should reject unknown keys in DeliveryMetadataSchema', () => {
+    const invalid = {
+      notificationIds: ['12345678-1234-1234-1234-123456789012'],
+      unknownField: 'should be rejected',
+    }
+    expect(() => DeliveryMetadataSchema.parse(invalid)).toThrow()
   })
 
-  it('should have correct notification type values', () => {
-    expect(NotificationType.REPORT_READY).toBe('REPORT_READY')
-    expect(NotificationType.REVIEW_REQUESTED).toBe('REVIEW_REQUESTED')
-    expect(NotificationType.ACTION_RECOMMENDED).toBe('ACTION_RECOMMENDED')
+  it('should reject unknown keys in NotificationMetadataSchema', () => {
+    const invalid = {
+      downloadUrl: 'https://example.com/download',
+      unknownField: 'should be rejected',
+    }
+    expect(() => NotificationMetadataSchema.parse(invalid)).toThrow()
   })
 
-  it('should have correct notification channel values', () => {
-    expect(NotificationChannel.IN_APP).toBe('in_app')
-    expect(NotificationChannel.EMAIL).toBe('email')
-    expect(NotificationChannel.SMS).toBe('sms')
+  it('should reject unknown keys in CreateNotificationInputSchema', () => {
+    const invalid = {
+      userId: '12345678-1234-1234-1234-123456789012',
+      notificationType: 'REPORT_READY',
+      subject: 'Test',
+      message: 'Test message',
+      unknownField: 'should be rejected',
+    }
+    expect(() => validateCreateNotificationInput(invalid)).toThrow()
   })
 
-  it('should have correct notification priority values', () => {
-    expect(NotificationPriority.LOW).toBe('low')
-    expect(NotificationPriority.MEDIUM).toBe('medium')
-    expect(NotificationPriority.HIGH).toBe('high')
-    expect(NotificationPriority.URGENT).toBe('urgent')
+  it('should enforce max lengths in schemas', () => {
+    const invalidSubject = {
+      userId: '12345678-1234-1234-1234-123456789012',
+      notificationType: 'REPORT_READY',
+      subject: 'a'.repeat(201), // Exceeds 200 char limit
+      message: 'Test message',
+    }
+    expect(() => validateCreateNotificationInput(invalidSubject)).toThrow()
+
+    const invalidMessage = {
+      userId: '12345678-1234-1234-1234-123456789012',
+      notificationType: 'REPORT_READY',
+      subject: 'Test',
+      message: 'a'.repeat(2001), // Exceeds 2000 char limit
+    }
+    expect(() => validateCreateNotificationInput(invalidMessage)).toThrow()
+  })
+
+  it('should enforce bounded arrays in metadata', () => {
+    const invalidMetadata = {
+      errors: Array(11).fill({
+        code: 'ERROR',
+        message: 'Error message',
+        timestamp: new Date().toISOString(),
+      }), // Exceeds 10 item limit
+    }
+    expect(() => DeliveryMetadataSchema.parse(invalidMetadata)).toThrow()
   })
 })

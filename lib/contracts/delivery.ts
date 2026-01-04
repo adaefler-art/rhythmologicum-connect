@@ -96,34 +96,39 @@ export type NotificationPriorityType =
 /**
  * Delivery metadata schema (PHI-free)
  */
-export const DeliveryMetadataSchema = z.object({
-  notificationIds: z.array(z.string().uuid()).optional(),
-  attemptTimestamps: z.array(z.string().datetime()).optional(),
-  errors: z
-    .array(
-      z.object({
-        code: z.string(),
-        message: z.string(),
-        timestamp: z.string().datetime(),
-      })
-    )
-    .optional(),
-  lastAttemptAt: z.string().datetime().optional(),
-})
+export const DeliveryMetadataSchema = z
+  .object({
+    notificationIds: z.array(z.string().uuid()).optional(),
+    attemptTimestamps: z.array(z.string().datetime()).optional(),
+    errors: z
+      .array(
+        z.object({
+          code: z.string().max(50),
+          message: z.string().max(200),
+          timestamp: z.string().datetime(),
+        })
+      )
+      .max(10)
+      .optional(),
+    lastAttemptAt: z.string().datetime().optional(),
+  })
+  .strict()
 
 export type DeliveryMetadata = z.infer<typeof DeliveryMetadataSchema>
 
 /**
  * Notification metadata schema (PHI-free, for actions/links)
  */
-export const NotificationMetadataSchema = z.object({
-  downloadUrl: z.string().url().optional(),
-  expiresAt: z.string().datetime().optional(),
-  actionUrl: z.string().url().optional(),
-  actionLabel: z.string().optional(),
-  reportType: z.string().optional(),
-  pillarKey: z.string().optional(),
-})
+export const NotificationMetadataSchema = z
+  .object({
+    downloadUrl: z.string().url().max(500).optional(),
+    expiresAt: z.string().datetime().optional(),
+    actionUrl: z.string().url().max(500).optional(),
+    actionLabel: z.string().max(100).optional(),
+    reportType: z.string().max(50).optional(),
+    pillarKey: z.string().max(50).optional(),
+  })
+  .strict()
 
 export type NotificationMetadata = z.infer<typeof NotificationMetadataSchema>
 
@@ -155,10 +160,12 @@ export type DeliveryStatusResult = z.infer<typeof DeliveryStatusResultSchema>
 /**
  * Trigger delivery input
  */
-export const TriggerDeliveryInputSchema = z.object({
-  jobId: z.string().uuid(),
-  force: z.boolean().optional(), // Force delivery even if already delivered (admin only)
-})
+export const TriggerDeliveryInputSchema = z
+  .object({
+    jobId: z.string().uuid(),
+    force: z.boolean().optional(), // Force delivery even if already delivered (admin only)
+  })
+  .strict()
 
 export type TriggerDeliveryInput = z.infer<typeof TriggerDeliveryInputSchema>
 
@@ -166,19 +173,23 @@ export type TriggerDeliveryInput = z.infer<typeof TriggerDeliveryInputSchema>
  * Trigger delivery result
  */
 export const TriggerDeliveryResultSchema = z.discriminatedUnion('success', [
-  z.object({
-    success: z.literal(true),
-    jobId: z.string().uuid(),
-    deliveryStatus: z.enum(['DELIVERED']),
-    deliveryTimestamp: z.string().datetime(),
-    notificationIds: z.array(z.string().uuid()),
-  }),
-  z.object({
-    success: z.literal(false),
-    error: z.string(),
-    code: z.string(),
-    retryable: z.boolean(),
-  }),
+  z
+    .object({
+      success: z.literal(true),
+      jobId: z.string().uuid(),
+      deliveryStatus: z.enum(['DELIVERED']),
+      deliveryTimestamp: z.string().datetime(),
+      notificationIds: z.array(z.string().uuid()).max(10),
+    })
+    .strict(),
+  z
+    .object({
+      success: z.literal(false),
+      error: z.string().max(500),
+      code: z.string().max(50),
+      retryable: z.boolean(),
+    })
+    .strict(),
 ])
 
 export type TriggerDeliveryResult = z.infer<typeof TriggerDeliveryResultSchema>
@@ -186,27 +197,29 @@ export type TriggerDeliveryResult = z.infer<typeof TriggerDeliveryResultSchema>
 /**
  * Create notification input
  */
-export const CreateNotificationInputSchema = z.object({
-  userId: z.string().uuid(),
-  jobId: z.string().uuid().optional(),
-  assessmentId: z.string().uuid().optional(),
-  notificationType: z.enum([
-    'REPORT_READY',
-    'REVIEW_REQUESTED',
-    'ACTION_RECOMMENDED',
-    'REPORT_UPDATED',
-    'FOLLOW_UP_REMINDER',
-  ]),
-  channel: z.enum(['in_app', 'email', 'sms']).default('in_app'),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
-  subject: z.string().min(1).max(200),
-  message: z.string().min(1).max(2000),
-  metadata: NotificationMetadataSchema.optional(),
-  consentVerified: z.boolean().default(false),
-  consentVersion: z.string().optional(),
-  followUpAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional(),
-})
+export const CreateNotificationInputSchema = z
+  .object({
+    userId: z.string().uuid(),
+    jobId: z.string().uuid().optional(),
+    assessmentId: z.string().uuid().optional(),
+    notificationType: z.enum([
+      'REPORT_READY',
+      'REVIEW_REQUESTED',
+      'ACTION_RECOMMENDED',
+      'REPORT_UPDATED',
+      'FOLLOW_UP_REMINDER',
+    ]),
+    channel: z.enum(['in_app', 'email', 'sms']).default('in_app'),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+    subject: z.string().min(1).max(200),
+    message: z.string().min(1).max(2000),
+    metadata: NotificationMetadataSchema.optional(),
+    consentVerified: z.boolean().default(false),
+    consentVersion: z.string().max(20).optional(),
+    followUpAt: z.string().datetime().optional(),
+    expiresAt: z.string().datetime().optional(),
+  })
+  .strict()
 
 export type CreateNotificationInput = z.infer<typeof CreateNotificationInputSchema>
 

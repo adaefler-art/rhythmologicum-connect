@@ -7,7 +7,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
-import { logUnauthorized } from '@/lib/logging/logger'
+import { logUnauthorized, logError } from '@/lib/logging/logger'
 
 /**
  * API Route: Mark Notification as Read
@@ -31,19 +31,19 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  // ============================================================================
+  // STEP 1: Authentication Check (BEFORE reading params)
+  // ============================================================================
+  const user = await getCurrentUser()
+  if (!user) {
+    logUnauthorized({
+      endpoint: `/api/notifications/[id]`,
+    })
+    return unauthorizedResponse('Authentifizierung erforderlich.')
+  }
+
   try {
     const { id } = await context.params
-
-    // ============================================================================
-    // STEP 1: Authentication Check
-    // ============================================================================
-    const user = await getCurrentUser()
-    if (!user) {
-      logUnauthorized({
-        endpoint: `/api/notifications/${id}`,
-      })
-      return unauthorizedResponse('Authentifizierung erforderlich.')
-    }
 
     // ============================================================================
     // STEP 2: Update notification (RLS ensures user ownership)
@@ -53,7 +53,7 @@ export async function PATCH(
     const readAt = new Date().toISOString()
 
     const { data, error } = (await supabase
-      .from('notifications')
+      .from('notifications' as any) // Type will be correct after db:typegen
       .update({
         status: 'READ' as any, // Type will be correct after db:typegen
         read_at: readAt,
@@ -64,7 +64,8 @@ export async function PATCH(
       .single()) as { data: { id: string; read_at: string } | null; error: any }
 
     if (error || !data) {
-      console.error('Error marking notification as read:', error)
+      logError('Error marking notification as read', { userId: user.id, notificationId: id }, error)
+      // Return 404 to avoid existence disclosure
       return notFoundResponse('Benachrichtigung nicht gefunden.')
     }
 
@@ -76,7 +77,7 @@ export async function PATCH(
       readAt: data.read_at,
     })
   } catch (err) {
-    console.error('Error in PATCH /api/notifications/[id]:', err)
+    logError('Error in PATCH /api/notifications/[id]', { userId: user.id }, err)
     return internalErrorResponse('Fehler beim Aktualisieren der Benachrichtigung.')
   }
 }

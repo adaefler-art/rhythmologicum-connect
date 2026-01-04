@@ -13,11 +13,9 @@ type ProcessingJob = {
   stage: string
   delivery_status: string
   delivery_timestamp: string | null
-  pdf_path: string | null
   created_at: string
   updated_at: string
   completed_at: string | null
-  [key: string]: any // Allow additional fields from DB
 }
 
 type JobRow = {
@@ -27,9 +25,9 @@ type JobRow = {
   stage: string
   deliveryStatus: string
   deliveryTimestamp: string | null
-  pdfPath: string | null
   createdAt: string
   completedAt: string | null
+  hasPdf: boolean // Indicates if PDF exists (not the path itself)
 }
 
 export default function DeliveryDashboardPage() {
@@ -45,7 +43,7 @@ export default function DeliveryDashboardPage() {
 
         const { data, error } = await supabase
           .from('processing_jobs')
-          .select('*')
+          .select('id, assessment_id, status, stage, delivery_status, delivery_timestamp, created_at, updated_at, completed_at')
           .order('created_at', { ascending: false })
           .limit(100)
 
@@ -79,9 +77,9 @@ export default function DeliveryDashboardPage() {
       stage: job.stage,
       deliveryStatus: job.delivery_status,
       deliveryTimestamp: job.delivery_timestamp,
-      pdfPath: job.pdf_path,
       createdAt: job.created_at,
       completedAt: job.completed_at,
+      hasPdf: job.delivery_status === 'DELIVERED' || job.delivery_status === 'READY',
     }))
   }, [jobs])
 
@@ -212,7 +210,7 @@ export default function DeliveryDashboardPage() {
         header: 'Actions',
         accessor: (row) => (
           <div className="flex gap-2">
-            {row.pdfPath && (
+            {row.hasPdf && (
               <Button
                 variant="secondary"
                 size="sm"

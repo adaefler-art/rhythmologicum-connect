@@ -6,7 +6,7 @@ import {
   unauthorizedResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
-import { logUnauthorized } from '@/lib/logging/logger'
+import { logUnauthorized, logError } from '@/lib/logging/logger'
 
 /**
  * API Route: List User Notifications
@@ -39,28 +39,25 @@ import { logUnauthorized } from '@/lib/logging/logger'
  */
 
 export async function GET(request: NextRequest) {
-  try {
-    // ============================================================================
-    // STEP 1: Authentication Check
-    // ============================================================================
-    const user = await getCurrentUser()
-    if (!user) {
-      logUnauthorized({
-        endpoint: '/api/notifications',
-      })
-      return unauthorizedResponse('Authentifizierung erforderlich.')
-    }
+  // ============================================================================
+  // STEP 1: Authentication Check (BEFORE parsing query params)
+  // ============================================================================
+  const user = await getCurrentUser()
+  if (!user) {
+    logUnauthorized({
+      endpoint: '/api/notifications',
+    })
+    return unauthorizedResponse('Authentifizierung erforderlich.')
+  }
 
+  try {
     // ============================================================================
     // STEP 2: Parse query parameters
     // ============================================================================
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
-    const limit = Math.min(
-      parseInt(searchParams.get('limit') || '50', 10),
-      100
-    )
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
 
     // ============================================================================
@@ -92,7 +89,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (error) {
-      console.error('Error fetching notifications:', error)
+      logError('Error fetching notifications', { userId: user.id }, error)
       return internalErrorResponse('Fehler beim Laden der Benachrichtigungen.')
     }
 
@@ -107,7 +104,7 @@ export async function GET(request: NextRequest) {
       .neq('status', 'CANCELLED')) as { count: number | null }
 
     // ============================================================================
-    // STEP 5: Return response
+    // STEP 5: Return response (no PHI - notifications are already PHI-free)
     // ============================================================================
     return successResponse({
       notifications: notifications || [],
@@ -116,7 +113,7 @@ export async function GET(request: NextRequest) {
       hasMore: (count || 0) > offset + limit,
     })
   } catch (err) {
-    console.error('Error in GET /api/notifications:', err)
+    logError('Error in GET /api/notifications', { userId: user.id }, err)
     return internalErrorResponse('Fehler beim Laden der Benachrichtigungen.')
   }
 }

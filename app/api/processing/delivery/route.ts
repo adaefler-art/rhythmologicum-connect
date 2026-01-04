@@ -5,9 +5,10 @@ import {
   unauthorizedResponse,
   validationErrorResponse,
   internalErrorResponse,
+  notFoundResponse,
 } from '@/lib/api/responses'
 import { processDeliveryStage } from '@/lib/processing/deliveryStageProcessor'
-import { logUnauthorized } from '@/lib/logging/logger'
+import { logUnauthorized, logError } from '@/lib/logging/logger'
 import { randomUUID } from 'crypto'
 
 /**
@@ -41,19 +42,35 @@ import { randomUUID } from 'crypto'
 export async function POST(request: NextRequest) {
   const requestId = randomUUID()
 
-  try {
-    // ============================================================================
-    // STEP 1: Authentication Check (BEFORE parsing body - DoS prevention)
-    // ============================================================================
-    const user = await getCurrentUser()
-    if (!user) {
-      logUnauthorized({
-        endpoint: '/api/processing/delivery',
-        requestId,
-      })
-      return unauthorizedResponse('Authentifizierung erforderlich.')
-    }
+  // ============================================================================
+  // STEP 1: Authentication Check (BEFORE parsing body - DoS prevention)
+  // ============================================================================
+  const user = await getCurrentUser()
+  if (!user) {
+    logUnauthorized({
+      endpoint: '/api/processing/delivery',
+      requestId,
+    })
+    return unauthorizedResponse('Authentifizierung erforderlich.')
+  }
 
+  // Get user role for RBAC (use app_metadata only, no fallback)
+  const userRole = user.app_metadata?.role
+  
+  // Only clinicians and admins can trigger delivery manually
+  // Service role operations handled separately
+  if (userRole !== 'clinician' && userRole !== 'admin') {
+    logUnauthorized({
+      endpoint: '/api/processing/delivery',
+      userId: user.id,
+      role: userRole,
+      requestId,
+    })
+    // Return 404 to avoid existence disclosure
+    return notFoundResponse('Resource nicht gefunden.')
+  }
+
+  try {
     // ============================================================================
     // STEP 2: Parse and validate request
     // ============================================================================
@@ -112,7 +129,8 @@ export async function POST(request: NextRequest) {
       notificationIds: result.notificationIds,
     })
   } catch (err) {
-    console.error('Error in POST /api/processing/delivery:', err)
+    // Do NOT log the full error as it may contain PHI
+    logError('Error in POST /api/processing/delivery', { requestId }, err)
     return internalErrorResponse('Fehler bei der Zustellung.')
   }
 }
