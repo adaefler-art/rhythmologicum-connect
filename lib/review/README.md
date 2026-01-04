@@ -11,8 +11,8 @@ The review queue system allows clinicians and admins to review jobs that:
 
 ## Key Features
 
-- **Deterministic Sampling**: Same job + config → same sampling decision (stable hash)
-- **RBAC**: Only clinician/admin can access review queue and make decisions
+- **Deterministic Sampling**: Same job + config → same sampling decision (stable hash, not review decision)
+- **RBAC**: Global clinician/admin access (no per-patient assignment required - deliberate design for QA workflow)
 - **Audit Trail**: All decisions logged with reviewer ID, timestamp, reason codes (PHI-free)
 - **Idempotent**: Same decision can be applied multiple times without error
 - **PHI-Free**: Queue responses contain only references, codes, and aggregated summaries
@@ -231,7 +231,8 @@ npm run db:verify
 ## Security & Compliance
 
 - **PHI-Free**: No patient data in queue responses or audit logs
-- **RBAC**: Only authorized roles can access/modify review records
+- **RBAC**: Global clinician/admin access (no per-patient assignment - deliberate design for QA workflow)
+- **HTTP Semantics**: Unauthorized → 404 (not 403) to avoid resource existence disclosure
 - **Audit Trail**: All decisions logged with WHO, WHEN, WHAT, WHY
 - **Idempotent**: Safe to retry decisions
 - **Fail-Safe**: Sampling failure → manual review (not auto-approve)
@@ -250,7 +251,6 @@ This module integrates with:
 - `201` - Created (new decision)
 - `400` - Bad request (validation error)
 - `401` - Authentication required
-- `403` - Forbidden (insufficient permissions)
-- `404` - Not found
+- `404` - Not found (also used for unauthorized to avoid resource existence disclosure)
 - `422` - Unprocessable entity (processing failed)
 - `500` - Internal error

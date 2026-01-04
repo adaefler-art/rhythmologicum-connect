@@ -278,10 +278,11 @@ Successfully implemented a comprehensive medical QA review queue system that col
 - Tests verify determinism (16 tests ✅)
 
 ### ✅ RBAC
-- All endpoints check authentication
+- All endpoints check authentication (401 if missing)
 - Role validation: only clinician/admin
+- Unauthorized → 404 (not 403, to avoid resource existence disclosure)
+- Global clinician access (no per-patient assignment - deliberate design for QA workflow)
 - RLS policies enforce row-level security
-- 403 for insufficient permissions
 - Tests verify RBAC enforcement
 
 ### ✅ Idempotent

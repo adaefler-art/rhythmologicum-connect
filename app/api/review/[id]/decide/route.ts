@@ -50,15 +50,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const userRole = user.app_metadata?.role
     
     if (!userRole || !['clinician', 'admin'].includes(userRole)) {
+      // Return 404 instead of 403 to avoid resource existence disclosure
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'FORBIDDEN',
-            message: 'Insufficient permissions to make review decisions',
+            code: 'NOT_FOUND',
+            message: 'Resource not found',
           },
         },
-        { status: 403 }
+        { status: 404 }
       )
     }
     

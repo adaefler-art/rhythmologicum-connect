@@ -40,16 +40,16 @@ export async function GET(request: NextRequest) {
     const userRole = user.app_metadata?.role
     
     if (!userRole || !['clinician', 'admin'].includes(userRole)) {
-      // Return 403 for review queue (not 404) since it's a known resource
+      // Return 404 instead of 403 to avoid resource existence disclosure
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'FORBIDDEN',
-            message: 'Insufficient permissions to access review queue',
+            code: 'NOT_FOUND',
+            message: 'Resource not found',
           },
         },
-        { status: 403 }
+        { status: 404 }
       )
     }
     
