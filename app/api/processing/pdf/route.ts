@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // ============================================================================
-    // STEP 1: Authentication Check
+    // STEP 1: Authentication Check (BEFORE parsing body - DoS prevention)
     // ============================================================================
     const user = await getCurrentUser()
     if (!user) {

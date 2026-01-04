@@ -136,7 +136,8 @@ export async function generateSignedUrl(
 
 /**
  * Verifies user has access to PDF for given assessment
- * Checks ownership (patient) or role (clinician/admin)
+ * Checks ownership (patient) or explicit clinician assignment
+ * Follows same RBAC policy as processing_jobs (V05-I05.1)
  * 
  * @param assessmentId - Assessment ID
  * @param userId - User ID requesting access
@@ -160,13 +161,7 @@ export async function verifyPdfAccess(
 
     const userRole = userData.user.app_metadata?.role || 'patient'
 
-    // Clinicians and admins have access to all PDFs
-    if (userRole === 'clinician' || userRole === 'admin') {
-      return { authorized: true }
-    }
-
-    // Patients can only access their own PDFs
-    // Verify ownership via assessment → patient_profile → user_id
+    // Get assessment with patient info
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id')
@@ -180,6 +175,7 @@ export async function verifyPdfAccess(
       }
     }
 
+    // Get patient profile
     const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('user_id')
@@ -193,14 +189,42 @@ export async function verifyPdfAccess(
       }
     }
 
-    if (patientProfile.user_id !== userId) {
-      return {
-        authorized: false,
-        error: 'Unauthorized: Assessment belongs to different user',
+    // Patients can only access their own PDFs
+    if (userRole === 'patient') {
+      if (patientProfile.user_id !== userId) {
+        return {
+          authorized: false,
+          error: 'Unauthorized: Assessment belongs to different user',
+        }
       }
+      return { authorized: true }
     }
 
-    return { authorized: true }
+    // Clinicians/admins must have explicit assignment via clinician_patient_assignments
+    // This matches the policy in processing_jobs RLS (V05-I05.1)
+    if (userRole === 'clinician' || userRole === 'admin') {
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('clinician_patient_assignments')
+        .select('id')
+        .eq('clinician_user_id', userId)
+        .eq('patient_user_id', patientProfile.user_id)
+        .single()
+
+      if (assignmentError || !assignment) {
+        return {
+          authorized: false,
+          error: 'Clinician not assigned to this patient',
+        }
+      }
+
+      return { authorized: true }
+    }
+
+    // Unknown role
+    return {
+      authorized: false,
+      error: 'Invalid user role',
+    }
   } catch (error) {
     return {
       authorized: false,

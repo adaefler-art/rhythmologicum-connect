@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   try {
     // ============================================================================
-    // STEP 1: Authentication Check
+    // STEP 1: Authentication Check (BEFORE any other operations)
     // ============================================================================
     const user = await getCurrentUser()
     if (!user) {
@@ -99,6 +99,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // ============================================================================
     // STEP 4: Authorization Check (verify access)
+    // Return 404 instead of 403 to avoid resource existence disclosure
     // ============================================================================
     const accessCheck = await verifyPdfAccess(jobWithPdf.assessment_id, user.id)
 
@@ -112,11 +113,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
         },
         accessCheck.error || 'PDF access denied',
       )
-      return forbiddenResponse('Sie haben keine Berechtigung, auf dieses PDF zuzugreifen.')
+      // Return 404 instead of 403 to avoid disclosing resource existence
+      return notFoundResponse('Report', 'Report nicht gefunden.')
     }
 
     // ============================================================================
-    // STEP 5: Parse query parameters
+    // STEP 5: Parse and validate query parameters
     // ============================================================================
     const searchParams = request.nextUrl.searchParams
     const expiresInParam = searchParams.get('expiresIn')
@@ -124,6 +126,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (expiresInParam) {
       const parsed = parseInt(expiresInParam, 10)
+      // Enforce bounds: min 60s (1 min), max 86400s (24 hours)
       if (!isNaN(parsed) && parsed >= 60 && parsed <= 86400) {
         expiresIn = parsed
       }

@@ -32,11 +32,11 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     const supabase = await createServerSupabaseClient()
 
     // ============================================================================
-    // STEP 1: Fetch processing job
+    // STEP 1: Fetch processing job with PDF metadata
     // ============================================================================
     const { data: job, error: jobError } = await supabase
       .from('processing_jobs')
-      .select('id, assessment_id, stage, status')
+      .select('id, assessment_id, stage, status, pdf_path, pdf_metadata, pdf_generated_at')
       .eq('id', jobId)
       .single()
 
@@ -50,13 +50,22 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
       }
     }
 
+    // Type assertion for new columns (until types are regenerated)
+    const jobWithPdf = job as typeof job & {
+      stage: string
+      assessment_id: string
+      pdf_path?: string | null
+      pdf_metadata?: Record<string, any> | null
+      pdf_generated_at?: string | null
+    }
+
     // Verify job is in correct stage
-    if (job.stage !== 'pdf') {
+    if (jobWithPdf.stage !== 'pdf') {
       return {
         success: false,
         error: {
           code: 'INVALID_STAGE',
-          message: `Job is in stage ${job.stage}, expected pdf`,
+          message: `Job is in stage ${jobWithPdf.stage}, expected pdf`,
         },
       }
     }
@@ -89,12 +98,53 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     const sections = sectionsData.sections_data as ReportSectionsV1
 
     // ============================================================================
+    // STEP 2.5: Idempotency Check - Return existing PDF if content unchanged
+    // ============================================================================
+    // Compute hash of current sections to check for changes
+    const sectionsJson = JSON.stringify(sections)
+    const currentContentHash = computePdfHash(Buffer.from(sectionsJson))
+
+    // If PDF already exists and content hash matches, return existing metadata
+    if (
+      jobWithPdf.pdf_path &&
+      jobWithPdf.pdf_metadata &&
+      jobWithPdf.pdf_metadata.sectionsContentHash === currentContentHash
+    ) {
+      console.log('[PDF_IDEMPOTENT_RETURN]', {
+        jobId,
+        pdfPath: jobWithPdf.pdf_path,
+        contentHash: currentContentHash,
+        message: 'PDF already exists with same content, returning existing',
+      })
+
+      return {
+        success: true,
+        data: {
+          pdfPath: jobWithPdf.pdf_path,
+          metadata: jobWithPdf.pdf_metadata as any,
+          generationTimeMs: 0, // No generation needed
+        },
+      }
+    }
+
+    // If PDF exists but content changed, delete old PDF before creating new one
+    if (jobWithPdf.pdf_path) {
+      console.log('[PDF_CONTENT_CHANGED]', {
+        jobId,
+        oldPath: jobWithPdf.pdf_path,
+        message: 'Content changed, will replace PDF',
+      })
+      // Best-effort delete of old PDF (don't fail if it doesn't exist)
+      await deletePdfFromStorage(jobWithPdf.pdf_path)
+    }
+
+    // ============================================================================
     // STEP 3: Fetch minimal patient data (for PDF header only)
     // ============================================================================
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id, created_at')
-      .eq('id', job.assessment_id)
+      .eq('id', jobWithPdf.assessment_id)
       .single()
 
     if (assessmentError || !assessment) {
@@ -124,7 +174,7 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     // ============================================================================
     const pdfInput: PdfGenerationInput = {
       jobId,
-      assessmentId: job.assessment_id,
+      assessmentId: jobWithPdf.assessment_id,
       sectionsData: sections,
       patientData,
       options: {
@@ -179,14 +229,20 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
     }
 
     // ============================================================================
-    // STEP 6: Update processing job with PDF metadata
+    // STEP 6: Update processing job with PDF metadata (including content hash)
     // ============================================================================
+    // Add sectionsContentHash to metadata for idempotency checks
+    const metadataWithHash = {
+      ...pdfResult.metadata,
+      sectionsContentHash: currentContentHash,
+    }
+
     // Type assertion for new columns (until types are regenerated)
     const { error: updateError } = await supabase
       .from('processing_jobs')
       .update({
         pdf_path: storagePath,
-        pdf_metadata: pdfResult.metadata as any,
+        pdf_metadata: metadataWithHash as any,
         pdf_generated_at: new Date().toISOString(),
         stage: 'delivery', // Move to next stage
         status: 'in_progress',
@@ -216,7 +272,7 @@ export async function processPdfStage(jobId: string): Promise<PdfGenerationResul
       success: true,
       data: {
         pdfPath: storagePath,
-        metadata: pdfResult.metadata,
+        metadata: metadataWithHash,
         generationTimeMs,
       },
     }
