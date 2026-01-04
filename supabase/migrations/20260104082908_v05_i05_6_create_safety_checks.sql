@@ -141,52 +141,94 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_safety_check_results_evaluation_key
 ALTER TABLE public.safety_check_results ENABLE ROW LEVEL SECURITY;
 
 -- Policy 1: Patients can read their own safety check results (via processing_jobs → assessments)
-CREATE POLICY safety_check_results_select_own ON public.safety_check_results
-    FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.processing_jobs pj
-            JOIN public.assessments a ON a.id = pj.assessment_id
-            WHERE pj.id = safety_check_results.job_id
-            AND a.user_id = auth.uid()
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'safety_check_results'
+          AND policyname = 'safety_check_results_select_own'
+    ) THEN
+        CREATE POLICY safety_check_results_select_own ON public.safety_check_results
+            FOR SELECT
+            USING (
+                EXISTS (
+                    SELECT 1 FROM public.processing_jobs pj
+                    JOIN public.assessments a ON a.id = pj.assessment_id
+                    WHERE pj.id = safety_check_results.job_id
+                    AND a.user_id = auth.uid()
+                )
+            );
+    END IF;
+END $$;
 
 -- Policy 2: Clinicians can read safety check results for assigned patients
-CREATE POLICY safety_check_results_select_clinician ON public.safety_check_results
-    FOR SELECT
-    USING (
-        auth.jwt() ->> 'role' IN ('clinician', 'admin')
-        OR EXISTS (
-            SELECT 1 FROM public.processing_jobs pj
-            JOIN public.assessments a ON a.id = pj.assessment_id
-            WHERE pj.id = safety_check_results.job_id
-            AND auth.jwt() ->> 'role' = 'clinician'
-        )
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'safety_check_results'
+          AND policyname = 'safety_check_results_select_clinician'
+    ) THEN
+        CREATE POLICY safety_check_results_select_clinician ON public.safety_check_results
+            FOR SELECT
+            USING (
+                auth.jwt() ->> 'role' IN ('clinician', 'admin')
+                OR EXISTS (
+                    SELECT 1 FROM public.processing_jobs pj
+                    JOIN public.assessments a ON a.id = pj.assessment_id
+                    WHERE pj.id = safety_check_results.job_id
+                    AND auth.jwt() ->> 'role' = 'clinician'
+                )
+            );
+    END IF;
+END $$;
 
 -- Policy 3: Service role can insert (for processing pipeline)
-CREATE POLICY safety_check_results_insert_service ON public.safety_check_results
-    FOR INSERT
-    WITH CHECK (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'safety_check_results'
+          AND policyname = 'safety_check_results_insert_service'
+    ) THEN
+        CREATE POLICY safety_check_results_insert_service ON public.safety_check_results
+            FOR INSERT
+            WITH CHECK (
+                auth.jwt() ->> 'role' = 'service_role'
+            );
+    END IF;
+END $$;
 
 -- Policy 4: Service role can update (for reprocessing)
-CREATE POLICY safety_check_results_update_service ON public.safety_check_results
-    FOR UPDATE
-    USING (
-        auth.jwt() ->> 'role' = 'service_role'
-    )
-    WITH CHECK (
-        auth.jwt() ->> 'role' = 'service_role'
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'safety_check_results'
+          AND policyname = 'safety_check_results_update_service'
+    ) THEN
+        CREATE POLICY safety_check_results_update_service ON public.safety_check_results
+            FOR UPDATE
+            USING (
+                auth.jwt() ->> 'role' = 'service_role'
+            )
+            WITH CHECK (
+                auth.jwt() ->> 'role' = 'service_role'
+            );
+    END IF;
+END $$;
 
 -- ============================================================
 -- SECTION 5: CREATE TRIGGERS
 -- ============================================================
 
 -- Auto-update updated_at timestamp
+DROP TRIGGER IF EXISTS update_safety_check_results_updated_at ON public.safety_check_results;
+
 CREATE TRIGGER update_safety_check_results_updated_at
     BEFORE UPDATE ON public.safety_check_results
     FOR EACH ROW
