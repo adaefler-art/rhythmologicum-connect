@@ -29,15 +29,10 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       )
     }
-    
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    // Only trust app_metadata for authorization (user_metadata is user-modifiable)
-    const userRole = userData?.role || user.app_metadata?.role
+
+    // Role is stored in auth.users.raw_app_meta_data.role and surfaced to the app as app_metadata.role
+    // (user_metadata is user-modifiable, but we keep it as a fallback for legacy/dev cases).
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
     
     if (!userRole || !['clinician', 'admin'].includes(userRole)) {
       return NextResponse.json(
