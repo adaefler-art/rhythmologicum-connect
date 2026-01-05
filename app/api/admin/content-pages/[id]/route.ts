@@ -32,11 +32,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Use admin client for content pages management (RLS bypass for cross-user access)
     const adminClient = createAdminSupabaseClient()
 
-    // Fetch single content page with funnel data
-    const { data: contentPage, error: pageError } = await adminClient
-      .from('content_pages')
-      .select(
-        `
+    // Fetch the page itself WITHOUT embedded joins. This prevents accidental 404s
+    // when related tables (e.g. sections/funnel) are missing or empty.
+    const baseSelect = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index,
+      updated_at,
+      created_at,
+      deleted_at
+    `
+
+    const contentPageQuery = adminClient.from('content_pages').select(baseSelect).eq('id', id)
+    let contentPage: any
+    let pageError: any
+
+    ;({ data: contentPage, error: pageError } = await contentPageQuery.maybeSingle())
+
+    if (pageError && pageError.code === '42703') {
+      // deleted_at column missing, retry without it
+      const fallbackSelect = `
         id,
         slug,
         title,
@@ -50,62 +74,61 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         flow_step,
         order_index,
         updated_at,
-        created_at,
-        deleted_at,
-        funnels (
-          id,
-          title,
-          slug
-        )
-      `,
-      )
-      .eq('id', id)
-      .single()
+        created_at
+      `
+      ;({ data: contentPage, error: pageError } = await adminClient
+        .from('content_pages')
+        .select(fallbackSelect)
+        .eq('id', id)
+        .maybeSingle())
+    }
 
     if (pageError) {
-      if (pageError.code === '42703') {
-        console.warn('deleted_at column missing, retrying content page fetch without soft-delete field')
-        const { data: fallbackPage, error: fallbackError } = await adminClient
-          .from('content_pages')
-          .select(
-            `
-            id,
-            slug,
-            title,
-            excerpt,
-            body_markdown,
-            status,
-            layout,
-            category,
-            priority,
-            funnel_id,
-            flow_step,
-            order_index,
-            updated_at,
-            created_at,
-            funnels (
-              id,
-              title,
-              slug
-            )
-          `,
-          )
-          .eq('id', id)
-          .single()
+      console.error('Error fetching content page:', { code: pageError.code, message: pageError.message })
+      return NextResponse.json({ error: 'Failed to fetch content page' }, { status: 500 })
+    }
 
-        if (fallbackError || !fallbackPage) {
-          console.error('Error fetching content page (fallback):', fallbackError)
-          return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
-        }
-
-        return NextResponse.json({ contentPage: fallbackPage })
-      }
-
-      console.error('Error fetching content page:', pageError)
+    if (!contentPage) {
       return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ contentPage })
+    // Fetch sections separately; empty array is a valid state.
+    const { data: sections, error: sectionsError } = await adminClient
+      .from('content_page_sections')
+      .select('id, title, body_markdown, order_index, created_at, updated_at')
+      .eq('content_page_id', id)
+      .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
+
+    if (sectionsError) {
+      console.error('Error fetching content page sections:', {
+        code: sectionsError.code,
+        message: sectionsError.message,
+      })
+      return NextResponse.json({ error: 'Failed to fetch sections' }, { status: 500 })
+    }
+
+    // Fetch funnel metadata separately to preserve the previous response shape.
+    let funnel: any = null
+    if (contentPage.funnel_id) {
+      const { data: funnelData, error: funnelError } = await adminClient
+        .from('funnels')
+        .select('id, title, slug')
+        .eq('id', contentPage.funnel_id)
+        .maybeSingle()
+
+      if (!funnelError && funnelData) {
+        funnel = funnelData
+      }
+    }
+
+    return NextResponse.json({
+      contentPage: {
+        ...contentPage,
+        funnels: funnel,
+      },
+      sections: sections || [],
+    })
   } catch (error) {
     console.error('Error in GET /api/admin/content-pages/[id]:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
