@@ -20,15 +20,20 @@ import {
   PlayCircle,
   XCircle,
   Filter,
+  User,
 } from 'lucide-react'
 import { 
   Task, 
   TASK_STATUS,
   TaskStatus,
+  UserRole,
+  USER_ROLE,
   getTaskTypeLabel,
   getTaskStatusLabel,
   getUserRoleLabel,
 } from '@/lib/contracts/task'
+import { supabase } from '@/lib/supabaseClient'
+import { getUserRole } from '@/lib/utils/roleBasedRouting'
 import TaskCreateDialog from './TaskCreateDialog'
 
 type TaskWithPatient = Task & {
@@ -45,6 +50,22 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskWithPatient[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all')
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+
+  // Get current user's role on mount
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        const role = getUserRole(user)
+        setCurrentUserRole(role)
+      }
+    }
+    fetchUserRole()
+  }, [])
 
   const loadTasks = useCallback(async () => {
     try {
@@ -55,6 +76,9 @@ export default function TasksPage() {
       const params = new URLSearchParams()
       if (statusFilter !== 'all') {
         params.append('status', statusFilter)
+      }
+      if (roleFilter !== 'all') {
+        params.append('assigned_to_role', roleFilter)
       }
 
       const response = await fetch(`/api/tasks?${params.toString()}`)
@@ -72,7 +96,7 @@ export default function TasksPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, roleFilter])
 
   useEffect(() => {
     loadTasks()
@@ -358,10 +382,12 @@ export default function TasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
+        {/* Status Filter */}
         <Card padding="md">
           <div className="flex items-center gap-4">
             <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Status:</span>
             <div className="flex gap-2">
               <Button
                 variant={statusFilter === 'all' ? 'primary' : 'secondary'}
@@ -391,6 +417,60 @@ export default function TasksPage() {
               >
                 Abgeschlossen
               </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Role Filter */}
+        <Card padding="md">
+          <div className="flex items-center gap-4">
+            <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Zugewiesen an:
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant={roleFilter === 'all' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setRoleFilter('all')}
+              >
+                Alle
+              </Button>
+              {currentUserRole === 'nurse' && (
+                <Button
+                  variant={roleFilter === USER_ROLE.NURSE ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => setRoleFilter(USER_ROLE.NURSE)}
+                  icon={<User className="w-3 h-3" />}
+                >
+                  Meine Aufgaben
+                </Button>
+              )}
+              {(currentUserRole === 'clinician' || currentUserRole === 'admin') && (
+                <>
+                  <Button
+                    variant={roleFilter === USER_ROLE.CLINICIAN ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setRoleFilter(USER_ROLE.CLINICIAN)}
+                  >
+                    Clinician
+                  </Button>
+                  <Button
+                    variant={roleFilter === USER_ROLE.NURSE ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setRoleFilter(USER_ROLE.NURSE)}
+                  >
+                    Nurse
+                  </Button>
+                  <Button
+                    variant={roleFilter === USER_ROLE.ADMIN ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setRoleFilter(USER_ROLE.ADMIN)}
+                  >
+                    Admin
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </Card>
