@@ -11,15 +11,27 @@
 ### 1. Evidence-First ✅
 
 **Database Schema Evidence:**
-All tables queried in this implementation exist in the canonical schema:
+All tables queried in this implementation exist in the canonical schema manifest (`docs/canon/DB_SCHEMA_MANIFEST.json`):
 
-From `docs/canon/DB_SCHEMA_MANIFEST.json`:
-- ✅ `documents` (line 16) - Contains `extracted_json` field for lab values and medications
-- ✅ `reports` (line 35) - Contains `safety_score` and `safety_findings` fields
-- ✅ `calculated_results` (line 12) - Contains `scores` and `risk_models` fields  
-- ✅ `priority_rankings` (line 30) - Contains `ranking_data` field for interventions
-- ✅ `processing_jobs` (line 31) - Links assessments to rankings
-- ✅ `assessments` (line 10) - Links patients to all data
+**Tables Verified in Manifest (lines referenced):**
+- ✅ `documents` (manifest line 16, schema: `schema/schema.sql:1305`) - Contains `extracted_json` field
+- ✅ `reports` (manifest line 35, schema: `schema/schema.sql:1440`) - Contains `safety_score`, `safety_findings` fields
+- ✅ `calculated_results` (manifest line 12, schema: `schema/schema.sql:1203`) - Contains `scores`, `risk_models` fields
+- ✅ `priority_rankings` (manifest line 30, schema: `schema/schema.sql:1735`) - Contains `ranking_data` field (columns defined in manifest lines 186-198)
+- ✅ `processing_jobs` (manifest line 31, schema: `schema/schema.sql:1644`) - Links assessments to rankings (columns defined in manifest lines 152-173)
+- ✅ `assessments` (manifest line 10, schema: `schema/schema.sql:1160`) - Links patients to all data (columns defined in manifest lines 97-107)
+
+**Column Verification:**
+All selected fields verified in `schema/schema.sql`:
+- `documents.extracted_json` (JSONB) - line 1318
+- `documents.doc_type` (TEXT) - line 1309  
+- `documents.created_at` (TIMESTAMPTZ) - line 1314
+- `reports.safety_score` (INTEGER, 0-100) - line 1451
+- `reports.safety_findings` (JSONB) - line 1452
+- `calculated_results.scores` (JSONB) - line 1207
+- `calculated_results.risk_models` (JSONB) - line 1208
+- `processing_jobs.id` (UUID) - implicit
+- `priority_rankings.ranking_data` (JSONB) - manifest line 197
 
 **Type Evidence:**
 All types used come from existing contracts:
@@ -168,15 +180,42 @@ export interface InterventionsSectionProps {
 
 ## Data Source Mapping (Exact Paths & Queries)
 
+### Complete Query Audit
+
+**All queries verified against canonical sources:**
+1. `docs/canon/DB_SCHEMA_MANIFEST.json` - Table allowlist (lines 7-43)
+2. `schema/schema.sql` - Column definitions and constraints
+3. Supabase client: `@/lib/supabaseClient` (auth-bound, RLS-enforced)
+
 ### Section → Source → Query → Error/Empty Behavior
 
-| Section | Data Source | File Path | Query Table | Fields Selected | Empty Behavior | Error Behavior |
-|---------|-------------|-----------|-------------|-----------------|----------------|----------------|
-| **Key Labs** | V05-I04.2 Extraction | `app/clinician/patient/[id]/page.tsx` (line ~186) | `documents` | `id, extracted_json, doc_type, created_at` | "Keine Labordaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
-| **Medications** | V05-I04.2 Extraction | `app/clinician/patient/[id]/page.tsx` (line ~186) | `documents` | `id, extracted_json, doc_type, created_at` | "Keine Medikamentendaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
-| **Safety Findings** | V05-I05.6 Safety Checks | `app/clinician/patient/[id]/page.tsx` (line ~211) | `reports` | `id, assessment_id, safety_score, safety_findings, created_at` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SAFETY)" |
-| **Calculated Scores** | V05-I05.2 Risk Analysis | `app/clinician/patient/[id]/page.tsx` (line ~227) | `calculated_results` | `id, assessment_id, scores, risk_models, created_at` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SCORES)" |
-| **Interventions** | V05-I05.3 Priority Ranking | `app/clinician/patient/[id]/page.tsx` (line ~257) | `priority_rankings` (via `processing_jobs`) | `id, ranking_data` | "Keine Interventionen verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_INTERVENTIONS)" |
+| Section | Data Source | Table (Manifest Line) | Fields Queried | File Path & Line | Empty Behavior | Error Behavior |
+|---------|-------------|------------------------|----------------|------------------|----------------|----------------|
+| **Key Labs** | V05-I04.2 Extraction | `documents` (line 16) | `id`, `extracted_json`, `doc_type`, `created_at` | `page.tsx:192-193` | "Keine Labordaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
+| **Medications** | V05-I04.2 Extraction | `documents` (line 16) | `id`, `extracted_json`, `doc_type`, `created_at` | `page.tsx:192-193` | "Keine Medikamentendaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
+| **Safety Findings** | V05-I05.6 Safety Checks | `reports` (line 35) | `id`, `assessment_id`, `safety_score`, `safety_findings`, `created_at` | `page.tsx:219-220` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SAFETY)" |
+| **Calculated Scores** | V05-I05.2 Risk Analysis | `calculated_results` (line 12) | `id`, `assessment_id`, `scores`, `risk_models`, `created_at` | `page.tsx:239-240` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SCORES)" |
+| **Interventions** | V05-I05.3 Priority Ranking | `priority_rankings` (line 30) via `processing_jobs` (line 31) | `id`, `ranking_data` | `page.tsx:259-260, 272-273` | "Keine Interventionen verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_INTERVENTIONS)" |
+
+**Schema Verification:**
+- `documents.extracted_json`: JSONB field (`schema/schema.sql:1318`) - contains `lab_values[]`, `medications[]`
+- `reports.safety_score`: INTEGER 0-100 (`schema/schema.sql:1451`) - CHECK constraint enforced
+- `reports.safety_findings`: JSONB field (`schema/schema.sql:1452`) - contains severity breakdown
+- `calculated_results.scores`: JSONB field (`schema/schema.sql:1207`) - algorithm output
+- `calculated_results.risk_models`: JSONB field (`schema/schema.sql:1208`) - risk bundle data
+- `priority_rankings.ranking_data`: JSONB field (manifest lines 186-198) - contains `topInterventions[]`
+
+**Query Pattern:**
+```typescript
+// Example: Documents query (lines 191-197)
+const { data, error } = await supabase
+  .from('documents')                    // ✅ Manifest line 16
+  .select('id, extracted_json, ...')    // ✅ All columns in schema
+  .in('assessment_id', assessmentIds)
+  .not('extracted_json', 'is', null)
+  .order('created_at', { ascending: false })
+  .limit(10)
+```
 
 ### Error Code Mapping
 
