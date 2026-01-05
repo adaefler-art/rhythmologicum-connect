@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
-import { getClinicianNavItems, hasAnyRole, getUserRole, getRoleDisplayName } from '@/lib/utils/roleBasedRouting'
+import { getNavItemsForRole, hasAnyRole, getUserRole, getRoleDisplayName } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
 import type { User } from '@supabase/supabase-js'
 
@@ -30,8 +30,8 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
         return
       }
 
-      // Check if user has clinician or admin role
-      if (!hasAnyRole(user, ['clinician', 'admin'])) {
+      // Check if user has clinician or admin or nurse role
+      if (!hasAnyRole(user, ['clinician', 'admin', 'nurse'])) {
         router.push(ACCESS_DENIED_REDIRECT)
         return
       }
@@ -50,7 +50,7 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          if (!hasAnyRole(session.user, ['clinician', 'admin'])) {
+          if (!hasAnyRole(session.user, ['clinician', 'admin', 'nurse'])) {
             router.push(ACCESS_DENIED_REDIRECT)
           } else {
             setUser(session.user)
@@ -79,7 +79,7 @@ export default function ClinicianLayout({ children }: { children: ReactNode }) {
   }
 
   // Get navigation items and role display name
-  const navItems = getClinicianNavItems(pathname)
+  const navItems = getNavItemsForRole(user, pathname)
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 

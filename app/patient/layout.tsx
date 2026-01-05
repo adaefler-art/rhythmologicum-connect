@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useEffect, useState } from 'react'
-import { getUserRole, getRoleDisplayName, getPatientNavItems } from '@/lib/utils/roleBasedRouting'
+import { getUserRole, getRoleDisplayName, getNavItemsForRole } from '@/lib/utils/roleBasedRouting'
 import { PatientNavigation } from '@/app/components/PatientNavigation'
 import { ThemeToggle } from '@/lib/ui'
 import type { User } from '@supabase/supabase-js'
@@ -44,7 +44,7 @@ export default function PatientLayout({ children }: { children: ReactNode }) {
   }
 
   // Get navigation items from shared configuration
-  const navItems = getPatientNavItems(pathname)
+  const navItems = getNavItemsForRole(user, pathname)
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 

@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js'
 /**
  * User roles in the application
  */
-export type UserRole = 'patient' | 'clinician' | 'admin'
+export type UserRole = 'patient' | 'clinician' | 'admin' | 'nurse'
 
 /**
  * Navigation item for role-based menus
@@ -51,6 +51,9 @@ export function getRoleLandingPage(user: User | null): string {
       return '/clinician'
     case 'admin':
       // Admins share the same dashboard as clinicians
+      return '/clinician'
+    case 'nurse':
+      // Nurses share the same dashboard as clinicians
       return '/clinician'
     case 'patient':
       return '/patient'
@@ -140,12 +143,40 @@ export function getPatientNavItems(pathname: string): RoleNavItem[] {
 }
 
 /**
+ * Get navigation items for nurse role
+ * 
+ * Nurse navigation shares clinician dashboard access but with nurse-specific label.
+ * Nurses can view patient assessments and manage their workflow.
+ */
+export function getNurseNavItems(pathname: string): RoleNavItem[] {
+  return [
+    {
+      href: '/clinician',
+      label: 'Übersicht',
+      active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/funnels',
+      label: 'Fragebögen',
+      active: pathname?.startsWith('/clinician/funnels') ?? false,
+    },
+  ]
+}
+
+/**
  * Get navigation items based on user role
  * 
  * Automatically returns the appropriate navigation items for the user's role.
  * This is the recommended way to get navigation items in layouts.
+ * 
+ * Fail-closed: Returns empty array if role cannot be determined or user is not authenticated.
  */
 export function getNavItemsForRole(user: User | null, pathname: string): RoleNavItem[] {
+  // Fail-closed: unauthenticated users get no navigation
+  if (!user) {
+    return []
+  }
+  
   const role = getUserRole(user)
   
   switch (role) {
@@ -153,9 +184,12 @@ export function getNavItemsForRole(user: User | null, pathname: string): RoleNav
       return getAdminNavItems(pathname)
     case 'clinician':
       return getClinicianNavItems(pathname)
+    case 'nurse':
+      return getNurseNavItems(pathname)
     case 'patient':
       return getPatientNavItems(pathname)
     default:
+      // Fail-closed: unknown roles get no privileged navigation
       return []
   }
 }
@@ -169,6 +203,8 @@ export function getRoleDisplayName(role: UserRole | null): string {
       return 'Clinician'
     case 'admin':
       return 'Administrator'
+    case 'nurse':
+      return 'Nurse'
     case 'patient':
       return 'Patient'
     default:
@@ -189,12 +225,12 @@ export function canAccessRoute(user: User | null, route: string): boolean {
   
   // Patient routes
   if (route.startsWith('/patient')) {
-    return role === 'patient' || role === 'clinician' || role === 'admin'
+    return role === 'patient' || role === 'clinician' || role === 'admin' || role === 'nurse'
   }
   
   // Clinician routes
   if (route.startsWith('/clinician')) {
-    return role === 'clinician' || role === 'admin'
+    return role === 'clinician' || role === 'admin' || role === 'nurse'
   }
   
   // Admin routes (clinicians also have access)
