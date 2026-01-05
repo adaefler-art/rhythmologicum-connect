@@ -19,12 +19,14 @@ export interface MedicationsSectionProps {
   medications: Medication[]
   /** Loading state */
   loading?: boolean
+  /** Error evidence code (PHI-safe) - if present, shows data source error instead of empty state */
+  errorEvidenceCode?: string
 }
 
 /**
  * Displays patient medications
  */
-export function MedicationsSection({ medications, loading }: MedicationsSectionProps) {
+export function MedicationsSection({ medications, loading, errorEvidenceCode }: MedicationsSectionProps) {
   if (loading) {
     return (
       <Card padding="lg" shadow="md">
@@ -37,6 +39,29 @@ export function MedicationsSection({ medications, loading }: MedicationsSectionP
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Medikamentendaten werden geladen…
         </p>
+      </Card>
+    )
+  }
+
+  // Show error state if data source is unavailable
+  if (errorEvidenceCode) {
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="flex items-center gap-2 mb-4">
+          <Pill className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Medikamente
+          </h2>
+        </div>
+        <div className="text-center py-6">
+          <Pill className="w-8 h-8 text-amber-300 dark:text-amber-600 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+            Datenquelle aktuell nicht verfügbar
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            EVIDENCE: {errorEvidenceCode}
+          </p>
+        </div>
       </Card>
     )
   }

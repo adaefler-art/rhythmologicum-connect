@@ -30,6 +30,8 @@ export interface InterventionsSectionProps {
   interventions: RankedIntervention[]
   /** Loading state */
   loading?: boolean
+  /** Error evidence code (PHI-safe) - if present, shows data source error instead of empty state */
+  errorEvidenceCode?: string
 }
 
 /**
@@ -53,7 +55,7 @@ function getPriorityBadge(score: number): {
 /**
  * Displays priority-ranked interventions
  */
-export function InterventionsSection({ interventions, loading }: InterventionsSectionProps) {
+export function InterventionsSection({ interventions, loading, errorEvidenceCode }: InterventionsSectionProps) {
   if (loading) {
     return (
       <Card padding="lg" shadow="md">
@@ -66,6 +68,29 @@ export function InterventionsSection({ interventions, loading }: InterventionsSe
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Interventionen werden geladen…
         </p>
+      </Card>
+    )
+  }
+
+  // Show error state if data source is unavailable
+  if (errorEvidenceCode) {
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Empfohlene Interventionen
+          </h2>
+        </div>
+        <div className="text-center py-6">
+          <Target className="w-8 h-8 text-amber-300 dark:text-amber-600 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+            Datenquelle aktuell nicht verfügbar
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            EVIDENCE: {errorEvidenceCode}
+          </p>
+        </div>
       </Card>
     )
   }

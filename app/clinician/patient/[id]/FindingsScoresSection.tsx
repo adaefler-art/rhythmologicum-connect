@@ -33,6 +33,8 @@ export interface FindingsScoresSectionProps {
   riskModels?: Record<string, unknown> | null
   /** Loading state */
   loading?: boolean
+  /** Error evidence code (PHI-safe) - if present, shows data source error instead of empty state */
+  errorEvidenceCode?: string
 }
 
 /**
@@ -101,6 +103,7 @@ export function FindingsScoresSection({
   calculatedScores,
   riskModels,
   loading,
+  errorEvidenceCode,
 }: FindingsScoresSectionProps) {
   if (loading) {
     return (
@@ -112,6 +115,29 @@ export function FindingsScoresSection({
           </h2>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Daten werden geladen…</p>
+      </Card>
+    )
+  }
+
+  // Show error state if data source is unavailable
+  if (errorEvidenceCode) {
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Findings & Scores
+          </h2>
+        </div>
+        <div className="text-center py-6">
+          <Shield className="w-8 h-8 text-amber-300 dark:text-amber-600 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+            Datenquelle aktuell nicht verfügbar
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            EVIDENCE: {errorEvidenceCode}
+          </p>
+        </div>
       </Card>
     )
   }

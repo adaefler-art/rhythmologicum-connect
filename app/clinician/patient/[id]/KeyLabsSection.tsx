@@ -19,6 +19,8 @@ export interface KeyLabsSectionProps {
   labValues: LabValue[]
   /** Loading state */
   loading?: boolean
+  /** Error evidence code (PHI-safe) - if present, shows data source error instead of empty state */
+  errorEvidenceCode?: string
 }
 
 /**
@@ -34,7 +36,7 @@ function formatLabValue(value: number | string): string {
 /**
  * Displays key laboratory values
  */
-export function KeyLabsSection({ labValues, loading }: KeyLabsSectionProps) {
+export function KeyLabsSection({ labValues, loading, errorEvidenceCode }: KeyLabsSectionProps) {
   if (loading) {
     return (
       <Card padding="lg" shadow="md">
@@ -45,6 +47,29 @@ export function KeyLabsSection({ labValues, loading }: KeyLabsSectionProps) {
           </h2>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">Labordaten werden geladen…</p>
+      </Card>
+    )
+  }
+
+  // Show error state if data source is unavailable
+  if (errorEvidenceCode) {
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="flex items-center gap-2 mb-4">
+          <FlaskConical className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Key Labs
+          </h2>
+        </div>
+        <div className="text-center py-6">
+          <FlaskConical className="w-8 h-8 text-amber-300 dark:text-amber-600 mx-auto mb-3" />
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">
+            Datenquelle aktuell nicht verfügbar
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            EVIDENCE: {errorEvidenceCode}
+          </p>
+        </div>
       </Card>
     )
   }

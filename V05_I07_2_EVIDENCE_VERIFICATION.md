@@ -76,10 +76,17 @@ if (interventions.length === 0) {
 ```
 
 **No Crashes on Missing Data:**
-- All database queries wrapped in try-catch with console.warn
-- PGRST116 errors (no rows) handled explicitly
+- All database queries wrapped with error handling
+- PGRST116 errors (no rows) handled explicitly → empty state
+- Other errors mapped to evidence codes → error state with code displayed
 - Page continues to work even if new data sources fail
 - Props are optional and components handle undefined/null gracefully
+
+**Distinction Between "No Data" vs "Data Source Error":**
+- **Empty State** (`state: 'empty'`): No rows returned (PGRST116) or empty array - normal condition
+- **Error State** (`state: 'error'`): Schema error, RLS error, or query error - abnormal condition
+- Error states show evidence code: `E_SCHEMA_*`, `E_RLS_*`, or `E_QUERY_*`
+- PHI-safe logging: Only table names and evidence codes, no document content
 
 ### 4. Presentational Components ✅
 
@@ -153,9 +160,65 @@ export interface InterventionsSectionProps {
 - No bypassing of RLS policies
 
 **PHI Protection:**
-- No PHI logged (only UUIDs in console.warn)
+- No PHI logged (only UUIDs and evidence codes: `[I07.2] E_QUERY_LABS documents`)
 - Empty states don't reveal PHI
-- Error messages don't expose sensitive data
+- Error evidence codes are PHI-safe (no document content, no patient data)
+
+---
+
+## Data Source Mapping (Exact Paths & Queries)
+
+### Section → Source → Query → Error/Empty Behavior
+
+| Section | Data Source | File Path | Query Table | Fields Selected | Empty Behavior | Error Behavior |
+|---------|-------------|-----------|-------------|-----------------|----------------|----------------|
+| **Key Labs** | V05-I04.2 Extraction | `app/clinician/patient/[id]/page.tsx` (line ~186) | `documents` | `id, extracted_json, doc_type, created_at` | "Keine Labordaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
+| **Medications** | V05-I04.2 Extraction | `app/clinician/patient/[id]/page.tsx` (line ~186) | `documents` | `id, extracted_json, doc_type, created_at` | "Keine Medikamentendaten verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_DOCS)" |
+| **Safety Findings** | V05-I05.6 Safety Checks | `app/clinician/patient/[id]/page.tsx` (line ~211) | `reports` | `id, assessment_id, safety_score, safety_findings, created_at` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SAFETY)" |
+| **Calculated Scores** | V05-I05.2 Risk Analysis | `app/clinician/patient/[id]/page.tsx` (line ~227) | `calculated_results` | `id, assessment_id, scores, risk_models, created_at` | "Keine Findings oder Scores verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_SCORES)" |
+| **Interventions** | V05-I05.3 Priority Ranking | `app/clinician/patient/[id]/page.tsx` (line ~257) | `priority_rankings` (via `processing_jobs`) | `id, ranking_data` | "Keine Interventionen verfügbar" | "Datenquelle aktuell nicht verfügbar (EVIDENCE: E_QUERY_INTERVENTIONS)" |
+
+### Error Code Mapping
+
+Helper function `mapSupabaseErrorToEvidenceCode(error, source)` in `page.tsx`:
+
+| PostgreSQL Error | Evidence Code | Meaning |
+|------------------|---------------|---------|
+| `42P01` (undefined_table) | `E_SCHEMA_<SOURCE>` | Table doesn't exist in schema |
+| `42703` (undefined_column) | `E_SCHEMA_<SOURCE>` | Column doesn't exist in table |
+| `42xxx` (syntax/schema) | `E_SCHEMA_<SOURCE>` | Schema-related error |
+| `PGRST301` | `E_RLS_<SOURCE>` | RLS policy violation |
+| `PGRST3xx` | `E_RLS_<SOURCE>` | RLS/auth error |
+| `PGRST116` | *(No error - empty state)* | No rows returned (expected) |
+| Other | `E_QUERY_<SOURCE>` | Generic query error |
+
+**Source Identifiers:**
+- `DOCS` - documents table (labs & meds)
+- `SAFETY` - reports table (safety findings)
+- `SCORES` - calculated_results table  
+- `INTERVENTIONS` - priority_rankings table
+- `JOBS` - processing_jobs table
+
+### Upstream Dependencies (UI Scaffolding)
+
+**Current Status:**
+- ✅ Tables exist in schema (`docs/canon/DB_SCHEMA_MANIFEST.json`)
+- ✅ Migrations applied (V05-I04.2, V05-I05.2, V05-I05.3, V05-I05.6)
+- ⚠️ **Data may not yet be populated** - upstream pipeline (V05-I05) writes data
+
+**Pipeline Flow:**
+1. Patient uploads document → V05-I04.1 (Upload)
+2. Document parsed → V05-I04.2 (Extraction writes to `documents.extracted_json`)
+3. Assessment completed → V05-I05.1 (Processing Orchestrator)
+4. Risk analysis → V05-I05.2 (writes to `calculated_results`)
+5. Safety check → V05-I05.6 (writes to `reports.safety_score`, `reports.safety_findings`)
+6. Priority ranking → V05-I05.3 (writes to `priority_rankings`)
+
+**This implementation (V05-I07.2) is UI scaffolding:**
+- Queries exist and are correct
+- Empty states shown when pipeline hasn't populated data yet
+- Error states shown if queries fail (schema/RLS/query errors)
+- No mock data - only renders what exists
 
 ---
 
