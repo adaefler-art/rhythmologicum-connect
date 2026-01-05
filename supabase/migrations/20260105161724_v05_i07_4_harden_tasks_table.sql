@@ -10,11 +10,24 @@ ALTER TABLE public.tasks
 ADD COLUMN IF NOT EXISTS organization_id UUID;
 
 -- Add foreign key constraint
-ALTER TABLE public.tasks
-ADD CONSTRAINT tasks_organization_id_fkey
-FOREIGN KEY (organization_id)
-REFERENCES public.organizations(id)
-ON DELETE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE c.conname = 'tasks_organization_id_fkey'
+      AND n.nspname = 'public'
+      AND t.relname = 'tasks'
+  ) THEN
+    ALTER TABLE public.tasks
+    ADD CONSTRAINT tasks_organization_id_fkey
+    FOREIGN KEY (organization_id)
+    REFERENCES public.organizations(id)
+    ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Create index for org queries
 CREATE INDEX IF NOT EXISTS tasks_organization_id_idx
