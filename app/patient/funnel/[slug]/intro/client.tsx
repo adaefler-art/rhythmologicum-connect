@@ -33,6 +33,10 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   const [useManifestRenderer, setUseManifestRenderer] = useState(false)
 
   useEffect(() => {
+    if (manifestError) {
+      return
+    }
+
     const loadIntroContent = async () => {
       try {
         setLoading(true)
@@ -90,7 +94,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
     }
 
     loadIntroContent()
-  }, [funnelSlug, router, manifestData])
+  }, [funnelSlug, router, manifestData, manifestError])
 
   const handleStartAssessment = () => {
     // Add skipIntro parameter to avoid redirect loop

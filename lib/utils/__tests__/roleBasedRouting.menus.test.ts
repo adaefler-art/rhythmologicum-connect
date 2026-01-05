@@ -76,13 +76,15 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('clinician')
       const navItems = getNavItemsForRole(user, '/clinician')
       
-      expect(navItems).toHaveLength(3)
+      expect(navItems).toHaveLength(4)
       expect(navItems[0].href).toBe('/clinician')
       expect(navItems[0].label).toBe('Übersicht')
-      expect(navItems[1].href).toBe('/clinician/funnels')
-      expect(navItems[1].label).toBe('Fragebögen')
-      expect(navItems[2].href).toBe('/admin/content')
-      expect(navItems[2].label).toBe('Inhalte')
+      expect(navItems[1].href).toBe('/clinician/triage')
+      expect(navItems[1].label).toBe('Triage')
+      expect(navItems[2].href).toBe('/clinician/funnels')
+      expect(navItems[2].label).toBe('Fragebögen')
+      expect(navItems[3].href).toBe('/admin/content')
+      expect(navItems[3].label).toBe('Inhalte')
     })
 
     it('should not return patient items for clinician user', () => {
@@ -107,12 +109,13 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('admin')
       const navItems = getNavItemsForRole(user, '/admin/content')
       
-      expect(navItems).toHaveLength(4)
+      expect(navItems).toHaveLength(5)
       expect(navItems[0].href).toBe('/clinician')
-      expect(navItems[1].href).toBe('/clinician/funnels')
-      expect(navItems[2].href).toBe('/admin/content')
-      expect(navItems[3].href).toBe('/admin/design-system')
-      expect(navItems[3].label).toBe('Design System')
+      expect(navItems[1].href).toBe('/clinician/triage')
+      expect(navItems[2].href).toBe('/clinician/funnels')
+      expect(navItems[3].href).toBe('/admin/content')
+      expect(navItems[4].href).toBe('/admin/design-system')
+      expect(navItems[4].label).toBe('Design System')
     })
 
     it('should not return patient items for admin user', () => {
@@ -129,11 +132,13 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('nurse')
       const navItems = getNavItemsForRole(user, '/clinician')
       
-      expect(navItems).toHaveLength(2)
+      expect(navItems).toHaveLength(3)
       expect(navItems[0].href).toBe('/clinician')
       expect(navItems[0].label).toBe('Übersicht')
-      expect(navItems[1].href).toBe('/clinician/funnels')
-      expect(navItems[1].label).toBe('Fragebögen')
+      expect(navItems[1].href).toBe('/clinician/triage')
+      expect(navItems[1].label).toBe('Triage')
+      expect(navItems[2].href).toBe('/clinician/funnels')
+      expect(navItems[2].label).toBe('Fragebögen')
     })
 
     it('should not return patient items for nurse user', () => {
@@ -206,21 +211,22 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
 
     it('getClinicianNavItems should return clinician items', () => {
       const items = getClinicianNavItems('/clinician')
-      expect(items).toHaveLength(3)
+      expect(items).toHaveLength(4)
       expect(items[0].href).toBe('/clinician')
     })
 
     it('getAdminNavItems should return admin items', () => {
       const items = getAdminNavItems('/admin/content')
-      expect(items).toHaveLength(4)
-      expect(items[3].href).toBe('/admin/design-system')
+      expect(items).toHaveLength(5)
+      expect(items[4].href).toBe('/admin/design-system')
     })
 
     it('getNurseNavItems should return nurse items', () => {
       const items = getNurseNavItems('/clinician')
-      expect(items).toHaveLength(2)
+      expect(items).toHaveLength(3)
       expect(items[0].href).toBe('/clinician')
-      expect(items[1].href).toBe('/clinician/funnels')
+      expect(items[1].href).toBe('/clinician/triage')
+      expect(items[2].href).toBe('/clinician/funnels')
     })
   })
 
@@ -353,8 +359,9 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const navItems = getNavItemsForRole(user, '/clinician/funnels')
       
       expect(navItems[0].active).toBe(false)
-      expect(navItems[1].active).toBe(true)
-      expect(navItems[2].active).toBe(false)
+      expect(navItems[1].active).toBe(false)
+      expect(navItems[2].active).toBe(true)
+      expect(navItems[3].active).toBe(false)
     })
 
     it('should set correct active state for nurse items', () => {

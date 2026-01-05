@@ -28,6 +28,10 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
   const [useManifestRenderer, setUseManifestRenderer] = useState(false)
 
   useEffect(() => {
+    if (manifestError) {
+      return
+    }
+
     const loadContentPage = async () => {
       try {
         setLoading(true)
@@ -68,7 +72,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
     }
 
     loadContentPage()
-  }, [pageSlug, contentManifest])
+  }, [pageSlug, contentManifest, manifestError])
 
   // V05-I06.5: Handle manifest error (422 - invalid manifest)
   // Check this before loading state
