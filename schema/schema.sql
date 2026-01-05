@@ -2160,14 +2160,14 @@ CREATE TABLE IF NOT EXISTS "public"."tasks" (
     "assessment_id" "uuid",
     "created_by_role" "public"."user_role",
     "assigned_to_role" "public"."user_role",
-    "assigned_to_user_id" "uuid",
     "task_type" "text" NOT NULL,
     "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "status" "public"."task_status" DEFAULT 'pending'::"public"."task_status" NOT NULL,
     "due_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone,
-    "organization_id" "uuid"
+    "organization_id" "uuid",
+    "assigned_to_user_id" "uuid"
 );
 
 
@@ -3099,14 +3099,6 @@ CREATE INDEX "idx_tasks_assigned_to_role_status_due" ON "public"."tasks" USING "
 
 
 
-CREATE INDEX "idx_tasks_assigned_to_user_id" ON "public"."tasks" USING "btree" ("assigned_to_user_id") WHERE ("assigned_to_user_id" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_tasks_assigned_user_status" ON "public"."tasks" USING "btree" ("assigned_to_user_id", "status", "created_at" DESC) WHERE ("assigned_to_user_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_tasks_patient_id" ON "public"."tasks" USING "btree" ("patient_id");
 
 
@@ -3144,6 +3136,14 @@ CREATE INDEX "idx_user_profiles_user_id" ON "public"."user_profiles" USING "btre
 
 
 COMMENT ON INDEX "public"."medical_validation_results_job_version_hash_unique" IS 'Composite uniqueness: allows versioned reruns with different rulesets';
+
+
+
+CREATE INDEX "tasks_assigned_to_user_id_idx" ON "public"."tasks" USING "btree" ("assigned_to_user_id") WHERE ("assigned_to_user_id" IS NOT NULL);
+
+
+
+CREATE INDEX "tasks_assigned_user_status_idx" ON "public"."tasks" USING "btree" ("assigned_to_user_id", "status", "created_at" DESC) WHERE ("assigned_to_user_id" IS NOT NULL);
 
 
 
@@ -3388,6 +3388,11 @@ ALTER TABLE ONLY "public"."tasks"
 
 ALTER TABLE ONLY "public"."tasks"
     ADD CONSTRAINT "tasks_assigned_to_user_id_fkey" FOREIGN KEY ("assigned_to_user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."tasks"
+    ADD CONSTRAINT "tasks_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
 
 
 
@@ -3649,11 +3654,6 @@ CREATE POLICY "Patients can view own reports" ON "public"."reports" FOR SELECT U
 CREATE POLICY "Patients can view own results" ON "public"."calculated_results" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."assessments"
   WHERE (("assessments"."id" = "calculated_results"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
-
-
-
-CREATE POLICY "tasks_select_staff_org" ON "public"."tasks" FOR SELECT TO "authenticated" USING (((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'clinician'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) OR (("public"."is_member_of_org"("organization_id") AND ("public"."current_user_role"("organization_id") = 'nurse'::"public"."user_role")) AND ("assigned_to_user_id" = "auth"."uid"())) OR ("patient_id" = "public"."get_my_patient_profile_id"()))));
-
 
 
 
@@ -4064,7 +4064,7 @@ CREATE POLICY "tasks_insert_clinician_admin" ON "public"."tasks" FOR INSERT TO "
 
 
 
-CREATE POLICY "tasks_select_staff_org" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'clinician'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'nurse'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) OR ("patient_id" = "public"."get_my_patient_profile_id"())));
+CREATE POLICY "tasks_select_staff_org" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'clinician'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) OR ("public"."is_member_of_org"("organization_id") AND ("public"."current_user_role"("organization_id") = 'nurse'::"public"."user_role") AND ("assigned_to_user_id" = "auth"."uid"())) OR ("patient_id" = "public"."get_my_patient_profile_id"())));
 
 
 
