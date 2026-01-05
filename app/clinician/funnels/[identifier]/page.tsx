@@ -71,9 +71,17 @@ const translateStepType = (type: string): string => {
   return translations[type] || type
 }
 
+// UUID regex pattern for strict validation
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isUUID(value: string): boolean {
+  return UUID_PATTERN.test(value)
+}
+
 export default function FunnelDetailPage() {
   const params = useParams()
-  const funnelId = params.id as string
+  const identifier = params.identifier as string
+  const isId = isUUID(identifier)
 
   const [funnel, setFunnel] = useState<Funnel | null>(null)
   const [steps, setSteps] = useState<Step[]>([])
@@ -102,7 +110,7 @@ export default function FunnelDetailPage() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/admin/funnels/${funnelId}`)
+      const response = await fetch(`/api/admin/funnels/${identifier}`)
 
       if (!response.ok) {
         let requestId = response.headers.get('x-request-id')
@@ -135,7 +143,7 @@ export default function FunnelDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [funnelId])
+  }, [identifier])
 
   useEffect(() => {
     loadFunnelDetails()
@@ -146,7 +154,7 @@ export default function FunnelDetailPage() {
 
     try {
       setSaving(true)
-      const response = await fetch(`/api/admin/funnels/${funnelId}`, {
+      const response = await fetch(`/api/admin/funnels/${identifier}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !funnel.is_active }),
@@ -216,7 +224,7 @@ export default function FunnelDetailPage() {
 
     try {
       setSaving(true)
-      const response = await fetch(`/api/admin/funnels/${funnelId}`, {
+      const response = await fetch(`/api/admin/funnels/${identifier}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
