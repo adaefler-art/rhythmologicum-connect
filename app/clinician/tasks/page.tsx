@@ -61,12 +61,12 @@ export default function TasksPage() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to load tasks')
+        throw new Error(result.error?.message || 'Fehler beim Laden der Aufgaben')
       }
 
       setTasks(result.data ?? [])
     } catch (e: unknown) {
-      console.error(e)
+      console.error('Failed to load tasks:', e)
       const errorMessage = e instanceof Error ? e.message : 'Fehler beim Laden der Aufgaben.'
       setError(errorMessage)
     } finally {
@@ -97,14 +97,15 @@ export default function TasksPage() {
         const result = await response.json()
 
         if (!response.ok) {
-          throw new Error(result.error?.message || 'Failed to update task')
+          throw new Error(result.error?.message || 'Fehler beim Aktualisieren der Aufgabe')
         }
 
         // Reload tasks to show updated status
         loadTasks()
       } catch (e: unknown) {
-        console.error(e)
-        alert(e instanceof Error ? e.message : 'Fehler beim Aktualisieren der Aufgabe.')
+        console.error('Failed to update task status:', e)
+        const errorMessage = e instanceof Error ? e.message : 'Fehler beim Aktualisieren der Aufgabe.'
+        setError(errorMessage)
       }
     },
     [loadTasks]

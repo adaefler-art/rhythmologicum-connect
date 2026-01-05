@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         created_by_role: userRole,
         assigned_to_role: taskRequest.assigned_to_role,
         task_type: taskRequest.task_type,
-        payload: (taskRequest.payload ?? {}) as never, // Type assertion for JSONB
+        payload: (taskRequest.payload ?? {}) as never,
         status: TASK_STATUS.PENDING,
         due_at: taskRequest.due_at ?? null,
       })

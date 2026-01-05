@@ -129,7 +129,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updatePayload.status = updateData.status
     }
     if (updateData.payload !== undefined) {
-      updatePayload.payload = updateData.payload as never // Type assertion for JSONB
+      updatePayload.payload = updateData.payload as never
     }
     if (updateData.due_at !== undefined) {
       updatePayload.due_at = updateData.due_at

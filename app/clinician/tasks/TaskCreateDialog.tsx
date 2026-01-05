@@ -55,6 +55,7 @@ export default function TaskCreateDialog({ onClose, onTaskCreated }: TaskCreateD
         setPatients(result.data ?? [])
       } catch (e) {
         console.error('Failed to load patients:', e)
+        setError('Fehler beim Laden der Patienten')
         // Continue even if we can't load patients - user can still type patient ID
       } finally {
         setLoadingPatients(false)
