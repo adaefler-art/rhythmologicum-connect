@@ -753,7 +753,8 @@ function BlockEditor({ section, onChange }: BlockEditorProps) {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-800 font-semibold">Unbekannter Block-Typ</p>
           <p className="text-xs text-red-600 mt-1">
-            Typ "{section.type}" wird nicht unterstützt. Dieser Block kann nicht bearbeitet werden.
+            Typ &quot;{section.type}&quot; wird nicht unterstützt. Dieser Block kann nicht
+            bearbeitet werden.
           </p>
         </div>
       )
