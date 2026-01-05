@@ -17,7 +17,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { loadReviewRecordById } from '@/lib/review/persistence'
-import { validate as uuidValidate } from 'uuid'
+
+// UUID validation (no external dependency)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isUuid(value: string): boolean {
+  return UUID_REGEX.test(value.trim())
+}
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -83,7 +89,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
     
     // Validate UUID format
-    if (!uuidValidate(reviewId)) {
+    if (!isUuid(reviewId)) {
       return NextResponse.json(
         {
           success: false,

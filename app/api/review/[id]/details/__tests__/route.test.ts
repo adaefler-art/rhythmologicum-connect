@@ -8,11 +8,6 @@
 import { NextRequest } from 'next/server'
 import { GET as reviewDetails } from '@/app/api/review/[id]/details/route'
 
-// Mock UUID validation
-jest.mock('uuid', () => ({
-  validate: jest.fn(),
-}))
-
 // Mock Supabase
 jest.mock('@/lib/db/supabase.server', () => ({
   createServerSupabaseClient: jest.fn(),
@@ -21,13 +16,13 @@ jest.mock('@/lib/db/supabase.server', () => ({
 jest.mock('@/lib/review/persistence', () => ({
   loadReviewRecordById: jest.fn(),
 }))
-
-import { validate as uuidValidate } from 'uuid'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { loadReviewRecordById } from '@/lib/review/persistence'
 import { REVIEW_STATUS } from '@/lib/contracts/reviewRecord'
 
 describe('GET /api/review/[id]/details - V05-I07.3', () => {
+  const VALID_REVIEW_ID = '11111111-1111-4111-8111-111111111111'
+
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -94,9 +89,6 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
         },
       })
 
-      // Invalid UUID
-      ;(uuidValidate as jest.Mock).mockReturnValue(false)
-
       const request = new NextRequest('http://localhost:3000/api/review/invalid-uuid/details')
       const context = { params: Promise.resolve({ id: 'invalid-uuid' }) }
       const response = await reviewDetails(request, context)
@@ -121,8 +113,6 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
           }),
         },
       })
-
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: false,
         error: 'Review record not found',
@@ -142,7 +132,7 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
 
     it('should return 200 with schema-versioned response when review found', async () => {
       const mockReview = {
-        id: 'review-123',
+        id: VALID_REVIEW_ID,
         jobId: 'job-123',
         status: REVIEW_STATUS.PENDING,
         queueReasons: ['VALIDATION_FLAG'],
@@ -193,21 +183,20 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
       }
 
       ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: true,
         data: mockReview,
       })
 
-      const request = new NextRequest('http://localhost:3000/api/review/review-123/details')
-      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const request = new NextRequest(`http://localhost:3000/api/review/${VALID_REVIEW_ID}/details`)
+      const context = { params: Promise.resolve({ id: VALID_REVIEW_ID }) }
       const response = await reviewDetails(request, context)
       const data = await response.json()
 
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
       expect(data.version).toBe('v1')
-      expect(data.data.review.id).toBe('review-123')
+      expect(data.data.review.id).toBe(VALID_REVIEW_ID)
       expect(data.data.review.status).toBe(REVIEW_STATUS.PENDING)
       expect(data.data.validation).toBeDefined()
       expect(data.data.validation.overallStatus).toBe('flag')
@@ -236,11 +225,10 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
       }
 
       ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: true,
         data: {
-          id: 'review-123',
+          id: VALID_REVIEW_ID,
           jobId: 'job-123',
           status: REVIEW_STATUS.PENDING,
           queueReasons: [],
@@ -251,8 +239,8 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
         },
       })
 
-      const request = new NextRequest('http://localhost:3000/api/review/review-123/details')
-      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const request = new NextRequest(`http://localhost:3000/api/review/${VALID_REVIEW_ID}/details`)
+      const context = { params: Promise.resolve({ id: VALID_REVIEW_ID }) }
       const response = await reviewDetails(request, context)
 
       expect(response.status).toBe(200)
@@ -278,11 +266,10 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
       }
 
       ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: true,
         data: {
-          id: 'review-123',
+          id: VALID_REVIEW_ID,
           jobId: 'job-123',
           status: REVIEW_STATUS.PENDING,
           queueReasons: [],
@@ -293,8 +280,8 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
         },
       })
 
-      const request = new NextRequest('http://localhost:3000/api/review/review-123/details')
-      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const request = new NextRequest(`http://localhost:3000/api/review/${VALID_REVIEW_ID}/details`)
+      const context = { params: Promise.resolve({ id: VALID_REVIEW_ID }) }
       const response = await reviewDetails(request, context)
 
       expect(response.status).toBe(200)
@@ -320,11 +307,10 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
       }
 
       ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: true,
         data: {
-          id: 'review-123',
+          id: VALID_REVIEW_ID,
           jobId: 'job-123',
           status: REVIEW_STATUS.PENDING,
           queueReasons: [],
@@ -335,8 +321,8 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
         },
       })
 
-      const request = new NextRequest('http://localhost:3000/api/review/review-123/details')
-      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const request = new NextRequest(`http://localhost:3000/api/review/${VALID_REVIEW_ID}/details`)
+      const context = { params: Promise.resolve({ id: VALID_REVIEW_ID }) }
       const response = await reviewDetails(request, context)
 
       expect(response.status).toBe(200)
@@ -364,11 +350,10 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
       }
 
       ;(createServerSupabaseClient as jest.Mock).mockResolvedValue(mockSupabase)
-      ;(uuidValidate as jest.Mock).mockReturnValue(true)
       ;(loadReviewRecordById as jest.Mock).mockResolvedValue({
         success: true,
         data: {
-          id: 'review-123',
+          id: VALID_REVIEW_ID,
           jobId: 'job-123',
           status: REVIEW_STATUS.PENDING,
           queueReasons: ['VALIDATION_FLAG'],
@@ -379,8 +364,8 @@ describe('GET /api/review/[id]/details - V05-I07.3', () => {
         },
       })
 
-      const request = new NextRequest('http://localhost:3000/api/review/review-123/details')
-      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const request = new NextRequest(`http://localhost:3000/api/review/${VALID_REVIEW_ID}/details`)
+      const context = { params: Promise.resolve({ id: VALID_REVIEW_ID }) }
       const response = await reviewDetails(request, context)
       const data = await response.json()
 

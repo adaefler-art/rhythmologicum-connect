@@ -553,7 +553,7 @@ export function QAReviewPanel({ reviewId, onDecisionMade }: QAReviewPanelProps) 
         {isPending && (
           <div className="flex gap-3">
             <Button
-              variant="success"
+              variant="primary"
               onClick={() => setShowApproveDialog(true)}
               className="flex-1"
             >
@@ -613,7 +613,7 @@ export function QAReviewPanel({ reviewId, onDecisionMade }: QAReviewPanelProps) 
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="success"
+                  variant="primary"
                   onClick={handleApprove}
                   disabled={submitting || !selectedReason}
                   className="flex-1"
