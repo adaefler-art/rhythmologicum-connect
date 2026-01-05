@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 /**
  * Tests for environment variable validation and parsing
  * 
