@@ -30,6 +30,17 @@ jest.mock('@/lib/logging/logger', () => ({
 const { getCurrentUser } = require('@/lib/db/supabase.server')
 const { isValidMimeType, isValidFileSize } = require('@/lib/documents/helpers')
 
+function mockRequestFormData(request: NextRequest, entries: Record<string, unknown>) {
+  const formDataLike = {
+    get: (key: string) => (key in entries ? (entries as Record<string, unknown>)[key] : null),
+  }
+
+  Object.defineProperty(request, 'formData', {
+    value: async () => formDataLike,
+    configurable: true,
+  })
+}
+
 describe('POST /api/documents/upload - Authentication-First Behavior', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -120,13 +131,19 @@ describe('POST /api/documents/upload - Authentication-First Behavior', () => {
     // Mock MIME validation to return false (invalid)
     isValidMimeType.mockReturnValue(false)
 
-    const formData = new FormData()
-    formData.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt')
-    formData.append('assessmentId', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890')
-
     const request = new NextRequest('http://localhost:3000/api/documents/upload', {
       method: 'POST',
-      body: formData,
+    })
+
+    const fakeFile = {
+      name: 'test.txt',
+      type: 'text/plain',
+      size: 4,
+    } as unknown as File
+
+    mockRequestFormData(request, {
+      file: fakeFile,
+      assessmentId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     })
 
     const response = await POST(request)
@@ -150,14 +167,19 @@ describe('POST /api/documents/upload - Authentication-First Behavior', () => {
     isValidMimeType.mockReturnValue(true)
     isValidFileSize.mockReturnValue(false) // Too large
 
-    const formData = new FormData()
-    const largeBlob = new Blob(['x'.repeat(100 * 1024 * 1024)], { type: 'application/pdf' })
-    formData.append('file', largeBlob, 'large.pdf')
-    formData.append('assessmentId', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890')
-
     const request = new NextRequest('http://localhost:3000/api/documents/upload', {
       method: 'POST',
-      body: formData,
+    })
+
+    const largeFile = {
+      name: 'large.pdf',
+      type: 'application/pdf',
+      size: 100 * 1024 * 1024,
+    } as unknown as File
+
+    mockRequestFormData(request, {
+      file: largeFile,
+      assessmentId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
     })
 
     const response = await POST(request)
