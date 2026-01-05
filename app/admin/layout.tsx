@@ -30,8 +30,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         return
       }
 
-      // Check if user has clinician or admin or nurse role
-      if (!hasAnyRole(user, ['clinician', 'admin', 'nurse'])) {
+      // Check if user has clinician or admin role
+      if (!hasAnyRole(user, ['clinician', 'admin'])) {
         router.push(ACCESS_DENIED_REDIRECT)
         return
       }
@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
-          if (!hasAnyRole(session.user, ['clinician', 'admin', 'nurse'])) {
+          if (!hasAnyRole(session.user, ['clinician', 'admin'])) {
             router.push(ACCESS_DENIED_REDIRECT)
           } else {
             setUser(session.user)

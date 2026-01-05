@@ -283,6 +283,12 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('nurse')
       expect(hasAnyRole(user, ['clinician', 'admin', 'nurse'])).toBe(true)
     })
+
+    it('should NOT allow nurse to pass admin layout gate', () => {
+      const user = createMockUser('nurse')
+      // Admin layout requires ['clinician', 'admin'] only
+      expect(hasAnyRole(user, ['clinician', 'admin'])).toBe(false)
+    })
   })
 
   describe('canAccessRoute', () => {
@@ -301,9 +307,10 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       expect(canAccessRoute(user, '/clinician')).toBe(true)
     })
 
-    it('should allow nurse to access admin routes', () => {
+    it('should NOT allow nurse to access admin routes', () => {
       const user = createMockUser('nurse')
-      expect(canAccessRoute(user, '/admin/content')).toBe(true)
+      expect(canAccessRoute(user, '/admin/content')).toBe(false)
+      expect(canAccessRoute(user, '/admin/design-system')).toBe(false)
     })
 
     it('should not allow patient to access clinician routes', () => {

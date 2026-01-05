@@ -233,9 +233,9 @@ export function canAccessRoute(user: User | null, route: string): boolean {
     return role === 'clinician' || role === 'admin' || role === 'nurse'
   }
   
-  // Admin routes (clinicians and nurses also have access)
+  // Admin routes (clinicians also have access)
   if (route.startsWith('/admin')) {
-    return role === 'clinician' || role === 'admin' || role === 'nurse'
+    return role === 'clinician' || role === 'admin'
   }
   
   return false
