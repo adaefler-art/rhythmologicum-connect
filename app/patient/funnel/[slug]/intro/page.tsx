@@ -35,7 +35,7 @@ export default async function IntroPage({ params }: PageProps) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // Load funnel version manifest (server-side)

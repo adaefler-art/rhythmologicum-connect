@@ -23,7 +23,7 @@ export default async function FunnelCatalogPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // Render client component

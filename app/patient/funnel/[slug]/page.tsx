@@ -22,7 +22,7 @@ export default async function FunnelPage({ params, searchParams }: PageProps) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // Check for intro page (F6 - Intro-Page Integration)
