@@ -30,7 +30,7 @@ export default async function PatientIndexRedirect({
 
   if (!statusResult.success) {
     // Not authenticated - redirect to login
-    redirect('/login')
+    redirect('/')
   }
 
   const status = statusResult.data!

@@ -21,7 +21,7 @@ export default async function ContentPage({ params }: PageProps) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // V05-I06.5: Load funnel version manifest (server-side)

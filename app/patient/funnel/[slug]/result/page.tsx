@@ -41,7 +41,7 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // Verify assessment ownership
@@ -52,7 +52,7 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
     .single()
 
   if (!patientProfile) {
-    redirect('/login')
+    redirect('/')
   }
 
   const funnelCandidates = getFunnelSlugCandidates(slug)

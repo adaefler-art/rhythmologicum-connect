@@ -50,7 +50,7 @@ export default function PatientHistoryClient() {
 
       if (authError || !user) {
         console.error('Fehler bei getUser:', authError)
-        router.push('/login')
+        router.push('/')
         return
       }
 
