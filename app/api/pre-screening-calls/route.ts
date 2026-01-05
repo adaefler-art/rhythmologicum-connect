@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       organization_id: organizationId,
       is_suitable: body.is_suitable,
       suitability_notes: body.suitability_notes || null,
-      red_flags: JSON.stringify(body.red_flags || []),
+      red_flags: body.red_flags || [],
       red_flags_notes: body.red_flags_notes || null,
       recommended_tier: body.recommended_tier || null,
       tier_notes: body.tier_notes || null,

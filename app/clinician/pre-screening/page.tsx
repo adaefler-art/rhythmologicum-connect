@@ -57,6 +57,19 @@ export default function PreScreeningPage() {
   const [tierNotes, setTierNotes] = useState('')
   const [generalNotes, setGeneralNotes] = useState('')
 
+  // Reset form helper
+  const resetForm = useCallback(() => {
+    setSelectedPatientId('')
+    setIsSuitable(null)
+    setSuitabilityNotes('')
+    setRedFlags(COMMON_RED_FLAGS.map((flag) => ({ ...flag, checked: false })))
+    setRedFlagsNotes('')
+    setRecommendedTier('')
+    setTierNotes('')
+    setGeneralNotes('')
+    setSuccess(false)
+  }, [])
+
   // Load patients on mount
   useEffect(() => {
     const loadPatients = async () => {
@@ -130,17 +143,9 @@ export default function PreScreeningPage() {
 
       setSuccess(true)
       
-      // Reset form
+      // Reset form after 2 seconds
       setTimeout(() => {
-        setSelectedPatientId('')
-        setIsSuitable(null)
-        setSuitabilityNotes('')
-        setRedFlags(COMMON_RED_FLAGS.map((flag) => ({ ...flag, checked: false })))
-        setRedFlagsNotes('')
-        setRecommendedTier('')
-        setTierNotes('')
-        setGeneralNotes('')
-        setSuccess(false)
+        resetForm()
       }, 2000)
     } catch (e) {
       console.error('Failed to save pre-screening call:', e)
