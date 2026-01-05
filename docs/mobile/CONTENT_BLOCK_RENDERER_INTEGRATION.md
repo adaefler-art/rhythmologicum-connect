@@ -219,13 +219,13 @@ Renders: `a` → `b` → `c` (deterministic, stable)
 
 ### Run Tests
 
-```bash
+```powershell
 # Run all integration tests
 npm test -- app/patient/funnel
 
 # Run specific integration tests
-npm test -- app/patient/funnel/\\[slug\\]/intro/__tests__/integration.test.tsx
-npm test -- app/patient/funnel/\\[slug\\]/content/\\[pageSlug\\]/__tests__/integration.test.tsx
+npm test -- app/patient/funnel/`[slug`]/intro/__tests__/integration.test.tsx
+npm test -- app/patient/funnel/`[slug`]/content/`[pageSlug`]/__tests__/integration.test.tsx
 
 # Run all content block renderer tests
 npm test -- lib/components/content
@@ -233,7 +233,7 @@ npm test -- lib/components/content
 
 ### Build Verification
 
-```bash
+```powershell
 # Build project
 npm run build
 

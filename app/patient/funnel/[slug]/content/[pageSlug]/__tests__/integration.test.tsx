@@ -89,7 +89,9 @@ describe('V05-I06.5 — Content Page Route Integration', () => {
 
       // Verify content is rendered
       await waitFor(() => {
-        expect(screen.getByText('Understanding Stress')).toBeInTheDocument()
+        // Use getAllByText since "Understanding Stress" appears in multiple places (page title, hero)
+        const stressTitles = screen.getAllByText('Understanding Stress')
+        expect(stressTitles.length).toBeGreaterThan(0)
         expect(screen.getByText('What you need to know')).toBeInTheDocument()
       })
     })
