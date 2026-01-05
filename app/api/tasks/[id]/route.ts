@@ -216,7 +216,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       },
       metadata: {
         request_id: requestId,
-        org_id: updatedTask.organization_id,
+        org_id: (updatedTask as { organization_id?: string }).organization_id,
         ...(updatedTask.patient_id && { patient_id: updatedTask.patient_id }),
         ...(updatedTask.assessment_id && { assessment_id: updatedTask.assessment_id }),
         status_changed: existingTask.status !== updatedTask.status,
