@@ -3,11 +3,9 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Badge, Button, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
-  Users,
-  ClipboardList,
   FileCheck,
   AlertTriangle,
   Clock,
@@ -41,9 +39,9 @@ export default function TriagePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
+  const [retryTrigger, setRetryTrigger] = useState(0)
 
-  useEffect(() => {
-    const loadTriageData = async () => {
+  const loadTriageData = useCallback(async () => {
       try {
         setLoading(true)
         setError(null)
@@ -118,7 +116,7 @@ export default function TriagePage() {
           const report = reportsMap.get(a.id)
           
           // Determine triage status
-          let triageStatus: TriageStatus = 'incomplete'
+          let triageStatus: TriageStatus
           let flaggedReason: string | null = null
 
           if (a.status === 'in_progress') {
@@ -188,9 +186,15 @@ export default function TriagePage() {
       } finally {
         setLoading(false)
       }
-    }
+    }, [])
 
+  useEffect(() => {
     loadTriageData()
+  }, [loadTriageData, retryTrigger])
+
+  // Retry handler that triggers data reload without full page refresh
+  const handleRetry = useCallback(() => {
+    setRetryTrigger((prev) => prev + 1)
   }, [])
 
   // Calculate statistics
@@ -305,13 +309,6 @@ export default function TriagePage() {
       </div>
     )
   }
-
-  const handleRetry = useCallback(() => {
-    setLoading(true)
-    setError(null)
-    // Re-trigger the useEffect by force-reloading
-    window.location.reload()
-  }, [])
 
   if (error) {
     return (
