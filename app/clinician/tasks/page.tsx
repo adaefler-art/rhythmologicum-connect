@@ -112,7 +112,7 @@ export default function TasksPage() {
 
   const getStatusBadgeVariant = useCallback((
     status: TaskStatus
-  ): 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary' => {
+  ): 'default' | 'success' | 'warning' | 'danger' | 'info' | 'secondary' => {
     switch (status) {
       case TASK_STATUS.PENDING:
         return 'warning'

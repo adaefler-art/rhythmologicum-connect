@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         created_by_role: userRole,
         assigned_to_role: taskRequest.assigned_to_role,
         task_type: taskRequest.task_type,
-        payload: taskRequest.payload ?? {},
+        payload: (taskRequest.payload ?? {}) as never, // Type assertion for JSONB
         status: TASK_STATUS.PENDING,
         due_at: taskRequest.due_at ?? null,
       })
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       entity_id: task.id,
       action: 'create',
       diff: {
-        before: null,
+        before: {},
         after: {
           task_type: task.task_type,
           assigned_to_role: task.assigned_to_role,
@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
       },
       metadata: {
         request_id: requestId,
-        patient_id: task.patient_id,
-        assessment_id: task.assessment_id,
+        ...(task.patient_id && { patient_id: task.patient_id }),
+        ...(task.assessment_id && { assessment_id: task.assessment_id }),
       },
     })
     

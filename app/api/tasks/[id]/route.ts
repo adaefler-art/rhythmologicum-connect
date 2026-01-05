@@ -129,7 +129,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updatePayload.status = updateData.status
     }
     if (updateData.payload !== undefined) {
-      updatePayload.payload = updateData.payload
+      updatePayload.payload = updateData.payload as never // Type assertion for JSONB
     }
     if (updateData.due_at !== undefined) {
       updatePayload.due_at = updateData.due_at
@@ -179,8 +179,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       },
       metadata: {
         request_id: requestId,
-        patient_id: updatedTask.patient_id,
-        assessment_id: updatedTask.assessment_id,
+        ...(updatedTask.patient_id && { patient_id: updatedTask.patient_id }),
+        ...(updatedTask.assessment_id && { assessment_id: updatedTask.assessment_id }),
       },
     })
     

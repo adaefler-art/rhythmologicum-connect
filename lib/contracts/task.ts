@@ -127,7 +127,7 @@ export const TaskSchema = z.object({
   created_by_role: UserRoleSchema.nullable(),
   assigned_to_role: UserRoleSchema,
   task_type: TaskTypeSchema,
-  payload: z.record(z.any()), // JSONB - flexible payload
+  payload: z.record(z.string(), z.any()), // JSONB - flexible payload
   status: TaskStatusSchema,
   due_at: z.string().nullable(), // ISO datetime string
   created_at: z.string(),
@@ -145,7 +145,7 @@ export const CreateTaskRequestSchema = z.object({
   assessment_id: z.string().uuid().optional(),
   assigned_to_role: UserRoleSchema,
   task_type: TaskTypeSchema,
-  payload: z.record(z.any()).optional(),
+  payload: z.record(z.string(), z.any()).optional(),
   due_at: z.string().optional(), // ISO datetime string
 })
 
@@ -157,7 +157,7 @@ export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>
 
 export const UpdateTaskRequestSchema = z.object({
   status: TaskStatusSchema.optional(),
-  payload: z.record(z.any()).optional(),
+  payload: z.record(z.string(), z.any()).optional(),
   due_at: z.string().nullable().optional(),
 })
 
