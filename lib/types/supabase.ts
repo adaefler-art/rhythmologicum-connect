@@ -1672,6 +1672,7 @@ export type Database = {
           created_by_role: Database["public"]["Enums"]["user_role"] | null
           due_at: string | null
           id: string
+          organization_id: string | null
           patient_id: string | null
           payload: Json
           status: Database["public"]["Enums"]["task_status"]
@@ -1685,6 +1686,7 @@ export type Database = {
           created_by_role?: Database["public"]["Enums"]["user_role"] | null
           due_at?: string | null
           id?: string
+          organization_id?: string | null
           patient_id?: string | null
           payload?: Json
           status?: Database["public"]["Enums"]["task_status"]
@@ -1698,6 +1700,7 @@ export type Database = {
           created_by_role?: Database["public"]["Enums"]["user_role"] | null
           due_at?: string | null
           id?: string
+          organization_id?: string | null
           patient_id?: string | null
           payload?: Json
           status?: Database["public"]["Enums"]["task_status"]
@@ -1710,6 +1713,13 @@ export type Database = {
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
