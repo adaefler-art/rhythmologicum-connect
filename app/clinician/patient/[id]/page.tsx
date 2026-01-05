@@ -8,7 +8,12 @@ import { Badge, Card, Button, Tabs, TabsList, TabTrigger, TabContent } from '@/l
 import { colors } from '@/lib/design-tokens'
 import { PatientOverviewHeader } from './PatientOverviewHeader'
 import { AssessmentList } from './AssessmentList'
+import { KeyLabsSection } from './KeyLabsSection'
+import { MedicationsSection } from './MedicationsSection'
+import { FindingsScoresSection } from './FindingsScoresSection'
+import { InterventionsSection, type RankedIntervention } from './InterventionsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
+import type { LabValue, Medication } from '@/lib/types/extraction'
 
 type PatientMeasure = {
   id: string
@@ -33,6 +38,74 @@ type PatientProfile = {
   user_id: string
 }
 
+type ExtractedDocument = {
+  id: string
+  extracted_json: {
+    lab_values?: LabValue[]
+    medications?: Medication[]
+    vital_signs?: Record<string, unknown>
+    diagnoses?: string[]
+    notes?: string
+  }
+  doc_type: string | null
+  created_at: string
+}
+
+type ReportWithSafety = {
+  id: string
+  assessment_id: string
+  safety_score: number | null
+  safety_findings: Record<string, unknown> | null
+  created_at: string
+}
+
+type CalculatedResult = {
+  id: string
+  assessment_id: string
+  scores: Record<string, unknown>
+  risk_models: Record<string, unknown> | null
+  created_at: string
+}
+
+type PriorityRanking = {
+  id: string
+  ranking_data: {
+    topInterventions?: RankedIntervention[]
+    rankedInterventions?: RankedIntervention[]
+  }
+}
+
+/**
+ * Section data state - distinguishes between "no data" and "data source error"
+ * Evidence codes follow pattern: E_QUERY_<SOURCE> | E_SCHEMA_<SOURCE> | E_RLS_<SOURCE>
+ */
+type SectionState<T> =
+  | { state: 'ok'; items: T[] }
+  | { state: 'empty' }
+  | { state: 'error'; evidenceCode: string }
+
+/**
+ * Maps Supabase errors to evidence codes (PHI-safe)
+ * @param error - Supabase error object
+ * @param source - Data source identifier (e.g., "LABS", "MEDS", "SAFETY", "INTERVENTIONS")
+ * @returns Evidence code for debugging
+ */
+function mapSupabaseErrorToEvidenceCode(error: unknown, source: string): string {
+  if (!error) return `E_UNKNOWN_${source}`
+  
+  const err = error as { code?: string; message?: string; details?: string }
+  
+  // PostgreSQL error codes
+  if (err.code === '42P01') return `E_SCHEMA_${source}` // undefined_table
+  if (err.code === '42703') return `E_SCHEMA_${source}` // undefined_column
+  if (err.code?.startsWith('42')) return `E_SCHEMA_${source}` // syntax/schema errors
+  if (err.code === 'PGRST301') return `E_RLS_${source}` // RLS policy violation
+  if (err.code?.startsWith('PGRST3')) return `E_RLS_${source}` // RLS/auth errors
+  
+  // Generic query error
+  return `E_QUERY_${source}`
+}
+
 export default function PatientDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -42,6 +115,14 @@ export default function PatientDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
+  
+  // V05-I07.2: Section states - distinguish "no data" from "data source error"
+  const [labsState, setLabsState] = useState<SectionState<LabValue>>({ state: 'empty' })
+  const [medsState, setMedsState] = useState<SectionState<Medication>>({ state: 'empty' })
+  const [safetyState, setSafetyState] = useState<SectionState<ReportWithSafety>>({ state: 'empty' })
+  const [scoresState, setScoresState] = useState<SectionState<CalculatedResult>>({ state: 'empty' })
+  const [interventionsState, setInterventionsState] = useState<SectionState<RankedIntervention>>({ state: 'empty' })
+  
   const [showRawData, setShowRawData] = useState(false)
 
   useEffect(() => {
@@ -81,6 +162,144 @@ export default function PatientDetailPage() {
         setPatient(profileResult.data)
         // Type assertion for Supabase joined query (one-to-one relationship)
         setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
+
+        // V05-I07.2: Load additional data for new sections (Key Labs, Medications, Findings, Interventions)
+        // NOTE: These queries access tables that exist in schema (documents, reports, calculated_results, priority_rankings)
+        // but may not yet have data populated by the processing pipeline (V05-I05).
+        // We distinguish between "no data" (empty state) and "data source error" (error state with evidence code).
+        // All sections are presentational components that receive props and fail gracefully.
+        
+        // First, get assessments for this patient to use as filter for related data
+        const { data: assessmentsData, error: assessmentsError } = await supabase
+          .from('assessments')
+          .select('id')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false })
+
+        if (assessmentsError) {
+          console.warn('[I07.2]', 'E_QUERY_ASSESSMENTS', 'assessments')
+          // Cannot proceed without assessments - set all sections to empty
+          setLabsState({ state: 'empty' })
+          setMedsState({ state: 'empty' })
+          setSafetyState({ state: 'empty' })
+          setScoresState({ state: 'empty' })
+          setInterventionsState({ state: 'empty' })
+        } else if (assessmentsData && assessmentsData.length > 0) {
+          const assessmentIds = assessmentsData.map((a) => a.id)
+
+          // Load documents with extracted data (for Labs and Medications)
+          const { data: docsData, error: docsError } = await supabase
+            .from('documents')
+            .select('id, extracted_json, doc_type, created_at')
+            .in('assessment_id', assessmentIds)
+            .not('extracted_json', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (docsError) {
+            const evidenceCode = mapSupabaseErrorToEvidenceCode(docsError, 'DOCS')
+            console.warn('[I07.2]', evidenceCode, 'documents')
+            setLabsState({ state: 'error', evidenceCode })
+            setMedsState({ state: 'error', evidenceCode })
+          } else if (docsData && docsData.length > 0) {
+            // Extract labs and meds from documents
+            const labs = docsData.flatMap((doc) => (doc as ExtractedDocument).extracted_json?.lab_values ?? [])
+            const meds = docsData.flatMap((doc) => (doc as ExtractedDocument).extracted_json?.medications ?? [])
+            
+            setLabsState(labs.length > 0 ? { state: 'ok', items: labs.slice(0, 5) } : { state: 'empty' })
+            setMedsState(meds.length > 0 ? { state: 'ok', items: meds } : { state: 'empty' })
+          } else {
+            // No documents found (not an error, just no data yet)
+            setLabsState({ state: 'empty' })
+            setMedsState({ state: 'empty' })
+          }
+
+          // Load latest report with safety data
+          const { data: reportsData, error: reportsError } = await supabase
+            .from('reports')
+            .select('id, assessment_id, safety_score, safety_findings, created_at')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (reportsError && reportsError.code !== 'PGRST116') {
+            // PGRST116 is "no rows returned", which is expected/ok (empty state)
+            const evidenceCode = mapSupabaseErrorToEvidenceCode(reportsError, 'SAFETY')
+            console.warn('[I07.2]', evidenceCode, 'reports')
+            setSafetyState({ state: 'error', evidenceCode })
+          } else if (reportsData) {
+            setSafetyState({ state: 'ok', items: [reportsData as ReportWithSafety] })
+          } else {
+            setSafetyState({ state: 'empty' })
+          }
+
+          // Load latest calculated results
+          const { data: calcData, error: calcError } = await supabase
+            .from('calculated_results')
+            .select('id, assessment_id, scores, risk_models, created_at')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (calcError && calcError.code !== 'PGRST116') {
+            const evidenceCode = mapSupabaseErrorToEvidenceCode(calcError, 'SCORES')
+            console.warn('[I07.2]', evidenceCode, 'calculated_results')
+            setScoresState({ state: 'error', evidenceCode })
+          } else if (calcData) {
+            setScoresState({ state: 'ok', items: [calcData as CalculatedResult] })
+          } else {
+            setScoresState({ state: 'empty' })
+          }
+
+          // Load latest priority ranking
+          // First get processing jobs for these assessments
+          const { data: jobsData, error: jobsError } = await supabase
+            .from('processing_jobs')
+            .select('id')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (jobsError) {
+            const evidenceCode = mapSupabaseErrorToEvidenceCode(jobsError, 'JOBS')
+            console.warn('[I07.2]', evidenceCode, 'processing_jobs')
+            setInterventionsState({ state: 'error', evidenceCode })
+          } else if (jobsData && jobsData.length > 0) {
+            const jobIds = jobsData.map((j) => j.id)
+
+            const { data: rankingData, error: rankingError } = await supabase
+              .from('priority_rankings')
+              .select('id, ranking_data')
+              .in('job_id', jobIds)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
+
+            if (rankingError && rankingError.code !== 'PGRST116') {
+              const evidenceCode = mapSupabaseErrorToEvidenceCode(rankingError, 'INTERVENTIONS')
+              console.warn('[I07.2]', evidenceCode, 'priority_rankings')
+              setInterventionsState({ state: 'error', evidenceCode })
+            } else if (rankingData) {
+              const ranking = rankingData as PriorityRanking
+              const interventions = ranking.ranking_data?.topInterventions ?? 
+                                   ranking.ranking_data?.rankedInterventions?.slice(0, 5) ?? []
+              setInterventionsState(interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' })
+            } else {
+              setInterventionsState({ state: 'empty' })
+            }
+          } else {
+            setInterventionsState({ state: 'empty' })
+          }
+        } else {
+          // No assessments found for this patient (not an error, just no data yet)
+          setLabsState({ state: 'empty' })
+          setMedsState({ state: 'empty' })
+          setSafetyState({ state: 'empty' })
+          setScoresState({ state: 'empty' })
+          setInterventionsState({ state: 'empty' })
+        }
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
         const errorMessage =
@@ -257,6 +476,41 @@ export default function PatientDetailPage() {
                   </Card>
                 </div>
               )}
+
+              {/* Key Labs and Medications Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <KeyLabsSection
+                  labValues={labsState.state === 'ok' ? labsState.items : []}
+                  loading={false}
+                  errorEvidenceCode={labsState.state === 'error' ? labsState.evidenceCode : undefined}
+                />
+                <MedicationsSection
+                  medications={medsState.state === 'ok' ? medsState.items : []}
+                  loading={false}
+                  errorEvidenceCode={medsState.state === 'error' ? medsState.evidenceCode : undefined}
+                />
+              </div>
+
+              {/* Findings & Scores Section */}
+              <FindingsScoresSection
+                safetyScore={safetyState.state === 'ok' ? safetyState.items[0]?.safety_score : undefined}
+                safetyFindings={safetyState.state === 'ok' ? safetyState.items[0]?.safety_findings : undefined}
+                calculatedScores={scoresState.state === 'ok' ? scoresState.items[0]?.scores : undefined}
+                riskModels={scoresState.state === 'ok' ? scoresState.items[0]?.risk_models : undefined}
+                loading={false}
+                errorEvidenceCode={
+                  safetyState.state === 'error' ? safetyState.evidenceCode :
+                  scoresState.state === 'error' ? scoresState.evidenceCode :
+                  undefined
+                }
+              />
+
+              {/* Interventions Section */}
+              <InterventionsSection
+                interventions={interventionsState.state === 'ok' ? interventionsState.items : []}
+                loading={false}
+                errorEvidenceCode={interventionsState.state === 'error' ? interventionsState.evidenceCode : undefined}
+              />
 
               {/* Raw Data Section */}
               <Card padding="lg" shadow="md">
