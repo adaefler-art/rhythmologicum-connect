@@ -61,10 +61,11 @@ export default async function IntroPage({ params }: PageProps) {
       console.error(`[INTRO_PAGE] Funnel not found: ${slug}`)
       notFound()
     } else if (error instanceof ManifestValidationError) {
-      // 422: Invalid manifest
-      console.error(`[INTRO_PAGE] Manifest validation failed for ${slug}:`, error.message)
+      // Manifest invalid/missing: allow legacy intro fallback.
+      // Intro content is optional and should not hard-block access.
+      console.error(`[INTRO_PAGE] Manifest validation failed for ${slug} (falling back to legacy intro):`, error.message)
       manifestData = null
-      manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
+      manifestError = null
     } else {
       // 500: Unexpected error - re-throw to trigger error boundary
       console.error(`[INTRO_PAGE] Unexpected error loading funnel ${slug}:`, error)

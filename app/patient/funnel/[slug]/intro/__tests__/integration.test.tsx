@@ -30,6 +30,25 @@ describe('V05-I06.5 — Funnel Intro Route Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(global.fetch as jest.Mock).mockClear()
+
+    // Provide a safe default for any unexpected/double-invoked calls.
+    // React may run effects more than once in tests; returning a consistent response
+    // prevents spurious throws and noisy console output.
+    ;(global.fetch as jest.Mock).mockImplementation(async (input: any) => {
+      const url = typeof input === 'string' ? input : String(input?.url ?? input)
+
+      if (url.includes('/api/funnels/') && url.endsWith('/definition')) {
+        return {
+          ok: true,
+          json: async () => ({ title: 'Test Funnel' }),
+        }
+      }
+
+      return {
+        ok: false,
+        status: 404,
+      }
+    })
   })
 
   describe('AC1: Manifest-driven content renders via ContentBlockRenderer', () => {
@@ -323,6 +342,13 @@ describe('V05-I06.5 — Funnel Intro Route Integration', () => {
       // Should NOT use ContentBlockRenderer (no manifest content)
       expect(container.querySelector('[data-page-slug="intro"]')).not.toBeInTheDocument()
       expect(container.querySelector('.content-block-renderer')).not.toBeInTheDocument()
+
+      // 404 from legacy resolver should be treated as "no legacy content"
+      expect(screen.getByText('Inhalt ist noch nicht verfügbar.')).toBeInTheDocument()
+      expect(screen.getByText('Direkt zum Assessment')).toBeInTheDocument()
+
+      // Must not surface as a manifest/config error
+      expect(screen.queryByText('Konfigurationsfehler')).not.toBeInTheDocument()
     })
   })
 })
