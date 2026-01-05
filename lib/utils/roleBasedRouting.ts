@@ -66,7 +66,7 @@ export function getRoleLandingPage(user: User | null): string {
  * Get navigation items for clinician/admin role
  * 
  * Returns user-friendly navigation with clear, non-technical labels.
- * Navigation order reflects typical workflow: overview -> assessments -> content.
+ * Navigation order reflects typical workflow: overview -> triage -> assessments -> content.
  */
 export function getClinicianNavItems(pathname: string): RoleNavItem[] {
   return [
@@ -74,6 +74,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician',
       label: 'Übersicht',
       active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/triage',
+      label: 'Triage',
+      active: pathname?.startsWith('/clinician/triage') ?? false,
     },
     {
       href: '/clinician/funnels',
@@ -99,6 +104,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician',
       label: 'Übersicht',
       active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/triage',
+      label: 'Triage',
+      active: pathname?.startsWith('/clinician/triage') ?? false,
     },
     {
       href: '/clinician/funnels',
@@ -154,6 +164,11 @@ export function getNurseNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician',
       label: 'Übersicht',
       active: pathname === '/clinician',
+    },
+    {
+      href: '/clinician/triage',
+      label: 'Triage',
+      active: pathname?.startsWith('/clinician/triage') ?? false,
     },
     {
       href: '/clinician/funnels',
