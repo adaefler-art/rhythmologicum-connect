@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState, lazy, Suspense } from 'react'
+import React, { useEffect, useState, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { MobileContentPage } from '@/app/components/mobile'
+import { ContentBlockRenderer } from '@/lib/components/content'
 import { spacing, typography } from '@/lib/design-tokens'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
+import type { FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 
 // Lazy load MarkdownRenderer for better initial page load performance
 const MarkdownRenderer = lazy(() => import('@/app/components/MarkdownRenderer'))
@@ -13,14 +15,17 @@ const MarkdownRenderer = lazy(() => import('@/app/components/MarkdownRenderer'))
 type ContentPageClientProps = {
   funnelSlug: string
   pageSlug: string
+  contentManifest: FunnelContentManifest | null
+  manifestError: string | null
 }
 
-export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageClientProps) {
+export default function ContentPageClient({ funnelSlug, pageSlug, contentManifest, manifestError }: ContentPageClientProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [contentPage, setContentPage] = useState<ContentPageWithFunnel | null>(null)
+  const [useManifestRenderer, setUseManifestRenderer] = useState(false)
 
   useEffect(() => {
     const loadContentPage = async () => {
@@ -28,6 +33,19 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
         setLoading(true)
         setError(null)
 
+        // V05-I06.5: Check if manifest content is available
+        if (contentManifest) {
+          const pageInManifest = contentManifest.pages.find((p) => p.slug === pageSlug)
+          
+          if (pageInManifest && pageInManifest.sections.length > 0) {
+            // Use manifest-driven renderer
+            setUseManifestRenderer(true)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Fallback: Load content page via API (legacy path)
         const response = await fetch(`/api/content-pages/${pageSlug}`)
         if (!response.ok) {
           if (response.status === 404) {
@@ -50,7 +68,34 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
     }
 
     loadContentPage()
-  }, [pageSlug])
+  }, [pageSlug, contentManifest])
+
+  // V05-I06.5: Handle manifest error (422 - invalid manifest)
+  // Check this before loading state
+  if (manifestError) {
+    return (
+      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+        <div className="rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+          style={{ backgroundColor: 'var(--background)' }}
+        >
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--foreground)' }}>
+            Konfigurationsfehler
+          </h1>
+          <p className="mb-6" style={{ color: 'var(--color-neutral-600)' }}>
+            {manifestError}
+          </p>
+          <button
+            onClick={() => router.push('/patient/funnels')}
+            className="text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'var(--color-primary-600)' }}
+          >
+            Zurück zur Übersicht
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -64,6 +109,82 @@ export default function ContentPageClient({ funnelSlug, pageSlug }: ContentPageC
           ></div>
           <p style={{ color: 'var(--color-neutral-600)' }}>Seite wird geladen...</p>
         </div>
+      </div>
+    )
+  }
+
+  // V05-I06.5: Render manifest-driven content if available
+  if (useManifestRenderer && contentManifest) {
+    const handleBlockTypeError = (blockType: string, sectionKey: string) => {
+      console.error(`[CONTENT_PAGE] Unsupported block type: ${blockType} in section ${sectionKey}`)
+      // PHI-free logging only - don't expose to user
+    }
+
+    const pageData = contentManifest.pages.find((p) => p.slug === pageSlug)
+
+    return (
+      <div className="min-h-screen bg-muted">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+              aria-label="Zurück"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              <span className="hidden sm:inline font-medium">Zurück</span>
+            </button>
+            <div className="flex-1 text-sm text-slate-500">
+              <span className="hidden sm:inline">{pageData?.title || 'Content'}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* V05-I06.5: Manifest-driven content renderer */}
+        <main className="max-w-4xl mx-auto px-4 py-8">
+          <ContentBlockRenderer 
+            manifest={contentManifest}
+            pageSlug={pageSlug}
+            onBlockTypeError={handleBlockTypeError}
+          />
+          
+          {/* Back to Funnel Button */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => router.push(`/patient/funnel/${funnelSlug}`)}
+              className="inline-flex items-center gap-2 text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90 shadow-md"
+              style={{ backgroundColor: 'var(--color-primary-600)' }}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Zurück zum Fragebogen
+            </button>
+          </div>
+        </main>
       </div>
     )
   }
