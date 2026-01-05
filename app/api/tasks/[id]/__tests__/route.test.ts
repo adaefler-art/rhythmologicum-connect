@@ -58,10 +58,6 @@ jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(),
 }))
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(),
-}))
-
 jest.mock('@/lib/audit/log', () => ({
   logAuditEvent: jest.fn(),
 }))
@@ -69,7 +65,6 @@ jest.mock('@/lib/audit/log', () => ({
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
 }>
 
 async function importRouteWithEnv(overrides: EnvOverrides) {
@@ -78,7 +73,6 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
   const envMock = {
     NEXT_PUBLIC_SUPABASE_URL: overrides.NEXT_PUBLIC_SUPABASE_URL ?? 'https://example.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: overrides.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: overrides.SUPABASE_SERVICE_ROLE_KEY ?? 'service-key',
   }
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
@@ -92,10 +86,9 @@ function getMocks() {
   const { createServerClient } = jest.requireMock('@supabase/ssr') as {
     createServerClient: jest.Mock
   }
-  const { createClient } = jest.requireMock('@supabase/supabase-js') as { createClient: jest.Mock }
   const { logAuditEvent } = jest.requireMock('@/lib/audit/log') as { logAuditEvent: jest.Mock }
 
-  return { cookies, createServerClient, createClient, logAuditEvent }
+  return { cookies, createServerClient, logAuditEvent }
 }
 
 function setupCookieStore() {
@@ -107,6 +100,10 @@ function setupCookieStore() {
 }
 
 describe('PATCH /api/tasks/[id]', () => {
+  const ORG_ID = '11111111-1111-4111-8111-111111111111'
+  const TASK_ID = '22222222-2222-4222-8222-222222222222'
+  const PATIENT_ID = '33333333-3333-4333-8333-333333333333'
+
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -130,7 +127,7 @@ describe('PATCH /api/tasks/[id]', () => {
         method: 'PATCH',
         body: JSON.stringify({ status: 'in_progress' }),
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: TASK_ID }) }
     )
 
     expect(res.status).toBe(401)
@@ -159,7 +156,7 @@ describe('PATCH /api/tasks/[id]', () => {
         method: 'PATCH',
         body: JSON.stringify({ status: 'in_progress' }),
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: TASK_ID }) }
     )
 
     expect(res.status).toBe(404)
@@ -173,9 +170,9 @@ describe('PATCH /api/tasks/[id]', () => {
 
     const taskBuilder = makeThenableBuilder({
       data: {
-        id: 't1',
-        organization_id: 'org1',
-        patient_id: 'p1',
+        id: TASK_ID,
+        organization_id: ORG_ID,
+        patient_id: PATIENT_ID,
         task_type: 'ldl_measurement',
         status: 'completed', // Terminal state
         payload: {},
@@ -200,7 +197,7 @@ describe('PATCH /api/tasks/[id]', () => {
         method: 'PATCH',
         body: JSON.stringify({ status: 'in_progress' }), // Can't go back
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: TASK_ID }) }
     )
 
     expect(res.status).toBe(409)
@@ -214,14 +211,14 @@ describe('PATCH /api/tasks/[id]', () => {
     const { PATCH } = await importRouteWithEnv({})
     setupCookieStore()
 
-    const orgId = 'org1'
-    const taskId = 't1'
+    const orgId = ORG_ID
+    const taskId = TASK_ID
 
     const existingTaskBuilder = makeThenableBuilder({
       data: {
         id: taskId,
         organization_id: orgId,
-        patient_id: 'p1',
+        patient_id: PATIENT_ID,
         task_type: 'ldl_measurement',
         status: 'pending',
         payload: { notes: 'some PHI data' },
@@ -234,7 +231,7 @@ describe('PATCH /api/tasks/[id]', () => {
       data: {
         id: taskId,
         organization_id: orgId,
-        patient_id: 'p1',
+        patient_id: PATIENT_ID,
         task_type: 'ldl_measurement',
         status: 'in_progress',
         payload: { notes: 'some PHI data' },
@@ -250,24 +247,22 @@ describe('PATCH /api/tasks/[id]', () => {
           .fn()
           .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } }, error: null }),
       },
-      from: jest.fn(() => existingTaskBuilder),
+      from: jest.fn()
     }
 
-    const mockAdminClient: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn(() => updatedTaskBuilder),
-    }
-
-    const { createServerClient, createClient, logAuditEvent } = getMocks()
+    const { createServerClient, logAuditEvent } = getMocks()
     createServerClient.mockReturnValue(mockServerClient)
-    createClient.mockReturnValue(mockAdminClient)
+
+    mockServerClient.from
+      .mockImplementationOnce(() => existingTaskBuilder)
+      .mockImplementationOnce(() => updatedTaskBuilder)
 
     const res = await PATCH(
       new Request('http://localhost/api/tasks/t1', {
         method: 'PATCH',
         body: JSON.stringify({ status: 'in_progress' }),
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: taskId }) }
     )
 
     expect(res.status).toBe(200)
@@ -309,9 +304,9 @@ describe('PATCH /api/tasks/[id]', () => {
     setupCookieStore()
 
     const makeTask = (status: string) => ({
-      id: 't1',
-      organization_id: 'org1',
-      patient_id: 'p1',
+      id: TASK_ID,
+      organization_id: ORG_ID,
+      patient_id: PATIENT_ID,
       task_type: 'ldl_measurement',
       status,
       payload: {},
@@ -327,24 +322,22 @@ describe('PATCH /api/tasks/[id]', () => {
           .fn()
           .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } }, error: null }),
       },
-      from: jest.fn(() => taskBuilder1),
+      from: jest.fn(),
     }
 
-    const mockAdmin1: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn(() => updatedBuilder1),
-    }
-
-    const { createServerClient, createClient } = getMocks()
+    const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(mockClient1)
-    createClient.mockReturnValue(mockAdmin1)
+
+    mockClient1.from
+      .mockImplementationOnce(() => taskBuilder1)
+      .mockImplementationOnce(() => updatedBuilder1)
 
     const res1 = await PATCH(
       new Request('http://localhost/api/tasks/t1', {
         method: 'PATCH',
         body: JSON.stringify({ status: 'in_progress' }),
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: TASK_ID }) }
     )
 
     expect(res1.status).toBe(200)
@@ -361,23 +354,21 @@ describe('PATCH /api/tasks/[id]', () => {
           .fn()
           .mockResolvedValue({ data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } }, error: null }),
       },
-      from: jest.fn(() => taskBuilder2),
-    }
-
-    const mockAdmin2: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn(() => updatedBuilder2),
+      from: jest.fn(),
     }
 
     createServerClient.mockReturnValue(mockClient2)
-    createClient.mockReturnValue(mockAdmin2)
+
+    mockClient2.from
+      .mockImplementationOnce(() => taskBuilder2)
+      .mockImplementationOnce(() => updatedBuilder2)
 
     const res2 = await PATCH(
       new Request('http://localhost/api/tasks/t1', {
         method: 'PATCH',
         body: JSON.stringify({ status: 'cancelled' }),
       }),
-      { params: Promise.resolve({ id: 't1' }) }
+      { params: Promise.resolve({ id: TASK_ID }) }
     )
 
     expect(res2.status).toBe(200)

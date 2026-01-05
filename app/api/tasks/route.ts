@@ -16,7 +16,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { 
   CreateTaskRequestSchema,
   TaskFiltersSchema,
@@ -24,13 +23,16 @@ import {
 } from '@/lib/contracts/task'
 import { logAuditEvent } from '@/lib/audit/log'
 
+type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
+
 /**
  * Get user's organization ID server-side (never trust client)
  */
-async function getUserOrgId(userId: string): Promise<string | null> {
-  const admin = createAdminSupabaseClient()
-  
-  const { data, error } = await admin
+async function getUserOrgId(
+  supabase: ServerSupabaseClient,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
     .from('user_org_membership')
     .select('organization_id')
     .eq('user_id', userId)
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
     const taskRequest = requestParse.data
     
     // Get organization_id SERVER-SIDE (never trust client)
-    const organizationId = await getUserOrgId(user.id)
+    const organizationId = await getUserOrgId(supabase, user.id)
     if (!organizationId) {
       return NextResponse.json(
         {
@@ -126,11 +128,8 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Use admin client for task creation (bypasses RLS for insert)
-    const admin = createAdminSupabaseClient()
-    
-    // Create task record with org_id set server-side
-    const { data: task, error: insertError } = await admin
+    // Create task record with org_id set server-side (RLS enforced)
+    const { data: task, error: insertError } = await supabase
       .from('tasks')
       .insert({
         organization_id: organizationId, // SERVER-SIDE, not client-trusted

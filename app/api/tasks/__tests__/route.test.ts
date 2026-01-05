@@ -12,6 +12,12 @@
 
 export {}
 
+import { NextRequest } from 'next/server'
+
+const ORG_ID = '11111111-1111-4111-8111-111111111111'
+const TASK_ID = '22222222-2222-4222-8222-222222222222'
+const PATIENT_ID = '33333333-3333-4333-8333-333333333333'
+
 type SupabaseQueryResult<T> = { data: T | null; error: unknown }
 
 type MockSupabaseClient = {
@@ -61,10 +67,6 @@ jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(),
 }))
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(),
-}))
-
 jest.mock('@/lib/audit/log', () => ({
   logAuditEvent: jest.fn(),
 }))
@@ -72,7 +74,6 @@ jest.mock('@/lib/audit/log', () => ({
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
 }>
 
 async function importRouteWithEnv(overrides: EnvOverrides) {
@@ -81,7 +82,6 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
   const envMock = {
     NEXT_PUBLIC_SUPABASE_URL: overrides.NEXT_PUBLIC_SUPABASE_URL ?? 'https://example.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: overrides.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: overrides.SUPABASE_SERVICE_ROLE_KEY ?? 'service-key',
   }
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
@@ -95,10 +95,9 @@ function getMocks() {
   const { createServerClient } = jest.requireMock('@supabase/ssr') as {
     createServerClient: jest.Mock
   }
-  const { createClient } = jest.requireMock('@supabase/supabase-js') as { createClient: jest.Mock }
   const { logAuditEvent } = jest.requireMock('@/lib/audit/log') as { logAuditEvent: jest.Mock }
 
-  return { cookies, createServerClient, createClient, logAuditEvent }
+  return { cookies, createServerClient, logAuditEvent }
 }
 
 function setupCookieStore() {
@@ -132,7 +131,7 @@ describe('POST /api/tasks', () => {
       new Request('http://localhost/api/tasks', {
         method: 'POST',
         body: JSON.stringify({
-          patient_id: 'p1',
+          patient_id: PATIENT_ID,
           task_type: 'ldl_measurement',
           assigned_to_role: 'clinician',
         }),
@@ -165,7 +164,7 @@ describe('POST /api/tasks', () => {
       new Request('http://localhost/api/tasks', {
         method: 'POST',
         body: JSON.stringify({
-          patient_id: 'p1',
+          patient_id: PATIENT_ID,
           task_type: 'ldl_measurement',
           assigned_to_role: 'clinician',
         }),
@@ -198,7 +197,7 @@ describe('POST /api/tasks', () => {
       new Request('http://localhost/api/tasks', {
         method: 'POST',
         body: JSON.stringify({
-          patient_id: 'p1',
+          patient_id: PATIENT_ID,
           task_type: 'invalid_type', // Invalid enum
           assigned_to_role: 'clinician',
         }),
@@ -215,6 +214,8 @@ describe('POST /api/tasks', () => {
     const { POST } = await importRouteWithEnv({})
     setupCookieStore()
 
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
     const orgBuilder = makeThenableBuilder({ data: null, error: { code: 'PGRST116' } })
 
     const mockServerClient: MockSupabaseClient = {
@@ -226,23 +227,19 @@ describe('POST /api/tasks', () => {
       from: jest.fn(),
     }
 
-    const mockAdminClient: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn((table: string) => {
-        if (table === 'user_org_membership') return orgBuilder
-        throw new Error(`Unexpected table: ${table}`)
-      }),
-    }
-
-    const { createServerClient, createClient } = getMocks()
+    const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(mockServerClient)
-    createClient.mockReturnValue(mockAdminClient)
+
+    mockServerClient.from.mockImplementation((table: string) => {
+      if (table === 'user_org_membership') return orgBuilder
+      throw new Error(`Unexpected table: ${table}`)
+    })
 
     const res = await POST(
       new Request('http://localhost/api/tasks', {
         method: 'POST',
         body: JSON.stringify({
-          patient_id: 'p1',
+          patient_id: PATIENT_ID,
           task_type: 'ldl_measurement',
           assigned_to_role: 'clinician',
         }),
@@ -254,22 +251,20 @@ describe('POST /api/tasks', () => {
     expect(json.success).toBe(false)
     expect(json.error.code).toBe('FORBIDDEN')
     expect(json.error.message).toContain('organization')
+
+    consoleErrorSpy.mockRestore()
   })
 
   it('201: Happy path => task created with org_id set server-side + PHI-free audit', async () => {
     const { POST } = await importRouteWithEnv({})
     setupCookieStore()
 
-    const orgId = 'org1'
-    const taskId = 'task1'
-    const patientId = 'p1'
-
-    const orgBuilder = makeThenableBuilder({ data: { organization_id: orgId }, error: null })
-    const taskBuilder = makeThenableBuilder({
+    const orgBuilder = makeThenableBuilder({ data: { organization_id: ORG_ID }, error: null })
+    const insertBuilder = makeThenableBuilder({
       data: {
-        id: taskId,
-        organization_id: orgId,
-        patient_id: patientId,
+        id: TASK_ID,
+        organization_id: ORG_ID,
+        patient_id: PATIENT_ID,
         assessment_id: null,
         task_type: 'ldl_measurement',
         assigned_to_role: 'clinician',
@@ -291,24 +286,20 @@ describe('POST /api/tasks', () => {
       from: jest.fn(),
     }
 
-    const mockAdminClient: MockSupabaseClient = {
-      auth: { getUser: jest.fn() },
-      from: jest.fn((table: string) => {
-        if (table === 'user_org_membership') return orgBuilder
-        if (table === 'tasks') return taskBuilder
-        throw new Error(`Unexpected table: ${table}`)
-      }),
-    }
-
-    const { createServerClient, createClient, logAuditEvent } = getMocks()
+    const { createServerClient, logAuditEvent } = getMocks()
     createServerClient.mockReturnValue(mockServerClient)
-    createClient.mockReturnValue(mockAdminClient)
+
+    mockServerClient.from.mockImplementation((table: string) => {
+      if (table === 'user_org_membership') return orgBuilder
+      if (table === 'tasks') return insertBuilder
+      throw new Error(`Unexpected table: ${table}`)
+    })
 
     const res = await POST(
       new Request('http://localhost/api/tasks', {
         method: 'POST',
         body: JSON.stringify({
-          patient_id: patientId,
+          patient_id: PATIENT_ID,
           task_type: 'ldl_measurement',
           assigned_to_role: 'clinician',
         }),
@@ -318,15 +309,14 @@ describe('POST /api/tasks', () => {
     expect(res.status).toBe(201)
     const json = (await res.json()) as { success: boolean; data: { id: string; organization_id: string } }
     expect(json.success).toBe(true)
-    expect(json.data.id).toBe(taskId)
-    expect(json.data.organization_id).toBe(orgId)
+    expect(json.data.id).toBe(TASK_ID)
+    expect(json.data.organization_id).toBe(ORG_ID)
 
     // Verify org_id was set server-side
-    expect(mockAdminClient.from).toHaveBeenCalledWith('tasks')
-    const insertBuilder = mockAdminClient.from('tasks')
+    expect(mockServerClient.from).toHaveBeenCalledWith('tasks')
     expect(insertBuilder.insert).toHaveBeenCalledWith(
       expect.objectContaining({
-        organization_id: orgId, // Server-side set
+        organization_id: ORG_ID, // Server-side set
       })
     )
 
@@ -334,7 +324,7 @@ describe('POST /api/tasks', () => {
     expect(logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         entity_type: 'task',
-        entity_id: taskId,
+        entity_id: TASK_ID,
         action: 'create',
         diff: {
           before: {},
@@ -345,8 +335,8 @@ describe('POST /api/tasks', () => {
           },
         },
         metadata: expect.objectContaining({
-          org_id: orgId,
-          patient_id: patientId,
+          org_id: ORG_ID,
+          patient_id: PATIENT_ID,
         }),
       })
     )
@@ -377,7 +367,7 @@ describe('GET /api/tasks', () => {
     const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(mockClient)
 
-    const res = await GET(new Request('http://localhost/api/tasks'))
+    const res = await GET(new NextRequest('http://localhost/api/tasks'))
 
     expect(res.status).toBe(401)
   })
@@ -398,7 +388,7 @@ describe('GET /api/tasks', () => {
     const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(mockClient)
 
-    const res = await GET(new Request('http://localhost/api/tasks'))
+    const res = await GET(new NextRequest('http://localhost/api/tasks'))
 
     expect(res.status).toBe(403)
   })
@@ -410,13 +400,13 @@ describe('GET /api/tasks', () => {
     const tasksBuilder = makeThenableBuilder({
       data: [
         {
-          id: 't1',
-          organization_id: 'org1',
-          patient_id: 'p1',
+          id: TASK_ID,
+          organization_id: ORG_ID,
+          patient_id: PATIENT_ID,
           task_type: 'ldl_measurement',
           status: 'pending',
           created_at: '2026-01-05T16:00:00Z',
-          patient_profiles: { id: 'p1', full_name: 'Test Patient', user_id: 'u2' },
+          patient_profiles: { id: PATIENT_ID, full_name: 'Test Patient', user_id: 'u2' },
         },
       ],
       error: null,
@@ -434,7 +424,7 @@ describe('GET /api/tasks', () => {
     const { createServerClient } = getMocks()
     createServerClient.mockReturnValue(mockClient)
 
-    const res = await GET(new Request('http://localhost/api/tasks'))
+    const res = await GET(new NextRequest('http://localhost/api/tasks'))
 
     expect(res.status).toBe(200)
     const json = (await res.json()) as { success: boolean; data: unknown[] }

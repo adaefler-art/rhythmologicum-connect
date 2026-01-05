@@ -14,7 +14,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { UpdateTaskRequestSchema, TASK_STATUS, TaskStatus } from '@/lib/contracts/task'
 import { logAuditEvent } from '@/lib/audit/log'
 
@@ -156,9 +155,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
     
-    // Use admin client for update (RLS already checked via select above)
-    const admin = createAdminSupabaseClient()
-    
     // Build update object
     const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
@@ -175,7 +171,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     
     // Update task
-    const { data: updatedTask, error: updateError } = await admin
+    const { data: updatedTask, error: updateError } = await supabase
       .from('tasks')
       .update(updatePayload)
       .eq('id', taskId)
