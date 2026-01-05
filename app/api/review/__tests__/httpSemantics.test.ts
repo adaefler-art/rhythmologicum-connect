@@ -297,4 +297,157 @@ describe('Review Queue API - HTTP Semantics', () => {
       expect(data.success).toBe(true)
     })
   })
+
+  describe('POST /api/review/[id]/decide - Transition Guards', () => {
+    it('should return 422 when attempting to decide already-decided review', async () => {
+      ;(createServerSupabaseClient as jest.Mock).mockResolvedValue({
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: {
+              user: {
+                id: 'clinician-123',
+                app_metadata: { role: 'clinician' },
+              },
+            },
+            error: null,
+          }),
+        },
+      })
+
+      ;(createAdminSupabaseClient as jest.Mock).mockReturnValue({})
+      ;(updateReviewDecision as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Review is already APPROVED. Only PENDING reviews can be decided.',
+        errorCode: 'INVALID_TRANSITION',
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/review/review-123/decide', {
+        method: 'POST',
+        body: JSON.stringify({
+          status: 'REJECTED',
+          reasonCode: 'REJECTED_UNSAFE',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const response = await reviewDecide(request, context)
+      const data = await response.json()
+
+      expect(response.status).toBe(422)
+      expect(data.error.code).toBe('INVALID_TRANSITION')
+      expect(data.error.message).toContain('already APPROVED')
+    })
+
+    it('should return 409 on concurrency conflict', async () => {
+      ;(createServerSupabaseClient as jest.Mock).mockResolvedValue({
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: {
+              user: {
+                id: 'clinician-123',
+                app_metadata: { role: 'clinician' },
+              },
+            },
+            error: null,
+          }),
+        },
+      })
+
+      ;(createAdminSupabaseClient as jest.Mock).mockReturnValue({})
+      ;(updateReviewDecision as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Review status has changed. Please reload and try again.',
+        errorCode: 'CONCURRENCY_CONFLICT',
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/review/review-123/decide', {
+        method: 'POST',
+        body: JSON.stringify({
+          status: 'APPROVED',
+          reasonCode: 'APPROVED_SAFE',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      const response = await reviewDecide(request, context)
+      const data = await response.json()
+
+      expect(response.status).toBe(409)
+      expect(data.error.code).toBe('CONCURRENCY_CONFLICT')
+      expect(data.error.message).toContain('status has changed')
+    })
+  })
+
+  describe('Audit Trail', () => {
+    it('should log audit event with requestId on successful decision', async () => {
+      const { logAuditEvent } = jest.requireMock('@/lib/audit/log') as {
+        logAuditEvent: jest.Mock
+      }
+
+      ;(createServerSupabaseClient as jest.Mock).mockResolvedValue({
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: {
+              user: {
+                id: 'clinician-123',
+                app_metadata: { role: 'clinician' },
+              },
+            },
+            error: null,
+          }),
+        },
+      })
+
+      ;(createAdminSupabaseClient as jest.Mock).mockReturnValue({})
+      ;(updateReviewDecision as jest.Mock).mockResolvedValue({
+        success: true,
+        data: {
+          id: 'review-123',
+          jobId: 'job-456',
+          status: 'APPROVED',
+          decidedAt: '2026-01-05T10:00:00Z',
+        },
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/review/review-123/decide', {
+        method: 'POST',
+        body: JSON.stringify({
+          status: 'APPROVED',
+          reasonCode: 'APPROVED_SAFE',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const context = { params: Promise.resolve({ id: 'review-123' }) }
+      await reviewDecide(request, context)
+
+      expect(logAuditEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: 'api',
+          actor_user_id: 'clinician-123',
+          actor_role: 'clinician',
+          entity_type: 'review_record',
+          entity_id: 'review-123',
+          action: 'approve',
+          diff: {
+            before: { status: 'PENDING' },
+            after: {
+              status: 'APPROVED',
+              reasonCode: 'APPROVED_SAFE',
+            },
+          },
+          metadata: expect.objectContaining({
+            request_id: expect.any(String),
+            review_id: 'review-123',
+            job_id: 'job-456',
+            decision_reason: 'APPROVED_SAFE',
+            has_notes: false,
+            reviewer_id: 'clinician-123',
+          }),
+        })
+      )
+    })
+  })
 })

@@ -12,6 +12,7 @@ import { KeyLabsSection } from './KeyLabsSection'
 import { MedicationsSection } from './MedicationsSection'
 import { FindingsScoresSection } from './FindingsScoresSection'
 import { InterventionsSection, type RankedIntervention } from './InterventionsSection'
+import { QAReviewPanel } from './QAReviewPanel'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 
@@ -122,6 +123,9 @@ export default function PatientDetailPage() {
   const [safetyState, setSafetyState] = useState<SectionState<ReportWithSafety>>({ state: 'empty' })
   const [scoresState, setScoresState] = useState<SectionState<CalculatedResult>>({ state: 'empty' })
   const [interventionsState, setInterventionsState] = useState<SectionState<RankedIntervention>>({ state: 'empty' })
+  
+  // V05-I07.3: Review records for QA Panel
+  const [reviewRecords, setReviewRecords] = useState<string[]>([])
   
   const [showRawData, setShowRawData] = useState(false)
 
@@ -288,6 +292,19 @@ export default function PatientDetailPage() {
               setInterventionsState(interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' })
             } else {
               setInterventionsState({ state: 'empty' })
+            }
+
+            // V05-I07.3: Load review records for QA Panel
+            const { data: reviewData, error: reviewError } = await supabase
+              .from('review_records')
+              .select('id')
+              .in('job_id', jobIds)
+              .order('created_at', { ascending: false })
+
+            if (!reviewError && reviewData && reviewData.length > 0) {
+              setReviewRecords(reviewData.map((r) => r.id))
+            } else {
+              setReviewRecords([])
             }
           } else {
             setInterventionsState({ state: 'empty' })
@@ -511,6 +528,18 @@ export default function PatientDetailPage() {
                 loading={false}
                 errorEvidenceCode={interventionsState.state === 'error' ? interventionsState.evidenceCode : undefined}
               />
+
+              {/* V05-I07.3: QA Review Panel - shows Layer 1 & Layer 2 findings with approve/reject actions */}
+              {reviewRecords.length > 0 && reviewRecords.map((reviewId) => (
+                <QAReviewPanel
+                  key={reviewId}
+                  reviewId={reviewId}
+                  onDecisionMade={() => {
+                    // Optionally reload data after decision
+                    console.log('Review decision made:', reviewId)
+                  }}
+                />
+              ))}
 
               {/* Raw Data Section */}
               <Card padding="lg" shadow="md">
