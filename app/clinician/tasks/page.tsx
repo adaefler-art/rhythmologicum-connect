@@ -51,6 +51,7 @@ export default function TasksPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all')
+  // currentUserRole can be 'patient' but layout ensures only clinician/nurse/admin access this page
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
 
   // Get current user's role on mount
