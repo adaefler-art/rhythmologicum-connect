@@ -25,13 +25,14 @@ export default async function ContentPage({ params }: PageProps) {
 
   // V05-I06.5: Load funnel version manifest (server-side)
   // Fail-closed behavior for missing/invalid manifests
+  let contentManifest: unknown = null
+  let manifestError: string | null = null
+
   try {
     const funnelVersion = await loadFunnelVersion(slug)
-    
+
     // Check if requested page exists in manifest
-    const requestedPage = funnelVersion.manifest.content_manifest.pages.find(
-      (p) => p.slug === pageSlug
-    )
+    const requestedPage = funnelVersion.manifest.content_manifest.pages.find((p) => p.slug === pageSlug)
 
     if (!requestedPage) {
       // 404: Page not found in manifest
@@ -39,15 +40,7 @@ export default async function ContentPage({ params }: PageProps) {
       notFound()
     }
 
-    // Render client component with slug and manifest
-    return (
-      <ContentPageClient 
-        funnelSlug={slug} 
-        pageSlug={pageSlug}
-        contentManifest={funnelVersion.manifest.content_manifest}
-        manifestError={null}
-      />
-    )
+    contentManifest = funnelVersion.manifest.content_manifest
   } catch (error) {
     if (error instanceof FunnelNotFoundError) {
       // 404: Funnel not found
@@ -56,18 +49,21 @@ export default async function ContentPage({ params }: PageProps) {
     } else if (error instanceof ManifestValidationError) {
       // 422: Invalid manifest
       console.error(`[CONTENT_PAGE] Manifest validation failed for ${slug}:`, error.message)
-      return (
-        <ContentPageClient 
-          funnelSlug={slug} 
-          pageSlug={pageSlug}
-          contentManifest={null}
-          manifestError="Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration"
-        />
-      )
+      contentManifest = null
+      manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
     } else {
       // 500: Unexpected error - re-throw to trigger error boundary
       console.error(`[CONTENT_PAGE] Unexpected error loading funnel ${slug}:`, error)
       throw error
     }
   }
+
+  return (
+    <ContentPageClient
+      funnelSlug={slug}
+      pageSlug={pageSlug}
+      contentManifest={contentManifest}
+      manifestError={manifestError}
+    />
+  )
 }

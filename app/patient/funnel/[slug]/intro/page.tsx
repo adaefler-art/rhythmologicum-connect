@@ -25,10 +25,13 @@ export default async function IntroPage({ params }: PageProps) {
 
   // Load funnel version manifest (server-side)
   // V05-I06.5: Fail-closed behavior for missing/invalid manifests
+  let manifestData: unknown = null
+  let manifestError: string | null = null
+
   try {
     const funnelVersion = await loadFunnelVersion(slug)
-    
-    const manifestData = {
+
+    manifestData = {
       version: funnelVersion.version,
       funnelId: funnelVersion.funnelId,
       algorithmVersion: funnelVersion.manifest.algorithm_bundle_version,
@@ -37,9 +40,6 @@ export default async function IntroPage({ params }: PageProps) {
       contentPages: funnelVersion.manifest.content_manifest.pages,
       contentManifest: funnelVersion.manifest.content_manifest,
     }
-
-    // Render client component with slug and manifest data
-    return <IntroPageClient funnelSlug={slug} manifestData={manifestData} manifestError={null} />
   } catch (error) {
     if (error instanceof FunnelNotFoundError) {
       // 404: Funnel not found
@@ -48,12 +48,14 @@ export default async function IntroPage({ params }: PageProps) {
     } else if (error instanceof ManifestValidationError) {
       // 422: Invalid manifest
       console.error(`[INTRO_PAGE] Manifest validation failed for ${slug}:`, error.message)
-      const manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
-      return <IntroPageClient funnelSlug={slug} manifestData={null} manifestError={manifestError} />
+      manifestData = null
+      manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
     } else {
       // 500: Unexpected error - re-throw to trigger error boundary
       console.error(`[INTRO_PAGE] Unexpected error loading funnel ${slug}:`, error)
       throw error
     }
   }
+
+  return <IntroPageClient funnelSlug={slug} manifestData={manifestData} manifestError={manifestError} />
 }
