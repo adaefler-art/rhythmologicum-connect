@@ -1,0 +1,466 @@
+'use client'
+
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
+import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
+import type { TableColumn } from '@/lib/ui/Table'
+import {
+  FileCheck,
+  AlertTriangle,
+  Clock,
+  Loader,
+} from 'lucide-react'
+
+// Triage status types matching the acceptance criteria
+type TriageStatus = 'incomplete' | 'processing' | 'report_ready' | 'flagged'
+
+type AssessmentTriage = {
+  assessment_id: string
+  patient_id: string
+  patient_name: string
+  funnel_slug: string
+  funnel_title: string | null
+  started_at: string
+  completed_at: string | null
+  assessment_status: string
+  assessment_state: string | null
+  processing_status: string | null
+  processing_stage: string | null
+  report_status: string | null
+  report_id: string | null
+  risk_level: string | null
+  triage_status: TriageStatus
+  flagged_reason: string | null
+}
+
+export default function TriagePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
+  const [retryTrigger, setRetryTrigger] = useState(0)
+
+  const loadTriageData = useCallback(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Query assessments with joined processing jobs and reports
+        const { data: assessmentsData, error: assessmentsError } = await supabase
+          .from('assessments')
+          .select(
+            `
+            id,
+            patient_id,
+            funnel,
+            funnel_id,
+            started_at,
+            completed_at,
+            status,
+            state,
+            patient_profiles!assessments_patient_id_fkey (
+              id,
+              full_name,
+              user_id
+            ),
+            funnels!assessments_funnel_id_fkey (
+              id,
+              slug,
+              title
+            )
+          `
+          )
+          .order('started_at', { ascending: false })
+          .limit(100)
+
+        if (assessmentsError) throw assessmentsError
+
+        // Get processing jobs for these assessments
+        const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
+        
+        let processingData = null
+        let reportsData = null
+
+        // Only query if there are assessments to avoid unnecessary queries
+        if (assessmentIds.length > 0) {
+          const { data: pData, error: processingError } = await supabase
+            .from('processing_jobs')
+            .select('assessment_id, status, stage, delivery_status')
+            .in('assessment_id', assessmentIds)
+
+          if (processingError) console.warn('Processing jobs query failed:', processingError)
+          processingData = pData
+
+          // Get reports for these assessments
+          const { data: rData, error: reportsError } = await supabase
+            .from('reports')
+            .select('assessment_id, id, status, risk_level')
+            .in('assessment_id', assessmentIds)
+
+          if (reportsError) console.warn('Reports query failed:', reportsError)
+          reportsData = rData
+        }
+
+        // Map processing and report data
+        const processingMap = new Map(
+          (processingData ?? []).map((p: any) => [p.assessment_id, p])
+        )
+        const reportsMap = new Map(
+          (reportsData ?? []).map((r: any) => [r.assessment_id, r])
+        )
+
+        // Transform data to triage format
+        const triageData: AssessmentTriage[] = (assessmentsData ?? []).map((a: any) => {
+          const processing = processingMap.get(a.id)
+          const report = reportsMap.get(a.id)
+          
+          // Determine triage status
+          let triageStatus: TriageStatus
+          let flaggedReason: string | null = null
+
+          if (a.status === 'in_progress') {
+            // Assessment not yet completed by patient
+            triageStatus = 'incomplete'
+          } else if (a.completed_at && processing) {
+            // Assessment completed and has processing job
+            if (processing.status === 'failed') {
+              triageStatus = 'flagged'
+              flaggedReason = 'Processing failed'
+            } else if (
+              processing.status === 'completed' &&
+              processing.delivery_status === 'DELIVERED'
+            ) {
+              triageStatus = 'report_ready'
+              // Check for high risk flagging
+              if (report?.risk_level === 'high') {
+                triageStatus = 'flagged'
+                flaggedReason = 'High risk detected'
+              }
+            } else if (
+              processing.status === 'queued' ||
+              processing.status === 'in_progress'
+            ) {
+              triageStatus = 'processing'
+            } else {
+              // Processing job exists but status is unknown - assume report ready
+              triageStatus = 'report_ready'
+            }
+          } else if (a.completed_at && !processing) {
+            // Assessment completed but no processing job yet - awaiting processing
+            triageStatus = 'processing'
+          } else {
+            // Fallback for unexpected states - treat as incomplete
+            triageStatus = 'incomplete'
+          }
+
+          return {
+            assessment_id: a.id,
+            patient_id: a.patient_id,
+            patient_name:
+              a.patient_profiles?.full_name ??
+              a.patient_profiles?.user_id ??
+              'Unbekannt',
+            funnel_slug: a.funnel || a.funnels?.slug || 'unknown',
+            funnel_title: a.funnels?.title || null,
+            started_at: a.started_at,
+            completed_at: a.completed_at,
+            assessment_status: a.status,
+            assessment_state: a.state,
+            processing_status: processing?.status || null,
+            processing_stage: processing?.stage || null,
+            report_status: report?.status || null,
+            report_id: report?.id || null,
+            risk_level: report?.risk_level || null,
+            triage_status: triageStatus,
+            flagged_reason: flaggedReason,
+          }
+        })
+
+        setAssessments(triageData)
+      } catch (e: unknown) {
+        console.error(e)
+        const errorMessage =
+          e instanceof Error ? e.message : 'Fehler beim Laden der Triage-Daten.'
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }, [])
+
+  useEffect(() => {
+    loadTriageData()
+  }, [loadTriageData, retryTrigger])
+
+  // Retry handler that triggers data reload without full page refresh
+  const handleRetry = useCallback(() => {
+    setRetryTrigger((prev) => prev + 1)
+  }, [])
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const incomplete = assessments.filter((a) => a.triage_status === 'incomplete').length
+    const processing = assessments.filter((a) => a.triage_status === 'processing').length
+    const reportReady = assessments.filter((a) => a.triage_status === 'report_ready').length
+    const flagged = assessments.filter((a) => a.triage_status === 'flagged').length
+
+    return { incomplete, processing, reportReady, flagged, total: assessments.length }
+  }, [assessments])
+
+  const getTriageStatusBadge = useCallback((status: TriageStatus) => {
+    switch (status) {
+      case 'incomplete':
+        return { variant: 'secondary' as const, label: 'Unvollständig', icon: Clock }
+      case 'processing':
+        return { variant: 'info' as const, label: 'In Bearbeitung', icon: Loader }
+      case 'report_ready':
+        return { variant: 'success' as const, label: 'Bericht bereit', icon: FileCheck }
+      case 'flagged':
+        return { variant: 'danger' as const, label: 'Markiert', icon: AlertTriangle }
+    }
+  }, [])
+
+  const formatDateTime = useCallback((isoString: string | null): string => {
+    if (!isoString) return '—'
+    try {
+      return new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(isoString))
+    } catch {
+      return 'Datum unbekannt'
+    }
+  }, [])
+
+  const handleRowClick = useCallback(
+    (assessment: AssessmentTriage) => {
+      router.push(`/clinician/patient/${assessment.patient_id}`)
+    },
+    [router]
+  )
+
+  // Define table columns
+  const columns: TableColumn<AssessmentTriage>[] = useMemo(
+    () => [
+      {
+        header: 'Patient:in',
+        accessor: (row) => (
+          <span className="font-medium text-slate-900 dark:text-slate-50">
+            {row.patient_name}
+          </span>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Funnel',
+        accessor: (row) => (
+          <span className="text-slate-700 dark:text-slate-300">
+            {row.funnel_title || row.funnel_slug}
+          </span>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Status',
+        accessor: (row) => {
+          const badge = getTriageStatusBadge(row.triage_status)
+          return (
+            <div className="flex flex-col gap-1">
+              <Badge variant={badge.variant}>{badge.label}</Badge>
+              {row.flagged_reason && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {row.flagged_reason}
+                </span>
+              )}
+            </div>
+          )
+        },
+        sortable: true,
+      },
+      {
+        header: 'Gestartet',
+        accessor: (row) => (
+          <span className="text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            {formatDateTime(row.started_at)}
+          </span>
+        ),
+        sortable: true,
+      },
+      {
+        header: 'Abgeschlossen',
+        accessor: (row) => (
+          <span className="text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            {formatDateTime(row.completed_at)}
+          </span>
+        ),
+        sortable: true,
+      },
+    ],
+    [getTriageStatusBadge, formatDateTime]
+  )
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <LoadingSpinner size="md" text="Triage-Übersicht wird geladen…" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <ErrorState
+          title="Fehler beim Laden"
+          message={error}
+          onRetry={handleRetry}
+          retryText="Neu laden"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+          Triage / Übersicht
+        </h1>
+        <p className="text-slate-600 dark:text-slate-300">
+          Aktive Patienten und Funnels mit aktuellem Bearbeitungsstatus
+        </p>
+      </div>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Incomplete Assessments */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Unvollständig
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.incomplete}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Noch in Bearbeitung
+              </p>
+            </div>
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+              <Clock className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Processing */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                In Bearbeitung
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.processing}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Bericht wird erstellt</p>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Loader className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Report Ready */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Bericht bereit
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.reportReady}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Bereit zur Einsicht
+              </p>
+            </div>
+            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <FileCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Flagged */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Markiert
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.flagged}
+              </p>
+              {stats.flagged > 0 && (
+                <Badge variant="danger" size="sm" className="mt-1">
+                  Aufmerksamkeit erforderlich
+                </Badge>
+              )}
+            </div>
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Assessments Table */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+              Alle Assessments
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+              {stats.total} aktive Assessments insgesamt
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Table
+        columns={columns}
+        data={assessments}
+        keyExtractor={(row) => row.assessment_id}
+        hoverable
+        bordered
+        onRowClick={handleRowClick}
+        emptyMessage="Noch keine Assessments vorhanden"
+      />
+    </div>
+  )
+}

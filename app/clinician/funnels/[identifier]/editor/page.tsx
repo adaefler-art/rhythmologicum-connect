@@ -36,7 +36,7 @@ type ApiEnvelope<T> = {
 export default function ManifestEditorPage() {
   const params = useParams()
   const router = useRouter()
-  const funnelSlug = params.slug as string
+  const funnelSlug = params.identifier as string
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
