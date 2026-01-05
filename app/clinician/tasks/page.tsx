@@ -20,14 +20,11 @@ import {
   PlayCircle,
   XCircle,
   Filter,
-  User,
 } from 'lucide-react'
 import { 
   Task, 
   TASK_STATUS,
   TaskStatus,
-  UserRole,
-  USER_ROLE,
   getTaskTypeLabel,
   getTaskStatusLabel,
   getUserRoleLabel,
@@ -50,7 +47,6 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskWithPatient[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all')
   // currentUserRole can be 'patient' but layout ensures only clinician/nurse/admin access this page
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
 
@@ -78,9 +74,8 @@ export default function TasksPage() {
       if (statusFilter !== 'all') {
         params.append('status', statusFilter)
       }
-      if (roleFilter !== 'all') {
-        params.append('assigned_to_role', roleFilter)
-      }
+      // RLS automatically filters nurses to their assigned tasks
+      // No need for client-side role filtering
 
       const response = await fetch(`/api/tasks?${params.toString()}`)
       const result = await response.json()
@@ -97,7 +92,7 @@ export default function TasksPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, roleFilter])
+  }, [statusFilter])
 
   useEffect(() => {
     loadTasks()
@@ -383,12 +378,10 @@ export default function TasksPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 space-y-4">
-        {/* Status Filter */}
+      <div className="mb-6">
         <Card padding="md">
           <div className="flex items-center gap-4">
             <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Status:</span>
             <div className="flex gap-2">
               <Button
                 variant={statusFilter === 'all' ? 'primary' : 'secondary'}
@@ -421,61 +414,16 @@ export default function TasksPage() {
             </div>
           </div>
         </Card>
-
-        {/* Role Filter */}
-        <Card padding="md">
-          <div className="flex items-center gap-4">
-            <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Zugewiesen an:
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant={roleFilter === 'all' ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setRoleFilter('all')}
-              >
-                Alle
-              </Button>
-              {currentUserRole === 'nurse' && (
-                <Button
-                  variant={roleFilter === USER_ROLE.NURSE ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={() => setRoleFilter(USER_ROLE.NURSE)}
-                  icon={<User className="w-3 h-3" />}
-                >
-                  Meine Aufgaben
-                </Button>
-              )}
-              {(currentUserRole === 'clinician' || currentUserRole === 'admin') && (
-                <>
-                  <Button
-                    variant={roleFilter === USER_ROLE.CLINICIAN ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => setRoleFilter(USER_ROLE.CLINICIAN)}
-                  >
-                    Clinician
-                  </Button>
-                  <Button
-                    variant={roleFilter === USER_ROLE.NURSE ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => setRoleFilter(USER_ROLE.NURSE)}
-                  >
-                    Nurse
-                  </Button>
-                  <Button
-                    variant={roleFilter === USER_ROLE.ADMIN ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => setRoleFilter(USER_ROLE.ADMIN)}
-                  >
-                    Admin
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </Card>
       </div>
+
+      {/* Info banner for nurses */}
+      {currentUserRole === 'nurse' && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Hinweis:</strong> Sie sehen nur Aufgaben, die Ihnen zugewiesen wurden.
+          </p>
+        </div>
+      )}
 
       {/* Tasks Table */}
       <Table
