@@ -5,15 +5,26 @@
  * Auth: clinician/admin/nurse only
  * 
  * GET /api/review/[id]/details - Get comprehensive QA data for review
+ * 
+ * HTTP Semantics:
+ * - 401: Not authenticated
+ * - 403: Authenticated but insufficient role
+ * - 404: Review not found
+ * - 422: Invalid UUID format
+ * - 200: Success
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { loadReviewRecordById } from '@/lib/review/persistence'
+import { validate as uuidValidate } from 'uuid'
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
+
+// Schema version for API response
+const API_VERSION = 'v1'
 
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
@@ -42,16 +53,16 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const userRole = user.app_metadata?.role
     
     if (!userRole || !['clinician', 'admin', 'nurse'].includes(userRole)) {
-      // Return 404 instead of 403 to avoid resource existence disclosure
+      // Return 403 for insufficient permissions (authenticated but wrong role)
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'NOT_FOUND',
-            message: 'Resource not found',
+            code: 'FORBIDDEN',
+            message: 'Insufficient permissions',
           },
         },
-        { status: 404 }
+        { status: 403 }
       )
     }
     
@@ -67,7 +78,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
             message: 'Review ID is required',
           },
         },
-        { status: 400 }
+        { status: 422 }
+      )
+    }
+    
+    // Validate UUID format
+    if (!uuidValidate(reviewId)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid review ID format',
+          },
+        },
+        { status: 422 }
       )
     }
     
@@ -140,10 +165,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
       }
     }
     
-    // Return comprehensive QA data
+    // Return comprehensive QA data (PHI-free, schema-versioned)
     return NextResponse.json(
       {
         success: true,
+        version: API_VERSION,
         data: {
           review: {
             id: review.id,

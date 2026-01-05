@@ -24,6 +24,9 @@ type RouteContext = {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  // Generate request ID for audit trail
+  const requestId = crypto.randomUUID()
+  
   try {
     // Auth check BEFORE parsing body (DoS prevention)
     const supabase = await createServerSupabaseClient()
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // Use admin client for decision updates
     const admin = createAdminSupabaseClient()
     
-    // Update review decision
+    // Update review decision (with transition guards and concurrency safety)
     const result = await updateReviewDecision(admin, {
       reviewId,
       decision,
@@ -138,6 +141,34 @@ export async function POST(request: NextRequest, context: RouteContext) {
         )
       }
       
+      // Handle invalid transition (already decided)
+      if (result.errorCode === 'INVALID_TRANSITION') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_TRANSITION',
+              message: result.error,
+            },
+          },
+          { status: 422 }
+        )
+      }
+      
+      // Handle concurrency conflict
+      if (result.errorCode === 'CONCURRENCY_CONFLICT') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'CONCURRENCY_CONFLICT',
+              message: result.error,
+            },
+          },
+          { status: 409 }
+        )
+      }
+      
       return NextResponse.json(
         {
           success: false,
@@ -150,7 +181,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
     
-    // Log audit event (PHI-free)
+    // Log audit event (PHI-free, append-only)
     await logAuditEvent({
       source: 'api',
       actor_user_id: user.id,
@@ -168,10 +199,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
         },
       },
       metadata: {
+        request_id: requestId,
         review_id: reviewId,
         job_id: result.data.jobId,
         decision_reason: decision.reasonCode,
         has_notes: !!decision.notes,
+        reviewer_id: user.id,
       },
     })
     
@@ -187,7 +220,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       { status: 200 }
     )
   } catch (err) {
-    console.error('[review/[id]/decide] Unexpected error:', err)
+    console.error('[review/[id]/decide] Unexpected error:', err, 'requestId:', requestId)
     return NextResponse.json(
       {
         success: false,

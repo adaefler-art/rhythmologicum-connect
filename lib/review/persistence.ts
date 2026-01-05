@@ -248,20 +248,30 @@ export type UpdateReviewDecisionInput = {
 
 /**
  * Update review record with decision
- * Idempotent: can be called multiple times with same decision
+ * Guards:
+ * - Prevents double decisions (only PENDING can transition)
+ * - Concurrency-safe (checks status before update)
  */
 export async function updateReviewDecision(
   supabase: SupabaseClient<Database>,
   input: UpdateReviewDecisionInput
 ): Promise<Result<ReviewRecordV1>> {
   try {
-    // First, verify the record exists and is pending
+    // First, verify the record exists
     const existing = await loadReviewRecordById(supabase, input.reviewId)
     if (!existing.success) {
       return existing
     }
 
-    // Allow idempotent updates (same decision can be applied multiple times)
+    // Guard: Only PENDING reviews can be decided
+    if (existing.data.status !== REVIEW_STATUS.PENDING) {
+      return {
+        success: false,
+        error: `Review is already ${existing.data.status}. Only PENDING reviews can be decided.`,
+        errorCode: 'INVALID_TRANSITION',
+      }
+    }
+
     const update: DbReviewRecordUpdate = {
       status: input.decision.status,
       reviewer_user_id: input.reviewerUserId,
@@ -275,14 +285,25 @@ export async function updateReviewDecision(
       },
     }
 
+    // Concurrency-safe update: only update if still PENDING
     const { data, error } = await supabase
       .from('review_records')
       .update(update)
       .eq('id', input.reviewId)
+      .eq('status', REVIEW_STATUS.PENDING) // Concurrency guard
       .select()
       .single()
 
     if (error || !data) {
+      // Check if it failed because status changed (concurrency conflict)
+      if (error?.code === 'PGRST116') {
+        return {
+          success: false,
+          error: 'Review status has changed. Please reload and try again.',
+          errorCode: 'CONCURRENCY_CONFLICT',
+        }
+      }
+      
       return {
         success: false,
         error: `Failed to update review decision: ${error?.message ?? 'Unknown error'}`,
