@@ -24,6 +24,22 @@ import { env } from '@/lib/env'
 import { FunnelContentManifestSchema } from '@/lib/contracts/funnelManifest'
 import { AUDIT_ACTION, AUDIT_ENTITY_TYPE, AUDIT_SOURCE } from '@/lib/contracts/registry'
 import { ZodError } from 'zod'
+import { createHash } from 'crypto'
+
+/**
+ * Maximum request body size (10 MB)
+ * Prevents DoS via large payloads
+ */
+const MAX_BODY_SIZE = 10 * 1024 * 1024 // 10 MB
+
+/**
+ * Creates a deterministic SHA-256 hash of a manifest
+ * Used for audit logging without storing PHI/content
+ */
+function hashManifest(manifest: unknown): string {
+  const manifestJson = JSON.stringify(manifest, Object.keys(manifest as object).sort())
+  return createHash('sha256').update(manifestJson).digest('hex').substring(0, 16)
+}
 
 /**
  * V05-I06.4 API Endpoint: Get funnel version content manifest
@@ -185,6 +201,24 @@ export async function PUT(
       return withRequestId(forbiddenResponse(), requestId)
     }
 
+    // Check Content-Length header for payload size
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      return withRequestId(
+        NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'PAYLOAD_TOO_LARGE',
+              message: 'Request body exceeds maximum size of 10 MB',
+            },
+          },
+          { status: 413 }
+        ),
+        requestId,
+      )
+    }
+
     // Parse and validate request body
     let body: unknown
     try {
@@ -264,7 +298,8 @@ export async function PUT(
       )
     }
 
-    // Audit log
+    // Audit log with manifest hash (no PHI/content)
+    const manifestHash = hashManifest(validatedManifest)
     const { error: auditError } = await adminClient.from('audit_log').insert({
       entity_type: AUDIT_ENTITY_TYPE.FUNNEL_VERSION,
       entity_id: versionId,
@@ -273,7 +308,9 @@ export async function PUT(
       source: AUDIT_SOURCE.ADMIN_UI,
       metadata: {
         field: 'content_manifest',
+        manifest_hash: manifestHash,
         page_count: validatedManifest.pages.length,
+        section_count: validatedManifest.pages.reduce((sum, p) => sum + p.sections.length, 0),
       },
     })
 

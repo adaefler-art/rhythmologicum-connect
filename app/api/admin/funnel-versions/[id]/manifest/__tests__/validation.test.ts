@@ -7,6 +7,7 @@
  * - Schema validation gating save
  * - Deterministic ordering / stable serialization
  * - Fail-closed behavior for unknown types
+ * - URL security validation (V05-I06.4 Hardening)
  */
 
 import { SECTION_TYPE } from '@/lib/contracts/funnelManifest'
@@ -290,6 +291,223 @@ describe('Manifest API - Validation', () => {
       // Content is generic, no PHI
       expect(parsed.pages[0].sections[0].content).toBeDefined()
       expect(typeof parsed.pages[0].sections[0].content).toBe('object')
+    })
+  })
+})
+
+describe('URL Security Validation (V05-I06.4 Hardening)', () => {
+  describe('CTA block href validation', () => {
+    it('should reject javascript: URLs', () => {
+      const maliciousManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'cta-1',
+                type: SECTION_TYPE.CTA,
+                content: {
+                  text: 'Click me',
+                  href: 'javascript:alert(1)',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(maliciousManifest)).toThrow()
+    })
+
+    it('should reject data: URLs', () => {
+      const maliciousManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'cta-1',
+                type: SECTION_TYPE.CTA,
+                content: {
+                  text: 'Click me',
+                  href: 'data:text/html,<script>alert(1)</script>',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(maliciousManifest)).toThrow()
+    })
+
+    it('should reject vbscript: URLs', () => {
+      const maliciousManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'cta-1',
+                type: SECTION_TYPE.CTA,
+                content: {
+                  text: 'Click me',
+                  href: 'vbscript:msgbox(1)',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(maliciousManifest)).toThrow()
+    })
+
+    it('should accept safe http/https URLs', () => {
+      const safeManifest: FunnelContentManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'cta-1',
+                type: SECTION_TYPE.CTA,
+                content: {
+                  text: 'Click me',
+                  href: 'https://example.com',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(safeManifest)).not.toThrow()
+    })
+
+    it('should accept relative URLs', () => {
+      const safeManifest: FunnelContentManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'cta-1',
+                type: SECTION_TYPE.CTA,
+                content: {
+                  text: 'Click me',
+                  href: '/internal/page',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(safeManifest)).not.toThrow()
+    })
+  })
+
+  describe('Image/Video block url validation', () => {
+    it('should reject javascript: URLs in image blocks', () => {
+      const maliciousManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'image-1',
+                type: SECTION_TYPE.IMAGE,
+                content: {
+                  url: 'javascript:alert(1)',
+                  alt: 'Test image',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(maliciousManifest)).toThrow()
+    })
+
+    it('should accept safe URLs in image blocks', () => {
+      const safeManifest: FunnelContentManifest = {
+        version: '1.0',
+        pages: [
+          {
+            slug: 'test-page',
+            title: 'Test Page',
+            sections: [
+              {
+                key: 'image-1',
+                type: SECTION_TYPE.IMAGE,
+                content: {
+                  url: 'https://example.com/image.jpg',
+                  alt: 'Test image',
+                },
+              },
+            ],
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(safeManifest)).not.toThrow()
+    })
+  })
+
+  describe('Asset URL validation', () => {
+    it('should reject javascript: URLs in assets', () => {
+      const maliciousManifest = {
+        version: '1.0',
+        pages: [],
+        assets: [
+          {
+            key: 'asset-1',
+            type: 'image' as const,
+            url: 'javascript:alert(1)',
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(maliciousManifest)).toThrow()
+    })
+
+    it('should accept safe URLs in assets', () => {
+      const safeManifest: FunnelContentManifest = {
+        version: '1.0',
+        pages: [],
+        assets: [
+          {
+            key: 'asset-1',
+            type: 'image',
+            url: 'https://example.com/asset.jpg',
+          },
+        ],
+      }
+
+      const { FunnelContentManifestSchema } = require('@/lib/contracts/funnelManifest')
+      expect(() => FunnelContentManifestSchema.parse(safeManifest)).not.toThrow()
     })
   })
 })

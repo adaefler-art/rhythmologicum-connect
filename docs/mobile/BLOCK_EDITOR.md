@@ -2,8 +2,9 @@
 
 **Version**: v0.5.0  
 **Issue**: V05-I06.4  
-**Status**: Implemented  
-**Date**: 2026-01-05
+**Status**: Implemented & Hardened  
+**Date**: 2026-01-05  
+**Security Hardening**: 2026-01-05
 
 ---
 
@@ -17,6 +18,35 @@ The Visual Block Editor provides an internal UI for composing and editing funnel
 - **Fail-closed**: Unknown block types show error, no silent coercion
 - **Deterministic**: Stable ordering via explicit `orderIndex`
 - **No PHI**: Schema enforcement prevents PHI in manifests
+- **URL Security**: Dangerous protocols (javascript:, data:, vbscript:) are rejected
+- **DoS Protection**: 10 MB payload size limit enforced
+
+---
+
+## Security Features (V05-I06.4 Hardening)
+
+### URL Validation
+- **CTA blocks**: `href` field validated against dangerous protocols
+- **Image/Video blocks**: `url` field validated
+- **Assets**: `url` field validated
+- **Rejected protocols**: `javascript:`, `data:`, `vbscript:`, `file:`
+- **Allowed**: `http:`, `https:`, `mailto:`, `tel:`, relative paths
+
+### Payload Protection
+- **Maximum request size**: 10 MB
+- **Response code**: HTTP 413 (Payload Too Large)
+- **Schema bounds**: Pages (50), sections (100), assets (200)
+
+### Audit Logging
+- **Manifest hash**: SHA-256 hash (first 16 chars) for integrity tracking
+- **No content storage**: Raw manifest never logged
+- **Metadata tracked**: page_count, section_count, manifest_hash
+- **Actor tracking**: user_id, role, source, timestamp
+
+### RBAC
+- **Allowed roles**: `clinician`, `admin` only
+- **Auth-first**: Authentication checked before body parsing
+- **Fail-closed**: Unknown roles → 403 Forbidden
 
 ---
 
@@ -167,6 +197,13 @@ const validatedManifest = FunnelContentManifestSchema.parse(manifest)
 - Field length limits enforced
 - No unknown keys allowed (strict mode)
 - `orderIndex` must be non-negative integer
+- **URLs validated**: `href`, `url`, `backgroundImage` fields checked for dangerous protocols
+
+**URL Validation Errors**:
+```
+Content URLs must use safe protocols (http:, https:, mailto:, tel:, or relative paths). 
+Dangerous protocols (javascript:, data:, vbscript:, file:) are not allowed.
+```
 
 ### Fail-Closed Behavior
 
@@ -180,6 +217,11 @@ const validatedManifest = FunnelContentManifestSchema.parse(manifest)
 - Save is blocked until errors are fixed
 - User must correct errors before proceeding
 
+**Payload too large**:
+- HTTP 413 status code
+- Error code: `PAYLOAD_TOO_LARGE`
+- Maximum size: 10 MB
+
 ### Bounds Enforcement
 
 **Manifest limits** (from schema):
@@ -190,6 +232,7 @@ const validatedManifest = FunnelContentManifestSchema.parse(manifest)
 - URL length: max 2048 chars
 - Title length: max 500 chars
 - Description length: max 2000 chars
+- **Request body**: max 10 MB
 
 ---
 
@@ -287,13 +330,22 @@ For deterministic sorting, use `orderIndex`:
 - 401: Not authenticated
 - 403: Not authorized
 - 404: Funnel version not found
+- 413: Payload too large (> 10 MB) - Error code: `PAYLOAD_TOO_LARGE`
 - 422: Validation failed (with Zod error details)
+  - Invalid manifest structure
+  - Dangerous URLs (javascript:, data:, etc.)
+  - Exceeds schema bounds
 
-**Audit Trail**:
+**Audit Trail** (V05-I06.4 Hardening):
 - All updates logged to `audit_log` table
 - Entity type: `AUDIT_ENTITY_TYPE.FUNNEL_VERSION`
 - Action: `AUDIT_ACTION.UPDATE`
 - Source: `AUDIT_SOURCE.ADMIN_UI`
+- **Metadata** (no PHI):
+  - `manifest_hash`: SHA-256 hash (first 16 chars)
+  - `page_count`: Number of pages
+  - `section_count`: Total number of sections
+  - `field`: Always `'content_manifest'`
 
 ---
 
