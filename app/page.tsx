@@ -5,7 +5,34 @@ import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { featureFlags } from '@/lib/featureFlags'
 import { ThemeToggle, Input } from '@/lib/ui'
-import { getRoleLandingPage, getUserRole } from '@/lib/utils/roleBasedRouting'
+import { getLandingForRole, type ResolvedUserRole } from '@/lib/utils/roleLanding'
+
+async function syncServerSession() {
+  const { data } = await supabase.auth.getSession()
+  const session = data.session
+  if (!session) return
+
+  await fetch('/api/auth/callback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event: 'SIGNED_IN', session }),
+  })
+}
+
+async function resolveRole(): Promise<ResolvedUserRole | null> {
+  try {
+    const res = await fetch('/api/auth/resolve-role', { method: 'GET' })
+    if (!res.ok) return null
+    const json: unknown = await res.json()
+    if (!json || typeof json !== 'object') return null
+    const role = (json as { data?: { role?: string } }).data?.role
+    if (role === 'patient' || role === 'clinician' || role === 'admin' || role === 'nurse') return role
+    return null
+  } catch {
+    return null
+  }
+}
+
 
 type Mode = 'login' | 'signup'
 
@@ -34,14 +61,22 @@ export default function LoginPage() {
       } = await supabase.auth.getUser()
 
       if (user) {
-        const role = getUserRole(user)
-        // Use role-based landing page
-        if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
-          router.replace('/patient')
-        } else {
-          const landingPage = getRoleLandingPage(user)
-          router.replace(landingPage)
+        await syncServerSession()
+
+        const resolvedRole = await resolveRole()
+        if (!resolvedRole) {
+          // Fail-closed: authenticated but no membership role -> go back to login with error
+          await supabase.auth.signOut()
+          router.replace('/?error=access_denied&message=Keine gültige Rolle gefunden.')
+          return
         }
+
+        if (resolvedRole === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          router.replace('/patient')
+          return
+        }
+
+        router.replace(getLandingForRole(resolvedRole))
       }
     }
 
@@ -132,6 +167,9 @@ export default function LoginPage() {
         if (signInError) throw signInError
       }
 
+      // Ensure the server-side cookie session exists before any SSR pages run.
+      await syncServerSession()
+
       // aktuellen User holen
       const {
         data: { user },
@@ -141,11 +179,15 @@ export default function LoginPage() {
       if (userError) throw userError
       if (!user) throw new Error('Kein Benutzerprofil gefunden.')
 
-      // Get user role and determine landing page
-      const role = getUserRole(user)
+      // Resolve role from DB membership (source-of-truth)
+      const resolvedRole = await resolveRole()
+      if (!resolvedRole) {
+        await supabase.auth.signOut()
+        throw new Error('Keine gültige Rolle gefunden.')
+      }
       
       // For patients: ensure patient_profile exists
-      if (role === 'patient') {
+      if (resolvedRole === 'patient') {
         const { error: profileError } = await supabase
           .from('patient_profiles')
           .upsert(
@@ -160,13 +202,11 @@ export default function LoginPage() {
       }
 
       // Redirect based on role
-      if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+      if (resolvedRole === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
         // If clinician dashboard is disabled, redirect clinicians to patient flow
         router.replace('/patient')
       } else {
-        // Use role-based landing page
-        const landingPage = getRoleLandingPage(user)
-        router.replace(landingPage)
+        router.replace(getLandingForRole(resolvedRole))
       }
     } catch (err: unknown) {
       console.error(err)
