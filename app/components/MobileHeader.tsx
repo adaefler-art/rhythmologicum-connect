@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Settings, Info } from 'lucide-react'
 import { spacing, typography, shadows, colors } from '@/lib/design-tokens'

@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ContentPage } from '@/lib/types/content'
-import type { QuestionnaireStep, ContentPage as ManifestContentPage } from '@/lib/contracts/funnelManifest'
+import type { QuestionnaireStep, ContentPage as ManifestContentPage, FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 import MobileWelcomeScreen from '@/app/components/MobileWelcomeScreen'
+import { ContentBlockRenderer } from '@/lib/components/content'
 
 type ManifestData = {
   version: string
@@ -13,6 +14,7 @@ type ManifestData = {
   promptVersion: string
   steps: QuestionnaireStep[]
   contentPages: ManifestContentPage[]
+  contentManifest: FunnelContentManifest
 }
 
 type IntroPageClientProps = {
@@ -28,6 +30,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   const [introPage, setIntroPage] = useState<ContentPage | null>(null)
   const [funnelTitle, setFunnelTitle] = useState<string>('')
   const [isMissingContent, setIsMissingContent] = useState(false)
+  const [useManifestRenderer, setUseManifestRenderer] = useState(false)
 
   useEffect(() => {
     const loadIntroContent = async () => {
@@ -43,7 +46,21 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
           setFunnelTitle(funnelData.title || 'Assessment')
         }
 
-        // Load intro content page via Content Resolver
+        // V05-I06.5: Check if manifest has intro page content
+        if (manifestData?.contentManifest) {
+          const introPageInManifest = manifestData.contentManifest.pages.find(
+            (p) => p.slug === 'intro'
+          )
+          
+          if (introPageInManifest && introPageInManifest.sections.length > 0) {
+            // Use manifest-driven renderer
+            setUseManifestRenderer(true)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Fallback: Load intro content page via Content Resolver (legacy path)
         const response = await fetch(
           `/api/content/resolve?funnel=${funnelSlug}&category=intro`,
         )
@@ -73,11 +90,40 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
     }
 
     loadIntroContent()
-  }, [funnelSlug, router])
+  }, [funnelSlug, router, manifestData])
 
   const handleStartAssessment = () => {
     // Add skipIntro parameter to avoid redirect loop
     router.push(`/patient/funnel/${funnelSlug}?skipIntro=true`)
+  }
+
+  // V05-I06.5: Handle manifest error (422 - invalid manifest)
+  if (manifestError) {
+    return (
+      <main className="flex items-center justify-center bg-muted py-20 px-4">
+        <div className="w-full max-w-md border-2 rounded-xl p-6"
+          style={{
+            backgroundColor: 'var(--background)',
+            borderColor: 'var(--color-red-300)',
+          }}
+        >
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-red-700)' }}>
+            Konfigurationsfehler
+          </h2>
+          <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
+            {manifestError}
+          </p>
+          <button
+            onClick={() => router.push('/patient/funnels')}
+            className="px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+            style={{ backgroundColor: 'var(--color-primary-600)' }}
+          >
+            Zurück zur Übersicht
+          </button>
+        </div>
+      </main>
+    )
   }
 
   // Loading state
@@ -85,6 +131,104 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
     return (
       <main className="flex items-center justify-center bg-muted py-20">
         <p className="text-sm" style={{ color: 'var(--color-neutral-600)' }}>Bitte warten…</p>
+      </main>
+    )
+  }
+
+  // V05-I06.5: Render manifest-driven content if available
+  if (useManifestRenderer && manifestData?.contentManifest) {
+    const handleBlockTypeError = (blockType: string, sectionKey: string) => {
+      console.error(`[INTRO_PAGE] Unsupported block type: ${blockType} in section ${sectionKey}`)
+      // PHI-free logging only - don't expose to user
+    }
+
+    return (
+      <main className="min-h-screen bg-muted">
+        {/* V05-I06.5: Manifest-driven content renderer */}
+        <ContentBlockRenderer 
+          manifest={manifestData.contentManifest}
+          pageSlug="intro"
+          onBlockTypeError={handleBlockTypeError}
+        />
+        
+        {/* CTA Button */}
+        <div className="px-4 py-6 bg-white border-t border-slate-200">
+          <div className="max-w-2xl mx-auto">
+            <button
+              onClick={handleStartAssessment}
+              className="w-full px-6 py-4 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg"
+              style={{ backgroundColor: 'var(--color-primary-600)' }}
+            >
+              Assessment starten
+            </button>
+          </div>
+        </div>
+
+        {/* Manifest Info Display - Only visible if manifest loaded successfully */}
+        {manifestData && (
+          <div className="bg-slate-50 px-4 py-6">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-900 mb-3">
+                  📋 Funnel-Konfiguration (Version {manifestData.version})
+                </h3>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Assessment-Schritte:</span>
+                    <span className="font-medium text-slate-900">{manifestData.steps.length}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Algorithmus-Version:</span>
+                    <span className="font-mono text-xs text-slate-900">{manifestData.algorithmVersion}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Prompt-Version:</span>
+                    <span className="font-mono text-xs text-slate-900">{manifestData.promptVersion}</span>
+                  </div>
+                </div>
+                
+                {/* Step List */}
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900">
+                    Schritte anzeigen ({manifestData.steps.length})
+                  </summary>
+                  <ul className="mt-2 space-y-1 pl-4">
+                    {manifestData.steps.map((step, index) => (
+                      <li key={step.id} className="text-sm text-slate-600">
+                        {index + 1}. {step.title}
+                        {step.questions && (
+                          <span className="text-xs text-slate-500 ml-2">
+                            ({step.questions.length} Fragen)
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+
+                {/* Content Pages from Manifest */}
+                {manifestData.contentPages && manifestData.contentPages.length > 0 && (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900">
+                      Content Pages ({manifestData.contentPages.length})
+                    </summary>
+                    <ul className="mt-2 space-y-1 pl-4">
+                      {manifestData.contentPages.map((page) => (
+                        <li key={page.slug} className="text-sm text-slate-600">
+                          📄 {page.title}
+                          <span className="text-xs text-slate-500 ml-2">({page.slug})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     )
   }

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { spacing, typography, radii, shadows, colors, componentTokens } from '@/lib/design-tokens'
 import MobileHeader from './MobileHeader'
 

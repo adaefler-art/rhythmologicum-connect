@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import IntroPageClient from './client'
 import { loadFunnelVersion, FunnelNotFoundError, ManifestValidationError } from '@/lib/funnels/loadFunnelVersion'
@@ -24,31 +24,36 @@ export default async function IntroPage({ params }: PageProps) {
   }
 
   // Load funnel version manifest (server-side)
-  let manifestData = null
-  let manifestError = null
-
+  // V05-I06.5: Fail-closed behavior for missing/invalid manifests
   try {
     const funnelVersion = await loadFunnelVersion(slug)
-    manifestData = {
+    
+    const manifestData = {
       version: funnelVersion.version,
       funnelId: funnelVersion.funnelId,
       algorithmVersion: funnelVersion.manifest.algorithm_bundle_version,
       promptVersion: funnelVersion.manifest.prompt_version,
       steps: funnelVersion.manifest.questionnaire_config.steps,
       contentPages: funnelVersion.manifest.content_manifest.pages,
+      contentManifest: funnelVersion.manifest.content_manifest,
     }
+
+    // Render client component with slug and manifest data
+    return <IntroPageClient funnelSlug={slug} manifestData={manifestData} manifestError={null} />
   } catch (error) {
     if (error instanceof FunnelNotFoundError) {
-      manifestError = `Funnel nicht gefunden: ${slug}`
+      // 404: Funnel not found
+      console.error(`[INTRO_PAGE] Funnel not found: ${slug}`)
+      notFound()
     } else if (error instanceof ManifestValidationError) {
-      manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
-      console.error('Manifest validation failed:', error.message)
+      // 422: Invalid manifest
+      console.error(`[INTRO_PAGE] Manifest validation failed for ${slug}:`, error.message)
+      const manifestError = 'Manifest-Validierung fehlgeschlagen: Ungültige Konfiguration'
+      return <IntroPageClient funnelSlug={slug} manifestData={null} manifestError={manifestError} />
     } else {
-      manifestError = 'Fehler beim Laden der Funnel-Konfiguration'
-      console.error('Error loading funnel version:', error)
+      // 500: Unexpected error - re-throw to trigger error boundary
+      console.error(`[INTRO_PAGE] Unexpected error loading funnel ${slug}:`, error)
+      throw error
     }
   }
-
-  // Render client component with slug and manifest data
-  return <IntroPageClient funnelSlug={slug} manifestData={manifestData} manifestError={manifestError} />
 }
