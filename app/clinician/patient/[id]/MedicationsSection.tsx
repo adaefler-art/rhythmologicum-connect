@@ -1,8 +1,13 @@
 /**
  * MedicationsSection Component
  * 
- * Displays medications extracted from patient documents.
- * Shows medication name, dosage, frequency, and route.
+ * Presentational component (props-in, render-out) for displaying medications.
+ * Data source: documents.extracted_json.medications (populated by V05-I04.2 extraction pipeline)
+ * 
+ * Fail-closed behavior:
+ * - Shows empty state when medications is empty array
+ * - Shows loading state when loading prop is true
+ * - No mock/fantasy data - only renders what is passed via props
  */
 
 import { Card, Badge } from '@/lib/ui'

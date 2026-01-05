@@ -128,8 +128,13 @@ export default function PatientDetailPage() {
         // Type assertion for Supabase joined query (one-to-one relationship)
         setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
 
-        // Load additional data: documents, reports with safety, calculated results, rankings
-        // We need to first get assessments for this patient
+        // V05-I07.2: Load additional data for new sections (Key Labs, Medications, Findings, Interventions)
+        // NOTE: These queries access tables that exist in schema (documents, reports, calculated_results, priority_rankings)
+        // but may not yet have data populated by the processing pipeline (V05-I05).
+        // Empty states are shown when data is not available. No mock/fantasy data is used.
+        // All sections are presentational components that receive props and fail gracefully.
+        
+        // First, get assessments for this patient to use as filter for related data
         const { data: assessmentsData, error: assessmentsError } = await supabase
           .from('assessments')
           .select('id')

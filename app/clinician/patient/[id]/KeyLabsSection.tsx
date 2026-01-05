@@ -1,8 +1,13 @@
 /**
  * KeyLabsSection Component
  * 
- * Displays key laboratory values extracted from patient documents.
- * Shows test name, value, unit, reference range, and date.
+ * Presentational component (props-in, render-out) for displaying laboratory values.
+ * Data source: documents.extracted_json.lab_values (populated by V05-I04.2 extraction pipeline)
+ * 
+ * Fail-closed behavior:
+ * - Shows empty state when labValues is empty array
+ * - Shows loading state when loading prop is true
+ * - No mock/fantasy data - only renders what is passed via props
  */
 
 import { Card } from '@/lib/ui'

@@ -1,8 +1,14 @@
 /**
  * InterventionsSection Component
  * 
- * Displays top priority interventions from the ranking algorithm.
- * Shows intervention topics with impact, feasibility, and priority scores.
+ * Presentational component (props-in, render-out) for displaying priority-ranked interventions.
+ * Data source: priority_rankings.ranking_data.topInterventions (populated by V05-I05.3 ranking algorithm)
+ * 
+ * Fail-closed behavior:
+ * - Shows empty state when interventions is empty array
+ * - Shows loading state when loading prop is true
+ * - No mock/fantasy data - only renders what is passed via props
+ * - All intervention topics and signals come from actual ranking data
  */
 
 import { Card, Badge } from '@/lib/ui'

@@ -1,8 +1,16 @@
 /**
  * FindingsScoresSection Component
  * 
- * Displays funnel-specific findings and comprehensive scores from safety checks and reports.
- * Shows safety scores, findings counts, and risk-related information.
+ * Presentational component (props-in, render-out) for displaying safety findings and scores.
+ * Data sources:
+ * - reports.safety_score, reports.safety_findings (populated by V05-I05.6 safety checks)
+ * - calculated_results.scores, calculated_results.risk_models (populated by V05-I05.2 risk analysis)
+ * 
+ * Fail-closed behavior:
+ * - Shows empty state when all props are null/undefined
+ * - Shows loading state when loading prop is true
+ * - Only renders sections for which data exists (no mock/fantasy data)
+ * - Safety score badge only shown when safetyScore is a number
  */
 
 import { Card, Badge } from '@/lib/ui'
