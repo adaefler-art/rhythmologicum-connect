@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import ContentPageClient from './client'
 import { loadFunnelVersion, FunnelNotFoundError, ManifestValidationError } from '@/lib/funnels/loadFunnelVersion'
+import type { FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 
 type PageProps = {
   params: Promise<{ slug: string; pageSlug: string }>
@@ -25,7 +26,7 @@ export default async function ContentPage({ params }: PageProps) {
 
   // V05-I06.5: Load funnel version manifest (server-side)
   // Fail-closed behavior for missing/invalid manifests
-  let contentManifest: unknown = null
+  let contentManifest: FunnelContentManifest | null = null
   let manifestError: string | null = null
 
   try {

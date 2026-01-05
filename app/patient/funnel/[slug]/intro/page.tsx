@@ -2,6 +2,21 @@ import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import IntroPageClient from './client'
 import { loadFunnelVersion, FunnelNotFoundError, ManifestValidationError } from '@/lib/funnels/loadFunnelVersion'
+import type {
+  ContentPage as ManifestContentPage,
+  FunnelContentManifest,
+  QuestionnaireStep,
+} from '@/lib/contracts/funnelManifest'
+
+type ManifestData = {
+  version: string
+  funnelId: string
+  algorithmVersion: string
+  promptVersion: string
+  steps: QuestionnaireStep[]
+  contentPages: ManifestContentPage[]
+  contentManifest: FunnelContentManifest
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -25,7 +40,7 @@ export default async function IntroPage({ params }: PageProps) {
 
   // Load funnel version manifest (server-side)
   // V05-I06.5: Fail-closed behavior for missing/invalid manifests
-  let manifestData: unknown = null
+  let manifestData: ManifestData | null = null
   let manifestError: string | null = null
 
   try {
