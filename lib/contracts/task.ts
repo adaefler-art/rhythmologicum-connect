@@ -126,6 +126,7 @@ export const TaskSchema = z.object({
   assessment_id: z.string().uuid().nullable(),
   created_by_role: UserRoleSchema.nullable(),
   assigned_to_role: UserRoleSchema,
+  assigned_to_user_id: z.string().uuid().nullable(),
   task_type: TaskTypeSchema,
   payload: z.record(z.string(), z.any()), // JSONB - flexible payload
   status: TaskStatusSchema,
@@ -144,6 +145,7 @@ export const CreateTaskRequestSchema = z.object({
   patient_id: z.string().uuid(),
   assessment_id: z.string().uuid().optional(),
   assigned_to_role: UserRoleSchema,
+  assigned_to_user_id: z.string().uuid().optional(),
   task_type: TaskTypeSchema,
   payload: z.record(z.string(), z.any()).optional(),
   due_at: z.string().optional(), // ISO datetime string

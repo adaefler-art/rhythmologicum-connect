@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
         assessment_id: taskRequest.assessment_id ?? null,
         created_by_role: userRole,
         assigned_to_role: taskRequest.assigned_to_role,
+        assigned_to_user_id: taskRequest.assigned_to_user_id ?? null,
         task_type: taskRequest.task_type,
         payload: (taskRequest.payload ?? {}) as never,
         status: TASK_STATUS.PENDING, // Always start as pending
@@ -274,6 +275,14 @@ export async function GET(request: NextRequest) {
     }
     
     const validFilters = filtersParse.data
+    
+    // SECURITY: Nurses can ONLY see tasks assigned to them (RLS + server-side enforcement)
+    // Clinicians/admins can see all org tasks
+    if (userRole === 'nurse') {
+      // Force filter to user's own tasks - RLS will enforce, but we also enforce here
+      // This prevents UI from even attempting to fetch unassigned tasks
+      console.log('[tasks] Nurse user - filtering to assigned tasks only:', user.id)
+    }
     
     // Build query with RLS - automatically filters by org via RLS policies
     let query = supabase

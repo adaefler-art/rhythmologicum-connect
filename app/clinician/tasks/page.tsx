@@ -29,6 +29,8 @@ import {
   getTaskStatusLabel,
   getUserRoleLabel,
 } from '@/lib/contracts/task'
+import { supabase } from '@/lib/supabaseClient'
+import { getUserRole } from '@/lib/utils/roleBasedRouting'
 import TaskCreateDialog from './TaskCreateDialog'
 
 type TaskWithPatient = Task & {
@@ -45,6 +47,22 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskWithPatient[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all')
+  // currentUserRole can be 'patient' but layout ensures only clinician/nurse/admin access this page
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+
+  // Get current user's role on mount
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        const role = getUserRole(user)
+        setCurrentUserRole(role)
+      }
+    }
+    fetchUserRole()
+  }, [])
 
   const loadTasks = useCallback(async () => {
     try {
@@ -56,6 +74,8 @@ export default function TasksPage() {
       if (statusFilter !== 'all') {
         params.append('status', statusFilter)
       }
+      // RLS automatically filters nurses to their assigned tasks
+      // No need for client-side role filtering
 
       const response = await fetch(`/api/tasks?${params.toString()}`)
       const result = await response.json()
@@ -395,6 +415,15 @@ export default function TasksPage() {
           </div>
         </Card>
       </div>
+
+      {/* Info banner for nurses */}
+      {currentUserRole === 'nurse' && (
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Hinweis:</strong> Sie sehen nur Aufgaben, die Ihnen zugewiesen wurden.
+          </p>
+        </div>
+      )}
 
       {/* Tasks Table */}
       <Table
