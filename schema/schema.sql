@@ -2156,7 +2156,6 @@ COMMENT ON COLUMN "public"."safety_check_results"."evaluation_key_hash" IS 'Hash
 
 CREATE TABLE IF NOT EXISTS "public"."tasks" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "organization_id" "uuid",
     "patient_id" "uuid",
     "assessment_id" "uuid",
     "created_by_role" "public"."user_role",
@@ -2167,7 +2166,8 @@ CREATE TABLE IF NOT EXISTS "public"."tasks" (
     "status" "public"."task_status" DEFAULT 'pending'::"public"."task_status" NOT NULL,
     "due_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone
+    "updated_at" timestamp with time zone,
+    "organization_id" "uuid"
 );
 
 
@@ -2178,15 +2178,15 @@ COMMENT ON TABLE "public"."tasks" IS 'V0.5: Task management with role-based assi
 
 
 
-COMMENT ON COLUMN "public"."tasks"."organization_id" IS 'V05-I07.4: Organization for multi-tenant isolation. Set server-side, not client-trusted.';
-
-
-
 COMMENT ON COLUMN "public"."tasks"."task_type" IS 'Task type (e.g., review_assessment, schedule_followup, contact_patient)';
 
 
 
 COMMENT ON COLUMN "public"."tasks"."payload" IS 'JSONB: Task-specific data and parameters';
+
+
+
+COMMENT ON COLUMN "public"."tasks"."organization_id" IS 'V05-I07.4: Organization for multi-tenant isolation. Set server-side, not client-trusted.';
 
 
 
@@ -3147,6 +3147,14 @@ COMMENT ON INDEX "public"."medical_validation_results_job_version_hash_unique" I
 
 
 
+CREATE INDEX "tasks_org_status_created_idx" ON "public"."tasks" USING "btree" ("organization_id", "status", "created_at" DESC);
+
+
+
+CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("organization_id");
+
+
+
 CREATE OR REPLACE TRIGGER "report_sections_updated_at" BEFORE UPDATE ON "public"."report_sections" FOR EACH ROW EXECUTE FUNCTION "public"."update_report_sections_updated_at"();
 
 
@@ -3531,10 +3539,6 @@ CREATE POLICY "Clinicians and admins can view all funnels_catalog (app role)" ON
 
 
 
-CREATE POLICY "tasks_insert_clinician_admin" ON "public"."tasks" FOR INSERT TO "authenticated" WITH CHECK ((("public"."has_any_role"('clinician'::"public"."user_role") OR "public"."has_any_role"('admin'::"public"."user_role")) AND ("organization_id" = ANY ("public"."get_user_org_ids"()))));
-
-
-
 CREATE POLICY "Clinicians can view all assessment answers" ON "public"."assessment_answers" FOR SELECT USING ("public"."is_clinician"());
 
 
@@ -3666,10 +3670,6 @@ CREATE POLICY "Service can update measures" ON "public"."patient_measures" FOR U
 
 
 CREATE POLICY "Service can update reports" ON "public"."reports" FOR UPDATE USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "authenticated" USING ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role"))))) WITH CHECK ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role")))));
 
 
 
@@ -4058,6 +4058,18 @@ CREATE POLICY "safety_check_results_update_service" ON "public"."safety_check_re
 
 
 ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "tasks_insert_clinician_admin" ON "public"."tasks" FOR INSERT TO "authenticated" WITH CHECK ((("public"."has_any_role"('clinician'::"public"."user_role") OR "public"."has_any_role"('admin'::"public"."user_role")) AND ("organization_id" = ANY ("public"."get_user_org_ids"()))));
+
+
+
+CREATE POLICY "tasks_select_staff_org" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'clinician'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'nurse'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) OR ("patient_id" = "public"."get_my_patient_profile_id"())));
+
+
+
+CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "authenticated" USING (("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role")))) WITH CHECK (("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role"))));
+
 
 
 ALTER TABLE "public"."user_consents" ENABLE ROW LEVEL SECURITY;
