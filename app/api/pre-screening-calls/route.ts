@@ -10,7 +10,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { PreScreeningCallInput } from '@/lib/contracts/preScreening'
 import { logAuditEvent } from '@/lib/audit/log'
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
@@ -42,8 +41,6 @@ async function getUserOrgId(
  * POST /api/pre-screening-calls - Create a new pre-screening call record
  */
 export async function POST(request: NextRequest) {
-  const requestId = crypto.randomUUID()
-  
   try {
     // Auth check FIRST
     const supabase = await createServerSupabaseClient()
