@@ -487,6 +487,12 @@ export default function FunnelDetailPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <Link
+                href={`/clinician/funnels/${funnel.slug}/editor`}
+                className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors inline-flex items-center"
+              >
+                Content Editor
+              </Link>
               {!editingFunnel && (
                 <button
                   onClick={startEditingFunnel}
