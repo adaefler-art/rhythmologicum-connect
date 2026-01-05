@@ -81,20 +81,28 @@ export default function TriagePage() {
         // Get processing jobs for these assessments
         const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
         
-        const { data: processingData, error: processingError } = await supabase
-          .from('processing_jobs')
-          .select('assessment_id, status, stage, delivery_status')
-          .in('assessment_id', assessmentIds)
+        let processingData = null
+        let reportsData = null
 
-        if (processingError) console.warn('Processing jobs query failed:', processingError)
+        // Only query if there are assessments to avoid unnecessary queries
+        if (assessmentIds.length > 0) {
+          const { data: pData, error: processingError } = await supabase
+            .from('processing_jobs')
+            .select('assessment_id, status, stage, delivery_status')
+            .in('assessment_id', assessmentIds)
 
-        // Get reports for these assessments
-        const { data: reportsData, error: reportsError } = await supabase
-          .from('reports')
-          .select('assessment_id, id, status, risk_level')
-          .in('assessment_id', assessmentIds)
+          if (processingError) console.warn('Processing jobs query failed:', processingError)
+          processingData = pData
 
-        if (reportsError) console.warn('Reports query failed:', reportsError)
+          // Get reports for these assessments
+          const { data: rData, error: reportsError } = await supabase
+            .from('reports')
+            .select('assessment_id, id, status, risk_level')
+            .in('assessment_id', assessmentIds)
+
+          if (reportsError) console.warn('Reports query failed:', reportsError)
+          reportsData = rData
+        }
 
         // Map processing and report data
         const processingMap = new Map(
@@ -114,8 +122,10 @@ export default function TriagePage() {
           let flaggedReason: string | null = null
 
           if (a.status === 'in_progress') {
+            // Assessment not yet completed by patient
             triageStatus = 'incomplete'
-          } else if (processing) {
+          } else if (a.completed_at && processing) {
+            // Assessment completed and has processing job
             if (processing.status === 'failed') {
               triageStatus = 'flagged'
               flaggedReason = 'Processing failed'
@@ -135,11 +145,15 @@ export default function TriagePage() {
             ) {
               triageStatus = 'processing'
             } else {
+              // Processing job exists but status is unknown - assume report ready
               triageStatus = 'report_ready'
             }
-          } else if (a.completed_at) {
-            // Completed but no processing job yet
+          } else if (a.completed_at && !processing) {
+            // Assessment completed but no processing job yet - awaiting processing
             triageStatus = 'processing'
+          } else {
+            // Fallback for unexpected states - treat as incomplete
+            triageStatus = 'incomplete'
           }
 
           return {
@@ -292,13 +306,20 @@ export default function TriagePage() {
     )
   }
 
+  const handleRetry = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    // Re-trigger the useEffect by force-reloading
+    window.location.reload()
+  }, [])
+
   if (error) {
     return (
       <div className="flex items-center justify-center py-12">
         <ErrorState
           title="Fehler beim Laden"
           message={error}
-          onRetry={() => window.location.reload()}
+          onRetry={handleRetry}
           retryText="Neu laden"
         />
       </div>
