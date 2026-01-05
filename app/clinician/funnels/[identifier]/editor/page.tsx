@@ -27,6 +27,12 @@ type FunnelVersion = {
   manifest: FunnelContentManifest
 }
 
+type FunnelDetailsResponse = {
+  funnel?: { default_version_id?: string }
+  versions?: Array<{ id: string }>
+  default_version?: { id: string }
+}
+
 type ApiEnvelope<T> = {
   success?: boolean
   data?: T
@@ -60,16 +66,20 @@ export default function ManifestEditorPage() {
         throw new Error('Failed to load funnel')
       }
 
-      const funnelData: ApiEnvelope<{ funnel?: { default_version_id?: string } }> =
-        await funnelRes.json()
-      const defaultVersionId = funnelData.data?.funnel?.default_version_id
+      const funnelData: ApiEnvelope<FunnelDetailsResponse> = await funnelRes.json()
 
-      if (!defaultVersionId) {
-        throw new Error('No default version found for funnel')
+      // Deterministic version selection:
+      // Prefer latest version returned by the API (ordered desc), otherwise fall back to default.
+      // IMPORTANT: Do not transform UUIDs.
+      const latestVersionId =
+        funnelData.data?.versions?.[0]?.id || funnelData.data?.default_version?.id
+
+      if (!latestVersionId) {
+        throw new Error('No funnel version found for funnel')
       }
 
       // Load manifest
-      const manifestRes = await fetch(`/api/admin/funnel-versions/${defaultVersionId}/manifest`)
+      const manifestRes = await fetch(`/api/admin/funnel-versions/${latestVersionId}/manifest`)
       if (!manifestRes.ok) {
         throw new Error('Failed to load manifest')
       }

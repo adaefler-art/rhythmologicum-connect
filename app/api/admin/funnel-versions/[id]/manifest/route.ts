@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   configurationErrorResponse,
   databaseErrorResponse,
+  errorResponse,
   forbiddenResponse,
   internalErrorResponse,
   notFoundResponse,
@@ -23,8 +24,19 @@ import {
 import { env } from '@/lib/env'
 import { FunnelContentManifestSchema } from '@/lib/contracts/funnelManifest'
 import { AUDIT_ACTION, AUDIT_ENTITY_TYPE, AUDIT_SOURCE } from '@/lib/contracts/registry'
+import { ErrorCode } from '@/lib/api/responseTypes'
 import { ZodError } from 'zod'
 import { createHash } from 'crypto'
+
+/**
+ * UUID v4 regex pattern for strict validation
+ * Matches: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx where x is [0-9a-f] and y is [89ab]
+ */
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function isUuidV4(value: string): boolean {
+  return UUID_V4_PATTERN.test(value.trim())
+}
 
 /**
  * Maximum request body size (10 MB)
@@ -56,6 +68,14 @@ export async function GET(
 
   try {
     const { id: versionId } = await params
+
+    // Validate UUID format early
+    if (!isUuidV4(versionId)) {
+      return withRequestId(
+        validationErrorResponse('Invalid funnel version id format'),
+        requestId,
+      )
+    }
 
     // Check Supabase configuration
     if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
@@ -91,19 +111,19 @@ export async function GET(
       .eq('id', versionId)
       .single()
 
-    if (versionError || !version) {
+    if (versionError) {
       const sanitized = sanitizeSupabaseError(versionError)
-      
+
       // PGRST116: .single() could not coerce result (0 rows found)
       if (sanitized.code === 'PGRST116') {
-        return withRequestId(notFoundResponse('Funnel version not found'), requestId)
+        return withRequestId(notFoundResponse('Funnel version'), requestId)
       }
 
-      const classified = classifySupabaseError(versionError)
+      const classified = classifySupabaseError(sanitized)
       logError({
         requestId,
         operation: 'fetch_funnel_version_manifest',
-        error: versionError,
+        error: sanitized,
         versionId,
       })
 
@@ -111,10 +131,11 @@ export async function GET(
         return withRequestId(schemaNotReadyResponse(), requestId)
       }
 
-      return withRequestId(
-        databaseErrorResponse('Failed to fetch funnel version'),
-        requestId,
-      )
+      return withRequestId(databaseErrorResponse('Failed to fetch funnel version'), requestId)
+    }
+
+    if (!version) {
+      return withRequestId(notFoundResponse('Funnel version'), requestId)
     }
 
     // Validate manifest structure
@@ -138,9 +159,11 @@ export async function GET(
           error,
           versionId,
         })
+
+        // 422 for manifest validation
         return withRequestId(
-          validationErrorResponse('Invalid manifest structure', {
-            details: error.issues,
+          errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
+            issues: error.issues,
           }),
           requestId,
         )
@@ -173,6 +196,14 @@ export async function PUT(
 
   try {
     const { id: versionId } = await params
+
+    // Validate UUID format early
+    if (!isUuidV4(versionId)) {
+      return withRequestId(
+        validationErrorResponse('Invalid funnel version id format'),
+        requestId,
+      )
+    }
 
     // Check Supabase configuration
     if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
@@ -249,9 +280,10 @@ export async function PUT(
           error,
           versionId,
         })
+        // 422 for manifest validation
         return withRequestId(
-          validationErrorResponse('Invalid manifest structure', {
-            details: error.issues,
+          errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
+            issues: error.issues,
           }),
           requestId,
         )
@@ -277,14 +309,14 @@ export async function PUT(
       
       // PGRST116: .single() could not coerce result (0 rows found)
       if (sanitized.code === 'PGRST116') {
-        return withRequestId(notFoundResponse('Funnel version not found'), requestId)
+        return withRequestId(notFoundResponse('Funnel version'), requestId)
       }
 
-      const classified = classifySupabaseError(updateError)
+      const classified = classifySupabaseError(sanitized)
       logError({
         requestId,
         operation: 'update_funnel_version_manifest',
-        error: updateError,
+        error: sanitized,
         versionId,
       })
 
