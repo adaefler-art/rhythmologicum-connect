@@ -15,10 +15,26 @@
 
 import { z } from 'zod'
 import { NODE_TYPE, QUESTION_TYPE, type NodeType, type QuestionType } from './registry'
+import { isValidUrl } from '@/lib/utils/urlSecurity'
 
 // ============================================================
 // Questionnaire Config Schema
 // ============================================================
+
+/**
+ * V05-I06.4 Security: Safe URL validator for Zod schemas
+ * Rejects javascript:, data:, vbscript:, file: and other dangerous protocols
+ */
+const safeUrlValidator = z.string().refine(
+  (url) => {
+    // Empty/undefined is OK for optional fields
+    if (!url || url.trim() === '') return true
+    return isValidUrl(url, false)
+  },
+  {
+    message: 'URL must use http:, https:, mailto:, tel:, or be a relative path. Dangerous protocols (javascript:, data:, vbscript:, file:) are not allowed.',
+  }
+)
 
 /**
  * Validation rule for question
@@ -136,9 +152,11 @@ export type SectionType = typeof SECTION_TYPE[keyof typeof SECTION_TYPE]
  * Content section within a page
  * 
  * V05-I06.2 Hardening: Added strict bounds and validation
+ * V05-I06.4 Security: Added URL validation for content fields
  * - key: max 200 chars (prevent DoS)
  * - contentRef: max 2048 chars (URL/path length limit)
  * - orderIndex: non-negative integer (deterministic sorting)
+ * - content.url, content.href: validated against dangerous protocols
  * - No unknown keys allowed (strict mode via .strict())
  */
 export const ContentSectionSchema = z
@@ -158,6 +176,38 @@ export const ContentSectionSchema = z
     orderIndex: z.number().int().nonnegative().optional(),
   })
   .strict()
+  .refine(
+    (section) => {
+      // Validate URLs in content object for security
+      if (!section.content) return true
+      
+      // Check href field (CTA blocks)
+      if ('href' in section.content && typeof section.content.href === 'string') {
+        if (!isValidUrl(section.content.href, false)) {
+          return false
+        }
+      }
+      
+      // Check url field (Image, Video blocks)
+      if ('url' in section.content && typeof section.content.url === 'string') {
+        if (!isValidUrl(section.content.url, false)) {
+          return false
+        }
+      }
+      
+      // Check backgroundImage field (Hero blocks)
+      if ('backgroundImage' in section.content && typeof section.content.backgroundImage === 'string') {
+        if (section.content.backgroundImage && !isValidUrl(section.content.backgroundImage, false)) {
+          return false
+        }
+      }
+      
+      return true
+    },
+    {
+      message: 'Content URLs must use safe protocols (http:, https:, mailto:, tel:, or relative paths). Dangerous protocols (javascript:, data:, vbscript:, file:) are not allowed.',
+    }
+  )
 
 export type ContentSection = z.infer<typeof ContentSectionSchema>
 
@@ -208,7 +258,7 @@ export const FunnelContentManifestSchema = z
           .object({
             key: z.string().min(1).max(200),
             type: z.enum(['image', 'video', 'audio', 'document']),
-            url: z.string().min(1).max(2048),
+            url: safeUrlValidator.min(1).max(2048),
             metadata: z.record(z.string(), z.any()).optional(),
           })
           .strict(),
