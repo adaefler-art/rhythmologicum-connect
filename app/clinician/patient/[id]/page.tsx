@@ -8,7 +8,12 @@ import { Badge, Card, Button, Tabs, TabsList, TabTrigger, TabContent } from '@/l
 import { colors } from '@/lib/design-tokens'
 import { PatientOverviewHeader } from './PatientOverviewHeader'
 import { AssessmentList } from './AssessmentList'
+import { KeyLabsSection } from './KeyLabsSection'
+import { MedicationsSection } from './MedicationsSection'
+import { FindingsScoresSection } from './FindingsScoresSection'
+import { InterventionsSection, type RankedIntervention } from './InterventionsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
+import type { LabValue, Medication } from '@/lib/types/extraction'
 
 type PatientMeasure = {
   id: string
@@ -33,6 +38,43 @@ type PatientProfile = {
   user_id: string
 }
 
+type ExtractedDocument = {
+  id: string
+  extracted_json: {
+    lab_values?: LabValue[]
+    medications?: Medication[]
+    vital_signs?: Record<string, unknown>
+    diagnoses?: string[]
+    notes?: string
+  }
+  doc_type: string | null
+  created_at: string
+}
+
+type ReportWithSafety = {
+  id: string
+  assessment_id: string
+  safety_score: number | null
+  safety_findings: Record<string, unknown> | null
+  created_at: string
+}
+
+type CalculatedResult = {
+  id: string
+  assessment_id: string
+  scores: Record<string, unknown>
+  risk_models: Record<string, unknown> | null
+  created_at: string
+}
+
+type PriorityRanking = {
+  id: string
+  ranking_data: {
+    topInterventions?: RankedIntervention[]
+    rankedInterventions?: RankedIntervention[]
+  }
+}
+
 export default function PatientDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -42,6 +84,10 @@ export default function PatientDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
+  const [documents, setDocuments] = useState<ExtractedDocument[]>([])
+  const [latestReport, setLatestReport] = useState<ReportWithSafety | null>(null)
+  const [latestCalculated, setLatestCalculated] = useState<CalculatedResult | null>(null)
+  const [latestRanking, setLatestRanking] = useState<PriorityRanking | null>(null)
   const [showRawData, setShowRawData] = useState(false)
 
   useEffect(() => {
@@ -81,6 +127,95 @@ export default function PatientDetailPage() {
         setPatient(profileResult.data)
         // Type assertion for Supabase joined query (one-to-one relationship)
         setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
+
+        // Load additional data: documents, reports with safety, calculated results, rankings
+        // We need to first get assessments for this patient
+        const { data: assessmentsData, error: assessmentsError } = await supabase
+          .from('assessments')
+          .select('id')
+          .eq('patient_id', patientId)
+          .order('created_at', { ascending: false })
+
+        if (assessmentsError) {
+          console.warn('Error loading assessments:', assessmentsError)
+        } else if (assessmentsData && assessmentsData.length > 0) {
+          const assessmentIds = assessmentsData.map((a) => a.id)
+
+          // Load documents with extracted data
+          const { data: docsData, error: docsError } = await supabase
+            .from('documents')
+            .select('id, extracted_json, doc_type, created_at')
+            .in('assessment_id', assessmentIds)
+            .not('extracted_json', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (docsError) {
+            console.warn('Error loading documents:', docsError)
+          } else if (docsData) {
+            setDocuments(docsData as ExtractedDocument[])
+          }
+
+          // Load latest report with safety data
+          const { data: reportsData, error: reportsError } = await supabase
+            .from('reports')
+            .select('id, assessment_id, safety_score, safety_findings, created_at')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (reportsError && reportsError.code !== 'PGRST116') {
+            // PGRST116 is "no rows returned", which is ok
+            console.warn('Error loading reports:', reportsError)
+          } else if (reportsData) {
+            setLatestReport(reportsData as ReportWithSafety)
+          }
+
+          // Load latest calculated results
+          const { data: calcData, error: calcError } = await supabase
+            .from('calculated_results')
+            .select('id, assessment_id, scores, risk_models, created_at')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (calcError && calcError.code !== 'PGRST116') {
+            console.warn('Error loading calculated results:', calcError)
+          } else if (calcData) {
+            setLatestCalculated(calcData as CalculatedResult)
+          }
+
+          // Load latest priority ranking
+          // We need to get processing jobs for these assessments first
+          const { data: jobsData, error: jobsError } = await supabase
+            .from('processing_jobs')
+            .select('id')
+            .in('assessment_id', assessmentIds)
+            .order('created_at', { ascending: false })
+            .limit(10)
+
+          if (jobsError) {
+            console.warn('Error loading processing jobs:', jobsError)
+          } else if (jobsData && jobsData.length > 0) {
+            const jobIds = jobsData.map((j) => j.id)
+
+            const { data: rankingData, error: rankingError } = await supabase
+              .from('priority_rankings')
+              .select('id, ranking_data')
+              .in('job_id', jobIds)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
+
+            if (rankingError && rankingError.code !== 'PGRST116') {
+              console.warn('Error loading priority rankings:', rankingError)
+            } else if (rankingData) {
+              setLatestRanking(rankingData as PriorityRanking)
+            }
+          }
+        }
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
         const errorMessage =
@@ -257,6 +392,43 @@ export default function PatientDetailPage() {
                   </Card>
                 </div>
               )}
+
+              {/* Key Labs and Medications Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <KeyLabsSection
+                  labValues={
+                    documents
+                      .flatMap((doc) => doc.extracted_json?.lab_values ?? [])
+                      .slice(0, 5) // Show top 5 most recent lab values
+                  }
+                  loading={false}
+                />
+                <MedicationsSection
+                  medications={documents.flatMap(
+                    (doc) => doc.extracted_json?.medications ?? []
+                  )}
+                  loading={false}
+                />
+              </div>
+
+              {/* Findings & Scores Section */}
+              <FindingsScoresSection
+                safetyScore={latestReport?.safety_score}
+                safetyFindings={latestReport?.safety_findings}
+                calculatedScores={latestCalculated?.scores}
+                riskModels={latestCalculated?.risk_models}
+                loading={false}
+              />
+
+              {/* Interventions Section */}
+              <InterventionsSection
+                interventions={
+                  latestRanking?.ranking_data?.topInterventions ??
+                  latestRanking?.ranking_data?.rankedInterventions?.slice(0, 5) ??
+                  []
+                }
+                loading={false}
+              />
 
               {/* Raw Data Section */}
               <Card padding="lg" shadow="md">
