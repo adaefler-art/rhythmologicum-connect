@@ -5,16 +5,39 @@
  * Auth: nurse/clinician/admin (must match assigned_to_role or be admin)
  * 
  * PATCH /api/tasks/[id] - Update task
+ * 
+ * Security:
+ * - Status transition guards (server-side)
+ * - Audit logs are PHI-free (no payload/notes)
+ * - 404 for not found, 409 for invalid transitions
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
-import { UpdateTaskRequestSchema } from '@/lib/contracts/task'
+import { UpdateTaskRequestSchema, TASK_STATUS, TaskStatus } from '@/lib/contracts/task'
 import { logAuditEvent } from '@/lib/audit/log'
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+/**
+ * Allowed status transitions (server-side guard)
+ */
+const ALLOWED_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
+  [TASK_STATUS.PENDING]: [TASK_STATUS.IN_PROGRESS, TASK_STATUS.CANCELLED],
+  [TASK_STATUS.IN_PROGRESS]: [TASK_STATUS.COMPLETED, TASK_STATUS.CANCELLED],
+  [TASK_STATUS.COMPLETED]: [], // Terminal state
+  [TASK_STATUS.CANCELLED]: [], // Terminal state
+}
+
+/**
+ * Validate status transition
+ */
+function isValidTransition(from: TaskStatus, to: TaskStatus): boolean {
+  if (from === to) return true // No-op is allowed
+  return ALLOWED_TRANSITIONS[from]?.includes(to) ?? false
 }
 
 /**
@@ -73,7 +96,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
             message: 'Task ID is required',
           },
         },
-        { status: 400 }
+        { status: 422 }
       )
     }
     
@@ -91,13 +114,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
             details: updateParse.error.issues,
           },
         },
-        { status: 400 }
+        { status: 422 } // 422 for validation errors
       )
     }
     
     const updateData = updateParse.data
     
-    // Fetch existing task to check before update
+    // Fetch existing task to check before update (RLS enforced)
     const { data: existingTask, error: fetchError } = await supabase
       .from('tasks')
       .select('*')
@@ -115,6 +138,22 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         },
         { status: 404 }
       )
+    }
+    
+    // Validate status transition if status is being updated
+    if (updateData.status !== undefined && updateData.status !== existingTask.status) {
+      if (!isValidTransition(existingTask.status as TaskStatus, updateData.status)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_TRANSITION',
+              message: `Cannot transition from ${existingTask.status} to ${updateData.status}`,
+            },
+          },
+          { status: 409 } // 409 for conflict/invalid transition
+        )
+      }
     }
     
     // Use admin client for update (RLS already checked via select above)
@@ -157,7 +196,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       )
     }
     
-    // Log audit event
+    // Log audit event (PHI-FREE: no payload content, only status changes)
     await logAuditEvent({
       source: 'api',
       actor_user_id: user.id,
@@ -168,19 +207,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       diff: {
         before: {
           status: existingTask.status,
-          payload: existingTask.payload,
-          due_at: existingTask.due_at,
+          // NOT logging payload - PHI risk
         },
         after: {
           status: updatedTask.status,
-          payload: updatedTask.payload,
-          due_at: updatedTask.due_at,
+          // NOT logging payload - PHI risk
         },
       },
       metadata: {
         request_id: requestId,
+        org_id: updatedTask.organization_id,
         ...(updatedTask.patient_id && { patient_id: updatedTask.patient_id }),
         ...(updatedTask.assessment_id && { assessment_id: updatedTask.assessment_id }),
+        status_changed: existingTask.status !== updatedTask.status,
+        payload_updated: updateData.payload !== undefined,
+        due_date_updated: updateData.due_at !== undefined,
       },
     })
     

@@ -1,10 +1,14 @@
 /**
  * Patient Profiles API - V05-I07.4
  * 
- * Get list of patient profiles
+ * Get minimal list of patient profiles for task assignment
  * Auth: clinician/admin/nurse
  * 
- * GET /api/patient-profiles - List patient profiles
+ * GET /api/patient-profiles - List patient profiles (minimal fields, org-scoped)
+ * 
+ * Security:
+ * - RLS org scoping enforced
+ * - Minimal fields only (id, full_name, user_id)
  */
 
 import { NextResponse } from 'next/server'
@@ -52,11 +56,13 @@ export async function GET() {
       )
     }
     
-    // Query patient profiles with RLS
+    // Query patient profiles with RLS (org-scoped automatically)
+    // Select ONLY minimal fields needed for task assignment dropdown
     const { data: profiles, error: queryError } = await supabase
       .from('patient_profiles')
       .select('id, full_name, user_id')
       .order('full_name', { ascending: true, nullsFirst: false })
+      .order('id', { ascending: true }) // Tie-breaker for determinism
     
     if (queryError) {
       console.error('[patient-profiles] Query error:', queryError)

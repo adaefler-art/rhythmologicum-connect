@@ -6,6 +6,12 @@
  * 
  * POST /api/tasks - Create a new task
  * GET /api/tasks - List tasks with optional filters
+ * 
+ * Security:
+ * - organization_id set server-side (not client-trusted)
+ * - Audit logs are PHI-free (no payload/notes)
+ * - Status transitions enforced
+ * - Deterministic ordering
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,13 +25,36 @@ import {
 import { logAuditEvent } from '@/lib/audit/log'
 
 /**
+ * Get user's organization ID server-side (never trust client)
+ */
+async function getUserOrgId(userId: string): Promise<string | null> {
+  const admin = createAdminSupabaseClient()
+  
+  const { data, error } = await admin
+    .from('user_org_membership')
+    .select('organization_id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+  
+  if (error || !data) {
+    console.error('[tasks] Failed to get user org:', error)
+    return null
+  }
+  
+  return data.organization_id
+}
+
+/**
  * POST /api/tasks - Create a new task
  */
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID()
   
   try {
-    // Auth check
+    // Auth check FIRST (401 before parsing body)
     const supabase = await createServerSupabaseClient()
     
     const {
@@ -76,26 +105,42 @@ export async function POST(request: NextRequest) {
             details: requestParse.error.issues,
           },
         },
-        { status: 400 }
+        { status: 422 } // 422 for validation errors (not 400)
       )
     }
     
     const taskRequest = requestParse.data
     
+    // Get organization_id SERVER-SIDE (never trust client)
+    const organizationId = await getUserOrgId(user.id)
+    if (!organizationId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'User not associated with an organization',
+          },
+        },
+        { status: 403 }
+      )
+    }
+    
     // Use admin client for task creation (bypasses RLS for insert)
     const admin = createAdminSupabaseClient()
     
-    // Create task record
+    // Create task record with org_id set server-side
     const { data: task, error: insertError } = await admin
       .from('tasks')
       .insert({
+        organization_id: organizationId, // SERVER-SIDE, not client-trusted
         patient_id: taskRequest.patient_id,
         assessment_id: taskRequest.assessment_id ?? null,
         created_by_role: userRole,
         assigned_to_role: taskRequest.assigned_to_role,
         task_type: taskRequest.task_type,
         payload: (taskRequest.payload ?? {}) as never,
-        status: TASK_STATUS.PENDING,
+        status: TASK_STATUS.PENDING, // Always start as pending
         due_at: taskRequest.due_at ?? null,
       })
       .select()
@@ -115,7 +160,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Log audit event
+    // Log audit event (PHI-FREE: no payload, no notes, only coded values + IDs)
     await logAuditEvent({
       source: 'api',
       actor_user_id: user.id,
@@ -133,6 +178,7 @@ export async function POST(request: NextRequest) {
       },
       metadata: {
         request_id: requestId,
+        org_id: organizationId,
         ...(task.patient_id && { patient_id: task.patient_id }),
         ...(task.assessment_id && { assessment_id: task.assessment_id }),
       },
@@ -162,6 +208,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/tasks - List tasks with optional filters
+ * Returns tasks in deterministic order (org + status + created_at DESC)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -223,17 +270,20 @@ export async function GET(request: NextRequest) {
             details: filtersParse.error.issues,
           },
         },
-        { status: 400 }
+        { status: 422 } // 422 for validation errors
       )
     }
     
     const validFilters = filtersParse.data
     
-    // Build query with RLS - will automatically filter based on user's org and role
+    // Build query with RLS - automatically filters by org via RLS policies
     let query = supabase
       .from('tasks')
       .select('*, patient_profiles!tasks_patient_id_fkey(id, full_name, user_id)')
+      // Deterministic ordering: org (implicit via RLS), status, created_at DESC, id
+      .order('status', { ascending: true })
       .order('created_at', { ascending: false })
+      .order('id', { ascending: true }) // Tie-breaker for determinism
     
     // Apply filters
     if (validFilters.patient_id) {
