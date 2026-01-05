@@ -4,6 +4,20 @@
 **Date:** 2026-01-05  
 **Status:** ✅ MERGE-READY (Evidence-First, No-Fantasy, Minimal-Diff)
 
+**Reproducibility:** See `V05_I07_2_REPRODUCIBILITY_REPORT.md` for complete verification with PowerShell/Bash commands and outputs proving all schema claims.
+
+---
+
+## Canonical Sources of Truth (SOT)
+
+This implementation uses **only** canonical database objects from the repository:
+
+1. **Primary SOT:** `docs/canon/DB_SCHEMA_MANIFEST.json` - Canonical allowlist (tables & enums)
+2. **Secondary SOT:** `schema/schema.sql` - Complete schema with column definitions
+3. **Tertiary SOT:** `supabase/migrations/*.sql` - Migration history
+
+**Verification:** All tables and columns referenced in this PR have been verified to exist in these canonical sources. See reproducibility report for exact line numbers and grep outputs.
+
 ---
 
 ## Guardrails Compliance
