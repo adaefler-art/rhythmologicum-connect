@@ -2156,6 +2156,7 @@ COMMENT ON COLUMN "public"."safety_check_results"."evaluation_key_hash" IS 'Hash
 
 CREATE TABLE IF NOT EXISTS "public"."tasks" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid",
     "patient_id" "uuid",
     "assessment_id" "uuid",
     "created_by_role" "public"."user_role",
@@ -2173,6 +2174,10 @@ ALTER TABLE "public"."tasks" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."tasks" IS 'V0.5: Task management with role-based assignment';
+
+
+
+COMMENT ON COLUMN "public"."tasks"."organization_id" IS 'V05-I07.4: Organization for multi-tenant isolation. Set server-side, not client-trusted.';
 
 
 
@@ -3508,7 +3513,7 @@ CREATE POLICY "Clinicians and admins can view all funnels_catalog (app role)" ON
 
 
 
-CREATE POLICY "Clinicians can create tasks" ON "public"."tasks" FOR INSERT WITH CHECK (("public"."has_any_role"('clinician'::"public"."user_role") OR "public"."has_any_role"('admin'::"public"."user_role")));
+CREATE POLICY "tasks_insert_clinician_admin" ON "public"."tasks" FOR INSERT TO "authenticated" WITH CHECK ((("public"."has_any_role"('clinician'::"public"."user_role") OR "public"."has_any_role"('admin'::"public"."user_role")) AND ("organization_id" = ANY ("public"."get_user_org_ids"()))));
 
 
 
@@ -3625,7 +3630,8 @@ CREATE POLICY "Patients can view own results" ON "public"."calculated_results" F
 
 
 
-CREATE POLICY "Patients can view own tasks" ON "public"."tasks" FOR SELECT USING (("patient_id" = "public"."get_my_patient_profile_id"()));
+CREATE POLICY "tasks_select_staff_org" ON "public"."tasks" FOR SELECT TO "authenticated" USING (((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'clinician'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'nurse'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) OR ("patient_id" = "public"."get_my_patient_profile_id"()))));
+
 
 
 
@@ -3645,26 +3651,7 @@ CREATE POLICY "Service can update reports" ON "public"."reports" FOR UPDATE USIN
 
 
 
-CREATE POLICY "Staff can update assigned tasks" ON "public"."tasks" FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM ("public"."patient_profiles" "pp"
-     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
-  WHERE (("pp"."id" = "tasks"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."user_org_membership" "uom2"
-          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = "tasks"."assigned_to_role") OR ("uom2"."role" = 'admin'::"public"."user_role"))))))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM ("public"."patient_profiles" "pp"
-     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
-  WHERE (("pp"."id" = "tasks"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."user_org_membership" "uom2"
-          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = "tasks"."assigned_to_role") OR ("uom2"."role" = 'admin'::"public"."user_role")))))))));
-
-
-
-CREATE POLICY "Staff can view assigned org tasks" ON "public"."tasks" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM ("public"."patient_profiles" "pp"
-     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
-  WHERE (("pp"."id" = "tasks"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."user_org_membership" "uom2"
-          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = "tasks"."assigned_to_role") OR ("uom2"."role" = 'admin'::"public"."user_role")))))))));
+CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "authenticated" USING ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role"))))) WITH CHECK ((("public"."is_member_of_org"("organization_id") AND (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role") OR ("public"."current_user_role"("organization_id") = "assigned_to_role")))));
 
 
 
