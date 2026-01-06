@@ -17,13 +17,24 @@
 -- Enum: Support Case Status
 -- ============================================================
 
-CREATE TYPE public.support_case_status AS ENUM (
-    'open',
-    'in_progress',
-    'escalated',
-    'resolved',
-    'closed'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'support_case_status'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.support_case_status AS ENUM (
+            'open',
+            'in_progress',
+            'escalated',
+            'resolved',
+            'closed'
+        );
+    END IF;
+END $$;
 
 COMMENT ON TYPE public.support_case_status IS 'V05-I08.4: Status of a support case';
 
@@ -31,12 +42,23 @@ COMMENT ON TYPE public.support_case_status IS 'V05-I08.4: Status of a support ca
 -- Enum: Support Case Priority
 -- ============================================================
 
-CREATE TYPE public.support_case_priority AS ENUM (
-    'low',
-    'medium',
-    'high',
-    'urgent'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'support_case_priority'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.support_case_priority AS ENUM (
+            'low',
+            'medium',
+            'high',
+            'urgent'
+        );
+    END IF;
+END $$;
 
 COMMENT ON TYPE public.support_case_priority IS 'V05-I08.4: Priority level of a support case';
 
@@ -44,14 +66,25 @@ COMMENT ON TYPE public.support_case_priority IS 'V05-I08.4: Priority level of a 
 -- Enum: Support Case Category
 -- ============================================================
 
-CREATE TYPE public.support_case_category AS ENUM (
-    'technical',
-    'medical',
-    'administrative',
-    'billing',
-    'general',
-    'other'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'support_case_category'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.support_case_category AS ENUM (
+            'technical',
+            'medical',
+            'administrative',
+            'billing',
+            'general',
+            'other'
+        );
+    END IF;
+END $$;
 
 COMMENT ON TYPE public.support_case_category IS 'V05-I08.4: Category of a support case';
 
@@ -116,22 +149,22 @@ COMMENT ON COLUMN public.support_cases.escalated_by_user_id IS 'User who escalat
 -- Indexes
 -- ============================================================
 
-CREATE INDEX idx_support_cases_patient_id ON public.support_cases(patient_id);
-CREATE INDEX idx_support_cases_organization_id ON public.support_cases(organization_id);
-CREATE INDEX idx_support_cases_created_by_user_id ON public.support_cases(created_by_user_id);
-CREATE INDEX idx_support_cases_assigned_to_user_id ON public.support_cases(assigned_to_user_id) WHERE assigned_to_user_id IS NOT NULL;
-CREATE INDEX idx_support_cases_status ON public.support_cases(status);
-CREATE INDEX idx_support_cases_priority ON public.support_cases(priority);
-CREATE INDEX idx_support_cases_category ON public.support_cases(category);
-CREATE INDEX idx_support_cases_escalated_task_id ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_support_cases_patient_id ON public.support_cases(patient_id);
+CREATE INDEX IF NOT EXISTS idx_support_cases_organization_id ON public.support_cases(organization_id);
+CREATE INDEX IF NOT EXISTS idx_support_cases_created_by_user_id ON public.support_cases(created_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_support_cases_assigned_to_user_id ON public.support_cases(assigned_to_user_id) WHERE assigned_to_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_support_cases_status ON public.support_cases(status);
+CREATE INDEX IF NOT EXISTS idx_support_cases_priority ON public.support_cases(priority);
+CREATE INDEX IF NOT EXISTS idx_support_cases_category ON public.support_cases(category);
+CREATE INDEX IF NOT EXISTS idx_support_cases_escalated_task_id ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
 
 -- Unique constraint to prevent duplicate escalations (idempotency)
-CREATE UNIQUE INDEX idx_support_cases_escalated_task_unique ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_support_cases_escalated_task_unique ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
 
 -- Composite indexes for common queries
-CREATE INDEX idx_support_cases_org_status_created ON public.support_cases(organization_id, status, created_at DESC);
-CREATE INDEX idx_support_cases_org_priority_created ON public.support_cases(organization_id, priority, created_at DESC);
-CREATE INDEX idx_support_cases_assigned_status_created ON public.support_cases(assigned_to_user_id, status, created_at DESC) WHERE assigned_to_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_support_cases_org_status_created ON public.support_cases(organization_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_cases_org_priority_created ON public.support_cases(organization_id, priority, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_cases_assigned_status_created ON public.support_cases(assigned_to_user_id, status, created_at DESC) WHERE assigned_to_user_id IS NOT NULL;
 
 -- ============================================================
 -- Trigger: Auto-update updated_at
@@ -145,6 +178,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_support_cases_updated_at ON public.support_cases;
+
 CREATE TRIGGER trigger_support_cases_updated_at
     BEFORE UPDATE ON public.support_cases
     FOR EACH ROW
@@ -157,6 +192,8 @@ CREATE TRIGGER trigger_support_cases_updated_at
 ALTER TABLE public.support_cases ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Patients can view their own support cases
+DROP POLICY IF EXISTS "support_cases_patient_select" ON public.support_cases;
+
 CREATE POLICY "support_cases_patient_select" ON public.support_cases
     FOR SELECT
     USING (
@@ -167,6 +204,8 @@ CREATE POLICY "support_cases_patient_select" ON public.support_cases
     );
 
 -- Policy: Staff can view all support cases in their organization
+DROP POLICY IF EXISTS "support_cases_staff_select" ON public.support_cases;
+
 CREATE POLICY "support_cases_staff_select" ON public.support_cases
     FOR SELECT
     USING (
@@ -180,6 +219,8 @@ CREATE POLICY "support_cases_staff_select" ON public.support_cases
     );
 
 -- Policy: Patients can create support cases for themselves
+DROP POLICY IF EXISTS "support_cases_patient_insert" ON public.support_cases;
+
 CREATE POLICY "support_cases_patient_insert" ON public.support_cases
     FOR INSERT
     WITH CHECK (
@@ -190,6 +231,8 @@ CREATE POLICY "support_cases_patient_insert" ON public.support_cases
     );
 
 -- Policy: Staff can create support cases in their organization
+DROP POLICY IF EXISTS "support_cases_staff_insert" ON public.support_cases;
+
 CREATE POLICY "support_cases_staff_insert" ON public.support_cases
     FOR INSERT
     WITH CHECK (
@@ -203,6 +246,8 @@ CREATE POLICY "support_cases_staff_insert" ON public.support_cases
     );
 
 -- Policy: Patients can update their own support cases (limited fields)
+DROP POLICY IF EXISTS "support_cases_patient_update" ON public.support_cases;
+
 CREATE POLICY "support_cases_patient_update" ON public.support_cases
     FOR UPDATE
     USING (
@@ -219,6 +264,8 @@ CREATE POLICY "support_cases_patient_update" ON public.support_cases
     );
 
 -- Policy: Staff can update support cases in their organization
+DROP POLICY IF EXISTS "support_cases_staff_update" ON public.support_cases;
+
 CREATE POLICY "support_cases_staff_update" ON public.support_cases
     FOR UPDATE
     USING (
@@ -241,6 +288,8 @@ CREATE POLICY "support_cases_staff_update" ON public.support_cases
     );
 
 -- Policy: Only admins can delete support cases
+DROP POLICY IF EXISTS "support_cases_admin_delete" ON public.support_cases;
+
 CREATE POLICY "support_cases_admin_delete" ON public.support_cases
     FOR DELETE
     USING (
