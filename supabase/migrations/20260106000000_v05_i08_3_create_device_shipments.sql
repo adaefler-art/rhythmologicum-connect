@@ -320,6 +320,15 @@ USING (false);
 -- 6. CREATE TRIGGERS AND FUNCTIONS
 -- ============================================================
 
+-- ============================================================
+-- 6a. GRANTS
+-- ============================================================
+
+-- Grant appropriate permissions
+GRANT SELECT, INSERT, UPDATE ON public.device_shipments TO authenticated;
+GRANT SELECT, INSERT ON public.shipment_events TO authenticated;
+GRANT DELETE ON public.device_shipments TO authenticated; -- RLS controls actual deletion
+
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_device_shipments_updated_at()
 RETURNS TRIGGER AS $$
@@ -400,14 +409,3 @@ BEGIN
     RETURN v_rows_affected > 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-COMMENT ON FUNCTION increment_reminder_count_atomic IS 'V05-I08.3: Atomically increment reminder count with 7-day cooldown check to prevent concurrent duplicate reminders';
-
--- ============================================================
--- 7. GRANTS
--- ============================================================
-
--- Grant appropriate permissions
-GRANT SELECT, INSERT, UPDATE ON public.device_shipments TO authenticated;
-GRANT SELECT, INSERT ON public.shipment_events TO authenticated;
-GRANT DELETE ON public.device_shipments TO authenticated; -- RLS controls actual deletion
