@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { logAuditEvent } from '@/lib/audit/log'
+import { AUDIT_ENTITY_TYPE } from '@/lib/contracts/registry'
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
 
@@ -134,17 +135,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log audit event (PHI-free)
-    await logAuditEvent(supabase, {
-      event_type: 'pre_screening_call_created',
-      user_id: user.id,
-      resource_type: 'pre_screening_call',
-      resource_id: callRecord.id,
+    // Log audit event (PHI-free: no patient_id, only coded values)
+    await logAuditEvent({
+      source: 'api',
+      actor_user_id: user.id,
+      actor_role: userRole as 'clinician' | 'admin',
+      org_id: organizationId || undefined,
+      entity_type: AUDIT_ENTITY_TYPE.PRE_SCREENING_CALL,
+      entity_id: callRecord.id,
+      action: 'create',
       metadata: {
-        patient_id: body.patient_id,
         is_suitable: body.is_suitable,
         has_red_flags: (body.red_flags || []).length > 0,
-        recommended_tier: body.recommended_tier,
+        red_flag_count: (body.red_flags || []).filter((f: { checked: boolean }) => f.checked).length,
+        recommended_tier: body.recommended_tier || undefined,
       },
     })
 

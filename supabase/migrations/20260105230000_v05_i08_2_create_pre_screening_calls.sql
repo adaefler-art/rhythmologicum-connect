@@ -44,7 +44,7 @@ CREATE INDEX idx_pre_screening_calls_call_date ON public.pre_screening_calls(cal
 -- RLS Policies
 ALTER TABLE public.pre_screening_calls ENABLE ROW LEVEL SECURITY;
 
--- Clinicians can view all pre-screening calls in their organization
+-- Clinicians/nurses/admins can view pre-screening calls in their organization only
 CREATE POLICY pre_screening_calls_select_staff
   ON public.pre_screening_calls
   FOR SELECT
@@ -57,6 +57,16 @@ CREATE POLICY pre_screening_calls_select_staff
         auth.users.raw_app_meta_data->>'role' = 'clinician'
         OR auth.users.raw_app_meta_data->>'role' = 'nurse'
         OR auth.users.raw_app_meta_data->>'role' = 'admin'
+      )
+    )
+    AND (
+      -- Enforce organization isolation
+      organization_id IS NULL
+      OR organization_id IN (
+        SELECT organization_id 
+        FROM user_org_membership 
+        WHERE user_id = auth.uid() 
+        AND is_active = true
       )
     )
   );
