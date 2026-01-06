@@ -376,8 +376,6 @@ CREATE OR REPLACE FUNCTION increment_reminder_count_atomic(
     p_reminder_timestamp TIMESTAMP WITH TIME ZONE
 )
 RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
 AS $$
 DECLARE
     v_rows_affected INTEGER;
@@ -401,7 +399,7 @@ BEGIN
     -- Return false if no rows updated (reminder was already sent)
     RETURN v_rows_affected > 0;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION increment_reminder_count_atomic IS 'V05-I08.3: Atomically increment reminder count with 7-day cooldown check to prevent concurrent duplicate reminders';
 
