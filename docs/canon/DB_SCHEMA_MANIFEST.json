@@ -13,6 +13,7 @@
     "clinician_patient_assignments",
     "content_page_sections",
     "content_pages",
+    "device_shipments",
     "documents",
     "funnel_question_rules",
     "funnel_step_questions",
@@ -36,6 +37,7 @@
     "reports",
     "risk_bundles",
     "safety_check_results",
+    "shipment_events",
     "rls_test_results",
     "tasks",
     "user_consents",
@@ -52,6 +54,7 @@
     "report_status",
     "review_status",
     "safety_action",
+    "shipment_status",
     "task_status",
     "user_role",
     "validation_status"
