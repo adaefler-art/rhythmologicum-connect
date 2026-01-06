@@ -95,7 +95,7 @@ export default function ShipmentDetailDialog({
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to update shipment')
+        throw new Error(result.error?.message || 'Fehler beim Aktualisieren der Sendung')
       }
 
       setSuccess('Sendung erfolgreich aktualisiert')

@@ -301,6 +301,10 @@ export function isShipmentOverdue(shipment: DeviceShipment): boolean {
   return now > expectedDate
 }
 
+// Constants
+const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24
+const REMINDER_COOLDOWN_DAYS = 7
+
 /**
  * Check if shipment needs a reminder
  * (Overdue and no reminder sent in last 7 days)
@@ -312,10 +316,10 @@ export function shouldSendReminder(shipment: DeviceShipment): boolean {
   
   const lastReminder = new Date(shipment.last_reminder_at)
   const now = new Date()
-  const daysSinceLastReminder = (now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60 * 24)
+  const daysSinceLastReminder = (now.getTime() - lastReminder.getTime()) / MILLISECONDS_PER_DAY
   
-  // Send reminder if more than 7 days since last reminder
-  return daysSinceLastReminder >= 7
+  // Send reminder if more than REMINDER_COOLDOWN_DAYS since last reminder
+  return daysSinceLastReminder >= REMINDER_COOLDOWN_DAYS
 }
 
 /**

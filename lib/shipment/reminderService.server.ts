@@ -203,11 +203,18 @@ export async function sendShipmentReminder(input: ShipmentReminderInput): Promis
     }
 
     // Update shipment reminder tracking
+    // First fetch current reminder count
+    const { data: currentShipment } = await supabase
+      .from('device_shipments')
+      .select('reminder_count')
+      .eq('id', input.shipmentId)
+      .single()
+
     const { error: updateError } = await supabase
       .from('device_shipments')
       .update({
         last_reminder_at: new Date().toISOString(),
-        reminder_count: supabase.rpc('increment', { x: 1 }) as any, // Increment counter
+        reminder_count: (currentShipment?.reminder_count || 0) + 1,
       })
       .eq('id', input.shipmentId)
 

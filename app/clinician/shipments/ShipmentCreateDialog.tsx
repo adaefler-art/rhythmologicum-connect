@@ -100,7 +100,7 @@ export default function ShipmentCreateDialog({
         const result = await response.json()
 
         if (!response.ok) {
-          throw new Error(result.error?.message || 'Failed to create shipment')
+          throw new Error(result.error?.message || 'Fehler beim Erstellen der Sendung')
         }
 
         onShipmentCreated()
