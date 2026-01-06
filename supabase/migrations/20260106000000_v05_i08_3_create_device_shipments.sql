@@ -7,14 +7,25 @@
 -- 1. CREATE ENUM: shipment_status
 -- ============================================================
 
-CREATE TYPE public.shipment_status AS ENUM (
-    'ordered',
-    'shipped',
-    'in_transit',
-    'delivered',
-    'returned',
-    'cancelled'
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'shipment_status'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.shipment_status AS ENUM (
+            'ordered',
+            'shipped',
+            'in_transit',
+            'delivered',
+            'returned',
+            'cancelled'
+        );
+    END IF;
+END $$;
 
 ALTER TYPE public.shipment_status OWNER TO postgres;
 
@@ -24,7 +35,7 @@ COMMENT ON TYPE public.shipment_status IS 'V05-I08.3: Device shipment lifecycle 
 -- 2. CREATE TABLE: device_shipments
 -- ============================================================
 
-CREATE TABLE public.device_shipments (
+CREATE TABLE IF NOT EXISTS public.device_shipments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     
     -- Foreign Keys
@@ -88,7 +99,7 @@ COMMENT ON COLUMN public.device_shipments.metadata IS 'Additional shipment data 
 -- 3. CREATE TABLE: shipment_events
 -- ============================================================
 
-CREATE TABLE public.shipment_events (
+CREATE TABLE IF NOT EXISTS public.shipment_events (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     
     -- Foreign Keys
@@ -123,26 +134,26 @@ COMMENT ON COLUMN public.shipment_events.event_status IS 'Shipment status at tim
 -- ============================================================
 
 -- Performance indexes for common queries
-CREATE INDEX idx_device_shipments_patient_id ON public.device_shipments(patient_id);
-CREATE INDEX idx_device_shipments_task_id ON public.device_shipments(task_id) WHERE task_id IS NOT NULL;
-CREATE INDEX idx_device_shipments_organization_id ON public.device_shipments(organization_id);
-CREATE INDEX idx_device_shipments_status ON public.device_shipments(status);
-CREATE INDEX idx_device_shipments_tracking_number ON public.device_shipments(tracking_number) WHERE tracking_number IS NOT NULL;
-CREATE INDEX idx_device_shipments_created_at_desc ON public.device_shipments(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_patient_id ON public.device_shipments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_task_id ON public.device_shipments(task_id) WHERE task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_device_shipments_organization_id ON public.device_shipments(organization_id);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_status ON public.device_shipments(status);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_tracking_number ON public.device_shipments(tracking_number) WHERE tracking_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_device_shipments_created_at_desc ON public.device_shipments(created_at DESC);
 
 -- Composite indexes for common filter combinations
-CREATE INDEX idx_device_shipments_org_status ON public.device_shipments(organization_id, status);
-CREATE INDEX idx_device_shipments_org_created ON public.device_shipments(organization_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_org_status ON public.device_shipments(organization_id, status);
+CREATE INDEX IF NOT EXISTS idx_device_shipments_org_created ON public.device_shipments(organization_id, created_at DESC);
 
 -- Reminder query optimization: org + status + expected_delivery for overdue shipments
-CREATE INDEX idx_device_shipments_reminder_query 
+CREATE INDEX IF NOT EXISTS idx_device_shipments_reminder_query 
 ON public.device_shipments(organization_id, status, expected_delivery_at) 
 WHERE expected_delivery_at IS NOT NULL 
 AND status NOT IN ('delivered', 'returned', 'cancelled');
 
 -- Shipment events indexes
-CREATE INDEX idx_shipment_events_shipment_id ON public.shipment_events(shipment_id);
-CREATE INDEX idx_shipment_events_event_at_desc ON public.shipment_events(event_at DESC);
+CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment_id ON public.shipment_events(shipment_id);
+CREATE INDEX IF NOT EXISTS idx_shipment_events_event_at_desc ON public.shipment_events(event_at DESC);
 
 -- ============================================================
 -- 5. CREATE RLS POLICIES
@@ -155,6 +166,7 @@ ALTER TABLE public.shipment_events ENABLE ROW LEVEL SECURITY;
 -- Device Shipments Policies
 
 -- Staff (clinician/nurse/admin) can view all shipments in their organization
+DROP POLICY IF EXISTS device_shipments_select_staff_org ON public.device_shipments;
 CREATE POLICY device_shipments_select_staff_org
 ON public.device_shipments
 FOR SELECT
@@ -173,6 +185,7 @@ USING (
 );
 
 -- Patients can view their own shipments
+DROP POLICY IF EXISTS device_shipments_select_own_patient ON public.device_shipments;
 CREATE POLICY device_shipments_select_own_patient
 ON public.device_shipments
 FOR SELECT
@@ -184,6 +197,7 @@ USING (
 );
 
 -- Only clinicians and admins can insert shipments
+DROP POLICY IF EXISTS device_shipments_insert_staff ON public.device_shipments;
 CREATE POLICY device_shipments_insert_staff
 ON public.device_shipments
 FOR INSERT
@@ -197,6 +211,7 @@ WITH CHECK (
 );
 
 -- Only staff in same org can update shipments
+DROP POLICY IF EXISTS device_shipments_update_staff_org ON public.device_shipments;
 CREATE POLICY device_shipments_update_staff_org
 ON public.device_shipments
 FOR UPDATE
@@ -215,6 +230,7 @@ USING (
 );
 
 -- Only admins can delete shipments
+DROP POLICY IF EXISTS device_shipments_delete_admin ON public.device_shipments;
 CREATE POLICY device_shipments_delete_admin
 ON public.device_shipments
 FOR DELETE
@@ -230,6 +246,7 @@ USING (
 -- Shipment Events Policies
 
 -- Staff can view events for shipments in their organization
+DROP POLICY IF EXISTS shipment_events_select_staff_org ON public.shipment_events;
 CREATE POLICY shipment_events_select_staff_org
 ON public.shipment_events
 FOR SELECT
@@ -251,6 +268,7 @@ USING (
 );
 
 -- Patients can view events for their own shipments
+DROP POLICY IF EXISTS shipment_events_select_own_patient ON public.shipment_events;
 CREATE POLICY shipment_events_select_own_patient
 ON public.shipment_events
 FOR SELECT
@@ -265,6 +283,7 @@ USING (
 );
 
 -- Staff can insert events
+DROP POLICY IF EXISTS shipment_events_insert_staff ON public.shipment_events;
 CREATE POLICY shipment_events_insert_staff
 ON public.shipment_events
 FOR INSERT
@@ -278,6 +297,7 @@ WITH CHECK (
 );
 
 -- Prevent UPDATE on shipment_events (append-only audit log)
+DROP POLICY IF EXISTS shipment_events_no_update ON public.shipment_events;
 CREATE POLICY shipment_events_no_update
 ON public.shipment_events
 FOR UPDATE
@@ -285,6 +305,7 @@ TO authenticated
 USING (false);
 
 -- Prevent DELETE on shipment_events (append-only audit log)
+DROP POLICY IF EXISTS shipment_events_no_delete ON public.shipment_events;
 CREATE POLICY shipment_events_no_delete
 ON public.shipment_events
 FOR DELETE
@@ -304,6 +325,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_device_shipments_updated_at ON public.device_shipments;
 CREATE TRIGGER trigger_device_shipments_updated_at
     BEFORE UPDATE ON public.device_shipments
     FOR EACH ROW
@@ -336,6 +358,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_shipment_status_event ON public.device_shipments;
 CREATE TRIGGER trigger_shipment_status_event
     AFTER UPDATE ON public.device_shipments
     FOR EACH ROW
