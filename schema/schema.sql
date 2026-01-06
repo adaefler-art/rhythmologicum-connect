@@ -695,6 +695,19 @@ $$;
 ALTER FUNCTION "public"."update_notifications_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_pre_screening_calls_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_pre_screening_calls_updated_at"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_processing_jobs_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1590,6 +1603,44 @@ COMMENT ON COLUMN "public"."pillars"."sort_order" IS 'Display order for pillars 
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."pre_screening_calls" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "clinician_id" "uuid" NOT NULL,
+    "organization_id" "uuid",
+    "is_suitable" boolean NOT NULL,
+    "suitability_notes" "text",
+    "red_flags" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "red_flags_notes" "text",
+    "recommended_tier" "text",
+    "tier_notes" "text",
+    "general_notes" "text",
+    "call_date" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "pre_screening_calls_recommended_tier_check" CHECK (("recommended_tier" = ANY (ARRAY['tier_1'::"text", 'tier_2'::"text", 'tier_3'::"text"])))
+);
+
+
+ALTER TABLE "public"."pre_screening_calls" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."pre_screening_calls" IS 'V05-I08.2: Pre-screening call records for initial patient contact';
+
+
+
+COMMENT ON COLUMN "public"."pre_screening_calls"."is_suitable" IS 'Whether patient is suitable for the program';
+
+
+
+COMMENT ON COLUMN "public"."pre_screening_calls"."red_flags" IS 'JSON array of identified red flags';
+
+
+
+COMMENT ON COLUMN "public"."pre_screening_calls"."recommended_tier" IS 'Recommended program tier (tier_1, tier_2, tier_3)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."priority_rankings" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "job_id" "uuid" NOT NULL,
@@ -2420,6 +2471,11 @@ ALTER TABLE ONLY "public"."pillars"
 
 
 
+ALTER TABLE ONLY "public"."pre_screening_calls"
+    ADD CONSTRAINT "pre_screening_calls_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."priority_rankings"
     ADD CONSTRAINT "priority_rankings_job_version_unique" UNIQUE ("job_id", "ranking_version", "registry_version");
 
@@ -2887,6 +2943,22 @@ CREATE INDEX "idx_patient_measures_report_id" ON "public"."patient_measures" USI
 
 
 
+CREATE INDEX "idx_pre_screening_calls_call_date" ON "public"."pre_screening_calls" USING "btree" ("call_date" DESC);
+
+
+
+CREATE INDEX "idx_pre_screening_calls_clinician_id" ON "public"."pre_screening_calls" USING "btree" ("clinician_id");
+
+
+
+CREATE INDEX "idx_pre_screening_calls_organization_id" ON "public"."pre_screening_calls" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_pre_screening_calls_patient_id" ON "public"."pre_screening_calls" USING "btree" ("patient_id");
+
+
+
 CREATE INDEX "idx_priority_rankings_job_id" ON "public"."priority_rankings" USING "btree" ("job_id");
 
 
@@ -3155,6 +3227,10 @@ CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("org
 
 
 
+CREATE OR REPLACE TRIGGER "pre_screening_calls_updated_at" BEFORE UPDATE ON "public"."pre_screening_calls" FOR EACH ROW EXECUTE FUNCTION "public"."update_pre_screening_calls_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "report_sections_updated_at" BEFORE UPDATE ON "public"."report_sections" FOR EACH ROW EXECUTE FUNCTION "public"."update_report_sections_updated_at"();
 
 
@@ -3343,6 +3419,21 @@ ALTER TABLE ONLY "public"."patient_funnels"
 
 ALTER TABLE ONLY "public"."patient_profiles"
     ADD CONSTRAINT "patient_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."pre_screening_calls"
+    ADD CONSTRAINT "pre_screening_calls_clinician_id_fkey" FOREIGN KEY ("clinician_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."pre_screening_calls"
+    ADD CONSTRAINT "pre_screening_calls_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."pre_screening_calls"
+    ADD CONSTRAINT "pre_screening_calls_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE CASCADE;
 
 
 
@@ -3916,6 +4007,33 @@ ALTER TABLE "public"."patient_profiles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."pillars" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."pre_screening_calls" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "pre_screening_calls_delete_admin" ON "public"."pre_screening_calls" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")))));
+
+
+
+CREATE POLICY "pre_screening_calls_insert_staff" ON "public"."pre_screening_calls" FOR INSERT TO "authenticated" WITH CHECK (((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND ("clinician_id" = "auth"."uid"())));
+
+
+
+CREATE POLICY "pre_screening_calls_select_staff" ON "public"."pre_screening_calls" FOR SELECT TO "authenticated" USING (((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'nurse'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND (("organization_id" IS NULL) OR ("organization_id" IN ( SELECT "user_org_membership"."organization_id"
+   FROM "public"."user_org_membership"
+  WHERE (("user_org_membership"."user_id" = "auth"."uid"()) AND ("user_org_membership"."is_active" = true)))))));
+
+
+
+CREATE POLICY "pre_screening_calls_update_own" ON "public"."pre_screening_calls" FOR UPDATE TO "authenticated" USING (("clinician_id" = "auth"."uid"())) WITH CHECK (("clinician_id" = "auth"."uid"()));
+
+
+
 ALTER TABLE "public"."priority_rankings" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4362,6 +4480,12 @@ GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "service_r
 
 
 
+GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_processing_jobs_updated_at"() TO "service_role";
@@ -4548,6 +4672,12 @@ GRANT ALL ON TABLE "public"."patient_profiles" TO "service_role";
 GRANT ALL ON TABLE "public"."pillars" TO "anon";
 GRANT ALL ON TABLE "public"."pillars" TO "authenticated";
 GRANT ALL ON TABLE "public"."pillars" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pre_screening_calls" TO "anon";
+GRANT ALL ON TABLE "public"."pre_screening_calls" TO "authenticated";
+GRANT ALL ON TABLE "public"."pre_screening_calls" TO "service_role";
 
 
 
