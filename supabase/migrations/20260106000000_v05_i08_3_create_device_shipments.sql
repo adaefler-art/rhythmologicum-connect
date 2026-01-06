@@ -172,15 +172,13 @@ ON public.device_shipments
 FOR SELECT
 TO authenticated
 USING (
-    organization_id IN (
-        SELECT organization_id 
-        FROM patient_profiles 
-        WHERE user_id = auth.uid()
-    )
-    AND EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role IN ('clinician', 'nurse', 'admin')
+    EXISTS (
+        SELECT 1
+        FROM public.user_org_membership uom
+        WHERE uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.organization_id = device_shipments.organization_id
+          AND uom.role IN ('clinician', 'nurse', 'admin')
     )
 );
 
@@ -204,9 +202,12 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role IN ('clinician', 'admin')
+        SELECT 1
+        FROM public.user_org_membership uom
+        WHERE uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.organization_id = device_shipments.organization_id
+          AND uom.role IN ('clinician', 'admin')
     )
 );
 
@@ -217,15 +218,13 @@ ON public.device_shipments
 FOR UPDATE
 TO authenticated
 USING (
-    organization_id IN (
-        SELECT organization_id 
-        FROM patient_profiles 
-        WHERE user_id = auth.uid()
-    )
-    AND EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role IN ('clinician', 'nurse', 'admin')
+    EXISTS (
+        SELECT 1
+        FROM public.user_org_membership uom
+        WHERE uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.organization_id = device_shipments.organization_id
+          AND uom.role IN ('clinician', 'nurse', 'admin')
     )
 );
 
@@ -237,9 +236,12 @@ FOR DELETE
 TO authenticated
 USING (
     EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role = 'admin'
+        SELECT 1
+        FROM public.user_org_membership uom
+        WHERE uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.organization_id = device_shipments.organization_id
+          AND uom.role = 'admin'
     )
 );
 
@@ -252,18 +254,15 @@ ON public.shipment_events
 FOR SELECT
 TO authenticated
 USING (
-    shipment_id IN (
-        SELECT id FROM device_shipments 
-        WHERE organization_id IN (
-            SELECT organization_id 
-            FROM patient_profiles 
-            WHERE user_id = auth.uid()
-        )
-    )
-    AND EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role IN ('clinician', 'nurse', 'admin')
+    EXISTS (
+        SELECT 1
+        FROM public.device_shipments ds
+        JOIN public.user_org_membership uom
+          ON uom.organization_id = ds.organization_id
+        WHERE ds.id = shipment_events.shipment_id
+          AND uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.role IN ('clinician', 'nurse', 'admin')
     )
 );
 
@@ -290,9 +289,14 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM patient_profiles 
-        WHERE user_id = auth.uid() 
-        AND role IN ('clinician', 'nurse', 'admin')
+        SELECT 1
+        FROM public.device_shipments ds
+        JOIN public.user_org_membership uom
+          ON uom.organization_id = ds.organization_id
+        WHERE ds.id = shipment_events.shipment_id
+          AND uom.user_id = auth.uid()
+          AND uom.is_active = true
+          AND uom.role IN ('clinician', 'nurse', 'admin')
     )
 );
 
