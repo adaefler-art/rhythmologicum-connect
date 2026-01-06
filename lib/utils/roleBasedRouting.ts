@@ -86,6 +86,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       active: pathname?.startsWith('/clinician/pre-screening') ?? false,
     },
     {
+      href: '/clinician/shipments',
+      label: 'Geräteversand',
+      active: pathname?.startsWith('/clinician/shipments') ?? false,
+    },
+    {
       href: '/clinician/funnels',
       label: 'Fragebögen',
       active: pathname?.startsWith('/clinician/funnels') ?? false,
@@ -119,6 +124,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician/pre-screening',
       label: 'Pre-Screening',
       active: pathname?.startsWith('/clinician/pre-screening') ?? false,
+    },
+    {
+      href: '/clinician/shipments',
+      label: 'Geräteversand',
+      active: pathname?.startsWith('/clinician/shipments') ?? false,
     },
     {
       href: '/clinician/funnels',
@@ -179,6 +189,11 @@ export function getNurseNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician/triage',
       label: 'Triage',
       active: pathname?.startsWith('/clinician/triage') ?? false,
+    },
+    {
+      href: '/clinician/shipments',
+      label: 'Geräteversand',
+      active: pathname?.startsWith('/clinician/shipments') ?? false,
     },
     {
       href: '/clinician/funnels',
