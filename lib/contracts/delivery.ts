@@ -45,6 +45,8 @@ export const NotificationType = {
   ACTION_RECOMMENDED: 'ACTION_RECOMMENDED', // Clinical action recommended
   REPORT_UPDATED: 'REPORT_UPDATED', // Report was updated
   FOLLOW_UP_REMINDER: 'FOLLOW_UP_REMINDER', // Follow-up reminder
+  SHIPMENT_OVERDUE: 'SHIPMENT_OVERDUE', // Shipment overdue reminder (patient)
+  SHIPMENT_OVERDUE_STAFF: 'SHIPMENT_OVERDUE_STAFF', // Shipment overdue reminder (staff)
 } as const
 
 export type NotificationTypeType = (typeof NotificationType)[keyof typeof NotificationType]
@@ -127,6 +129,10 @@ export const NotificationMetadataSchema = z
     actionLabel: z.string().max(100).optional(),
     reportType: z.string().max(50).optional(),
     pillarKey: z.string().max(50).optional(),
+    // Shipment reminders (PHI-free)
+    shipmentId: z.string().uuid().optional(),
+    deviceType: z.string().max(100).optional(),
+    status: z.string().max(50).optional(),
   })
   .strict()
 
@@ -208,6 +214,8 @@ export const CreateNotificationInputSchema = z
       'ACTION_RECOMMENDED',
       'REPORT_UPDATED',
       'FOLLOW_UP_REMINDER',
+      'SHIPMENT_OVERDUE',
+      'SHIPMENT_OVERDUE_STAFF',
     ]),
     channel: z.enum(['in_app', 'email', 'sms']).default('in_app'),
     priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),

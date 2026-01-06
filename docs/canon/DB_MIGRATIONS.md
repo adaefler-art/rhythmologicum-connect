@@ -68,6 +68,8 @@ When introducing a new canonical table or enum:
 
 **Recent canonical additions:**
 - `pre_screening_calls` (V05-I08.2)
+- `device_shipments`, `shipment_events` (V05-I08.3)
+- `shipment_status` (V05-I08.3)
 
 **Example manifest entry:**
 ```json

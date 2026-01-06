@@ -153,6 +153,13 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Re-apply override for canonical DB client factories (must come AFTER server-only override)
+  {
+    files: ["lib/db/supabase.*.ts", "lib/audit/log.ts", "lib/utils/contentResolver.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

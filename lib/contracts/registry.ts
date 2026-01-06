@@ -266,6 +266,7 @@ export const AUDIT_ENTITY_TYPE = {
   PROCESSING_JOB: 'processing_job', // V05-I05.1: Processing job orchestration
   REVIEW_RECORD: 'review_record', // V05-I05.7: Medical review records
   PRE_SCREENING_CALL: 'pre_screening_call', // V05-I08.2: Pre-screening call records
+  DEVICE_SHIPMENT: 'device_shipment', // V05-I08.3: Shipment tracking
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
