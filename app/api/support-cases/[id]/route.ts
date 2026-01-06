@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { Json } from '@/lib/types/supabase'
 import {
   UpdateSupportCaseRequestSchema,
   SUPPORT_CASE_STATUS,
@@ -22,9 +23,9 @@ import { logSupportCaseStatusChanged } from '@/lib/audit/log'
 /**
  * GET /api/support-cases/[id] - Get a specific support case
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const requestId = crypto.randomUUID()
-  const { id } = params
+  const { id } = await context.params
 
   try {
     const supabase = await createServerSupabaseClient()
@@ -109,9 +110,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 /**
  * PATCH /api/support-cases/[id] - Update a support case
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   const requestId = crypto.randomUUID()
-  const { id } = params
+  const { id } = await context.params
 
   try {
     const supabase = await createServerSupabaseClient()
@@ -230,7 +234,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (updateRequest.resolution_notes !== undefined)
       updateData.resolution_notes = updateRequest.resolution_notes
     if (updateRequest.metadata !== undefined)
-      updateData.metadata = updateRequest.metadata as Record<string, unknown>
+      updateData.metadata = updateRequest.metadata as Json
 
     // Update support case (RLS enforced)
     const { data: updatedCase, error: updateError } = await supabase
@@ -300,9 +304,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 /**
  * DELETE /api/support-cases/[id] - Delete a support case (admin only)
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   const requestId = crypto.randomUUID()
-  const { id } = params
+  const { id } = await context.params
 
   try {
     const supabase = await createServerSupabaseClient()

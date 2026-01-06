@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { Json } from '@/lib/types/supabase'
 import {
   EscalateSupportCaseRequestSchema,
   SUPPORT_CASE_STATUS,
@@ -54,9 +55,12 @@ async function getUserOrgId(
 /**
  * POST /api/support-cases/[id]/escalate - Escalate case to clinician
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   const requestId = crypto.randomUUID()
-  const { id } = params
+  const { id } = await context.params
 
   try {
     const supabase = await createServerSupabaseClient()
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // but we implement rollback on failure + unique constraint prevents duplicates
 
     // Create task for clinician (PHI-free payload)
-    const taskPayload = {
+    const taskPayload: Json = {
       support_case_id: id,
       // PHI-safe: only IDs and escalation metadata, no free text
     }
@@ -222,7 +226,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         assigned_to_role: escalationRequest.assigned_to_role,
         assigned_to_user_id: escalationRequest.assigned_to_user_id ?? null,
         task_type: TASK_TYPE.CONTACT_PATIENT,
-        payload: taskPayload as Record<string, unknown>,
+        payload: taskPayload,
         status: TASK_STATUS.PENDING,
         due_at: escalationRequest.task_due_at ?? null,
       })

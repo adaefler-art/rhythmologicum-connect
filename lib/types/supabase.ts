@@ -1895,6 +1895,75 @@ export type Database = {
           },
         ]
       }
+      support_cases: {
+        Row: {
+          assigned_to_user_id: string | null
+          category: Database["public"]["Enums"]["support_case_category"]
+          closed_at: string | null
+          created_at: string
+          created_by_user_id: string | null
+          description: string | null
+          escalated_at: string | null
+          escalated_by_user_id: string | null
+          escalated_task_id: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          organization_id: string | null
+          patient_id: string
+          priority: Database["public"]["Enums"]["support_case_priority"]
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["support_case_status"]
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          category?: Database["public"]["Enums"]["support_case_category"]
+          closed_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          escalated_at?: string | null
+          escalated_by_user_id?: string | null
+          escalated_task_id?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          patient_id: string
+          priority?: Database["public"]["Enums"]["support_case_priority"]
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_case_status"]
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          category?: Database["public"]["Enums"]["support_case_category"]
+          closed_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          description?: string | null
+          escalated_at?: string | null
+          escalated_by_user_id?: string | null
+          escalated_task_id?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          organization_id?: string | null
+          patient_id?: string
+          priority?: Database["public"]["Enums"]["support_case_priority"]
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["support_case_status"]
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assessment_id: string | null
@@ -2172,6 +2241,20 @@ export type Database = {
         | "delivered"
         | "returned"
         | "cancelled"
+      support_case_category:
+        | "technical"
+        | "medical"
+        | "administrative"
+        | "billing"
+        | "general"
+        | "other"
+      support_case_priority: "low" | "medium" | "high" | "urgent"
+      support_case_status:
+        | "open"
+        | "in_progress"
+        | "escalated"
+        | "resolved"
+        | "closed"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
@@ -2349,6 +2432,22 @@ export const Constants = {
         "delivered",
         "returned",
         "cancelled",
+      ],
+      support_case_category: [
+        "technical",
+        "medical",
+        "administrative",
+        "billing",
+        "general",
+        "other",
+      ],
+      support_case_priority: ["low", "medium", "high", "urgent"],
+      support_case_status: [
+        "open",
+        "in_progress",
+        "escalated",
+        "resolved",
+        "closed",
       ],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],

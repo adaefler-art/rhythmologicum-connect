@@ -102,7 +102,7 @@ export const SupportCaseSchema = z.object({
   notes: z.string().nullable(),
   resolution_notes: z.string().nullable(),
   
-  metadata: z.record(z.string(), z.any()),
+  metadata: z.record(z.string(), z.any()).nullable(),
   
   escalated_at: z.string().nullable(),
   escalated_by_user_id: z.string().uuid().nullable(),
@@ -114,6 +114,8 @@ export const SupportCaseSchema = z.object({
 })
 
 export type SupportCase = z.infer<typeof SupportCaseSchema>
+
+type SupportCaseStatusFields = Pick<SupportCase, 'status' | 'escalated_task_id'>
 
 // ============================================================
 // Create Support Case Request
@@ -280,7 +282,7 @@ export function getSupportCaseCategoryLabel(category: SupportCaseCategory): stri
 /**
  * Check if a support case can be escalated
  */
-export function canEscalateSupportCase(supportCase: SupportCase): boolean {
+export function canEscalateSupportCase(supportCase: SupportCaseStatusFields): boolean {
   return (
     supportCase.status !== SUPPORT_CASE_STATUS.ESCALATED &&
     supportCase.status !== SUPPORT_CASE_STATUS.CLOSED &&
@@ -291,7 +293,7 @@ export function canEscalateSupportCase(supportCase: SupportCase): boolean {
 /**
  * Check if a support case can be resolved
  */
-export function canResolveSupportCase(supportCase: SupportCase): boolean {
+export function canResolveSupportCase(supportCase: Pick<SupportCase, 'status'>): boolean {
   return (
     supportCase.status !== SUPPORT_CASE_STATUS.RESOLVED &&
     supportCase.status !== SUPPORT_CASE_STATUS.CLOSED
@@ -301,7 +303,7 @@ export function canResolveSupportCase(supportCase: SupportCase): boolean {
 /**
  * Check if a support case can be closed
  */
-export function canCloseSupportCase(supportCase: SupportCase): boolean {
+export function canCloseSupportCase(supportCase: Pick<SupportCase, 'status'>): boolean {
   return supportCase.status !== SUPPORT_CASE_STATUS.CLOSED
 }
 

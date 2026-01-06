@@ -136,7 +136,7 @@ export default function SupportCasesPage() {
   }
 
   if (loading) {
-    return <LoadingSpinner message="Lade Support-Fälle..." />
+    return <LoadingSpinner text="Lade Support-Fälle..." />
   }
 
   if (error) {

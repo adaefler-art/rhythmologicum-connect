@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { Json } from '@/lib/types/supabase'
 import {
   CreateSupportCaseRequestSchema,
   SupportCaseFiltersSchema,
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
         status: SUPPORT_CASE_STATUS.OPEN,
         subject: caseRequest.subject,
         description: caseRequest.description ?? null,
-        metadata: (caseRequest.metadata ?? {}) as Record<string, unknown>,
+        metadata: (caseRequest.metadata ?? {}) as Json,
       })
       .select()
       .single()

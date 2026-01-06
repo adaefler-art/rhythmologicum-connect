@@ -10,6 +10,8 @@ import { useState } from 'react'
 import { Button } from '@/lib/ui'
 import { X } from 'lucide-react'
 import {
+  type SupportCaseCategory,
+  type SupportCasePriority,
   SUPPORT_CASE_CATEGORY,
   SUPPORT_CASE_PRIORITY,
   getSupportCaseCategoryLabel,
@@ -29,8 +31,8 @@ type Props = {
 export function SupportCaseDialog({ onClose, onCreate }: Props) {
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState(SUPPORT_CASE_CATEGORY.GENERAL)
-  const [priority, setPriority] = useState(SUPPORT_CASE_PRIORITY.MEDIUM)
+  const [category, setCategory] = useState<SupportCaseCategory>(SUPPORT_CASE_CATEGORY.GENERAL)
+  const [priority, setPriority] = useState<SupportCasePriority>(SUPPORT_CASE_PRIORITY.MEDIUM)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -105,7 +107,7 @@ export function SupportCaseDialog({ onClose, onCreate }: Props) {
             <select
               id="category"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => setCategory(e.target.value as SupportCaseCategory)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
             >
@@ -124,7 +126,7 @@ export function SupportCaseDialog({ onClose, onCreate }: Props) {
             <select
               id="priority"
               value={priority}
-              onChange={(e) => setPriority(e.target.value)}
+              onChange={(e) => setPriority(e.target.value as SupportCasePriority)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
             >

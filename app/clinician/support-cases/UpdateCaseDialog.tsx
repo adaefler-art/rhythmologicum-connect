@@ -11,6 +11,8 @@ import { Button } from '@/lib/ui'
 import { X, Edit } from 'lucide-react'
 import {
   type SupportCase,
+  type SupportCaseStatus,
+  type SupportCasePriority,
   SUPPORT_CASE_STATUS,
   SUPPORT_CASE_PRIORITY,
   getSupportCaseStatusLabel,
@@ -30,8 +32,8 @@ type Props = {
 }
 
 export function UpdateCaseDialog({ supportCase, onClose, onUpdate }: Props) {
-  const [status, setStatus] = useState(supportCase.status)
-  const [priority, setPriority] = useState(supportCase.priority)
+  const [status, setStatus] = useState<SupportCaseStatus>(supportCase.status)
+  const [priority, setPriority] = useState<SupportCasePriority>(supportCase.priority)
   const [notes, setNotes] = useState(supportCase.notes || '')
   const [resolutionNotes, setResolutionNotes] = useState(supportCase.resolution_notes || '')
   const [submitting, setSubmitting] = useState(false)
@@ -98,7 +100,7 @@ export function UpdateCaseDialog({ supportCase, onClose, onUpdate }: Props) {
             <select
               id="status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => setStatus(e.target.value as SupportCaseStatus)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
             >
@@ -122,7 +124,7 @@ export function UpdateCaseDialog({ supportCase, onClose, onUpdate }: Props) {
             <select
               id="priority"
               value={priority}
-              onChange={(e) => setPriority(e.target.value)}
+              onChange={(e) => setPriority(e.target.value as SupportCasePriority)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
             >
