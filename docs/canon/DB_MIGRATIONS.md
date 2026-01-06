@@ -66,6 +66,9 @@ When introducing a new canonical table or enum:
 4. Document the change in this file (DB_MIGRATIONS.md)
 5. Commit both migration and manifest together
 
+**Recent canonical additions:**
+- `pre_screening_calls` (V05-I08.2)
+
 **Example manifest entry:**
 ```json
 {
