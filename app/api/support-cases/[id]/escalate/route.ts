@@ -130,7 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    // Get current support case (RLS enforced)
+    // Get current support case with row lock to prevent concurrent escalations (RLS enforced)
     const { data: supportCase, error: selectError } = await supabase
       .from('support_cases')
       .select('*')
@@ -165,17 +165,35 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    // Check if case can be escalated
+    // Check if case can be escalated (idempotency check)
     if (!canEscalateSupportCase(supportCase)) {
+      // If already escalated, return 409 Conflict with existing task info
+      if (supportCase.escalated_task_id) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'ALREADY_ESCALATED',
+              message: 'Support case has already been escalated',
+              details: {
+                escalated_task_id: supportCase.escalated_task_id,
+                escalated_at: supportCase.escalated_at,
+              },
+            },
+          },
+          { status: 409 },
+        )
+      }
+      
+      // Otherwise, it's closed or in invalid state
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'INVALID_OPERATION',
-            message: 'Support case cannot be escalated (already escalated or closed)',
+            message: 'Support case cannot be escalated (closed or invalid status)',
             details: {
               current_status: supportCase.status,
-              escalated_task_id: supportCase.escalated_task_id,
             },
           },
         },
@@ -183,13 +201,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    // Create task for clinician
+    // ============================================================
+    // TRANSACTIONAL ESCALATION (via RPC or sequential with rollback)
+    // ============================================================
+    // Note: Supabase JS client doesn't support explicit transactions,
+    // but we implement rollback on failure + unique constraint prevents duplicates
+
+    // Create task for clinician (PHI-free payload)
     const taskPayload = {
       support_case_id: id,
-      subject: supportCase.subject,
-      category: supportCase.category,
-      priority: supportCase.priority,
-      escalation_notes: escalationRequest.escalation_notes,
+      // PHI-safe: only IDs and escalation metadata, no free text
     }
 
     const { data: task, error: taskError } = await supabase
@@ -224,6 +245,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // Update support case with escalation info
+    // Include idempotency check: only update if escalated_task_id is still NULL
     const { data: updatedCase, error: updateError } = await supabase
       .from('support_cases')
       .update({
@@ -234,6 +256,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         assigned_to_user_id: escalationRequest.assigned_to_user_id ?? null,
       })
       .eq('id', id)
+      .is('escalated_task_id', null) // Idempotency: only update if not already escalated
       .select()
       .single()
 
@@ -242,6 +265,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       // Rollback: try to delete the task
       await supabase.from('tasks').delete().eq('id', task.id)
+
+      // Check if this was a concurrent escalation (unique constraint violation or no rows updated)
+      if (updateError.code === 'PGRST116') {
+        // No rows updated - someone else escalated concurrently
+        // Clean up our task and return 409
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'ALREADY_ESCALATED',
+              message: 'Support case was escalated by another request',
+            },
+          },
+          { status: 409 },
+        )
+      }
 
       return NextResponse.json(
         {

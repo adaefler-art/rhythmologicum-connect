@@ -550,7 +550,6 @@ export async function logSupportCaseCreated(params: {
   actor_user_id?: string
   actor_role?: UserRole
   support_case_id: string
-  patient_id: string
   category?: string
   priority?: string
 }): Promise<AuditLogResult> {
@@ -563,7 +562,8 @@ export async function logSupportCaseCreated(params: {
     entity_id: params.support_case_id,
     action: 'create',
     metadata: {
-      has_notes: false, // PHI-safe: just track presence
+      // PHI-safe: NO patient_id, only category/priority metadata
+      has_notes: false,
     },
   })
 }

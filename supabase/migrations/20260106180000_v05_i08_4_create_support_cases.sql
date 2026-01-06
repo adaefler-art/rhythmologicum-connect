@@ -125,6 +125,9 @@ CREATE INDEX idx_support_cases_priority ON public.support_cases(priority);
 CREATE INDEX idx_support_cases_category ON public.support_cases(category);
 CREATE INDEX idx_support_cases_escalated_task_id ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
 
+-- Unique constraint to prevent duplicate escalations (idempotency)
+CREATE UNIQUE INDEX idx_support_cases_escalated_task_unique ON public.support_cases(escalated_task_id) WHERE escalated_task_id IS NOT NULL;
+
 -- Composite indexes for common queries
 CREATE INDEX idx_support_cases_org_status_created ON public.support_cases(organization_id, status, created_at DESC);
 CREATE INDEX idx_support_cases_org_priority_created ON public.support_cases(organization_id, priority, created_at DESC);

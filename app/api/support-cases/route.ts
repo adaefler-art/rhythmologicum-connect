@@ -209,7 +209,6 @@ export async function POST(request: NextRequest) {
       actor_user_id: user.id,
       actor_role: userRole,
       support_case_id: supportCase.id,
-      patient_id: caseRequest.patient_id,
       category: supportCase.category,
       priority: supportCase.priority,
     })
