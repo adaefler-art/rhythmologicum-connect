@@ -64,8 +64,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Role check: only clinician/admin can create pre-screening calls
-    const userRole = user.raw_app_meta_data?.role
+    // Role is stored in auth.users.raw_app_meta_data.role and surfaced to the app as app_metadata.role
+    // (user_metadata is user-modifiable, but we keep it as a fallback for legacy/dev cases).
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
     if (userRole !== 'clinician' && userRole !== 'admin') {
       return NextResponse.json(
         {
@@ -200,9 +201,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Role check
-    const userRole = user.raw_app_meta_data?.role
-    if (!['clinician', 'admin', 'nurse'].includes(userRole)) {
+    // Role is stored in auth.users.raw_app_meta_data.role and surfaced to the app as app_metadata.role
+    // (user_metadata is user-modifiable, but we keep it as a fallback for legacy/dev cases).
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
+    if (!userRole || !['clinician', 'admin', 'nurse'].includes(userRole)) {
       return NextResponse.json(
         {
           success: false,
