@@ -36,13 +36,19 @@ COMMENT ON COLUMN public.pre_screening_calls.red_flags IS 'JSON array of identif
 COMMENT ON COLUMN public.pre_screening_calls.recommended_tier IS 'Recommended program tier (tier_1, tier_2, tier_3)';
 
 -- Indexes
-CREATE INDEX idx_pre_screening_calls_patient_id ON public.pre_screening_calls(patient_id);
-CREATE INDEX idx_pre_screening_calls_clinician_id ON public.pre_screening_calls(clinician_id);
-CREATE INDEX idx_pre_screening_calls_organization_id ON public.pre_screening_calls(organization_id);
-CREATE INDEX idx_pre_screening_calls_call_date ON public.pre_screening_calls(call_date DESC);
+CREATE INDEX IF NOT EXISTS idx_pre_screening_calls_patient_id ON public.pre_screening_calls(patient_id);
+CREATE INDEX IF NOT EXISTS idx_pre_screening_calls_clinician_id ON public.pre_screening_calls(clinician_id);
+CREATE INDEX IF NOT EXISTS idx_pre_screening_calls_organization_id ON public.pre_screening_calls(organization_id);
+CREATE INDEX IF NOT EXISTS idx_pre_screening_calls_call_date ON public.pre_screening_calls(call_date DESC);
 
 -- RLS Policies
 ALTER TABLE public.pre_screening_calls ENABLE ROW LEVEL SECURITY;
+
+-- Policy guards (idempotency)
+DROP POLICY IF EXISTS pre_screening_calls_select_staff ON public.pre_screening_calls;
+DROP POLICY IF EXISTS pre_screening_calls_insert_staff ON public.pre_screening_calls;
+DROP POLICY IF EXISTS pre_screening_calls_update_own ON public.pre_screening_calls;
+DROP POLICY IF EXISTS pre_screening_calls_delete_admin ON public.pre_screening_calls;
 
 -- Clinicians/nurses/admins can view pre-screening calls in their organization only
 CREATE POLICY pre_screening_calls_select_staff
@@ -117,6 +123,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS pre_screening_calls_updated_at ON public.pre_screening_calls;
 
 CREATE TRIGGER pre_screening_calls_updated_at
   BEFORE UPDATE ON public.pre_screening_calls
