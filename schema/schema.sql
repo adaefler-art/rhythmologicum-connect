@@ -182,6 +182,23 @@ COMMENT ON TYPE "public"."safety_action" IS 'V05-I05.6: Safety check recommended
 
 
 
+CREATE TYPE "public"."shipment_status" AS ENUM (
+    'ordered',
+    'shipped',
+    'in_transit',
+    'delivered',
+    'returned',
+    'cancelled'
+);
+
+
+ALTER TYPE "public"."shipment_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."shipment_status" IS 'V05-I08.3: Device shipment lifecycle status';
+
+
+
 CREATE TYPE "public"."task_status" AS ENUM (
     'pending',
     'in_progress',
@@ -279,6 +296,37 @@ ALTER FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_salt" "tex
 
 COMMENT ON FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_salt" "text") IS 'V05-I05.7: Compute deterministic sampling hash from job_id + salt';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."create_shipment_status_event"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    -- Only create event if status actually changed
+    IF (TG_OP = 'UPDATE' AND OLD.status IS DISTINCT FROM NEW.status) THEN
+        INSERT INTO public.shipment_events (
+            shipment_id,
+            created_by_user_id,
+            event_type,
+            event_status,
+            event_description,
+            event_at
+        ) VALUES (
+            NEW.id,
+            auth.uid(),
+            'status_changed',
+            NEW.status,
+            'Status changed from ' || OLD.status || ' to ' || NEW.status,
+            now()
+        );
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_shipment_status_event"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."current_user_role"("org_id" "uuid") RETURNS "public"."user_role"
@@ -516,6 +564,37 @@ COMMENT ON FUNCTION "public"."has_role"("check_role" "text") IS 'Check if the cu
 
 
 
+CREATE OR REPLACE FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id" "uuid", "p_reminder_timestamp" timestamp with time zone) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    v_rows_affected INTEGER;
+BEGIN
+    -- Atomically update reminder tracking
+    -- Only succeeds if reminder wasn't sent in last 7 days
+    UPDATE public.device_shipments
+    SET 
+        last_reminder_at = p_reminder_timestamp,
+        reminder_count = COALESCE(reminder_count, 0) + 1
+    WHERE 
+        id = p_shipment_id
+        AND (
+            last_reminder_at IS NULL 
+            OR last_reminder_at < (p_reminder_timestamp - INTERVAL '7 days')
+        );
+    
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+    
+    -- Return true if update succeeded (reminder should be sent)
+    -- Return false if no rows updated (reminder was already sent)
+    RETURN v_rows_affected > 0;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id" "uuid", "p_reminder_timestamp" timestamp with time zone) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     AS $$
@@ -667,6 +746,19 @@ ALTER FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_perce
 
 COMMENT ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") IS 'V05-I05.7: Deterministic sampling decision based on hash modulo';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."update_device_shipments_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_device_shipments_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_medical_validation_results_updated_at"() RETURNS "trigger"
@@ -1045,6 +1137,64 @@ COMMENT ON COLUMN "public"."content_pages"."flow_step" IS 'Identifies which step
 
 
 COMMENT ON COLUMN "public"."content_pages"."order_index" IS 'Determines the display order of content pages within a flow step. Lower numbers appear first. NULL if ordering is not relevant.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."device_shipments" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "task_id" "uuid",
+    "organization_id" "uuid" NOT NULL,
+    "created_by_user_id" "uuid",
+    "device_type" "text" NOT NULL,
+    "device_serial_number" "text",
+    "tracking_number" "text",
+    "carrier" "text",
+    "shipping_address" "text",
+    "status" "public"."shipment_status" DEFAULT 'ordered'::"public"."shipment_status" NOT NULL,
+    "ordered_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "shipped_at" timestamp with time zone,
+    "delivered_at" timestamp with time zone,
+    "expected_delivery_at" timestamp with time zone,
+    "return_requested_at" timestamp with time zone,
+    "returned_at" timestamp with time zone,
+    "return_tracking_number" "text",
+    "return_carrier" "text",
+    "return_reason" "text",
+    "reminder_sent_at" timestamp with time zone,
+    "last_reminder_at" timestamp with time zone,
+    "reminder_count" integer DEFAULT 0 NOT NULL,
+    "notes" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."device_shipments" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."device_shipments" IS 'V05-I08.3: Device shipment tracking with status, return tracking, and reminder management';
+
+
+
+COMMENT ON COLUMN "public"."device_shipments"."organization_id" IS 'Organization for multi-tenant isolation. Set server-side.';
+
+
+
+COMMENT ON COLUMN "public"."device_shipments"."tracking_number" IS 'Carrier tracking number for outbound shipment';
+
+
+
+COMMENT ON COLUMN "public"."device_shipments"."return_tracking_number" IS 'Carrier tracking number for return shipment';
+
+
+
+COMMENT ON COLUMN "public"."device_shipments"."reminder_count" IS 'Number of reminders sent for this shipment';
+
+
+
+COMMENT ON COLUMN "public"."device_shipments"."metadata" IS 'Additional shipment data (JSONB)';
 
 
 
@@ -2205,6 +2355,37 @@ COMMENT ON COLUMN "public"."safety_check_results"."evaluation_key_hash" IS 'Hash
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."shipment_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "shipment_id" "uuid" NOT NULL,
+    "created_by_user_id" "uuid",
+    "event_type" "text" NOT NULL,
+    "event_status" "public"."shipment_status",
+    "event_description" "text",
+    "location" "text",
+    "carrier" "text",
+    "tracking_number" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "event_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."shipment_events" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."shipment_events" IS 'V05-I08.3: Event log for shipment lifecycle tracking';
+
+
+
+COMMENT ON COLUMN "public"."shipment_events"."event_type" IS 'Event type (status_changed, tracking_updated, reminder_sent, note_added, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."shipment_events"."event_status" IS 'Shipment status at time of event (nullable for non-status events)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."tasks" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "patient_id" "uuid",
@@ -2359,6 +2540,11 @@ ALTER TABLE ONLY "public"."content_pages"
 
 ALTER TABLE ONLY "public"."content_pages"
     ADD CONSTRAINT "content_pages_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."device_shipments"
+    ADD CONSTRAINT "device_shipments_pkey" PRIMARY KEY ("id");
 
 
 
@@ -2571,6 +2757,11 @@ ALTER TABLE ONLY "public"."safety_check_results"
 
 
 
+ALTER TABLE ONLY "public"."shipment_events"
+    ADD CONSTRAINT "shipment_events_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."tasks"
     ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
 
@@ -2756,6 +2947,42 @@ CREATE INDEX "idx_content_pages_order_index" ON "public"."content_pages" USING "
 
 
 CREATE INDEX "idx_content_pages_priority" ON "public"."content_pages" USING "btree" ("priority");
+
+
+
+CREATE INDEX "idx_device_shipments_created_at_desc" ON "public"."device_shipments" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_device_shipments_org_created" ON "public"."device_shipments" USING "btree" ("organization_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_device_shipments_org_status" ON "public"."device_shipments" USING "btree" ("organization_id", "status");
+
+
+
+CREATE INDEX "idx_device_shipments_organization_id" ON "public"."device_shipments" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_device_shipments_patient_id" ON "public"."device_shipments" USING "btree" ("patient_id");
+
+
+
+CREATE INDEX "idx_device_shipments_reminder_query" ON "public"."device_shipments" USING "btree" ("organization_id", "status", "expected_delivery_at") WHERE (("expected_delivery_at" IS NOT NULL) AND ("status" <> ALL (ARRAY['delivered'::"public"."shipment_status", 'returned'::"public"."shipment_status", 'cancelled'::"public"."shipment_status"])));
+
+
+
+CREATE INDEX "idx_device_shipments_status" ON "public"."device_shipments" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_device_shipments_task_id" ON "public"."device_shipments" USING "btree" ("task_id") WHERE ("task_id" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_device_shipments_tracking_number" ON "public"."device_shipments" USING "btree" ("tracking_number") WHERE ("tracking_number" IS NOT NULL);
 
 
 
@@ -3163,6 +3390,14 @@ CREATE INDEX "idx_safety_check_results_sections_id" ON "public"."safety_check_re
 
 
 
+CREATE INDEX "idx_shipment_events_event_at_desc" ON "public"."shipment_events" USING "btree" ("event_at" DESC);
+
+
+
+CREATE INDEX "idx_shipment_events_shipment_id" ON "public"."shipment_events" USING "btree" ("shipment_id");
+
+
+
 CREATE INDEX "idx_tasks_assessment_id" ON "public"."tasks" USING "btree" ("assessment_id");
 
 
@@ -3243,6 +3478,10 @@ CREATE OR REPLACE TRIGGER "trg_notifications_updated_at" BEFORE UPDATE ON "publi
 
 
 
+CREATE OR REPLACE TRIGGER "trigger_device_shipments_updated_at" BEFORE UPDATE ON "public"."device_shipments" FOR EACH ROW EXECUTE FUNCTION "public"."update_device_shipments_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "trigger_medical_validation_results_updated_at" BEFORE UPDATE ON "public"."medical_validation_results" FOR EACH ROW EXECUTE FUNCTION "public"."update_medical_validation_results_updated_at"();
 
 
@@ -3252,6 +3491,10 @@ CREATE OR REPLACE TRIGGER "trigger_processing_jobs_updated_at" BEFORE UPDATE ON 
 
 
 CREATE OR REPLACE TRIGGER "trigger_reports_updated_at" BEFORE UPDATE ON "public"."reports" FOR EACH ROW EXECUTE FUNCTION "public"."update_reports_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_shipment_status_event" AFTER UPDATE ON "public"."device_shipments" FOR EACH ROW WHEN (("old"."status" IS DISTINCT FROM "new"."status")) EXECUTE FUNCTION "public"."create_shipment_status_event"();
 
 
 
@@ -3335,6 +3578,26 @@ ALTER TABLE ONLY "public"."content_page_sections"
 
 ALTER TABLE ONLY "public"."content_pages"
     ADD CONSTRAINT "content_pages_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels"("id");
+
+
+
+ALTER TABLE ONLY "public"."device_shipments"
+    ADD CONSTRAINT "device_shipments_created_by_user_id_fkey" FOREIGN KEY ("created_by_user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."device_shipments"
+    ADD CONSTRAINT "device_shipments_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."device_shipments"
+    ADD CONSTRAINT "device_shipments_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."device_shipments"
+    ADD CONSTRAINT "device_shipments_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE SET NULL;
 
 
 
@@ -3469,6 +3732,16 @@ ALTER TABLE ONLY "public"."risk_bundles"
 
 ALTER TABLE ONLY "public"."risk_bundles"
     ADD CONSTRAINT "risk_bundles_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "public"."processing_jobs"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."shipment_events"
+    ADD CONSTRAINT "shipment_events_created_by_user_id_fkey" FOREIGN KEY ("created_by_user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."shipment_events"
+    ADD CONSTRAINT "shipment_events_shipment_id_fkey" FOREIGN KEY ("shipment_id") REFERENCES "public"."device_shipments"("id") ON DELETE CASCADE;
 
 
 
@@ -3928,6 +4201,39 @@ ALTER TABLE "public"."clinician_patient_assignments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."content_page_sections" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."device_shipments" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "device_shipments_delete_admin" ON "public"."device_shipments" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."user_org_membership" "uom"
+  WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = 'admin'::"public"."user_role")))));
+
+
+
+CREATE POLICY "device_shipments_insert_staff" ON "public"."device_shipments" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."user_org_membership" "uom"
+  WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "device_shipments_select_own_patient" ON "public"."device_shipments" FOR SELECT TO "authenticated" USING (("patient_id" IN ( SELECT "patient_profiles"."id"
+   FROM "public"."patient_profiles"
+  WHERE ("patient_profiles"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "device_shipments_select_staff_org" ON "public"."device_shipments" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."user_org_membership" "uom"
+  WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "device_shipments_update_staff_org" ON "public"."device_shipments" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."user_org_membership" "uom"
+  WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
 ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4175,6 +4481,39 @@ CREATE POLICY "safety_check_results_update_service" ON "public"."safety_check_re
 
 
 
+ALTER TABLE "public"."shipment_events" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "shipment_events_insert_staff" ON "public"."shipment_events" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."device_shipments" "ds"
+     JOIN "public"."user_org_membership" "uom" ON (("uom"."organization_id" = "ds"."organization_id")))
+  WHERE (("ds"."id" = "shipment_events"."shipment_id") AND ("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "shipment_events_no_delete" ON "public"."shipment_events" FOR DELETE TO "authenticated" USING (false);
+
+
+
+CREATE POLICY "shipment_events_no_update" ON "public"."shipment_events" FOR UPDATE TO "authenticated" USING (false);
+
+
+
+CREATE POLICY "shipment_events_select_own_patient" ON "public"."shipment_events" FOR SELECT TO "authenticated" USING (("shipment_id" IN ( SELECT "device_shipments"."id"
+   FROM "public"."device_shipments"
+  WHERE ("device_shipments"."patient_id" IN ( SELECT "patient_profiles"."id"
+           FROM "public"."patient_profiles"
+          WHERE ("patient_profiles"."user_id" = "auth"."uid"()))))));
+
+
+
+CREATE POLICY "shipment_events_select_staff_org" ON "public"."shipment_events" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM ("public"."device_shipments" "ds"
+     JOIN "public"."user_org_membership" "uom" ON (("uom"."organization_id" = "ds"."organization_id")))
+  WHERE (("ds"."id" = "shipment_events"."shipment_id") AND ("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
 ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4384,6 +4723,12 @@ GRANT ALL ON FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_sal
 
 
 
+GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "anon";
+GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "service_role";
@@ -4432,6 +4777,12 @@ GRANT ALL ON FUNCTION "public"."has_role"("check_role" "text") TO "service_role"
 
 
 
+GRANT ALL ON FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id" "uuid", "p_reminder_timestamp" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id" "uuid", "p_reminder_timestamp" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id" "uuid", "p_reminder_timestamp" timestamp with time zone) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "service_role";
@@ -4465,6 +4816,12 @@ GRANT ALL ON FUNCTION "public"."set_user_role"("user_email" "text", "user_role" 
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "service_role";
 
 
 
@@ -4576,6 +4933,12 @@ GRANT ALL ON TABLE "public"."content_page_sections" TO "service_role";
 GRANT ALL ON TABLE "public"."content_pages" TO "anon";
 GRANT ALL ON TABLE "public"."content_pages" TO "authenticated";
 GRANT ALL ON TABLE "public"."content_pages" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."device_shipments" TO "anon";
+GRANT ALL ON TABLE "public"."device_shipments" TO "authenticated";
+GRANT ALL ON TABLE "public"."device_shipments" TO "service_role";
 
 
 
@@ -4738,6 +5101,12 @@ GRANT ALL ON TABLE "public"."rls_test_results" TO "service_role";
 GRANT ALL ON TABLE "public"."safety_check_results" TO "anon";
 GRANT ALL ON TABLE "public"."safety_check_results" TO "authenticated";
 GRANT ALL ON TABLE "public"."safety_check_results" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."shipment_events" TO "anon";
+GRANT ALL ON TABLE "public"."shipment_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."shipment_events" TO "service_role";
 
 
 
