@@ -152,6 +152,34 @@ export async function sendShipmentReminder(input: ShipmentReminderInput): Promis
   const supabase = createAdminSupabaseClient()
 
   try {
+    // CRITICAL: Atomically check and update reminder tracking FIRST
+    // This prevents race conditions where concurrent runs send duplicate notifications
+    const updateTimestamp = new Date().toISOString()
+    
+    const { data: shouldSend, error: rpcError } = await supabase.rpc(
+      'increment_reminder_count_atomic',
+      {
+        p_shipment_id: input.shipmentId,
+        p_reminder_timestamp: updateTimestamp,
+      }
+    )
+
+    if (rpcError) {
+      logError('Failed to check reminder cooldown atomically', { 
+        shipmentId: input.shipmentId 
+      }, rpcError)
+      return false
+    }
+    
+    if (shouldSend === false) {
+      // Another process already sent a reminder within cooldown period
+      logInfo('Reminder skipped - already sent by another process or within cooldown', { 
+        shipmentId: input.shipmentId 
+      })
+      return true // Return true since reminder was handled (no error)
+    }
+
+    // Only send notifications if atomic update succeeded
     // Create patient notification
     const patientNotification = await createNotification({
       userId: input.patientUserId,
@@ -200,27 +228,6 @@ export async function sendShipmentReminder(input: ShipmentReminderInput): Promis
         })
         // Don't fail the whole reminder if clinician notification fails
       }
-    }
-
-    // Update shipment reminder tracking
-    // First fetch current reminder count
-    const { data: currentShipment } = await supabase
-      .from('device_shipments')
-      .select('reminder_count')
-      .eq('id', input.shipmentId)
-      .single()
-
-    const { error: updateError } = await supabase
-      .from('device_shipments')
-      .update({
-        last_reminder_at: new Date().toISOString(),
-        reminder_count: (currentShipment?.reminder_count || 0) + 1,
-      })
-      .eq('id', input.shipmentId)
-
-    if (updateError) {
-      logError('Failed to update shipment reminder tracking', { shipmentId: input.shipmentId }, updateError)
-      // Don't fail - notification was sent successfully
     }
 
     // Create shipment event

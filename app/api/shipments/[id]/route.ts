@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/db/supabase.server'
 import { logAuditEvent } from '@/lib/audit/auditLogger'
-import { UpdateShipmentRequestSchema } from '@/lib/contracts/shipment'
+import { UpdateShipmentRequestSchema, getValidStatusTransitions, type ShipmentStatus } from '@/lib/contracts/shipment'
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -138,6 +138,50 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const updateData = validationResult.data
+
+    // Prevent changing organization_id or patient_id (tenant isolation)
+    // These fields are not in UpdateShipmentRequestSchema, but double-check
+    if ('organization_id' in updateData || 'patient_id' in updateData) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'forbidden', message: 'Cannot change organization or patient' },
+        },
+        { status: 403 }
+      )
+    }
+
+    // Validate status transitions if status is being changed
+    if (updateData.status) {
+      // First fetch current shipment to get current status
+      const { data: currentShipment, error: fetchError } = await supabase
+        .from('device_shipments')
+        .select('status')
+        .eq('id', id)
+        .single()
+
+      if (fetchError || !currentShipment) {
+        return NextResponse.json(
+          { success: false, error: { code: 'not_found', message: 'Shipment not found' } },
+          { status: 404 }
+        )
+      }
+
+      // Validate transition using helper function
+      const validTransitions = getValidStatusTransitions(currentShipment.status as ShipmentStatus)
+      if (!validTransitions.includes(updateData.status as ShipmentStatus) && updateData.status !== currentShipment.status) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'invalid_transition',
+              message: `Cannot transition from ${currentShipment.status} to ${updateData.status}`,
+            },
+          },
+          { status: 400 }
+        )
+      }
+    }
 
     // Auto-set timestamp fields based on status changes
     if (updateData.status) {

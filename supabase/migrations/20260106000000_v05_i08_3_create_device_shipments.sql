@@ -134,6 +134,12 @@ CREATE INDEX idx_device_shipments_created_at_desc ON public.device_shipments(cre
 CREATE INDEX idx_device_shipments_org_status ON public.device_shipments(organization_id, status);
 CREATE INDEX idx_device_shipments_org_created ON public.device_shipments(organization_id, created_at DESC);
 
+-- Reminder query optimization: org + status + expected_delivery for overdue shipments
+CREATE INDEX idx_device_shipments_reminder_query 
+ON public.device_shipments(organization_id, status, expected_delivery_at) 
+WHERE expected_delivery_at IS NOT NULL 
+AND status NOT IN ('delivered', 'returned', 'cancelled');
+
 -- Shipment events indexes
 CREATE INDEX idx_shipment_events_shipment_id ON public.shipment_events(shipment_id);
 CREATE INDEX idx_shipment_events_event_at_desc ON public.shipment_events(event_at DESC);
@@ -271,8 +277,22 @@ WITH CHECK (
     )
 );
 
+-- Prevent UPDATE on shipment_events (append-only audit log)
+CREATE POLICY shipment_events_no_update
+ON public.shipment_events
+FOR UPDATE
+TO authenticated
+USING (false);
+
+-- Prevent DELETE on shipment_events (append-only audit log)
+CREATE POLICY shipment_events_no_delete
+ON public.shipment_events
+FOR DELETE
+TO authenticated
+USING (false);
+
 -- ============================================================
--- 6. CREATE TRIGGERS
+-- 6. CREATE TRIGGERS AND FUNCTIONS
 -- ============================================================
 
 -- Trigger to update updated_at timestamp
@@ -321,6 +341,42 @@ CREATE TRIGGER trigger_shipment_status_event
     FOR EACH ROW
     WHEN (OLD.status IS DISTINCT FROM NEW.status)
     EXECUTE FUNCTION create_shipment_status_event();
+
+-- Atomic reminder count increment function
+-- Prevents race conditions on concurrent reminder runs
+CREATE OR REPLACE FUNCTION increment_reminder_count_atomic(
+    p_shipment_id UUID,
+    p_reminder_timestamp TIMESTAMP WITH TIME ZONE
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_rows_affected INTEGER;
+BEGIN
+    -- Atomically update reminder tracking
+    -- Only succeeds if reminder wasn't sent in last 7 days
+    UPDATE public.device_shipments
+    SET 
+        last_reminder_at = p_reminder_timestamp,
+        reminder_count = COALESCE(reminder_count, 0) + 1
+    WHERE 
+        id = p_shipment_id
+        AND (
+            last_reminder_at IS NULL 
+            OR last_reminder_at < (p_reminder_timestamp - INTERVAL '7 days')
+        );
+    
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+    
+    -- Return true if update succeeded (reminder should be sent)
+    -- Return false if no rows updated (reminder was already sent)
+    RETURN v_rows_affected > 0;
+END;
+$$;
+
+COMMENT ON FUNCTION increment_reminder_count_atomic IS 'V05-I08.3: Atomically increment reminder count with 7-day cooldown check to prevent concurrent duplicate reminders';
 
 -- ============================================================
 -- 7. GRANTS
