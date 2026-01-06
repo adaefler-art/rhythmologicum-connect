@@ -201,7 +201,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         assigned_to_role: escalationRequest.assigned_to_role,
         assigned_to_user_id: escalationRequest.assigned_to_user_id ?? null,
         task_type: TASK_TYPE.CONTACT_PATIENT,
-        payload: taskPayload as never,
+        payload: taskPayload as Record<string, unknown>,
         status: TASK_STATUS.PENDING,
         due_at: escalationRequest.task_due_at ?? null,
       })

@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         status: SUPPORT_CASE_STATUS.OPEN,
         subject: caseRequest.subject,
         description: caseRequest.description ?? null,
-        metadata: (caseRequest.metadata ?? {}) as never,
+        metadata: (caseRequest.metadata ?? {}) as Record<string, unknown>,
       })
       .select()
       .single()

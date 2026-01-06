@@ -230,7 +230,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (updateRequest.resolution_notes !== undefined)
       updateData.resolution_notes = updateRequest.resolution_notes
     if (updateRequest.metadata !== undefined)
-      updateData.metadata = updateRequest.metadata as never
+      updateData.metadata = updateRequest.metadata as Record<string, unknown>
 
     // Update support case (RLS enforced)
     const { data: updatedCase, error: updateError } = await supabase

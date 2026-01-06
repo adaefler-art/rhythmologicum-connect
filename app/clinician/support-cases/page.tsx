@@ -143,8 +143,6 @@ export default function SupportCasesPage() {
     return <ErrorState message={error} onRetry={loadSupportCases} />
   }
 
-  const filteredCases = supportCases
-
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -197,20 +195,20 @@ export default function SupportCasesPage() {
             </div>
           </div>
           <div className="text-sm text-gray-600">
-            {filteredCases.length} {filteredCases.length === 1 ? 'Fall' : 'Fälle'}
+            {supportCases.length} {supportCases.length === 1 ? 'Fall' : 'Fälle'}
           </div>
         </div>
       </Card>
 
       {/* Support Cases List */}
       <div className="space-y-4">
-        {filteredCases.length === 0 ? (
+        {supportCases.length === 0 ? (
           <Card className="p-8 text-center">
             <AlertCircle size={48} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600">Keine Support-Fälle gefunden.</p>
           </Card>
         ) : (
-          filteredCases.map((supportCase) => (
+          supportCases.map((supportCase) => (
             <Card key={supportCase.id} className="p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
