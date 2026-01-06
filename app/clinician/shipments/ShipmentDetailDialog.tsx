@@ -13,7 +13,7 @@
 
 import { useState, useCallback } from 'react'
 import { Button, Card, Input, Select, Textarea, Label, Badge } from '@/lib/ui'
-import { X, Package, Bell, TruckIcon, Clock, AlertCircle } from 'lucide-react'
+import { X, Package, Bell, AlertCircle } from 'lucide-react'
 import {
   type DeviceShipment,
   type ShipmentStatus,
@@ -57,7 +57,7 @@ export default function ShipmentDetailDialog({
     setLoading(true)
 
     try {
-      const updateData: any = {}
+      const updateData: Record<string, unknown> = {}
 
       if (status !== shipment.status) {
         updateData.status = status
@@ -184,14 +184,18 @@ export default function ShipmentDetailDialog({
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as ShipmentStatus)}
-              options={[
-                { value: shipment.status, label: getShipmentStatusLabel(shipment.status as ShipmentStatus) },
-                ...validTransitions.map((s) => ({
-                  value: s,
-                  label: getShipmentStatusLabel(s),
-                })),
-              ]}
-            />
+            >
+              {Array.from(
+                new Set<ShipmentStatus>([
+                  shipment.status as ShipmentStatus,
+                  ...validTransitions,
+                ])
+              ).map((s) => (
+                <option key={s} value={s}>
+                  {getShipmentStatusLabel(s)}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Tracking Information */}
@@ -206,8 +210,13 @@ export default function ShipmentDetailDialog({
                 id="carrier"
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
-                options={carrierOptions}
-              />
+              >
+                {carrierOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
             </div>
 
             <div>

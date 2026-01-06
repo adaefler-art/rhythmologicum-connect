@@ -7,8 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/db/supabase.server'
-import { logAuditEvent } from '@/lib/audit/auditLogger'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { logAuditEvent } from '@/lib/audit/log'
 import { UpdateShipmentRequestSchema, getValidStatusTransitions, type ShipmentStatus } from '@/lib/contracts/shipment'
 
 type RouteContext = {
@@ -20,7 +20,7 @@ type RouteContext = {
 // ============================================================
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const supabase = await createServerClient()
+  const supabase = await createServerSupabaseClient()
   const { id } = await context.params
 
   try {
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // ============================================================
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const supabase = await createServerClient()
+  const supabase = await createServerSupabaseClient()
   const { id } = await context.params
 
   try {
@@ -102,14 +102,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       )
     }
 
-    // Get user role
-    const { data: profile } = await supabase
-      .from('patient_profiles')
-      .select('role, organization_id')
-      .eq('user_id', user.id)
-      .single()
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
 
-    if (!profile || !['clinician', 'nurse', 'admin'].includes(profile.role)) {
+    if (!userRole || !['clinician', 'nurse', 'admin'].includes(userRole)) {
       return NextResponse.json(
         {
           success: false,
@@ -130,7 +125,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
           error: {
             code: 'validation_error',
             message: 'Invalid request data',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
         },
         { status: 400 }
@@ -229,12 +224,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     // Log audit event (PHI-free)
     await logAuditEvent({
-      eventType: 'shipment_updated',
-      userId: user.id,
+      actor_user_id: user.id,
+      actor_role: userRole as 'clinician' | 'nurse' | 'admin',
+      source: 'api',
+      entity_type: 'device_shipment',
+      entity_id: id,
+      action: 'update',
       metadata: {
-        shipmentId: id,
-        updatedFields: Object.keys(updateData),
-        newStatus: updateData.status,
+        status_to: updateData.status,
       },
     })
 

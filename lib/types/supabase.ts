@@ -406,6 +406,118 @@ export type Database = {
           },
         ]
       }
+      device_shipments: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          created_by_user_id: string | null
+          delivered_at: string | null
+          device_serial_number: string | null
+          device_type: string
+          expected_delivery_at: string | null
+          id: string
+          last_reminder_at: string | null
+          metadata: Json
+          notes: string | null
+          ordered_at: string
+          organization_id: string
+          patient_id: string
+          reminder_count: number
+          reminder_sent_at: string | null
+          return_carrier: string | null
+          return_reason: string | null
+          return_requested_at: string | null
+          return_tracking_number: string | null
+          returned_at: string | null
+          shipped_at: string | null
+          shipping_address: string | null
+          status: Database["public"]["Enums"]["shipment_status"]
+          task_id: string | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          delivered_at?: string | null
+          device_serial_number?: string | null
+          device_type: string
+          expected_delivery_at?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          metadata?: Json
+          notes?: string | null
+          ordered_at?: string
+          organization_id: string
+          patient_id: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          return_carrier?: string | null
+          return_reason?: string | null
+          return_requested_at?: string | null
+          return_tracking_number?: string | null
+          returned_at?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["shipment_status"]
+          task_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          delivered_at?: string | null
+          device_serial_number?: string | null
+          device_type?: string
+          expected_delivery_at?: string | null
+          id?: string
+          last_reminder_at?: string | null
+          metadata?: Json
+          notes?: string | null
+          ordered_at?: string
+          organization_id?: string
+          patient_id?: string
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          return_carrier?: string | null
+          return_reason?: string | null
+          return_requested_at?: string | null
+          return_tracking_number?: string | null
+          returned_at?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          status?: Database["public"]["Enums"]["shipment_status"]
+          task_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_shipments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_shipments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_shipments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           assessment_id: string | null
@@ -1735,6 +1847,59 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_events: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          created_by_user_id: string | null
+          event_at: string
+          event_description: string | null
+          event_status: Database["public"]["Enums"]["shipment_status"] | null
+          event_type: string
+          id: string
+          location: string | null
+          metadata: Json
+          shipment_id: string
+          tracking_number: string | null
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          event_at?: string
+          event_description?: string | null
+          event_status?: Database["public"]["Enums"]["shipment_status"] | null
+          event_type: string
+          id?: string
+          location?: string | null
+          metadata?: Json
+          shipment_id: string
+          tracking_number?: string | null
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          event_at?: string
+          event_description?: string | null
+          event_status?: Database["public"]["Enums"]["shipment_status"] | null
+          event_type?: string
+          id?: string
+          location?: string | null
+          metadata?: Json
+          shipment_id?: string
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "device_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assessment_id: string | null
@@ -1947,6 +2112,10 @@ export type Database = {
         Args: { patient_uid: string }
         Returns: boolean
       }
+      increment_reminder_count_atomic: {
+        Args: { p_reminder_timestamp: string; p_shipment_id: string }
+        Returns: boolean
+      }
       is_clinician: { Args: never; Returns: boolean }
       is_member_of_org: { Args: { org_id: string }; Returns: boolean }
       log_rls_violation: {
@@ -2001,6 +2170,13 @@ export type Database = {
       report_status: "pending" | "generating" | "completed" | "failed"
       review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
       safety_action: "PASS" | "FLAG" | "BLOCK" | "UNKNOWN"
+      shipment_status:
+        | "ordered"
+        | "shipped"
+        | "in_transit"
+        | "delivered"
+        | "returned"
+        | "cancelled"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
@@ -2171,6 +2347,14 @@ export const Constants = {
       report_status: ["pending", "generating", "completed", "failed"],
       review_status: ["PENDING", "APPROVED", "REJECTED", "CHANGES_REQUESTED"],
       safety_action: ["PASS", "FLAG", "BLOCK", "UNKNOWN"],
+      shipment_status: [
+        "ordered",
+        "shipped",
+        "in_transit",
+        "delivered",
+        "returned",
+        "cancelled",
+      ],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],

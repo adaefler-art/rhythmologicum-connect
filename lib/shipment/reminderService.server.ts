@@ -17,7 +17,7 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createNotification } from '@/lib/notifications/notificationService.server'
 import { logInfo, logError } from '@/lib/logging/logger'
 import type { DeviceShipment } from '@/lib/contracts/shipment'
-import { shouldSendReminder, getShipmentStatusLabel } from '@/lib/contracts/shipment'
+import { shouldSendReminder } from '@/lib/contracts/shipment'
 
 // ============================================================
 // TYPES
@@ -36,6 +36,18 @@ type ShipmentReminderInput = {
   deviceType: string
   status: string
   expectedDeliveryDate: string
+}
+
+type OverdueShipmentRow = {
+  id: string
+  patient_id: string
+  created_by_user_id: string | null
+  device_type: string
+  status: string
+  expected_delivery_at: string | null
+  last_reminder_at: string | null
+  reminder_count: number | null
+  patient_profiles: { user_id: string } | null
 }
 
 // ============================================================
@@ -57,7 +69,7 @@ export async function processShipmentReminders(): Promise<SendReminderResult> {
 
   try {
     // Find overdue shipments that need reminders
-    const { data: shipments, error: queryError } = await supabase
+    const { data: rawShipments, error: queryError } = await supabase
       .from('device_shipments')
       .select(
         `
@@ -78,6 +90,8 @@ export async function processShipmentReminders(): Promise<SendReminderResult> {
       .lt('expected_delivery_at', new Date().toISOString())
       .not('status', 'in', '(delivered,returned,cancelled)')
 
+    const shipments = (rawShipments ?? []) as OverdueShipmentRow[]
+
     if (queryError) {
       logError('Failed to query overdue shipments', {}, queryError)
       result.success = false
@@ -85,13 +99,13 @@ export async function processShipmentReminders(): Promise<SendReminderResult> {
       return result
     }
 
-    if (!shipments || shipments.length === 0) {
+    if (shipments.length === 0) {
       logInfo('No overdue shipments found')
       return result
     }
 
     // Filter shipments that actually need reminders (time-based logic)
-    const shipmentsNeedingReminders = shipments.filter((shipment: any) => {
+    const shipmentsNeedingReminders = shipments.filter((shipment) => {
       const mockShipment = {
         id: shipment.id,
         expected_delivery_at: shipment.expected_delivery_at,
@@ -110,6 +124,18 @@ export async function processShipmentReminders(): Promise<SendReminderResult> {
     // Send reminders for each shipment
     for (const shipment of shipmentsNeedingReminders) {
       try {
+        if (!shipment.patient_profiles?.user_id) {
+          logError('Shipment missing patient user id for reminder', { shipmentId: shipment.id })
+          result.errors.push(`Shipment ${shipment.id} missing patient user id`)
+          continue
+        }
+
+        if (!shipment.expected_delivery_at) {
+          logError('Shipment missing expected delivery date for reminder', { shipmentId: shipment.id })
+          result.errors.push(`Shipment ${shipment.id} missing expected delivery date`)
+          continue
+        }
+
         const reminderInput: ShipmentReminderInput = {
           shipmentId: shipment.id,
           patientUserId: shipment.patient_profiles.user_id,

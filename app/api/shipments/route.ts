@@ -7,20 +7,57 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/db/supabase.server'
-import { logAuditEvent } from '@/lib/audit/auditLogger'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { logAuditEvent } from '@/lib/audit/log'
 import {
   CreateShipmentRequestSchema,
   ShipmentFiltersSchema,
-  type DeviceShipment,
 } from '@/lib/contracts/shipment'
+
+type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
+
+async function getUserOrgId(supabase: ServerSupabaseClient, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('user_org_membership')
+    .select('organization_id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (error || !data) {
+    console.error('[shipments] Failed to get user org:', error)
+    return null
+  }
+
+  return data.organization_id
+}
+
+async function getPatientProfileIdForUser(
+  supabase: ServerSupabaseClient,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('patient_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !data) {
+    console.error('[shipments] Failed to get patient profile:', error)
+    return null
+  }
+
+  return data.id
+}
 
 // ============================================================
 // POST /api/shipments - Create new shipment
 // ============================================================
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerClient()
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Auth check
@@ -36,18 +73,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user role
-    const { data: profile } = await supabase
-      .from('patient_profiles')
-      .select('role, organization_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile || !['clinician', 'admin'].includes(profile.role)) {
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
+    if (!userRole || !['clinician', 'admin'].includes(userRole)) {
       return NextResponse.json(
         {
           success: false,
           error: { code: 'forbidden', message: 'Only clinicians and admins can create shipments' },
+        },
+        { status: 403 }
+      )
+    }
+
+    const organizationId = await getUserOrgId(supabase, user.id)
+    if (!organizationId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'forbidden', message: 'User not associated with an organization' },
         },
         { status: 403 }
       )
@@ -64,7 +106,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'validation_error',
             message: 'Invalid request data',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
         },
         { status: 400 }
@@ -76,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Verify patient exists and is in same organization
     const { data: patient } = await supabase
       .from('patient_profiles')
-      .select('id, organization_id')
+      .select('id, user_id')
       .eq('id', shipmentData.patient_id)
       .single()
 
@@ -87,7 +129,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (patient.organization_id !== profile.organization_id) {
+    const patientOrgId = await getUserOrgId(supabase, patient.user_id)
+    if (!patientOrgId || patientOrgId !== organizationId) {
       return NextResponse.json(
         {
           success: false,
@@ -103,7 +146,7 @@ export async function POST(request: NextRequest) {
       .insert({
         patient_id: shipmentData.patient_id,
         task_id: shipmentData.task_id || null,
-        organization_id: profile.organization_id,
+        organization_id: organizationId,
         created_by_user_id: user.id,
         device_type: shipmentData.device_type,
         device_serial_number: shipmentData.device_serial_number || null,
@@ -128,12 +171,15 @@ export async function POST(request: NextRequest) {
 
     // Log audit event (PHI-free)
     await logAuditEvent({
-      eventType: 'shipment_created',
-      userId: user.id,
+      org_id: organizationId,
+      actor_user_id: user.id,
+      actor_role: userRole as 'clinician' | 'admin',
+      source: 'api',
+      entity_type: 'device_shipment',
+      entity_id: shipment.id,
+      action: 'create',
       metadata: {
-        shipmentId: shipment.id,
-        deviceType: shipmentData.device_type,
-        status: 'ordered',
+        status_to: 'ordered',
       },
     })
 
@@ -158,7 +204,7 @@ export async function POST(request: NextRequest) {
 // ============================================================
 
 export async function GET(request: NextRequest) {
-  const supabase = await createServerClient()
+  const supabase = await createServerSupabaseClient()
 
   try {
     // Auth check
@@ -174,16 +220,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user role
-    const { data: profile } = await supabase
-      .from('patient_profiles')
-      .select('role, organization_id, id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile) {
+    const userRole = user.app_metadata?.role || user.user_metadata?.role
+    if (!userRole) {
       return NextResponse.json(
         { success: false, error: { code: 'forbidden', message: 'User profile not found' } },
+        { status: 403 }
+      )
+    }
+
+    const isPatient = userRole === 'patient'
+    const isStaff = ['clinician', 'nurse', 'admin'].includes(userRole)
+
+    if (!isPatient && !isStaff) {
+      return NextResponse.json(
+        { success: false, error: { code: 'forbidden', message: 'Insufficient permissions' } },
+        { status: 403 }
+      )
+    }
+
+    const patientProfileId = isPatient ? await getPatientProfileIdForUser(supabase, user.id) : null
+    const organizationId = isStaff ? await getUserOrgId(supabase, user.id) : null
+
+    if (isPatient && !patientProfileId) {
+      return NextResponse.json(
+        { success: false, error: { code: 'forbidden', message: 'Patient profile not found' } },
+        { status: 403 }
+      )
+    }
+
+    if (isStaff && !organizationId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: 'forbidden', message: 'User not associated with an organization' },
+        },
         { status: 403 }
       )
     }
@@ -208,12 +278,14 @@ export async function GET(request: NextRequest) {
           error: {
             code: 'validation_error',
             message: 'Invalid query parameters',
-            details: validationResult.error.errors,
+            details: validationResult.error.issues,
           },
         },
         { status: 400 }
       )
     }
+
+    const parsedFilters = validationResult.data
 
     // Build query
     let query = supabase.from('device_shipments').select(
@@ -228,28 +300,30 @@ export async function GET(request: NextRequest) {
     )
 
     // Apply role-based filtering
-    if (profile.role === 'patient') {
+    if (isPatient && patientProfileId) {
       // Patients can only see their own shipments
-      query = query.eq('patient_id', profile.id)
-    } else {
+      query = query.eq('patient_id', patientProfileId)
+    }
+
+    if (isStaff && organizationId) {
       // Staff can see all shipments in their organization
-      query = query.eq('organization_id', profile.organization_id)
+      query = query.eq('organization_id', organizationId)
     }
 
     // Apply additional filters
-    if (filters.patient_id) {
-      query = query.eq('patient_id', filters.patient_id)
+    if (parsedFilters.patient_id) {
+      query = query.eq('patient_id', parsedFilters.patient_id)
     }
-    if (filters.task_id) {
-      query = query.eq('task_id', filters.task_id)
+    if (parsedFilters.task_id) {
+      query = query.eq('task_id', parsedFilters.task_id)
     }
-    if (filters.status) {
-      query = query.eq('status', filters.status)
+    if (parsedFilters.status) {
+      query = query.eq('status', parsedFilters.status)
     }
-    if (filters.device_type) {
-      query = query.ilike('device_type', `%${filters.device_type}%`)
+    if (parsedFilters.device_type) {
+      query = query.ilike('device_type', `%${parsedFilters.device_type}%`)
     }
-    if (filters.needs_reminder) {
+    if (parsedFilters.needs_reminder) {
       // Filter for shipments that need reminders (overdue and not yet delivered)
       query = query
         .not('expected_delivery_at', 'is', null)
@@ -258,7 +332,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Order by created_at DESC and apply limit
-    query = query.order('created_at', { ascending: false }).limit(filters.limit || 50)
+    query = query.order('created_at', { ascending: false }).limit(parsedFilters.limit || 50)
 
     const { data: shipments, error: queryError } = await query
 

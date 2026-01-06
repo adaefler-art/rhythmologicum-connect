@@ -184,11 +184,18 @@ export default function ShipmentCreateDialog({
               id="patient"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
-              options={patientOptions}
-              placeholder={loadingPatients ? 'Lade Patienten...' : 'Patient:in auswählen'}
               required
               disabled={loadingPatients || !!initialPatientId}
-            />
+            >
+              <option value="" disabled>
+                {loadingPatients ? 'Lade Patienten...' : 'Patient:in auswählen'}
+              </option>
+              {patientOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Device Type */}
@@ -198,10 +205,17 @@ export default function ShipmentCreateDialog({
               id="deviceType"
               value={deviceType}
               onChange={(e) => setDeviceType(e.target.value)}
-              options={deviceTypeOptions}
-              placeholder="Gerätetyp auswählen"
               required
-            />
+            >
+              <option value="" disabled>
+                Gerätetyp auswählen
+              </option>
+              {deviceTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Serial Number */}
@@ -223,9 +237,14 @@ export default function ShipmentCreateDialog({
               id="carrier"
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
-              options={carrierOptions}
-              placeholder="Versanddienstleister auswählen"
-            />
+            >
+              <option value="">Versanddienstleister auswählen</option>
+              {carrierOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Tracking Number */}

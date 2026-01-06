@@ -17,9 +17,7 @@ import type { TableColumn } from '@/lib/ui/Table'
 import {
   Package,
   Plus,
-  TruckIcon,
   Bell,
-  CheckCircle,
   AlertCircle,
   Filter,
   RefreshCw,
@@ -100,30 +98,31 @@ export default function ShipmentsPage() {
   const columns: TableColumn<ShipmentWithPatient>[] = [
     {
       header: 'Patient:in',
-      accessor: 'patient_profiles',
-      render: (patient) => (
+      accessor: (shipment) => (
         <span className="font-medium">
-          {patient?.full_name || patient?.user_id || 'Unbekannt'}
+          {shipment.patient_profiles?.full_name ||
+            shipment.patient_profiles?.user_id ||
+            'Unbekannt'}
         </span>
       ),
     },
     {
       header: 'Gerät',
-      accessor: 'device_type',
-      render: (deviceType) => <span className="text-sm">{deviceType}</span>,
+      accessor: (shipment) => <span className="text-sm">{shipment.device_type}</span>,
     },
     {
       header: 'Status',
-      accessor: 'status',
-      render: (status, shipment) => {
+      accessor: (shipment) => {
         const isOverdue = isShipmentOverdue(shipment)
         return (
           <div className="flex items-center gap-2">
-            <Badge className={getShipmentStatusColor(status as ShipmentStatus)}>
-              {getShipmentStatusLabel(status as ShipmentStatus)}
+            <Badge className={getShipmentStatusColor(shipment.status)}>
+              {getShipmentStatusLabel(shipment.status)}
             </Badge>
             {isOverdue && (
-              <AlertCircle className="w-4 h-4 text-orange-500" title="Überfällig" />
+              <span title="Überfällig" className="inline-flex">
+                <AlertCircle className="w-4 h-4 text-orange-500" />
+              </span>
             )}
           </div>
         )
@@ -131,17 +130,16 @@ export default function ShipmentsPage() {
     },
     {
       header: 'Tracking-Nr.',
-      accessor: 'tracking_number',
-      render: (trackingNumber) => (
+      accessor: (shipment) => (
         <span className="text-sm font-mono">
-          {trackingNumber || <span className="text-slate-400">—</span>}
+          {shipment.tracking_number || <span className="text-slate-400">—</span>}
         </span>
       ),
     },
     {
       header: 'Erwartete Lieferung',
-      accessor: 'expected_delivery_at',
-      render: (date) => {
+      accessor: (shipment) => {
+        const date = shipment.expected_delivery_at
         if (!date) return <span className="text-slate-400">—</span>
         const deliveryDate = new Date(date)
         const isOverdue = deliveryDate < new Date()
@@ -154,20 +152,18 @@ export default function ShipmentsPage() {
     },
     {
       header: 'Erinnerungen',
-      accessor: 'reminder_count',
-      render: (count) => (
+      accessor: (shipment) => (
         <div className="flex items-center gap-1">
           <Bell className="w-4 h-4 text-slate-400" />
-          <span className="text-sm">{count || 0}</span>
+          <span className="text-sm">{shipment.reminder_count || 0}</span>
         </div>
       ),
     },
     {
       header: 'Erstellt am',
-      accessor: 'created_at',
-      render: (date) => (
+      accessor: (shipment) => (
         <span className="text-sm text-slate-600 dark:text-slate-400">
-          {new Date(date).toLocaleDateString('de-DE')}
+          {new Date(shipment.created_at).toLocaleDateString('de-DE')}
         </span>
       ),
     },
@@ -254,8 +250,10 @@ export default function ShipmentsPage() {
         <ErrorState
           title="Fehler beim Laden"
           message={error}
-          actionLabel="Erneut versuchen"
-          onAction={loadShipments}
+          retryText="Erneut versuchen"
+          onRetry={() => {
+            void loadShipments()
+          }}
         />
       ) : shipments.length === 0 ? (
         <Card className="p-12 text-center">
