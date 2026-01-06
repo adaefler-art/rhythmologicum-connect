@@ -56,6 +56,9 @@ const ALLOWED_ADMIN_USAGE = [
   'lib/audit/log.ts',
   'lib/utils/contentResolver.ts',
   'lib/funnels/loadFunnelVersion.ts', // Legacy, to be refactored
+  // Shipment reminders: scheduled/background task without end-user cookies.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'lib/shipment/reminderService.server.ts',
   // Notifications pipeline (server-only modules)
   'lib/notifications/notificationService.server.ts',
   'lib/processing/deliveryStageProcessor.server.ts',

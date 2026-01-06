@@ -366,6 +366,11 @@ Use in all API routes for consistency.
    - **Scope**: `funnels_catalog`, `pillars` (public metadata)
    - **Mitigation**: Auth required, only active funnels shown
 
+5. **Shipment Reminder Service** (`lib/shipment/reminderService.server.ts`)
+  - **Why**: Runs as a scheduled/background job (no end-user cookies), needs to query/update shipments and emit reminders across users
+  - **Scope**: `device_shipments`, `shipment_events`, RPC `increment_reminder_count_atomic` (shipment reminder tracking)
+  - **Mitigation**: Server-only module, selects minimal fields, atomic cooldown enforcement via RPC to prevent duplicate reminders; notification metadata is PHI-free
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.
