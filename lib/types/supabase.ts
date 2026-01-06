@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -2108,12 +2103,12 @@ export type Database = {
         Returns: boolean
       }
       has_role: { Args: { check_role: string }; Returns: boolean }
-      is_assigned_to_patient: {
-        Args: { patient_uid: string }
-        Returns: boolean
-      }
       increment_reminder_count_atomic: {
         Args: { p_reminder_timestamp: string; p_shipment_id: string }
+        Returns: boolean
+      }
+      is_assigned_to_patient: {
+        Args: { patient_uid: string }
         Returns: boolean
       }
       is_clinician: { Args: never; Returns: boolean }
@@ -2186,8 +2181,6 @@ export type Database = {
     }
   }
 }
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
