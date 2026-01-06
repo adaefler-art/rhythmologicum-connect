@@ -1094,6 +1094,72 @@ export type Database = {
         }
         Relationships: []
       }
+      pre_screening_calls: {
+        Row: {
+          call_date: string
+          clinician_id: string
+          created_at: string
+          general_notes: string | null
+          id: string
+          is_suitable: boolean
+          organization_id: string | null
+          patient_id: string
+          recommended_tier: string | null
+          red_flags: Json
+          red_flags_notes: string | null
+          suitability_notes: string | null
+          tier_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          call_date?: string
+          clinician_id: string
+          created_at?: string
+          general_notes?: string | null
+          id?: string
+          is_suitable: boolean
+          organization_id?: string | null
+          patient_id: string
+          recommended_tier?: string | null
+          red_flags?: Json
+          red_flags_notes?: string | null
+          suitability_notes?: string | null
+          tier_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          call_date?: string
+          clinician_id?: string
+          created_at?: string
+          general_notes?: string | null
+          id?: string
+          is_suitable?: boolean
+          organization_id?: string | null
+          patient_id?: string
+          recommended_tier?: string | null
+          red_flags?: Json
+          red_flags_notes?: string | null
+          suitability_notes?: string | null
+          tier_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pre_screening_calls_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pre_screening_calls_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       priority_rankings: {
         Row: {
           algorithm_version: string
