@@ -283,6 +283,144 @@ COMMENT ON TYPE "public"."validation_status" IS 'V05-I05.5: Medical validation o
 
 
 
+CREATE OR REPLACE FUNCTION "public"."audit_kpi_thresholds"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF (TG_OP = 'DELETE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, changed_by
+    ) VALUES (
+      'kpi_thresholds',
+      OLD.id,
+      TG_OP,
+      to_jsonb(OLD),
+      OLD.updated_by
+    );
+    RETURN OLD;
+  ELSIF (TG_OP = 'UPDATE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, new_values, changed_by
+    ) VALUES (
+      'kpi_thresholds',
+      NEW.id,
+      TG_OP,
+      to_jsonb(OLD),
+      to_jsonb(NEW),
+      NEW.updated_by
+    );
+    RETURN NEW;
+  ELSIF (TG_OP = 'INSERT') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, new_values, changed_by
+    ) VALUES (
+      'kpi_thresholds',
+      NEW.id,
+      TG_OP,
+      to_jsonb(NEW),
+      NEW.created_by
+    );
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."audit_kpi_thresholds"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."audit_notification_templates"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF (TG_OP = 'DELETE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, changed_by
+    ) VALUES (
+      'notification_templates',
+      OLD.id,
+      TG_OP,
+      to_jsonb(OLD),
+      OLD.updated_by
+    );
+    RETURN OLD;
+  ELSIF (TG_OP = 'UPDATE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, new_values, changed_by
+    ) VALUES (
+      'notification_templates',
+      NEW.id,
+      TG_OP,
+      to_jsonb(OLD),
+      to_jsonb(NEW),
+      NEW.updated_by
+    );
+    RETURN NEW;
+  ELSIF (TG_OP = 'INSERT') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, new_values, changed_by
+    ) VALUES (
+      'notification_templates',
+      NEW.id,
+      TG_OP,
+      to_jsonb(NEW),
+      NEW.created_by
+    );
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."audit_notification_templates"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."audit_reassessment_rules"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF (TG_OP = 'DELETE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, changed_by
+    ) VALUES (
+      'reassessment_rules',
+      OLD.id,
+      TG_OP,
+      to_jsonb(OLD),
+      OLD.updated_by
+    );
+    RETURN OLD;
+  ELSIF (TG_OP = 'UPDATE') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, old_values, new_values, changed_by
+    ) VALUES (
+      'reassessment_rules',
+      NEW.id,
+      TG_OP,
+      to_jsonb(OLD),
+      to_jsonb(NEW),
+      NEW.updated_by
+    );
+    RETURN NEW;
+  ELSIF (TG_OP = 'INSERT') THEN
+    INSERT INTO public.operational_settings_audit (
+      table_name, record_id, operation, new_values, changed_by
+    ) VALUES (
+      'reassessment_rules',
+      NEW.id,
+      TG_OP,
+      to_jsonb(NEW),
+      NEW.created_by
+    );
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."audit_reassessment_rules"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") RETURNS "text"
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -891,6 +1029,19 @@ $$;
 
 
 ALTER FUNCTION "public"."update_notifications_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_operational_settings_timestamp"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_operational_settings_timestamp"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_pre_screening_calls_updated_at"() RETURNS "trigger"
@@ -1596,6 +1747,54 @@ COMMENT ON COLUMN "public"."funnels_catalog"."default_version_id" IS 'Default ve
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."kpi_thresholds" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "kpi_key" "text" NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "metric_type" "text" NOT NULL,
+    "warning_threshold" numeric,
+    "critical_threshold" numeric,
+    "target_threshold" numeric,
+    "unit" "text",
+    "evaluation_period_days" integer,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "notify_on_breach" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "kpi_thresholds_metric_type_check" CHECK (("metric_type" = ANY (ARRAY['percentage'::"text", 'count'::"text", 'duration'::"text", 'score'::"text"])))
+);
+
+
+ALTER TABLE "public"."kpi_thresholds" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."kpi_thresholds" IS 'V05-I09.4: Key Performance Indicator thresholds for monitoring and alerting';
+
+
+
+COMMENT ON COLUMN "public"."kpi_thresholds"."kpi_key" IS 'Unique identifier for KPI (e.g., "assessment_completion_rate", "avg_response_time")';
+
+
+
+COMMENT ON COLUMN "public"."kpi_thresholds"."warning_threshold" IS 'Threshold that triggers warning alerts';
+
+
+
+COMMENT ON COLUMN "public"."kpi_thresholds"."critical_threshold" IS 'Threshold that triggers critical alerts';
+
+
+
+COMMENT ON COLUMN "public"."kpi_thresholds"."target_threshold" IS 'Desired target value for the KPI';
+
+
+
+COMMENT ON COLUMN "public"."kpi_thresholds"."evaluation_period_days" IS 'Number of days over which to evaluate the KPI (NULL = real-time)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."medical_validation_results" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "job_id" "uuid" NOT NULL,
@@ -1769,6 +1968,44 @@ COMMENT ON COLUMN "public"."navigation_items"."is_system" IS 'System items canno
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."notification_templates" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "template_key" "text" NOT NULL,
+    "name" "text" NOT NULL,
+    "description" "text",
+    "channel" "text" NOT NULL,
+    "subject_template" "text",
+    "body_template" "text" NOT NULL,
+    "variables" "jsonb" DEFAULT '[]'::"jsonb",
+    "is_active" boolean DEFAULT true NOT NULL,
+    "is_system" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "notification_templates_channel_check" CHECK (("channel" = ANY (ARRAY['in_app'::"text", 'email'::"text", 'sms'::"text"])))
+);
+
+
+ALTER TABLE "public"."notification_templates" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."notification_templates" IS 'V05-I09.4: Reusable notification templates for system communications';
+
+
+
+COMMENT ON COLUMN "public"."notification_templates"."template_key" IS 'Unique identifier for template (e.g., "report_ready", "followup_reminder")';
+
+
+
+COMMENT ON COLUMN "public"."notification_templates"."variables" IS 'JSON array of variable names used in template (e.g., ["patient_name", "report_url"])';
+
+
+
+COMMENT ON COLUMN "public"."notification_templates"."is_system" IS 'System templates cannot be deleted, only deactivated';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."notifications" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -1875,6 +2112,39 @@ COMMENT ON COLUMN "public"."notifications"."follow_up_completed" IS 'Has follow-
 
 
 COMMENT ON COLUMN "public"."notifications"."expires_at" IS 'When notification expires (optional)';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."operational_settings_audit" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "table_name" "text" NOT NULL,
+    "record_id" "uuid" NOT NULL,
+    "operation" "text" NOT NULL,
+    "old_values" "jsonb",
+    "new_values" "jsonb",
+    "changed_by" "uuid",
+    "changed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "change_reason" "text",
+    CONSTRAINT "operational_settings_audit_operation_check" CHECK (("operation" = ANY (ARRAY['INSERT'::"text", 'UPDATE'::"text", 'DELETE'::"text"])))
+);
+
+
+ALTER TABLE "public"."operational_settings_audit" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."operational_settings_audit" IS 'V05-I09.4: Audit trail for all operational settings changes';
+
+
+
+COMMENT ON COLUMN "public"."operational_settings_audit"."table_name" IS 'Name of the table that was modified';
+
+
+
+COMMENT ON COLUMN "public"."operational_settings_audit"."old_values" IS 'JSONB snapshot of values before change';
+
+
+
+COMMENT ON COLUMN "public"."operational_settings_audit"."new_values" IS 'JSONB snapshot of values after change';
 
 
 
@@ -2190,6 +2460,45 @@ CREATE TABLE IF NOT EXISTS "public"."questions" (
 
 
 ALTER TABLE "public"."questions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."reassessment_rules" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "rule_name" "text" NOT NULL,
+    "description" "text",
+    "funnel_id" "uuid",
+    "trigger_condition" "jsonb" NOT NULL,
+    "schedule_interval_days" integer,
+    "schedule_cron" "text",
+    "priority" "text" DEFAULT 'medium'::"text",
+    "is_active" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "reassessment_rules_priority_check" CHECK (("priority" = ANY (ARRAY['low'::"text", 'medium'::"text", 'high'::"text", 'urgent'::"text"]))),
+    CONSTRAINT "reassessment_rules_schedule_interval_days_check" CHECK (("schedule_interval_days" > 0)),
+    CONSTRAINT "schedule_check" CHECK (((("schedule_interval_days" IS NOT NULL) AND ("schedule_cron" IS NULL)) OR (("schedule_interval_days" IS NULL) AND ("schedule_cron" IS NOT NULL))))
+);
+
+
+ALTER TABLE "public"."reassessment_rules" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."reassessment_rules" IS 'V05-I09.4: Rules for scheduling patient re-assessments based on conditions';
+
+
+
+COMMENT ON COLUMN "public"."reassessment_rules"."trigger_condition" IS 'JSONB object defining when rule triggers (e.g., {"risk_level": "high", "days_since_last": 30})';
+
+
+
+COMMENT ON COLUMN "public"."reassessment_rules"."schedule_interval_days" IS 'Simple interval in days (mutually exclusive with schedule_cron)';
+
+
+
+COMMENT ON COLUMN "public"."reassessment_rules"."schedule_cron" IS 'Cron expression for complex scheduling (mutually exclusive with schedule_interval_days)';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."report_sections" (
@@ -2931,6 +3240,16 @@ ALTER TABLE ONLY "public"."funnels"
 
 
 
+ALTER TABLE ONLY "public"."kpi_thresholds"
+    ADD CONSTRAINT "kpi_thresholds_kpi_key_key" UNIQUE ("kpi_key");
+
+
+
+ALTER TABLE ONLY "public"."kpi_thresholds"
+    ADD CONSTRAINT "kpi_thresholds_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."medical_validation_results"
     ADD CONSTRAINT "medical_validation_results_job_version_hash_unique" UNIQUE ("job_id", "validation_version", "ruleset_hash");
 
@@ -2961,6 +3280,16 @@ ALTER TABLE ONLY "public"."navigation_items"
 
 
 
+ALTER TABLE ONLY "public"."notification_templates"
+    ADD CONSTRAINT "notification_templates_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."notification_templates"
+    ADD CONSTRAINT "notification_templates_template_key_key" UNIQUE ("template_key");
+
+
+
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_idempotency_key" UNIQUE ("user_id", "job_id", "notification_type", "channel");
 
@@ -2972,6 +3301,11 @@ COMMENT ON CONSTRAINT "notifications_idempotency_key" ON "public"."notifications
 
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."operational_settings_audit"
+    ADD CONSTRAINT "operational_settings_audit_pkey" PRIMARY KEY ("id");
 
 
 
@@ -3042,6 +3376,16 @@ ALTER TABLE ONLY "public"."questions"
 
 ALTER TABLE ONLY "public"."questions"
     ADD CONSTRAINT "questions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."reassessment_rules"
+    ADD CONSTRAINT "reassessment_rules_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."reassessment_rules"
+    ADD CONSTRAINT "reassessment_rules_rule_name_key" UNIQUE ("rule_name");
 
 
 
@@ -3432,6 +3776,18 @@ CREATE INDEX "idx_funnels_catalog_slug" ON "public"."funnels_catalog" USING "btr
 
 
 
+CREATE INDEX "idx_kpi_thresholds_active" ON "public"."kpi_thresholds" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "idx_kpi_thresholds_key" ON "public"."kpi_thresholds" USING "btree" ("kpi_key");
+
+
+
+CREATE INDEX "idx_kpi_thresholds_metric_type" ON "public"."kpi_thresholds" USING "btree" ("metric_type");
+
+
+
 CREATE INDEX "idx_medical_validation_results_job_id_lookup" ON "public"."medical_validation_results" USING "btree" ("job_id", "validated_at" DESC);
 
 
@@ -3477,6 +3833,18 @@ COMMENT ON INDEX "public"."idx_navigation_item_configs_role_order" IS 'V05-I09.1
 
 
 CREATE INDEX "idx_navigation_items_default_order" ON "public"."navigation_items" USING "btree" ("default_order");
+
+
+
+CREATE INDEX "idx_notification_templates_active" ON "public"."notification_templates" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "idx_notification_templates_channel" ON "public"."notification_templates" USING "btree" ("channel");
+
+
+
+CREATE INDEX "idx_notification_templates_key" ON "public"."notification_templates" USING "btree" ("template_key");
 
 
 
@@ -3529,6 +3897,22 @@ COMMENT ON INDEX "public"."idx_notifications_user_created" IS 'V05-I05.9: Fast l
 
 
 CREATE INDEX "idx_notifications_user_id" ON "public"."notifications" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_operational_audit_changed_at" ON "public"."operational_settings_audit" USING "btree" ("changed_at" DESC);
+
+
+
+CREATE INDEX "idx_operational_audit_changed_by" ON "public"."operational_settings_audit" USING "btree" ("changed_by");
+
+
+
+CREATE INDEX "idx_operational_audit_record" ON "public"."operational_settings_audit" USING "btree" ("record_id");
+
+
+
+CREATE INDEX "idx_operational_audit_table" ON "public"."operational_settings_audit" USING "btree" ("table_name");
 
 
 
@@ -3645,6 +4029,18 @@ CREATE INDEX "idx_processing_jobs_status" ON "public"."processing_jobs" USING "b
 
 
 CREATE INDEX "idx_processing_jobs_status_created" ON "public"."processing_jobs" USING "btree" ("status", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_reassessment_rules_active" ON "public"."reassessment_rules" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "idx_reassessment_rules_funnel" ON "public"."reassessment_rules" USING "btree" ("funnel_id");
+
+
+
+CREATE INDEX "idx_reassessment_rules_priority" ON "public"."reassessment_rules" USING "btree" ("priority");
 
 
 
@@ -3900,6 +4296,18 @@ CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("org
 
 
 
+CREATE OR REPLACE TRIGGER "audit_kpi_thresholds_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."kpi_thresholds" FOR EACH ROW EXECUTE FUNCTION "public"."audit_kpi_thresholds"();
+
+
+
+CREATE OR REPLACE TRIGGER "audit_notification_templates_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."notification_templates" FOR EACH ROW EXECUTE FUNCTION "public"."audit_notification_templates"();
+
+
+
+CREATE OR REPLACE TRIGGER "audit_reassessment_rules_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."reassessment_rules" FOR EACH ROW EXECUTE FUNCTION "public"."audit_reassessment_rules"();
+
+
+
 CREATE OR REPLACE TRIGGER "navigation_item_configs_updated_at" BEFORE UPDATE ON "public"."navigation_item_configs" FOR EACH ROW EXECUTE FUNCTION "public"."update_navigation_updated_at"();
 
 
@@ -3945,6 +4353,18 @@ CREATE OR REPLACE TRIGGER "trigger_shipment_status_event" AFTER UPDATE ON "publi
 
 
 CREATE OR REPLACE TRIGGER "trigger_support_cases_updated_at" BEFORE UPDATE ON "public"."support_cases" FOR EACH ROW EXECUTE FUNCTION "public"."update_support_cases_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_kpi_thresholds_timestamp" BEFORE UPDATE ON "public"."kpi_thresholds" FOR EACH ROW EXECUTE FUNCTION "public"."update_operational_settings_timestamp"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_notification_templates_timestamp" BEFORE UPDATE ON "public"."notification_templates" FOR EACH ROW EXECUTE FUNCTION "public"."update_operational_settings_timestamp"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_reassessment_rules_timestamp" BEFORE UPDATE ON "public"."reassessment_rules" FOR EACH ROW EXECUTE FUNCTION "public"."update_operational_settings_timestamp"();
 
 
 
@@ -4120,13 +4540,38 @@ ALTER TABLE ONLY "public"."funnels_catalog"
 
 
 
+ALTER TABLE ONLY "public"."kpi_thresholds"
+    ADD CONSTRAINT "kpi_thresholds_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."kpi_thresholds"
+    ADD CONSTRAINT "kpi_thresholds_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
+
+
+
 ALTER TABLE ONLY "public"."navigation_item_configs"
     ADD CONSTRAINT "navigation_item_configs_navigation_item_id_fkey" FOREIGN KEY ("navigation_item_id") REFERENCES "public"."navigation_items"("id") ON DELETE CASCADE;
 
 
 
+ALTER TABLE ONLY "public"."notification_templates"
+    ADD CONSTRAINT "notification_templates_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."notification_templates"
+    ADD CONSTRAINT "notification_templates_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
+
+
+
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."operational_settings_audit"
+    ADD CONSTRAINT "operational_settings_audit_changed_by_fkey" FOREIGN KEY ("changed_by") REFERENCES "auth"."users"("id");
 
 
 
@@ -4172,6 +4617,21 @@ ALTER TABLE ONLY "public"."priority_rankings"
 
 ALTER TABLE ONLY "public"."priority_rankings"
     ADD CONSTRAINT "priority_rankings_risk_bundle_id_fkey" FOREIGN KEY ("risk_bundle_id") REFERENCES "public"."risk_bundles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."reassessment_rules"
+    ADD CONSTRAINT "reassessment_rules_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."reassessment_rules"
+    ADD CONSTRAINT "reassessment_rules_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id");
+
+
+
+ALTER TABLE ONLY "public"."reassessment_rules"
+    ADD CONSTRAINT "reassessment_rules_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id");
 
 
 
@@ -4742,6 +5202,19 @@ ALTER TABLE "public"."funnels" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."funnels_catalog" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."kpi_thresholds" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "kpi_thresholds_admin_modify" ON "public"."kpi_thresholds" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "kpi_thresholds_select_authenticated" ON "public"."kpi_thresholds" FOR SELECT TO "authenticated" USING (true);
+
+
+
 ALTER TABLE "public"."medical_validation_results" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4797,6 +5270,19 @@ CREATE POLICY "navigation_items_select_authenticated" ON "public"."navigation_it
 
 
 
+ALTER TABLE "public"."notification_templates" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "notification_templates_admin_modify" ON "public"."notification_templates" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "notification_templates_select_authenticated" ON "public"."notification_templates" FOR SELECT TO "authenticated" USING (true);
+
+
+
 ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
 
 
@@ -4812,6 +5298,15 @@ CREATE POLICY "notifications_select_own" ON "public"."notifications" FOR SELECT 
 
 CREATE POLICY "notifications_update_own" ON "public"."notifications" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
+
+
+CREATE POLICY "operational_audit_select_admin" ON "public"."operational_settings_audit" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+ALTER TABLE "public"."operational_settings_audit" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
@@ -4900,6 +5395,19 @@ CREATE POLICY "processing_jobs_system_update" ON "public"."processing_jobs" FOR 
 
 
 ALTER TABLE "public"."questions" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."reassessment_rules" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "reassessment_rules_admin_modify" ON "public"."reassessment_rules" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "reassessment_rules_select_authenticated" ON "public"."reassessment_rules" FOR SELECT TO "authenticated" USING (true);
+
 
 
 ALTER TABLE "public"."report_sections" ENABLE ROW LEVEL SECURITY;
@@ -5270,6 +5778,24 @@ GRANT ALL ON TYPE "public"."review_status" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "anon";
+GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."audit_notification_templates"() TO "anon";
+GRANT ALL ON FUNCTION "public"."audit_notification_templates"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."audit_notification_templates"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "anon";
+GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "service_role";
@@ -5411,6 +5937,12 @@ GRANT ALL ON FUNCTION "public"."update_navigation_updated_at"() TO "service_role
 GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "service_role";
 
 
 
@@ -5573,6 +6105,12 @@ GRANT ALL ON TABLE "public"."funnels_catalog" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."kpi_thresholds" TO "anon";
+GRANT ALL ON TABLE "public"."kpi_thresholds" TO "authenticated";
+GRANT ALL ON TABLE "public"."kpi_thresholds" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."medical_validation_results" TO "anon";
 GRANT ALL ON TABLE "public"."medical_validation_results" TO "authenticated";
 GRANT ALL ON TABLE "public"."medical_validation_results" TO "service_role";
@@ -5591,6 +6129,12 @@ GRANT ALL ON TABLE "public"."navigation_items" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."notification_templates" TO "anon";
+GRANT ALL ON TABLE "public"."notification_templates" TO "authenticated";
+GRANT ALL ON TABLE "public"."notification_templates" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."notifications" TO "anon";
 GRANT ALL ON TABLE "public"."notifications" TO "authenticated";
 GRANT ALL ON TABLE "public"."notifications" TO "service_role";
@@ -5606,6 +6150,12 @@ GRANT UPDATE("read_at") ON TABLE "public"."notifications" TO "authenticated";
 
 
 GRANT UPDATE("updated_at") ON TABLE "public"."notifications" TO "authenticated";
+
+
+
+GRANT ALL ON TABLE "public"."operational_settings_audit" TO "anon";
+GRANT ALL ON TABLE "public"."operational_settings_audit" TO "authenticated";
+GRANT ALL ON TABLE "public"."operational_settings_audit" TO "service_role";
 
 
 
@@ -5660,6 +6210,12 @@ GRANT ALL ON TABLE "public"."processing_jobs" TO "service_role";
 GRANT ALL ON TABLE "public"."questions" TO "anon";
 GRANT ALL ON TABLE "public"."questions" TO "authenticated";
 GRANT ALL ON TABLE "public"."questions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."reassessment_rules" TO "anon";
+GRANT ALL ON TABLE "public"."reassessment_rules" TO "authenticated";
+GRANT ALL ON TABLE "public"."reassessment_rules" TO "service_role";
 
 
 
