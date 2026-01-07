@@ -6,7 +6,7 @@
  * backwards compatibility with the default tokens defined in design-tokens.ts
  */
 
-import { createClient } from '@/lib/supabaseServer'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import designTokens from './design-tokens'
 
 /**
@@ -56,7 +56,7 @@ export async function loadDesignTokens(organizationId?: string | null) {
   }
   
   try {
-    const supabase = await createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Fetch organization-specific token overrides
     const { data: overrides, error } = await supabase
@@ -115,7 +115,7 @@ export async function loadDesignTokens(organizationId?: string | null) {
  */
 export async function getUserOrganizationId(): Promise<string | null> {
   try {
-    const supabase = await createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Get current user
     const {

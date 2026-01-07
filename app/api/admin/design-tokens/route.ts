@@ -5,14 +5,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabaseServer'
-import { getCurrentUser, hasClinicianRole } from '@/lib/supabaseServer'
+import {
+  createServerSupabaseClient,
+  getCurrentUser,
+  hasClinicianRole,
+} from '@/lib/db/supabase.server'
 
 export async function GET(request: NextRequest) {
   const requestId = crypto.randomUUID()
   
   try {
-    const supabase = await createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Check authentication
     const user = await getCurrentUser()
@@ -119,7 +122,7 @@ export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID()
   
   try {
-    const supabase = await createClient()
+    const supabase = await createServerSupabaseClient()
     
     // Check authentication
     const user = await getCurrentUser()
