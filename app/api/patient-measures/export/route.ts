@@ -30,6 +30,53 @@ type ConsentRecord = {
   user_agent: string | null
 }
 
+type ConsentExport = {
+  consent_id: string
+  consent_version: string
+  consented_at: string
+  ip_address: string | null
+  user_agent: string | null
+}
+
+/**
+ * Fetches user consents from the database
+ */
+async function fetchUserConsents(
+  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  userId: string
+): Promise<ConsentRecord[]> {
+  const { data: consents, error: consentsError } = await supabase
+    .from('user_consents')
+    .select<'id, consent_version, consented_at, ip_address, user_agent', ConsentRecord>(
+      'id, consent_version, consented_at, ip_address, user_agent'
+    )
+    .eq('user_id', userId)
+    .order('consented_at', { ascending: false })
+
+  if (consentsError) {
+    console.error(
+      '[patient-measures/export] Fehler beim Laden der Einwilligungen:',
+      consentsError
+    )
+    return []
+  }
+
+  return consents || []
+}
+
+/**
+ * Transforms consent records for export
+ */
+function transformConsentsForExport(consents: ConsentRecord[]): ConsentExport[] {
+  return consents.map((consent) => ({
+    consent_id: consent.id,
+    consent_version: consent.consent_version,
+    consented_at: consent.consented_at,
+    ip_address: consent.ip_address,
+    user_agent: consent.user_agent,
+  }))
+}
+
 export async function GET(req: Request) {
   // Use admin client for patient measures export (RLS bypass for clinician access)
   const supabase = createAdminSupabaseClient()
@@ -101,22 +148,8 @@ export async function GET(req: Request) {
 
     if (!measures || measures.length === 0) {
       // Even if no measures, export consent data
-      const { data: consents, error: consentsError } = await supabase
-        .from('user_consents')
-        .select<'id, consent_version, consented_at, ip_address, user_agent', ConsentRecord>(
-          'id, consent_version, consented_at, ip_address, user_agent'
-        )
-        .eq('user_id', user.id)
-        .order('consented_at', { ascending: false })
-
-      const consentData =
-        consents?.map((consent) => ({
-          consent_id: consent.id,
-          consent_version: consent.consent_version,
-          consented_at: consent.consented_at,
-          ip_address: consent.ip_address,
-          user_agent: consent.user_agent,
-        })) || []
+      const consents = await fetchUserConsents(supabase, user.id)
+      const consentData = transformConsentsForExport(consents)
 
       return NextResponse.json({
         export_date: new Date().toISOString(),
@@ -154,21 +187,7 @@ export async function GET(req: Request) {
     }
 
     // 5. Fetch user consents
-    const { data: consents, error: consentsError } = await supabase
-      .from('user_consents')
-      .select<'id, consent_version, consented_at, ip_address, user_agent', ConsentRecord>(
-        'id, consent_version, consented_at, ip_address, user_agent'
-      )
-      .eq('user_id', user.id)
-      .order('consented_at', { ascending: false })
-
-    if (consentsError) {
-      console.error(
-        '[patient-measures/export] Fehler beim Laden der Einwilligungen:',
-        consentsError
-      )
-      // Continue without consents rather than failing completely
-    }
+    const consents = await fetchUserConsents(supabase, user.id)
 
     // 6. Combine measures with their reports and prepare export data
     const exportData = measures.map((measure) => {
@@ -193,14 +212,7 @@ export async function GET(req: Request) {
     })
 
     // 7. Prepare consent data for export
-    const consentData =
-      consents?.map((consent) => ({
-        consent_id: consent.id,
-        consent_version: consent.consent_version,
-        consented_at: consent.consented_at,
-        ip_address: consent.ip_address,
-        user_agent: consent.user_agent,
-      })) || []
+    const consentData = transformConsentsForExport(consents)
 
     // 8. Return the complete export
     return NextResponse.json({
