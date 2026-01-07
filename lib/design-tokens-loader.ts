@@ -6,7 +6,7 @@
  * backwards compatibility with the default tokens defined in design-tokens.ts
  */
 
-import { createServerClient } from '@/lib/supabaseServer'
+import { createClient } from '@/lib/supabaseServer'
 import designTokens from './design-tokens'
 
 /**
@@ -56,10 +56,11 @@ export async function loadDesignTokens(organizationId?: string | null) {
   }
   
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     
     // Fetch organization-specific token overrides
     const { data: overrides, error } = await supabase
+      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .select('token_category, token_key, token_value')
       .eq('organization_id', organizationId)
@@ -75,8 +76,10 @@ export async function loadDesignTokens(organizationId?: string | null) {
     if (overrides && overrides.length > 0) {
       const overridesByCategory: Record<string, Record<string, any>> = {}
       
-      // Group overrides by category
-      for (const override of overrides) {
+      // Group overrides by category - type assertion until types are regenerated
+      const overrideArray = overrides as any[]
+      
+      for (const override of overrideArray) {
         if (!overridesByCategory[override.token_category]) {
           overridesByCategory[override.token_category] = {}
         }
@@ -112,7 +115,7 @@ export async function loadDesignTokens(organizationId?: string | null) {
  */
 export async function getUserOrganizationId(): Promise<string | null> {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     
     // Get current user
     const {

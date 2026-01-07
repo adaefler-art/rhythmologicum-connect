@@ -5,14 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabaseServer'
+import { createClient } from '@/lib/supabaseServer'
 import { getCurrentUser, hasClinicianRole } from '@/lib/supabaseServer'
 
 export async function GET(request: NextRequest) {
   const requestId = crypto.randomUUID()
   
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     
     // Check authentication
     const user = await getCurrentUser()
@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     
     // Build query
     let query = supabase
+      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .select('*')
       .eq('is_active', true)
@@ -67,7 +68,10 @@ export async function GET(request: NextRequest) {
     // Group tokens by category for easier consumption
     const tokensByCategory: Record<string, Record<string, any>> = {}
     
-    for (const token of tokens || []) {
+    // Type assertion needed until types are regenerated
+    const tokenArray = (tokens || []) as any[]
+    
+    for (const token of tokenArray) {
       if (!tokensByCategory[token.token_category]) {
         tokensByCategory[token.token_category] = {}
       }
@@ -115,7 +119,7 @@ export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID()
   
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     
     // Check authentication
     const user = await getCurrentUser()
@@ -166,6 +170,7 @@ export async function POST(request: NextRequest) {
     
     // Upsert token
     const { data: token, error } = await supabase
+      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .upsert(
         {
@@ -176,7 +181,7 @@ export async function POST(request: NextRequest) {
           is_active,
           created_by: user.id,
           updated_at: new Date().toISOString(),
-        },
+        } as any,
         {
           onConflict: 'organization_id,token_category,token_key',
         }
