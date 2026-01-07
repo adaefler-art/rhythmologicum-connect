@@ -46,6 +46,18 @@ type Funnel = {
   updated_at: string
 }
 
+type FunnelVersion = {
+  id: string
+  funnel_id: string
+  version: string
+  is_default: boolean
+  rollout_percent: number
+  algorithm_bundle_version: string
+  prompt_version: string
+  created_at: string
+  updated_at: string | null
+}
+
 // Translation helpers
 const translateQuestionType = (type: string): string => {
   const translations: Record<string, string> = {
@@ -85,6 +97,7 @@ export default function FunnelDetailPage() {
 
   const [funnel, setFunnel] = useState<Funnel | null>(null)
   const [steps, setSteps] = useState<Step[]>([])
+  const [versions, setVersions] = useState<FunnelVersion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -131,12 +144,14 @@ export default function FunnelDetailPage() {
       }
 
       const json: unknown = await response.json()
-      const envelope = asEnvelope<{ funnel?: Funnel; steps?: Step[] }>(json)
+      const envelope = asEnvelope<{ funnel?: Funnel; steps?: Step[]; versions?: FunnelVersion[] }>(json)
       const funnelData = envelope?.data?.funnel
       const stepsData = envelope?.data?.steps
+      const versionsData = envelope?.data?.versions
 
       setFunnel(funnelData ?? null)
       setSteps(Array.isArray(stepsData) ? stepsData : [])
+      setVersions(Array.isArray(versionsData) ? versionsData : [])
     } catch (err) {
       console.error('Error loading funnel details:', err)
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Funnel-Details')
@@ -381,6 +396,93 @@ export default function FunnelDetailPage() {
     }
   }
 
+  const setDefaultVersion = async (versionId: string) => {
+    try {
+      setSaving(true)
+      const response = await fetch(`/api/admin/funnel-versions/${versionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_default: true }),
+      })
+
+      if (!response.ok) {
+        let requestId = response.headers.get('x-request-id')
+        let message = 'Failed to set default version'
+
+        try {
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
+          if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
+          if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
+        } catch {
+          // ignore
+        }
+
+        throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
+      }
+
+      // Reload to get updated versions
+      await loadFunnelDetails()
+    } catch (err) {
+      console.error('Error setting default version:', err)
+      alert(`Fehler beim Setzen der Standard-Version: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateVersionRollout = async (versionId: string, rolloutPercent: number) => {
+    try {
+      setSaving(true)
+      const response = await fetch(`/api/admin/funnel-versions/${versionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rollout_percent: rolloutPercent }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update rollout percentage')
+      }
+
+      // Reload to get updated versions
+      await loadFunnelDetails()
+    } catch (err) {
+      console.error('Error updating rollout:', err)
+      alert('Fehler beim Aktualisieren des Rollouts')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateVersionMetadata = async (versionId: string, algorithmVersion?: string, promptVersion?: string) => {
+    try {
+      setSaving(true)
+      const updatePayload: { algorithm_bundle_version?: string; prompt_version?: string } = {}
+      if (algorithmVersion !== undefined) updatePayload.algorithm_bundle_version = algorithmVersion
+      if (promptVersion !== undefined) updatePayload.prompt_version = promptVersion
+
+      const response = await fetch(`/api/admin/funnel-versions/${versionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update version metadata')
+      }
+
+      // Reload to get updated versions
+      await loadFunnelDetails()
+    } catch (err) {
+      console.error('Error updating version metadata:', err)
+      alert('Fehler beim Aktualisieren der Versions-Metadaten')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -524,6 +626,123 @@ export default function FunnelDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Version Management Section */}
+      {versions.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50 mb-4">Versionen</h2>
+          <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Version
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Rollout %
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Algorithmus
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Prompt
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Erstellt
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Aktionen
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {versions.map((version) => (
+                    <tr key={version.id} className={version.is_default ? 'bg-sky-50' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-slate-900">{version.version}</span>
+                          {version.is_default && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-800">
+                              Standard
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          version.is_default 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {version.is_default ? 'Aktiv' : 'Bereit'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            defaultValue={version.rollout_percent}
+                            onBlur={(e) => {
+                              const value = parseInt(e.target.value, 10)
+                              if (!isNaN(value) && value >= 0 && value <= 100 && value !== version.rollout_percent) {
+                                updateVersionRollout(version.id, value)
+                              } else if (value !== version.rollout_percent) {
+                                // Reset to current value if invalid
+                                e.target.value = String(version.rollout_percent)
+                              }
+                            }}
+                            disabled={saving}
+                            className="w-16 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:border-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <span className="text-sm text-slate-600">%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-slate-900 font-mono">
+                          {version.algorithm_bundle_version}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-slate-900 font-mono">
+                          {version.prompt_version}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {new Date(version.created_at).toLocaleDateString('de-DE')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        {!version.is_default && (
+                          <button
+                            onClick={() => setDefaultVersion(version.id)}
+                            disabled={saving}
+                            className="inline-flex items-center px-3 py-1.5 border border-sky-600 text-sky-600 hover:bg-sky-50 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Als Standard setzen
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="mt-4 text-sm text-slate-600">
+            <p className="mb-1">
+              <strong>Rollout %:</strong> Prozentsatz der Nutzer, die diese Version sehen (0-100). Bei mehreren aktiven Versionen wird nach Prozentsatz gewichtet ausgewählt.
+            </p>
+            <p>
+              <strong>Standard:</strong> Die Standard-Version wird neuen Nutzern zugewiesen und ist die Haupt-Version des Funnels.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Steps List */}
       <div className="space-y-6">
