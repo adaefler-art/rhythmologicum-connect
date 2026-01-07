@@ -70,6 +70,8 @@ When introducing a new canonical table or enum:
 - `pre_screening_calls` (V05-I08.2)
 - `device_shipments`, `shipment_events` (V05-I08.3)
 - `shipment_status` (V05-I08.3)
+- `support_cases` (V05-I08.4)
+- `support_case_status`, `support_case_priority`, `support_case_category` (V05-I08.4)
 
 **Example manifest entry:**
 ```json

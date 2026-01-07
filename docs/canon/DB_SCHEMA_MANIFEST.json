@@ -38,6 +38,7 @@
     "risk_bundles",
     "safety_check_results",
     "shipment_events",
+    "support_cases",
     "rls_test_results",
     "tasks",
     "user_consents",
@@ -55,6 +56,9 @@
     "review_status",
     "safety_action",
     "shipment_status",
+    "support_case_category",
+    "support_case_priority",
+    "support_case_status",
     "task_status",
     "user_role",
     "validation_status"

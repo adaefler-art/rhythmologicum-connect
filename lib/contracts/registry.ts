@@ -267,6 +267,7 @@ export const AUDIT_ENTITY_TYPE = {
   REVIEW_RECORD: 'review_record', // V05-I05.7: Medical review records
   PRE_SCREENING_CALL: 'pre_screening_call', // V05-I08.2: Pre-screening call records
   DEVICE_SHIPMENT: 'device_shipment', // V05-I08.3: Shipment tracking
+  SUPPORT_CASE: 'support_case', // V05-I08.4: Support case documentation
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
@@ -293,6 +294,7 @@ export const AUDIT_ACTION = {
   DEACTIVATE: 'deactivate',
   ROLLOUT: 'rollout',
   COMPLETE: 'complete',
+  ESCALATE: 'escalate', // V05-I08.4: Support case escalation
 } as const
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION]

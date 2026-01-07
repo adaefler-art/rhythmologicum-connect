@@ -45,6 +45,7 @@ export const TASK_TYPE = {
   FOLLOW_UP: 'follow_up',
   REVIEW_ASSESSMENT: 'review_assessment',
   CONTACT_PATIENT: 'contact_patient',
+  SUPPORT_CASE: 'support_case', // V05-I08.4: Support case escalation
 } as const
 
 export type TaskType = typeof TASK_TYPE[keyof typeof TASK_TYPE]
@@ -56,6 +57,7 @@ export const TaskTypeSchema = z.enum([
   TASK_TYPE.FOLLOW_UP,
   TASK_TYPE.REVIEW_ASSESSMENT,
   TASK_TYPE.CONTACT_PATIENT,
+  TASK_TYPE.SUPPORT_CASE,
 ])
 
 // ============================================================
@@ -200,6 +202,8 @@ export function getTaskTypeLabel(taskType: TaskType): string {
       return 'Assessment prüfen'
     case TASK_TYPE.CONTACT_PATIENT:
       return 'Patient kontaktieren'
+    case TASK_TYPE.SUPPORT_CASE:
+      return 'Support-Fall'
     default:
       return taskType
   }

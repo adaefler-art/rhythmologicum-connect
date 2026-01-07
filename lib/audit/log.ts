@@ -541,3 +541,84 @@ export async function logConsentChange(params: {
     },
   })
 }
+
+/**
+ * Logs a support case creation event
+ */
+export async function logSupportCaseCreated(params: {
+  org_id?: string
+  actor_user_id?: string
+  actor_role?: UserRole
+  support_case_id: string
+  category?: string
+  priority?: string
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'api',
+    entity_type: 'support_case',
+    entity_id: params.support_case_id,
+    action: 'create',
+    metadata: {
+      // PHI-safe: NO patient_id, only category/priority metadata
+      has_notes: false,
+    },
+  })
+}
+
+/**
+ * Logs a support case escalation event
+ * This creates both an audit log entry and updates the support case
+ */
+export async function logSupportCaseEscalated(params: {
+  org_id?: string
+  actor_user_id: string
+  actor_role: UserRole
+  support_case_id: string
+  task_id: string
+  assigned_to_role: UserRole
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'api',
+    entity_type: 'support_case',
+    entity_id: params.support_case_id,
+    action: 'escalate',
+    metadata: {
+      task_id: params.task_id,
+      assigned_to_role: params.assigned_to_role,
+    },
+  })
+}
+
+/**
+ * Logs a support case status update event
+ */
+export async function logSupportCaseStatusChanged(params: {
+  org_id?: string
+  actor_user_id: string
+  actor_role: UserRole
+  support_case_id: string
+  status_from: string
+  status_to: string
+  has_notes?: boolean
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'api',
+    entity_type: 'support_case',
+    entity_id: params.support_case_id,
+    action: 'update',
+    metadata: {
+      status_from: params.status_from,
+      status_to: params.status_to,
+      has_notes: params.has_notes ?? false,
+    },
+  })
+}
