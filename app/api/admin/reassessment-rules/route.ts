@@ -5,7 +5,7 @@ import {
   successResponse,
   unauthorizedResponse,
   internalErrorResponse,
-  badRequestResponse,
+  validationErrorResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logError } from '@/lib/logging/logger'
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return unauthorizedResponse('Authentifizierung erforderlich.')
   }
 
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     return unauthorizedResponse('Zugriff verweigert. Admin- oder Clinician-Rolle erforderlich.')
   }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     return unauthorizedResponse('Authentifizierung erforderlich.')
   }
 
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     return unauthorizedResponse('Zugriff verweigert. Admin- oder Clinician-Rolle erforderlich.')
   }
@@ -69,11 +69,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     if (!body.rule_name || !body.trigger_condition) {
-      return badRequestResponse('Pflichtfelder fehlen: rule_name, trigger_condition')
+      return validationErrorResponse('Pflichtfelder fehlen: rule_name, trigger_condition')
     }
 
     if (!body.schedule_interval_days && !body.schedule_cron) {
-      return badRequestResponse('Entweder schedule_interval_days oder schedule_cron muss angegeben werden.')
+      return validationErrorResponse('Entweder schedule_interval_days oder schedule_cron muss angegeben werden.')
     }
 
     const supabase = createAdminSupabaseClient()

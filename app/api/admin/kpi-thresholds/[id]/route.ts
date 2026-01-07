@@ -5,7 +5,7 @@ import {
   successResponse,
   unauthorizedResponse,
   internalErrorResponse,
-  badRequestResponse,
+  validationErrorResponse,
   notFoundResponse,
 } from '@/lib/api/responses'
 import { logError } from '@/lib/logging/logger'
@@ -16,13 +16,13 @@ export async function PUT(
 ) {
   const { id } = await params
   const user = await getCurrentUser()
-  if (!user || !(await hasClinicianRole(user.id))) {
+  if (!user || !(await hasClinicianRole())) {
     return unauthorizedResponse('Zugriff verweigert.')
   }
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(id)) {
-    return badRequestResponse('Ungültige ID.')
+    return validationErrorResponse('Ungültige ID.')
   }
 
   try {
@@ -76,7 +76,7 @@ export async function DELETE(
 ) {
   const { id } = await params
   const user = await getCurrentUser()
-  if (!user || !(await hasClinicianRole(user.id))) {
+  if (!user || !(await hasClinicianRole())) {
     return unauthorizedResponse('Zugriff verweigert.')
   }
 

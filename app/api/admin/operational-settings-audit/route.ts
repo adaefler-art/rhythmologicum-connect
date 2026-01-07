@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Authorization check
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     logUnauthorized({
       endpoint: '/api/admin/operational-settings-audit',

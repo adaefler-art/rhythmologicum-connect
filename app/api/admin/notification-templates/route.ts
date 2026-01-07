@@ -5,7 +5,7 @@ import {
   successResponse,
   unauthorizedResponse,
   internalErrorResponse,
-  badRequestResponse,
+  validationErrorResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logError } from '@/lib/logging/logger'
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Authorization check
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     logUnauthorized({
       endpoint: '/api/admin/notification-templates',
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Authorization check
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     logUnauthorized({
       endpoint: '/api/admin/notification-templates',
@@ -93,13 +93,13 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!body.template_key || !body.name || !body.channel || !body.body_template) {
-      return badRequestResponse('Pflichtfelder fehlen: template_key, name, channel, body_template')
+      return validationErrorResponse('Pflichtfelder fehlen: template_key, name, channel, body_template')
     }
 
     // Validate channel
     const validChannels = ['in_app', 'email', 'sms']
     if (!validChannels.includes(body.channel)) {
-      return badRequestResponse(`Ungültiger Kanal. Erlaubt: ${validChannels.join(', ')}`)
+      return validationErrorResponse(`Ungültiger Kanal. Erlaubt: ${validChannels.join(', ')}`)
     }
 
     const supabase = createAdminSupabaseClient()
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existing) {
-      return badRequestResponse('Ein Template mit diesem Schlüssel existiert bereits.')
+      return validationErrorResponse('Ein Template mit diesem Schlüssel existiert bereits.')
     }
 
     // Create template

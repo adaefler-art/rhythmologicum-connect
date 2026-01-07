@@ -323,11 +323,11 @@ function TemplatesTab({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-medium">{template.name}</h3>
-                      <Badge variant={template.is_active ? 'success' : 'neutral'}>
+                      <Badge variant={template.is_active ? 'success' : 'secondary'}>
                         {template.is_active ? 'Aktiv' : 'Inaktiv'}
                       </Badge>
-                      {template.is_system && <Badge variant="primary">System</Badge>}
-                      <Badge variant="neutral">{template.channel}</Badge>
+                      {template.is_system && <Badge variant="info">System</Badge>}
+                      <Badge variant="secondary">{template.channel}</Badge>
                     </div>
                     <p className="text-sm text-neutral-600 mb-2">
                       Schlüssel:{' '}
@@ -386,7 +386,7 @@ function RulesTab({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-medium">{rule.rule_name}</h3>
-                      <Badge variant={rule.is_active ? 'success' : 'neutral'}>
+                      <Badge variant={rule.is_active ? 'success' : 'secondary'}>
                         {rule.is_active ? 'Aktiv' : 'Inaktiv'}
                       </Badge>
                       <Badge
@@ -395,7 +395,7 @@ function RulesTab({
                             ? 'danger'
                             : rule.priority === 'high'
                               ? 'warning'
-                              : 'neutral'
+                              : 'secondary'
                         }
                       >
                         {rule.priority}
@@ -455,10 +455,10 @@ function ThresholdsTab({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-medium">{threshold.name}</h3>
-                      <Badge variant={threshold.is_active ? 'success' : 'neutral'}>
+                      <Badge variant={threshold.is_active ? 'success' : 'secondary'}>
                         {threshold.is_active ? 'Aktiv' : 'Inaktiv'}
                       </Badge>
-                      <Badge variant="neutral">{threshold.metric_type}</Badge>
+                      <Badge variant="secondary">{threshold.metric_type}</Badge>
                     </div>
                     {threshold.description && (
                       <p className="text-sm text-neutral-600 mb-2">{threshold.description}</p>
@@ -527,7 +527,7 @@ function AuditTab({ auditLogs, total }: { auditLogs: AuditLog[]; total: number }
                           ? 'success'
                           : log.operation === 'DELETE'
                             ? 'danger'
-                            : 'neutral'
+                            : 'info'
                       }
                     >
                       {log.operation}

@@ -5,7 +5,7 @@ import {
   successResponse,
   unauthorizedResponse,
   internalErrorResponse,
-  badRequestResponse,
+  validationErrorResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logError } from '@/lib/logging/logger'
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return unauthorizedResponse('Authentifizierung erforderlich.')
   }
 
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     return unauthorizedResponse('Zugriff verweigert. Admin- oder Clinician-Rolle erforderlich.')
   }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     return unauthorizedResponse('Authentifizierung erforderlich.')
   }
 
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     return unauthorizedResponse('Zugriff verweigert. Admin- oder Clinician-Rolle erforderlich.')
   }
@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     if (!body.kpi_key || !body.name || !body.metric_type) {
-      return badRequestResponse('Pflichtfelder fehlen: kpi_key, name, metric_type')
+      return validationErrorResponse('Pflichtfelder fehlen: kpi_key, name, metric_type')
     }
 
     const validMetricTypes = ['percentage', 'count', 'duration', 'score']
     if (!validMetricTypes.includes(body.metric_type)) {
-      return badRequestResponse(`Ungültiger Metrik-Typ. Erlaubt: ${validMetricTypes.join(', ')}`)
+      return validationErrorResponse(`Ungültiger Metrik-Typ. Erlaubt: ${validMetricTypes.join(', ')}`)
     }
 
     const supabase = createAdminSupabaseClient()

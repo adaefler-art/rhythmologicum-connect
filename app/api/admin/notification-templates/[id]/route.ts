@@ -5,7 +5,7 @@ import {
   successResponse,
   unauthorizedResponse,
   internalErrorResponse,
-  badRequestResponse,
+  validationErrorResponse,
   notFoundResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logError } from '@/lib/logging/logger'
@@ -36,7 +36,7 @@ export async function PUT(
   }
 
   // Authorization check
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     logUnauthorized({
       endpoint: `/api/admin/notification-templates/${id}`,
@@ -49,7 +49,7 @@ export async function PUT(
   // Validate UUID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(id)) {
-    return badRequestResponse('Ungültige Template-ID.')
+    return validationErrorResponse('Ungültige Template-ID.')
   }
 
   try {
@@ -71,7 +71,7 @@ export async function PUT(
     if (body.channel) {
       const validChannels = ['in_app', 'email', 'sms']
       if (!validChannels.includes(body.channel)) {
-        return badRequestResponse(`Ungültiger Kanal. Erlaubt: ${validChannels.join(', ')}`)
+        return validationErrorResponse(`Ungültiger Kanal. Erlaubt: ${validChannels.join(', ')}`)
       }
     }
 
@@ -122,7 +122,7 @@ export async function DELETE(
   }
 
   // Authorization check
-  const isAuthorized = await hasClinicianRole(user.id)
+  const isAuthorized = await hasClinicianRole()
   if (!isAuthorized) {
     logUnauthorized({
       endpoint: `/api/admin/notification-templates/${id}`,
@@ -135,7 +135,7 @@ export async function DELETE(
   // Validate UUID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!uuidRegex.test(id)) {
-    return badRequestResponse('Ungültige Template-ID.')
+    return validationErrorResponse('Ungültige Template-ID.')
   }
 
   try {
@@ -153,7 +153,7 @@ export async function DELETE(
     }
 
     if (existing.is_system) {
-      return badRequestResponse('System-Templates können nicht gelöscht werden. Deaktivieren Sie sie stattdessen.')
+      return validationErrorResponse('System-Templates können nicht gelöscht werden. Deaktivieren Sie sie stattdessen.')
     }
 
     // Delete template (this will trigger audit logging)
