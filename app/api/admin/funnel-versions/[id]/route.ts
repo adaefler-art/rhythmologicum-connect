@@ -151,6 +151,12 @@ export async function PATCH(
     }
 
     // If setting as default, first unset other defaults for the same funnel
+    // NOTE: This is not a true database transaction due to Supabase client limitations.
+    // In production, consider using a database function with proper transaction handling
+    // to ensure atomic default version switching across all three operations:
+    // 1. Unset is_default on other versions
+    // 2. Update funnels_catalog.default_version_id
+    // 3. Set is_default on target version
     if (updateData.is_default === true) {
       // Get the funnel_id for this version
       const { data: versionData, error: versionError } = await writeClient
@@ -204,7 +210,19 @@ export async function PATCH(
             userId: user.id,
             error: unsetError,
           })
-          // Continue anyway - the update might still work
+          // Critical error - don't continue if we can't unset other defaults
+          // This prevents multiple versions from being marked as default
+          const classified = classifySupabaseError(unsetError)
+          if (classified.kind === 'SCHEMA_NOT_READY') {
+            return withRequestId(schemaNotReadyResponse(), requestId)
+          }
+          if (classified.kind === 'AUTH_OR_RLS') {
+            return withRequestId(forbiddenResponse(), requestId)
+          }
+          return withRequestId(
+            internalErrorResponse('Failed to update default version settings'),
+            requestId,
+          )
         }
 
         // Also update the funnels_catalog.default_version_id
@@ -220,7 +238,8 @@ export async function PATCH(
             userId: user.id,
             error: catalogError,
           })
-          // Continue anyway
+          // This is less critical - version is_default is the source of truth
+          // Log but continue with version update
         }
       }
     }

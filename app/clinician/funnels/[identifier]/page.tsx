@@ -687,11 +687,14 @@ export default function FunnelDetailPage() {
                             type="number"
                             min="0"
                             max="100"
-                            value={version.rollout_percent}
-                            onChange={(e) => {
+                            defaultValue={version.rollout_percent}
+                            onBlur={(e) => {
                               const value = parseInt(e.target.value, 10)
-                              if (!isNaN(value) && value >= 0 && value <= 100) {
+                              if (!isNaN(value) && value >= 0 && value <= 100 && value !== version.rollout_percent) {
                                 updateVersionRollout(version.id, value)
+                              } else if (value !== version.rollout_percent) {
+                                // Reset to current value if invalid
+                                e.target.value = String(version.rollout_percent)
                               }
                             }}
                             disabled={saving}
