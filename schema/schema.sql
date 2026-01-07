@@ -938,6 +938,51 @@ $$;
 
 ALTER FUNCTION "public"."update_support_cases_updated_at"() OWNER TO "postgres";
 
+
+CREATE OR REPLACE FUNCTION "public"."get_design_tokens"("org_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    result jsonb;
+    category_name text;
+BEGIN
+    -- Initialize empty object
+    result := '{}'::jsonb;
+    
+    -- Get all token categories
+    FOR category_name IN 
+        SELECT DISTINCT token_category 
+        FROM public.design_tokens 
+        WHERE is_active = true
+    LOOP
+        -- Build category object with overrides
+        result := jsonb_set(
+            result,
+            ARRAY[category_name],
+            COALESCE(
+                (
+                    SELECT jsonb_object_agg(token_key, token_value)
+                    FROM public.design_tokens
+                    WHERE token_category = category_name
+                    AND is_active = true
+                    AND (organization_id = org_id OR (org_id IS NULL AND organization_id IS NULL))
+                ),
+                '{}'::jsonb
+            )
+        );
+    END LOOP;
+    
+    RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_design_tokens"("org_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_design_tokens"("org_id" "uuid") IS 'V05-I09.2: Returns merged design tokens for the specified organization. NULL org_id returns global defaults.';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -1269,6 +1314,48 @@ COMMENT ON COLUMN "public"."device_shipments"."reminder_count" IS 'Number of rem
 
 
 COMMENT ON COLUMN "public"."device_shipments"."metadata" IS 'Additional shipment data (JSONB)';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."design_tokens" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "organization_id" "uuid",
+    "token_category" "text" NOT NULL,
+    "token_key" "text" NOT NULL,
+    "token_value" "jsonb" NOT NULL,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone,
+    "created_by" "uuid",
+    CONSTRAINT "design_tokens_category_check" CHECK (("token_category" = ANY (ARRAY['spacing'::"text", 'typography'::"text", 'radii'::"text", 'shadows'::"text", 'motion'::"text", 'colors'::"text", 'componentTokens'::"text", 'layout'::"text"]))),
+    CONSTRAINT "design_tokens_unique_org_category_key" UNIQUE ("organization_id", "token_category", "token_key")
+);
+
+
+ALTER TABLE "public"."design_tokens" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."design_tokens" IS 'V05-I09.2: Organization-specific design token overrides. Allows tenant/clinic-level customization of the design system.';
+
+
+
+COMMENT ON COLUMN "public"."design_tokens"."organization_id" IS 'Organization that owns this token override. NULL means global default.';
+
+
+
+COMMENT ON COLUMN "public"."design_tokens"."token_category" IS 'Token category: spacing, typography, radii, shadows, motion, colors, componentTokens, layout';
+
+
+
+COMMENT ON COLUMN "public"."design_tokens"."token_key" IS 'Token key within the category (e.g., "md" for spacing.md)';
+
+
+
+COMMENT ON COLUMN "public"."design_tokens"."token_value" IS 'JSONB token value. Structure depends on token category.';
+
+
+
+COMMENT ON COLUMN "public"."design_tokens"."is_active" IS 'Whether this token override is active';
 
 
 
@@ -2785,6 +2872,11 @@ ALTER TABLE ONLY "public"."device_shipments"
 
 
 
+ALTER TABLE ONLY "public"."design_tokens"
+    ADD CONSTRAINT "design_tokens_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."documents"
     ADD CONSTRAINT "documents_pkey" PRIMARY KEY ("id");
 
@@ -3245,6 +3337,18 @@ CREATE INDEX "idx_device_shipments_task_id" ON "public"."device_shipments" USING
 
 
 CREATE INDEX "idx_device_shipments_tracking_number" ON "public"."device_shipments" USING "btree" ("tracking_number") WHERE ("tracking_number" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_design_tokens_active" ON "public"."design_tokens" USING "btree" ("is_active") WHERE ("is_active" = true);
+
+
+
+CREATE INDEX "idx_design_tokens_category" ON "public"."design_tokens" USING "btree" ("token_category");
+
+
+
+CREATE INDEX "idx_design_tokens_organization" ON "public"."design_tokens" USING "btree" ("organization_id");
 
 
 
@@ -3943,6 +4047,16 @@ ALTER TABLE ONLY "public"."device_shipments"
 
 
 
+ALTER TABLE ONLY "public"."design_tokens"
+    ADD CONSTRAINT "design_tokens_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."design_tokens"
+    ADD CONSTRAINT "design_tokens_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."documents"
     ADD CONSTRAINT "documents_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
 
@@ -4578,6 +4692,31 @@ CREATE POLICY "device_shipments_select_staff_org" ON "public"."device_shipments"
 CREATE POLICY "device_shipments_update_staff_org" ON "public"."device_shipments" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."user_org_membership" "uom"
   WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
+ALTER TABLE "public"."design_tokens" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "design_tokens_admin_delete" ON "public"."design_tokens" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "design_tokens_admin_insert" ON "public"."design_tokens" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "design_tokens_admin_update" ON "public"."design_tokens" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "design_tokens_select_authenticated" ON "public"."design_tokens" FOR SELECT TO "authenticated" USING (("is_active" = true));
 
 
 
