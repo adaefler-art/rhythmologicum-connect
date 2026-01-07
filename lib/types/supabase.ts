@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -402,6 +397,50 @@ export type Database = {
             columns: ["funnel_id"]
             isOneToOne: false
             referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          organization_id: string | null
+          token_category: string
+          token_key: string
+          token_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          token_category: string
+          token_key: string
+          token_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string | null
+          token_category?: string
+          token_key?: string
+          token_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2250,6 +2289,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_design_tokens: { Args: { org_id?: string }; Returns: Json }
       get_my_patient_profile_id: { Args: never; Returns: string }
       get_user_org_ids: { Args: never; Returns: string[] }
       has_any_role: {
@@ -2540,3 +2580,4 @@ export const Constants = {
     },
   },
 } as const
+
