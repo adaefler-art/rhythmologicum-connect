@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -910,6 +905,63 @@ export type Database = {
           },
         ]
       }
+      kpi_thresholds: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          critical_threshold: number | null
+          description: string | null
+          evaluation_period_days: number | null
+          id: string
+          is_active: boolean
+          kpi_key: string
+          metric_type: string
+          name: string
+          notify_on_breach: boolean
+          target_threshold: number | null
+          unit: string | null
+          updated_at: string
+          updated_by: string | null
+          warning_threshold: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          critical_threshold?: number | null
+          description?: string | null
+          evaluation_period_days?: number | null
+          id?: string
+          is_active?: boolean
+          kpi_key: string
+          metric_type: string
+          name: string
+          notify_on_breach?: boolean
+          target_threshold?: number | null
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          warning_threshold?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          critical_threshold?: number | null
+          description?: string | null
+          evaluation_period_days?: number | null
+          id?: string
+          is_active?: boolean
+          kpi_key?: string
+          metric_type?: string
+          name?: string
+          notify_on_breach?: boolean
+          target_threshold?: number | null
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          warning_threshold?: number | null
+        }
+        Relationships: []
+      }
       medical_validation_results: {
         Row: {
           created_at: string
@@ -1053,6 +1105,57 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_templates: {
+        Row: {
+          body_template: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          subject_template: string | null
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+          variables: Json | null
+        }
+        Insert: {
+          body_template: string
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          subject_template?: string | null
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          body_template?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          subject_template?: string | null
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           assessment_id: string | null
@@ -1137,6 +1240,42 @@ export type Database = {
           template_key?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      operational_settings_audit: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          operation: string
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation: string
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation?: string
+          record_id?: string
+          table_name?: string
         }
         Relationships: []
       }
@@ -1557,6 +1696,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reassessment_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          funnel_id: string | null
+          id: string
+          is_active: boolean
+          priority: string | null
+          rule_name: string
+          schedule_cron: string | null
+          schedule_interval_days: number | null
+          trigger_condition: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          funnel_id?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: string | null
+          rule_name: string
+          schedule_cron?: string | null
+          schedule_interval_days?: number | null
+          trigger_condition: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          funnel_id?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: string | null
+          rule_name?: string
+          schedule_cron?: string | null
+          schedule_interval_days?: number | null
+          trigger_condition?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reassessment_rules_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_sections: {
         Row: {
@@ -2585,3 +2780,4 @@ export const Constants = {
     },
   },
 } as const
+
