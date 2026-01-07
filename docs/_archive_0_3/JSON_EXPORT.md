@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Patientinnen und Patienten können ihre Verlaufsdaten im JSON-Format exportieren. Der Export enthält alle relevanten Messungen mit Scores, Risikobewertungen, Zeitstempeln und AMY-Auswertungen.
+Patientinnen und Patienten können ihre Verlaufsdaten im JSON-Format exportieren. Der Export enthält alle relevanten Messungen mit Scores, Risikobewertungen, Zeitstempeln, AMY-Auswertungen sowie alle erteilten Einwilligungen (Consents).
 
 ## Zugriff
 
@@ -28,6 +28,7 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
 {
   "export_date": "2025-12-05T10:30:00.000Z",
   "patient_id": "uuid-of-patient",
+  "user_id": "uuid-of-user",
   "total_count": 5,
   "measures": [
     {
@@ -46,7 +47,17 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
       "amy_interpretation": "Ihre Stresswerte liegen im moderaten Bereich...",
       "report_created_at": "2025-12-05T09:16:00.000Z"
     }
-  ]
+  ],
+  "consents": [
+    {
+      "consent_id": "uuid-of-consent",
+      "consent_version": "1.0.0",
+      "consented_at": "2025-12-05T08:00:00.000Z",
+      "ip_address": "192.168.1.100",
+      "user_agent": "Mozilla/5.0 ..."
+    }
+  ],
+  "consents_count": 1
 }
 ```
 
@@ -56,8 +67,11 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
 
 - **export_date** (ISO 8601): Zeitstempel des Exports
 - **patient_id** (UUID): Eindeutige Patienten-ID
+- **user_id** (UUID): Eindeutige User-ID (auth.users)
 - **total_count** (Zahl): Anzahl der exportierten Messungen
 - **measures** (Array): Liste aller Messungen
+- **consents** (Array): Liste aller erteilten Einwilligungen
+- **consents_count** (Zahl): Anzahl der exportierten Einwilligungen
 
 #### Measures-Objekt
 
@@ -74,6 +88,14 @@ In der Patientenansicht unter `/patient/history` steht ein "Als JSON exportieren
 - **report_assessment_id** (UUID | null): Assessment, das dem Report zugrunde liegt
 - **amy_interpretation** (String | null): Kurztext von AMY
 - **report_created_at** (ISO 8601 | null): Zeitpunkt der Report-Erstellung
+
+#### Consents-Objekt
+
+- **consent_id** (UUID): Eindeutige ID der Einwilligung
+- **consent_version** (String): Version der Nutzungsbedingungen (z.B. "1.0.0")
+- **consented_at** (ISO 8601): Zeitpunkt der Zustimmung
+- **ip_address** (String | null): IP-Adresse zum Zeitpunkt der Zustimmung (Audit-Trail)
+- **user_agent** (String | null): Browser User-Agent zum Zeitpunkt der Zustimmung (Audit-Trail)
 
 ### Datei-Name
 
@@ -132,7 +154,9 @@ console.log(exportData)
 - ✅ Jede Person kann nur ihre eigenen Daten abrufen
 - ✅ Patient-ID wird über das verknüpfte Profil verifiziert
 - ✅ Kein direkter Datenbankzugriff über URL-Parameter möglich
+- ✅ Einwilligungsdaten (Consents) werden mit exportiert für GDPR-Compliance
+- ✅ IP-Adressen und User-Agent-Daten dienen als Audit-Trail für Einwilligungen
 
 ## Datenschutz
 
-Die exportierten Daten enthalten personenbezogene Gesundheitsdaten und sollten entsprechend den Datenschutzrichtlinien behandelt werden.
+Die exportierten Daten enthalten personenbezogene Gesundheitsdaten und sollten entsprechend den Datenschutzrichtlinien behandelt werden. Der Export ermöglicht es Nutzer:innen, ihre vollständigen Daten gemäß DSGVO Art. 15 (Auskunftsrecht) und Art. 20 (Datenübertragbarkeit) zu erhalten.
