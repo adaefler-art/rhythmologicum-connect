@@ -30,7 +30,7 @@ interface ReassessmentRule {
   rule_name: string
   description: string | null
   funnel_id: string | null
-  trigger_condition: any
+  trigger_condition: Record<string, unknown>
   schedule_interval_days: number | null
   schedule_cron: string | null
   priority: string
@@ -61,8 +61,8 @@ interface AuditLog {
   table_name: string
   record_id: string
   operation: string
-  old_values: any
-  new_values: any
+  old_values: Record<string, unknown> | null
+  new_values: Record<string, unknown> | null
   changed_by: string | null
   changed_at: string
   change_reason: string | null
@@ -89,6 +89,7 @@ export default function OperationalSettingsPage() {
 
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
   async function loadData() {
@@ -155,7 +156,7 @@ export default function OperationalSettingsPage() {
       } else {
         alert('Fehler beim Aktualisieren: ' + (data.error?.message || 'Unbekannter Fehler'))
       }
-    } catch (err) {
+    } catch {
       alert('Netzwerkfehler beim Aktualisieren')
     } finally {
       setSaving(false)
@@ -177,7 +178,7 @@ export default function OperationalSettingsPage() {
       } else {
         alert('Fehler beim Aktualisieren: ' + (data.error?.message || 'Unbekannter Fehler'))
       }
-    } catch (err) {
+    } catch {
       alert('Netzwerkfehler beim Aktualisieren')
     } finally {
       setSaving(false)
@@ -201,7 +202,7 @@ export default function OperationalSettingsPage() {
       } else {
         alert('Fehler beim Aktualisieren: ' + (data.error?.message || 'Unbekannter Fehler'))
       }
-    } catch (err) {
+    } catch {
       alert('Netzwerkfehler beim Aktualisieren')
     } finally {
       setSaving(false)
