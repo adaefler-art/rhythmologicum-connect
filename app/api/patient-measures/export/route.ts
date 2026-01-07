@@ -30,12 +30,8 @@ type ConsentRecord = {
   user_agent: string | null
 }
 
-type ConsentExport = {
+type ConsentExport = Omit<ConsentRecord, 'id'> & {
   consent_id: string
-  consent_version: string
-  consented_at: string
-  ip_address: string | null
-  user_agent: string | null
 }
 
 /**
@@ -68,12 +64,9 @@ async function fetchUserConsents(
  * Transforms consent records for export
  */
 function transformConsentsForExport(consents: ConsentRecord[]): ConsentExport[] {
-  return consents.map((consent) => ({
-    consent_id: consent.id,
-    consent_version: consent.consent_version,
-    consented_at: consent.consented_at,
-    ip_address: consent.ip_address,
-    user_agent: consent.user_agent,
+  return consents.map(({ id, ...rest }) => ({
+    consent_id: id,
+    ...rest,
   }))
 }
 
