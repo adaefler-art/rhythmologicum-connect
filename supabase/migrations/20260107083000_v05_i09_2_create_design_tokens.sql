@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS public.design_tokens (
 );
 
 -- Create index for faster lookups by organization
-CREATE INDEX idx_design_tokens_organization ON public.design_tokens(organization_id);
-CREATE INDEX idx_design_tokens_category ON public.design_tokens(token_category);
-CREATE INDEX idx_design_tokens_active ON public.design_tokens(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_design_tokens_organization ON public.design_tokens(organization_id);
+CREATE INDEX IF NOT EXISTS idx_design_tokens_category ON public.design_tokens(token_category);
+CREATE INDEX IF NOT EXISTS idx_design_tokens_active ON public.design_tokens(is_active) WHERE is_active = true;
 
 -- Add comments
 COMMENT ON TABLE public.design_tokens IS 'V05-I09.2: Organization-specific design token overrides. Allows tenant/clinic-level customization of the design system.';
@@ -36,12 +36,16 @@ ALTER TABLE public.design_tokens ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 -- All authenticated users can read active tokens
+DROP POLICY IF EXISTS design_tokens_select_authenticated ON public.design_tokens;
+
 CREATE POLICY design_tokens_select_authenticated ON public.design_tokens
     FOR SELECT
     TO authenticated
     USING (is_active = true);
 
 -- Only admins can insert/update/delete tokens
+DROP POLICY IF EXISTS design_tokens_admin_insert ON public.design_tokens;
+
 CREATE POLICY design_tokens_admin_insert ON public.design_tokens
     FOR INSERT
     TO authenticated
@@ -56,6 +60,8 @@ CREATE POLICY design_tokens_admin_insert ON public.design_tokens
         )
     );
 
+DROP POLICY IF EXISTS design_tokens_admin_update ON public.design_tokens;
+
 CREATE POLICY design_tokens_admin_update ON public.design_tokens
     FOR UPDATE
     TO authenticated
@@ -69,6 +75,8 @@ CREATE POLICY design_tokens_admin_update ON public.design_tokens
             )
         )
     );
+
+DROP POLICY IF EXISTS design_tokens_admin_delete ON public.design_tokens;
 
 CREATE POLICY design_tokens_admin_delete ON public.design_tokens
     FOR DELETE
