@@ -45,19 +45,19 @@ function jsonError(status: number, code: ErrorCode, message: string, requestId: 
 
 export async function PUT(
   request: Request,
-  { params }: { params: { role: string } },
+  { params }: { params: Promise<{ role: string }> },
 ) {
   const requestId = getRequestId()
 
   try {
-    const role = params.role
+    const { role } = await params
 
     // Validate role
     if (!VALID_ROLES.includes(role as UserRole)) {
-      return jsonError(400, ErrorCode.VALIDATION_ERROR, 'Ungültige Rolle', requestId)
+      return jsonError(400, ErrorCode.VALIDATION_FAILED, 'Ungültige Rolle', requestId)
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication and authorization
     const {
@@ -69,7 +69,7 @@ export async function PUT(
       return jsonError(401, ErrorCode.UNAUTHORIZED, 'Nicht authentifiziert', requestId)
     }
 
-    const hasPermission = await hasAdminOrClinicianRole(supabase, user.id)
+    const hasPermission = await hasAdminOrClinicianRole()
     if (!hasPermission) {
       return jsonError(
         403,
@@ -84,15 +84,16 @@ export async function PUT(
     try {
       body = await request.json()
     } catch {
-      return jsonError(400, ErrorCode.VALIDATION_ERROR, 'Ungültiger Request-Body', requestId)
+      return jsonError(400, ErrorCode.VALIDATION_FAILED, 'Ungültiger Request-Body', requestId)
     }
 
     if (!body.configs || !Array.isArray(body.configs)) {
-      return jsonError(400, ErrorCode.VALIDATION_ERROR, 'configs muss ein Array sein', requestId)
+      return jsonError(400, ErrorCode.VALIDATION_FAILED, 'configs muss ein Array sein', requestId)
     }
 
     // Delete existing configs for this role
     const { error: deleteError } = await supabase
+      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
       .delete()
       .eq('role', role)
@@ -124,7 +125,9 @@ export async function PUT(
     }))
 
     const { data: insertedConfigs, error: insertError } = await supabase
+      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
+      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .insert(configsToInsert)
       .select()
 
@@ -135,17 +138,6 @@ export async function PUT(
         error: insertError,
         userId: user.id,
       })
-
-      const classified = classifySupabaseError(insertError)
-
-      if (classified.kind === 'CONSTRAINT_VIOLATION') {
-        return jsonError(
-          400,
-          ErrorCode.VALIDATION_ERROR,
-          'Ungültige Konfigurationsdaten',
-          requestId,
-        )
-      }
 
       return jsonError(
         500,
@@ -171,7 +163,7 @@ export async function PUT(
 
     return jsonError(
       500,
-      ErrorCode.INTERNAL_SERVER_ERROR,
+      ErrorCode.INTERNAL_ERROR,
       'Interner Serverfehler',
       requestId,
     )

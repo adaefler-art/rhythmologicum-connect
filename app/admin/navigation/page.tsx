@@ -106,7 +106,7 @@ export default function NavigationConfigPage() {
       const config = configs.find(
         (c) => c.role === role && c.navigation_item_id === item.id,
       )
-      return { item, config }
+      return { item, config: config ?? null }
     })
   }
 

@@ -57,7 +57,7 @@ export async function GET() {
   const requestId = getRequestId()
 
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication and authorization
     const {
@@ -69,7 +69,7 @@ export async function GET() {
       return jsonError(401, ErrorCode.UNAUTHORIZED, 'Nicht authentifiziert', requestId)
     }
 
-    const hasPermission = await hasAdminOrClinicianRole(supabase, user.id)
+    const hasPermission = await hasAdminOrClinicianRole()
     if (!hasPermission) {
       return jsonError(
         403,
@@ -81,6 +81,7 @@ export async function GET() {
 
     // Fetch all navigation items
     const { data: items, error: itemsError } = await supabase
+      // @ts-expect-error - navigation_items table not yet in generated types
       .from('navigation_items')
       .select('*')
       .order('default_order', { ascending: true })
@@ -113,6 +114,7 @@ export async function GET() {
 
     // Fetch all navigation item configs
     const { data: configs, error: configsError } = await supabase
+      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
       .select('*')
       .order('role', { ascending: true })
@@ -135,8 +137,8 @@ export async function GET() {
     }
 
     const response: NavigationConfigResponse = {
-      items: items || [],
-      configs: configs || [],
+      items: (items as unknown as NavigationItem[]) || [],
+      configs: (configs as unknown as NavigationItemConfig[]) || [],
     }
 
     return withRequestId(successResponse(response), requestId)
@@ -149,7 +151,7 @@ export async function GET() {
 
     return jsonError(
       500,
-      ErrorCode.INTERNAL_SERVER_ERROR,
+      ErrorCode.INTERNAL_ERROR,
       'Interner Serverfehler',
       requestId,
     )
