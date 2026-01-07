@@ -60,7 +60,6 @@ export async function loadDesignTokens(organizationId?: string | null) {
     
     // Fetch organization-specific token overrides
     const { data: overrides, error } = await supabase
-      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .select('token_category, token_key, token_value')
       .eq('organization_id', organizationId)

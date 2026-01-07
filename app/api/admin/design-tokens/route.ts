@@ -43,7 +43,6 @@ export async function GET(request: NextRequest) {
     
     // Build query
     let query = supabase
-      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .select('*')
       .eq('is_active', true)
@@ -173,7 +172,6 @@ export async function POST(request: NextRequest) {
     
     // Upsert token
     const { data: token, error } = await supabase
-      // @ts-expect-error - design_tokens table will be added to types after type regeneration
       .from('design_tokens')
       .upsert(
         {
