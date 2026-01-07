@@ -2478,6 +2478,53 @@ ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 COMMENT ON TABLE "public"."user_profiles" IS 'V0.5: Extended user profile information';
 
 
+-- V05-I09.1: Navigation Configuration Tables
+CREATE TABLE IF NOT EXISTS "public"."navigation_items" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "route" "text" NOT NULL,
+    "default_label" "text" NOT NULL,
+    "default_icon" "text",
+    "default_order" integer NOT NULL,
+    "is_system" boolean NOT NULL DEFAULT true,
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "navigation_items_route_check" CHECK (route ~ '^/[a-z0-9/_-]*$'),
+    CONSTRAINT "navigation_items_default_order_check" CHECK (default_order >= 0)
+);
+
+ALTER TABLE "public"."navigation_items" OWNER TO "postgres";
+
+COMMENT ON TABLE "public"."navigation_items" IS 'V05-I09.1: Defines available navigation items in the application';
+COMMENT ON COLUMN "public"."navigation_items"."route" IS 'URL route path (e.g., /clinician, /admin/content)';
+COMMENT ON COLUMN "public"."navigation_items"."default_label" IS 'Default label shown in navigation';
+COMMENT ON COLUMN "public"."navigation_items"."default_icon" IS 'Icon identifier (lucide-react icon name)';
+COMMENT ON COLUMN "public"."navigation_items"."default_order" IS 'Default display order (0-based)';
+COMMENT ON COLUMN "public"."navigation_items"."is_system" IS 'System items cannot be deleted, only disabled';
+
+CREATE TABLE IF NOT EXISTS "public"."navigation_item_configs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "role" "text" NOT NULL,
+    "navigation_item_id" "uuid" NOT NULL,
+    "is_enabled" boolean NOT NULL DEFAULT true,
+    "custom_label" "text",
+    "custom_icon" "text",
+    "order_index" integer NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "navigation_item_configs_role_check" CHECK (role IN ('patient', 'clinician', 'admin', 'nurse')),
+    CONSTRAINT "navigation_item_configs_order_check" CHECK (order_index >= 0)
+);
+
+ALTER TABLE "public"."navigation_item_configs" OWNER TO "postgres";
+
+COMMENT ON TABLE "public"."navigation_item_configs" IS 'V05-I09.1: Role-specific navigation configuration overrides';
+COMMENT ON COLUMN "public"."navigation_item_configs"."role" IS 'User role this config applies to';
+COMMENT ON COLUMN "public"."navigation_item_configs"."is_enabled" IS 'Whether this item is shown for this role';
+COMMENT ON COLUMN "public"."navigation_item_configs"."custom_label" IS 'Optional custom label override';
+COMMENT ON COLUMN "public"."navigation_item_configs"."custom_icon" IS 'Optional custom icon override';
+COMMENT ON COLUMN "public"."navigation_item_configs"."order_index" IS 'Display order for this role (0-based)';
+
 
 ALTER TABLE ONLY "public"."assessment_answers"
     ADD CONSTRAINT "assessment_answers_assessment_question_unique" UNIQUE ("assessment_id", "question_id");
@@ -2800,6 +2847,19 @@ ALTER TABLE ONLY "public"."user_profiles"
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_user_id_key" UNIQUE ("user_id");
 
+
+-- V05-I09.1: Navigation configuration constraints
+ALTER TABLE ONLY "public"."navigation_items"
+    ADD CONSTRAINT "navigation_items_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."navigation_items"
+    ADD CONSTRAINT "navigation_items_route_key" UNIQUE ("route");
+
+ALTER TABLE ONLY "public"."navigation_item_configs"
+    ADD CONSTRAINT "navigation_item_configs_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY "public"."navigation_item_configs"
+    ADD CONSTRAINT "navigation_item_configs_unique" UNIQUE ("role", "navigation_item_id");
 
 
 CREATE INDEX "assessments_funnel_id_idx" ON "public"."assessments" USING "btree" ("funnel_id");
@@ -3441,6 +3501,17 @@ CREATE INDEX "idx_user_profiles_organization_id" ON "public"."user_profiles" USI
 CREATE INDEX "idx_user_profiles_user_id" ON "public"."user_profiles" USING "btree" ("user_id");
 
 
+-- V05-I09.1: Navigation configuration indexes
+CREATE INDEX "idx_navigation_items_default_order" ON "public"."navigation_items" USING "btree" ("default_order");
+
+CREATE INDEX "idx_navigation_item_configs_role" ON "public"."navigation_item_configs" USING "btree" ("role");
+
+CREATE INDEX "idx_navigation_item_configs_role_order" ON "public"."navigation_item_configs" USING "btree" ("role", "order_index");
+
+COMMENT ON INDEX "public"."idx_navigation_item_configs_role" IS 'V05-I09.1: Optimizes role-based navigation lookups';
+
+COMMENT ON INDEX "public"."idx_navigation_item_configs_role_order" IS 'V05-I09.1: Optimizes ordered navigation retrieval';
+
 
 COMMENT ON INDEX "public"."medical_validation_results_job_version_hash_unique" IS 'Composite uniqueness: allows versioned reruns with different rulesets';
 
@@ -3788,6 +3859,10 @@ ALTER TABLE ONLY "public"."user_profiles"
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
+
+-- V05-I09.1: Navigation configuration foreign keys
+ALTER TABLE ONLY "public"."navigation_item_configs"
+    ADD CONSTRAINT "navigation_item_configs_navigation_item_id_fkey" FOREIGN KEY ("navigation_item_id") REFERENCES "public"."navigation_items"("id") ON DELETE CASCADE;
 
 
 CREATE POLICY "Admins can manage funnel versions" ON "public"."funnel_versions" USING ("public"."has_any_role"('admin'::"public"."user_role")) WITH CHECK ("public"."has_any_role"('admin'::"public"."user_role"));
@@ -4163,6 +4238,45 @@ CREATE POLICY "Users can view own organizations" ON "public"."organizations" FOR
 CREATE POLICY "Users can view own profile" ON "public"."user_profiles" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
+-- V05-I09.1: Navigation configuration RLS policies
+CREATE POLICY "navigation_items_select_authenticated" 
+  ON "public"."navigation_items"
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "navigation_items_admin_modify" 
+  ON "public"."navigation_items"
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM "public"."role_memberships" rm
+      WHERE rm.user_id = auth.uid()
+        AND rm.role IN ('admin', 'clinician')
+        AND rm.is_active = true
+    )
+  );
+
+CREATE POLICY "navigation_item_configs_select_authenticated" 
+  ON "public"."navigation_item_configs"
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "navigation_item_configs_admin_modify" 
+  ON "public"."navigation_item_configs"
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM "public"."role_memberships" rm
+      WHERE rm.user_id = auth.uid()
+        AND rm.role IN ('admin', 'clinician')
+        AND rm.is_active = true
+    )
+  );
+
 
 CREATE POLICY "allow_admin_clinician_delete_sections" ON "public"."content_page_sections" FOR DELETE TO "authenticated" USING (("public"."has_role"('admin'::"text") OR "public"."has_role"('clinician'::"text")));
 
@@ -4536,6 +4650,11 @@ ALTER TABLE "public"."user_org_membership" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
+
+-- V05-I09.1: Enable RLS for navigation configuration
+ALTER TABLE "public"."navigation_items" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."navigation_item_configs" ENABLE ROW LEVEL SECURITY;
 
 
 
@@ -5132,6 +5251,15 @@ GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
 
+
+-- V05-I09.1: Navigation configuration grants
+GRANT ALL ON TABLE "public"."navigation_items" TO "anon";
+GRANT ALL ON TABLE "public"."navigation_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."navigation_items" TO "service_role";
+
+GRANT ALL ON TABLE "public"."navigation_item_configs" TO "anon";
+GRANT ALL ON TABLE "public"."navigation_item_configs" TO "authenticated";
+GRANT ALL ON TABLE "public"."navigation_item_configs" TO "service_role";
 
 
 

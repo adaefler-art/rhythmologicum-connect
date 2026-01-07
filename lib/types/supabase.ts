@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -926,6 +921,86 @@ export type Database = {
           validation_time_ms?: number
           validation_version?: string
           warning_flags_count?: number
+        }
+        Relationships: []
+      }
+      navigation_item_configs: {
+        Row: {
+          created_at: string
+          custom_icon: string | null
+          custom_label: string | null
+          id: string
+          is_enabled: boolean
+          navigation_item_id: string
+          order_index: number
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_icon?: string | null
+          custom_label?: string | null
+          id?: string
+          is_enabled?: boolean
+          navigation_item_id: string
+          order_index: number
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_icon?: string | null
+          custom_label?: string | null
+          id?: string
+          is_enabled?: boolean
+          navigation_item_id?: string
+          order_index?: number
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_item_configs_navigation_item_id_fkey"
+            columns: ["navigation_item_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      navigation_items: {
+        Row: {
+          created_at: string
+          default_icon: string | null
+          default_label: string
+          default_order: number
+          description: string | null
+          id: string
+          is_system: boolean
+          route: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_icon?: string | null
+          default_label: string
+          default_order: number
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          route: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_icon?: string | null
+          default_label?: string
+          default_order?: number
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          route?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2460,3 +2535,4 @@ export const Constants = {
     },
   },
 } as const
+
