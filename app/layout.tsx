@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
+import { DesignTokensProvider } from '@/lib/contexts/DesignTokensContext'
+import { loadUserDesignTokens } from '@/lib/design-tokens-loader'
 
 export const metadata: Metadata = {
   title: 'Rhythmologicum Connect',
@@ -12,11 +14,22 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Load design tokens with organization overrides (if user is logged in)
+  // Fallback to default tokens if there's any error during build/SSG
+  let tokens
+  try {
+    tokens = await loadUserDesignTokens()
+  } catch (error) {
+    // During build time or if Supabase is unavailable, use default tokens
+    console.warn('[RootLayout] Could not load user design tokens, using defaults:', error)
+    tokens = undefined // Will use default tokens in provider
+  }
+
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
@@ -43,7 +56,9 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <DesignTokensProvider tokens={tokens}>
+          <ThemeProvider>{children}</ThemeProvider>
+        </DesignTokensProvider>
       </body>
     </html>
   )

@@ -73,6 +73,7 @@ When introducing a new canonical table or enum:
 - `support_cases` (V05-I08.4)
 - `support_case_status`, `support_case_priority`, `support_case_category` (V05-I08.4)
 - `navigation_items`, `navigation_item_configs` (V05-I09.1)
+- `design_tokens` (V05-I09.2)
 
 **Example manifest entry:**
 ```json
