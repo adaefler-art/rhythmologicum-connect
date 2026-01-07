@@ -142,18 +142,20 @@ export async function DELETE(
     const supabase = createAdminSupabaseClient()
 
     // Check if template exists and is not a system template
-    const { data: existing } = await supabase
+    const { data: existing } = (await supabase
       .from('notification_templates' as any)
       .select('is_system')
       .eq('id', id)
-      .single()
+      .single()) as { data: { is_system: boolean } | null; error: any }
 
     if (!existing) {
       return notFoundResponse('Template nicht gefunden.')
     }
 
     if (existing.is_system) {
-      return validationErrorResponse('System-Templates können nicht gelöscht werden. Deaktivieren Sie sie stattdessen.')
+      return validationErrorResponse(
+        'System-Templates können nicht gelöscht werden. Deaktivieren Sie sie stattdessen.',
+      )
     }
 
     // Delete template (this will trigger audit logging)
