@@ -76,6 +76,8 @@ ALTER TABLE public.navigation_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.navigation_item_configs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow all authenticated users to read navigation items
+DROP POLICY IF EXISTS "navigation_items_select_authenticated" ON public.navigation_items;
+
 CREATE POLICY "navigation_items_select_authenticated" 
   ON public.navigation_items
   FOR SELECT
@@ -83,20 +85,25 @@ CREATE POLICY "navigation_items_select_authenticated"
   USING (true);
 
 -- Policy: Only admins and clinicians can modify navigation items
+DROP POLICY IF EXISTS "navigation_items_admin_modify" ON public.navigation_items;
+
 CREATE POLICY "navigation_items_admin_modify" 
   ON public.navigation_items
   FOR ALL
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.role_memberships rm
-      WHERE rm.user_id = auth.uid()
-        AND rm.role IN ('admin', 'clinician')
-        AND rm.is_active = true
+      SELECT 1
+      FROM public.user_org_membership uom
+      WHERE uom.user_id = auth.uid()
+        AND uom.is_active = true
+        AND uom.role IN ('admin', 'clinician')
     )
   );
 
 -- Policy: Allow all authenticated users to read navigation configs
+DROP POLICY IF EXISTS "navigation_item_configs_select_authenticated" ON public.navigation_item_configs;
+
 CREATE POLICY "navigation_item_configs_select_authenticated" 
   ON public.navigation_item_configs
   FOR SELECT
@@ -104,16 +111,19 @@ CREATE POLICY "navigation_item_configs_select_authenticated"
   USING (true);
 
 -- Policy: Only admins and clinicians can modify navigation configs
+DROP POLICY IF EXISTS "navigation_item_configs_admin_modify" ON public.navigation_item_configs;
+
 CREATE POLICY "navigation_item_configs_admin_modify" 
   ON public.navigation_item_configs
   FOR ALL
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.role_memberships rm
-      WHERE rm.user_id = auth.uid()
-        AND rm.role IN ('admin', 'clinician')
-        AND rm.is_active = true
+      SELECT 1
+      FROM public.user_org_membership uom
+      WHERE uom.user_id = auth.uid()
+        AND uom.is_active = true
+        AND uom.role IN ('admin', 'clinician')
     )
   );
 
@@ -128,10 +138,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS navigation_items_updated_at ON public.navigation_items;
+
 CREATE TRIGGER navigation_items_updated_at
   BEFORE UPDATE ON public.navigation_items
   FOR EACH ROW
   EXECUTE FUNCTION public.update_navigation_updated_at();
+
+DROP TRIGGER IF EXISTS navigation_item_configs_updated_at ON public.navigation_item_configs;
 
 CREATE TRIGGER navigation_item_configs_updated_at
   BEFORE UPDATE ON public.navigation_item_configs

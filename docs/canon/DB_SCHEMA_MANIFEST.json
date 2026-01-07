@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "version": "0.5.0",
   "description": "Canonical DB Schema Manifest - Single source of truth for allowed database objects in Rhythmologicum Connect",
-  "lastUpdated": "2026-01-06",
+  "lastUpdated": "2026-01-07",
   "_comment_deprecation": "DEPRECATION MODEL: Deprecated objects remain in the 'tables' or 'enums' arrays (to allow existing migrations to pass validation) AND are listed in the 'deprecated' section (to warn on usage). This dual-listing is intentional and supports gradual migration away from legacy objects. See 'notes.deprecation_model' for details.",
   "tables": [
     "assessment_answers",
@@ -22,6 +22,8 @@
     "funnels",
     "funnels_catalog",
     "medical_validation_results",
+    "navigation_item_configs",
+    "navigation_items",
     "notifications",
     "organizations",
     "patient_funnels",
