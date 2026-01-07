@@ -22,6 +22,14 @@ type ReportRecord = {
   report_text_short: string | null
 }
 
+type ConsentRecord = {
+  id: string
+  consent_version: string
+  consented_at: string
+  ip_address: string | null
+  user_agent: string | null
+}
+
 export async function GET(req: Request) {
   // Use admin client for patient measures export (RLS bypass for clinician access)
   const supabase = createAdminSupabaseClient()
@@ -92,11 +100,32 @@ export async function GET(req: Request) {
     }
 
     if (!measures || measures.length === 0) {
+      // Even if no measures, export consent data
+      const { data: consents, error: consentsError } = await supabase
+        .from('user_consents')
+        .select<'id, consent_version, consented_at, ip_address, user_agent', ConsentRecord>(
+          'id, consent_version, consented_at, ip_address, user_agent'
+        )
+        .eq('user_id', user.id)
+        .order('consented_at', { ascending: false })
+
+      const consentData =
+        consents?.map((consent) => ({
+          consent_id: consent.id,
+          consent_version: consent.consent_version,
+          consented_at: consent.consented_at,
+          ip_address: consent.ip_address,
+          user_agent: consent.user_agent,
+        })) || []
+
       return NextResponse.json({
         export_date: new Date().toISOString(),
         patient_id: patientId,
+        user_id: user.id,
         measures: [],
         total_count: 0,
+        consents: consentData,
+        consents_count: consentData.length,
         message: 'Keine Messungen gefunden.',
       })
     }
@@ -124,7 +153,24 @@ export async function GET(req: Request) {
       }
     }
 
-    // 5. Combine measures with their reports and prepare export data
+    // 5. Fetch user consents
+    const { data: consents, error: consentsError } = await supabase
+      .from('user_consents')
+      .select<'id, consent_version, consented_at, ip_address, user_agent', ConsentRecord>(
+        'id, consent_version, consented_at, ip_address, user_agent'
+      )
+      .eq('user_id', user.id)
+      .order('consented_at', { ascending: false })
+
+    if (consentsError) {
+      console.error(
+        '[patient-measures/export] Fehler beim Laden der Einwilligungen:',
+        consentsError
+      )
+      // Continue without consents rather than failing completely
+    }
+
+    // 6. Combine measures with their reports and prepare export data
     const exportData = measures.map((measure) => {
       const report = reports?.find((r) => r.id === measure.report_id)
       const measuredAt = report?.created_at ?? measure.created_at
@@ -146,12 +192,25 @@ export async function GET(req: Request) {
       }
     })
 
-    // 6. Return the complete export
+    // 7. Prepare consent data for export
+    const consentData =
+      consents?.map((consent) => ({
+        consent_id: consent.id,
+        consent_version: consent.consent_version,
+        consented_at: consent.consented_at,
+        ip_address: consent.ip_address,
+        user_agent: consent.user_agent,
+      })) || []
+
+    // 8. Return the complete export
     return NextResponse.json({
       export_date: new Date().toISOString(),
       patient_id: patientId,
+      user_id: user.id,
       measures: exportData,
       total_count: exportData.length,
+      consents: consentData,
+      consents_count: consentData.length,
     })
   } catch (err: unknown) {
     console.error('[patient-measures/export] Unerwarteter Fehler:', err)
