@@ -1,5 +1,5 @@
 // tools/list-anthropic-models.cjs
-/* eslint-disable @typescript-eslint/no-require-imports */
+ 
 
 // 1) Erst versuchen, .env.local zu laden
 require("dotenv").config({ path: ".env.local" });

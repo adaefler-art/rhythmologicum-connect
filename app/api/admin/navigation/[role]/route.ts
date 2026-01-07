@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { successResponse } from '@/lib/api/responses'
-import { getRequestId, logError, withRequestId, classifySupabaseError } from '@/lib/db/errors'
+import { getRequestId, logError, withRequestId } from '@/lib/db/errors'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 /**
