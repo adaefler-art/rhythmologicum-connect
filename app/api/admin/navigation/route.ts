@@ -81,7 +81,6 @@ export async function GET() {
 
     // Fetch all navigation items
     const { data: items, error: itemsError } = await supabase
-      // @ts-expect-error - navigation_items table not yet in generated types
       .from('navigation_items')
       .select('*')
       .order('default_order', { ascending: true })
@@ -114,7 +113,6 @@ export async function GET() {
 
     // Fetch all navigation item configs
     const { data: configs, error: configsError } = await supabase
-      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
       .select('*')
       .order('role', { ascending: true })

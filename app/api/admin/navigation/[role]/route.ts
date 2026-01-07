@@ -93,7 +93,6 @@ export async function PUT(
 
     // Delete existing configs for this role
     const { error: deleteError } = await supabase
-      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
       .delete()
       .eq('role', role)
@@ -125,9 +124,7 @@ export async function PUT(
     }))
 
     const { data: insertedConfigs, error: insertError } = await supabase
-      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .from('navigation_item_configs')
-      // @ts-expect-error - navigation_item_configs table not yet in generated types
       .insert(configsToInsert)
       .select()
 
