@@ -148,6 +148,19 @@ const ALLOWED_METADATA_KEYS = [
   'records_anonymized',
   'executed_by',
   'anonymization_reason',
+  // V05-I10.3: KPI/Observability tracking
+  'kpi_event',
+  'funnel_slug',
+  'drop_off_reason',
+  'current_step_id',
+  'step_order_index',
+  'duration_seconds',
+  'duration_before_drop_seconds',
+  'started_at',
+  'completed_at',
+  'time_to_report_seconds',
+  'report_created_at',
+  'error_type',
 ] as const
 
 /**

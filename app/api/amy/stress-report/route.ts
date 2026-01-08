@@ -15,6 +15,12 @@ import {
 import { logReportGenerated } from '@/lib/audit';
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin';
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper';
+import {
+  trackReportGenerationStarted,
+  trackReportGenerationCompleted,
+  trackReportGenerationFailed,
+  calculateTimeToReport,
+} from '@/lib/monitoring/kpi';
 import { env } from '@/lib/env';
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN;
@@ -244,7 +250,7 @@ export async function POST(req: Request) {
 
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id')
+      .select('id, patient_id, completed_at')
       .eq('id', assessmentId)
       .single();
 
@@ -409,6 +415,29 @@ export async function POST(req: Request) {
       console.error('[stress-report] Audit logging failed (non-blocking):', auditError);
     }
 
+    // V05-I10.3: Track KPI - Report generation completed
+    try {
+      const reportCreatedAt = reportRow.created_at || new Date().toISOString();
+      let timeToReportSeconds: number | undefined;
+      
+      if (assessment.completed_at) {
+        timeToReportSeconds = calculateTimeToReport(assessment.completed_at, reportCreatedAt);
+      }
+
+      await trackReportGenerationCompleted({
+        report_id: reportRow.id,
+        assessment_id: assessmentId,
+        assessment_completed_at: assessment.completed_at || undefined,
+        report_created_at: reportCreatedAt,
+        time_to_report_seconds: timeToReportSeconds,
+        algorithm_version: CURRENT_ALGORITHM_VERSION,
+        prompt_version: CURRENT_PROMPT_VERSION,
+      });
+    } catch (kpiError) {
+      // Don't fail the request if KPI tracking fails
+      console.error('[stress-report] KPI tracking failed (non-blocking):', kpiError);
+    }
+
     const totalDuration = Date.now() - requestStartTime;
     console.log('[stress-report] Request completed successfully', {
       duration: `${totalDuration}ms`,
@@ -445,6 +474,22 @@ export async function POST(req: Request) {
       { endpoint: '/api/amy/stress-report', duration: totalDuration },
       err
     );
+
+    // V05-I10.3: Track KPI - Report generation failed
+    try {
+      const body = await req.json().catch(() => null);
+      const assessmentId = body?.assessmentId as string | undefined;
+      
+      if (assessmentId) {
+        await trackReportGenerationFailed({
+          assessment_id: assessmentId,
+          error_type: error?.message ? 'processing_error' : 'unknown_error',
+        });
+      }
+    } catch (kpiError) {
+      // Don't fail the request if KPI tracking fails
+      console.error('[stress-report] KPI error tracking failed (non-blocking):', kpiError);
+    }
     
     const response = NextResponse.json(
       {

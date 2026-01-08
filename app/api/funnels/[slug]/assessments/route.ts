@@ -14,6 +14,7 @@ import {
   logDatabaseError,
   logAssessmentStarted,
 } from '@/lib/logging/logger'
+import { trackAssessmentStarted } from '@/lib/monitoring/kpi'
 
 /**
  * B5/B8: Start a new assessment for a funnel
@@ -145,6 +146,17 @@ export async function POST(
       assessmentId: assessment.id,
       endpoint: `/api/funnels/${slug}/assessments`,
       funnel: slug,
+    })
+
+    // V05-I10.3: Track KPI - Assessment start
+    await trackAssessmentStarted({
+      actor_user_id: user.id,
+      assessment_id: assessment.id,
+      funnel_slug: slug,
+      funnel_id: funnel.id,
+    }).catch((err) => {
+      // Don't fail the request if KPI tracking fails
+      console.error('[assessments] Failed to track KPI event', err)
     })
 
     // Return success response
