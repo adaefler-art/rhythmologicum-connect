@@ -139,8 +139,19 @@ export default function ReviewQueuePage() {
       
       // Build stats from counts
       if (result.data.counts) {
-        const counts = result.data.counts
+        const counts = result.data.counts as Record<string, unknown>
         const allItems = result.data.items || []
+
+        const getCount = (key: string): number => {
+          const value = counts[key]
+          return typeof value === 'number' && Number.isFinite(value) ? value : 0
+        }
+
+        const totalCount = Object.values(counts).reduce<number>(
+          (sum, count) =>
+            sum + (typeof count === 'number' && Number.isFinite(count) ? count : 0),
+          0,
+        )
         
         // Calculate priority counts
         const p0Items = allItems.filter((item: QueueItem) => getPriority(item.queueReasons) === 'P0')
@@ -155,11 +166,11 @@ export default function ReviewQueuePage() {
         })
         
         setStats({
-          total: Object.values(counts).reduce((sum, count) => sum + (count || 0), 0),
-          pending: counts.PENDING || 0,
-          approved: counts.APPROVED || 0,
-          rejected: counts.REJECTED || 0,
-          changesRequested: counts.CHANGES_REQUESTED || 0,
+          total: totalCount,
+          pending: getCount('PENDING'),
+          approved: getCount('APPROVED'),
+          rejected: getCount('REJECTED'),
+          changesRequested: getCount('CHANGES_REQUESTED'),
           p0Count: p0Items.length,
           p1Count: p1Items.length,
           p2Count: p2Items.length,
@@ -324,9 +335,9 @@ export default function ReviewQueuePage() {
               <span className="text-slate-900 dark:text-slate-50">
                 {row.validationSummary.overallStatus}
               </span>
-              {row.validationSummary.criticalFlagsCount > 0 && (
+              {(row.validationSummary.criticalFlagsCount ?? 0) > 0 && (
                 <Badge variant="danger" size="sm" className="ml-2">
-                  {row.validationSummary.criticalFlagsCount} critical
+                  {row.validationSummary.criticalFlagsCount ?? 0} critical
                 </Badge>
               )}
             </div>
