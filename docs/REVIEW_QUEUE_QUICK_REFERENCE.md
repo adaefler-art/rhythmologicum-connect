@@ -205,7 +205,7 @@
 
 ## 🔗 Quick Links
 
-- **Queue Dashboard:** `/clinician/review-queue` (TBD)
+- **Queue Dashboard:** `/clinician/review-queue`
 - **Full SOP:** `docs/CONTENT_SAFETY_OPS_SOP.md`
 - **Technical Docs:** `lib/review/README.md`
 - **Queue API:** `GET /api/review/queue`

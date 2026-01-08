@@ -522,7 +522,7 @@ Attachments:
 - **CONTENT_QA_CHECKLIST.md:** Quality assurance testing procedures
 
 ### System Endpoints
-- Queue Dashboard: `/clinician/review-queue` (TBD)
+- Queue Dashboard: `/clinician/review-queue`
 - Queue API: `GET /api/review/queue`
 - Review Details: `GET /api/review/{reviewId}/details`
 - Decision API: `POST /api/review/{reviewId}/decide`

@@ -155,7 +155,7 @@ export default function ReviewQueuePage() {
         })
         
         setStats({
-          total: Object.values(counts).reduce((a: number, b) => (a as number) + (b as number), 0) as number,
+          total: Object.values(counts).reduce((sum, count) => sum + (count || 0), 0),
           pending: counts.PENDING || 0,
           approved: counts.APPROVED || 0,
           rejected: counts.REJECTED || 0,
@@ -514,14 +514,19 @@ export default function ReviewQueuePage() {
           
           {/* Status Filter */}
           <div className="flex gap-2">
-            {['PENDING', 'APPROVED', 'REJECTED', 'CHANGES_REQUESTED'].map((status) => (
+            {[
+              REVIEW_STATUS.PENDING,
+              REVIEW_STATUS.APPROVED,
+              REVIEW_STATUS.REJECTED,
+              REVIEW_STATUS.CHANGES_REQUESTED,
+            ].map((status) => (
               <Button
                 key={status}
                 variant={statusFilter === status ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setStatusFilter(status)}
               >
-                {getStatusLabel(status as any)}
+                {getStatusLabel(status)}
               </Button>
             ))}
           </div>
