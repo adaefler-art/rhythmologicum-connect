@@ -300,11 +300,31 @@ export async function trackReportGenerationFailed(params: {
 
 /**
  * Calculate duration in seconds between two ISO timestamps
+ * Returns 0 for invalid inputs or negative durations
  */
 export function calculateDurationSeconds(startTime: string, endTime: string): number {
-  const start = new Date(startTime).getTime()
-  const end = new Date(endTime).getTime()
-  return Math.round((end - start) / 1000)
+  try {
+    const start = new Date(startTime).getTime()
+    const end = new Date(endTime).getTime()
+
+    // Validate that both timestamps are valid dates
+    if (isNaN(start) || isNaN(end)) {
+      console.warn('[kpi] Invalid timestamp provided', { startTime, endTime })
+      return 0
+    }
+
+    // Calculate duration (protect against negative values)
+    const durationMs = end - start
+    if (durationMs < 0) {
+      console.warn('[kpi] End time is before start time', { startTime, endTime })
+      return 0
+    }
+
+    return Math.round(durationMs / 1000)
+  } catch (error) {
+    console.error('[kpi] Error calculating duration', error)
+    return 0
+  }
 }
 
 /**

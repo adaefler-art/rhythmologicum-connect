@@ -197,10 +197,14 @@ export async function POST(
     // Calculate duration if started_at is available
     let durationSeconds: number | undefined
     if (assessment.started_at) {
-      try {
-        durationSeconds = calculateDurationSeconds(assessment.started_at, completedAt)
-      } catch (err) {
-        console.warn('[complete] Failed to calculate duration', err)
+      durationSeconds = calculateDurationSeconds(assessment.started_at, completedAt)
+      // Only include if valid (non-zero)
+      if (durationSeconds === 0) {
+        console.warn('[complete] Invalid duration calculated', {
+          started_at: assessment.started_at,
+          completedAt,
+        })
+        durationSeconds = undefined
       }
     }
 

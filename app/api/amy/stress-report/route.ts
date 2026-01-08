@@ -16,7 +16,6 @@ import { logReportGenerated } from '@/lib/audit'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
 import {
-  trackReportGenerationStarted,
   trackReportGenerationCompleted,
   trackReportGenerationFailed,
   calculateTimeToReport,
@@ -467,19 +466,17 @@ export async function POST(req: Request) {
     logPatientFlowError({ endpoint: '/api/amy/stress-report', duration: totalDuration }, err)
 
     // V05-I10.3: Track KPI - Report generation failed
-    try {
-      const body = await req.json().catch(() => null)
-      const assessmentId = body?.assessmentId as string | undefined
-
-      if (assessmentId) {
+    // Use assessmentId from outer scope (already parsed)
+    if (assessmentId) {
+      try {
         await trackReportGenerationFailed({
           assessment_id: assessmentId,
           error_type: error?.message ? 'processing_error' : 'unknown_error',
         })
+      } catch (kpiError) {
+        // Don't fail the request if KPI tracking fails
+        console.error('[stress-report] KPI error tracking failed (non-blocking):', kpiError)
       }
-    } catch (kpiError) {
-      // Don't fail the request if KPI tracking fails
-      console.error('[stress-report] KPI error tracking failed (non-blocking):', kpiError)
     }
 
     const response = NextResponse.json(
