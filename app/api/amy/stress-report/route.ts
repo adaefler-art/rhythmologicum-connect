@@ -228,6 +228,8 @@ export async function POST(req: Request) {
   // Use admin client for accessing reports across users (RLS bypass for system operation)
   const supabase = createAdminSupabaseClient()
 
+  let assessmentId: string | undefined
+
   try {
     const body = await req.json().catch((parseError) => {
       console.error('[stress-report] JSON parsing error', {
@@ -235,7 +237,7 @@ export async function POST(req: Request) {
       })
       return null
     })
-    const assessmentId = body?.assessmentId as string | undefined
+    assessmentId = body?.assessmentId as string | undefined
 
     if (!assessmentId) {
       console.warn('[stress-report] Missing assessmentId in request')
