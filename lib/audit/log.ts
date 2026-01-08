@@ -140,6 +140,14 @@ const ALLOWED_METADATA_KEYS = [
   'job_id',
   'decision_reason',
   'has_notes',
+  // V05-I10.2: Account deletion/retention metadata
+  'deletion_reason',
+  'scheduled_for',
+  'retention_period_days',
+  'records_deleted',
+  'records_anonymized',
+  'executed_by',
+  'anonymization_reason',
 ] as const
 
 /**
@@ -619,6 +627,120 @@ export async function logSupportCaseStatusChanged(params: {
       status_from: params.status_from,
       status_to: params.status_to,
       has_notes: params.has_notes ?? false,
+    },
+  })
+}
+
+// ============================================================
+// Account Lifecycle Events (V05-I10.2)
+// ============================================================
+
+/**
+ * Logs an account deletion request event
+ * User has requested to delete their account (GDPR Article 17)
+ */
+export async function logAccountDeletionRequest(params: {
+  org_id?: string
+  actor_user_id: string
+  actor_role: UserRole
+  account_id: string
+  deletion_reason?: string
+  scheduled_for?: string
+  retention_period_days?: number
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'api',
+    entity_type: 'account',
+    entity_id: params.account_id,
+    action: 'deletion_request',
+    metadata: {
+      deletion_reason: params.deletion_reason,
+      scheduled_for: params.scheduled_for,
+      retention_period_days: params.retention_period_days,
+    },
+  })
+}
+
+/**
+ * Logs an account deletion cancellation event
+ * User cancelled their deletion request during retention period
+ */
+export async function logAccountDeletionCancel(params: {
+  org_id?: string
+  actor_user_id: string
+  actor_role: UserRole
+  account_id: string
+  cancellation_reason?: string
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'api',
+    entity_type: 'account',
+    entity_id: params.account_id,
+    action: 'deletion_cancel',
+    metadata: {
+      reason: params.cancellation_reason,
+    },
+  })
+}
+
+/**
+ * Logs an account deletion execution event
+ * System or admin executed the account deletion
+ */
+export async function logAccountDeletionExecute(params: {
+  org_id?: string
+  actor_user_id?: string
+  actor_role?: UserRole
+  account_id: string
+  records_deleted?: number
+  records_anonymized?: number
+  executed_by?: string
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: params.executed_by === 'system' ? 'system' : 'admin-ui',
+    entity_type: 'account',
+    entity_id: params.account_id,
+    action: 'deletion_execute',
+    metadata: {
+      records_deleted: params.records_deleted,
+      records_anonymized: params.records_anonymized,
+      executed_by: params.executed_by,
+    },
+  })
+}
+
+/**
+ * Logs an account anonymization event
+ * Records were anonymized instead of deleted (retention requirements)
+ */
+export async function logAccountAnonymize(params: {
+  org_id?: string
+  actor_user_id?: string
+  actor_role?: UserRole
+  account_id: string
+  records_anonymized: number
+  anonymization_reason?: string
+}): Promise<AuditLogResult> {
+  return logAuditEvent({
+    org_id: params.org_id,
+    actor_user_id: params.actor_user_id,
+    actor_role: params.actor_role,
+    source: 'system',
+    entity_type: 'account',
+    entity_id: params.account_id,
+    action: 'anonymize',
+    metadata: {
+      records_anonymized: params.records_anonymized,
+      reason: params.anonymization_reason,
     },
   })
 }

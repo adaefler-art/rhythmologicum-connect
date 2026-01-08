@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -203,6 +198,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "audit_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "audit_log_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -292,11 +294,32 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "clinician_patient_assignments_clinician_fkey"
+            columns: ["clinician_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "clinician_patient_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "clinician_patient_assignments_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinician_patient_assignments_patient_fkey"
+            columns: ["patient_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -442,6 +465,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "design_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "design_tokens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -539,6 +569,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "device_shipments_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "device_shipments_organization_id_fkey"
             columns: ["organization_id"]
@@ -965,7 +1002,22 @@ export type Database = {
           updated_by?: string | null
           warning_threshold?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "kpi_thresholds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "kpi_thresholds_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       medical_validation_results: {
         Row: {
@@ -1159,7 +1211,22 @@ export type Database = {
           updated_by?: string | null
           variables?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notification_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "notification_templates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -1246,7 +1313,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       operational_settings_audit: {
         Row: {
@@ -1282,7 +1357,15 @@ export type Database = {
           record_id?: string
           table_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "operational_settings_audit_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       organizations: {
         Row: {
@@ -1442,7 +1525,15 @@ export type Database = {
           sex?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patient_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       pillars: {
         Row: {
@@ -1524,6 +1615,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pre_screening_calls_clinician_id_fkey"
+            columns: ["clinician_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "pre_screening_calls_organization_id_fkey"
             columns: ["organization_id"]
@@ -1750,11 +1848,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "reassessment_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "reassessment_rules_funnel_id_fkey"
             columns: ["funnel_id"]
             isOneToOne: false
             referencedRelation: "funnels_catalog"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reassessment_rules_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2216,6 +2328,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "shipment_events_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "shipment_events_shipment_id_fkey"
             columns: ["shipment_id"]
             isOneToOne: false
@@ -2348,6 +2467,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assigned_to_user_id_fkey"
+            columns: ["assigned_to_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "tasks_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -2388,7 +2514,15 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_org_membership: {
         Row: {
@@ -2425,6 +2559,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_org_membership_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2464,13 +2605,53 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      pending_account_deletions: {
+        Row: {
+          account_status: string | null
+          days_remaining: number | null
+          deletion_reason: string | null
+          deletion_requested_at: string | null
+          deletion_scheduled_for: string | null
+          email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_status?: never
+          days_remaining?: never
+          deletion_reason?: never
+          deletion_requested_at?: never
+          deletion_scheduled_for?: never
+          email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_status?: never
+          days_remaining?: never
+          deletion_reason?: never
+          deletion_requested_at?: never
+          deletion_scheduled_for?: never
+          email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cancel_account_deletion: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
       compute_inputs_hash: { Args: { p_inputs: Json }; Returns: string }
       compute_safety_evaluation_key_hash: {
         Args: { p_prompt_version: string; p_sections_id: string }
@@ -2485,6 +2666,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       diagnostics_pillars_sot: { Args: never; Returns: Json }
+      execute_account_deletion: {
+        Args: { executed_by?: string; target_user_id: string }
+        Returns: Json
+      }
       generate_report_version: {
         Args: {
           p_algorithm_version: string
@@ -2515,6 +2700,14 @@ export type Database = {
       log_rls_violation: {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
+      }
+      request_account_deletion: {
+        Args: {
+          deletion_reason?: string
+          retention_days?: number
+          target_user_id: string
+        }
+        Returns: Json
       }
       set_user_role: {
         Args: { user_email: string; user_role: string }
@@ -2785,3 +2978,4 @@ export const Constants = {
     },
   },
 } as const
+
