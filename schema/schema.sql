@@ -421,6 +421,53 @@ $$;
 ALTER FUNCTION "public"."audit_reassessment_rules"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  result JSONB;
+  was_pending BOOLEAN;
+BEGIN
+  -- Check if deletion was pending
+  SELECT (raw_user_meta_data->>'account_status') = 'deletion_pending'
+  INTO was_pending
+  FROM auth.users
+  WHERE id = target_user_id;
+  
+  IF NOT was_pending THEN
+    RETURN jsonb_build_object(
+      'success', FALSE,
+      'error', 'No pending deletion request found'
+    );
+  END IF;
+  
+  -- Clear deletion metadata and restore active status
+  UPDATE auth.users
+  SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object(
+    'deletion_cancelled_at', NOW()::TEXT,
+    'account_status', 'active'
+  ) - 'deletion_requested_at' - 'deletion_scheduled_for' - 'deletion_reason'
+  WHERE id = target_user_id;
+  
+  result := jsonb_build_object(
+    'success', TRUE,
+    'user_id', target_user_id,
+    'cancelled_at', NOW(),
+    'account_status', 'active'
+  );
+  
+  RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") IS 'V05-I10.2: Cancels pending account deletion request and restores active status.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") RETURNS "text"
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -637,6 +684,92 @@ $$;
 
 
 ALTER FUNCTION "public"."enforce_clinician_patient_same_org"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text" DEFAULT 'system'::"text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  result JSONB;
+  deleted_count INT := 0;
+  anonymized_count INT := 0;
+  patient_profile_id UUID;
+BEGIN
+  -- Verify deletion is scheduled
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.users
+    WHERE id = target_user_id
+    AND (raw_user_meta_data->>'account_status') = 'deletion_pending'
+  ) THEN
+    RETURN jsonb_build_object(
+      'success', FALSE,
+      'error', 'Account is not pending deletion'
+    );
+  END IF;
+  
+  -- Start transaction (implicit in function)
+  BEGIN
+    -- Get patient_profile_id before deletion for audit trail
+    SELECT id INTO patient_profile_id
+    FROM public.patient_profiles
+    WHERE user_id = target_user_id;
+    
+    -- 1. Anonymize audit logs (keep structure, remove direct user reference)
+    -- We keep the entity_id references but anonymize the actor
+    UPDATE public.audit_log
+    SET 
+      actor_user_id = NULL,
+      metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+        'anonymized_user_id', target_user_id::TEXT,
+        'anonymized_at', NOW()::TEXT
+      )
+    WHERE actor_user_id = target_user_id;
+    
+    GET DIAGNOSTICS anonymized_count = ROW_COUNT;
+    
+    -- 2. Delete patient profile (CASCADE will handle related records)
+    -- This will cascade to:
+    -- - assessments
+    -- - assessment_answers
+    -- - patient_funnels
+    -- - tasks
+    -- - device_shipments
+    -- - pre_screening_calls
+    -- And other tables with ON DELETE CASCADE
+    DELETE FROM public.patient_profiles WHERE user_id = target_user_id;
+    
+    -- 3. Delete user from auth.users (final step)
+    -- Note: Some tables reference auth.users with ON DELETE SET NULL or CASCADE
+    DELETE FROM auth.users WHERE id = target_user_id;
+    
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    -- Build result
+    result := jsonb_build_object(
+      'success', TRUE,
+      'user_id', target_user_id,
+      'patient_profile_id', patient_profile_id,
+      'deleted_count', deleted_count,
+      'anonymized_count', anonymized_count,
+      'executed_by', executed_by,
+      'deleted_at', NOW()
+    );
+    
+    RETURN result;
+    
+  EXCEPTION WHEN OTHERS THEN
+    -- Rollback happens automatically
+    RAISE EXCEPTION 'Account deletion failed: %', SQLERRM;
+  END;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") IS 'V05-I10.2: Executes account deletion with proper anonymization of audit logs and cascade deletion of user data. SECURITY DEFINER - requires proper authorization checks in calling code.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."generate_report_version"("p_funnel_version" "text", "p_algorithm_version" "text", "p_prompt_version" "text", "p_inputs_hash_prefix" "text") RETURNS "text"
@@ -909,6 +1042,49 @@ ALTER FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "te
 
 
 COMMENT ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") IS 'Logs RLS policy violations for security monitoring';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text" DEFAULT NULL::"text", "retention_days" integer DEFAULT 30) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  scheduled_deletion TIMESTAMPTZ;
+  result JSONB;
+BEGIN
+  -- Calculate deletion date (30 days from now by default)
+  scheduled_deletion := NOW() + (retention_days || ' days')::INTERVAL;
+  
+  -- Update user metadata to track deletion request
+  -- Using raw_user_meta_data for user-controlled lifecycle data
+  UPDATE auth.users
+  SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object(
+    'deletion_requested_at', NOW()::TEXT,
+    'deletion_scheduled_for', scheduled_deletion::TEXT,
+    'deletion_reason', deletion_reason,
+    'account_status', 'deletion_pending'
+  )
+  WHERE id = target_user_id;
+  
+  -- Build response
+  result := jsonb_build_object(
+    'success', TRUE,
+    'user_id', target_user_id,
+    'deletion_requested_at', NOW(),
+    'deletion_scheduled_for', scheduled_deletion,
+    'retention_period_days', retention_days,
+    'can_cancel_until', scheduled_deletion
+  );
+  
+  RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) IS 'V05-I10.2: Records account deletion request with retention period. Updates user metadata to track deletion lifecycle.';
 
 
 
@@ -2238,6 +2414,26 @@ ALTER TABLE "public"."patient_profiles" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."patient_profiles" IS 'Patient profile data with RLS: patients see own data, clinicians see all';
+
+
+
+CREATE OR REPLACE VIEW "public"."pending_account_deletions" AS
+ SELECT "id" AS "user_id",
+    "email",
+    (("raw_user_meta_data" ->> 'deletion_requested_at'::"text"))::timestamp with time zone AS "deletion_requested_at",
+    (("raw_user_meta_data" ->> 'deletion_scheduled_for'::"text"))::timestamp with time zone AS "deletion_scheduled_for",
+    ("raw_user_meta_data" ->> 'deletion_reason'::"text") AS "deletion_reason",
+    ("raw_user_meta_data" ->> 'account_status'::"text") AS "account_status",
+    EXTRACT(day FROM ((("raw_user_meta_data" ->> 'deletion_scheduled_for'::"text"))::timestamp with time zone - "now"())) AS "days_remaining"
+   FROM "auth"."users" "u"
+  WHERE ((("raw_user_meta_data" ->> 'account_status'::"text") = 'deletion_pending'::"text") AND ((("raw_user_meta_data" ->> 'deletion_scheduled_for'::"text"))::timestamp with time zone > "now"()))
+  ORDER BY (("raw_user_meta_data" ->> 'deletion_scheduled_for'::"text"))::timestamp with time zone;
+
+
+ALTER VIEW "public"."pending_account_deletions" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."pending_account_deletions" IS 'V05-I10.2: View of accounts pending deletion. For admin/system use only.';
 
 
 
@@ -5796,6 +5992,13 @@ GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "service_role";
@@ -5835,6 +6038,13 @@ GRANT ALL ON FUNCTION "public"."diagnostics_pillars_sot"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."enforce_clinician_patient_same_org"() TO "anon";
 GRANT ALL ON FUNCTION "public"."enforce_clinician_patient_same_org"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."enforce_clinician_patient_same_org"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."execute_account_deletion"("target_user_id" "uuid", "executed_by" "text") TO "service_role";
 
 
 
@@ -5901,6 +6111,13 @@ GRANT ALL ON FUNCTION "public"."is_member_of_org"("org_id" "uuid") TO "service_r
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."request_account_deletion"("target_user_id" "uuid", "deletion_reason" "text", "retention_days" integer) TO "service_role";
 
 
 
@@ -6180,6 +6397,12 @@ GRANT ALL ON TABLE "public"."patient_measures" TO "service_role";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pending_account_deletions" TO "anon";
+GRANT ALL ON TABLE "public"."pending_account_deletions" TO "authenticated";
+GRANT ALL ON TABLE "public"."pending_account_deletions" TO "service_role";
 
 
 
