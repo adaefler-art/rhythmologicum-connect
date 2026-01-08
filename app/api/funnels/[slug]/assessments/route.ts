@@ -9,20 +9,17 @@ import {
   invalidInputResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
-import {
-  logUnauthorized,
-  logDatabaseError,
-  logAssessmentStarted,
-} from '@/lib/logging/logger'
+import { logUnauthorized, logDatabaseError, logAssessmentStarted } from '@/lib/logging/logger'
+import { trackAssessmentStarted } from '@/lib/monitoring/kpi'
 
 /**
  * B5/B8: Start a new assessment for a funnel
- * 
+ *
  * POST /api/funnels/[slug]/assessments
- * 
+ *
  * Creates a new assessment for the authenticated patient and returns
  * the assessment ID and first step information.
- * 
+ *
  * Response (B8 standardized):
  * {
  *   success: true,
@@ -34,10 +31,7 @@ import {
  * }
  */
 
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ slug: string }> },
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await context.params
 
@@ -145,6 +139,17 @@ export async function POST(
       assessmentId: assessment.id,
       endpoint: `/api/funnels/${slug}/assessments`,
       funnel: slug,
+    })
+
+    // V05-I10.3: Track KPI - Assessment start
+    await trackAssessmentStarted({
+      actor_user_id: user.id,
+      assessment_id: assessment.id,
+      funnel_slug: slug,
+      funnel_id: funnel.id,
+    }).catch((err) => {
+      // Don't fail the request if KPI tracking fails
+      console.error('[assessments] Failed to track KPI event', err)
     })
 
     // Return success response

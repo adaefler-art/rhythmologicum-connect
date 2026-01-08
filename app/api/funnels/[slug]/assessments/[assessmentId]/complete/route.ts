@@ -17,16 +17,17 @@ import {
   logDatabaseError,
   logAssessmentCompleted,
 } from '@/lib/logging/logger'
+import { trackAssessmentCompleted, calculateDurationSeconds } from '@/lib/monitoring/kpi'
 
 /**
  * B5/B8: Complete an assessment
- * 
+ *
  * POST /api/funnels/[slug]/assessments/[assessmentId]/complete
- * 
+ *
  * Performs full validation across all steps in the funnel.
  * If all required questions are answered, sets assessment status to 'completed'
  * and records the completion timestamp.
- * 
+ *
  * Response (B8 standardized):
  * Success:
  * {
@@ -36,7 +37,7 @@ import {
  *     status: 'completed'
  *   }
  * }
- * 
+ *
  * Validation failed:
  * {
  *   success: false,
@@ -99,7 +100,7 @@ export async function POST(
     // Load assessment and verify ownership
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id, funnel, funnel_id, status')
+      .select('id, patient_id, funnel, funnel_id, status, started_at')
       .eq('id', assessmentId)
       .eq('funnel', slug)
       .single()
@@ -163,11 +164,12 @@ export async function POST(
     }
 
     // All questions answered - mark assessment as completed
+    const completedAt = new Date().toISOString()
     const { error: updateError } = await supabase
       .from('assessments')
       .update({
         status: 'completed',
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       })
       .eq('id', assessmentId)
 
@@ -189,6 +191,35 @@ export async function POST(
       assessmentId,
       endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
       funnel: slug,
+    })
+
+    // V05-I10.3: Track KPI - Assessment completion
+    // Calculate duration if started_at is available
+    let durationSeconds: number | undefined
+    if (assessment.started_at) {
+      durationSeconds = calculateDurationSeconds(assessment.started_at, completedAt)
+      // Only include if valid (non-zero)
+      if (durationSeconds === 0) {
+        console.warn('[complete] Invalid duration calculated', {
+          started_at: assessment.started_at,
+          completedAt,
+        })
+        durationSeconds = undefined
+      }
+    }
+
+    // Track completion event for observability
+    await trackAssessmentCompleted({
+      actor_user_id: user.id,
+      assessment_id: assessmentId,
+      funnel_slug: slug,
+      funnel_id: assessment.funnel_id,
+      started_at: assessment.started_at,
+      completed_at: completedAt,
+      duration_seconds: durationSeconds,
+    }).catch((err) => {
+      // Don't fail the request if KPI tracking fails
+      console.error('[complete] Failed to track KPI event', err)
     })
 
     // Success response
