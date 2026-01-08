@@ -16,8 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { logAccountDeletionRequest } from '@/lib/audit/log'
 
 // Default retention period in days before deletion executes
@@ -46,17 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase client
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: () => {}, // Read-only for this operation
-        },
-      }
-    )
+    const supabase = await createServerSupabaseClient()
 
     // Get authenticated user
     const {
