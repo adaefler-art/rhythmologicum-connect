@@ -268,6 +268,7 @@ export const AUDIT_ENTITY_TYPE = {
   PRE_SCREENING_CALL: 'pre_screening_call', // V05-I08.2: Pre-screening call records
   DEVICE_SHIPMENT: 'device_shipment', // V05-I08.3: Shipment tracking
   SUPPORT_CASE: 'support_case', // V05-I08.4: Support case documentation
+  ACCOUNT: 'account', // V05-I10.2: Account lifecycle (deletion/retention)
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
@@ -295,6 +296,10 @@ export const AUDIT_ACTION = {
   ROLLOUT: 'rollout',
   COMPLETE: 'complete',
   ESCALATE: 'escalate', // V05-I08.4: Support case escalation
+  DELETION_REQUEST: 'deletion_request', // V05-I10.2: User requested account deletion
+  DELETION_CANCEL: 'deletion_cancel', // V05-I10.2: User cancelled deletion request
+  DELETION_EXECUTE: 'deletion_execute', // V05-I10.2: System executed account deletion
+  ANONYMIZE: 'anonymize', // V05-I10.2: Records anonymized instead of deleted
 } as const
 
 export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION]
