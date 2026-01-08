@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    if (deletionError) {
+    if (deletionError || !deletionResult) {
       console.error('[account/deletion-request] Database error', {
         userId: user.id,
         error: deletionError,
@@ -104,13 +104,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (typeof deletionResult !== 'object' || deletionResult === null || Array.isArray(deletionResult)) {
+      console.error('[account/deletion-request] Unexpected RPC result shape', {
+        userId: user.id,
+        result: deletionResult,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to process deletion request',
+        },
+        { status: 500 }
+      )
+    }
+
+    const deletion = deletionResult as Record<string, unknown>
+
+    const deletionRequestedAt =
+      typeof deletion.deletion_requested_at === 'string' ? deletion.deletion_requested_at : undefined
+
+    const deletionScheduledFor =
+      typeof deletion.deletion_scheduled_for === 'string'
+        ? deletion.deletion_scheduled_for
+        : undefined
+
+    const canCancelUntil =
+      typeof deletion.can_cancel_until === 'string' ? deletion.can_cancel_until : undefined
+
     // Log audit event
     const auditResult = await logAccountDeletionRequest({
       actor_user_id: user.id,
       actor_role: userRole,
       account_id: user.id,
       deletion_reason: reason,
-      scheduled_for: deletionResult.deletion_scheduled_for,
+      scheduled_for: deletionScheduledFor,
       retention_period_days: DEFAULT_RETENTION_DAYS,
     })
 
@@ -124,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[account/deletion-request] Deletion requested successfully', {
       userId: user.id,
-      scheduledFor: deletionResult.deletion_scheduled_for,
+      scheduledFor: deletionScheduledFor,
       auditId: auditResult.audit_id,
     })
 
@@ -132,9 +159,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Account deletion requested successfully',
-      deletion_requested_at: deletionResult.deletion_requested_at,
-      deletion_scheduled_for: deletionResult.deletion_scheduled_for,
-      can_cancel_until: deletionResult.can_cancel_until,
+      deletion_requested_at: deletionRequestedAt,
+      deletion_scheduled_for: deletionScheduledFor,
+      can_cancel_until: canCancelUntil,
       retention_period_days: DEFAULT_RETENTION_DAYS,
       next_steps: [
         'You will receive a confirmation email',

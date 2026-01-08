@@ -11,7 +11,18 @@
 -- Note: We use raw_user_meta_data for user-facing fields that users control
 -- This is separate from raw_app_meta_data which is system/admin controlled
 
-COMMENT ON SCHEMA auth IS 'Supabase auth schema - extended for account lifecycle tracking (V05-I10.2)';
+DO $$
+BEGIN
+  BEGIN
+    EXECUTE 'COMMENT ON SCHEMA auth IS ''Supabase auth schema - extended for account lifecycle tracking (V05-I10.2)''';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      -- Local Supabase role used for migrations may not own schema auth.
+      -- Comment is non-essential; ignore to keep migrations runnable.
+      NULL;
+  END;
+END;
+$$;
 
 -- Create helper function to update user metadata for deletion tracking
 -- This function allows safe updates to user metadata without exposing full auth schema
