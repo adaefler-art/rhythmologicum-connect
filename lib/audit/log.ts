@@ -1,9 +1,9 @@
 /**
  * Audit Logging Helper
- * 
+ *
  * Provides type-safe audit logging functionality for decision-relevant events.
  * Ensures no PHI leakage and maintains comprehensive audit trails.
- * 
+ *
  * @module lib/audit/log
  */
 
@@ -191,12 +191,15 @@ const PHI_KEYS = [
 /**
  * Redacts PHI from a data object
  * Only allows specific safe keys and removes PHI-containing fields
- * 
+ *
  * @param data - Object to redact
  * @param maxSize - Maximum allowed size in characters (default: 5000)
  * @returns Redacted object with only safe fields
  */
-export function redactPHI(data: Record<string, unknown> | undefined, maxSize = 5000): Record<string, unknown> {
+export function redactPHI(
+  data: Record<string, unknown> | undefined,
+  maxSize = 5000,
+): Record<string, unknown> {
   if (!data || typeof data !== 'object') {
     return {}
   }
@@ -207,14 +210,14 @@ export function redactPHI(data: Record<string, unknown> | undefined, maxSize = 5
   for (const [key, value] of Object.entries(data)) {
     // Block PHI keys explicitly
     const lowerKey = key.toLowerCase()
-    if (PHI_KEYS.some(phiKey => lowerKey.includes(phiKey))) {
+    if (PHI_KEYS.some((phiKey) => lowerKey.includes(phiKey))) {
       redacted[key] = '[REDACTED]'
       continue
     }
 
     // Check if key is in allowlist
-    const isAllowed = ALLOWED_METADATA_KEYS.includes(key as typeof ALLOWED_METADATA_KEYS[number])
-    
+    const isAllowed = ALLOWED_METADATA_KEYS.includes(key as (typeof ALLOWED_METADATA_KEYS)[number])
+
     // Allow numeric values, booleans, and safe strings
     if (typeof value === 'number' || typeof value === 'boolean') {
       redacted[key] = value
@@ -223,7 +226,7 @@ export function redactPHI(data: Record<string, unknown> | undefined, maxSize = 5
       // Only allow strings from allowlist or UUID-like patterns
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
       const isShortSafe = value.length <= 100 && !/[<>{}]/.test(value) // No HTML/JSON
-      
+
       if (isAllowed || isUUID || (isShortSafe && lowerKey.includes('id'))) {
         redacted[key] = value
         totalSize += value.length
@@ -257,16 +260,16 @@ export function redactPHI(data: Record<string, unknown> | undefined, maxSize = 5
 
 /**
  * Logs an audit event to the database
- * 
+ *
  * This function:
  * - Validates event structure
  * - Ensures no PHI in diff/metadata
  * - Uses service role to bypass RLS
  * - Returns success/failure status
- * 
+ *
  * @param event - The audit event to log
  * @returns Result indicating success or failure
- * 
+ *
  * @example
  * ```typescript
  * await logAuditEvent({
@@ -313,7 +316,7 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
     // Redact PHI from diff and metadata
     const safeMetadata = redactPHI(event.metadata || {})
     const safeDiff: Record<string, unknown> = {}
-    
+
     if (event.diff?.before) {
       safeDiff.before = redactPHI(event.diff.before as Record<string, unknown>)
     }
@@ -338,7 +341,11 @@ export async function logAuditEvent(event: AuditEvent): Promise<AuditLogResult> 
     }
 
     // Insert audit log
-    const { data, error } = await supabase.from('audit_log').insert(auditEntry).select('id').single()
+    const { data, error } = await supabase
+      .from('audit_log')
+      .insert(auditEntry)
+      .select('id')
+      .single()
 
     if (error) {
       console.error('[audit/log] Failed to insert audit event', {

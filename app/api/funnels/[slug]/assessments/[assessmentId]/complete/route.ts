@@ -17,20 +17,17 @@ import {
   logDatabaseError,
   logAssessmentCompleted,
 } from '@/lib/logging/logger'
-import {
-  trackAssessmentCompleted,
-  calculateDurationSeconds,
-} from '@/lib/monitoring/kpi'
+import { trackAssessmentCompleted, calculateDurationSeconds } from '@/lib/monitoring/kpi'
 
 /**
  * B5/B8: Complete an assessment
- * 
+ *
  * POST /api/funnels/[slug]/assessments/[assessmentId]/complete
- * 
+ *
  * Performs full validation across all steps in the funnel.
  * If all required questions are answered, sets assessment status to 'completed'
  * and records the completion timestamp.
- * 
+ *
  * Response (B8 standardized):
  * Success:
  * {
@@ -40,7 +37,7 @@ import {
  *     status: 'completed'
  *   }
  * }
- * 
+ *
  * Validation failed:
  * {
  *   success: false,

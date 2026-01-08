@@ -1,11 +1,11 @@
 /**
  * V05-I10.3: KPI/Observability Tracking
- * 
+ *
  * Tracks key performance indicators for observability and analytics:
  * - Assessment completion rate (completions vs starts)
  * - Assessment drop-off detection (where users abandon)
  * - Time-to-report (duration from assessment completion to report generation)
- * 
+ *
  * Privacy: All tracking is PHI-free, using only IDs and timestamps
  * Storage: Leverages existing audit_log infrastructure for persistence
  */
