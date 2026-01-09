@@ -73,103 +73,99 @@ export function ProfileClient() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <div className="text-slate-600 dark:text-slate-400">Lädt...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-            Basisprofil erstellen
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-            Bitte geben Sie einige grundlegende Informationen an. Diese Daten helfen uns, 
-            Ihre Assessments besser zu verstehen.
-          </p>
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+        Basisprofil erstellen
+      </h1>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+        Bitte geben Sie einige grundlegende Informationen an. Diese Daten helfen uns,
+        Ihre Assessments besser zu verstehen.
+      </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                placeholder="Ihr vollständiger Name"
-                disabled={isSubmitting}
-                required
-                maxLength={200}
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="fullName"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            placeholder="Ihr vollständiger Name"
+            disabled={isSubmitting}
+            required
+            maxLength={200}
+          />
+        </div>
 
-            <div>
-              <label htmlFor="birthYear" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Geburtsjahr (optional)
-              </label>
-              <input
-                type="number"
-                id="birthYear"
-                value={birthYear}
-                onChange={(e) => setBirthYear(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                placeholder="z.B. 1990"
-                disabled={isSubmitting}
-                min={1900}
-                max={new Date().getFullYear()}
-              />
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Diese Information ist optional und wird nur für statistische Zwecke verwendet.
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="sex" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Geschlecht (optional)
-              </label>
-              <select
-                id="sex"
-                value={sex}
-                onChange={(e) => setSex(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                disabled={isSubmitting}
-              >
-                <option value="">Bitte wählen</option>
-                <option value={PATIENT_SEX.MALE}>Männlich</option>
-                <option value={PATIENT_SEX.FEMALE}>Weiblich</option>
-                <option value={PATIENT_SEX.OTHER}>Divers</option>
-                <option value={PATIENT_SEX.PREFER_NOT_TO_SAY}>Keine Angabe</option>
-              </select>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors duration-200"
-              >
-                {isSubmitting ? 'Wird gespeichert...' : 'Profil speichern'}
-              </button>
-            </div>
-          </form>
-
-          <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
-            <span className="text-red-500">*</span> Pflichtfeld
+        <div>
+          <label htmlFor="birthYear" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            Geburtsjahr (optional)
+          </label>
+          <input
+            type="number"
+            id="birthYear"
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            placeholder="z.B. 1990"
+            disabled={isSubmitting}
+            min={1900}
+            max={new Date().getFullYear()}
+          />
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Diese Information ist optional und wird nur für statistische Zwecke verwendet.
           </p>
         </div>
-      </div>
+
+        <div>
+          <label htmlFor="sex" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            Geschlecht (optional)
+          </label>
+          <select
+            id="sex"
+            value={sex}
+            onChange={(e) => setSex(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+            disabled={isSubmitting}
+          >
+            <option value="">Bitte wählen</option>
+            <option value={PATIENT_SEX.MALE}>Männlich</option>
+            <option value={PATIENT_SEX.FEMALE}>Weiblich</option>
+            <option value={PATIENT_SEX.OTHER}>Divers</option>
+            <option value={PATIENT_SEX.PREFER_NOT_TO_SAY}>Keine Angabe</option>
+          </select>
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors duration-200"
+          >
+            {isSubmitting ? 'Wird gespeichert...' : 'Profil speichern'}
+          </button>
+        </div>
+      </form>
+
+      <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
+        <span className="text-red-500">*</span> Pflichtfeld
+      </p>
     </div>
   )
 }

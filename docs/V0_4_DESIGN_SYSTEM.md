@@ -471,7 +471,8 @@ All authenticated areas share a common layout structure:
 ### Spacing Guidelines
 
 - **Page container**: `max-w-6xl mx-auto px-4 sm:px-6`
-- **Content pages (Consent/Onboarding/Article)**: `w-full max-w-4xl mx-auto px-4 sm:px-6`
+- **Onboarding pages (Patient consent/profile)**: `w-full max-w-3xl mx-auto px-4 sm:px-6`
+- **Content pages (Articles/Info)**: `w-full max-w-4xl mx-auto px-4 sm:px-6`
 - **Auth forms (Login-only)**: `w-full max-w-md mx-auto px-4`
 - **Section spacing**: `mb-6` or `mb-8` between sections
 - **Card spacing**: `p-6` for standard card padding
