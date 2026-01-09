@@ -6,6 +6,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { MobileContentPage } from '@/app/components/mobile'
 import { ContentBlockRenderer } from '@/lib/components/content'
 import { spacing, typography } from '@/lib/design-tokens'
+import StandardContentContainer from '@/app/components/StandardContentContainer'
 import type { ContentPageWithFunnel } from '@/lib/types/content'
 import type { FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 
@@ -130,64 +131,68 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
       <div className="min-h-screen bg-muted">
         {/* Header */}
         <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-              aria-label="Zurück"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <StandardContentContainer className="py-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+                aria-label="Zurück"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              <span className="hidden sm:inline font-medium">Zurück</span>
-            </button>
-            <div className="flex-1 text-sm text-slate-500">
-              <span className="hidden sm:inline">{pageData?.title || 'Content'}</span>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                <span className="hidden sm:inline font-medium">Zurück</span>
+              </button>
+              <div className="flex-1 text-sm text-slate-500">
+                <span className="hidden sm:inline">{pageData?.title || 'Content'}</span>
+              </div>
             </div>
-          </div>
+          </StandardContentContainer>
         </header>
 
         {/* V05-I06.5: Manifest-driven content renderer */}
-        <main className="max-w-4xl mx-auto px-4 py-8">
-          <ContentBlockRenderer 
-            manifest={contentManifest}
-            pageSlug={pageSlug}
-            onBlockTypeError={handleBlockTypeError}
-          />
-          
-          {/* Back to Funnel Button */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push(`/patient/funnel/${funnelSlug}`)}
-              className="inline-flex items-center gap-2 text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90 shadow-md"
-              style={{ backgroundColor: 'var(--color-primary-600)' }}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <main className="py-8">
+          <StandardContentContainer>
+            <ContentBlockRenderer
+              manifest={contentManifest}
+              pageSlug={pageSlug}
+              onBlockTypeError={handleBlockTypeError}
+            />
+
+            {/* Back to Funnel Button */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => router.push(`/patient/funnel/${funnelSlug}`)}
+                className="inline-flex items-center gap-2 text-white font-medium px-6 py-3 rounded-lg transition-opacity hover:opacity-90 shadow-md"
+                style={{ backgroundColor: 'var(--color-primary-600)' }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Zurück zum Fragebogen
-            </button>
-          </div>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Zurück zum Fragebogen
+              </button>
+            </div>
+          </StandardContentContainer>
         </main>
       </div>
     )

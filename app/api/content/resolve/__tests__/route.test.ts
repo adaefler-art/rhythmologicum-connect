@@ -16,6 +16,47 @@ describe('GET /api/content/resolve', () => {
     jest.clearAllMocks()
   })
 
+  it('returns 200 ok when matching content exists', async () => {
+    const { getContentPage } = jest.requireMock('@/lib/utils/contentResolver') as {
+      getContentPage: jest.Mock
+    }
+
+    getContentPage.mockResolvedValue({
+      page: {
+        id: 'page-1',
+        title: 'Intro',
+        slug: 'intro',
+        category: 'intro',
+        body_markdown: 'Hello',
+      },
+      strategy: 'direct-match',
+    })
+
+    const { GET } = await import('../route')
+
+    const request = new NextRequest(
+      'http://localhost/api/content/resolve?funnel=stress-assessment&category=intro',
+    )
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    const json = (await response.json()) as {
+      success: boolean
+      status: string
+      page: { id: string; slug: string }
+      requestId: string
+      version: string
+    }
+
+    expect(json.success).toBe(true)
+    expect(json.version).toBe('v1')
+    expect(json.status).toBe('ok')
+    expect(json.page.id).toBe('page-1')
+    expect(json.page.slug).toBe('intro')
+    expect(typeof json.requestId).toBe('string')
+    expect(json.requestId.length).toBeGreaterThan(0)
+  })
+
   it('returns 200 missing_content when no matching content exists', async () => {
     const { getContentPage } = jest.requireMock('@/lib/utils/contentResolver') as {
       getContentPage: jest.Mock
@@ -45,6 +86,36 @@ describe('GET /api/content/resolve', () => {
     expect(json.version).toBe('v1')
     expect(json.status).toBe('missing_content')
     expect(json.content).toBeNull()
+    expect(typeof json.requestId).toBe('string')
+    expect(json.requestId.length).toBeGreaterThan(0)
+  })
+
+  it('returns 404 when funnel does not exist', async () => {
+    const { getContentPage } = jest.requireMock('@/lib/utils/contentResolver') as {
+      getContentPage: jest.Mock
+    }
+
+    getContentPage.mockResolvedValue({
+      page: null,
+      strategy: 'funnel-not-found',
+      error: 'FUNNEL_NOT_FOUND',
+    })
+
+    const { GET } = await import('../route')
+
+    const request = new NextRequest(
+      'http://localhost/api/content/resolve?funnel=unknown-funnel&category=intro',
+    )
+    const response = await GET(request)
+
+    expect(response.status).toBe(404)
+    const json = (await response.json()) as {
+      success: boolean
+      error?: { code?: string }
+      requestId: string
+    }
+    expect(json.success).toBe(false)
+    expect(json.error?.code).toBe('FUNNEL_NOT_FOUND')
     expect(typeof json.requestId).toBe('string')
     expect(json.requestId.length).toBeGreaterThan(0)
   })

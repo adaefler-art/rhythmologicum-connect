@@ -122,6 +122,22 @@ export default function PatientPage() {
 }
 ```
 
+**Reusable helper**:
+
+For consistency, patient-facing pages may use:
+
+```tsx
+import StandardContentContainer from '@/app/components/StandardContentContainer'
+
+export default function PatientPage() {
+  return (
+    <StandardContentContainer className="gap-6 py-10">
+      {/* Page content */}
+    </StandardContentContainer>
+  )
+}
+```
+
 **Applied to**:
 
 - `/patient/history/PatientHistoryClient.tsx`

@@ -6,6 +6,7 @@ import type { ContentPage } from '@/lib/types/content'
 import type { QuestionnaireStep, ContentPage as ManifestContentPage, FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 import MobileWelcomeScreen from '@/app/components/MobileWelcomeScreen'
 import { ContentBlockRenderer } from '@/lib/components/content'
+import StandardContentContainer from '@/app/components/StandardContentContainer'
 
 type ManifestData = {
   version: string
@@ -149,15 +150,17 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
     return (
       <main className="min-h-screen bg-muted">
         {/* V05-I06.5: Manifest-driven content renderer */}
-        <ContentBlockRenderer 
-          manifest={manifestData.contentManifest}
-          pageSlug="intro"
-          onBlockTypeError={handleBlockTypeError}
-        />
+        <StandardContentContainer className="py-8">
+          <ContentBlockRenderer
+            manifest={manifestData.contentManifest}
+            pageSlug="intro"
+            onBlockTypeError={handleBlockTypeError}
+          />
+        </StandardContentContainer>
         
         {/* CTA Button */}
-        <div className="px-4 py-6 bg-white border-t border-slate-200">
-          <div className="max-w-2xl mx-auto">
+        <div className="bg-white border-t border-slate-200">
+          <StandardContentContainer className="py-6">
             <button
               onClick={handleStartAssessment}
               className="w-full px-6 py-4 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg"
@@ -165,13 +168,13 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
             >
               Assessment starten
             </button>
-          </div>
+          </StandardContentContainer>
         </div>
 
         {/* Manifest Info Display - Only visible if manifest loaded successfully */}
         {manifestData && (
           <div className="bg-slate-50 px-4 py-6">
-            <div className="max-w-2xl mx-auto">
+            <StandardContentContainer>
               <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-900 mb-3">
                   📋 Funnel-Konfiguration (Version {manifestData.version})
@@ -230,7 +233,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
                   </details>
                 )}
               </div>
-            </div>
+            </StandardContentContainer>
           </div>
         )}
       </main>
@@ -289,8 +292,8 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
       
       {/* Manifest Info Display - Only visible if manifest loaded successfully */}
       {manifestData && (
-        <div className="bg-slate-50 px-4 py-6">
-          <div className="max-w-2xl mx-auto">
+        <div className="bg-slate-50 py-6">
+          <StandardContentContainer>
             <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-900 mb-3">
                 📋 Funnel-Konfiguration (Version {manifestData.version})
@@ -349,23 +352,19 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
                 </details>
               )}
             </div>
-          </div>
+          </StandardContentContainer>
         </div>
       )}
 
       {/* Manifest Error Display */}
       {manifestError && (
-        <div className="bg-red-50 px-4 py-4">
-          <div className="max-w-2xl mx-auto">
+        <div className="bg-red-50 py-4">
+          <StandardContentContainer>
             <div className="bg-red-100 border border-red-300 rounded-lg p-4">
-              <p className="text-sm font-medium text-red-900">
-                ⚠️ Manifest-Fehler
-              </p>
-              <p className="text-sm text-red-700 mt-1">
-                {manifestError}
-              </p>
+              <p className="text-sm font-medium text-red-900">⚠️ Manifest-Fehler</p>
+              <p className="text-sm text-red-700 mt-1">{manifestError}</p>
             </div>
-          </div>
+          </StandardContentContainer>
         </div>
       )}
     </>

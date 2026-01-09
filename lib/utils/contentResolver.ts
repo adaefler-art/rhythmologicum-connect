@@ -162,10 +162,17 @@ export async function getContentPage(
       if (!isUUID(funnel)) {
         const normalized = funnel.toLowerCase().trim()
         const canonical = getCanonicalFunnelSlug(normalized)
+        const legacySlugs = Object.entries(FUNNEL_SLUG_ALIASES)
+          .filter(([, mapped]) => mapped === canonical)
+          .map(([legacy]) => legacy)
+
+        const candidates = Array.from(new Set([normalized, canonical, ...legacySlugs]))
+
         const { data: catalogFunnel } = await supabase
           .from('funnels_catalog')
           .select('id')
-          .eq('slug', canonical)
+          .in('slug', candidates)
+          .limit(1)
           .maybeSingle()
 
         if (catalogFunnel?.id) {
