@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { CURRENT_CONSENT_VERSION } from '@/lib/contracts/onboarding'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type ApiResponse<T> = {
   success: boolean
   data?: T
@@ -14,14 +17,23 @@ type OnboardingStatusData = {
   completed: boolean
 }
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, max-age=0',
+  Pragma: 'no-cache',
+  Expires: '0',
+} as const
+
 function ok(data: OnboardingStatusData) {
-  return NextResponse.json({ success: true, data } satisfies ApiResponse<OnboardingStatusData>)
+  return NextResponse.json(
+    { success: true, data } satisfies ApiResponse<OnboardingStatusData>,
+    { headers: NO_STORE_HEADERS },
+  )
 }
 
 function fail(code: string, message: string, status: number) {
   return NextResponse.json(
     { success: false, error: { code, message } } satisfies ApiResponse<never>,
-    { status },
+    { status, headers: NO_STORE_HEADERS },
   )
 }
 
@@ -44,6 +56,7 @@ export async function GET() {
     .select('id')
     .eq('user_id', user.id)
     .eq('consent_version', CURRENT_CONSENT_VERSION)
+    .order('consented_at', { ascending: false })
     .limit(1)
 
   if (consentError) {
@@ -55,6 +68,7 @@ export async function GET() {
     .from('patient_profiles')
     .select('id, full_name')
     .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
     .limit(1)
 
   if (profileError) {

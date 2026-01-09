@@ -12,8 +12,25 @@ function createQueryResult<T>(result: { data: T; error: unknown }) {
   return {
     select: () => createQueryResult(result),
     eq: () => createQueryResult(result),
+    order: () => createQueryResult(result),
     limit: async () => result,
   }
+}
+
+function createTrackedQueryResult<T>(result: { data: T; error: unknown }) {
+  const calls: Array<{ column: string; ascending: boolean }> = []
+
+  const builder = {
+    select: () => builder,
+    eq: () => builder,
+    order: (column: string, opts: { ascending: boolean }) => {
+      calls.push({ column, ascending: opts.ascending })
+      return builder
+    },
+    limit: async () => result,
+  }
+
+  return { builder, calls }
 }
 
 describe('GET /api/patient/onboarding-status', () => {
@@ -30,6 +47,8 @@ describe('GET /api/patient/onboarding-status', () => {
 
     const res = await GET()
     expect(res.status).toBe(401)
+
+    expect(res.headers.get('Cache-Control')).toContain('no-store')
 
     const json = await res.json()
     expect(json).toEqual({
@@ -64,6 +83,8 @@ describe('GET /api/patient/onboarding-status', () => {
     const res = await GET()
     expect(res.status).toBe(200)
 
+    expect(res.headers.get('Cache-Control')).toContain('no-store')
+
     const json = await res.json()
     expect(json).toEqual({
       success: true,
@@ -96,6 +117,8 @@ describe('GET /api/patient/onboarding-status', () => {
 
     const res = await GET()
     expect(res.status).toBe(200)
+
+    expect(res.headers.get('Cache-Control')).toContain('no-store')
 
     const json = await res.json()
     expect(json).toEqual({
@@ -130,10 +153,41 @@ describe('GET /api/patient/onboarding-status', () => {
     const res = await GET()
     expect(res.status).toBe(200)
 
+    expect(res.headers.get('Cache-Control')).toContain('no-store')
+
     const json = await res.json()
     expect(json).toEqual({
       success: true,
       data: { needsConsent: false, needsProfile: true, completed: false },
     })
+  })
+
+  it('orders consent/profile queries by newest-first', async () => {
+    const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
+      createServerSupabaseClient: jest.Mock
+    }
+
+    const consent = createTrackedQueryResult({ data: [{ id: 'c1' }], error: null })
+    const profile = createTrackedQueryResult({
+      data: [{ id: 'p1', full_name: 'Jane Doe' }],
+      error: null,
+    })
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: async () => ({ data: { user: { id: 'u1' } }, error: null }),
+      },
+      from: (table: string) => {
+        if (table === 'user_consents') return consent.builder
+        if (table === 'patient_profiles') return profile.builder
+        throw new Error(`Unexpected table: ${table}`)
+      },
+    })
+
+    const res = await GET()
+    expect(res.status).toBe(200)
+
+    expect(consent.calls).toEqual([{ column: 'consented_at', ascending: false }])
+    expect(profile.calls).toEqual([{ column: 'created_at', ascending: false }])
   })
 })

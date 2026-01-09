@@ -1,0 +1,68 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`migrationParity adapter buildMigrationParityReport produces deterministic ordering (snapshot) 1`] = `
+{
+  "db": {
+    "count": 3,
+    "migrations": [
+      {
+        "canonicalId": "999",
+        "raw": "999",
+      },
+      {
+        "canonicalId": "20251231093345",
+        "raw": "20251231093345",
+      },
+      {
+        "canonicalId": "init",
+        "raw": "init",
+      },
+    ],
+  },
+  "detectedColumns": [
+    "name",
+    "version",
+  ],
+  "identifierColumn": "version",
+  "parity": {
+    "dbOnly": [
+      "999",
+    ],
+    "repoOnly": [
+      "054",
+    ],
+    "shared": [
+      "20251231093345",
+      "init",
+    ],
+  },
+  "repo": {
+    "count": 3,
+    "migrations": [
+      {
+        "basename": "054_add_table",
+        "canonicalId": "054",
+        "filename": "054_add_table.sql",
+      },
+      {
+        "basename": "20251231093345_v05_i01_3_versioning_contract",
+        "canonicalId": "20251231093345",
+        "filename": "20251231093345_v05_i01_3_versioning_contract.sql",
+      },
+      {
+        "basename": "init",
+        "canonicalId": "init",
+        "filename": "init.sql",
+      },
+    ],
+  },
+  "supportedIdentifierColumns": [
+    "filename",
+    "migration_id",
+    "name",
+    "migration_name",
+    "version",
+    "id",
+  ],
+}
+`;

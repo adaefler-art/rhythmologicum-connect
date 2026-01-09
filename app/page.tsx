@@ -67,7 +67,7 @@ async function getPatientRedirectFromOnboardingStatus(): Promise<
   | { kind: 'fallback' }
 > {
   try {
-    const res = await fetch('/api/patient/onboarding-status', { method: 'GET' })
+    const res = await fetch('/api/patient/onboarding-status', { method: 'GET', cache: 'no-store' })
     if (res.status === 401) return { kind: 'unauthenticated' }
     if (!res.ok) return { kind: 'fallback' }
 

@@ -30,7 +30,7 @@ function isValidIpAddress(ip: string): boolean {
  * - 201: Consent recorded successfully
  * - 400: Missing or invalid parameters
  * - 401: Not authenticated
- * - 409: Consent already recorded for this version
+ * - 200: Consent already recorded for this version (idempotent)
  * - 500: Server error
  */
 export async function POST(request: NextRequest) {
@@ -94,9 +94,45 @@ export async function POST(request: NextRequest) {
         console.log(
           `Consent already recorded for user ${user.id}, version ${consentVersion}`,
         )
+
+        const { data: existing, error: existingError } = await supabase
+          .from('user_consents')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('consent_version', consentVersion)
+          .order('consented_at', { ascending: false })
+          .limit(1)
+
+        if (existingError) {
+          console.error('Error fetching existing consent after conflict:', existingError)
+          const response = NextResponse.json(
+            { error: 'Failed to record consent' },
+            { status: 500 },
+          )
+          trackUsage('POST /api/consent/record', response)
+          return response
+        }
+
+        const row = existing?.[0]
+        if (!row) {
+          const response = NextResponse.json(
+            { error: 'Failed to record consent' },
+            { status: 500 },
+          )
+          trackUsage('POST /api/consent/record', response)
+          return response
+        }
+
         const response = NextResponse.json(
-          { error: 'Consent already recorded for this version' },
-          { status: 409 },
+          {
+            success: true,
+            consent: {
+              id: row.id,
+              consentVersion: row.consent_version,
+              consentedAt: row.consented_at,
+            },
+          },
+          { status: 200 },
         )
         trackUsage('POST /api/consent/record', response)
         return response

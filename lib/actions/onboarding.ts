@@ -24,6 +24,9 @@ import {
 import { logAuditEvent } from '@/lib/audit'
 import { env } from '@/lib/env'
 
+// PostgreSQL error codes
+const PG_ERROR_UNIQUE_VIOLATION = '23505'
+
 // ============================================================
 // Types
 // ============================================================
@@ -92,6 +95,7 @@ export async function recordConsent(formData: {
       .select('*')
       .eq('user_id', user.id)
       .eq('consent_version', formData.consentVersion)
+      .order('consented_at', { ascending: false })
       .limit(1)
 
     if (existingConsentError) {
@@ -123,11 +127,29 @@ export async function recordConsent(formData: {
       .single()
 
     if (error) {
-      console.error('[onboarding/recordConsent] Database error:', error)
-      return {
-        success: false,
-        error: 'Failed to record consent',
+      // Idempotent under races: if another request inserted concurrently, treat as success.
+      if ((error as { code?: string } | null)?.code === PG_ERROR_UNIQUE_VIOLATION) {
+        const { data: retryData, error: retryError } = await supabase
+          .from('user_consents')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('consent_version', formData.consentVersion)
+          .order('consented_at', { ascending: false })
+          .limit(1)
+
+        if (retryError) {
+          console.error('[onboarding/recordConsent] Retry after conflict failed:', retryError)
+          return { success: false, error: 'Failed to record consent' }
+        }
+
+        const retryConsent = retryData?.[0]
+        if (retryConsent) {
+          return { success: true, data: retryConsent as ConsentRecord }
+        }
       }
+
+      console.error('[onboarding/recordConsent] Database error:', error)
+      return { success: false, error: 'Failed to record consent' }
     }
 
     // Log audit event
@@ -172,6 +194,7 @@ export async function hasUserConsented(): Promise<ActionResult<boolean>> {
       .select('id')
       .eq('user_id', user.id)
       .eq('consent_version', CURRENT_CONSENT_VERSION)
+      .order('consented_at', { ascending: false })
       .limit(1)
 
     if (error) {
@@ -232,6 +255,7 @@ export async function saveBaselineProfile(
       .from('patient_profiles')
       .select('*')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(1)
 
     if (existingProfileError) {
@@ -241,9 +265,9 @@ export async function saveBaselineProfile(
 
     const existingProfile = existingProfiles?.[0]
 
-    let result
+    let result: PatientProfile | null = null
     let isUpdate = false
-
+   
     if (existingProfile) {
       // Update existing profile
       isUpdate = true
@@ -254,7 +278,7 @@ export async function saveBaselineProfile(
           birth_year: validationResult.data.birth_year,
           sex: validationResult.data.sex,
         })
-        .eq('user_id', user.id)
+        .eq('id', (existingProfile as { id: string }).id)
         .select()
         .single()
 
@@ -262,7 +286,7 @@ export async function saveBaselineProfile(
         console.error('[onboarding/saveBaselineProfile] Update error:', error)
         return { success: false, error: 'Failed to update profile' }
       }
-      result = data
+      result = data as PatientProfile
     } else {
       // Insert new profile
       const { data, error } = await supabase
@@ -277,10 +301,61 @@ export async function saveBaselineProfile(
         .single()
 
       if (error) {
-        console.error('[onboarding/saveBaselineProfile] Insert error:', error)
-        return { success: false, error: 'Failed to create profile' }
+        // Idempotent under races: if a concurrent request inserted a profile, update the latest.
+        if ((error as { code?: string } | null)?.code === PG_ERROR_UNIQUE_VIOLATION) {
+          const { data: retryProfiles, error: retryExistingError } = await supabase
+            .from('patient_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (retryExistingError) {
+            console.error(
+              '[onboarding/saveBaselineProfile] Retry fetch after conflict failed:',
+              retryExistingError,
+            )
+            return { success: false, error: 'Failed to create profile' }
+          }
+
+          const retryExisting = retryProfiles?.[0]
+          if (!retryExisting) {
+            return { success: false, error: 'Failed to create profile' }
+          }
+
+          isUpdate = true
+          const { data: retryUpdateData, error: retryUpdateError } = await supabase
+            .from('patient_profiles')
+            .update({
+              full_name: validationResult.data.full_name,
+              birth_year: validationResult.data.birth_year,
+              sex: validationResult.data.sex,
+            })
+            .eq('id', (retryExisting as { id: string }).id)
+            .select()
+            .single()
+
+          if (retryUpdateError) {
+            console.error(
+              '[onboarding/saveBaselineProfile] Retry update after conflict failed:',
+              retryUpdateError,
+            )
+            return { success: false, error: 'Failed to update profile' }
+          }
+
+          result = retryUpdateData
+        } else {
+          console.error('[onboarding/saveBaselineProfile] Insert error:', error)
+          return { success: false, error: 'Failed to create profile' }
+        }
       }
-      result = data
+      if (!result) {
+        result = data as PatientProfile
+      }
+    }
+
+    if (!result) {
+      return { success: false, error: 'Failed to save profile' }
     }
 
     // Log audit event
@@ -297,7 +372,7 @@ export async function saveBaselineProfile(
 
     return {
       success: true,
-      data: result as PatientProfile,
+      data: result,
     }
   } catch (err) {
     console.error('[onboarding/saveBaselineProfile] Unexpected error:', err)
@@ -324,6 +399,7 @@ export async function getBaselineProfile(): Promise<ActionResult<PatientProfile 
       .from('patient_profiles')
       .select('*')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(1)
 
     if (error) {
@@ -367,6 +443,7 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
       .select('id')
       .eq('user_id', user.id)
       .eq('consent_version', CURRENT_CONSENT_VERSION)
+      .order('consented_at', { ascending: false })
       .limit(1)
 
     if (consentError) {
@@ -381,6 +458,7 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
       .from('patient_profiles')
       .select('id, full_name')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
       .limit(1)
 
     if (profileError) {
