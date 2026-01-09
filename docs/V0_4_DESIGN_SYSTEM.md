@@ -471,9 +471,18 @@ All authenticated areas share a common layout structure:
 ### Spacing Guidelines
 
 - **Page container**: `max-w-6xl mx-auto px-4 sm:px-6`
+- **Content pages (Consent/Onboarding/Article)**: `w-full max-w-4xl mx-auto px-4 sm:px-6`
+- **Auth forms (Login-only)**: `w-full max-w-md mx-auto px-4`
 - **Section spacing**: `mb-6` or `mb-8` between sections
 - **Card spacing**: `p-6` for standard card padding
 - **Form field spacing**: `mb-4` between fields
+
+### Table Responsiveness
+
+- Wrap any wide tables with a horizontal scroll container:
+  - Wrapper: `w-full overflow-x-auto`
+  - Table: `w-full min-w-[640px]`
+- Avoid `table-fixed` unless there is a strong reason (it can cause columns to get squeezed).
 
 ## Accessibility
 

@@ -43,9 +43,9 @@ export function ConsentClient() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8 px-4 sm:px-6">
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
             Willkommen bei Rhythmologicum Connect
           </h1>
@@ -55,7 +55,7 @@ export function ConsentClient() {
               Nutzungsbedingungen
             </h2>
             
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-md p-4 mb-4 max-h-96 overflow-y-auto border border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-md p-4 mb-4 max-h-[60vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
               <h3 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
                 1. Zweck der Anwendung
               </h3>

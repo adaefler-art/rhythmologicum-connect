@@ -71,6 +71,18 @@ export function MarkdownBlockRenderer({ section }: MarkdownBlockRendererProps) {
           skipHtml={true}
           components={{
             a: SafeLink,
+            table: ({ children, ...props }) => (
+              <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[640px]" {...props}>
+                  {children}
+                </table>
+              </div>
+            ),
+            th: ({ children, ...props }) => (
+              <th className="whitespace-nowrap" {...props}>
+                {children}
+              </th>
+            ),
           }}
         >
           {markdown}
