@@ -25,8 +25,8 @@ describe('Audit Constants', () => {
       expect(AUDIT_ENTITY_TYPE.REVIEW_RECORD).toBe('review_record') // V05-I05.7
     })
 
-    it('has exactly 13 entity types', () => {
-      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(13)
+    it('has exactly 17 entity types', () => {
+      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(17)
     })
   })
 
@@ -47,8 +47,8 @@ describe('Audit Constants', () => {
       expect(AUDIT_ACTION.COMPLETE).toBe('complete')
     })
 
-    it('has exactly 13 actions', () => {
-      expect(Object.keys(AUDIT_ACTION)).toHaveLength(13)
+    it('has exactly 18 actions', () => {
+      expect(Object.keys(AUDIT_ACTION)).toHaveLength(18)
     })
   })
 

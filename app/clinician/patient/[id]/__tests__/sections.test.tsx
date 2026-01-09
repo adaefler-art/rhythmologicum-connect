@@ -92,7 +92,7 @@ describe('V05-I07.2: Patient Detail Sections', () => {
 
     it('renders calculated scores when provided', () => {
       render(<FindingsScoresSection calculatedScores={{ stress_score: 78 }} />)
-      expect(screen.getByText(/stress_score/i)).toBeInTheDocument()
+      expect(screen.getByText(/stress score/i)).toBeInTheDocument()
       expect(screen.getByText('78')).toBeInTheDocument()
     })
   })

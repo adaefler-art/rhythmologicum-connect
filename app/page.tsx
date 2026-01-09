@@ -19,17 +19,38 @@ async function syncServerSession() {
   })
 }
 
-async function resolveRole(): Promise<ResolvedUserRole | null> {
+type ResolveRoleResult = {
+  role: ResolvedUserRole
+  requiresOnboarding: boolean
+  reason?: string
+}
+
+type ResolveRoleOutcome =
+  | { kind: 'ok'; value: ResolveRoleResult }
+  | { kind: 'unauthenticated' }
+  | { kind: 'fallback_patient' }
+
+async function resolveRole(): Promise<ResolveRoleOutcome> {
   try {
     const res = await fetch('/api/auth/resolve-role', { method: 'GET' })
-    if (!res.ok) return null
+    if (res.status === 401) return { kind: 'unauthenticated' }
+    if (!res.ok) return { kind: 'fallback_patient' }
     const json: unknown = await res.json()
-    if (!json || typeof json !== 'object') return null
-    const role = (json as { data?: { role?: string } }).data?.role
-    if (role === 'patient' || role === 'clinician' || role === 'admin' || role === 'nurse') return role
-    return null
+    if (!json || typeof json !== 'object') return { kind: 'fallback_patient' }
+    const data = (json as { data?: unknown }).data
+    if (!data || typeof data !== 'object') return { kind: 'fallback_patient' }
+
+    const role = (data as { role?: string }).role
+    const requiresOnboarding = (data as { requiresOnboarding?: boolean }).requiresOnboarding
+    const reason = (data as { reason?: string }).reason
+    if (role === 'patient' || role === 'clinician' || role === 'admin' || role === 'nurse') {
+      return { kind: 'ok', value: { role, requiresOnboarding: requiresOnboarding === true, reason } }
+    }
+
+    // If the API returns an unexpected role, don't block UX.
+    return { kind: 'fallback_patient' }
   } catch {
-    return null
+    return { kind: 'fallback_patient' }
   }
 }
 
@@ -63,20 +84,28 @@ export default function LoginPage() {
       if (user) {
         await syncServerSession()
 
-        const resolvedRole = await resolveRole()
-        if (!resolvedRole) {
-          // Fail-closed: authenticated but no membership role -> go back to login with error
-          await supabase.auth.signOut()
-          router.replace('/?error=access_denied&message=Keine gültige Rolle gefunden.')
+        const resolved = await resolveRole()
+
+        if (resolved.kind === 'unauthenticated') {
           return
         }
 
-        if (resolvedRole === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+        if (resolved.kind === 'fallback_patient') {
+          router.replace('/patient/onboarding/consent')
+          return
+        }
+
+        if (resolved.value.requiresOnboarding) {
+          router.replace('/patient/onboarding/consent')
+          return
+        }
+
+        if (resolved.value.role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
           router.replace('/patient')
           return
         }
 
-        router.replace(getLandingForRole(resolvedRole))
+        router.replace(getLandingForRole(resolved.value.role))
       }
     }
 
@@ -179,15 +208,20 @@ export default function LoginPage() {
       if (userError) throw userError
       if (!user) throw new Error('Kein Benutzerprofil gefunden.')
 
-      // Resolve role from DB membership (source-of-truth)
-      const resolvedRole = await resolveRole()
-      if (!resolvedRole) {
-        await supabase.auth.signOut()
-        throw new Error('Keine gültige Rolle gefunden.')
+      // Resolve role from auth metadata (metadata-only; no DB/RLS dependency)
+      const resolved = await resolveRole()
+      if (resolved.kind === 'unauthenticated') {
+        setError('Bitte einloggen.')
+        return
+      }
+
+      if (resolved.kind === 'fallback_patient') {
+        router.replace('/patient/onboarding/consent')
+        return
       }
       
       // For patients: ensure patient_profile exists
-      if (resolvedRole === 'patient') {
+      if (resolved.value.role === 'patient') {
         const { error: profileError } = await supabase
           .from('patient_profiles')
           .upsert(
@@ -198,15 +232,25 @@ export default function LoginPage() {
             { onConflict: 'user_id' }
           )
 
-        if (profileError) throw profileError
+        if (profileError) {
+          console.error('[login] patient_profile upsert failed', profileError)
+          if (!resolved.value.requiresOnboarding) {
+            throw profileError
+          }
+        }
+      }
+
+      if (resolved.value.requiresOnboarding) {
+        router.replace('/patient/onboarding/consent')
+        return
       }
 
       // Redirect based on role
-      if (resolvedRole === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+      if (resolved.value.role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
         // If clinician dashboard is disabled, redirect clinicians to patient flow
         router.replace('/patient')
       } else {
-        router.replace(getLandingForRole(resolvedRole))
+        router.replace(getLandingForRole(resolved.value.role))
       }
     } catch (err: unknown) {
       console.error(err)

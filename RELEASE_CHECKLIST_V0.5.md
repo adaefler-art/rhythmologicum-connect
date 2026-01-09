@@ -6,6 +6,26 @@
 
 ---
 
+## 0. GO/NO-GO Gates (Run These Commands)
+
+**GO** if all commands below complete with exit code `0`.
+
+**NO-GO** if any command fails; capture the terminal output as evidence.
+
+```powershell
+# Unit tests (verify via exit code + output)
+npm test
+
+# Production build (verify via exit code + output)
+npm run build
+
+# Reset local DB + apply all migrations (CAUTION: deletes local data)
+npx supabase db reset
+
+# Regenerate Supabase types (verify that lib/types/supabase.ts changes only when schema/RPCs change)
+npm run db:typegen
+```
+
 ## 1. Framework & Dependency Verification
 
 ### ✅ Verified Versions

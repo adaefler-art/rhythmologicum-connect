@@ -1,7 +1,6 @@
 /** @jest-environment node */
 
 import { GET } from '../route'
-import { getLandingForRole } from '@/lib/utils/roleLanding'
 
 jest.mock('@/lib/db/supabase.server', () => {
   return {
@@ -10,18 +9,38 @@ jest.mock('@/lib/db/supabase.server', () => {
 })
 
 describe('GET /api/auth/resolve-role', () => {
-  it('resolves patient role from membership and lands on /patient', async () => {
+  it('returns 401 when not authenticated', async () => {
     const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
       createServerSupabaseClient: jest.Mock
     }
 
     createServerSupabaseClient.mockResolvedValue({
       auth: {
-        getUser: async () => ({ data: { user: { id: 'u1' } } }),
+        getUser: async () => ({ data: { user: null }, error: null }),
       },
-      rpc: async (_fn: string, args: { check_role: string }) => {
-        if (args.check_role === 'patient') return { data: true, error: null }
-        return { data: false, error: null }
+    })
+
+    const res = await GET()
+    expect(res.status).toBe(401)
+
+    const json = await res.json()
+    expect(json).toEqual({
+      success: false,
+      error: { code: 'AUTH_REQUIRED', message: 'Authentication required' },
+    })
+  })
+
+  it('returns 200 clinician when role=clinician is present (metadata)', async () => {
+    const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
+      createServerSupabaseClient: jest.Mock
+    }
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: async () => ({
+          data: { user: { id: 'u1', app_metadata: { role: 'clinician' } } },
+          error: null,
+        }),
       },
     })
 
@@ -29,7 +48,33 @@ describe('GET /api/auth/resolve-role', () => {
     expect(res.status).toBe(200)
 
     const json = await res.json()
-    expect(json).toEqual({ success: true, data: { role: 'patient' } })
-    expect(getLandingForRole('patient')).toBe('/patient')
+    expect(json).toEqual({
+      success: true,
+      data: { role: 'clinician', requiresOnboarding: false },
+    })
+  })
+
+  it('defaults to patient + requiresOnboarding=true when role is missing', async () => {
+    const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
+      createServerSupabaseClient: jest.Mock
+    }
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: async () => ({
+          data: { user: { id: 'u1', app_metadata: {} } },
+          error: null,
+        }),
+      },
+    })
+
+    const res = await GET()
+    expect(res.status).toBe(200)
+
+    const json = await res.json()
+    expect(json).toEqual({
+      success: true,
+      data: { role: 'patient', requiresOnboarding: true, reason: 'DEFAULT_PATIENT_ROLE' },
+    })
   })
 })

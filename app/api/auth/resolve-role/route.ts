@@ -10,45 +10,52 @@ type ApiResponse<T> = {
   error?: { code: string; message: string }
 }
 
-function ok<T>(data: T) {
-  return NextResponse.json({ success: true, data } satisfies ApiResponse<T>)
+type ResolveRoleData = {
+  role: ResolvedUserRole
+  requiresOnboarding: boolean
+  reason?: 'DEFAULT_PATIENT_ROLE'
 }
 
-function fail(code: string, message: string, status = 403) {
+const VALID_ROLES: ResolvedUserRole[] = ['admin', 'clinician', 'nurse', 'patient']
+
+function normalizeRole(value: unknown): ResolvedUserRole | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return (VALID_ROLES as string[]).includes(trimmed) ? (trimmed as ResolvedUserRole) : null
+}
+
+function ok(data: ResolveRoleData) {
+  return NextResponse.json({ success: true, data } satisfies ApiResponse<ResolveRoleData>)
+}
+
+function fail(code: string, message: string, status: number) {
   return NextResponse.json(
     { success: false, error: { code, message } } satisfies ApiResponse<never>,
     { status },
   )
 }
 
-async function resolveRoleFromMembership(): Promise<ResolvedUserRole | null> {
+export async function GET() {
   const supabase = await createServerSupabaseClient()
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser()
 
-  if (!user) return null
-
-  const precedence: ResolvedUserRole[] = ['admin', 'clinician', 'nurse', 'patient']
-
-  for (const role of precedence) {
-    const { data, error } = await supabase.rpc('has_any_role', { check_role: role })
-    if (error) {
-      // Fail-closed: if membership role lookup fails, don't fall through to app_metadata here.
-      return null
-    }
-    if (data) return role
+  // 401-first: no session / no authenticated user
+  if (userError || !user) {
+    return fail('AUTH_REQUIRED', 'Authentication required', 401)
   }
 
-  return null
-}
-
-export async function GET() {
-  const role = await resolveRoleFromMembership()
-
-  if (!role) {
-    return fail('ROLE_NOT_FOUND', 'Keine gültige Rolle gefunden.', 403)
+  // Role resolution must be metadata-only to avoid DB/RLS dependencies.
+  // Staff roles are provisioned server-side into raw_app_meta_data (surfaced as app_metadata).
+  const rawRole = user.app_metadata?.role ?? user.user_metadata?.role
+  const metadataRole = normalizeRole(rawRole)
+  if (metadataRole) {
+    return ok({ role: metadataRole, requiresOnboarding: false })
   }
 
-  return ok({ role })
+  // Missing/empty/unknown role: default to patient onboarding entry.
+  return ok({ role: 'patient', requiresOnboarding: true, reason: 'DEFAULT_PATIENT_ROLE' })
 }
