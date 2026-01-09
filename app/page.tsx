@@ -54,6 +54,36 @@ async function resolveRole(): Promise<ResolveRoleOutcome> {
   }
 }
 
+type OnboardingStatusResponse =
+  | {
+      success: true
+      data: { needsConsent: boolean; needsProfile: boolean; completed: boolean }
+    }
+  | { success: false; error: { code: string; message: string } }
+
+async function getPatientRedirectFromOnboardingStatus(): Promise<
+  | { kind: 'ok'; path: string }
+  | { kind: 'unauthenticated' }
+  | { kind: 'fallback' }
+> {
+  try {
+    const res = await fetch('/api/patient/onboarding-status', { method: 'GET' })
+    if (res.status === 401) return { kind: 'unauthenticated' }
+    if (!res.ok) return { kind: 'fallback' }
+
+    const json: unknown = await res.json()
+    if (!json || typeof json !== 'object') return { kind: 'fallback' }
+    const parsed = json as OnboardingStatusResponse
+    if (!('success' in parsed) || parsed.success !== true) return { kind: 'fallback' }
+
+    if (parsed.data.needsConsent) return { kind: 'ok', path: '/patient/onboarding/consent' }
+    if (parsed.data.needsProfile) return { kind: 'ok', path: '/patient/onboarding/profile' }
+    return { kind: 'ok', path: '/patient' }
+  } catch {
+    return { kind: 'fallback' }
+  }
+}
+
 
 type Mode = 'login' | 'signup'
 
@@ -90,22 +120,27 @@ export default function LoginPage() {
           return
         }
 
-        if (resolved.kind === 'fallback_patient') {
-          router.replace('/patient/onboarding/consent')
-          return
-        }
+        const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-        if (resolved.value.requiresOnboarding) {
-          router.replace('/patient/onboarding/consent')
-          return
-        }
+        if (role === 'patient') {
+          const onboarding = await getPatientRedirectFromOnboardingStatus()
+          if (onboarding.kind === 'unauthenticated') return
+          if (onboarding.kind === 'ok') {
+            router.replace(onboarding.path)
+            return
+          }
 
-        if (resolved.value.role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          // Fallback: don't block UX
           router.replace('/patient')
           return
         }
 
-        router.replace(getLandingForRole(resolved.value.role))
+        if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+          router.replace('/patient')
+          return
+        }
+
+        router.replace(getLandingForRole(role))
       }
     }
 
@@ -215,42 +250,30 @@ export default function LoginPage() {
         return
       }
 
-      if (resolved.kind === 'fallback_patient') {
-        router.replace('/patient/onboarding/consent')
-        return
-      }
-      
-      // For patients: ensure patient_profile exists
-      if (resolved.value.role === 'patient') {
-        const { error: profileError } = await supabase
-          .from('patient_profiles')
-          .upsert(
-            {
-              user_id: user.id,
-              full_name: user.email ?? trimmedEmail,
-            },
-            { onConflict: 'user_id' }
-          )
+      const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-        if (profileError) {
-          console.error('[login] patient_profile upsert failed', profileError)
-          if (!resolved.value.requiresOnboarding) {
-            throw profileError
-          }
+      if (role === 'patient') {
+        const onboarding = await getPatientRedirectFromOnboardingStatus()
+        if (onboarding.kind === 'unauthenticated') {
+          setError('Bitte einloggen.')
+          return
         }
-      }
+        if (onboarding.kind === 'ok') {
+          router.replace(onboarding.path)
+          return
+        }
 
-      if (resolved.value.requiresOnboarding) {
-        router.replace('/patient/onboarding/consent')
+        // Fallback: don't block UX
+        router.replace('/patient')
         return
       }
 
       // Redirect based on role
-      if (resolved.value.role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
+      if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
         // If clinician dashboard is disabled, redirect clinicians to patient flow
         router.replace('/patient')
       } else {
-        router.replace(getLandingForRole(resolved.value.role))
+        router.replace(getLandingForRole(role))
       }
     } catch (err: unknown) {
       console.error(err)
