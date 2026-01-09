@@ -86,12 +86,23 @@ export async function recordConsent(formData: {
     }
 
     // Check if consent already exists (idempotent check)
-    const { data: existingConsent } = await supabase
+    // Use limit(1) instead of maybeSingle() to avoid hard failures if duplicates exist.
+    const { data: existingConsents, error: existingConsentError } = await supabase
       .from('user_consents')
       .select('*')
       .eq('user_id', user.id)
       .eq('consent_version', formData.consentVersion)
-      .maybeSingle()
+      .limit(1)
+
+    if (existingConsentError) {
+      console.error('[onboarding/recordConsent] Existing consent check error:', existingConsentError)
+      return {
+        success: false,
+        error: 'Failed to check existing consent',
+      }
+    }
+
+    const existingConsent = existingConsents?.[0]
 
     if (existingConsent) {
       // Already consented - idempotent success
@@ -161,7 +172,7 @@ export async function hasUserConsented(): Promise<ActionResult<boolean>> {
       .select('id')
       .eq('user_id', user.id)
       .eq('consent_version', CURRENT_CONSENT_VERSION)
-      .maybeSingle()
+      .limit(1)
 
     if (error) {
       console.error('[onboarding/hasUserConsented] Database error:', error)
@@ -170,7 +181,7 @@ export async function hasUserConsented(): Promise<ActionResult<boolean>> {
 
     return {
       success: true,
-      data: !!data,
+      data: (data?.length ?? 0) > 0,
     }
   } catch (err) {
     console.error('[onboarding/hasUserConsented] Unexpected error:', err)
@@ -217,11 +228,18 @@ export async function saveBaselineProfile(
     }
 
     // Check if profile exists
-    const { data: existingProfile } = await supabase
+    const { data: existingProfiles, error: existingProfileError } = await supabase
       .from('patient_profiles')
       .select('*')
       .eq('user_id', user.id)
-      .maybeSingle()
+      .limit(1)
+
+    if (existingProfileError) {
+      console.error('[onboarding/saveBaselineProfile] Existing profile check error:', existingProfileError)
+      return { success: false, error: 'Failed to check profile' }
+    }
+
+    const existingProfile = existingProfiles?.[0]
 
     let result
     let isUpdate = false
@@ -306,7 +324,7 @@ export async function getBaselineProfile(): Promise<ActionResult<PatientProfile 
       .from('patient_profiles')
       .select('*')
       .eq('user_id', user.id)
-      .maybeSingle()
+      .limit(1)
 
     if (error) {
       console.error('[onboarding/getBaselineProfile] Database error:', error)
@@ -315,7 +333,7 @@ export async function getBaselineProfile(): Promise<ActionResult<PatientProfile 
 
     return {
       success: true,
-      data: data as PatientProfile | null,
+      data: (data?.[0] as PatientProfile | undefined) ?? null,
     }
   } catch (err) {
     console.error('[onboarding/getBaselineProfile] Unexpected error:', err)
@@ -344,23 +362,34 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
     }
 
     // Check consent
-    const { data: consentData } = await supabase
+    const { data: consentData, error: consentError } = await supabase
       .from('user_consents')
       .select('id')
       .eq('user_id', user.id)
       .eq('consent_version', CURRENT_CONSENT_VERSION)
-      .maybeSingle()
+      .limit(1)
 
-    const hasConsent = !!consentData
+    if (consentError) {
+      console.error('[onboarding/getOnboardingStatus] Consent check error:', consentError)
+      return { success: false, error: 'Failed to check onboarding status' }
+    }
+
+    const hasConsent = (consentData?.length ?? 0) > 0
 
     // Check profile (must have at least full_name)
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id, full_name')
       .eq('user_id', user.id)
-      .maybeSingle()
+      .limit(1)
 
-    const hasProfile = !!(profileData && profileData.full_name)
+    if (profileError) {
+      console.error('[onboarding/getOnboardingStatus] Profile check error:', profileError)
+      return { success: false, error: 'Failed to check onboarding status' }
+    }
+
+    const firstProfile = profileData?.[0]
+    const hasProfile = !!(firstProfile && (firstProfile as { full_name?: string | null }).full_name)
 
     return {
       success: true,

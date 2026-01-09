@@ -12,7 +12,7 @@ function createQueryResult<T>(result: { data: T; error: unknown }) {
   return {
     select: () => createQueryResult(result),
     eq: () => createQueryResult(result),
-    maybeSingle: async () => result,
+    limit: async () => result,
   }
 }
 
@@ -49,10 +49,13 @@ describe('GET /api/patient/onboarding-status', () => {
       },
       from: (table: string) => {
         if (table === 'user_consents') {
-          return createQueryResult({ data: { id: 'c1' }, error: null })
+          return createQueryResult({ data: [{ id: 'c1' }], error: null })
         }
         if (table === 'patient_profiles') {
-          return createQueryResult({ data: { id: 'p1', full_name: 'Jane Doe' }, error: null })
+          return createQueryResult({
+            data: [{ id: 'p1', full_name: 'Jane Doe' }],
+            error: null,
+          })
         }
         throw new Error(`Unexpected table: ${table}`)
       },
@@ -79,10 +82,13 @@ describe('GET /api/patient/onboarding-status', () => {
       },
       from: (table: string) => {
         if (table === 'user_consents') {
-          return createQueryResult({ data: null, error: null })
+          return createQueryResult({ data: [], error: null })
         }
         if (table === 'patient_profiles') {
-          return createQueryResult({ data: { id: 'p1', full_name: 'Jane Doe' }, error: null })
+          return createQueryResult({
+            data: [{ id: 'p1', full_name: 'Jane Doe' }],
+            error: null,
+          })
         }
         throw new Error(`Unexpected table: ${table}`)
       },
@@ -109,10 +115,13 @@ describe('GET /api/patient/onboarding-status', () => {
       },
       from: (table: string) => {
         if (table === 'user_consents') {
-          return createQueryResult({ data: { id: 'c1' }, error: null })
+          return createQueryResult({ data: [{ id: 'c1' }], error: null })
         }
         if (table === 'patient_profiles') {
-          return createQueryResult({ data: { id: 'p1', full_name: null }, error: null })
+          return createQueryResult({
+            data: [{ id: 'p1', full_name: null }],
+            error: null,
+          })
         }
         throw new Error(`Unexpected table: ${table}`)
       },

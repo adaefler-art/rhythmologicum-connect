@@ -44,7 +44,7 @@ export async function GET() {
     .select('id')
     .eq('user_id', user.id)
     .eq('consent_version', CURRENT_CONSENT_VERSION)
-    .maybeSingle()
+    .limit(1)
 
   if (consentError) {
     return fail('CONSENT_STATUS_FAILED', 'Failed to check consent status', 500)
@@ -55,14 +55,15 @@ export async function GET() {
     .from('patient_profiles')
     .select('id, full_name')
     .eq('user_id', user.id)
-    .maybeSingle()
+    .limit(1)
 
   if (profileError) {
     return fail('PROFILE_STATUS_FAILED', 'Failed to check profile status', 500)
   }
 
-  const hasConsent = !!consentData
-  const hasProfile = !!(profileData && profileData.full_name)
+  const hasConsent = (consentData?.length ?? 0) > 0
+  const firstProfile = profileData?.[0]
+  const hasProfile = !!(firstProfile && (firstProfile as { full_name?: string | null }).full_name)
 
   const needsConsent = !hasConsent
   const needsProfile = !hasProfile
