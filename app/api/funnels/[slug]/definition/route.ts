@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { env } from '@/lib/env'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { loadFunnelWithClient, loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 import type {
   FunnelDefinition,
   QuestionDefinition,
@@ -40,14 +41,81 @@ export async function GET(
       content_page_id?: string | null
     }
 
-    // Use canonical funnel slug from registry
-    const effectiveSlug = getCanonicalFunnelSlug(slug)
-
     if (!slug) {
       return NextResponse.json({ error: 'Funnel slug is required' }, { status: 400 })
     }
 
+    // Use canonical funnel slug from registry
+    const effectiveSlug = getCanonicalFunnelSlug(slug)
+
     const supabase = await createServerSupabaseClient()
+
+    // ============================================================
+    // V0.5 path (preferred): funnels_catalog + funnel_versions.questionnaire_config
+    // ============================================================
+    // This enables data-driven funnels (e.g. clinician-created funnels) without relying
+    // on legacy tables like funnels/funnel_steps.
+    const catalogFunnel = await loadFunnelWithClient(supabase, effectiveSlug)
+
+    if (catalogFunnel) {
+      let steps: StepDefinition[] = []
+      let totalQuestions = 0
+
+      try {
+        const loadedVersion = await loadFunnelVersionWithClient(supabase, effectiveSlug)
+        const questionnaireSteps = loadedVersion.manifest.questionnaire_config.steps
+
+        steps = questionnaireSteps.map((step, stepIndex): StepDefinition => {
+          const questions: QuestionDefinition[] = step.questions.map((q, questionIndex) => ({
+            id: q.id,
+            key: q.key,
+            label: q.label,
+            helpText: q.helpText ?? null,
+            questionType: q.type,
+            minValue: q.minValue ?? null,
+            maxValue: q.maxValue ?? null,
+            isRequired: q.required ?? false,
+            orderIndex: questionIndex,
+          }))
+
+          totalQuestions += questions.length
+
+          return {
+            id: step.id,
+            orderIndex: stepIndex,
+            title: step.title,
+            description: step.description ?? null,
+            type: 'question_step',
+            questions,
+          } as QuestionStepDefinition
+        })
+      } catch {
+        // If the effective version cannot be resolved or the manifest is invalid,
+        // return a deterministic empty state (no 404s). The UI will show
+        // "In Kürze verfügbar".
+        steps = []
+        totalQuestions = 0
+      }
+
+      const funnelDefinition: FunnelDefinition = {
+        id: catalogFunnel.id,
+        slug: catalogFunnel.slug,
+        title: catalogFunnel.title,
+        subtitle: null,
+        description: catalogFunnel.description,
+        theme: null,
+        steps,
+        totalSteps: steps.length,
+        totalQuestions,
+        isActive: catalogFunnel.isActive,
+      }
+
+      return NextResponse.json(funnelDefinition, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      })
+    }
 
     // 1. Fetch funnel by slug - selective fields for performance
     const { data: funnel, error: funnelError } = await supabase
@@ -56,12 +124,8 @@ export async function GET(
       .eq('slug', effectiveSlug)
       .single()
 
-    if (funnelError) {
-      console.error('Error fetching funnel:', funnelError)
-      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
-    }
-
-    if (!funnel) {
+    if (funnelError || !funnel) {
+      // Only 404 if the funnel does not exist in either v0.5 catalog or legacy tables.
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
     }
 
