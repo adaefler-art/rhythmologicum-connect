@@ -262,15 +262,17 @@ export async function GET(request: Request) {
       })
     }
 
-    // Fetch default versions for funnels
-    const funnelIds = (funnels || []).map((f) => f.id)
+    // Fetch default versions deterministically via funnels_catalog.default_version_id
+    const defaultVersionIds = (funnels || [])
+      .map((f) => f.default_version_id)
+      .filter((id): id is string => Boolean(id))
+
     const versionsResult =
-      funnelIds.length > 0
+      defaultVersionIds.length > 0
         ? await dataClient
             .from('funnel_versions')
-            .select('id, funnel_id, version, is_default')
-            .in('funnel_id', funnelIds)
-            .eq('is_default', true)
+            .select('id, version')
+            .in('id', defaultVersionIds)
             .order('id', { ascending: true })
         : { data: null, error: null }
 
@@ -304,11 +306,20 @@ export async function GET(request: Request) {
       // Non-critical: continue without version info
     }
 
-    // Create version lookup map
-    const versionMap = new Map<string, string>()
+    // Create version lookup map keyed by funnel_id
+    const defaultVersionById = new Map<string, string>()
     if (versionsResult.data) {
       versionsResult.data.forEach((v) => {
-        versionMap.set(v.funnel_id, v.version)
+        defaultVersionById.set(v.id, v.version)
+      })
+    }
+
+    const versionMap = new Map<string, string>()
+    if (funnels) {
+      funnels.forEach((f) => {
+        if (!f.default_version_id) return
+        const version = defaultVersionById.get(f.default_version_id)
+        if (version) versionMap.set(f.id, version)
       })
     }
 

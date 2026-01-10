@@ -30,10 +30,14 @@ jest.mock('@supabase/supabase-js', () => ({
                     pillar_id: 'mental-health',
                     description: 'Test funnel',
                     is_active: true,
+                    default_version_id: 'version-123',
                   },
                   error: null,
                 }
               } else if (table === 'funnel_versions') {
+                if (column !== 'id' || value !== 'version-123') {
+                  return { data: null, error: { message: 'Not found' } }
+                }
                 return {
                   data: {
                     id: 'version-123',

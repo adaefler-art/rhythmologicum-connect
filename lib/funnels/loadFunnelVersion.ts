@@ -12,6 +12,7 @@
  */
 
 import { createPublicClient } from '@/lib/db/supabase.public'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   FunnelPluginManifestSchema,
   FunnelQuestionnaireConfigSchema,
@@ -69,6 +70,7 @@ export type FunnelCatalogEntry = {
   pillarId: string | null
   description: string | null
   isActive: boolean
+  defaultVersionId: string | null
 }
 
 /**
@@ -111,6 +113,41 @@ function getSupabaseServerClient() {
   return createPublicClient()
 }
 
+async function resolvePatientActiveVersionId(
+  supabase: SupabaseClient<any>,
+  funnelId: string,
+): Promise<string | null> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    const { data: patientProfile, error: patientProfileError } = await supabase
+      .from('patient_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (patientProfileError || !patientProfile) return null
+
+    const { data: patientFunnel } = await supabase
+      .from('patient_funnels')
+      .select('active_version_id')
+      .eq('patient_id', patientProfile.id)
+      .eq('funnel_id', funnelId)
+      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    return patientFunnel?.active_version_id ?? null
+  } catch {
+    return null
+  }
+}
+
 // ============================================================
 // Core Loader Functions
 // ============================================================
@@ -121,13 +158,15 @@ function getSupabaseServerClient() {
  * @param slug - Funnel slug (can be legacy alias)
  * @returns Funnel catalog entry or null if not found
  */
-export async function loadFunnel(slug: string): Promise<FunnelCatalogEntry | null> {
-  const supabase = getSupabaseServerClient()
+export async function loadFunnelWithClient(
+  supabase: SupabaseClient<any>,
+  slug: string,
+): Promise<FunnelCatalogEntry | null> {
   const canonicalSlug = getCanonicalFunnelSlug(slug)
 
   const { data, error } = await supabase
     .from('funnels_catalog')
-    .select('id, slug, title, pillar_id, description, is_active')
+    .select('id, slug, title, pillar_id, description, is_active, default_version_id')
     .eq('slug', canonicalSlug)
     .single()
 
@@ -142,7 +181,13 @@ export async function loadFunnel(slug: string): Promise<FunnelCatalogEntry | nul
     pillarId: data.pillar_id,
     description: data.description,
     isActive: data.is_active,
+    defaultVersionId: data.default_version_id,
   }
+}
+
+export async function loadFunnel(slug: string): Promise<FunnelCatalogEntry | null> {
+  const supabase = getSupabaseServerClient()
+  return loadFunnelWithClient(supabase, slug)
 }
 
 /**
@@ -157,6 +202,14 @@ export async function loadFunnelVersionById(
   versionId: string,
 ): Promise<LoadedFunnelVersion> {
   const supabase = getSupabaseServerClient()
+
+  return loadFunnelVersionByIdWithClient(supabase, versionId)
+}
+
+export async function loadFunnelVersionByIdWithClient(
+  supabase: SupabaseClient<any>,
+  versionId: string,
+): Promise<LoadedFunnelVersion> {
 
   const { data, error } = await supabase
     .from('funnel_versions')
@@ -184,18 +237,24 @@ export async function loadDefaultFunnelVersion(
 ): Promise<LoadedFunnelVersion> {
   const supabase = getSupabaseServerClient()
 
-  const { data, error } = await supabase
-    .from('funnel_versions')
-    .select('*')
-    .eq('funnel_id', funnelId)
-    .eq('is_default', true)
+  return loadDefaultFunnelVersionWithClient(supabase, funnelId)
+}
+
+export async function loadDefaultFunnelVersionWithClient(
+  supabase: SupabaseClient<any>,
+  funnelId: string,
+): Promise<LoadedFunnelVersion> {
+  const { data: funnel, error: funnelError } = await supabase
+    .from('funnels_catalog')
+    .select('default_version_id')
+    .eq('id', funnelId)
     .single()
 
-  if (error || !data) {
+  if (funnelError || !funnel?.default_version_id) {
     throw new FunnelVersionNotFoundError(funnelId)
   }
 
-  return parseAndValidateFunnelVersion(data as FunnelVersionRow)
+  return loadFunnelVersionByIdWithClient(supabase, funnel.default_version_id)
 }
 
 /**
@@ -212,6 +271,15 @@ export async function loadFunnelVersionByVersion(
   version: string,
 ): Promise<LoadedFunnelVersion> {
   const supabase = getSupabaseServerClient()
+
+  return loadFunnelVersionByVersionWithClient(supabase, funnelId, version)
+}
+
+export async function loadFunnelVersionByVersionWithClient(
+  supabase: SupabaseClient<any>,
+  funnelId: string,
+  version: string,
+): Promise<LoadedFunnelVersion> {
 
   const { data, error } = await supabase
     .from('funnel_versions')
@@ -237,13 +305,28 @@ export async function loadFunnelVersionByVersion(
  * @throws {ManifestValidationError} If manifest validation fails
  */
 export async function loadFunnelVersion(slug: string): Promise<LoadedFunnelVersion> {
-  const funnel = await loadFunnel(slug)
+  const supabase = getSupabaseServerClient()
+  return loadFunnelVersionWithClient(supabase, slug)
+}
+
+export async function loadFunnelVersionWithClient(
+  supabase: SupabaseClient<any>,
+  slug: string,
+): Promise<LoadedFunnelVersion> {
+  const funnel = await loadFunnelWithClient(supabase, slug)
 
   if (!funnel) {
     throw new FunnelNotFoundError(slug)
   }
 
-  return loadDefaultFunnelVersion(funnel.id)
+  const patientActiveVersionId = await resolvePatientActiveVersionId(supabase, funnel.id)
+  const effectiveVersionId = patientActiveVersionId ?? funnel.defaultVersionId
+
+  if (!effectiveVersionId) {
+    throw new FunnelVersionNotFoundError(funnel.id)
+  }
+
+  return loadFunnelVersionByIdWithClient(supabase, effectiveVersionId)
 }
 
 // ============================================================

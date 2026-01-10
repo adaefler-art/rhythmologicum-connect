@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getOnboardingStatus } from '@/lib/actions/onboarding'
 
+export const dynamic = 'force-dynamic'
+
 type SearchParams = { [key: string]: string | string[] | undefined }
 
 function buildQuery(searchParams?: SearchParams): string {
