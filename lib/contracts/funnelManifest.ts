@@ -71,10 +71,11 @@ function normalizeQuestionType(value: unknown): unknown {
   return aliases[normalized] ?? normalized
 }
 
+// IMPORTANT: keep this optional at the *object key* level.
+// Using `.transform()` directly can turn it into a required key with `string | undefined`.
 const nullableString = z
-  .union([z.string(), z.null()])
+  .preprocess((value) => (value === null ? undefined : value), z.string().optional())
   .optional()
-  .transform((value) => (value === null ? undefined : value))
 
 // ============================================================
 // Questionnaire Config Schema
