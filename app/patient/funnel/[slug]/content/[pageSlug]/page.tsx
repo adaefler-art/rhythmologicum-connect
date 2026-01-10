@@ -1,7 +1,12 @@
 import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import ContentPageClient from './client'
-import { loadFunnelVersion, FunnelNotFoundError, ManifestValidationError } from '@/lib/funnels/loadFunnelVersion'
+import {
+  loadFunnelVersionWithClient,
+  FunnelNotFoundError,
+  FunnelVersionNotFoundError,
+  ManifestValidationError,
+} from '@/lib/funnels/loadFunnelVersion'
 import type { FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 
 type PageProps = {
@@ -30,7 +35,7 @@ export default async function ContentPage({ params }: PageProps) {
   let manifestError: string | null = null
 
   try {
-    const funnelVersion = await loadFunnelVersion(slug)
+    const funnelVersion = await loadFunnelVersionWithClient(supabase, slug)
 
     // Check if requested page exists in manifest
     const requestedPage = funnelVersion.manifest.content_manifest.pages.find((p) => p.slug === pageSlug)
@@ -47,6 +52,11 @@ export default async function ContentPage({ params }: PageProps) {
       // 404: Funnel not found
       console.error(`[CONTENT_PAGE] Funnel not found: ${slug}`)
       notFound()
+    } else if (error instanceof FunnelVersionNotFoundError) {
+      // No effective version resolved (empty-state)
+      console.error(`[CONTENT_PAGE] No effective funnel version resolved for ${slug}`)
+      contentManifest = null
+      manifestError = 'Kein aktives Funnel-Manifest verfügbar'
     } else if (error instanceof ManifestValidationError) {
       // 422: Invalid manifest
       console.error(`[CONTENT_PAGE] Manifest validation failed for ${slug}:`, error.message)

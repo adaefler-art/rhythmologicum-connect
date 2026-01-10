@@ -1,7 +1,12 @@
 import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import IntroPageClient from './client'
-import { loadFunnelVersion, FunnelNotFoundError, ManifestValidationError } from '@/lib/funnels/loadFunnelVersion'
+import {
+  loadFunnelVersionWithClient,
+  FunnelNotFoundError,
+  FunnelVersionNotFoundError,
+  ManifestValidationError,
+} from '@/lib/funnels/loadFunnelVersion'
 import type {
   ContentPage as ManifestContentPage,
   FunnelContentManifest,
@@ -44,7 +49,7 @@ export default async function IntroPage({ params }: PageProps) {
   let manifestError: string | null = null
 
   try {
-    const funnelVersion = await loadFunnelVersion(slug)
+    const funnelVersion = await loadFunnelVersionWithClient(supabase, slug)
 
     manifestData = {
       version: funnelVersion.version,
@@ -60,6 +65,11 @@ export default async function IntroPage({ params }: PageProps) {
       // 404: Funnel not found
       console.error(`[INTRO_PAGE] Funnel not found: ${slug}`)
       notFound()
+    } else if (error instanceof FunnelVersionNotFoundError) {
+      // No effective version resolved (empty-state)
+      console.error(`[INTRO_PAGE] No effective funnel version resolved for ${slug} (falling back to legacy intro)`)
+      manifestData = null
+      manifestError = null
     } else if (error instanceof ManifestValidationError) {
       // Manifest invalid/missing: allow legacy intro fallback.
       // Intro content is optional and should not hard-block access.

@@ -279,6 +279,12 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
               </div>
             )}
 
+            {!description && (
+              <p className="mt-4 text-base" style={{ color: 'var(--color-neutral-700)' }}>
+                Inhalt ist noch nicht verfügbar.
+              </p>
+            )}
+
             <button
               onClick={handleStartAssessment}
               className="mt-6 w-full rounded-lg px-6 py-4 text-lg font-medium text-white hover:opacity-90 transition-opacity"

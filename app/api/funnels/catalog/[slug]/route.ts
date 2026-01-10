@@ -158,11 +158,39 @@ export async function GET(request: Request, { params }: Params) {
       )
     }
 
-    // Find default version
-    const defaultVersion = (versions || []).find((v) => v.is_default) || null
+    // Find default version deterministically via funnels_catalog.default_version_id
+    const defaultVersion =
+      (versions || []).find((v) => v.id === funnel.default_version_id) || null
 
-    // Active version is the same as default for now (no separate is_active column)
-    const activeVersion = defaultVersion
+    // Resolve patient-specific active version if available; otherwise fall back to default
+    let activeVersion = defaultVersion
+    try {
+      const { data: patientProfile } = await supabase
+        .from('patient_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (patientProfile) {
+        const { data: patientFunnel, error: patientFunnelError } = await supabase
+          .from('patient_funnels')
+          .select('active_version_id')
+          .eq('patient_id', patientProfile.id)
+          .eq('funnel_id', funnel.id)
+          .order('updated_at', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (!patientFunnelError && patientFunnel?.active_version_id) {
+          activeVersion =
+            (versions || []).find((v) => v.id === patientFunnel.active_version_id) ||
+            activeVersion
+        }
+      }
+    } catch {
+      // Non-critical: ignore patient override failures
+    }
 
     // Add default version string to funnel
     if (defaultVersion) {
