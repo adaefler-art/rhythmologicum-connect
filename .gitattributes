@@ -1,4 +1,4 @@
-﻿# Keep evidence + scripts deterministic (LF in repo)
+# Keep evidence + scripts deterministic (LF in repo)
 * text=auto
 
 *.md  text eol=lf
