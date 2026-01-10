@@ -1,14 +1,5 @@
-# Ensure stable line endings across OSes for drift-sensitive files
-# NOTE: This does not rewrite existing files until you run: git add --renormalize .
-
-# Canonical DB schema dump must be LF-only
-schema/schema.sql text eol=lf
-
-# Shell scripts must be LF-only to avoid bash CRLF issues
-*.sh text eol=lf
-
-# GitHub Actions workflows are LF-only
-.github/workflows/*.yml text eol=lf
-
-# Generated Supabase types must be LF-only (CI typegen runs on Linux)
-lib/types/supabase.ts text eol=lf
+﻿# keep markdown/csv/json deterministic
+*.md  text eol=lf
+*.csv text eol=lf
+*.json text eol=lf
+*.ps1 text eol=lf
