@@ -34,7 +34,7 @@ export async function GET(
         requestedSlug: slug,
         reason: 'Missing or invalid slug',
       })
-      return NextResponse.json(
+      const validationResponse = NextResponse.json(
         {
           success: false,
           error: {
@@ -44,6 +44,8 @@ export async function GET(
         },
         { status: 422 },
       )
+      validationResponse.headers.set('X-Request-Id', requestId)
+      return validationResponse
     }
 
     // Structured logging for slug resolution (no PHI)
@@ -99,7 +101,9 @@ export async function GET(
           effectiveSlug,
           errorCode: catalogError.code,
         })
-        return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
+        const errorResponse = NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
+        errorResponse.headers.set('X-Request-Id', requestId)
+        return errorResponse
       }
 
       if (catalogFunnel?.id) {
@@ -111,7 +115,9 @@ export async function GET(
           funnelId: catalogFunnel.id,
           pageCount: 0,
         })
-        return NextResponse.json([])
+        const catalogResponse = NextResponse.json([])
+        catalogResponse.headers.set('X-Request-Id', requestId)
+        return catalogResponse
       }
 
       // Not found in either table
@@ -121,7 +127,9 @@ export async function GET(
         effectiveSlug,
         attemptedSlugs: candidateSlugs,
       })
-      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+      const notFoundResponse = NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+      notFoundResponse.headers.set('X-Request-Id', requestId)
+      return notFoundResponse
     }
 
     // Structured logging for funnel resolution (no PHI)
@@ -160,10 +168,12 @@ export async function GET(
             funnelId,
             errorCode: fallbackError.code,
           })
-          return NextResponse.json(
+          const fallbackErrorResponse = NextResponse.json(
             { error: 'Error loading content pages' },
             { status: 500 },
           )
+          fallbackErrorResponse.headers.set('X-Request-Id', requestId)
+          return fallbackErrorResponse
         }
 
         console.log('[Funnel Content Pages Success (Fallback)]', {
@@ -171,7 +181,9 @@ export async function GET(
           funnelId,
           pageCount: fallbackPages?.length ?? 0,
         })
-        return NextResponse.json(fallbackPages as ContentPage[])
+        const fallbackSuccessResponse = NextResponse.json(fallbackPages as ContentPage[])
+        fallbackSuccessResponse.headers.set('X-Request-Id', requestId)
+        return fallbackSuccessResponse
       }
 
       console.error('[Funnel Content Pages Query Error]', {
@@ -179,10 +191,12 @@ export async function GET(
         funnelId,
         errorCode: pagesError.code,
       })
-      return NextResponse.json(
+      const queryErrorResponse = NextResponse.json(
         { error: 'Error loading content pages' },
         { status: 500 },
       )
+      queryErrorResponse.headers.set('X-Request-Id', requestId)
+      return queryErrorResponse
     }
 
     console.log('[Funnel Content Pages Success]', {
@@ -191,7 +205,9 @@ export async function GET(
       effectiveSlug,
       pageCount: contentPages?.length ?? 0,
     })
-    return NextResponse.json((contentPages ?? []) as ContentPage[])
+    const successResponse = NextResponse.json((contentPages ?? []) as ContentPage[])
+    successResponse.headers.set('X-Request-Id', requestId)
+    return successResponse
   } catch (error) {
     // Structured logging for unexpected errors (no PHI, minimal error details)
     console.error('[Funnel Content Pages Unexpected Error]', {
@@ -199,9 +215,11 @@ export async function GET(
       errorType: error instanceof Error ? error.constructor.name : typeof error,
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
     })
-    return NextResponse.json(
+    const unexpectedErrorResponse = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },
     )
+    unexpectedErrorResponse.headers.set('X-Request-Id', requestId)
+    return unexpectedErrorResponse
   }
 }

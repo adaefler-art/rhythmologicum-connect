@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         },
         { status: 422 },
       )
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
         },
         { status: 422 },
       )
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -107,6 +109,7 @@ export async function GET(request: NextRequest) {
         page: result.page,
         strategy: result.strategy,
       })
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -135,6 +138,7 @@ export async function GET(request: NextRequest) {
         },
         { status: 404 },
       )
+      notFoundResponse.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', notFoundResponse)
       return notFoundResponse
     }
@@ -159,6 +163,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 },
     )
+    missingResponse.headers.set('X-Request-Id', requestId)
     trackUsage('GET /api/content/resolve', missingResponse)
     return missingResponse
   } catch (error) {
@@ -179,6 +184,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
+    errorResponse.headers.set('X-Request-Id', requestId)
     trackUsage('GET /api/content/resolve', errorResponse)
     return errorResponse
   }
