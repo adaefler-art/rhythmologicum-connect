@@ -26,8 +26,7 @@ export async function GET(
     })
     
     // Use canonical funnel slug from registry
-    effectiveSlug = getCanonicalFunnelSlug(slug)
-    isKnownSlug = Object.values(FUNNEL_SLUG).includes(effectiveSlug)
+    const effectiveSlug = getCanonicalFunnelSlug(slug)
 
     if (!effectiveSlug) {
       console.warn('[Funnel Content Pages Validation Failed]', {
