@@ -1,6 +1,8 @@
 # Keep evidence + scripts deterministic (LF in repo)
 * text=auto
 
+.gitattributes text eol=lf
+
 *.md  text eol=lf
 *.csv text eol=lf
 *.json text eol=lf
