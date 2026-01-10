@@ -2,7 +2,7 @@ export {}
 
 import { NextRequest } from 'next/server'
 
-type SupabaseQueryResult<T> = { data: T | null; error: { code?: string } | null }
+type SupabaseQueryResult<T> = { data: T | null; error: { code?: string; message?: string } | null }
 
 type ThenableBuilder<T> = {
   select: jest.Mock
@@ -75,5 +75,62 @@ describe('GET /api/funnels/[slug]/content-pages', () => {
     expect(response.status).toBe(200)
     const json = (await response.json()) as unknown
     expect(json).toEqual([])
+  })
+
+  // V0.5 P0: Known funnel in registry but not in DB should return 200 []
+  it('returns 200 [] when funnel is known in registry but not in database', async () => {
+    const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+      createAdminSupabaseClient: jest.Mock
+    }
+
+    const funnelsNotFound = makeThenableBuilder({ data: null, error: null })
+
+    const client: MockSupabaseClient = {
+      from: jest.fn((table: string) => {
+        if (table === 'funnels') return funnelsNotFound
+        // Don't query catalog - should return before that based on registry check
+        throw new Error(`Unexpected table query: ${table}`)
+      }),
+    }
+
+    createAdminSupabaseClient.mockReturnValue(client)
+
+    const { GET } = await import('../route')
+
+    const request = new NextRequest('http://localhost/api/funnels/stress-assessment/content-pages')
+    const response = await GET(request, { params: Promise.resolve({ slug: 'stress-assessment' }) })
+
+    expect(response.status).toBe(200)
+    const json = (await response.json()) as unknown
+    expect(json).toEqual([])
+  })
+
+  // V0.5 P0: Unknown funnel should return 404
+  it('returns 404 when funnel is unknown (not in registry or database)', async () => {
+    const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+      createAdminSupabaseClient: jest.Mock
+    }
+
+    const funnelsNotFound = makeThenableBuilder({ data: null, error: null })
+    const catalogNotFound = makeThenableBuilder({ data: null, error: null })
+
+    const client: MockSupabaseClient = {
+      from: jest.fn((table: string) => {
+        if (table === 'funnels') return funnelsNotFound
+        if (table === 'funnels_catalog') return catalogNotFound
+        throw new Error(`Unexpected table: ${table}`)
+      }),
+    }
+
+    createAdminSupabaseClient.mockReturnValue(client)
+
+    const { GET } = await import('../route')
+
+    const request = new NextRequest('http://localhost/api/funnels/unknown-funnel/content-pages')
+    const response = await GET(request, { params: Promise.resolve({ slug: 'unknown-funnel' }) })
+
+    expect(response.status).toBe(404)
+    const json = (await response.json()) as { error: string }
+    expect(json.error).toBe('Funnel not found')
   })
 })

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { ContentPage } from '@/lib/types/content'
-import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug, isKnownFunnelSlug } from '@/lib/contracts/registry'
 import { env } from '@/lib/env'
 
 /**
@@ -157,6 +157,17 @@ export async function getContentPage(
     // Resolve funnel to UUID
     const funnelId = await resolveFunnelId(supabase, funnel)
     if (!funnelId) {
+      // V0.5 P0 Fix: Check if funnel is known in the registry before returning FUNNEL_NOT_FOUND.
+      // If it's in the registry but not in DB, it's a known funnel with missing content.
+      if (!isUUID(funnel) && isKnownFunnelSlug(funnel)) {
+        // Funnel is registered but not yet in DB - treat as known funnel with no content
+        return {
+          page: null,
+          strategy: 'not-found',
+          error: FUNNEL_CATALOG_ONLY,
+        }
+      }
+
       // If the funnel exists in funnels_catalog but isn't fully defined in funnels yet,
       // treat this as "no content" rather than "unknown funnel".
       if (!isUUID(funnel)) {

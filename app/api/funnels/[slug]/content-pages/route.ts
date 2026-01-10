@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPage } from '@/lib/types/content'
-import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug, isKnownFunnelSlug } from '@/lib/contracts/registry'
 import { randomUUID } from 'crypto'
 
 /**
@@ -82,6 +82,22 @@ export async function GET(
     }
 
     if (!funnelId) {
+      // V0.5 P0 Fix: Check if funnel is known in registry before querying catalog
+      // Known funnels that aren't in DB yet should return 200 [] not 500
+      const isKnownFunnel = isKnownFunnelSlug(effectiveSlug)
+      
+      if (isKnownFunnel) {
+        // Funnel is registered but not yet in DB - return empty pages
+        console.log('[Funnel Content Pages Registry Known]', {
+          requestId,
+          effectiveSlug,
+          pageCount: 0,
+        })
+        const registryResponse = NextResponse.json([])
+        registryResponse.headers.set('X-Request-Id', requestId)
+        return registryResponse
+      }
+
       // Not found in funnels table - try funnels_catalog
       console.log('[Funnel Content Pages Trying Catalog]', {
         requestId,
@@ -95,11 +111,13 @@ export async function GET(
         .maybeSingle()
 
       if (catalogError) {
-        // Avoid dumping details; no secrets/PHI.
+        // V0.5 P0 Fix: Log error details but distinguish between query error and "no pages"
+        // Only 500 for true DB errors (permission/RLS/etc), not for missing data
         console.error('[Funnel Content Pages Catalog Lookup Failed]', {
           requestId,
           effectiveSlug,
           errorCode: catalogError.code,
+          errorMessage: catalogError.message,
         })
         const errorResponse = NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
         errorResponse.headers.set('X-Request-Id', requestId)
