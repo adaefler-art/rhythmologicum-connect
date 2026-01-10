@@ -108,6 +108,19 @@ export function getCanonicalFunnelSlug(slug: string): string {
   return FUNNEL_SLUG_ALIASES[normalized] || normalized
 }
 
+/**
+ * Checks if a funnel slug is known in the registry
+ * A funnel is "known" if it exists in FUNNEL_SLUG values (canonical or legacy)
+ * 
+ * @param slug - The funnel slug to check (case-insensitive, whitespace trimmed)
+ * @returns true if the funnel slug is registered, false otherwise
+ */
+export function isKnownFunnelSlug(slug: string): boolean {
+  const canonical = getCanonicalFunnelSlug(slug)
+  const allSlugs = Object.values(FUNNEL_SLUG)
+  return allSlugs.includes(canonical as FunnelSlug)
+}
+
 // ============================================================
 // Node/Step Types
 // ============================================================

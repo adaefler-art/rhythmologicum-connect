@@ -90,6 +90,42 @@ describe('GET /api/content/resolve', () => {
     expect(json.requestId.length).toBeGreaterThan(0)
   })
 
+  // V0.5 P0: Known funnel but missing content should return 200 not 404
+  it('returns 200 missing_content when funnel is known in registry but has no content', async () => {
+    const { getContentPage } = jest.requireMock('@/lib/utils/contentResolver') as {
+      getContentPage: jest.Mock
+    }
+
+    getContentPage.mockResolvedValue({
+      page: null,
+      strategy: 'not-found',
+      error: 'FUNNEL_CATALOG_ONLY',
+    })
+
+    const { GET } = await import('../route')
+
+    const request = new NextRequest(
+      'http://localhost/api/content/resolve?funnel=stress-assessment&category=intro',
+    )
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    const json = (await response.json()) as {
+      success: boolean
+      status: string
+      content: unknown
+      requestId: string
+      version: string
+    }
+
+    expect(json.success).toBe(true)
+    expect(json.version).toBe('v1')
+    expect(json.status).toBe('missing_content')
+    expect(json.content).toBeNull()
+    expect(typeof json.requestId).toBe('string')
+    expect(json.requestId.length).toBeGreaterThan(0)
+  })
+
   it('returns 404 when funnel does not exist', async () => {
     const { getContentPage } = jest.requireMock('@/lib/utils/contentResolver') as {
       getContentPage: jest.Mock
