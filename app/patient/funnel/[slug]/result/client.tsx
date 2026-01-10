@@ -9,6 +9,7 @@ import { getResultPages, getInfoPages } from '@/lib/utils/contentPageHelpers'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import { LoadingSpinner, ErrorState } from '@/lib/ui'
 import MobileHeader from '@/app/components/MobileHeader'
+import ContentContainer from '@/app/components/layout/ContentContainer'
 import {
   ScoreCard,
   InsightCardsGroup,
@@ -208,7 +209,7 @@ export default function ResultClient({
       <main className="min-h-screen bg-muted px-4 pt-8 sm:py-12" style={{
         paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
       }}>
-        <div className="max-w-4xl mx-auto space-y-6">
+        <ContentContainer className="space-y-6">
         {/* Success Header */}
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-4"
@@ -380,7 +381,7 @@ Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. W
             </div>
           </div>
         </div>
-      </div>
+        </ContentContainer>
     </main>
     </>
   )

@@ -7,6 +7,7 @@ import type { QuestionnaireStep, ContentPage as ManifestContentPage, FunnelConte
 import MobileWelcomeScreen from '@/app/components/MobileWelcomeScreen'
 import { ContentBlockRenderer } from '@/lib/components/content'
 import StandardContentContainer from '@/app/components/StandardContentContainer'
+import ContentContainer from '@/app/components/layout/ContentContainer'
 
 type ManifestData = {
   version: string
@@ -30,6 +31,11 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   const [error, setError] = useState<string | null>(null)
   const [introPage, setIntroPage] = useState<ContentPage | null>(null)
   const [funnelTitle, setFunnelTitle] = useState<string>('')
+  const [funnelMeta, setFunnelMeta] = useState<{
+    title: string
+    subtitle: string | null
+    description: string | null
+  } | null>(null)
   const [isMissingContent, setIsMissingContent] = useState(false)
   const [useManifestRenderer, setUseManifestRenderer] = useState(false)
 
@@ -49,6 +55,11 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
         if (funnelResponse.ok) {
           const funnelData = await funnelResponse.json()
           setFunnelTitle(funnelData.title || 'Assessment')
+          setFunnelMeta({
+            title: funnelData.title || 'Assessment',
+            subtitle: funnelData.subtitle ?? null,
+            description: funnelData.description ?? null,
+          })
         }
 
         // V05-I06.5: Check if manifest has intro page content
@@ -241,6 +252,46 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   }
 
   // Error state or no intro page
+  if (isMissingContent && !introPage) {
+    const title = funnelMeta?.title || funnelTitle || 'Assessment'
+    const subtitle = funnelMeta?.subtitle
+    const description = funnelMeta?.description
+
+    return (
+      <main className="min-h-screen bg-muted">
+        <ContentContainer className="px-4 py-10">
+          <div
+            data-testid="intro-missing-content-fallback"
+            className="w-full min-w-[320px] rounded-xl border border-slate-200 bg-white p-6"
+            style={{ backgroundColor: 'var(--background)' }}
+          >
+            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="mt-2 text-base sm:text-lg" style={{ color: 'var(--color-neutral-700)' }}>
+                {subtitle}
+              </p>
+            )}
+            {description && (
+              <div className="prose max-w-none mt-4" style={{ color: 'var(--color-neutral-700)' }}>
+                <p>{description}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleStartAssessment}
+              className="mt-6 w-full rounded-lg px-6 py-4 text-lg font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: 'var(--color-primary-600)' }}
+            >
+              Direkt zum Assessment
+            </button>
+          </div>
+        </ContentContainer>
+      </main>
+    )
+  }
+
   if (error || !introPage) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
@@ -251,9 +302,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
           }}
         >
           <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
-            {isMissingContent
-              ? 'Inhalt ist noch nicht verfügbar.'
-              : error || 'Intro-Seite konnte nicht geladen werden.'}
+            {error || 'Intro-Seite konnte nicht geladen werden.'}
           </p>
           <button
             onClick={handleStartAssessment}

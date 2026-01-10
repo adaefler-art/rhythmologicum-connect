@@ -183,6 +183,12 @@ export default function PatientPage() {
 - Table wrappers
 - Data-dense layouts
 
+**Guardrail (v0.5 P0)**:
+
+- Never use `w-fit` for any page-level/main content container.
+- Avoid `inline-flex` for main layout containers (use `w-full` blocks; `inline-flex` is fine for small icons/badges).
+- For patient-facing “article-like” screens (intro/result/content), prefer a centered container like `max-w-4xl mx-auto w-full`.
+
 ---
 
 ## Responsive Breakpoints
