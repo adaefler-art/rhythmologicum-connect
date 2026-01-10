@@ -1,0 +1,182 @@
+# v0.5 Status Quo & Delta (Evidence-First)
+
+## Evidence Pack Index
+- Endpoint inventory: [docs/v0.5/ENDPOINT_INVENTORY.md](ENDPOINT_INVENTORY.md)
+- Endpoint inventory (CSV): [docs/v0.5/endpoint-inventory.csv](endpoint-inventory.csv)
+- Callsite map (heuristic string scan): [docs/v0.5/CALLSITE_MAP.md](CALLSITE_MAP.md)
+- Changed files since 2025-12-30: [docs/v0.5/CHANGED_FILES_SINCE_2025-12-30.md](CHANGED_FILES_SINCE_2025-12-30.md)
+- Funnel wiring analysis: [docs/v0.5/FUNNEL_WIRING_ANALYSIS.md](FUNNEL_WIRING_ANALYSIS.md)
+- Design tokens wiring: [docs/v0.5/DESIGN_TOKENS_WIRING.md](DESIGN_TOKENS_WIRING.md)
+
+### GitHub export evidence (deterministic)
+- GitHub export metadata: [docs/_evidence/v0.5/github/meta_since_2025-12-30.json](../_evidence/v0.5/github/meta_since_2025-12-30.json)
+- Issues (updated since date): [docs/_evidence/v0.5/github/issues_updated_since_2025-12-30.json](../_evidence/v0.5/github/issues_updated_since_2025-12-30.json)
+- Issues (updated since date, CSV): [docs/_evidence/v0.5/github/issues_updated_since_2025-12-30.csv](../_evidence/v0.5/github/issues_updated_since_2025-12-30.csv)
+- PRs (merged since date): [docs/_evidence/v0.5/github/prs_merged_since_2025-12-30.json](../_evidence/v0.5/github/prs_merged_since_2025-12-30.json)
+- PRs (merged since date, CSV): [docs/_evidence/v0.5/github/prs_merged_since_2025-12-30.csv](../_evidence/v0.5/github/prs_merged_since_2025-12-30.csv)
+- Issue↔PR links (from PR closing references): [docs/_evidence/v0.5/github/issue_pr_links_since_2025-12-30.json](../_evidence/v0.5/github/issue_pr_links_since_2025-12-30.json)
+- Issue↔PR links (CSV): [docs/_evidence/v0.5/github/issue_pr_links_since_2025-12-30.csv](../_evidence/v0.5/github/issue_pr_links_since_2025-12-30.csv)
+
+---
+
+## Current Status (IST)
+
+### Product surfaces present
+- Patient funnel runtime (DB-driven): `/patient/funnel/[slug]` + `/api/funnels/[slug]/assessments/*`
+- Legacy content resolver: `/api/content/resolve` (intro/info/result content from `content_pages`)
+- Manifest-based content (pages/blocks): `funnel_versions.content_manifest` + clinician editor + patient manifest content route
+- Admin surfaces: multiple admin endpoints for funnels, versions, content pages, tokens, navigation
+
+### Architecture is hybrid
+- Runtime step navigation is DB-driven.
+- Manifest is currently used for content pages and metadata, not as the runtime assessment source of truth.
+
+---
+
+## Delta vs “Planned”
+
+### What we can derive purely from git (no GitHub auth)
+- Massive surface area changed since 2025-12-30 (667 unique files): see [docs/v0.5/CHANGED_FILES_SINCE_2025-12-30.md](CHANGED_FILES_SINCE_2025-12-30.md)
+
+### GitHub export + mapping strategy
+
+Primary mapping (high confidence):
+- **Merged PRs** since date are treated as “implemented”.
+- **Changed files** per PR are used to infer “Areas” (API/Patient/Clinician/Admin/DB/etc.).
+
+Linking strategy:
+- **Issue↔PR links** are derived from the PR’s `closingIssuesReferences` (GitHub-native “Fixes #123” style).
+- Issues with **no linked merged PR** are listed separately as “planned/tracked but unclear implementation linkage”.
+
+Regenerate GitHub evidence (requires `gh auth login`):
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\v05-inventory\export-github.ps1 -Repo "adaefler-art/rhythmologicum-connect" -Since "2025-12-30"
+```
+
+Regenerate delta table (from evidence):
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\v05-inventory\build-delta-table.ps1 -Since "2025-12-30"
+```
+
+---
+
+## Delta Table (Planned vs Implemented)
+
+Source file (generated): [docs/v0.5/_generated_delta_table.md](_generated_delta_table.md)
+
+| Planned Item | Type | Areas | Epic | Milestone | Status | PR | Merge Commit | Changed Files | Linked Issues | Labels |
+|---|---|---|---|---|---|---|---|---:|---|---|
+| Reorganize docs/ into canon, releases, and memory | PR | Docs |  |  | Implemented | [#345](https://github.com/adaefler-art/rhythmologicum-connect/pull/345) | 4dc3bb2fc29c2b8b269689ca079f0c8b53aa748a | 14 | #341 |  |
+| I502: Contract Registry + Environment Schema + CODEOWNERS Guardrails | PR | API,Config,Docs,Lib |  |  | Implemented | [#346](https://github.com/adaefler-art/rhythmologicum-connect/pull/346) | 2ca9b2ef7ae76c8d47fda8734e53dced87e8f5f0 | 20 | #342 |  |
+| Add DB determinism enforcement: migration-first + drift check + typegen gate (PowerShell-conform) | PR | Config,DB,Docs,Lib,Scripts |  |  | Implemented | [#399](https://github.com/adaefler-art/rhythmologicum-connect/pull/399) | 128fb13820f81174b09ac27a31420454ad7f1d60 | 13 | #343 |  |
+| I504: Finalize v0.4 verdict with evidence links and create v0.5 gate-based release plan | PR | Docs |  |  | Implemented | [#400](https://github.com/adaefler-art/rhythmologicum-connect/pull/400) | 557c5ae3db1cdcc33bf66f92a1764d20f1c98fe0 | 3 | #344 |  |
+| Add v0.5 core schema: JSONB fields, multi-tenant, versioning, document extraction, audit (schema only) | PR | DB,Docs,Scripts |  |  | Implemented | [#401](https://github.com/adaefler-art/rhythmologicum-connect/pull/401) | b253c416cbebd6f186dcbf856143e05842e3cc9f | 6 | #348 |  |
+| Implement V0.5 multi-tenant RLS policies with same-org isolation | PR | DB,Docs,Lib,Scripts |  |  | Implemented | [#402](https://github.com/adaefler-art/rhythmologicum-connect/pull/402) | 0f4153349a470f8aafc2ade579f2c07f8ea00936 | 7 | #349 |  |
+| V05-I01.3: Implement versioning contract for reproducible processing outputs | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#403](https://github.com/adaefler-art/rhythmologicum-connect/pull/403) | b5f71f3c748aefa651d0add769659e299c919483 | 10 | #350 |  |
+| V05-I01.4: Implement audit logging for decision-relevant events with hard PHI protection | PR | API,DB,Docs,Lib |  |  | Implemented | [#404](https://github.com/adaefler-art/rhythmologicum-connect/pull/404) | eecf83d0d78532db76b93c11f2e275e399db9ed0 | 16 | #351 |  |
+| Implement 7-pillar funnel catalog with V05 core schema integration (V05-I02.1) | PR | API,DB,Docs,Lib,Patient,UI |  |  | Implemented | [#405](https://github.com/adaefler-art/rhythmologicum-connect/pull/405) | 547de3ff9b1147eb85cf3119b71387da1f406fc1 | 15 | #353 |  |
+| Add DB schema manifest and migration linter to block non-canonical objects | PR | Config,Docs,Scripts |  |  | Implemented | [#407](https://github.com/adaefler-art/rhythmologicum-connect/pull/407) | eb4540121ba0516760ce2d7bf97c62788b7e77c6 | 10 | #406 |  |
+| Implement versioned funnel plugin manifest with Zod validation and patient flow integration (V05-I02.2) | PR | DB,Docs,Lib,Patient |  |  | Implemented | [#408](https://github.com/adaefler-art/rhythmologicum-connect/pull/408) | 8dfb6d1818a12a908bcec3e3625bb4ddc6f84288 | 13 | #354 |  |
+| Add 3 cardiovascular health funnels to catalog with versioned manifests | PR | DB,Docs,Lib |  |  | Implemented | [#409](https://github.com/adaefler-art/rhythmologicum-connect/pull/409) | c64344c5d72614029192df9a6a4c070c2b984fa5 | 9 | #355 |  |
+| Implement patient onboarding flow with consent capture and baseline profile | PR | Clinician,Docs,Lib,Patient |  |  | Implemented | [#410](https://github.com/adaefler-art/rhythmologicum-connect/pull/410) | a825d5281af37dfef2ab835319c62eec80a52b51 | 17 | #357 |  |
+| Harden /api/funnels/catalog (no more 500s) | PR | API,Docs,Lib |  |  | Implemented | [#411](https://github.com/adaefler-art/rhythmologicum-connect/pull/411) | 09a0f51fb366971bcf197f0bec94481874c24be9 | 6 |  |  |
+| Harden /api/admin/funnels for v0.5 (no blind 500) | PR | API,Clinician,Docs |  |  | Implemented | [#412](https://github.com/adaefler-art/rhythmologicum-connect/pull/412) | 552875ffc0517ac44c6c48a7c98b48e77d797644 | 4 |  |  |
+| Fix /api/funnels/catalog pillars error mapping | PR | API |  |  | Implemented | [#413](https://github.com/adaefler-art/rhythmologicum-connect/pull/413) | 436ba5a123bb2b6d7cd1f692038401fd1adf9e27 | 2 |  |  |
+| Fix catalog pillars errors + admin funnels schema-cache mapping | PR | API |  |  | Implemented | [#414](https://github.com/adaefler-art/rhythmologicum-connect/pull/414) | ef49fc1b3060cfb3a9eb59cdd46fa4f1d5e55bc0 | 2 |  |  |
+| V05-HYGIENE: Canonical DB access patterns + hard guardrails | PR | API,Config,Docs,Lib,Scripts |  |  | Implemented | [#416](https://github.com/adaefler-art/rhythmologicum-connect/pull/416) | b2b968424398548ec0d9ef7483344c12d37b5c6d | 25 | #415 |  |
+| Standardize admin funnel API routes to canonical DB client patterns | PR | API,Docs,Scripts |  |  | Implemented | [#420](https://github.com/adaefler-art/rhythmologicum-connect/pull/420) | 450df5f330c5384cee73f4c298e5758b187313a0 | 8 | #417 |  |
+| Migrate patient/clinician funnel surfaces to canonical DB clients | PR | API,Docs,Lib,Patient |  |  | Implemented | [#421](https://github.com/adaefler-art/rhythmologicum-connect/pull/421) | 3e8dde40e649ea6b5b2901820c0914924d3660b6 | 9 | #418 |  |
+| Migrate all DB access to canonical factories, eliminate 36 violations | PR | API,Docs,Lib,Scripts |  |  | Implemented | [#422](https://github.com/adaefler-art/rhythmologicum-connect/pull/422) | 4d8333f7c787d512292601a350089f8d1c17b6ad | 20 | #419 |  |
+| TV05-CLEANUP & AUDIT: Repo cleanup audit with issue mapping and prioritized backlog | PR | Docs,Scripts |  |  | Implemented | [#424](https://github.com/adaefler-art/rhythmologicum-connect/pull/424) | 40a9f2b1e011d2958816924f33f8d272b95f9d4d | 6 | #423 |  |
+| Add PHI-free runtime usage telemetry for API route cleanup audits | PR | API,Docs,Lib,Scripts |  |  | Implemented | [#426](https://github.com/adaefler-art/rhythmologicum-connect/pull/426) | 7d141dd82aa551156476cd7beebd8b0822d4d050 | 14 | #425 |  |
+| Add PHI-free diagnostics endpoint for pillar/catalog source-of-truth audit with secure RPC and status codes | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#432](https://github.com/adaefler-art/rhythmologicum-connect/pull/432) | 277af97063869ca8c6e0b763833e4e0b122a6baa | 9 | #431 |  |
+| Unify admin/clinician funnels API to use catalog v2 model | PR | API,Clinician,Config,Docs,Lib,UI |  |  | Implemented | [#435](https://github.com/adaefler-art/rhythmologicum-connect/pull/435) | 4ad2749f8281123f6533020ea519520205885ef7 | 21 | #433 |  |
+| Add Program Tier Contract system for tier-driven patient journeys | PR | API,Docs,Lib,Patient |  |  | Implemented | [#436](https://github.com/adaefler-art/rhythmologicum-connect/pull/436) | fe24897a4d7d4dcf97853dae5119d8297ad67bac | 15 | #434 |  |
+| Add External Client Registry and Usage Telemetry Toggle | PR | API,Docs,Lib |  |  | Implemented | [#437](https://github.com/adaefler-art/rhythmologicum-connect/pull/437) | 49daff34b184a9b347a9364f3c4b1d6617159c20 | 12 | #427 |  |
+| [WIP] Add environment self-check endpoint for health verification | PR | Unclear |  |  | Implemented | [#438](https://github.com/adaefler-art/rhythmologicum-connect/pull/438) | 32f641f775a846752e45cb6646346e7c545e562c | 0 | #428 |  |
+| Add environment self-check endpoint with fail-safe diagnostics | PR | API,Docs,Scripts |  |  | Implemented | [#440](https://github.com/adaefler-art/rhythmologicum-connect/pull/440) | 53d7d955740bf55f7d06601cddae72007d7c183d | 78 | #439 |  |
+| Add ESLint changed-files gate with robust SHA validation and debt tracking policy | PR | Docs |  |  | Implemented | [#441](https://github.com/adaefler-art/rhythmologicum-connect/pull/441) | 33c51502f39b7181bec929cbff6554ddbfea0fca | 2 | #429 |  |
+| Add V05 Milestones & Critical Path planning document (evidence-based) | PR | Docs |  |  | Implemented | [#442](https://github.com/adaefler-art/rhythmologicum-connect/pull/442) | 2dbbb18dff9e13e4e452c48929d635646a16a6f6 | 1 | #430 |  |
+| Implement adaptive questionnaire engine with conditional logic (V05-I03.2) | PR | Docs,Lib |  |  | Implemented | [#443](https://github.com/adaefler-art/rhythmologicum-connect/pull/443) | e276f6e7f99fae2b005f159ccd6a8be975403447 | 13 | #358 |  |
+| Implement save/resume with current_step_id persistence and fail-closed security for questionnaire runs | PR | API,Docs |  |  | Implemented | [#444](https://github.com/adaefler-art/rhythmologicum-connect/pull/444) | 5d57233fae94f94fd585ea42e29e6c1e1e4d7500 | 7 | #359 |  |
+| V05-I03.4: Add report library and key outcomes to result screen | PR | Docs,Lib,Patient |  |  | Implemented | [#445](https://github.com/adaefler-art/rhythmologicum-connect/pull/445) | d206806879c148b282656f08548146544b51cdf2 | 9 | #360 |  |
+| Implement document upload with hardened storage, RLS, and parsing status state machine | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#446](https://github.com/adaefler-art/rhythmologicum-connect/pull/446) | 471568628c6fa7408620f27feb96ba367a10578c | 12 | #362 |  |
+| fix(hydration): stabilize mobile/theme initial render | PR | Lib |  |  | Implemented | [#447](https://github.com/adaefler-art/rhythmologicum-connect/pull/447) | 9e33708b09543a199040b666719f20d8422b2c6f | 2 |  |  |
+| V05-FIXOPT-01: Fix patient landing, catalog availability, and 404 handling for incomplete funnels | PR | API,Config,Docs,Lib,Patient,UI |  |  | Implemented | [#449](https://github.com/adaefler-art/rhythmologicum-connect/pull/449) | a96916023ee4b6b93c60b9f17096f587fee7d58e | 14 | #448 |  |
+| V05-I04.2: AI extraction pipeline with versioned, idempotent document processing | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#450](https://github.com/adaefler-art/rhythmologicum-connect/pull/450) | 7b9f919bfa49e94c6192c44b573c143773ded92a | 12 | #363 |  |
+| Fix missing content endpoints + result handling | PR | API,Lib,Patient |  |  | Implemented | [#451](https://github.com/adaefler-art/rhythmologicum-connect/pull/451) | cced9e04dcfe2eeca25bd0df78eb57dfc67f0aea | 8 |  |  |
+| Fix markdown table overflow | PR | API,UI |  |  | Implemented | [#452](https://github.com/adaefler-art/rhythmologicum-connect/pull/452) | 04362c4f597d0b69b3fafd11bf5bf462ef91504b | 2 |  |  |
+| Fix intro missing-content card width | PR | Patient |  |  | Implemented | [#453](https://github.com/adaefler-art/rhythmologicum-connect/pull/453) | 44cfa78d93cc50cd2e7f640f808885236cf8dd25 | 1 |  |  |
+| Add patient confirmation UI for AI-extracted document data | PR | Docs,Lib,Patient,Scripts |  |  | Implemented | [#454](https://github.com/adaefler-art/rhythmologicum-connect/pull/454) | 1613f03dbc0e3de734b697422db95c2a8446fd48 | 11 | #364 |  |
+| Copilot/fix table overflow | PR | Scripts |  |  | Implemented | [#455](https://github.com/adaefler-art/rhythmologicum-connect/pull/455) | c08b71e9a25ee3438e0e40b1ea487312fcbeb02c | 2 |  |  |
+| V05-I05.1: Processing orchestrator with idempotent job creation and PHI-free status tracking | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#456](https://github.com/adaefler-art/rhythmologicum-connect/pull/456) | 793db93db6ff7debc1b1a66c4f94f871e6a6dcf0 | 13 | #366 |  |
+| Implement deterministic, versioned risk calculation bundle (V05-I05.2) | PR | API,DB,Docs,Lib |  |  | Implemented | [#457](https://github.com/adaefler-art/rhythmologicum-connect/pull/457) | fec912b45d7ce38f9a46bc861cace163e8542da9 | 13 | #367 |  |
+| Implement deterministic priority ranking with Impact → Feasibility scoring + security hardening (V05-I05.3) | PR | API,DB,Docs,Lib |  |  | Implemented | [#458](https://github.com/adaefler-art/rhythmologicum-connect/pull/458) | d7c1aff5eb29828bc29945627a87db38e6ab6d92 | 11 | #368 |  |
+| V05-I05.4: Modular report sections with versioned prompts, PHI-free generation, and version evolution tracking | PR | API,DB,Docs,Lib |  |  | Implemented | [#459](https://github.com/adaefler-art/rhythmologicum-connect/pull/459) | 9e8325e763943638d975732afb265ee16c6127fb | 14 | #369 |  |
+| Implement Medical Validation Layer 1: Rules-based contraindication and plausibility checks | PR | API,DB,Docs,Lib |  |  | Implemented | [#460](https://github.com/adaefler-art/rhythmologicum-connect/pull/460) | 71a3a5ce077d280159c5fda33ffd1f4862300fad | 15 | #370 |  |
+| Implement Medical Validation Layer 2: AI-powered safety assessment with PHI-free guardrails | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#461](https://github.com/adaefler-art/rhythmologicum-connect/pull/461) | 692567771e353ba87d645eec5908c0111ef8972f | 13 | #371 |  |
+| Implement medical review queue with deterministic sampling and RBAC workflow | PR | API,DB,Docs,Lib,Scripts |  |  | Implemented | [#462](https://github.com/adaefler-art/rhythmologicum-connect/pull/462) | 2504357c498a975aa3563e76a86fb3843fe78858 | 21 | #372 |  |
+| V05-I05.8: PDF Assembly with Secure Storage, Signed URLs, Hardened RBAC, and Fail-Closed Replacement | PR | API,Config,DB,Docs,Lib |  |  | Implemented | [#463](https://github.com/adaefler-art/rhythmologicum-connect/pull/463) | 531bac8de8b63c4023e248c6490e7d5d80bae207 | 22 | #373 |  |
+| Implement delivery system with status-driven notifications, clinician dashboard, and hardened DB deployment pipeline | PR | API,Clinician,Config,DB,Docs,Lib,Scripts |  |  | Implemented | [#464](https://github.com/adaefler-art/rhythmologicum-connect/pull/464) | d0435b522b82ba6137db58c72fe6374e9c427449 | 26 | #374 |  |
+| Copilot/fix update schema pg conn | PR | Unclear |  |  | Implemented | [#465](https://github.com/adaefler-art/rhythmologicum-connect/pull/465) | e424be0310ea4948a9f43293504708b664e659c0 | 2 |  |  |
+| Copilot/fix update schema pg conn | PR | Unclear |  |  | Implemented | [#466](https://github.com/adaefler-art/rhythmologicum-connect/pull/466) | 13ada3ad30df6e3a94eab3f44cfe2e7c34391c5f | 1 |  |  |
+| Add mobile shell with fixed top and bottom navigation for patient routes | PR | Docs,Lib,Patient,UI |  |  | Implemented | [#467](https://github.com/adaefler-art/rhythmologicum-connect/pull/467) | a5e9a1d91273936248c8f0da362bf20ecca4112b | 6 | #376 |  |
+| Implement manifest-driven Content Block Renderer for v0.5 Mobile UI with security hardening | PR | Config,Docs,Lib |  |  | Implemented | [#468](https://github.com/adaefler-art/rhythmologicum-connect/pull/468) | 382ef9da9a3a8a3591979a7f97bb6a81e0ab2d41 | 24 | #377 |  |
+| Implement role-specific menu filtering with fail-closed security | PR | Admin,Clinician,Lib,Patient |  |  | Implemented | [#471](https://github.com/adaefler-art/rhythmologicum-connect/pull/471) | f2b2786757152b6f227089633f7edfe2fd7e2297 | 5 | #378 |  |
+| V05-I06.4 — Visual Block Editor for funnel content manifests (Security Hardened) | PR | API,Clinician,Docs,Lib |  |  | Implemented | [#472](https://github.com/adaefler-art/rhythmologicum-connect/pull/472) | 15a4fd260a090baefbf882a3c7aeb5e308c3f31d | 7 | #469 |  |
+| Integrate ContentBlockRenderer into patient intro and content pages | PR | Docs,Patient,UI |  |  | Implemented | [#473](https://github.com/adaefler-art/rhythmologicum-connect/pull/473) | 6b241fed1ab60296b574950d79be8177b49359b5 | 10 | #470 |  |
+| Add triage dashboard with assessment status tracking and fix route conflict | PR | Clinician,Docs,Lib |  |  | Implemented | [#474](https://github.com/adaefler-art/rhythmologicum-connect/pull/474) | de1e4f74f01edb252b4673ae49948a8f2da0ff60 | 9 | #380 |  |
+| fix(auth): resolve role from membership | PR | Admin,API,Clinician,Lib |  |  | Implemented | [#475](https://github.com/adaefler-art/rhythmologicum-connect/pull/475) | 6be0fe8ef4a8c0ac73041762b2a981a4a51f9560 | 7 |  |  |
+| fix(auth): persist session for patient routes | PR | Lib,Patient |  |  | Implemented | [#476](https://github.com/adaefler-art/rhythmologicum-connect/pull/476) | b0f7a18a409d3ed386e3c75b355c2084b67dda89 | 10 |  |  |
+| test: stabilize jest web api polyfills | PR | API,Config,Lib |  |  | Implemented | [#477](https://github.com/adaefler-art/rhythmologicum-connect/pull/477) | 814443e041a509a18b9d79623ffcb0f8ed87461f | 5 |  |  |
+| Add Key Labs, Medications, Findings/Scores, and Interventions to Patient Detail with Error State Handling | PR | Clinician,Docs |  |  | Implemented | [#478](https://github.com/adaefler-art/rhythmologicum-connect/pull/478) | 0f4e54e4d20930363fb5160b31ecfab7d69f6c79 | 14 | #381 |  |
+| Copilot/patient content legacy fallback | PR | Lib,Patient |  |  | Implemented | [#479](https://github.com/adaefler-art/rhythmologicum-connect/pull/479) | 56e2ac42c2b0d1f25c663df44ec2ea052698aefd | 5 |  |  |
+| Fix funnel editor version id + manifest 404 semantics | PR | API,Clinician |  |  | Implemented | [#480](https://github.com/adaefler-art/rhythmologicum-connect/pull/480) | 5184f2e5cff32bd0f6a5e86e0d401f76a4948b9c | 3 |  |  |
+| Fix admin content-pages GET for empty sections | PR | API |  |  | Implemented | [#481](https://github.com/adaefler-art/rhythmologicum-connect/pull/481) | 3c25d729723bd382918c28f6429d700eca985806 | 2 |  |  |
+| Add QA Review Panel for Layer 1/2 findings with approve/reject workflow + security hardening | PR | API,Clinician,Docs,Lib |  |  | Implemented | [#482](https://github.com/adaefler-art/rhythmologicum-connect/pull/482) | 5af433fff89325f55e24488dba3230271b3e0445 | 11 | #382 |  |
+| Add task management API and UI for clinician workflow with security hardening (V05-I07.4) | PR | API,Clinician,DB,Docs,Lib |  |  | Implemented | [#483](https://github.com/adaefler-art/rhythmologicum-connect/pull/483) | 15f4257dbda19110aa5d9fe7f0fc0b1d4605c299 | 14 | #383 |  |
+| V05-I08.1: Security Fix - Enforce nurse task assignment at RLS level | PR | API,Clinician,DB,Docs,Lib |  |  | Implemented | [#484](https://github.com/adaefler-art/rhythmologicum-connect/pull/484) | 467397b32cb4cac1c7549c1d3f6eb86247e2a77e | 7 | #385 |  |
+| Add pre-screening call script UI with PHI-free audit logging and org-scoped RLS | PR | API,Clinician,DB,Docs,Lib |  |  | Implemented | [#485](https://github.com/adaefler-art/rhythmologicum-connect/pull/485) | df5a53b4fb1c9e4b63e58179da5fb3dee3bfba4f | 14 | #386 |  |
+| V05-I08.3: Add device shipment tracking with return management and automated reminders | PR | API,Clinician,Config,DB,Docs,Lib,Scripts |  |  | Implemented | [#486](https://github.com/adaefler-art/rhythmologicum-connect/pull/486) | 770914cd229c04ef480bc32c5b56074c707ed276 | 22 | #387 |  |
+| V05-I08.4: Support case management with task escalation workflow (hardened) | PR | API,Clinician,DB,Docs,Lib,Patient |  |  | Implemented | [#487](https://github.com/adaefler-art/rhythmologicum-connect/pull/487) | 10b7bf489fbb4874bca04914ec041d75e7e3b8a5 | 21 | #388 |  |
+| V05-I09.1: Database-driven navigation configuration UI | PR | Admin,API,DB,Docs,Lib,Scripts |  |  | Implemented | [#488](https://github.com/adaefler-art/rhythmologicum-connect/pull/488) | 8338611a5b5aa2cf4a20c5d1633148912af193a6 | 14 | #390 |  |
+| Add database-driven design token override system for multi-tenant customization | PR | Admin,API,DB,Docs,Lib,UI |  |  | Implemented | [#489](https://github.com/adaefler-art/rhythmologicum-connect/pull/489) | e247697f41d4126f0f79e52590b370b96f672007 | 14 | #391 |  |
+| V05-I09.3: Funnel version management API and UI | PR | API,Clinician,Docs |  |  | Implemented | [#490](https://github.com/adaefler-art/rhythmologicum-connect/pull/490) | 97aafec9b41ffb7ed9461f0abf430155ae26b8da | 4 | #392 |  |
+| Add operational settings system with notification templates, re-assessment rules, and KPI thresholds | PR | Admin,API,DB,Docs,Lib |  |  | Implemented | [#491](https://github.com/adaefler-art/rhythmologicum-connect/pull/491) | 516e039aac90a50378a9097a7a39e1d9e3a741a9 | 13 | #393 |  |
+| Add consent data to patient export endpoint for GDPR compliance | PR | API,Docs |  |  | Implemented | [#492](https://github.com/adaefler-art/rhythmologicum-connect/pull/492) | 1b68c4410fa74f6dbbd6ac9ef17ffae7016b4dac | 4 | #395 |  |
+| Implement account deletion/retention workflow with audit coverage (V05-I10.2) | PR | API,DB,Docs,Lib |  |  | Implemented | [#493](https://github.com/adaefler-art/rhythmologicum-connect/pull/493) | f92ed41f4519751702c9a5fe8f7527d202dcbbfd | 8 | #396 |  |
+| Add KPI tracking for completion rate, assessment duration, and time-to-report | PR | API,Docs,Lib |  |  | Implemented | [#494](https://github.com/adaefler-art/rhythmologicum-connect/pull/494) | 3a8bdff829d65a0eb7194f604170898ccfec2390 | 8 | #397 |  |
+| V05-I10.4: Content Safety Ops SLA + Sampling Rules SOP | PR | Clinician,Docs |  |  | Implemented | [#495](https://github.com/adaefler-art/rhythmologicum-connect/pull/495) | 5d3c3cb82c147fb34790e69a705e310866faed61 | 5 | #398 |  |
+| Add deployment verification tooling for production drift diagnosis | PR | API,Docs,Scripts |  |  | Implemented | [#496](https://github.com/adaefler-art/rhythmologicum-connect/pull/496) | 62a035dd80322a5081baf19301cb27468ed40ccc | 7 |  |  |
+| Fix source-of-truth mismatch between funnel registry and content resolver | PR | API,Lib |  |  | Implemented | [#498](https://github.com/adaefler-art/rhythmologicum-connect/pull/498) | 5ecaae72db09b2d3897b44258a67317509231386 | 5 | #497 |  |
+| fix(v0.5): intro missing_content fallback + content-pages no-500 | PR | Docs,Patient,UI |  |  | Implemented | [#499](https://github.com/adaefler-art/rhythmologicum-connect/pull/499) | ff939bee4f4dcaa2e785b22825fae5b189bd0b0c | 4 |  |  |
+
+### Issues updated since date with no linked merged PR
+
+| Planned Item | Type | Milestone | Status | Issue | Updated At | Labels |
+|---|---|---|---|---|---|---|
+| E50 — Repo Guardrails & Release-Discipline (v0.5 Prep) | Issue |  | Closed (no merged PR link) | [#340](https://github.com/adaefler-art/rhythmologicum-connect/issues/340) | 2025-12-30T21:07:40Z | epic |
+| EPIC V05-E01 — Data Model + RLS + Versioning + Audit (Supabase/Postgres) | Issue |  | Closed (no merged PR link) | [#347](https://github.com/adaefler-art/rhythmologicum-connect/issues/347) | 2025-12-31T14:12:50Z | database, epic |
+| EPIC V05-E02 — Funnel Catalog + Plugin Runtime (7 Säulen → Funnels → Plugin) | Issue |  | Closed (no merged PR link) | [#352](https://github.com/adaefler-art/rhythmologicum-connect/issues/352) | 2026-01-01T11:35:35Z | components, epic |
+| EPIC V05-E03 — Patient Journey Core (Onboarding → Questionnaire → Save/Resume → Results) | Issue |  | Closed (no merged PR link) | [#356](https://github.com/adaefler-art/rhythmologicum-connect/issues/356) | 2026-01-03T07:44:09Z | epic, patient, ui |
+| EPIC V05-E04 — Document Upload + Extraction + Patient Confirmation (optional) | Issue |  | Closed (no merged PR link) | [#361](https://github.com/adaefler-art/rhythmologicum-connect/issues/361) | 2026-01-03T15:05:14Z | agent, epic, patient |
+| EPIC V05-E05 — Processing Pipeline + Medical QA + PDF + Delivery (funnel-unabhängig) | Issue |  | Closed (no merged PR link) | [#365](https://github.com/adaefler-art/rhythmologicum-connect/issues/365) | 2026-01-04T20:01:09Z | agent, epic, OPS |
+| EPIC V05-E06 — Mobile UI v0.5: Fixed Top/Bottom Menus + Content Blocks (Admin-driven) | Issue |  | Closed (no merged PR link) | [#375](https://github.com/adaefler-art/rhythmologicum-connect/issues/375) | 2026-01-05T08:57:35Z | epic, ui, UX |
+| EPIC V05-E07 — Clinician View (Triage → Patient Detail → QA → Actioning) | Issue |  | Closed (no merged PR link) | [#379](https://github.com/adaefler-art/rhythmologicum-connect/issues/379) | 2026-01-05T22:04:13Z | clinician, epic, ui |
+| EPIC V05-E08 — Nurse Flow (Pre-screening → Logistics → Support → Follow-up) | Issue |  | Closed (no merged PR link) | [#384](https://github.com/adaefler-art/rhythmologicum-connect/issues/384) | 2026-01-07T05:50:46Z | epic, OPS, ui |
+| EPIC V05-E09 — Admin:  Konfiguration statt Code (Navigation/Blocks/Tokens/Funnels/Ops) | Issue |  | Closed (no merged PR link) | [#389](https://github.com/adaefler-art/rhythmologicum-connect/issues/389) | 2026-01-07T12:53:25Z | admin, epic, ui |
+| EPIC V05-E10 — Pilot-Readiness (5–10 → 50–100): Compliance + Reliability + Observability | Issue |  | Closed (no merged PR link) | [#394](https://github.com/adaefler-art/rhythmologicum-connect/issues/394) | 2026-01-08T13:50:02Z | epic, OPS |
+
+---
+
+## P0 risk items (observed)
+- **Slug canonicalization drift** between definition/content and assessment runtime endpoints (see [docs/v0.5/FUNNEL_WIRING_ANALYSIS.md](FUNNEL_WIRING_ANALYSIS.md)).
+- **Manifest strictness mismatch**: intro allows legacy fallback, but patient content pages fail-closed when manifest invalid.
+- **Design tokens wired but minimally adopted**: org overrides may not visibly affect most UI yet.
+
+---
+
+## Next actions
+1) Review the Delta Table section and confirm the “Areas” bucketing is acceptable.
+2) Decide whether we want to unify on manifest or DB-driven definitions for content + assessment runtime.
+3) If keeping hybrid: enforce consistent slug canonicalization and add a test so it can’t regress.
