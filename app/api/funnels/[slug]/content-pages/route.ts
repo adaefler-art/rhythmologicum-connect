@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPage } from '@/lib/types/content'
-import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { FUNNEL_SLUG, FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { randomUUID } from 'crypto'
 
 /**
  * D1 API Endpoint: List Content Pages for a Funnel
@@ -13,11 +14,16 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const requestId = randomUUID()
+  let effectiveSlug: string | null = null
+  let isKnownSlug = false
+
   try {
     const { slug } = await params
     
     // Use canonical funnel slug from registry
-    const effectiveSlug = getCanonicalFunnelSlug(slug)
+    effectiveSlug = getCanonicalFunnelSlug(slug)
+    isKnownSlug = Object.values(FUNNEL_SLUG).includes(effectiveSlug)
 
     if (!effectiveSlug) {
       return NextResponse.json(
@@ -68,7 +74,18 @@ export async function GET(
 
       if (catalogError) {
         // Avoid dumping details; no secrets/PHI.
-        console.error('[CONTENT_PAGES_CATALOG_LOOKUP_FAILED]')
+        console.error('[Funnel Content Pages Catalog Lookup Failed]', {
+          requestId,
+          effectiveSlug,
+          message: catalogError.message,
+          errorCode: catalogError.code,
+        })
+
+        // For known funnels, missing catalog access / empty DB must not hard-fail.
+        if (isKnownSlug) {
+          return NextResponse.json([])
+        }
+
         return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
       }
 
@@ -102,30 +119,50 @@ export async function GET(
           .order('created_at', { ascending: false })
 
         if (fallbackError) {
-          console.error('Error fetching content pages (fallback):', fallbackError)
-          return NextResponse.json(
-            { error: 'Error loading content pages' },
-            { status: 500 },
-          )
+          console.error('[Funnel Content Pages Fetch Failed - Fallback]', {
+            requestId,
+            effectiveSlug,
+            message: fallbackError.message,
+            errorCode: fallbackError.code,
+          })
+
+          if (isKnownSlug) {
+            return NextResponse.json([])
+          }
+
+          return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
         }
 
         return NextResponse.json(fallbackPages as ContentPage[])
       }
 
-      console.error('Error fetching content pages:', pagesError)
-      return NextResponse.json(
-        { error: 'Error loading content pages' },
-        { status: 500 },
-      )
+      console.error('[Funnel Content Pages Fetch Failed]', {
+        requestId,
+        effectiveSlug,
+        message: pagesError.message,
+        errorCode: pagesError.code,
+      })
+
+      if (isKnownSlug) {
+        return NextResponse.json([])
+      }
+
+      return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
     }
 
     return NextResponse.json((contentPages ?? []) as ContentPage[])
   } catch (error) {
     // Avoid dumping raw errors; no secrets/PHI.
-    console.error('[CONTENT_PAGES_UNEXPECTED_ERROR]')
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    )
+    console.error('[Funnel Content Pages Unexpected Error]', {
+      requestId,
+      effectiveSlug,
+      message: error instanceof Error ? error.message : String(error),
+    })
+
+    if (isKnownSlug) {
+      return NextResponse.json([])
+    }
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
