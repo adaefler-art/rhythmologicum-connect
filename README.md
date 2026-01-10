@@ -356,6 +356,80 @@ After deployment, perform these smoke tests:
 
 See [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed test procedures.
 
+## Troubleshooting Production Issues
+
+When production behaves differently from local development, it's often due to **deployment drift** rather than code bugs. Use this checklist to diagnose and resolve common issues.
+
+### Quick Diagnostic Steps
+
+1. **Verify Deployment Version**
+   ```bash
+   # Check what commit is running in production
+   curl https://your-production-url.vercel.app/version.json
+   
+   # Compare with latest main branch
+   git log main -1 --format="%H %cI"
+   ```
+   If hashes don't match, you may need to promote a newer deployment.
+
+2. **Check Database Migrations**
+   ```sql
+   -- In Supabase Dashboard → SQL Editor
+   SELECT version, name FROM supabase_migrations.schema_migrations 
+   ORDER BY version DESC LIMIT 10;
+   ```
+   Compare with your `supabase/migrations/` directory to ensure all migrations are applied.
+
+3. **View Production Logs**
+   - **Vercel Dashboard**: Project → Logs → Filter by status code or path
+   - **Vercel CLI**: `vercel logs your-url.vercel.app --follow`
+   
+   Look for structured log entries with request IDs for tracing issues.
+
+4. **Verify Environment Variables**
+   - **Vercel Dashboard**: Project → Settings → Environment Variables
+   - Ensure all required variables are set for **Production** environment
+   - Check for typos in URLs or API keys
+
+### Common Symptoms & Solutions
+
+| Symptom | Likely Cause | Fix |
+|---------|--------------|-----|
+| **404 on routes that exist in code** | Old deployment running | Promote latest deployment in Vercel |
+| **500 with database errors** | Migrations not applied | Run migration workflow in GitHub Actions |
+| **Onboarding repeats on login** | Cache or stale data | Redeploy with cleared cache |
+| **Features work locally, fail in prod** | Environment variable mismatch | Verify env vars in Vercel settings |
+| **Intermittent authentication issues** | Session cookie problems | Check middleware logs, verify Supabase config |
+
+### Build Verification (Before Deployment)
+
+Verify your build locally before deploying:
+
+```bash
+# Build and verify
+npm run build
+node scripts/verify-routes.mjs
+
+# Should output:
+# ✅ All critical routes verified successfully!
+
+# Test locally
+npm run start
+curl http://localhost:3000/version.json
+```
+
+### Complete Troubleshooting Guide
+
+For detailed instructions on deployment verification, rollback procedures, and advanced diagnostics:
+
+**📖 [Deployment Verification Guide](docs/DEPLOYMENT_VERIFICATION.md)** - Complete guide for:
+- How to verify PROD is running latest commit
+- How to check database migration status
+- How to view PROD error logs in Vercel  
+- Rollback procedures
+- Clearing cache issues
+- Monitoring best practices
+
 ---
 
 ## 📚 Documentation Hub
