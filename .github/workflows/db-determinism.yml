@@ -105,6 +105,22 @@ jobs:
           echo "📦 Applying all migrations via db reset..."
           supabase db reset
           echo "✅ Migrations applied successfully"
+
+      # Check 2b: Seed minimal data required for runtime invariants (deterministic)
+      - name: Seed minimal funnel data
+        shell: pwsh
+        run: |
+          Write-Host "Seeding minimal funnel data..."
+          pwsh -File scripts/db/seed-funnels-minimal.ps1
+          Write-Host "Seed step completed"
+
+      # Check 2c: Assert funnel invariants (fail fast on seed/data drift)
+      - name: Assert funnel invariants
+        shell: pwsh
+        run: |
+          Write-Host "Asserting funnel invariants..."
+          pwsh -File scripts/db/assert-funnel-invariants.ps1
+          Write-Host "Invariant gate passed"
       
       # Check 3: Verify no schema drift
       - name: Check for schema drift
@@ -149,6 +165,31 @@ jobs:
             exit 1
           fi
           echo "✅ Types are up to date"
+
+      # Check 5 (optional): Remote staging schema drift (read-only, no destructive ops)
+      - name: Check staging schema drift (optional)
+        shell: pwsh
+        env:
+          STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+        run: |
+          if (-not $env:STAGING_DB_URL) {
+            Write-Host "Skipping staging drift check: STAGING_DB_URL secret not set"
+            if ($env:GITHUB_STEP_SUMMARY) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Staging drift: skipped (STAGING_DB_URL not set)" }
+            exit 0
+          }
+
+          Write-Host "Checking schema drift against staging (read-only)..."
+          $diffOutput = & supabase db diff --db-url $env:STAGING_DB_URL 2>&1 | Out-String
+          Write-Host $diffOutput
+
+          if ($diffOutput -match '(?im)No schema changes (found|detected)') {
+            Write-Host "No staging schema drift detected"
+            if ($env:GITHUB_STEP_SUMMARY) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Staging drift: no schema changes detected" }
+            exit 0
+          }
+
+          Write-Host "Staging schema drift detected. Please capture changes in a new migration."
+          exit 1
       
       # Success summary
       - name: Success summary
@@ -160,6 +201,7 @@ jobs:
           echo "   ✅ All schema objects are canonical"
           echo "   ✅ No existing migrations were edited"
           echo "   ✅ Migrations apply cleanly"
+          echo "   ✅ Seed + funnel invariants gate passed"
           echo "   ✅ No schema drift detected"
           echo "   ✅ TypeScript types are up to date"
           echo ""

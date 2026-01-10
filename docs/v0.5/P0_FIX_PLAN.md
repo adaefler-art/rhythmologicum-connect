@@ -93,3 +93,11 @@ npm test
 if (Test-Path .next) { Remove-Item -Recurse -Force .next }
 npm run build
 ```
+
+---
+
+## Seed + Invariant Gate (DB/Code Drift)
+- CI runs `supabase db reset`, then applies a small deterministic seed for minimal funnel data.
+- After seeding, a PowerShell invariant gate asserts required funnel runtime JSON is present.
+- This prevents data/seed drift incidents where `funnel_versions.questionnaire_config.steps` is missing or empty.
+- Optional: if `STAGING_DB_URL` GitHub Secret is set, CI checks remote staging schema drift (read-only).
