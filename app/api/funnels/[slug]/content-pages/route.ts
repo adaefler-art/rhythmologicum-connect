@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import type { ContentPage } from '@/lib/types/content'
 import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import { randomUUID } from 'crypto'
 
 /**
  * D1 API Endpoint: List Content Pages for a Funnel
@@ -13,14 +14,27 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const requestId = randomUUID()
   try {
     const { slug } = await params
+    
+    // Structured logging for deployment verification (no PHI)
+    console.log('[Funnel Content Pages Request]', {
+      requestId,
+      requestedSlug: slug,
+      timestamp: new Date().toISOString(),
+    })
     
     // Use canonical funnel slug from registry
     const effectiveSlug = getCanonicalFunnelSlug(slug)
 
     if (!effectiveSlug) {
-      return NextResponse.json(
+      console.warn('[Funnel Content Pages Validation Failed]', {
+        requestId,
+        requestedSlug: slug,
+        reason: 'Missing or invalid slug',
+      })
+      const validationResponse = NextResponse.json(
         {
           success: false,
           error: {
@@ -30,7 +44,16 @@ export async function GET(
         },
         { status: 422 },
       )
+      validationResponse.headers.set('X-Request-Id', requestId)
+      return validationResponse
     }
+
+    // Structured logging for slug resolution (no PHI)
+    console.log('[Funnel Content Pages Slug Resolution]', {
+      requestId,
+      requestedSlug: slug,
+      effectiveSlug,
+    })
 
     // Use admin client for published content pages (RLS bypass for public metadata)
     const supabase = createAdminSupabaseClient()
@@ -60,6 +83,11 @@ export async function GET(
 
     if (!funnelId) {
       // Not found in funnels table - try funnels_catalog
+      console.log('[Funnel Content Pages Trying Catalog]', {
+        requestId,
+        effectiveSlug,
+        attemptedSlugs: candidateSlugs,
+      })
       const { data: catalogFunnel, error: catalogError } = await supabase
         .from('funnels_catalog')
         .select('id')
@@ -68,19 +96,48 @@ export async function GET(
 
       if (catalogError) {
         // Avoid dumping details; no secrets/PHI.
-        console.error('[CONTENT_PAGES_CATALOG_LOOKUP_FAILED]')
-        return NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
+        console.error('[Funnel Content Pages Catalog Lookup Failed]', {
+          requestId,
+          effectiveSlug,
+          errorCode: catalogError.code,
+        })
+        const errorResponse = NextResponse.json({ error: 'Error loading content pages' }, { status: 500 })
+        errorResponse.headers.set('X-Request-Id', requestId)
+        return errorResponse
       }
 
       if (catalogFunnel?.id) {
         // Funnel exists in catalog but not fully defined yet
         // Return empty array instead of 404.
-        return NextResponse.json([])
+        console.log('[Funnel Content Pages Catalog Found]', {
+          requestId,
+          effectiveSlug,
+          funnelId: catalogFunnel.id,
+          pageCount: 0,
+        })
+        const catalogResponse = NextResponse.json([])
+        catalogResponse.headers.set('X-Request-Id', requestId)
+        return catalogResponse
       }
 
       // Not found in either table
-      return NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+      console.warn('[Funnel Content Pages Not Found]', {
+        requestId,
+        requestedSlug: slug,
+        effectiveSlug,
+        attemptedSlugs: candidateSlugs,
+      })
+      const notFoundResponse = NextResponse.json({ error: 'Funnel not found' }, { status: 404 })
+      notFoundResponse.headers.set('X-Request-Id', requestId)
+      return notFoundResponse
     }
+
+    // Structured logging for funnel resolution (no PHI)
+    console.log('[Funnel Content Pages Funnel Resolved]', {
+      requestId,
+      effectiveSlug,
+      funnelId,
+    })
 
     // 2. Fetch published content pages for this funnel (excluding soft-deleted)
     const { data: contentPages, error: pagesError } = await supabase
@@ -93,7 +150,11 @@ export async function GET(
 
     if (pagesError) {
       if (pagesError.code === '42703') {
-        console.warn('deleted_at column missing, retrying funnel content pages without soft-delete filter')
+        console.warn('[Funnel Content Pages Schema Mismatch]', {
+          requestId,
+          funnelId,
+          reason: 'deleted_at column missing, using fallback query',
+        })
         const { data: fallbackPages, error: fallbackError } = await supabase
           .from('content_pages')
           .select('*')
@@ -102,30 +163,63 @@ export async function GET(
           .order('created_at', { ascending: false })
 
         if (fallbackError) {
-          console.error('Error fetching content pages (fallback):', fallbackError)
-          return NextResponse.json(
+          console.error('[Funnel Content Pages Fallback Error]', {
+            requestId,
+            funnelId,
+            errorCode: fallbackError.code,
+          })
+          const fallbackErrorResponse = NextResponse.json(
             { error: 'Error loading content pages' },
             { status: 500 },
           )
+          fallbackErrorResponse.headers.set('X-Request-Id', requestId)
+          return fallbackErrorResponse
         }
 
-        return NextResponse.json(fallbackPages as ContentPage[])
+        console.log('[Funnel Content Pages Success (Fallback)]', {
+          requestId,
+          funnelId,
+          pageCount: fallbackPages?.length ?? 0,
+        })
+        const fallbackSuccessResponse = NextResponse.json(fallbackPages as ContentPage[])
+        fallbackSuccessResponse.headers.set('X-Request-Id', requestId)
+        return fallbackSuccessResponse
       }
 
-      console.error('Error fetching content pages:', pagesError)
-      return NextResponse.json(
+      console.error('[Funnel Content Pages Query Error]', {
+        requestId,
+        funnelId,
+        errorCode: pagesError.code,
+      })
+      const queryErrorResponse = NextResponse.json(
         { error: 'Error loading content pages' },
         { status: 500 },
       )
+      queryErrorResponse.headers.set('X-Request-Id', requestId)
+      return queryErrorResponse
     }
 
-    return NextResponse.json((contentPages ?? []) as ContentPage[])
+    console.log('[Funnel Content Pages Success]', {
+      requestId,
+      funnelId,
+      effectiveSlug,
+      pageCount: contentPages?.length ?? 0,
+    })
+    const successResponse = NextResponse.json((contentPages ?? []) as ContentPage[])
+    successResponse.headers.set('X-Request-Id', requestId)
+    return successResponse
   } catch (error) {
-    // Avoid dumping raw errors; no secrets/PHI.
-    console.error('[CONTENT_PAGES_UNEXPECTED_ERROR]')
-    return NextResponse.json(
+    // Structured logging for unexpected errors (no PHI, minimal error details)
+    console.error('[Funnel Content Pages Unexpected Error]', {
+      requestId,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    })
+    const unexpectedErrorResponse = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 },
     )
+    unexpectedErrorResponse.headers.set('X-Request-Id', requestId)
+    return unexpectedErrorResponse
   }
 }

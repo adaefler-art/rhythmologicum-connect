@@ -29,6 +29,16 @@ export async function GET(request: NextRequest) {
 
     const allowedCategories = ['intro', 'info', 'result']
 
+    // Structured logging for deployment verification (no PHI)
+    console.log('[Content Resolver Request]', {
+      requestId,
+      funnel,
+      category,
+      slug,
+      includeDrafts,
+      timestamp: new Date().toISOString(),
+    })
+
     // Validate required parameters
     if (!funnel) {
       const response = NextResponse.json(
@@ -46,6 +56,7 @@ export async function GET(request: NextRequest) {
         },
         { status: 422 },
       )
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -64,6 +75,7 @@ export async function GET(request: NextRequest) {
         },
         { status: 422 },
       )
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -78,6 +90,16 @@ export async function GET(request: NextRequest) {
 
     // Return result based on resolution strategy
     if (result.page) {
+      // Structured logging for successful resolution (no PHI)
+      console.log('[Content Resolver Success]', {
+        requestId,
+        funnel,
+        category,
+        slug,
+        strategy: result.strategy,
+        pageId: result.page?.id,
+        pageSlug: result.page?.slug,
+      })
       const response = NextResponse.json({
         success: true,
         version: 'v1',
@@ -87,6 +109,7 @@ export async function GET(request: NextRequest) {
         page: result.page,
         strategy: result.strategy,
       })
+      response.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', response)
       return response
     }
@@ -97,6 +120,13 @@ export async function GET(request: NextRequest) {
     const isUnknownFunnel = result.error === 'FUNNEL_NOT_FOUND'
 
     if (isUnknownFunnel) {
+      // Structured logging for funnel not found (no PHI)
+      console.warn('[Content Resolver Funnel Not Found]', {
+        requestId,
+        funnel,
+        category,
+        slug,
+      })
       const notFoundResponse = NextResponse.json(
         {
           success: false,
@@ -108,10 +138,19 @@ export async function GET(request: NextRequest) {
         },
         { status: 404 },
       )
+      notFoundResponse.headers.set('X-Request-Id', requestId)
       trackUsage('GET /api/content/resolve', notFoundResponse)
       return notFoundResponse
     }
 
+    // Structured logging for missing content (no PHI)
+    console.log('[Content Resolver Missing Content]', {
+      requestId,
+      funnel,
+      category,
+      slug,
+      strategy: result.strategy,
+    })
     const missingResponse = NextResponse.json(
       {
         success: true,
@@ -124,10 +163,16 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 },
     )
+    missingResponse.headers.set('X-Request-Id', requestId)
     trackUsage('GET /api/content/resolve', missingResponse)
     return missingResponse
   } catch (error) {
-    console.error('[CONTENT_RESOLVE_API_ERROR]', { requestId })
+    // Structured logging for internal errors (no PHI, minimal error details)
+    console.error('[Content Resolver Internal Error]', {
+      requestId,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    })
     const errorResponse = NextResponse.json(
       {
         success: false,
@@ -139,6 +184,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
+    errorResponse.headers.set('X-Request-Id', requestId)
     trackUsage('GET /api/content/resolve', errorResponse)
     return errorResponse
   }
