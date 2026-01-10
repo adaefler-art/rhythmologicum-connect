@@ -17,6 +17,66 @@ import { z } from 'zod'
 import { NODE_TYPE, QUESTION_TYPE, type NodeType, type QuestionType } from './registry'
 import { isValidUrl } from '@/lib/utils/urlSecurity'
 
+function normalizeQuestionType(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+
+  const normalized = value.toLowerCase().trim()
+  if (Object.values(QUESTION_TYPE).includes(normalized as QuestionType)) {
+    return normalized
+  }
+
+  // Compatibility layer for older/looser DB values.
+  // Keep this mapping narrow + deterministic so QuestionRenderer still receives only registry types.
+  const aliases: Record<string, QuestionType> = {
+    // single choice
+    'single_choice': QUESTION_TYPE.RADIO,
+    'single-choice': QUESTION_TYPE.RADIO,
+    'select_one': QUESTION_TYPE.RADIO,
+    'select-one': QUESTION_TYPE.RADIO,
+    'multiple_choice': QUESTION_TYPE.RADIO,
+
+    // multiple select
+    'multi_choice': QUESTION_TYPE.CHECKBOX,
+    'multi-choice': QUESTION_TYPE.CHECKBOX,
+    'select_many': QUESTION_TYPE.CHECKBOX,
+    'select-many': QUESTION_TYPE.CHECKBOX,
+    'multiple_select': QUESTION_TYPE.CHECKBOX,
+    'multiple-select': QUESTION_TYPE.CHECKBOX,
+
+    // text
+    'short_text': QUESTION_TYPE.TEXT,
+    'short-text': QUESTION_TYPE.TEXT,
+    'string': QUESTION_TYPE.TEXT,
+
+    // textarea
+    'long_text': QUESTION_TYPE.TEXTAREA,
+    'long-text': QUESTION_TYPE.TEXTAREA,
+    'paragraph': QUESTION_TYPE.TEXTAREA,
+
+    // number
+    'integer': QUESTION_TYPE.NUMBER,
+    'float': QUESTION_TYPE.NUMBER,
+    'decimal': QUESTION_TYPE.NUMBER,
+
+    // scale/rating
+    'likert': QUESTION_TYPE.SCALE,
+    'likert_scale': QUESTION_TYPE.SCALE,
+    'likert-scale': QUESTION_TYPE.SCALE,
+    'rating': QUESTION_TYPE.SCALE,
+
+    // slider/range
+    'range': QUESTION_TYPE.SLIDER,
+  }
+
+  return aliases[normalized] ?? normalized
+}
+
+// IMPORTANT: keep this optional at the *object key* level.
+// Using `.transform()` directly can turn it into a required key with `string | undefined`.
+const nullableString = z
+  .preprocess((value) => (value === null ? undefined : value), z.string().optional())
+  .optional()
+
 // ============================================================
 // Questionnaire Config Schema
 // ============================================================
@@ -55,7 +115,7 @@ export type QuestionValidation = z.infer<typeof QuestionValidationSchema>
 export const QuestionOptionSchema = z.object({
   value: z.string(),
   label: z.string(),
-  helpText: z.string().optional(),
+  helpText: nullableString,
 })
 
 export type QuestionOption = z.infer<typeof QuestionOptionSchema>
@@ -66,17 +126,20 @@ export type QuestionOption = z.infer<typeof QuestionOptionSchema>
 export const QuestionConfigSchema = z.object({
   id: z.string(),
   key: z.string(),
-  type: z.enum([
-    QUESTION_TYPE.RADIO,
-    QUESTION_TYPE.CHECKBOX,
-    QUESTION_TYPE.TEXT,
-    QUESTION_TYPE.TEXTAREA,
-    QUESTION_TYPE.NUMBER,
-    QUESTION_TYPE.SCALE,
-    QUESTION_TYPE.SLIDER,
-  ] as [QuestionType, ...QuestionType[]]),
+  type: z.preprocess(
+    normalizeQuestionType,
+    z.enum([
+      QUESTION_TYPE.RADIO,
+      QUESTION_TYPE.CHECKBOX,
+      QUESTION_TYPE.TEXT,
+      QUESTION_TYPE.TEXTAREA,
+      QUESTION_TYPE.NUMBER,
+      QUESTION_TYPE.SCALE,
+      QUESTION_TYPE.SLIDER,
+    ] as [QuestionType, ...QuestionType[]]),
+  ),
   label: z.string(),
-  helpText: z.string().optional(),
+  helpText: nullableString,
   required: z.boolean().default(false),
   options: z.array(QuestionOptionSchema).optional(),
   validation: QuestionValidationSchema.optional(),
