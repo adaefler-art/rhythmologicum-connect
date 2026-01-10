@@ -1,0 +1,3469 @@
+﻿"number","title","state","createdAt","updatedAt","url","milestone","labels","body"
+"340","E50 ÔÇö Repo Guardrails & Release-Discipline (v0.5 Prep)","CLOSED","2025-12-30T16:47:03Z","2025-12-30T21:07:40Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/340","","epic","**Ziel:** RHYTHM Repo so strukturieren und absichern, dass (a) v0.4 Ist und v0.5 Next jederzeit eindeutig sind und (b) Copilot/Dev keine Fantasie-Namen einf├╝hrt und DB/Migrations deterministisch bleiben.
+
+**Labels**: type:epic, area:repo, prio:P0
+**Milestone**: v0.5 (oder v0.5-prep)
+
+Enth├ñlt Issues:
+- I501 (Docs Reorg: Canon vs Releases + Memory Index)
+- I502 (ÔÇ£No Fantasy NamesÔÇØ: Contract Registry + Env Schema + PR/CODEOWNERS Guardrails)
+- I503 (DB Determinism: Migration-first + Drift Check + Typegen Gate)
+- I504 (Optional: Release Verdict Workflow)
+
+Akzeptanzkriterien:
+- Repo-Struktur unterscheidet eindeutig v0.4 Ist vs v0.5 Next
+- Keine Fantasie-Namen/IDs
+- DB/Migrations deterministisch, CI blockt Drift
+- Evidence und Verify-Commands dokumentiert
+"
+"341","I501 (E50) Docs Reorg: Canon vs Releases (v0.4 IST / v0.5 NEXT) + Memory Index","CLOSED","2025-12-30T16:47:03Z","2025-12-30T17:44:25Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/341","","docs","**Problem**
+Aktuell sind Release-Artefakte und ""kanonische"" Regeln nicht klar getrennt; Versionsstand (v0.4 vs v0.5) ist nicht sofort ersichtlich.
+
+**Zielzustand (Struktur)**
+docs/
+  canon/
+    PRINCIPLES.md
+    REVIEW_CHECKLIST.md
+    GLOSSARY.md
+    DB_MIGRATIONS.md
+    CONTRACTS.md
+  releases/
+    CURRENT.md
+    v0.4/
+      RELEASE.md
+      verdict.json
+      changelog.md
+    v0.5/
+      RELEASE.md
+      verdict.json
+      backlog.md   (oder issues. json ÔÇô w├ñhlt 1 Format und bleibt dabei)
+  memory/
+    INDEX.md
+    entries/
+    incidents/
+
+**Tasks**
+- docs/ Struktur anlegen wie oben
+- docs/releases/CURRENT.md erstellen (Single Entry Point:  ""Current is v0.4 / Next is v0.5"")
+- Bestehende Inhalte so einsortieren, dass v0.4=Ist, v0.5=Planung
+- docs/memory/INDEX.md + Ordner entries/ & incidents/ erstellen
+
+**Acceptance Criteria**
+- docs/releases/CURRENT.md existiert und zeigt eindeutig auf v0.4 und v0.5 Dateien
+- Keine ""v0.1""-Artefakte/Referenzen im Repo
+- v0.4 und v0.5 haben jeweils RELEASE.md + verdict.json
+- docs/canon/* ist kurz, pr├ñzise, zeitlos
+- Evidence:  PR mit tree-Ausgabe & Link auf verschobene Dateien
+
+**Verify (PowerShell)**
+tree .\docs /f
+rg -n ""v0\. 1|0\.1"" .\docs
+"
+"342","I502 (E50) ÔÇ£No Fantasy NamesÔÇØ: Contract Registry + Env Schema + PR/CODEOWNERS Guardrails","CLOSED","2025-12-30T16:47:04Z","2025-12-30T19:31:47Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/342","","","**Problem**
+Copilot/Dev k├Ânnen neue Strings/IDs/Env-Keys ÔÇ£erfindenÔÇØ (Statuses, Funnel IDs, Feature Flags, process.env.*), was zu Drift/Inkonsistenz f├╝hrt.
+
+**Ziel**
+Ein einziger kanonischer Ort f├╝r kritische Identifier + strikte Env-Validierung + Review-Gates.
+
+**Tasks**
+- src/contracts/registry.ts anlegen (TS const arrays + union types)
+- src/env.ts anlegen (zod) und direkte process.env.* Nutzung auf env.* umstellen
+- .github/CODEOWNERS erg├ñnzen (docs/canon/**, docs/releases/**, src/contracts/**, src/env.ts, supabase/migrations/**)
+- .github/pull_request_template.md erg├ñnzen (Evidence/Registry/Env/Memory Entry Pflicht)
+
+**Acceptance Criteria**
+- Neue Identifier ├╝ber registry.ts
+- Neue Env Vars ├╝ber env.ts
+- CODEOWNERS greift f├╝r Guardrail-Dateien
+- PR Template erzwingt Evidence + Memory Entry
+
+**Verify (PowerShell)**
+rg -n ""process\.env\."" .
+rg -n ""registry\.(ts)|src/contracts/registry"" .
+"
+"343","I503 (E50) DB Determinism: Migration-first + Drift Check + Typegen Gate in CI","CLOSED","2025-12-30T16:47:04Z","2025-12-30T20:33:36Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/343","","db","**Problem**
+Schema-Drift und ÔÇ£stilleÔÇØ DB-├änderungen (lokal/remote) f├╝hren zu nicht reproduzierbaren Zust├ñnden. F├╝r v0.5 brauchen wir deterministische Migrations- und Types-Disziplin.
+
+**Ziel**
+CI blockt PRs, wenn:
+- Migration fehlt
+- Drift entsteht
+- Generated types nicht aktuell sind
+
+**Tasks**
+- DB Stack erkennen (Supabase CLI? Prisma? Knex? plain SQL?); Entscheidung in docs/canon/DB_MIGRATIONS.md dokumentieren
+- Migration-first Regeln dokumentieren
+- CI Job: Apply/Reset Migrations, Drift Check, Typegen + git diff
+- Runbook in PowerShell in docs/canon/DB_MIGRATIONS.md
+- CODEOWNERS f├╝r Migrationsverzeichnis sicherstellen
+
+**Acceptance Criteria**
+- PR ohne Migration bei Schema├ñnderung = CI Fail
+- Drift/Typegen = CI Fail
+- Doku in docs/canon/DB_MIGRATIONS.md
+
+**Verify (PowerShell)**
+supabase start
+supabase db reset
+supabase gen types typescript --local > .\src\types\supabase.ts
+git diff --exit-code
+"
+"344","I504 (E50) Release Verdict Workflow: v0.4 finalisieren + v0.5 Gate-Plan","CLOSED","2025-12-30T16:47:04Z","2025-12-30T20:58:38Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/344","","","**Ziel**
+v0.4: Ist-Release dokumentiert inkl. finalem verdict.json + Evidence-Links
+v0.5: Gate-Plan + DoD + Risiken + initial HOLD
+
+**Acceptance Criteria**
+docs/releases/v0.4/verdict.json: finaler Status + Evidence-Links
+v0.5/RELEASE.md: Scope + DoD + Gate-Plan + Next actions.
+"
+"347","EPIC V05-E01 ÔÇö Data Model + RLS + Versioning + Audit (Supabase/Postgres)","CLOSED","2025-12-30T19:26:05Z","2025-12-31T14:12:50Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/347","","database;epic","**Intent:** Stabiler Core + JSONB Variabilit├ñt + konsequente Versionierung (Funnel/Algorithm/Prompt/Report) + RLS-Isolation + Audit. 
+
+Diese Epic umfasst: 
+- Datenmodell- und Tabellenstruktur inkl.  JSONB-Felder
+- RLS-Policies f├╝r Zugriffssteuerung
+- Vollst├ñndige Versionierung aller fachlich kritischen Entities
+- Audit-Logging entscheidungsrelevanter Events
+
+**Sub-Issues:**
+- [ ] V05-I01.1 ÔÇö DB Schema v0.5: Core Tables + JSONB Fields
+- [ ] V05-I01.2 ÔÇö RLS Policies: Patient vs Clinician/Nurse vs Admin (Tenant-isoliert)
+- [ ] V05-I01.3 ÔÇö Versioning Contract:  Funnel-Version / Algorithm-Version / Prompt-Version / Report-Version
+- [ ] V05-I01.4 ÔÇö Audit Log (entscheidungsrelevante Events)
+
+**Labels:** epic, database"
+"348","V05-I01.1 ÔÇö DB Schema v0.5: Core Tables + JSONB Fields","CLOSED","2025-12-30T19:26:05Z","2025-12-30T21:59:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/348","","child-of-epic;database","```text
+Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM (Rhythmologicum Connect) ÔÇö Issue V05-I01.1:
+ÔÇ£DB Schema v0.5: Core Tables + JSONB FieldsÔÇØ (Supabase/Postgres).
+
+Ziel
+Implementiere das v0.5 Core-Datenmodell als Supabase migrations (migration-first, deterministisch), mit JSONB f├╝r variable Inhalte und klaren Foreign Keys. Das Schema muss die v0.5 Executive Summary unterst├╝tzen: Multi-Funnel, Assessments, Document Upload + Extraction, Processing Results, Reports/Sections, Tasks/Notifications, Audit Log, Rollen/Org/RLS-ready.
+
+Nicht verhandelbare Guardrails
+- Keine DB-├änderung ohne Migration (supabase/migrations/*.sql).
+- Keine Fantasie-Namen: wenn neue Status/Enums/Keys ben├Âtigt werden, lege sie bewusst an und dokumentiere sie kurz in docs/canon/CONTRACTS.md (oder dem Contract-Doc im Repo).
+- Idempotency: Enforce Unique Keys f├╝r retry-sichere Upserts (z.B. report per assessment+version).
+- Determinism: Nach Umsetzung muss `npm run db:verify` (oder euer ├äquivalent) in CI gr├╝n sein (drift + typegen).
+- PowerShell-only in allen Runbook-Snippets, keine Bash.
+
+Arbeitsreihenfolge (strikt)
+1) Repo scan & Plan
+   - Finde bestehenden DB-Stand: supabase/migrations, schema snapshots, bestehende Tabellen.
+   - Pr├╝fe ob schon Tabellen existieren, die wir erweitern m├╝ssen (keine Duplikate).
+   - Erstelle einen kurzen Plan: ÔÇ£new tables / altered tables / indexes / constraintsÔÇØ.
+
+2) Migration(s) erstellen
+   - Erstelle eine neue Migration mit sauberem Timestamp-Namen.
+   - Implementiere folgende Core-Entities (minimale Spalten + FKs + JSONB):
+     A) Identity & Access (RLS-ready)
+        - organizations (tenant)
+        - users (optional: wenn Supabase auth genutzt wird, dann profiles statt users)
+        - user_profiles
+        - user_roles (role enum oder table), user_org_membership
+     B) Funnels / Versions / Sessions
+        - funnels_catalog (slug, title, pillar_id, description, is_active)
+        - funnel_versions (funnel_id, version, questionnaire_config jsonb, content_manifest jsonb, algorithm_bundle_version text, prompt_version text, is_default, rollout_percent)
+        - patient_funnels (patient_id, funnel_id, active_version_id, status, started_at, completed_at)
+     C) Assessments / Answers / State
+        - assessments (patient_id, funnel_version_id, state, current_step_id, started_at, completed_at)
+        - assessment_answers (assessment_id, step_id, question_id, answer jsonb, updated_at)
+        - assessment_events (assessment_id, event_type, payload jsonb, created_at)  # optional but useful for auditability
+     D) Documents / Extraction
+        - documents (assessment_id, storage_path, doc_type, parsing_status, extracted_data jsonb, confidence jsonb, confirmed_data jsonb, confirmed_at)
+     E) Calculated Results / Ranking
+        - calculated_results (assessment_id, algorithm_version, scores jsonb, risk_models jsonb, priority_ranking jsonb, created_at)
+     F) Reports / Sections / Delivery
+        - reports (assessment_id, report_version, prompt_version, status, safety_score, safety_findings jsonb, html_path, pdf_path, citations_meta jsonb, created_at)
+        - report_sections (report_id, section_key, prompt_version, content text, citations_meta jsonb, created_at)
+     G) Tasks / Notifications
+        - tasks (patient_id, assessment_id, created_by_role, assigned_to_role, task_type, payload jsonb, status, due_at, created_at)
+        - notifications (user_id, channel, template_key, payload jsonb, scheduled_at, sent_at, status)
+     H) Audit
+        - audit_log (actor_user_id, actor_role, entity_type, entity_id, action, diff jsonb, created_at)
+
+   - Setze sinnvolle Indizes:
+     - funnels_catalog.slug unique
+     - funnel_versions (funnel_id, version) unique
+     - assessments (patient_id, funnel_version_id, started_at)
+     - reports unique per (assessment_id, report_version)
+     - report_sections unique per (report_id, section_key)
+     - tasks index by (assigned_to_role, status, due_at)
+     - audit_log index by (entity_type, entity_id, created_at)
+
+   - Setze Constraints / enums:
+     - role enum: patient/clinician/nurse/admin (muss nurse enthalten)
+     - status enums: minimal, aber konsistent (assessment_state, report_status, task_status, parsing_status)
+     - Timestamps default now()
+
+3) Seeds/Types/Verification
+   - Wenn das Repo typegen nutzt: `npm run db:typegen` aktualisieren (lib/types/supabase.ts o.├ñ.).
+   - Stelle sicher, dass drift check sauber bleibt.
+
+4) Doku kurz erg├ñnzen
+   - docs/canon/DB_MIGRATIONS.md: falls neue Scripts/Verifikationen n├Âtig sind, nur minimal.
+   - docs/canon/CONTRACTS.md: nur falls neue Status/Enums definiert wurden (kein Roman).
+
+Acceptance Criteria (m├╝ssen erf├╝llt sein)
+- Neue Migration(en) liegen unter supabase/migrations/.
+- ÔÇ£Blank DB ÔåÆ apply migrationsÔÇØ l├ñuft ohne Fehler.
+- Tabellen decken mindestens ab: users/profiles/roles, funnels_catalog/funnel_versions, assessments/answers, documents/extraction, calculated_results, reports/report_sections, tasks/notifications, audit_log.
+- JSONB Felder vorhanden f├╝r questionnaire_config/content_manifest/extracted_data/scores/risk_models/priority_ranking/citations_meta etc.
+- Unique constraints f├╝r idempotente Generierung (reports per assessment+version, sections per report+key).
+- Evidence in PR: Schema diff output + typegen diff (PowerShell).
+
+Deliverables in PR
+- Migration SQL
+- Updated generated TS types file (falls genutzt)
+- Kurze PR Beschreibung mit Evidence
+
+PowerShell Verify Commands (in PR angeben)
+- npm ci
+- npm run db:reset
+- npm run db:diff
+- npm run db:typegen
+- git diff -- lib/types/supabase.ts
+- npm test
+- npm run build
+```
+"
+"349","V05-I01.2 ÔÇö RLS Policies: Patient vs Clinician/Nurse vs Admin (Tenant-isoliert)","CLOSED","2025-12-30T19:26:05Z","2025-12-31T09:26:37Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/349","","child-of-epic;database","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue V05-I01.2:
+ÔÇ£RLS Policies: Patient vs Clinician/Nurse vs Admin (tenant-isoliert)ÔÇØ (Supabase/Postgres).
+
+Ziel
+Implementiere robuste Row Level Security (RLS) auf den v0.5 Core-Tabellen. Patienten sehen nur eigene Daten, Clinician/Nurse nur F├ñlle ihrer Organization (oder explizit zugewiesene), Admin nur tenant-konfigurierbare Daten. Keine offenen ÔÇ£SELECT *ÔÇØ Leaks.
+
+Arbeitsreihenfolge (strikt)
+1) Repo scan & Ist-Stand
+   - Finde alle Tabellen aus V05-I01.1.
+   - Pr├╝fe: Welche RLS/Policies existieren bereits? Welche Tabellen haben RLS enabled?
+   - Pr├╝fe Auth-Setup: Supabase auth users + profiles? Welche JWT claims werden genutzt (auth.uid(), role claim, org_id claim, membership table)?
+
+2) Decide the RLS access model (minimal, aber korrekt)
+   Implementiere ein simples, deterministisches Modell:
+   - organizations: tenant
+   - user_org_membership: mapping user_id -> org_id + role (patient/clinician/nurse/admin)
+   - patient_profiles: besitzt user_id + org_id
+   - Clinician/Nurse Zugriff: gleiche org_id ODER assignment (optional, falls vorhanden)
+   - Admin Zugriff: nur org-config tables (nicht patient health data), sofern role=admin innerhalb org.
+
+   Wenn assignment table fehlt, lege minimal an:
+   - clinician_patient_assignments (org_id, clinician_user_id, patient_user_id, created_at)
+   (Nurse analog oder nurse sieht alle im org_id)
+
+3) Implementiere RLS in migrations
+   - Erstelle neue Migration: enable RLS f├╝r relevante Tabellen:
+     - user_profiles, patient_profiles (falls getrennt), funnels_catalog (read), funnel_versions (read), patient_funnels, assessments, assessment_answers, documents, calculated_results, reports, report_sections, tasks, notifications, audit_log
+   - Schreibe Policies (SELECT/INSERT/UPDATE/DELETE) mit klaren Regeln:
+     A) Patient:
+        - SELECT eigene rows (patient_user_id = auth.uid())
+        - INSERT/UPDATE nur eigene rows (mit check)
+     B) Clinician:
+        - SELECT rows f├╝r Patienten aus gleicher org_id (oder assignment)
+        - UPDATE nur in clinician-berechtigten Tabellen (z.B. reports review status, tasks)
+     C) Nurse:
+        - SELECT tasks/patients in org_id
+        - UPDATE tasks status (assigned_to_role nurse) und support notes
+     D) Admin:
+        - SELECT/UPDATE org config (menus, tokens, funnel activation), kein Zugriff auf patient-sensitive Tabellen au├ƒer explizit erlaubt (default: NO)
+   - Achte auf ÔÇ£WITH CHECKÔÇØ bei INSERT/UPDATE.
+
+4) Add helper SQL functions (optional, empfohlen)
+   - Erstelle stable functions:
+     - is_member_of_org(org_id)
+     - current_user_role(org_id)
+   Damit Policies weniger dupliziert sind.
+
+5) Tests / Evidence
+   - Schreibe mindestens 1ÔÇô2 DB-level smoke tests (falls ihr DB tests habt) oder ein script, das Policies probeweise validiert.
+   - Evidence muss zeigen: patient kann nicht fremde assessment lesen; clinician kann in anderer org nicht lesen.
+
+Acceptance Criteria
+- RLS ist aktiviert (ALTER TABLE ... ENABLE ROW LEVEL SECURITY) f├╝r alle sensiblen Tabellen.
+- Policies sind pro Tabelle definiert, minimal korrekt, kein ÔÇ£public readÔÇØ f├╝r Patientendaten.
+- Patient sieht nur eigene Daten.
+- Clinician/Nurse sehen nur org-gebunden oder assigned Patienten.
+- Admin sieht nur org-config (default no PHI).
+- Evidence: SQL/Migration + kurze Verify-Kommandos + Beispiel-Queries.
+
+PowerShell Verify Commands (in PR)
+- npm ci
+- npm run db:reset
+- npm run db:diff
+- npm run db:typegen
+- npm test
+- npm run build
+
+Deliverables
+- Neue Migration(en) mit RLS enable + policies + ggf. assignment table/functions
+- Kurze Doku-Erg├ñnzung: docs/canon/DB_MIGRATIONS.md oder docs/canon/CONTRACTS.md (nur Regeln, keine Romane)
+"
+"350","V05-I01.3 ÔÇö Versioning Contract: Funnel-Version / Algorithm-Version / Prompt-Version / Report-Version","CLOSED","2025-12-30T19:26:06Z","2025-12-31T10:39:37Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/350","","child-of-epic;database","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue V05-I01.3:
+ÔÇ£Versioning Contract: Funnel-Version / Algorithm-Version / Prompt-Version / Report-VersionÔÇØ (reproduzierbar).
+
+Ziel
+Stelle sicher, dass jeder erzeugte Output (Scores, Ranking, Report, Sections) eindeutig auf:
+- funnel_version
+- algorithm_version (bundle)
+- prompt_version
+- report_version
+referenziert. Ziel ist Reproduzierbarkeit: ÔÇ£Was wusste das System damals?ÔÇØ muss rekonstruierbar sein.
+
+Arbeitsreihenfolge (strikt)
+1) Repo scan
+   - Finde aktuelle Tabellen: funnels_catalog, funnel_versions, calculated_results, reports, report_sections.
+   - Finde vorhandene version fields oder TODOs in Code (processing pipeline).
+   - Pr├╝fe, ob es bereits eine ÔÇ£version registryÔÇØ im Code gibt.
+
+2) Define the canonical version fields (DB + code)
+   - funnel_versions: version (string/semver), questionnaire_config jsonb, content_manifest jsonb, algorithm_bundle_version, prompt_version, is_default, rollout_percent
+   - calculated_results: algorithm_version (not null), funnel_version_id (FK), computed_at, inputs_hash (optional)
+   - reports: report_version (not null), prompt_version (not null), funnel_version_id (FK), algorithm_version, status, safety_score, citations_meta
+   - report_sections: section_key, prompt_version, content, citations_meta
+
+   Add unique constraints for idempotency:
+   - calculated_results unique (assessment_id, algorithm_version)
+   - reports unique (assessment_id, report_version)
+   - report_sections unique (report_id, section_key)
+
+3) Implement migrations
+   - Wenn Felder fehlen: ALTER TABLE add columns + NOT NULL defaults (oder backfill) + constraints.
+   - Optional: add ÔÇ£inputs_hashÔÇØ (sha256 of normalized inputs) to detect re-run equivalence.
+
+4) Implement code path wiring
+   - In processing orchestrator / report generator:
+     - When generating results, persist algorithm_version + prompt_version + report_version.
+     - Ensure all downstream reads use these refs (not ÔÇ£latestÔÇØ).
+   - Provide a helper to compute report_version deterministically:
+     - e.g. report_version = `${funnelVersion.version}-${algorithmVersion}-${promptVersion}-${date or increment}`
+     - Or: explicit increment per assessment (v1, v2...) stored in DB.
+   Choose a simple deterministic rule and document it.
+
+5) Evidence
+   - Create one example flow (seed or test) that produces:
+     - a calculated_results row with algorithm_version set
+     - a report row with report_version + prompt_version set
+     - sections with prompt_version
+   - Show DB rows in logs or test output.
+
+Acceptance Criteria
+- All four version references exist and are persisted end-to-end.
+- Reports are reproducible via stable version references (no ÔÇ£latest implicitÔÇØ).
+- Unique constraints guarantee retry-safety (idempotent re-runs).
+- Typegen updated.
+- Evidence: example row(s) + migration diff.
+
+PowerShell Verify Commands
+- npm ci
+- npm run db:reset
+- npm run db:diff
+- npm run db:typegen
+- npm test
+- npm run build
+
+Deliverables
+- Migration(s)
+- Updated processing code paths
+- Minimal doc update: docs/canon/CONTRACTS.md (ÔÇ£Versioning ContractÔÇØ section)
+"
+"351","V05-I01.4 ÔÇö Audit Log (entscheidungsrelevante Events)","CLOSED","2025-12-30T19:26:06Z","2025-12-31T14:12:22Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/351","","child-of-epic;database;OPS","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue V05-I01.4:
+ÔÇ£Audit Log (entscheidungsrelevante Events)ÔÇØ (Supabase/Postgres).
+
+Ziel
+Implementiere ein Audit Logging, das jede relevante Entscheidung/├änderung nachvollziehbar macht:
+- Report generation + review approve/reject
+- Task creation/assignment/status change
+- Config changes (funnel activation/version rollout, navigation/layout config)
+- Consent record changes (falls im Scope)
+Audit muss actor, role, org, entity refs, action, diff/payload und timestamp enthalten.
+
+Arbeitsreihenfolge (strikt)
+1) Repo scan
+   - Pr├╝fe: audit_log Tabelle existiert schon aus V05-I01.1? Wenn ja: erweitern statt duplizieren.
+   - Finde alle Stellen im Code, die ÔÇ£decision eventsÔÇØ sind (API routes, processing orchestrator, admin config endpoints, clinician actions).
+
+2) Define canonical audit event contract (DB + code)
+   DB: audit_log columns (minimal):
+   - id (uuid)
+   - org_id
+   - actor_user_id (nullable for system jobs)
+   - actor_role (enum/text; must include nurse)
+   - source (e.g. 'api', 'job', 'admin-ui')
+   - entity_type (text/enum: 'assessment','report','task','funnel_version','config',...)
+   - entity_id (uuid/text)
+   - action (text: 'create','update','approve','reject','generate','flag','assign',...)
+   - diff jsonb (before/after or patch-like)
+   - metadata jsonb (request_id, prompt_version, algorithm_version, report_version, correlation ids)
+   - created_at default now()
+
+   Implement a small TS helper:
+   - lib/audit/log.ts: logAuditEvent({ ... }) with strict types, no magic strings (registry-backed where applicable).
+
+3) Implement logging in critical paths (minimal set)
+   - Report lifecycle:
+     - report generated (include versions)
+     - report flagged (include safety findings summary)
+     - report approved/rejected (include reviewer role, reason)
+   - Tasks:
+     - created/assigned/status change
+   - Admin config changes:
+     - funnel activation/version rollouts
+     - navigation/layout config updates
+   - Optional: consent changes
+
+4) Ensure no PHI in audit payload by default
+   - diff should reference ids + status transitions + versions, not raw clinical text.
+   - If necessary, store redacted summaries.
+
+5) RLS policy alignment
+   - Patient: typically read own audit for own entities (optional)
+   - Clinician/Nurse: read audit in org for assigned patients
+   - Admin: read config audit only
+
+6) Evidence
+   - Add at least one test or a minimal integration proof:
+     - Call endpoint that generates a report and shows an audit_log entry created.
+     - Call endpoint approve/reject and shows second audit entry.
+   - Include output in PR.
+
+Acceptance Criteria
+- audit_log exists and stores required fields.
+- Critical actions create audit entries.
+- Audit is queryable and linked to entities.
+- Typegen updated.
+- Evidence included (queries/logs/tests).
+- No PHI leakage in audit payload by default.
+
+PowerShell Verify Commands
+- npm ci
+- npm run db:reset
+- npm run db:diff
+- npm run db:typegen
+- npm test
+- npm run build
+
+Deliverables
+- Migration(s) for audit_log (if needed) + indexes
+- TS audit helper + integrations in key routes/jobs
+- Minimal doc note in docs/canon/CONTRACTS.md (ÔÇ£Audit Event ContractÔÇØ)
+"
+"352","EPIC V05-E02 ÔÇö Funnel Catalog + Plugin Runtime (7 S├ñulen ÔåÆ Funnels ÔåÆ Plugin)","CLOSED","2025-12-30T19:26:19Z","2026-01-01T11:35:35Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/352","","components;epic","**Intent:** S├ñulen als Taxonomie sichtbar; Funnels als Plugins, die ohne Core-├änderungen ausrollbar sind. 
+
+**Sub-Issues:**
+- [ ] V05-I02.1 ÔÇö S├ñulen-/Funnel-Katalog: UI + API
+- [ ] V05-I02.2 ÔÇö Funnel Plugin Manifest (questionnaire_config + content_manifest + algorithm bundle)
+- [ ] V05-I02.3 ÔÇö v0.5 Funnel Set: Aufnahme 2ÔÇô3 zus├ñtzlicher Funnels in den Katalog"
+"353","V05-I02.1 ÔÇö S├ñulen-/Funnel-Katalog: UI + API","CLOSED","2025-12-30T19:26:19Z","2025-12-31T16:08:10Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/353","","child-of-epic;components;ui","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue 521 (V05-I02.1):
+ÔÇ£S├ñulen-/Funnel-Katalog: UI + APIÔÇØ.
+
+Ziel
+Implementiere einen sichtbaren, nutzbaren Funnel-Katalog:
+- S├ñulen (Pillars) als Taxonomie
+- Funnels als Eintr├ñge mit slug, Titel, Kurzbeschreibung, Dauer, Outcomes
+- API + UI f├╝r Patient (Browse/Select) und optional Admin/Clinician (Read)
+- Multi-Tenant ready (org_id), RLS-konform.
+
+Arbeitsreihenfolge (strikt)
+1) DB/Contracts pr├╝fen
+- Pr├╝fe, ob Tabellen existieren: pillars (oder pillar enum), funnels_catalog, funnel_versions.
+- Pr├╝fe Contract Registry/CONTRACTS.md: canonical slugs, statuses.
+- Falls pillars Tabelle fehlt: Migration anlegen:
+  - pillars(id, key, title, description, sort_order, created_at)
+  - Unique: key
+- Funnels:
+  - funnels_catalog: (id, org_id nullable oder org-scoped, pillar_id FK, slug unique (pro org), title, description, est_duration_min, outcomes jsonb, is_active, created_at)
+  - funnel_versions: referenziert funnels_catalog.id
+
+2) API Routes (server-only)
+- Implementiere minimal:
+  - GET /api/funnels/catalog
+    - returns pillars + funnels (active) mit minimalen Feldern + default_version_id
+  - GET /api/funnels/catalog/[slug]
+    - returns funnel detail + active/default version summary
+- Optional (admin): GET /api/admin/funnels (same data)
+- Enforce RLS / auth: Patient darf catalog lesen (ohne PHI), org scoping korrekt.
+
+3) UI (Patient)
+- Neue Seite: /patient/funnels (oder bestehendes Muster)
+- Anzeige:
+  - Pillar Sections (Accordion oder grouped list)
+  - Funnel cards (title, description, duration, outcomes tags)
+  - CTA: ÔÇ£StartÔÇØ ÔåÆ f├╝hrt in funnel intro (uses slug)
+- Loading/empty/error states.
+
+4) Determinism / Idempotency
+- Slugs m├╝ssen ├╝ber Registry/Contracts validiert werden.
+- Keine hardcoded magic strings im UI/API.
+- API Sorting deterministisch: pillars.sort_order, funnels.title oder funnels.sort_order.
+
+5) Evidence
+- PR Description: PowerShell Commands:
+  - npm ci
+  - npm run db:reset
+  - npm run db:diff
+  - npm run db:typegen
+  - npm test
+  - npm run build
+- Screenshot/UI evidence: Funnel catalog page shows grouped pillars.
+
+Acceptance Criteria
+- Katalog ist im UI sichtbar und kommt aus API.
+- Funnels sind S├ñulen zugeordnet.
+- Slug ist canonical, deterministisch und unique.
+- Default/active Version wird angezeigt (mind. id/version).
+- Tests mindestens f├╝r API response shape + ordering.
+
+Deliverables
+- Migration(en) falls pillars/funnels fields fehlen
+- API routes + types
+- UI page + basic styling
+- Tests
+"
+"354","V05-I02.2 ÔÇö Funnel Plugin Manifest (questionnaire_config + content_manifest + algorithm bundle)","CLOSED","2025-12-30T19:26:20Z","2026-01-01T10:59:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/354","","architecture;child-of-epic;components","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue 522 (V05-I02.2):
+ÔÇ£Funnel Plugin ManifestÔÇØ.
+
+Ziel
+Definiere und implementiere ein versioniertes ÔÇ£Plugin ManifestÔÇØ pro Funnel-Version:
+- questionnaire_config (JSONB): Steps/Questions/Logic
+- content_manifest (JSONB): Content Pages/Sections/Assets
+- algorithm bundle pointer: algorithm_bundle_version (string) + optional config jsonb
+- prompt_version (string) f├╝r content/report generation
+Alles muss in DB gespeichert und im Code typisiert/validiert sein.
+
+Arbeitsreihenfolge (strikt)
+1) Contracts/Types
+- Lege TypeScript Schemas an (Zod empfohlen):
+  - FunnelQuestionnaireConfigSchema
+  - FunnelContentManifestSchema
+- Definiere minimale Pflichtfelder:
+  Questionnaire:
+    - steps[]: { id, title, questions[] }
+    - questions[]: { id, type, label, required, options?, validation? }
+    - conditionalLogic? (optional)
+  Content Manifest:
+    - pages[]: { slug, title, sections[] }
+    - sections[]: { key, type, contentRef? }
+- ÔÇ£No fantasy namesÔÇØ: question types, section types, step types m├╝ssen aus Registry/Contracts kommen.
+
+2) DB Fields
+- Pr├╝fe funnel_versions columns:
+  - questionnaire_config jsonb NOT NULL default '{}'::jsonb
+  - content_manifest jsonb NOT NULL default '{}'::jsonb
+  - algorithm_bundle_version text NOT NULL
+  - prompt_version text NOT NULL
+Falls fehlen: Migration.
+
+3) Load/Resolve Layer
+- Implementiere server-only loader:
+  - lib/funnels/loadFunnelVersion.ts
+    - loads funnel + version by slug (canonical)
+    - validates JSON with Zod
+    - returns typed manifest
+- API endpoint:
+  - GET /api/funnels/catalog/[slug]/manifest (or included in detail)
+    - returns version_id + typed manifest (or server-only consumption, if you prefer)
+  Entscheidung: Prefer server-only consumption to avoid leaking internal config? (Default: API returns minimal to client; full manifest used server-side during flow.)
+
+4) Wiring into Patient Flow
+- Ensure patient funnel pages use manifest for:
+  - rendering intro/outcomes
+  - building questionnaire steps
+- Minimal: one funnel (stress) uses the manifest end-to-end.
+
+5) Evidence & Tests
+- Unit tests:
+  - Zod schemas accept valid manifest and reject invalid (unknown question type)
+  - loader normalizes slug and loads correct version
+- PR commands (PowerShell): db reset/diff/typegen/test/build.
+
+Acceptance Criteria
+- funnel_versions contains versioned plugin manifest (questionnaire_config + content_manifest + algorithm_bundle_version + prompt_version).
+- Typed validation exists (Zod).
+- One end-to-end usage in patient flow for stress funnel (at least).
+- No magic strings for question/section types.
+
+Deliverables
+- Migration (if needed)
+- Zod schemas + registry integration
+- Loader + API minimal
+- Tests
+- Minimal docs update in docs/canon/CONTRACTS.md for manifest contract
+"
+"355","V05-I02.3 ÔÇö v0.5 Funnel Set:  Aufnahme 2ÔÇô3 zus├ñtzlicher Funnels in den Katalog","CLOSED","2025-12-30T19:26:20Z","2026-01-01T11:35:17Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/355","","child-of-epic;components","Du bist mein GitHub Copilot Implementation-Co-Pilot f├╝r RHYTHM ÔÇö Issue 523 (V05-I02.3):
+ÔÇ£v0.5 Funnel Set: 2ÔÇô3 zus├ñtzliche Funnels in den KatalogÔÇØ.
+
+Ziel
+Erweitere den Funnel-Katalog um mindestens 2ÔÇô3 zus├ñtzliche Funnels (zus├ñtzlich zum Stress/Resilienz Funnel), jeweils mit:
+- funnels_catalog entry (pillar, slug, title, description, duration, outcomes)
+- mind. 1 funnel_version (questionnaire_config stub + content_manifest stub)
+- algorithm_bundle_version + prompt_version gesetzt (Stub/Default ok)
+Diese Funnels sollen im Patient Catalog sichtbar und startbar sein (mind. bis Intro/Questionnaire stub).
+
+Kandidaten (falls im Repo/Executive Summary vorgesehen)
+- 7.1 CV Age
+- 4.6 Post-AFib Ablation Optimization
+- 7.8 WomenÔÇÖs CV Longevity
+Wenn bereits andere priorisierte Funnels existieren, nutze die ÔÇö aber keine Fantasie-Namen: nur aus Exec Summary/Contracts.
+
+Arbeitsreihenfolge (strikt)
+1) Slug/Contracts festlegen
+- Definiere canonical slugs (kebab-case) und hinterlege sie in Registry/Contracts.
+- Ensure legacy alias mapping falls n├Âtig.
+
+2) Seed/Insert Mechanismus
+- Implementiere deterministisches Seed:
+  - Entweder Migration mit INSERTs (idempotent upsert via ON CONFLICT)
+  - oder ein seeds script (db:seed) ÔÇö aber deterministisch und CI-safe.
+Bevorzugt: SQL migration mit idempotent inserts:
+  - INSERT INTO funnels_catalog ... ON CONFLICT (slug) DO UPDATE ...
+  - INSERT INTO funnel_versions ... ON CONFLICT (funnel_id, version) DO UPDATE ...
+
+3) Plugin stubs
+- questionnaire_config stub:
+  - 3ÔÇô5 steps, wenige questions, placeholder text
+- content_manifest stub:
+  - intro page + 1ÔÇô2 content pages placeholders
+- algorithm_bundle_version/prompt_version:
+  - set to ÔÇ£v0.5.0ÔÇØ (oder repo standard) ÔÇö konsistent mit Versioning Contract.
+
+4) UI validation
+- Patient funnel catalog zeigt neue Funnels.
+- Clicking ÔÇ£StartÔÇØ navigiert zur intro page und l├ñdt manifest ohne Fehler.
+
+5) Tests & Evidence
+- Test: GET catalog returns the new slugs.
+- Test: loader resolves each new funnel manifest successfully (Zod passes).
+- PR commands (PowerShell): db reset/diff/typegen/test/build.
+
+Acceptance Criteria
+- 2ÔÇô3 zus├ñtzliche Funnels sind im Katalog sichtbar.
+- F├╝r jeden existiert mind. 1 funnel_version mit manifest stubs.
+- Slugs sind canonical und in Contracts/Registry dokumentiert.
+- Deterministische Seeds/Upserts, keine Duplikate.
+- Evidence in PR: API output + UI screenshot.
+
+Deliverables
+- Migration/Seed SQL
+- Manifest stubs (JSONB)
+- Registry/Contracts updates
+- Tests
+"
+"356","EPIC V05-E03 ÔÇö Patient Journey Core (Onboarding ÔåÆ Questionnaire ÔåÆ Save/Resume ÔåÆ Results)","CLOSED","2025-12-30T19:26:29Z","2026-01-03T07:44:09Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/356","","epic;patient;ui","**Intent:** Standardpfad funnel-unabh├ñngig, parametrisiert durch Plugin-Definition.
+
+**Sub-Issues:**
+- [ ] V05-I03.1 ÔÇö Onboarding/Consent + Baseline Profile
+- [ ] V05-I03.2 ÔÇö Adaptive Questionnaire Engine (40ÔÇô50 Fragen, Conditional Logic)
+- [ ] V05-I03.3 ÔÇö Save/Resume + robuste States (loading/error/retry)
+- [ ] V05-I03.4 ÔÇö Result Screen:  Report Library + Key Outcomes + initial Tasks"
+"357","V05-I03.1 ÔÇö Onboarding/Consent + Baseline Profile","CLOSED","2025-12-30T19:26:30Z","2026-01-01T12:29:58Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/357","","child-of-epic;patient;ui","Issue #357 ÔÇö V05-I03.1 ÔÇö Onboarding/Consent + Baseline Profile
+GH Issue Text
+
+Context
+
+Epic: V05-E03 Patient Journey Core (#356)
+
+Ziel: Walking-Skeleton Startpunkt f├╝r Patient Journey: Onboarding ÔåÆ Consent ÔåÆ Baseline Profile als Voraussetzung f├╝r Questionnaire Run.
+
+Problem
+
+Es fehlt ein konsistenter Einstieg, der (a) Consent erfasst und (b) ein minimales Baseline-Profil speichert, bevor ein manifest-driven Questionnaire gestartet wird.
+
+Scope (In)
+
+Onboarding Flow (UI) mit:
+
+Consent Screen(s)
+
+Baseline Profile (minimales Set, nur aus bestehenden Contracts/Schema)
+
+Persistenz serverseitig (RLS-konform)
+
+Wire-up an bestehenden Patient Flow / Routing (keine neue Navigation-Paradigmen erfinden)
+
+Audit Events f├╝r Consent + Profile Update (nur bestehende Audit-Mechanik)
+
+Scope (Out)
+
+Kein Clinician UI
+
+Keine neue Datenmodell-Erfindung ohne DB_SCHEMA_MANIFEST-Migration
+
+Kein ÔÇ£vollst├ñndigesÔÇØ Profil ÔÇô nur baseline minimal
+
+Acceptance Criteria
+
+ Patient kann Onboarding durchlaufen und Consent abgeben; Status wird persistiert (idempotent).
+
+ Patient kann Baseline Profile speichern; Reload zeigt gespeicherte Werte.
+
+ RLS: Patient sieht/├ñndert nur eigene Daten; keine Cross-User Reads.
+
+ UI zeigt klare Validation Errors (client) und serverseitige Errors (ohne sensitive Details).
+
+ Evidence: Commands + kurzer UI-Smoke (Screenshots optional).
+
+Implementation Tasks
+
+ Vorhandene Contracts/Registry/DB_SCHEMA_MANIFEST pr├╝fen: Wo werden Consent/Baseline Profile gespeichert (bestehende Tabellen/Spalten nutzen).
+
+ Falls Felder fehlen: Migration-first (neue Spalten/Constraints nur via Migration + Manifest Update + Tests).
+
+ Server Actions / API Route: Upsert Consent + Upsert Baseline Profile (idempotent).
+
+ UI Pages/Components f├╝r Consent + Baseline Profile (nur registrierte Labels/Keys).
+
+ Tests: Zod/Contracts + Server handler tests (mind. happy path + RLS/unauthorized).
+
+ Audit: Consent/Baseline Update erzeugt Audit Event (├╝ber vorhandenes Audit-System; keine neuen Keys).
+
+Verify (PowerShell)
+
+npm test
+npm run build
+npm run db:reset
+npm run db:diff
+npm run db:typegen
+# optional (wenn vorhanden): npm run lint
+
+
+UI Smoke (lokal):
+
+ Patient Flow starten ÔåÆ Onboarding/Consent ÔåÆ Baseline Profile speichern ÔåÆ Reload ÔåÆ Werte vorhanden."
+"358","V05-I03.2 ÔÇö Adaptive Questionnaire Engine (40ÔÇô50 Fragen, Conditional Logic)","CLOSED","2025-12-30T19:26:30Z","2026-01-03T05:45:29Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/358","","child-of-epic;components;patient;ui","Du bist mein VS Code GitHub Copilot. Implementiere Issue #358 (V05-I03.2) in minimalem Diff.
+
+Hard Rules:
+- Keine Fantasie-Namen: Question Types, Logic Keys, Step IDs ausschlie├ƒlich aus Registry/Contracts/DB_SCHEMA_MANIFEST.
+- Conditional Logic NICHT neu erfinden. Implementiere genau das, was die vorhandenen Zod Schemas/Contracts bereits ausdr├╝cken.
+- Server-only loader bleibt server-only; kein Import in Client.
+- Tests verpflichtend (logic + sequencing).
+
+Ziel:
+- Manifest-driven Questionnaire Runner: Step/Question Rendering + Conditional Logic + Validation + Next/Back (ohne Persistenz).
+- Robust: Unknown question type => controlled error path.
+- Deterministisch: gleiche Antworten => gleiche Step-Sequenz.
+
+Arbeitsauftrag:
+1) Finde die bestehenden Manifest/Questionnaire Contracts (Zod) und Registry der Question Types.
+2) Implementiere Runner UI + internal state machine (currentStep, answers, visibleSteps).
+3) Implementiere Conditional Logic Evaluation + Tests (mind. 5 F├ñlle).
+4) Integriere in Patient Flow f├╝r einen vorhandenen Funnel (Pillar 4 Stress).
+
+Done Definition:
+- npm test/build/db gates gr├╝n.
+- UI Smoke: Stress Funnel Questionnaire durchlaufbar mit Branching.
+- Keine neuen Types/DSL.
+"
+"359","V05-I03.3 ÔÇö Save/Resume + robuste States (loading/error/retry)","CLOSED","2025-12-30T19:26:30Z","2026-01-03T06:26:54Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/359","","child-of-epic;patient;ui","Du bist mein VS Code GitHub Copilot. Implementiere Issue #359 (V05-I03.3) in minimalem Diff.
+
+Hard Rules:
+- Keine Fantasie-Namen: Persistenz nutzt ausschlie├ƒlich vorhandene Tabellen/Spalten aus DB_SCHEMA_MANIFEST/Contracts. Wenn etwas fehlt: STOP und lege migration-first (Migration + Manifest + Typegen + Tests) vor.
+- Upsert/Idempotenz ist Pflicht (keine Duplikate).
+- UI muss robuste loading/error/retry states haben.
+- PowerShell Verify.
+
+Ziel:
+- Save/Resume f├╝r Questionnaire Runs + robuste States:
+  - Save answers deterministisch (upsert)
+  - Resume loads last saved state and rehydrates runner
+  - UI shows loading/error/retry; retry works
+
+Arbeitsauftrag:
+1) Finde bestehende Persistenz-Modelle (assessment/run/answers) im DB schema manifest + code.
+2) Implementiere server handlers: saveAnswer(s) + loadRunState (latest for user/funnel/version).
+3) Integriere in runner: persist on Next (oder bestehendes Autosave Pattern), resume on entry.
+4) Add tests: server save/load + one retry/error scenario.
+
+Done Definition:
+- npm test/build/db gates gr├╝n.
+- UI Smoke: Answer 5 Qs ÔåÆ reload ÔåÆ resume; error ÔåÆ retry works.
+- Keine neuen Entities ohne migration/manifest update.
+"
+"360","V05-I03.4 ÔÇö Result Screen: Report Library + Key Outcomes + initial Tasks","CLOSED","2025-12-30T19:26:31Z","2026-01-03T07:43:51Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/360","","child-of-epic;patient;ui","Du bist mein VS Code GitHub Copilot. Implementiere Issue #360 (V05-I03.4) in minimalem Diff.
+
+Hard Rules:
+- Keine Fantasie-Namen: Reports/Results/Outcomes nur aus DB_SCHEMA_MANIFEST + bestehenden Contracts. Wenn nicht vorhanden: STOP und schlage migration-first oder eine ÔÇ£read-only placeholderÔÇØ UI mit empty state vor (ohne neue Tabellen).
+- Version Binding: nutze die bestehenden version fields (algorithm_bundle_version, prompt_version etc.) wie im aktuellen Contract.
+- Evidence-first + PowerShell Verify.
+
+Ziel:
+- Result Screen im Patient Flow:
+  - Report Library (list + open/download per existing pattern)
+  - Key Outcomes (summary)
+  - Initial Tasks nur wenn manifest/content-getrieben bereits existiert
+  - Robust: empty states
+
+Arbeitsauftrag:
+1) Finde bestehende Result/Report Speicherung + APIs (oder server queries) im Repo.
+2) Implementiere server loader/query: list reports + outcomes summary for current user and current run/funnel/version.
+3) Implementiere Results UI + navigation from questionnaire completion.
+4) Add tests: server query + UI empty/non-empty rendering.
+
+Done Definition:
+- npm test/build/db gates gr├╝n.
+- UI Smoke: complete questionnaire ÔåÆ results page with correct states.
+- Keine neuen schemas/keys ohne Manifest/Migration.
+"
+"361","EPIC V05-E04 ÔÇö Document Upload + Extraction + Patient Confirmation (optional)","CLOSED","2025-12-30T19:26:41Z","2026-01-03T15:05:14Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/361","","agent;epic;patient","**Intent:** Upload ÔåÆ (optional OCR) ÔåÆ AI Extraction ÔåÆ Patient best├ñtigt/korrigiert ÔåÆ bessere Genauigkeit.
+
+**Sub-Issues:**
+- [ ] V05-I04.1 ÔÇö Document Upload (Storage) + Typisierung + Parsing Status
+- [ ] V05-I04.2 ÔÇö AI Extraction Pipeline + Confidence Metadata
+- [ ] V05-I04.3 ÔÇö Confirmation UI (Patient best├ñtigt/korrigiert extrahierte Werte)"
+"362","V05-I04.1 ÔÇö Document Upload (Storage) + Typisierung + Parsing Status","CLOSED","2025-12-30T19:26:41Z","2026-01-03T11:11:02Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/362","","child-of-epic;components;patient","V05-I04.1 ÔÇö Document Upload (Storage) + Typisierung + Parsing Status (#362)
+GH Issue Text
+
+Goal
+Patient can upload a document, it is stored securely, recorded in DB with typed metadata, and a deterministic parsing status is tracked end-to-end.
+
+Scope
+
+Upload UI (patient) + API route(s) for upload initiation/completion.
+
+Supabase Storage (private bucket) + DB record for each upload.
+
+Parsing status state machine (e.g. UPLOADED ÔåÆ PARSING ÔåÆ PARSED ÔåÆ FAILED) stored in DB.
+
+No PDF parsing/extraction logic here beyond status + placeholder hook (that is I04.2).
+
+Acceptance Criteria
+
+Patient can upload a PDF (or allowed mime types) and sees an upload success state.
+
+File ends up in private Supabase Storage; no public bucket access; signed URLs only (if needed for preview/download).
+
+DB record exists for each upload with:
+
+user ownership (RLS-safe)
+
+storage path + original filename + mime + size
+
+deterministic parsing_status
+
+Status transitions are deterministic and auditable; failures are recorded without leaking PHI.
+
+No new ÔÇ£fantasyÔÇØ table/enum/keys:
+
+Use only objects from DB_SCHEMA_MANIFEST / existing migrations / registry.
+
+If missing: add migration + update schema manifest + tests (migration-first).
+
+Tests cover: auth gating, RLS scoping, allowed file types, DB record creation, status transitions.
+
+Tasks
+
+Inspect DB_SCHEMA_MANIFEST and current schema to find existing doc tables/status enums.
+
+Implement server-only upload endpoint(s):
+
+validate session (401) and user scope (RLS)
+
+validate mime/size allowlist
+
+create storage object + DB record
+
+Implement status update helper (server-only) with allowed transitions.
+
+Add docs: how to verify locally, PowerShell-only.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+npm run db:reset
+npm run db:diff
+npm run db:typegen"
+"363","V05-I04.2 ÔÇö AI Extraction Pipeline + Confidence Metadata","CLOSED","2025-12-30T19:26:41Z","2026-01-03T14:24:59Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/363","","agent;child-of-epic","V05-I04.2 ÔÇö AI Extraction Pipeline + Confidence Metadata (#363)
+GH Issue Text
+
+Goal
+Given an uploaded & parsed document, run an AI extraction pipeline that writes structured extracted values plus per-field confidence metadata, deterministically versioned.
+
+Scope
+
+Pipeline trigger (manual/API) for a given document_id (or canonical doc reference).
+
+Extraction result persisted with:
+
+extractor_version (versioned)
+
+input_hash (deterministic; same input ÔåÆ same output idempotent behavior)
+
+extracted_json (structured)
+
+confidence_json (per-field confidence + evidence pointers that are PHI-safe)
+
+Idempotency: same document + same extractor_version + same input_hash must not create duplicates.
+
+No patient confirmation UI yet (that is I04.3).
+
+Acceptance Criteria
+
+Extraction pipeline can be triggered for a document in PARSED state; other states ÔåÆ 409/422 (deterministic errors).
+
+Writes extraction result + confidence metadata to DB; idempotent upsert by (document_id, extractor_version, input_hash) (or existing canonical constraint).
+
+Extractor is versioned and must be referenced via registry/contracts (no free strings).
+
+PHI-safe logs + audit events: requestId, document_id (UUID), versions, status; no document text in logs.
+
+Tests: invalid states, idempotency, schema validation, auth gating.
+
+Tasks
+
+Locate existing AMY/LLM extraction utilities + contracts (no new DSL).
+
+Define/confirm canonical extraction result schema (Zod + DB).
+
+Implement orchestrator route/action:
+
+fetch parsed payload (existing storage/table)
+
+compute input_hash
+
+run extractor (LLM) with deterministic prompt versioning
+
+persist results idempotently
+
+Add docs + PowerShell verification.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+npm run db:reset
+npm run db:diff
+npm run db:typegen"
+"364","V05-I04.3 ÔÇö Confirmation UI (Patient best├ñtigt/korrigiert extrahierte Werte)","CLOSED","2025-12-30T19:26:42Z","2026-01-03T15:03:46Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/364","","child-of-epic;patient;ui","V05-I04.3 ÔÇö Confirmation UI (Patient best├ñtigt/korrigiert extrahierte Werte) (#364)
+GH Issue Text
+
+Goal
+Patient can review extracted values, see confidence, and confirm/correct them. Confirmations are persisted and become the canonical ÔÇ£patient-confirmedÔÇØ dataset for downstream reporting.
+
+Scope
+
+Patient UI page(s) to review extraction results per document.
+
+Confidence-aware UX:
+
+highlight low-confidence fields
+
+allow correction with validation
+
+Persist confirmation:
+
+confirmed_json + per-field status (accepted/edited/rejected)
+
+audit event (PHI-free)
+
+Downstream APIs return confirmed values preferentially (if present), otherwise extracted values (explicitly marked).
+
+Acceptance Criteria
+
+Patient can open a ÔÇ£Review extracted valuesÔÇØ screen for a document with extraction results.
+
+Fields are grouped per existing contracts (no new categories); low-confidence is visually flagged.
+
+Patient actions:
+
+Accept all
+
+Edit individual fields
+
+Mark ÔÇ£not applicable/unknownÔÇØ where supported by contracts
+
+Persisted deterministically and idempotently:
+
+re-opening shows previous confirmations
+
+saving twice doesnÔÇÖt create duplicates
+
+Security:
+
+RLS ensures user can only see/confirm their own documents
+
+server-only save action
+
+Tests: UI integration (basic), server action validation, idempotent persistence, auth gating.
+
+Tasks
+
+Locate extraction result schema from I04.2 and map to confirmation model.
+
+Implement patient route + client component rendering fields based on contracts.
+
+Implement server action/API for saving confirmation with validation.
+
+Add docs + PowerShell verification.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+npm run db:reset
+npm run db:diff
+npm run db:typegen"
+"365","EPIC V05-E05 ÔÇö Processing Pipeline + Medical QA + PDF + Delivery (funnel-unabh├ñngig)","CLOSED","2025-12-30T19:26:56Z","2026-01-04T20:01:09Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/365","","agent;epic;OPS","**Intent:** Gemeinsamer Workflow:  Scores ÔåÆ Ranking ÔåÆ Report Sections ÔåÆ Safety L1/L2 ÔåÆ Review ÔåÆ PDF ÔåÆ Delivery.
+
+**Sub-Issues:**
+- [ ] V05-I05.1 ÔÇö Processing Orchestrator (job/edge function) + Status Tracking
+- [ ] V05-I05.2 ÔÇö Risk Calculation Bundle (deterministisch, versioniert, getestet)
+- [ ] V05-I05.3 ÔÇö Priority Ranking (Impact x Feasibility) + Top-Interventions
+- [ ] V05-I05.4 ÔÇö Content Generation:  modulare Sections + Prompt Versioning
+- [ ] V05-I05.5 ÔÇö Medical Validation Layer 1 (rules:  contraindications/plausibility)
+- [ ] V05-I05.6 ÔÇö Medical Validation Layer 2 (AI self-check ÔåÆ safety_score)
+- [ ] V05-I05.7 ÔÇö Review Queue (alle flagged + Sampling) + Approve/Reject
+- [ ] V05-I05.8 ÔÇö PDF Assembly (HTML ÔåÆ PDF) + Signed URLs + Storage
+- [ ] V05-I05.9 ÔÇö Delivery: Dashboard + Notification/Email + Follow-up Sequences (MVP)"
+"366","V05-I05.1 ÔÇö Processing Orchestrator (job/edge function) + Status Tracking","CLOSED","2025-12-30T19:26:57Z","2026-01-03T17:26:51Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/366","","architecture;child-of-epic;OPS","V05-I05.1 ÔÇö Processing Orchestrator (job/edge function) + Status Tracking
+
+Title
+V05-I05.1 ÔÇö Processing Orchestrator (job/edge function) + Status Tracking (funnel-unabh├ñngig, deterministisch, idempotent)
+
+Kontext
+Nach I03.x (Assessment/Save/Resume) braucht der Walking Skeleton einen verl├ñsslichen ÔÇ£ProcessingÔÇØ-Pfad: aus einem abgeschlossenen Assessment wird ein verarbeitbarer Job, der deterministisch durch definierte Stages l├ñuft (Risk ÔåÆ Ranking ÔåÆ Content ÔåÆ Validation ÔåÆ Review ÔåÆ PDF ÔåÆ Delivery). Daf├╝r ist ein Orchestrator + Status Tracking notwendig, funnel-unabh├ñngig und evidence-first.
+
+Ziel
+
+Ein Orchestrator, der Processing-Jobs erstellt, ausf├╝hrt (synchron/async je nach bestehender Infrastruktur) und ihren Status nachvollziehbar persistiert.
+
+Ein Statusmodell, das UI/Clinician/Admin sp├ñter auslesen kann (ohne PHI-Leaks).
+
+Scope
+
+Processing Job Contract (versioniert)
+
+Definiere ein versioniertes Schema (z. B. ProcessingJobV1, ProcessingStatusV1) in lib/schemas/... (Zod o. ├ñ.).
+
+Minimale Felder (ohne Fantasie): jobId, assessmentId, createdAt, updatedAt, status, stage, attempt, correlationId, errors[] (redacted).
+
+Keine patient-identifizierenden Daten im Job-Payload, au├ƒer wenn bereits im DB-Schema zwingend vorgesehen (dann redaction/allowlist).
+
+Orchestrator Entry
+
+Implementiere einen Startpunkt (API route / edge function / server action) nur auf Basis vorhandener Architektur im Repo (keine neuen Plattformannahmen).
+
+Starten eines Jobs ist idempotent (gleicher assessmentId + correlationId ÔåÆ kein Duplikat).
+
+Status Tracking
+
+Persistiere Status├ñnderungen (inkl. stage transitions) in DB gem├ñ├ƒ bestehender Migrations-/Schema-Konventionen (DB_SCHEMA_MANIFEST als SOT).
+
+Status ist deterministisch: gleiche Inputs ÔåÆ gleiche Stage-Reihenfolge; Retries sind begrenzt und nachvollziehbar.
+
+Nicht-Ziele
+
+Noch kein kompletter Content/Risk/PDF Output (das kommt in I05.2ÔÇôI05.9).
+
+Keine neue Observability-Plattform; nur das minimale Tracking, das sp├ñter genutzt wird.
+
+Acceptance Criteria
+
+Idempotenz: Starten desselben Jobs (identische Inputs) erzeugt keine Duplikate; es wird derselbe Job referenziert oder sauber abgewiesen (422/409 je nach bestehender Semantik).
+
+Deterministische Stages: Stage-Mapping ist als Enum/Registry definiert; unbekannte Stage ÔåÆ fail-closed.
+
+Status Persistenz: Jobs und Status├ñnderungen sind persistent und querybar (f├╝r sp├ñtere Dashboards).
+
+PHI-frei: Job-Logs/Errors enthalten keine Request-Bodies, keine Freitexteingaben, keine Identifiers au├ƒerhalb allowlist.
+
+Auth/RBAC:
+
+Patient darf nur eigene Jobs triggern/sehen (Ownership .eq(...)).
+
+Clinician/Admin Zugriff nur ├╝ber existierende RBAC-Mechanik.
+
+HTTP Semantik:
+
+Missing assessment/resource ÔåÆ 404
+
+invalid state (z. B. assessment nicht abgeschlossen) ÔåÆ 422
+
+unauth ÔåÆ 401, forbidden ÔåÆ 403
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Vorhandene Muster finden: Jobs/Queues/Edge Functions/Background Processing im Repo (ohne neue Annahmen).
+
+ ProcessingJob + ProcessingStatus Schema v1 implementieren (versioniert).
+
+ DB: Tabelle(n) / Spalten / Indizes ├╝ber Migration anlegen (Name/Struktur strikt nach DB_SCHEMA_MANIFEST + bestehendem Naming).
+
+ API/Function: startProcessing(assessmentId, correlationId?) implementieren (idempotent).
+
+ Status transitions + retry policy minimal (z. B. attempt++, lastError redacted).
+
+ Tests: idempotency, ownership gating, status transitions, schema validation.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+Optional (nur falls im Repo vorhanden):
+
+npm run db:access-verify
+
+
+DoD
+
+Ein Processing Job kann erstellt werden und besitzt persisted Status/Stage.
+
+Idempotenz, Auth/RBAC, PHI-freie Errors, Statuscodes sind getestet."
+"367","V05-I05.2 ÔÇö Risk Calculation Bundle (deterministisch, versioniert, getestet)","CLOSED","2025-12-30T19:26:57Z","2026-01-03T20:40:52Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/367","","agent;child-of-epic;components","V05-I05.2 ÔÇö Risk Calculation Bundle (deterministisch, versioniert, getestet)
+
+Title
+V05-I05.2 ÔÇö Risk Calculation Bundle (deterministisch, versioniert, getestet)
+
+Kontext
+Die Pipeline ben├Âtigt eine deterministische Risikoberechnung als Grundlage f├╝r Ranking/Interventionen und QA. Diese Berechnung muss versioniert sein (damit Re-Processing reproduzierbar ist) und streng testen/validieren.
+
+Ziel
+
+Ein ÔÇ£Risk BundleÔÇØ (Contract) wird aus Assessment Answers + Registry/Manifest berechnet.
+
+Das Bundle ist reproduzierbar und tr├ñgt eine riskBundleVersion (und ggf. references auf registry/funnel_version).
+
+Scope
+
+Definition eines versionierten Risk-Bundle Schemas (z. B. RiskBundleV1).
+
+Deterministische Berechnung: nur aus erlaubten Inputs (Answers, scoring rules aus Registry/Manifest), kein LLM.
+
+Persistenz: Risk Bundle wird einem Processing Job zugeordnet (JobId/AssessmentId).
+
+Validierung: unknown operator/type/rule ÔåÆ fail-closed (422/processing FAILED).
+
+Nicht-Ziele
+
+Keine medizinische ÔÇ£InterpretationÔÇØ durch LLM (kommt sp├ñter in Content/Validation).
+
+Kein UI, au├ƒer minimalen Debug-Read endpoint falls bereits Pattern existiert.
+
+Acceptance Criteria
+
+Versionierung: Risk Bundle enth├ñlt eine klare Version + references auf Input-Versionen (mindestens funnel_version/registry identifiers, sofern vorhanden).
+
+Determinismus: gleicher Input ÔåÆ exakt gleicher Output (Snapshot-Test oder Hash).
+
+Fail-closed: unknown/unsupported rule/operator/type ÔåÆ kein Partial Output; klarer Fehlerpfad.
+
+Persistenz: Output ist gespeichert und einem Job zugeordnet; Re-Processing kann vorhandenes Bundle wiederverwenden (idempotent oder overwrite mit neuer version ÔÇô klar definiert).
+
+PHI-frei: Bundle enth├ñlt keine rohen Freitextantworten, sofern nicht zwingend im Assessment enthalten; wenn Freitext existiert, dann nur redacted/derived (Policy).
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Contract RiskBundleV1 (Schema + JSON representation) definieren.
+
+ Calculator implementieren (pure function): computeRiskBundle(input).
+
+ Input mapping aus Assessment Answers (aus vorhandener Answer-Struktur) ableiten.
+
+ Persistenz-Layer: speichern/lesen pro jobId.
+
+ Tests:
+
+golden fixtures (determinism)
+
+fail-closed f├╝r unknown rules
+
+regression tests f├╝r boundary conditions
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Risk Bundle wird im Orchestrator-Flow als Stage berechnet und persisted.
+
+Determinism + versioning + strict validation sind test-evident."
+"368","V05-I05.3 ÔÇö Priority Ranking (Impact x Feasibility) + Top-Interventions","CLOSED","2025-12-30T19:26:58Z","2026-01-03T21:41:05Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/368","","agent;child-of-epic","V05-I05.3 ÔÇö Priority Ranking (Impact ├ù Feasibility) + Top-Interventions
+
+Title
+V05-I05.3 ÔÇö Priority Ranking (Impact ├ù Feasibility) + Top-Interventions (deterministisch, nachvollziehbar)
+
+Kontext
+Nach der Risikoberechnung braucht der Report eine priorisierte Auswahl: welche Themen/Interventionen zuerst. Das Ranking muss nachvollziehbar, deterministic und regelbasiert sein (kein LLM), damit Medical QA sp├ñter pr├╝fen kann.
+
+Ziel
+
+Erzeuge ein PriorityRankingV1 aus RiskBundleV1 + (falls vorhanden) program tier constraints.
+
+Liefere ÔÇ£Top InterventionsÔÇØ als strukturierte Liste (ohne neue Fantasie-Interventionsnamen: ausschlie├ƒlich aus vorhandenen Content/Registry Quellen oder neutralen placeholders, die sp├ñter durch Content Gen ersetzt werden).
+
+Scope
+
+Ranking-Algorithmus (deterministisch) mit Score-Komponenten: Impact, Feasibility (jeweils numerisch + Begr├╝ndung).
+
+Output Contract (versioniert) inkl. ÔÇ£whyÔÇØ Felder als strukturierte Codes (kein Freitext erforderlich).
+
+Persistenz an Job gekoppelt.
+
+Nicht-Ziele
+
+Kein endg├╝ltiger Text-Content (kommt I05.4).
+
+Keine UI, au├ƒer optional debug read.
+
+Acceptance Criteria
+
+Determinismus: Ranking ist reproduzierbar (Snapshot/fixture).
+
+Explainability: Jede Top-Item Entscheidung enth├ñlt: input signals (codes), partial scores, final score.
+
+No fantasy: Items referenzieren existierende Registry IDs/Slugs/Content keys ÔÇô oder sind generische ÔÇ£topicsÔÇØ ohne erfundene medizinische Inhalte.
+
+Tier constraints: Wenn program tier existiert, wird Ranking korrekt gefiltert/gewichtet (nur nach validiertem Contract).
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Contract PriorityRankingV1 definieren.
+
+ Ranking function implementieren: rankInterventions(riskBundle, tier?).
+
+ Mapping von Risk Signals ÔåÆ Candidate topics (aus Registry/Manifest/Content keys).
+
+ Persistenz hinzuf├╝gen.
+
+ Tests: determinism + explainability + tier filtering.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Pipeline kann nach Risk Bundle ein Ranking erzeugen, speichern, und sp├ñter f├╝r Content/QA nutzen."
+"369","V05-I05.4 ÔÇö Content Generation: modulare Sections + Prompt Versioning","CLOSED","2025-12-30T19:26:58Z","2026-01-04T06:41:28Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/369","","agent;child-of-epic","V05-I05.4 ÔÇö Content Generation: modulare Sections + Prompt Versioning
+
+Title
+V05-I05.4 ÔÇö Content Generation: modulare Sections + Prompt Versioning (contract-first, no fantasy)
+
+Kontext
+Der Report braucht strukturierte, modulare Sections (z. B. Overview, Findings, Recommendations), generiert aus Ranking/Risk und manifestierten Inputs. Prompts m├╝ssen versioniert sein, damit Content reproduzierbar und reviewbar ist.
+
+Ziel
+
+Definiere ein Sections-Modell (Contract) und eine Prompt-Versionierung (SOT).
+
+Generiere Section Drafts (LLM oder templated), aber strikt ÔÇ£guardrailedÔÇØ: keine neuen medizinischen Behauptungen ohne Quellen/Constraints.
+
+Scope
+
+ReportSectionsV1 Schema: array von Sections mit sectionKey, inputs, draft, citations/refs (nur interne refs), promptVersion.
+
+Prompt Registry (versioniert):
+
+Speicherung als files oder DB, abh├ñngig von bestehender Repo-Policy (keine neue Plattform).
+
+Jede Generierung speichert promptId + promptVersion + model config reference (nur wenn bereits im Repo konfiguriert).
+
+Redaction: keinerlei PHI in prompts (nur abgeleitete, coded signals).
+
+Nicht-Ziele
+
+Kein finaler PDF Output (I05.8).
+
+Kein Review UI (I05.7).
+
+Acceptance Criteria
+
+Prompt Versioning: jede Generation referenziert eine konkrete prompt version (immutable).
+
+No PHI: prompts enthalten nur allowlisted derived data (codes/scores), keine rohen Antworten/Freitext.
+
+No fantasy medical claims: generierter Text muss an Constraints gebunden sein (z. B. ÔÇ£informational, not diagnosisÔÇØ, rule-based boundaries).
+
+Deterministische Inputs: Section inputs stammen ausschlie├ƒlich aus RiskBundle/Ranking + tier + funnel_version references.
+
+Retry behavior: bei LLM failure klare Fehlerpfade, keine silent partials.
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Sections schema v1 definieren + validator.
+
+ Prompt storage entscheiden anhand Repo-Praxis (Docs/Registry/DB); implementieren ohne neue Fantasie-Strukturen.
+
+ Generator implementieren: generateSections(jobContext) (guardrailed).
+
+ Persistenz: sections drafts speichern pro jobId + prompt versions.
+
+ Tests: prompt version recorded; PHI redaction; schema validation.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Pipeline kann modulare Section Drafts erzeugen, versioniert speichern, ohne PHI und mit klarer Guardrail-Policy."
+"370","V05-I05.5 ÔÇö Medical Validation Layer 1 (rules:  contraindications/plausibility)","CLOSED","2025-12-30T19:26:58Z","2026-01-04T08:12:07Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/370","","agent;child-of-epic","V05-I05.5 ÔÇö Medical Validation Layer 1 (rules: contraindications/plausibility)
+
+Title
+V05-I05.5 ÔÇö Medical Validation Layer 1: rules-based checks (contraindications/plausibility), fail-closed flags
+
+Kontext
+Vor Review/PDF m├╝ssen Inhalte und Empfehlungen durch eine erste, regelbasierte medizinische Plausibilit├ñts- und Contraindication-Schicht laufen. Das ist deterministic, testbar und ÔÇ£fail-closedÔÇØ: problematische Inhalte werden geflaggt oder blockieren.
+
+Ziel
+
+Implementiere MedicalValidationV1 Layer 1, der auf Regeln arbeitet (keine LLM).
+
+Output: flags, severity, reasons (coded), und ein ÔÇ£pass/failÔÇØ pro section + overall.
+
+Scope
+
+Validation Rules als SOT (files/registry/db) gem├ñ├ƒ bestehender Repo-Konvention (keine Fantasie-Rule-Engine).
+
+Checks (minimal, aber strukturiert):
+
+Contraindication conflicts (z. B. recommendation vs risk signals) ÔÇô als rule references, nicht als freie medizinische Behauptungen
+
+Plausibility: widerspr├╝chliche Aussagen / out-of-bound claims (pattern-based)
+
+Ergebnis wird persisted und beeinflusst Status:
+
+Critical ÔåÆ job stage flagged, Review required.
+
+Acceptance Criteria
+
+Deterministisch: gleiche Inputs ÔåÆ gleiche Flags.
+
+Versioniert: Validation Rules/Engine version wird im Output gespeichert.
+
+Fail-closed: unknown rule keys / missing rule set ÔåÆ validation FAIL mit klarer error (keine ÔÇ£pass by defaultÔÇØ).
+
+No PHI: flags enthalten keine patient identifiers; nur references (jobId, sectionKey, ruleId).
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ MedicalValidationResultV1 Schema definieren.
+
+ Rule storage implementieren (align mit Repo).
+
+ Rule evaluation implementieren.
+
+ Persistenz + stage transition: PASS ÔåÆ next stage, FAIL/FLAG ÔåÆ Review queue (I05.7).
+
+ Tests: rule fixtures, fail-closed behavior.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Layer 1 produziert reproduzierbare Flags und blockiert/flaggt korrekt f├╝r Review."
+"371","V05-I05.6 ÔÇö Medical Validation Layer 2 (AI self-check ÔåÆ safety_score)","CLOSED","2025-12-30T19:26:59Z","2026-01-04T10:10:58Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/371","","agent;child-of-epic","V05-I05.6 ÔÇö Medical Validation Layer 2 (AI self-check ÔåÆ safety_score)
+
+Title
+V05-I05.6 ÔÇö Medical Validation Layer 2: AI self-check ÔåÆ safety_score (guardrailed, PHI-free, auditable)
+
+Kontext
+Zus├ñtzlich zu Regeln braucht es eine zweite QA-Schicht: ein LLM-basierter Self-Check (ÔÇ£is this safe, consistent, non-harmful?ÔÇØ). Dieser Layer muss streng guardrailed sein (keine Diagnosen), PHI-frei, und auditierbar (prompt+version+score gespeichert).
+
+Ziel
+
+Erzeuge einen safety_score + structured findings aus Sections Drafts.
+
+Ergebnis steuert Review/Sampling (I05.7).
+
+Scope
+
+Self-check Prompt(s) versioniert (reuse Prompt Versioning aus I05.4).
+
+Inputs: ausschlie├ƒlich redacted Sections (keine patient identifiers, keine raw answers).
+
+Outputs: SafetyCheckV1 (score, severity, reasons, recommended action: PASS/FLAG/BLOCK).
+
+Logging: nur structured outputs, keine raw completions speichern, au├ƒer repo-policy erlaubt und PHI-sicher (default: minimal).
+
+Acceptance Criteria
+
+PHI-frei: Prompt/Inputs enthalten keine Identifiers; Outputs enthalten keine PHI.
+
+Versionierung: promptVersion + model config reference wird gespeichert.
+
+Guardrails: Self-check ist strikt ÔÇ£safety assessmentÔÇØ, keine Diagnosen, keine neuen Empfehlungen generieren.
+
+Deterministische Speicherung: gleicher content + gleiche promptVersion ÔåÆ stable evaluation record (idempotent record, nicht unbounded duplicates).
+
+Fail-closed: wenn self-check nicht verf├╝gbar ÔåÆ Ergebnis ÔÇ£UNKNOWNÔÇØ und Review required (nicht ÔÇ£PASSÔÇØ).
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ SafetyCheckV1 Schema definieren + validator.
+
+ Prompt(s) implementieren (versioned).
+
+ Execution: LLM client gem├ñ├ƒ Repo-Konfiguration verwenden (keine neuen Provider-Namen).
+
+ Persistenz + stage transition: PASS ÔåÆ next stage, FLAG/BLOCK ÔåÆ Review queue.
+
+ Tests: schema validation, fail-closed, prompt version recorded.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Layer 2 liefert einen auditierbaren safety_score, steuert Review deterministisch, und ist PHI-sicher."
+"372","V05-I05.7 ÔÇö Review Queue (alle flagged + Sampling) + Approve/Reject","CLOSED","2025-12-30T19:26:59Z","2026-01-04T11:30:37Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/372","","child-of-epic;clinician;ui","V05-I05.7 ÔÇö Review Queue (alle flagged + Sampling) + Approve/Reject
+
+Title
+V05-I05.7 ÔÇö Review Queue: flagged items + deterministic sampling, Approve/Reject workflow (RBAC, audit trail)
+
+Kontext
+Medical QA ben├Âtigt eine Review Queue: alle flagged Jobs (aus I05.5/I05.6) plus ein Sampling-Anteil (Qualit├ñtssicherung). Review Aktionen m├╝ssen auditierbar sein und RBAC-respektierend (Clinician/Admin, ggf. Nurse nur read/triage je nach existierender Policy).
+
+Ziel
+
+Queue-Mechanismus + minimaler Review State: PENDING, APPROVED, REJECTED, CHANGES_REQUESTED (nur wenn mit bestehenden State Patterns kompatibel).
+
+Audit trail f├╝r Entscheidungen (wer, wann, warum-code, keine PHI).
+
+Scope
+
+Persistenz eines Review Records pro Job (idempotent).
+
+Deterministic Sampling: definierte Regel (z. B. N% oder 1-of-K) basierend auf stable hash (jobId/correlationId), nicht random pro Request.
+
+API Endpoints:
+
+list queue (RBAC)
+
+get review details (redacted)
+
+approve/reject (write, RBAC before write)
+
+Statuscodes strikt (401/403/404/422).
+
+Acceptance Criteria
+
+Queue enth├ñlt: alle FLAG/BLOCK + sampled PASS F├ñlle (deterministisch).
+
+RBAC: nur erlaubte Rollen d├╝rfen approve/reject; unauthorized ÔåÆ 403.
+
+Audit trail: Decision record speichert reviewer identity reference (ohne PHI), timestamps, decision, reason codes.
+
+No PHI: Queue/List responses sind redacted; keine raw answers.
+
+Idempotent writes: approve/reject doppelt senden ÔåÆ kein inkonsistenter Zustand.
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Review schema v1 definieren.
+
+ DB migration (nach SOT) f├╝r review records.
+
+ Deterministic sampling function implementieren (stable hash).
+
+ API routes implementieren (list/get/decide).
+
+ Tests: RBAC, idempotency, sampling determinism, status codes.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Review Queue ist funktionsf├ñhig, sicher, deterministisch, und kann sp├ñtere UI/Delivery steuern."
+"373","V05-I05.8 ÔÇö PDF Assembly (HTML ÔåÆ PDF) + Signed URLs + Storage","CLOSED","2025-12-30T19:27:00Z","2026-01-04T13:36:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/373","","child-of-epic;components;OPS","V05-I05.8 ÔÇö PDF Assembly (HTML ÔåÆ PDF) + Signed URLs + Storage
+
+Title
+V05-I05.8 ÔÇö PDF Assembly: HTML ÔåÆ PDF + Signed URLs + Storage (secure, deterministic, redacted metadata)
+
+Kontext
+Der pipeline output muss als PDF bereitgestellt werden (Report). PDF-Erstellung ist h├ñufig fehleranf├ñllig (rendering, storage, signing) und muss sicher sein (keine offenen Buckets, keine PHI in URLs/paths).
+
+Ziel
+
+Erzeuge PDF aus HTML (oder Template) deterministisch.
+
+Speichere PDF in Storage nach Repo-Standard (Supabase storage / S3 / etc. ÔÇô nur vorhandene Infrastruktur nutzen).
+
+Liefere Signed URL(s) f├╝r Download, zeitlich begrenzt.
+
+Scope
+
+HTML Rendering: aus ReportSections + final approvals (I05.7) ein HTML Document erstellen (server-side).
+
+PDF Generation: nutze bestehende, bereits verwendete PDF tooling im Repo; wenn neu, minimal und dokumentiert.
+
+Storage:
+
+Pfad/Key ohne personenbezogene Daten (keine emails, keine patientId im Klartext).
+
+Metadaten redacted.
+
+Signed URL issuance: nur f├╝r berechtigte Rollen/Owner; expiry konfigurierbar.
+
+Acceptance Criteria
+
+Deterministischer Output: gleiches approved input ÔåÆ gleiche PDF bytes (oder zumindest stabiler hash innerhalb tolerierter non-determinism; muss dokumentiert sein).
+
+Secure Storage: Objekt ist nicht public; Zugriff nur via signed URLs.
+
+No PHI in paths: storage keys enthalten keine direkten Identifiers.
+
+RBAC/Ownership: Patient bekommt nur eigene PDFs; Clinician nur berechtigte F├ñlle.
+
+Failure handling: wenn PDF generation fails ÔåÆ klare stage FAILED, kein partial publish.
+
+Tests + Build gr├╝n (mindestens unit tests f├╝r key generation + signing policy + HTML render schema).
+
+Tasks
+
+ HTML template + renderer implementieren (strict schema).
+
+ PDF generator integrieren (repo-konform).
+
+ Storage adapter implementieren (upload + signed url).
+
+ Key policy definieren (PHI-free).
+
+ API endpoints: get signed url (auth+ownership).
+
+ Tests: key policy, signed url gating, renderer schema validation.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+PDF wird erzeugt, gespeichert, und kann berechtigt via signed URL abgerufen werden (ohne PHI leaks)."
+"374","V05-I05.9 ÔÇö Delivery: Dashboard + Notification/Email + Follow-up Sequences (MVP)","CLOSED","2025-12-30T19:27:00Z","2026-01-04T19:59:24Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/374","","child-of-epic;OPS;ui","V05-I05.9 ÔÇö Delivery: Dashboard + Notification/Email + Follow-up Sequences (MVP)
+
+Title
+V05-I05.9 ÔÇö Delivery MVP: Dashboard + Notifications/Email + Follow-up Sequences (status-driven, consent-aware)
+
+Kontext
+Nach PDF/Approval braucht es Zustellung: Patient/Clinician sehen Status, erhalten Benachrichtigungen, und es gibt einen minimalen Follow-up Mechanismus (z. B. ÔÇ£report readyÔÇØ, ÔÇ£review requestedÔÇØ, ÔÇ£action recommendedÔÇØ). Zustellung darf nicht ÔÇ£blindÔÇØ sein: RBAC/Consent muss respektiert werden; Telemetry/Logging PHI-frei.
+
+Ziel
+
+Delivery Status pro Processing Job und ein MVP Dashboard (mindestens Clinician/Admin; Patient optional je nach existierendem UI).
+
+Notification Mechanismus: Email/Notification nur wenn bereits Infrastruktur vorhanden und consent/regeln existieren. Sonst MVP als ÔÇ£in-app statusÔÇØ.
+
+Scope
+
+Delivery State Machine (versioniert): NOT_READY ÔåÆ READY ÔåÆ DELIVERED (ÔåÆ optional FAILED).
+
+Dashboard: list der Jobs/Reports mit Status, last update, actions (download via signed url).
+
+Notifications:
+
+Wenn Email infra vorhanden: send ÔÇ£Report readyÔÇØ an definierte Empf├ñnger nach existierendem Contract.
+
+Wenn nicht vorhanden: create placeholder ÔÇ£notification recordÔÇØ im System (kein externer Versand).
+
+Follow-up sequences (MVP): minimaler scheduler/trigger basierend auf Status + timestamps (ohne neue Plattform, wenn nicht vorhanden).
+
+Acceptance Criteria
+
+Status-driven: Delivery basiert ausschlie├ƒlich auf pipeline status (approved + pdf ready).
+
+RBAC/Ownership: dashboard/list ist rollenbasiert und restrictet; download links nur berechtigt.
+
+Consent-aware: wenn Consent/Prefs im Repo existieren, werden sie respected; wenn nicht, default fail-closed (kein Email-Versand).
+
+No PHI: notifications/logs enthalten keine sensitiven Inhalte; nur referenzierte IDs + redacted display fields.
+
+Idempotent delivery: mehrfacher trigger ÔåÆ kein mehrfacher Versand / keine Duplikate.
+
+Tests + Build gr├╝n.
+
+Tasks
+
+ Delivery schema v1 definieren.
+
+ DB records f├╝r delivery status/notifications (nach DB_SCHEMA_MANIFEST).
+
+ Dashboard API + minimal UI page (falls UI im Scope).
+
+ Notification adapter (email vs in-app record) gem├ñ├ƒ vorhandener Infrastruktur.
+
+ Follow-up scheduling policy (deterministisch, minimal): z. B. ÔÇ£after X days if not viewedÔÇØ nur wenn view-tracking existiert; sonst weglassen.
+
+ Tests: RBAC, consent gating, idempotent send, status transitions.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+DoD
+
+Reports haben einen klaren Delivery-Status, sind im Dashboard sichtbar, und ÔÇ£readyÔÇØ f├╝hrt zu einer sicheren Zustellung (mindestens in-app, optional email wenn erlaubt)."
+"375","EPIC V05-E06 ÔÇö Mobile UI v0.5: Fixed Top/Bottom Menus + Content Blocks (Admin-driven)","CLOSED","2025-12-30T19:27:13Z","2026-01-05T08:57:35Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/375","","epic;ui;UX","**Intent:** Standardisierte Mobile Shell:  fixed header/footer; Scroll Area als konfigurierbare Content-Blocks.
+
+**Sub-Issues:**
+- [ ] V05-I06.1 ÔÇö Mobile Shell:  Fixed Top Menu + Fixed Bottom Menu
+- [ ] V05-I06.2 ÔÇö Content Block Renderer (Cards/Sections Stack)
+- [ ] V05-I06.3 ÔÇö Role-specific Menus (Patient vs Clinician vs Nurse)"
+"376","V05-I06.1 ÔÇö Mobile Shell: Fixed Top Menu + Fixed Bottom Menu","CLOSED","2025-12-30T19:27:13Z","2026-01-04T20:29:37Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/376","","child-of-epic;ui;UX","V05-I06.1 ÔÇö Mobile Shell: Fixed Top Menu + Fixed Bottom Menu (GH Issue Text)
+
+Goal
+Introduce a stable ÔÇ£Mobile ShellÔÇØ layout for RHYTHM v0.5 that provides a fixed top navigation and fixed bottom navigation, so patient flows (onboarding, assessment, history, funnels) run inside the same app frame.
+
+Problem
+Current patient UI pages render without a consistent shell. This causes layout inconsistency, duplicated navigation logic, and makes later role-specific menus harder.
+
+Scope
+
+Add a single canonical layout wrapper (mobile-first) with:
+
+Fixed Top Menu
+
+Fixed Bottom Menu
+
+Content area with safe spacing (no overlap)
+
+Wire existing patient pages into the shell without changing their business logic.
+
+Keep terminology and roles strictly from existing registry/contracts (no new slugs/roles/keys).
+
+Non-goals
+
+No new design token system (thatÔÇÖs V05-I09.2).
+
+No content block renderer (thatÔÇÖs V05-I06.2).
+
+No new role modelÔÇöonly reuse existing guards/utilities.
+
+Acceptance Criteria
+
+Fixed Top Menu is present on all patient pages in scope; does not overlap content.
+
+Fixed Bottom Menu is present on all patient pages in scope; active state reflects current route.
+
+Navigation is deterministic and does not introduce new route names/slugs beyond what exists.
+
+No fantasy names: menu items/labels/route keys come from existing code/constants.
+
+Works on small viewport sizes (mobile) and does not break desktop rendering.
+
+Tests: at least basic rendering + route active-state tests for shell.
+
+Evidence: npm test, npm run build output captured in PR description.
+
+Tasks
+
+Identify canonical patient routes to include in bottom nav (must already exist).
+
+Implement app/patient/layout.tsx (or equivalent existing layout boundary) that wraps patient routes with the shell.
+
+Implement top/bottom components (server/client as appropriate) with minimal state.
+
+Add tests for:
+
+shell renders
+
+bottom nav highlights current route
+
+Update any existing patient pages only as needed for layout compatibility (minimal diff).
+
+Verify (PowerShell)
+
+npm test
+npm run build
+
+
+Copilot Prompt (VS Code / GitHub Copilot)
+You are my GitHub Copilot for the RHYTHM repo. Implement V05-I06.1 ÔÇö Mobile Shell: Fixed Top Menu + Fixed Bottom Menu with minimal diff.
+
+Constraints (non-negotiable):
+
+PowerShell-only verification commands in docs/comments.
+
+No fantasy names: do not invent new roles, slugs, menu keys, route names, or registry entries. Reuse existing routes/constants/utilities in the repo. If you canÔÇÖt find canonical values, stop and point out what is missing.
+
+Keep changes scoped: this issue is only ÔÇ£shell + fixed menusÔÇØ, not content blocks or design tokens.
+
+Implementation requirements:
+
+Create/modify the patient route layout (prefer app/patient/layout.tsx if present) so all patient pages render inside a common shell:
+
+Fixed Top Menu (header area)
+
+Fixed Bottom Menu (tab bar)
+
+Main content area with safe padding so it never overlaps fixed menus.
+
+Bottom menu must reflect active route deterministically.
+
+Do not change business logic of existing patient pages; only wrap them.
+
+Add tests:
+
+Shell renders for patient routes
+
+Active-state behavior for at least 2 routes
+
+Update docs only if needed, but keep it minimal.
+
+Files to inspect first:
+
+app/patient/** routes and any existing layout
+
+existing navigation/menu components if any
+
+role/auth helpers (do not hardcode roles)
+
+Definition of Done:
+
+npm test passes
+
+npm run build succeeds
+
+Patient pages render within the shell with top/bottom fixed menus
+
+No new invented constants/roles/slugs
+
+Minimal diff"
+"377","V05-I06.2 ÔÇö Content Block Renderer (Cards/Sections Stack)","CLOSED","2025-12-30T19:27:13Z","2026-01-04T21:05:57Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/377","","child-of-epic;components;ui","V05-I06.2 ÔÇö Content Block Renderer (Cards/Sections Stack)
+
+Ziel
+Implementiere einen manifest-driven Content Block Renderer f├╝r die Mobile UI v0.5, der aus bestehenden content_manifest / funnel_versions Daten deterministisch UI-Bl├Âcke rendert (Cards/Sections Stack). Fokus: Patient-View (und sp├ñter wiederverwendbar f├╝r Clinician/Nurse), ohne neue Begriffe/Slugs/DB-Objekte zu erfinden.
+
+GitHub Issue Text
+
+Titel
+V05-I06.2 ÔÇö Content Block Renderer (Cards/Sections Stack)
+
+Problem / Kontext
+Wir haben v0.5 Datenmodell + Funnel Versioning + Manifest-Konzept. F├╝r die Mobile Shell (V05-I06.1) und role-spezifische Men├╝s (V05-I06.3) fehlt ein einheitlicher Renderer, der content_manifest (versioniert) in eine UI-Stack-Darstellung ├╝bersetzt. Aktuell sind Views/Pages noch teilweise hardcoded oder ohne konsistente Block-Render-Engine.
+
+Scope
+
+Renderer-Komponente(n) f├╝r Card/Section Stack (Read-only Rendering).
+
+Input: manifest content blocks (nur aus bestehenden Contracts/Registry; keine Fantasie-Typen).
+
+Output: konsistente UI-Struktur, die in Patient- und sp├ñter Clinician/Nurse-Views eingebunden werden kann.
+
+Keine Editor-Funktionalit├ñt (kein Block-Builder), nur Anzeige.
+
+Nicht im Scope (explizit)
+
+Kein neues DB-Schema, keine neuen Tabellen/Enums/Slugs.
+
+Kein neues Content-DSL. Nur bestehende Manifest-Strukturen.
+
+Kein PDF-Export (geh├Ârt zu I05.8).
+
+Kein ÔÇ£Report GenerationÔÇØ (geh├Ârt zu I05.x / I03.4).
+
+Acceptance Criteria
+
+AC1 ÔÇö Manifest-driven, keine Fantasie-Namen
+
+Renderer akzeptiert ausschlie├ƒlich Block-Typen aus Registry/Contracts (z. B. CONTENT_BLOCK_TYPE o. ├ñ. ÔÇô genau wie im Repo definiert).
+
+Unbekannter Block-Typ ÔçÆ kontrollierter Fehlerpfad (422/ÔÇØUnsupported block typeÔÇØ), kein Silent Fallback.
+
+AC2 ÔÇö Deterministische Darstellung
+
+Gleicher Manifest-Input ÔçÆ identische Render-Reihenfolge und Struktur.
+
+Keine zuf├ñllige Sortierung; Reihenfolge kommt aus Manifest.
+
+AC3 ÔÇö UI Stack Pattern
+
+Darstellung als Sections (optional) mit Cards darunter.
+
+Minimal-UI: Titel, optional Subheading, Body/Content (je nach Block-Typ), optional CTA/Link falls im Manifest vorhanden.
+
+AC4 ÔÇö Server-only Boundaries / Data Loading
+
+Manifest wird serverseitig geladen (bestehender Loader), Renderer ist UI-seitig pure (keine Secrets/DB Clients in Client Components).
+
+Kein direkter Zugriff auf service role in Client.
+
+AC5 ÔÇö Test Coverage
+
+Unit/Integration Tests f├╝r:
+
+Supported block types rendern korrekt
+
+Unknown type ÔçÆ controlled error
+
+Deterministische Reihenfolge
+
+ÔÇ£Empty manifestÔÇØ ÔçÆ leere, g├╝ltige UI
+
+AC6 ÔÇö Evidence
+
+npm test gr├╝n
+
+npm run build gr├╝n
+
+Kurzer UI-Smoke: Seite mit Beispiel-Manifest zeigt Stack (Screenshot optional).
+
+Tasks
+
+Contracts/Registry pr├╝fen
+
+Welche Block-Typen sind im Repo bereits kanonisch definiert (Registry)?
+
+Welche Felder sind im bestehenden content_manifest vorgesehen?
+
+Renderer implementieren
+
+ContentBlockRenderer (Root)
+
+SectionRenderer / CardRenderer (je nach manifest structure)
+
+Block-spezifische Renderer (switch via registry type guard)
+
+Integration Point (minimal)
+
+Einen existierenden Screen (z. B. patient funnel detail / content pages) so anbinden, dass er den Renderer nutzt (minimal diff).
+
+Tests
+
+deterministic order test
+
+unknown type test
+
+empty manifest test
+
+ÔÇ£golden manifestÔÇØ snapshot/artifact test (wenn Repo das Muster hat)
+
+Docs
+
+Kurz: docs/V05_I06_2_CONTENT_BLOCK_RENDERER.md mit Input/Output + Integration-Hinweis + Verify Commands (PowerShell).
+
+Verify (PowerShell)
+npm test
+npm run build
+
+
+Optional UI Smoke (falls vorhanden im Repo):
+
+npm run dev
+# dann Patient Flow ├Âffnen und Content Stack Seite pr├╝fen
+
+Copilot Prompt (f├╝r sp├ñter, wenn du es angehst)
+
+Du bist mein VS-Code GitHub Copilot im Repo rhythmologicum-connect. Implementiere V05-I06.2 Content Block Renderer (Cards/Sections Stack).
+
+Nicht verhandelbar:
+
+Keine Fantasie-Namen: nutze ausschlie├ƒlich Block Types / Keys aus lib/contracts/registry und bestehenden Contracts (content_manifest).
+
+Keine neuen Tabellen/Enums/Slugs.
+
+Deterministisch, fail-closed: unknown block types ÔåÆ controlled error (keine Defaults).
+
+Server-only Boundaries: DB/Secrets bleiben serverseitig.
+
+Aufgaben:
+
+Finde den bestehenden Content-Manifest Contract (Zod/TS) und die Registry f├╝r Block Types.
+
+Implementiere ContentBlockRenderer + ggf. SectionRenderer/CardRenderer als UI-Komponenten.
+
+Implementiere Block Renderer f├╝r alle bereits im Repo definierten Block Types.
+
+Integriere den Renderer minimal in einen bestehenden Screen, der Content aus Manifest anzeigt (keine neuen Routen).
+
+Schreibe Tests: supported types, unknown type, empty manifest, deterministic order.
+
+Dokumentiere Integration + Verify in docs/V05_I06_2_CONTENT_BLOCK_RENDERER.md (PowerShell-only).
+
+Verify:
+
+npm test
+npm run build
+
+
+Done Definition:
+
+Tests gr├╝n, Build gr├╝n
+
+Keine neuen Begriffe/Types
+
+Renderer funktioniert mit vorhandenem Manifest und ist wiederverwendbar f├╝r Patient/Clinician/Nurse."
+"378","V05-I06.3 ÔÇö Role-specific Menus (Patient vs Clinician vs Nurse)","CLOSED","2025-12-30T19:27:14Z","2026-01-05T06:26:51Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/378","","admin;child-of-epic;ui","V05-I06.3 ÔÇö Role-specific Menus (Patient vs Clinician vs Nurse)
+
+Goal
+Make navigation menus role-aware so that patient/clinician/nurse see only their intended menu items, using existing role checks and existing routes.
+
+Problem
+Even with a shared shell/navigation, menus are currently not role-scoped, which risks exposing navigation links to routes a user shouldnÔÇÖt access (even if backend guards exist).
+
+Scope
+
+Implement a role-aware menu model that:
+
+Filters top/bottom menus by role
+
+Uses existing role/guard utilities (no new role enums/keys)
+
+Patient: uses patient shell menu items
+
+Clinician/Admin/Nurse: show only their respective items, but do not invent IAÔÇöonly map to existing pages/routes
+
+Non-goals
+
+No new roles
+
+No new permissions system
+
+No UI redesignÔÇöonly filtering/visibility logic
+
+No backend auth changes (assume existing guards remain)
+
+Acceptance Criteria
+
+Menu items shown/hidden based on role using existing role checks/helpers
+
+Unauthenticated users do not receive role menus (must not render authenticated navigation)
+
+No fantasy names: roles and route targets must already exist in repo
+
+Fail-closed: if role cannot be determined, do not show privileged items
+
+Tests cover:
+
+Patient sees patient items, not clinician/admin items
+
+Clinician/admin sees clinician/admin items
+
+Nurse sees nurse items if nurse role exists; otherwise fail-closed and document whatÔÇÖs missing
+
+Unauthenticated/unknown role: privileged items hidden
+
+Tasks
+
+Locate canonical role check helpers (e.g., admin/clinician checks; nurse helper if present).
+
+Define menu config structure mapping role ÔåÆ items referencing existing routes only.
+
+Integrate filtering into existing menu components introduced/used in V05-I06.1.
+
+Add tests for role filtering (mock session/role per existing patterns).
+
+Ensure fail-closed behavior and no rendering of authenticated nav for unauthenticated users.
+
+Evidence in PR: npm test, npm run build.
+
+Verify (PowerShell)
+
+npm test
+
+npm run build"
+"379","EPIC V05-E07 ÔÇö Clinician View (Triage ÔåÆ Patient Detail ÔåÆ QA ÔåÆ Actioning)","CLOSED","2025-12-30T19:27:44Z","2026-01-05T22:04:13Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/379","","clinician;epic;ui","**Intent:** Triage-Status, Patient Detail, QA-Layer Sicht, Review Workflow, Aufgaben/Entscheidungen auditierbar.
+
+**Sub-Issues:**
+- [ ] V05-I07.1 ÔÇö Triage/Overview (Status:  incomplete/processing/report ready/flagged)
+- [ ] V05-I07.2 ÔÇö Patient Detail (Anamnese/Medikamente/Labs + Findings/Scores)
+- [ ] V05-I07.3 ÔÇö QA Panel (Layer 1 Findings + Layer 2 Score) + Review Actions
+- [ ] V05-I07.4 ÔÇö Actioning:  Aufgaben definieren + Eskalationsregeln + Dokumentation"
+"380","V05-I07.1 ÔÇö Triage/Overview (Status: incomplete/processing/report ready/flagged)","CLOSED","2025-12-30T19:27:44Z","2026-01-05T11:59:10Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/380","","child-of-epic;clinician;ui","Liste aktiver Patienten/Funnels + Status. 
+
+**Acceptance Criteria:**
+- Liste aktiver Patienten/Funnels + Status."
+"381","V05-I07.2 ÔÇö Patient Detail (Anamnese/Medikamente/Labs + Findings/Scores)","CLOSED","2025-12-30T19:27:44Z","2026-01-05T14:30:43Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/381","","child-of-epic;clinician;ui","Detail zeigt ""Key Labs"", funnel-specific findings, scores, interventions.
+
+**Acceptance Criteria:**
+- Detail zeigt ""Key Labs"", funnel-specific findings, scores, interventions. "
+"382","V05-I07.3 ÔÇö QA Panel (Layer 1 Findings + Layer 2 Score) + Review Actions","CLOSED","2025-12-30T19:27:45Z","2026-01-05T15:35:39Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/382","","child-of-epic;clinician;ui","Sicht auf Contraindications/Plausibility + safety_score; Approve/Reject setzt Audit + Status.
+
+**Acceptance Criteria:**
+- Sicht auf Contraindications/Plausibility + safety_score. 
+- Approve/Reject setzt Audit + Status. "
+"383","V05-I07.4 ÔÇö Actioning: Aufgaben definieren + Eskalationsregeln + Dokumentation","CLOSED","2025-12-30T19:27:45Z","2026-01-05T22:03:54Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/383","","child-of-epic;clinician;ui","Clinician kann Tasks anlegen (LDL nachmessen, Video-Call, Device Versand) + assigned_to (nurse/clinician).
+
+**Acceptance Criteria:**
+- Clinician kann Tasks anlegen (LDL nachmessen, Video-Call, Device Versand).
+- assigned_to (nurse/clinician)."
+"384","EPIC V05-E08 ÔÇö Nurse Flow (Pre-screening ÔåÆ Logistics ÔåÆ Support ÔåÆ Follow-up)","CLOSED","2025-12-30T19:27:56Z","2026-01-07T05:50:46Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/384","","epic;OPS;ui","**Intent:** Neue Rolle Nurse f├╝r operative Aufgaben (Logistik, Support, Follow-ups).
+
+**Sub-Issues:**
+- [ ] V05-I08.1 ÔÇö Nurse Role + Views (Case Queue / Assigned Tasks)
+- [ ] V05-I08.2 ÔÇö Pre-screening Call Script UI (MVP)
+- [ ] V05-I08.3 ÔÇö Logistics:  Test/Device Versandstatus + R├╝cklauf + Reminders
+- [ ] V05-I08.4 ÔÇö Support Notes + Escalation to Clinician"
+"385","V05-I08.1 ÔÇö Nurse Role + Views (Case Queue / Assigned Tasks)","CLOSED","2025-12-30T19:27:56Z","2026-01-05T22:56:29Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/385","","child-of-epic;database;ui","Nurse kann zugewiesene Patienten/Tasks sehen, RLS-konform. 
+
+**Acceptance Criteria:**
+- Nurse kann zugewiesene Patienten/Tasks sehen, RLS-konform."
+"386","V05-I08.2 ÔÇö Pre-screening Call Script UI (MVP)","CLOSED","2025-12-30T19:27:57Z","2026-01-06T11:11:39Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/386","","child-of-epic;ui","Script-gest├╝tzter Erstkontakt:  Eignung/Red Flags/Tier-Empfehlung protokollierbar.
+
+**Acceptance Criteria:**
+- Script-gest├╝tzter Erstkontakt:  Eignung/Red Flags/Tier-Empfehlung protokollierbar."
+"387","V05-I08.3 ÔÇö Logistics: Test/Device Versandstatus + R├╝cklauf + Reminders","CLOSED","2025-12-30T19:27:57Z","2026-01-06T18:01:17Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/387","","child-of-epic;OPS","Versandstatus-Tracking + Reminder events (notifications).
+
+**Acceptance Criteria:**
+- Versandstatus-Tracking + Reminder events (notifications)."
+"388","V05-I08.4 ÔÇö Support Notes + Escalation to Clinician","CLOSED","2025-12-30T19:27:57Z","2026-01-07T05:45:20Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/388","","child-of-epic;OPS","Supportf├ñlle dokumentierbar; Eskalation erzeugt Task/Audit.
+
+**Acceptance Criteria:**
+- Supportf├ñlle dokumentierbar. 
+- Eskalation erzeugt Task/Audit."
+"389","EPIC V05-E09 ÔÇö Admin:  Konfiguration statt Code (Navigation/Blocks/Tokens/Funnels/Ops)","CLOSED","2025-12-30T19:28:13Z","2026-01-07T12:53:25Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/389","","admin;epic;ui","**Intent:** Admin kann Men├╝s/Layouts, Content Blocks, Design Tokens, Funnel Aktivierung/Version-Rollout, Operational Settings konfigurieren.
+
+**Sub-Issues:**
+- [ ] V05-I09.1 ÔÇö Admin Navigation/Layouts Config (Top/Bottom Menus + Block Layouts)
+- [ ] V05-I09.2 ÔÇö Design Tokens Parameterisierung (tenant/clinic override vorbereitet)
+- [ ] V05-I09.3 ÔÇö Funnel Management (Activate/Deactivate + Set Versions + Rollouts)
+- [ ] V05-I09.4 ÔÇö Operational Settings (Notification Templates, Re-assessment Rules, KPI thresholds)"
+"390","V05-I09.1 ÔÇö Admin Navigation/Layouts Config (Top/Bottom Menus + Block Layouts)","CLOSED","2025-12-30T19:28:13Z","2026-01-07T08:22:52Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/390","","admin;child-of-epic;ui","Admin UI: Items aktivieren/deaktivieren, Reihenfolge, Labels/Icons; per Rolle getrennt.
+
+**Acceptance Criteria:**
+- Admin UI: Items aktivieren/deaktivieren, Reihenfolge, Labels/Icons; per Rolle getrennt. "
+"391","V05-I09.2 ÔÇö Design Tokens Parameterisierung (tenant/clinic override vorbereitet)","CLOSED","2025-12-30T19:28:14Z","2026-01-07T09:47:35Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/391","","admin;child-of-epic;ui","Token-Datei/Config kann ├╝berschrieben werden (tenant/clinic); UI konsumiert Tokens.
+
+**Acceptance Criteria:**
+- Token-Datei/Config kann ├╝berschrieben werden (tenant/clinic).
+- UI konsumiert Tokens. "
+"392","V05-I09.3 ÔÇö Funnel Management (Activate/Deactivate + Set Versions + Rollouts)","CLOSED","2025-12-30T19:28:14Z","2026-01-07T10:27:18Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/392","","admin;child-of-epic;components","Admin kann Funnel aktivieren/deaktivieren, default_version setzen, Rollout neuer Algo/Prompt-Versionen steuern.
+
+**Acceptance Criteria:**
+- Admin kann Funnel aktivieren/deaktivieren, default_version setzen. 
+- Rollout neuer Algo/Prompt-Versionen steuern."
+"393","V05-I09.4 ÔÇö Operational Settings (Notification Templates, Re-assessment Rules, KPI thresholds)","CLOSED","2025-12-30T19:28:14Z","2026-01-07T12:53:07Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/393","","admin;child-of-epic;OPS","Basic Templates + Scheduling-Regeln; gespeichert & auditierbar.
+
+**Acceptance Criteria:**
+- Basic Templates + Scheduling-Regeln. 
+- Gespeichert & auditierbar."
+"394","EPIC V05-E10 ÔÇö Pilot-Readiness (5ÔÇô10 ÔåÆ 50ÔÇô100): Compliance + Reliability + Observability","CLOSED","2025-12-30T19:28:29Z","2026-01-08T13:50:02Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/394","","epic;OPS","**Intent:** Consent, Export, Deletion/Retention, Audit Logging; stabile UI; Fehlertracking + KPI/Usage. 
+
+**v0.5 Definition of Done:**
+v0.5 ist ""Done"", wenn: 
+- Multi-Funnelf├ñhig:  Pillars sichtbar + mind.  Stress/Resilienz + 2ÔÇô3 zus├ñtzliche Funnels im Katalog. 
+- E2E Patient Flow: Auswahl ÔåÆ Consent ÔåÆ Adaptive Questionnaire (save/resume) ÔåÆ optional Upload/Confirm ÔåÆ Processing ÔåÆ Report/Tasks. 
+- Processing Pipeline inkl. Medical Validation L1+L2 + Review Queue + PDF + Delivery.
+- Rollen aktiv:  Clinician + neue Nurse Rolle + Admin-Konfiguration (Men├╝s/Blocks/Funnels).
+- Versionierung durchg├ñngig (Funnel/Algo/Prompt/Report) + RLS + Audit + Pilot-Readiness Basics.
+
+**Sub-Issues:**
+- [ ] V05-I10.1 ÔÇö Consent Management (Versioned) + Data Export (JSON) MVP
+- [ ] V05-I10.2 ÔÇö Account Deletion/Retention + Audit Coverage
+- [ ] V05-I10.3 ÔÇö Observability:  Error Tracking + KPI Events (Completion, Drop-off, Time-to-report)
+- [ ] V05-I10.4 ÔÇö Content Safety Ops:  Review Queue SLA + Sampling Rules (MVP SOP)"
+"395","V05-I10.1 ÔÇö Consent Management (Versioned) + Data Export (JSON) MVP","CLOSED","2025-12-30T19:28:29Z","2026-01-07T13:30:43Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/395","","child-of-epic;OPS","Consent gespeichert + exportierbar; Export Funktion (MVP) vorhanden.
+
+**Acceptance Criteria:**
+- Consent gespeichert + exportierbar.
+- Export Funktion (MVP) vorhanden."
+"396","V05-I10.2 ÔÇö Account Deletion/Retention + Audit Coverage","CLOSED","2025-12-30T19:28:29Z","2026-01-08T11:09:21Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/396","","child-of-epic;OPS","Deletion/Retention Workflow (MVP) dokumentiert + technisch umgesetzt; Audit Events vorhanden.
+
+**Acceptance Criteria:**
+- Deletion/Retention Workflow (MVP) dokumentiert + technisch umgesetzt.
+- Audit Events vorhanden."
+"397","V05-I10.3 ÔÇö Observability: Error Tracking + KPI Events (Completion, Drop-off, Time-to-report)","CLOSED","2025-12-30T19:28:30Z","2026-01-08T11:54:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/397","","child-of-epic;devops;OPS","KPI/Usage-Metriken erfasst (mind. completion/drop-off/time-to-report).
+
+**Acceptance Criteria:**
+- KPI/Usage-Metriken erfasst (mind. completion/drop-off/time-to-report)."
+"398","V05-I10.4 ÔÇö Content Safety Ops: Review Queue SLA + Sampling Rules (MVP SOP)","CLOSED","2025-12-30T19:28:30Z","2026-01-08T13:49:42Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/398","","child-of-epic;OPS","SOP/Checkliste f├╝r flagged Reports + sampling; dokumentiert + im System abbildbar (mind. Status/Queue).
+
+**Acceptance Criteria:**
+- SOP/Checkliste f├╝r flagged Reports + sampling.
+- Dokumentiert + im System abbildbar (mind.  Status/Queue)."
+"406","I505 (V0.5) ÔÇö Hard Guardrails: DB Schema Manifest + Migration Linter (No Fantasy DB Objects)","CLOSED","2025-12-31T14:52:12Z","2026-01-01T09:59:57Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/406","","","GitHub Issue ÔÇö RHYTHM v0.5
+
+Title: I505 (V0.5) ÔÇö Hard Guardrails: DB Schema Manifest + Migration Linter (No Fantasy DB Objects)
+
+Problem
+Copilot/LLM-generated changes keep introducing ÔÇ£plausibleÔÇØ but non-canonical DB objects (tables/enums/columns), e.g. duplicate tables like funnels instead of canonical funnels_catalog. Current guardrails (registry/env/CODEOWNERS) are not sufficient because they do not hard-block schema invention at the migration layer.
+
+Goal
+Introduce a hard, machine-enforced guardrail that blocks any PR introducing non-canonical DB objects unless they are explicitly added to a canonical allowlist.
+
+Non-negotiables
+
+Migration-first discipline stays intact.
+
+PowerShell-only operational scripts/snippets.
+
+Deterministic CI gates: no manual judgement required.
+
+Clear, actionable failure output (file + line + offending identifier).
+
+Scope
+1) Canonical Allowlist
+
+Create docs/canon/DB_SCHEMA_MANIFEST.json as the single source of truth for allowed schema objects.
+
+Minimum structure:
+
+tables: list of allowed table names
+
+enums: list of allowed enum/type names
+Optional (recommended):
+
+columns: per-table allowed/required columns
+
+constraints: per-table unique constraints / indexes (names optional)
+
+Populate it with the current v0.5 core schema (from existing supabase/migrations/*.sql that define the canonical schema).
+
+2) Migration Linter (PowerShell)
+
+Create scripts/db/lint-migrations.ps1 that:
+
+Scans supabase/migrations/*.sql
+
+Extracts identifiers from:
+
+CREATE TABLE <name>
+
+CREATE TYPE <name> AS ENUM
+
+ALTER TABLE <name> ...
+
+(at least) ADD COLUMN, DROP, RENAME, CREATE INDEX, CREATE POLICY
+
+Fails if:
+
+A table/enum is referenced that is not in the manifest
+
+A forbidden alias appears (e.g. funnels if canonical is funnels_catalog)
+
+A migration creates an already-existing canonical object in a conflicting way (e.g. CREATE TABLE funnel_versions when it must be ALTER TABLE)
+
+Output must include:
+
+file path
+
+line number
+
+offending identifier
+
+rule violated
+
+Exit codes:
+
+0 = pass
+
+1 = fail (block CI)
+
+3) CI Workflow Gate
+
+Add .github/workflows/db-schema-guard.yml:
+
+Triggers on PRs changing supabase/migrations/** and/or docs/canon/DB_SCHEMA_MANIFEST.json
+
+Runs:
+
+npm ci
+
+pwsh scripts/db/lint-migrations.ps1
+
+npm run db:diff (drift gate)
+
+npm run db:typegen (type sync gate)
+
+The workflow must fail fast and block merges.
+
+4) PR Template & Docs
+
+Update .github/PULL_REQUEST_TEMPLATE.md:
+
+Require evidence that db-schema-guard passed (CI link is fine).
+
+Update docs/canon/DB_MIGRATIONS.md:
+
+Briefly explain the manifest + linter and how to add new canonical objects (process).
+
+Acceptance Criteria
+
+Manifest exists (docs/canon/DB_SCHEMA_MANIFEST.json) and is populated with current v0.5 canonical schema objects.
+
+scripts/db/lint-migrations.ps1 blocks any migration that introduces a table/enum not in the manifest.
+
+Linter output is actionable (file + line + identifier + rule).
+
+.github/workflows/db-schema-guard.yml runs on relevant PRs and blocks merge on failure.
+
+All scripts/snippets are PowerShell (no Bash).
+
+At least two tests/fixtures exist to validate the linter:
+
+one ÔÇ£allowedÔÇØ migration passes
+
+one ÔÇ£forbiddenÔÇØ migration fails (e.g. creates funnels)
+
+Implementation Tasks (suggested)
+
+ Create docs/canon/DB_SCHEMA_MANIFEST.json (initial v0.5 schema allowlist)
+
+ Implement scripts/db/lint-migrations.ps1
+
+ Add linter fixtures under scripts/db/fixtures/ (allowed.sql, forbidden.sql)
+
+ Add minimal test runner script (PowerShell) or node-based test invoking the PS linter on fixtures
+
+ Add .github/workflows/db-schema-guard.yml
+
+ Update PR template with evidence checklist
+
+ Update docs/canon/DB_MIGRATIONS.md with ÔÇ£Schema GuardrailÔÇØ section
+
+Verification (PowerShell)
+npm ci
+pwsh scripts/db/lint-migrations.ps1
+npm run db:diff
+npm run db:typegen
+npm test
+npm run build
+
+
+Notes
+
+The manifest is the explicit, reviewable mechanism to allow controlled schema evolution.
+
+This issue intentionally prevents ÔÇ£LLM guessworkÔÇØ at the DB layer."
+"415","Repo-weite DB-Access Analyse + Standardisierung + Hard Guardrails (verhindert inkonsistente Supabase-Nutzung)","CLOSED","2026-01-01T17:08:24Z","2026-01-01T18:38:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/415","","","
+
+Titel: V05-HYGIENE ÔÇö DB Access Patterns Audit ÔåÆ Canonical Client Pattern ÔåÆ Repo-wide Refactor ÔåÆ Hard Guardrails (CI/Lint)
+Type: Hygiene / Stabilization (Bug class prevention)
+Motivation: In Prod funktionieren einzelne Admin-Seiten (z. B. /admin/content), w├ñhrend Funnel-/Clinician-Seiten brechen. Ursache ist sehr wahrscheinlich inkonsistente DB-Client-Erzeugung/Env-Nutzung/RLS-Bypass. Wir wollen ein einziges ÔÇ£richtigesÔÇØ Muster definieren, repo-weit anwenden und anschlie├ƒend hart automatisiert verhindern, dass Copilot/LLM wieder abweicht.
+
+Ziel (Outcome)
+
+Eine kanonische Art, wie im Repo auf DB gelesen/geschrieben wird (Supabase) ÔÇô klar getrennt nach:
+
+Browser/Public (anon)
+
+Server/SSR (cookie-based user session)
+
+Server/Admin (service role, strikt scoped, metadata-only falls n├Âtig)
+
+Repo-weit sind alle Routes/Pages/Libs auf dieses Muster umgestellt.
+
+Guardrails wirken wirklich: neue inkonsistente DB-Zugriffe werden durch CI/Lint blockiert (nicht nur ÔÇ£DokuÔÇØ).
+
+Scope
+In Scope
+
+Vollst├ñndige Inventur aller DB-Zugriffe (read/write) in:
+
+app/api/**
+
+app/** (server components, pages)
+
+lib/** (helpers, loaders)
+
+scripts/** (nur dokumentieren/standardisieren, nicht zwingend refactor)
+
+Standardisierung der Client-Factories + env usage
+
+Refactor der betroffenen Stellen (mindestens alle Funnel-/Clinician-/Admin-Flows)
+
+CI/Lint Gates + Canon Docs + CODEOWNERS/PR-Template Anpassung
+
+Out of Scope
+
+Neue Features, neue Tabellen, neue Funnels
+
+RLS-Neudesign ÔÇ£from scratchÔÇØ (nur soweit n├Âtig, um Canon-Pattern konsistent zu betreiben)
+
+pr├╝fe auch erledigte Issues/PRs und ber├╝cksichtige die Erkenntnisse.
+
+Deliverables
+D1 ÔÇö DB Access Inventory Report (maschinenlesbar + lesbar)
+
+docs/canon/DB_ACCESS_PATTERNS.md (Report + Decision)
+
+docs/canon/DB_ACCESS_MATRIX.md (Table: Surface ÔåÆ Endpoint ÔåÆ Client Type ÔåÆ Tables ÔåÆ RLS expectations)
+
+docs/canon/DB_ACCESS_DECISION.md (Canon: ÔÇ£the right wayÔÇØ + rationale)
+
+D2 ÔÇö Canonical DB Client Layer (einheitlich)
+
+Einf├╝hrung/Finalisierung von genau diesen Factories (Namen an Repo anpassen, aber Prinzip fix):
+
+lib/db/supabase.public.ts ÔåÆ Browser/Public client (anon, keine service keys)
+
+lib/db/supabase.server.ts ÔåÆ SSR server client (cookie/session-based user)
+
+lib/db/supabase.admin.ts ÔåÆ server-only service role (strikt begr├╝ndet/scoped)
+
+Wichtig: supabase.admin.ts muss ÔÇ×server-onlyÔÇ£ erzwingen (z. B. Import server-only / runtime guard), und zentral loggen + requestId weiterreichen.
+
+D3 ÔÇö Repo-wide Refactor
+
+Alle API Routes und Pages d├╝rfen Supabase nur ├╝ber diese Factories initialisieren.
+
+Kein ÔÇ£wildesÔÇØ createClient(...) in einzelnen Routes.
+
+Einheitliche Fehlerklassifizierung + x-request-id Handling ├╝ber Shared Helpers.
+
+D4 ÔÇö Hard Guardrails (wirksam, CI-blocking)
+
+ESLint Gate: verbietet direkten Import/Call von createClient aus @supabase/supabase-js au├ƒerhalb der 3 Factory Files.
+
+Import Gate: verbietet Import von lib/db/supabase.admin.ts au├ƒerhalb von:
+
+app/api/** (server routes)
+
+optional: lib/** server-only modules
+(definiert via eslint overrides / path rules)
+
+Env Gate: Alle DB-relevanten envs nur ├╝ber lib/env.ts; verbiete process.env.* au├ƒerhalb erlaubter Dateien.
+
+CI Workflow: npm test, npm run build + ÔÇ£db-access-verifyÔÇØ step, der die Regeln deterministisch pr├╝ft (Exit 1 bei Versto├ƒ).
+
+D5 ÔÇö Tests/Evidence
+
+Unit/route-level Tests, die mindestens sicherstellen:
+
+admin client nicht im Browser bundle landen kann
+
+routes nutzen factories (mock/spy)
+
+env guard greift (blank env ÔåÆ CONFIGURATION_ERROR)
+
+Evidence Doc mit PowerShell Verify Commands.
+
+Acceptance Criteria (Pass/Fail)
+
+Inventory vollst├ñndig: Jeder DB-Zugriff ist in DB_ACCESS_MATRIX.md erfasst (Route/Page/Lib ÔåÆ Client Type ÔåÆ Tables).
+
+Single Canon: In DB_ACCESS_DECISION.md ist eindeutig beschrieben, welches Pattern f├╝r welche Surface gilt.
+
+No Stray Clients: rg ""createClient\("" au├ƒerhalb der Factory Files findet 0 Treffer (oder nur explizit erlaubte, dokumentierte Ausnahmen).
+
+Service Role Safety:
+
+Service-role wird nur server-only verwendet.
+
+Scope dokumentiert (welche Tabellen/warum).
+
+Hard Gates aktiv: PRs, die dagegen versto├ƒen, schlagen in CI fehl.
+
+npm ci, npm test, npm run build sind gr├╝n.
+
+Implementation Plan (phasenweise, ohne Chaos)
+Phase 1 ÔÇö Audit (nur lesen, nichts refactor)
+
+Script/Tooling: scripts/db/access-audit.ps1 (oder TS tool) erzeugt:
+
+Liste aller Stellen mit Supabase-Client Erstellung
+
+Liste aller Tabellenzugriffe (heuristisch via .from('...'))
+
+Liste der env usages (SUPABASE_, NEXT_PUBLIC_, process.env)
+
+Ergebnis in docs/canon/DB_ACCESS_PATTERNS.md + Matrix.
+
+Phase 2 ÔÇö Canonical Layer + Helpers
+
+Factories + shared helpers f├╝r:
+
+requestId propagation
+
+typed error mapping (FORBIDDEN/SCHEMA_NOT_READY/CONFIGURATION_ERROR/INTERNAL_ERROR)
+
+deterministic ordering conventions (wenn relevant)
+
+Phase 3 ÔÇö Refactor Surfaces
+
+Priorit├ñt: Funnels + Clinician + Admin funnels
+
+Danach alle restlichen Admin APIs/Pages
+
+Phase 4 ÔÇö Guardrails harden
+
+ESLint rules + CI step + CODEOWNERS/PR template update"
+"417","V05-HYGIENE-A: Admin Funnels DB-Access standardisieren (wie /admin/content) + 500 fix","CLOSED","2026-01-01T17:36:16Z","2026-01-01T19:26:30Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/417","","","Issue 1 ÔÇö V05-HYGIENE-A: Admin Funnels DB-Access standardisieren (wie /admin/content) + 500 fix
+
+Ziel
+Admin Funnel Seiten/APIs sollen in Prod zuverl├ñssig laden (kein 500), mit dem neuen canonical DB client layer (lib/db/*) und konsistenter Auth/RLS-Strategie.
+
+Scope
+
+Admin Funnel UI Seiten (z. B. /admin/funnels, ggf. Unterseiten)
+
+API Routes rund um Admin Funnels (z. B. app/api/admin/funnels/**, plus ÔÇ£pillarsÔÇØ/catalog dependencies falls genutzt)
+
+Entferne/ersetze alle direkten Supabase Client-Erzeugungen in diesen Bereichen (keine createClient/createServerClient direkt)
+
+Acceptance Criteria
+
+/admin/funnels l├ñdt in Prod (Vercel) ohne 500; Daten sichtbar.
+
+Admin Funnel APIs liefern:
+
+401/403 korrekt, wenn nicht autorisiert
+
+503 SCHEMA_NOT_READY bei fehlender Relation/Column
+
+500 CONFIGURATION_ERROR bei leerer Supabase env
+
+Alle betroffenen Files nutzen ausschlie├ƒlich lib/db/supabase.server|admin|public (je nach Bedarf).
+
+npm run db:access-verify zeigt keine Violations mehr in den Admin-Funnel Files.
+
+npm test + npm run build sind gr├╝n.
+
+Verify (PowerShell)
+
+npm ci
+npm run db:access-verify
+npm test
+npm run build
+# optional local
+npm run dev
+
+
+Copilot Prompt
+
+Implementiere V05-HYGIENE-A.
+1) Finde alle Admin-Funnel Pages/Routes (app/admin/**funnels**, app/api/admin/funnels/**).
+2) Vergleiche DB-Zugriffsmuster mit der funktionierenden Referenzseite /admin/content.
+3) Migriere Admin-Funnel Code auf canonical DB clients aus lib/db:
+   - server: supabase.server.ts f├╝r user/session basierte Reads/Writes
+   - admin: supabase.admin.ts nur falls n├Âtig und nur metadata tables (begr├╝ndet)
+4) Vereinheitliche Error Handling (FORBIDDEN/UNAUTHORIZED/SCHEMA_NOT_READY/CONFIGURATION_ERROR/INTERNAL_ERROR) + x-request-id.
+5) Erg├ñnze/aktualisiere route-level tests f├╝r die Admin-Funnel API(s), sodass 500s nicht mehr maskiert auftreten.
+Minimal diff, keine neuen Features."
+"418","V05-HYGIENE-B: Patient + Clinician Funnel Surfaces migrieren (Katalog/Funnel-Views stabil)","CLOSED","2026-01-01T17:36:45Z","2026-01-01T21:48:48Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/418","","","Issue 2 ÔÇö V05-HYGIENE-B: Patient + Clinician Funnel Surfaces migrieren (Katalog/Funnel-Views stabil)
+
+Ziel
+Patient Funnels Katalog und Clinician Views sollen konsistent Daten anzeigen. Keine inkonsistenten DB-Reads, keine Service-role Leaks, keine RLS-├£berraschungen.
+
+Scope
+
+Patient Funnel Katalog/Pages: z. B. /patient/funnels, /patient/funnel/**
+
+Clinician Funnel Views: z. B. /clinician/** (die Bereiche, die aktuell ÔÇ£leerÔÇØ sind)
+
+Zugeh├Ârige APIs: app/api/funnels/**, app/api/clinician/** (oder wie im Repo benannt)
+
+Acceptance Criteria
+
+/patient/funnels zeigt Katalog + Funnels in Prod (ohne 500).
+
+Clinician Seiten zeigen Daten (mindestens ÔÇ£baseline listÔÇØ) in Prod.
+
+DB Zugriff ausschlie├ƒlich ├╝ber canonical layer (keine direkten client constructions).
+
+Korrekte Auth Semantik:
+
+Patient: cookie-based SSR client f├╝r eigene Daten
+
+Clinician: SSR client + RLS / Assignments; keine ÔÇ£still silent emptyÔÇØ
+
+npm run db:access-verify zeigt keine Violations mehr in den betroffenen Surfaces.
+
+Tests/Build gr├╝n.
+
+Verify (PowerShell)
+
+npm ci
+npm run db:access-verify
+npm test
+npm run build
+
+
+Copilot Prompt
+
+Implementiere V05-HYGIENE-B.
+1) Identifiziere alle Patient/Clinician Funnel Pages und deren API Routes.
+2) Ersetze alle direkten Supabase Client-Erzeugungen durch lib/db canonical clients.
+3) Stelle sicher, dass Catalog/Funnel Reads deterministisch sind (ordering tie-breakers).
+4) Error Handling + x-request-id muss konsistent sein.
+5) Erg├ñnze route-level tests f├╝r die wichtigsten Endpoints:
+   - GET /api/funnels/catalog (success + schema-not-ready + forbidden + config-error)
+   - Clinician endpoint(s) analog.
+Minimal diff, keine neuen Features."
+"419","V05-HYGIENE-C: Repo-weite ÔÇ£Zero ViolationsÔÇØ Migration + Guardrails finalisieren (keine Drift mehr)","CLOSED","2026-01-01T17:37:09Z","2026-01-02T08:55:40Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/419","","","Issue 3 ÔÇö V05-HYGIENE-C: Repo-weite ÔÇ£Zero ViolationsÔÇØ Migration + Guardrails finalisieren (keine Drift mehr)
+
+Ziel
+Alle verbleibenden DB-Access Violations (aktuell ~47 Dateien) werden migriert. Danach ist der Repo-Zustand stabil: ein Pattern, keine Abweichungen, CI blockt alles.
+
+Scope
+
+Alle restlichen Dateien, die db:access-verify als Violations meldet
+
+Entferne/neutralisiere Legacy Helper, falls sie noch Clients bauen (nur re-export erlaubt)
+
+Optional: Script-/Env-Hygiene, falls DB-URLs noch missverst├ñndlich sind (nur wenn im Repo vorhanden und nachweislich relevant)
+
+Acceptance Criteria
+
+npm run db:access-verify ÔåÆ 0 violations
+
+Keine direkten createClient/createServerClient Imports au├ƒerhalb von lib/db/*
+
+supabase.admin.ts server-only bleibt enforced, keine Client-import Kette.
+
+Canon Docs + Guardrails Doc sind aktuell und spiegeln Realit├ñt.
+
+Tests/Build gr├╝n.
+
+Verify (PowerShell)
+
+npm ci
+npm run db:access-audit
+git diff -- docs/canon/DB_ACCESS_*.md
+npm run db:access-verify
+npm test
+npm run build
+
+
+Copilot Prompt
+
+Implementiere V05-HYGIENE-C (Zero Violations).
+1) Starte mit npm run db:access-verify und liste alle violators.
+2) Migriere file-by-file in kleinen, logischen Gruppen auf canonical DB clients aus lib/db.
+3) Entferne direkte createClient/createServerClient usage komplett au├ƒerhalb lib/db.
+4) Stelle sicher, dass keine neuen Ausnahmen entstehen; wenn eine Ausnahme n├Âtig ist, dokumentiere sie canon + f├╝ge eine explicit allowlist Regel hinzu.
+5) Am Ende: db:access-verify muss 0 violations liefern; tests/build gr├╝n.
+Minimal diff, keine Feature ├änderungen."
+"423","TV05-CLEANUP & AUDIT ÔÇö Repo Cleanup Audit: Implementiert aber ungenutzt + IssueÔåöRepo Abgleich (Aufr├ñum-Backlog)","CLOSED","2026-01-02T09:25:48Z","2026-01-02T10:01:34Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/423","","","
+Problem
+Im RHYTHM v0.5.x Repo existieren bereits implementierte Artefakte (Pages/Views, API Routes, Server Actions, Contracts, Seeds, Docs), die derzeit nicht genutzt oder nicht in den User-Flow integriert sind (z. B. Funnels View). Zus├ñtzlich fehlt ein systematischer Abgleich zwischen bereits bearbeiteten/geschlossenen GitHub Issues/PRs und dem tats├ñchlichen Repo-Stand. Das erzeugt ÔÇ£Zombie-CodeÔÇØ, Scope-Drift und erschwert QA/Release-Abschluss.
+
+Ziel
+Ein deterministisches ÔÇ£Cleanup AuditÔÇØ durchf├╝hren, das:
+
+alle implementierten, aber ungenutzten/ungenutzten Pfade identifiziert,
+
+Repo-Stand gegen geschlossene Issues/PRs mappt (Canonical IDs),
+
+daraus einen konkreten Aufr├ñum-Backlog ableitet (Integrate / Remove / Defer), ohne in diesem Issue selbst zu integrieren oder zu l├Âschen.
+
+Scope (In)
+
+Repo-weite Inventarisierung:
+
+app/** Pages/Layouts
+
+app/api/** API routes
+
+lib/actions/**, lib/contracts/**, registries
+
+supabase/migrations/**, seeds/fixtures (nur lesen)
+
+docs/**
+
+GitHub-Abgleich:
+
+Closed/Merged Issues/PRs, die v0.5.x betreffen
+
+Canonical IDs (V05-IÔÇª) aus Titles/Bodies/Docs/Commits
+
+Ergebnis-Artefakte (Reports) + Script zur Reproduzierbarkeit.
+
+Out of Scope
+
+Feature-Integration in Flows (separate Issues)
+
+Entfernen von Code/DB-Objekten (separate Issues)
+
+Neue Begriffe/Slugs/Tabellen (No Fantasy Names)
+
+Acceptance Criteria
+
+Unused/Unintegrated Inventory Report existiert:
+
+docs/V05_CLEANUP_AUDIT_UNUSED.md
+
+Pro Item: Path, Typ, Status (unused/unlinked/unreachable), Evidence (grep/findings), Empfohlene Aktion (Integrate/Remove/Defer), Risiko.
+
+IssueÔåöRepo Map Report existiert:
+
+docs/V05_CLEANUP_AUDIT_ISSUE_MAP.md
+
+Tabelle: Issue (Canonical ID) ÔåÆ PR/Commit/Files ÔåÆ Status: complete, partial, present-but-unused, missing, inkl. kurzer Notes.
+
+Aufr├ñum-Backlog ist abgeleitet und priorisiert (Top 10):
+
+im selben Report oder als docs/V05_CLEANUP_BACKLOG.md
+
+jedes Backlog-Item hat: Titel, Scope, AC, Verify, Risiko.
+
+Repro Script existiert und erzeugt/aktualisiert die Reports deterministisch:
+
+scripts/cleanup-audit.ps1
+
+Evidence: Script-Run + Reports im PR aktualisiert.
+
+Tasks
+A) GitHub-Abgleich (Closed Issues/PRs Ôåö Repo)
+
+Per gh Issues/PRs f├╝r v0.5.x identifizieren (Labels/Milestone/Prefix V05-/v0.5/Rhythm v0.5).
+
+Canonical IDs aus Issue/PR Titel+Body extrahieren.
+
+PRÔåÆMerge commit (SHA) bestimmen, optional Files-List per GitHub API (wenn verf├╝gbar).
+
+Report: Issue Map erzeugen.
+
+B) Implementiert-aber-ungenutzt Inventar (Repo Analyse)
+
+Deterministische Heuristiken (ohne AST, kein Raten):
+
+API Routes ohne Referenz:
+
+app/api/**/route.ts finden, dann repo-wide nach ""/api/<path>"" bzw. fetch(/server-action usage suchen.
+
+Pages/Views ohne Entry:
+
+app/**/page.tsx finden; pr├╝fen, ob irgendwo Link href/navigation/redirect darauf zeigt.
+
+Server Actions ohne Aufrufer:
+
+lib/actions/** exports; repo-wide references z├ñhlen.
+
+Docs ohne Integration:
+
+Implementationsdocs (docs/V05_*IMPLEMENTATION*) ohne Verlinkung aus einem ÔÇ£Entry docÔÇØ oder ohne verwendete Route/UI.
+
+Ergebnis pro Finding mit ÔÇ£EvidenceÔÇØ: grep hits / absence.
+
+C) Backlog-Ableitung
+
+F├╝r jedes Finding: Empfehlung Integrate/Remove/Defer.
+
+Top 10 priorisieren nach:
+
+User Value (Flow-relevant)
+
+Risiko (Security/PHI, RLS, Auth)
+
+Wartungs-/Komplexit├ñtskosten
+
+Verify (PowerShell)
+git status
+.\scripts\cleanup-audit.ps1
+npm test
+npm run build
+
+Notes / Guardrails
+
+Keine neuen DB-Objekte, keine neuen Slugs/Keys/Enums.
+
+Alle Findings m├╝ssen eine konkrete Referenz (Path + Evidence) haben.
+
+Output muss in PR nachvollziehbar sein (Reports + Script)."
+"425","TV05_01-AUDIT-RUNTIME ÔÇö Runtime Usage Telemetry (PHI-frei) f├╝r API/Views","CLOSED","2026-01-02T10:30:04Z","2026-01-02T12:46:58Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/425","","","
+
+Problem
+Der Cleanup-Audit identifiziert ÔÇ£potenziell ungenutzteÔÇØ Endpoints nur heuristisch (statische Referenzen) und empfiehlt explizit Runtime-Analyse. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+ Das f├╝hrt zu unsicheren Entscheidungen (Integrate vs Remove), besonders bei /api/amy/*, Consent APIs und Content Resolvers. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+Ziel
+Minimaler, PHI-freier Usage-Tracker, der pro Route/Operation z├ñhlt: count, lastSeenAt, statusCodeBucket, optional env. Damit kann der n├ñchste Audit ÔÇ£unusedÔÇØ datenbasiert entscheiden.
+
+Scope (In)
+
+Serverseitige Telemetrie (API routes) als kleine Utility.
+
+Speicherung: bevorzugt DB-Tabelle nur falls bereits geeignet vorhanden; sonst file/log-basierter Store (deterministisch, low risk) oder Supabase table via migration (nur wenn unbedingt n├Âtig).
+
+Dashboard/Report: simples JSON Endpoint /api/admin/usage (auth-gated).
+
+Out of scope
+
+Vollst├ñndiges Analytics/KPI System (kommt sp├ñter).
+
+Client-Side tracking.
+
+Acceptance Criteria
+
+Jeder Request auf ausgew├ñhlte Routen (mindestens: /api/amy/*, /api/consent/*, /api/content/resolve*) erzeugt einen Usage-Event ohne PHI. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+GET /api/admin/usage liefert aggregierte Metriken.
+
+Auth: unauth ÔåÆ 401; non-admin ÔåÆ 403.
+
+Keine PHI im Payload/Logs (nur routeKey, requestId, status bucket).
+
+Evidence: Script/commands + Screenshot/JSON response.
+
+Tasks
+
+Utility: recordUsage({ routeKey, statusCodeBucket, env }).
+
+Minimal aggregation store + read endpoint.
+
+Add hooks in target routes.
+
+Tests: aggregation + auth gating + ÔÇ£no PHI fieldsÔÇØ.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+# optional: run dev and curl admin usage endpoint (logged-in)"
+"427","TV05_02-REGISTRY ÔÇö External Client Registry + Route Ownership","CLOSED","2026-01-02T11:36:39Z","2026-01-02T18:37:21Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/427","","","
+
+Problem
+Audit weist darauf hin, dass externe Aufrufer (mobile app, scripts, integrations) in der Repo-Suche nicht sichtbar sind und empfiehlt eine Client-Registry. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+ Ohne Registry riskieren wir das Entfernen scheinbar ÔÇ£ungenutzterÔÇØ Endpoints (z. B. AMY) obwohl sie extern genutzt werden. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+Ziel
+Kanonische Dokumentation: welche API-Routen existieren, wer sie nutzt (Owner), ob extern erlaubt, und ob Deletion/Deprecation safe ist.
+
+Acceptance Criteria
+
+docs/EXTERNAL_CLIENTS.md existiert: Clients + Owner + auth method + environment.
+
+docs/API_ROUTE_OWNERSHIP.md existiert: route pattern ÔåÆ owner ÔåÆ externalAllowed (yes/no) ÔåÆ notes.
+
+ÔÇ£Cleanup AuditÔÇØ README verweist auf Registry als Pflichtinput f├╝r Entscheidungen. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+Tasks
+
+Initialer Eintrag f├╝r die im Audit markierten Bereiche: AMY, Consent APIs, Content Resolvers. 
+
+TV05_CLEANUP_AUDIT_UNUSED
+
+Prozessregel: Jede neue Route muss ownership/externalAllowed angeben (PR template update falls vorhanden).
+
+Verify (PowerShell)
+
+Test-Path .\docs\EXTERNAL_CLIENTS.md
+Test-Path .\docs\API_ROUTE_OWNERSHIP.md
+
+
+Und noch dieses Zusatzissue: Usage Telemetry Toggle Defaults (Dev ON / Prod OFF)
+
+Problem
+Die Runtime Usage Telemetry l├ñuft aktuell ÔÇ£einfach mitÔÇØ. Da es kein Staging gibt, soll Telemetrie in der Dev-Phase aktiv sein, aber in Production standardm├ñ├ƒig deaktiviert bleiben (um irref├╝hrende Daten durch ephemeres Storage und unn├Âtigen Overhead zu vermeiden).
+
+Ziel
+Ein deterministischer Toggle, der Telemetrie in Dev standardm├ñ├ƒig aktiviert und in Production standardm├ñ├ƒig deaktiviert, ohne dass Feature-Funktionalit├ñt jemals durch Telemetrie fehlschl├ñgt.
+
+Acceptance Criteria
+
+Telemetrie ist standardm├ñ├ƒig ON, wenn NODE_ENV=development und kein explizites Override gesetzt ist.
+
+Telemetrie ist standardm├ñ├ƒig OFF in Production/Preview, wenn kein Override gesetzt ist.
+
+Explizites Override via Env var USAGE_TELEMETRY_ENABLED:
+
+""true"" => ON
+
+""false"" => OFF
+
+unset => Default-Logik (AC1/AC2)
+
+Wenn Telemetrie OFF ist:
+
+es wird nichts geschrieben,
+
+Admin Endpoint /api/admin/usage bleibt erreichbar, liefert aber klar enabled:false (und ggf. leere Daten), ohne 500.
+
+Telemetrie darf niemals Requests brechen (Errors werden geschluckt, h├Âchstens warn-log).
+
+Tasks
+
+Implementiere isUsageTelemetryEnabled() (z. B. in lib/monitoring/usageTracker.ts oder lib/monitoring/config.ts).
+
+Nutze die Funktion in recordUsage(...) bzw. Wrapper so, dass bei OFF fr├╝h return erfolgt.
+
+Admin Endpoint erg├ñnzt enabled Flag im Response.
+
+Tests:
+
+Default dev => enabled
+
+Default prod/preview => disabled
+
+Override true/false
+
+OFF => keine writes (mock fs)
+
+OFF => admin usage response enth├ñlt enabled:false
+
+Verify (PowerShell)
+npm test
+npm run build
+
+# optional: quick runtime sanity (dev)
+$env:USAGE_TELEMETRY_ENABLED = ""true""
+npm run dev
+# Browser: /api/admin/usage (eingeloggt)"
+"428","TV05_03-HEALTHCHECK ÔÇö Environment Self-Check Endpoint (Supabase URL/Keys/Project)","CLOSED","2026-01-02T11:37:09Z","2026-01-02T18:40:34Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/428","","","
+
+Problem
+Fehlerbilder wie ÔÇ£Invalid API keyÔÇØ f├╝hren zu 500ern und sind schwer zu debuggen; DB cleanup l├Âst das nicht. Ein deterministischer Env-Self-Check reduziert Diagnosezeit massiv.
+
+Ziel
+GET /api/health/env (server-only, admin-gated) pr├╝ft:
+
+Env vars vorhanden (SUPABASE_URL, anon/service role falls genutzt)
+
+Plausibilit├ñtschecks (Format, kein Whitespace)
+
+Optional: ÔÇ£can query pillars via authenticated server clientÔÇØ (ohne PHI; nur existence check)
+
+Acceptance Criteria
+
+401/403 korrekt.
+
+JSON Output enth├ñlt checks[] mit pass/fail + message (keine Secrets).
+
+Bei Fail: konkrete Hinweise (z. B. ÔÇ£service role key missing/invalid formatÔÇØ).
+
+Tests f├╝r gating + redaction.
+
+Verify (PowerShell)
+
+npm test
+npm run build"
+"429","TV05_04-LINT-GATE ÔÇö ESLint Baseline & CI Gate (Changed-Files)","CLOSED","2026-01-02T11:37:35Z","2026-01-02T21:13:01Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/429","","","
+Problem
+Repo hat repo-weite ESLint Errors (pre-existing). Dadurch ist ÔÇ£lintÔÇØ als Guardrail aktuell nicht verl├ñsslich bzw. blockiert unrelated PRs.
+
+Ziel
+CI Lint wird so angepasst, dass PRs nur auf ge├ñnderte Files gelintet werden (interim), plus ein Debt-Tracking (separat). Dadurch bleibt ÔÇ£no new lint regressionsÔÇØ enforced, ohne Altlasten zu blocken.
+
+Acceptance Criteria
+
+CI l├ñuft lint nur auf changed TS/TSX Files; bei none ÔåÆ skip.
+
+Lokal bleibt npm run lint unver├ñndert (kann weiter failen).
+
+Dokumentation: docs/LINT_POLICY.md erkl├ñrt interim gate + Plan.
+
+Verify (PowerShell)
+
+npm test
+npm run build
+# CI verifies lint gate on changed files"
+"430","TV05_05-PLAN ÔÇö Milestones/Dependency Map f├╝r offene V05 Issues (Critical Path)","CLOSED","2026-01-02T11:38:04Z","2026-01-02T21:34:18Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/430","","","
+Problem
+Es existiert eine gro├ƒe Menge offener V05 Issues (I03.2 ÔÇª I10.4). Ohne Dependency-Map riskieren wir Parallelit├ñt ohne kritischen Pfad, und ÔÇ£Walking Skeleton Pillar 4 ÔåÆ Report ÔåÆ ClinicianÔÇØ verz├Âgert sich.
+
+Ziel
+Ein Planning-Artefakt, das:
+
+die offenen Issues in 2ÔÇô3 Milestones gruppiert,
+
+Dependencies/Prereqs explizit macht,
+
+den Minimalpfad ÔÇ£Patient completes assessment ÔåÆ processing ÔåÆ report ÔåÆ clinician sees triageÔÇØ definiert.
+
+Acceptance Criteria
+
+docs/V05_MILESTONES_CRITICAL_PATH.md existiert.
+
+Enth├ñlt: Milestones, Issues pro Milestone, Dependencies, Definition of Done pro Milestone.
+
+Keine neuen Begriffe/Slugs; nur aus bestehenden Issue-Titeln/Repo-Realit├ñt ableiten.
+
+Verify (PowerShell)
+
+Test-Path .\docs\V05_MILESTONES_CRITICAL_PATH.md"
+"431","TV05_01B-PILLARS-SOT-AUDIT ÔÇö Pillar/Catalog Source-of-Truth Audit + Drift Check (PHI-frei)","CLOSED","2026-01-02T12:50:48Z","2026-01-02T14:31:59Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/431","","","
+Ziel: Ein reproduzierbarer, deterministischer Audit/Diag-Pfad, der beweist: Welche Supabase-Instanz nutzt die App? Existieren Pillars/Catalog/Versions? Seeds vorhanden? RLS/Policies konsistent?
+
+Acceptance Criteria
+
+ Script oder Admin-Diagnostics Endpoint (server-only) liefert:
+
+Supabase Project URL (redacted), env name, ob SUPABASE_SERVICE_ROLE_KEY/ANON gesetzt (nur bool, keine Values)
+
+to_regclass f├╝r public.pillars, public.funnels_catalog, public.funnel_versions
+
+relkind (table/view), relrowsecurity, Policy count
+
+Row counts (pillars, catalog, versions), plus ÔÇ×seed present?ÔÇ£ (z. B. Stress-Funnel vorhanden)
+
+ Output ist PHI-frei und stabil/maschinenlesbar (JSON).
+
+ Dokumentation: ÔÇ×Wenn das rot ist ÔåÆ welches Fix (Vercel env / Supabase keys / migrations)ÔÇ£.
+
+Verification (PowerShell)
+
+npm test
+npm run build
+.\scripts\verify-pillars-sot-audit.ps1
+
+
+Copilot Prompt (optional, aber praktisch)
+
+Du bist mein VS-Code GitHub Copilot. Implementiere TV05_02-PILLARS-SOT-AUDIT ÔÇª (AC wie oben) ÔÇª fail-closed, PHI-frei, PowerShell-only verification, Tests inklusive."
+"433","TV05_01C-ADMIN-FUNNELS-CONVERGENCE ÔÇö Clinician/Admin Funnels: API+UI auf Catalog/V2 vereinheitlichen","CLOSED","2026-01-02T12:51:27Z","2026-01-02T15:42:09Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/433","","","
+Ziel: Admin/Clinician Funnels sollen dieselbe Source of Truth verwenden wie Patient /api/funnels/catalog (Pillars/Catalog/Versions). Keine gemischten Modelle mehr.
+
+Acceptance Criteria
+
+ /api/admin/funnels liest aus funnels_catalog (+ pillar) und liefert stabile IDs/Slugs.
+
+ Admin/Clinician Detail (z. B. /api/admin/funnels/[id] bzw. besser slug-basiert) liest aus funnel_versions.manifest (oder ├╝ber eine klare Adapter-Schicht).
+
+ UI-Linking ist konsistent: Liste ÔåÆ Detail funktioniert ohne ÔÇ×Ghost IDsÔÇ£.
+
+ Fehlersemantik:
+
+ÔÇ×not foundÔÇ£ ÔçÆ 404
+
+ÔÇ×unauthÔÇ£ ÔçÆ 401
+
+ÔÇ×forbidden roleÔÇ£ ÔçÆ 403
+
+Keine 500er f├╝r erwartbare Zust├ñnde.
+
+ Tests f├╝r list+detail + RBAC.
+
+Verification (PowerShell)
+
+npm test
+npm run build
+# minimal smoke:
+# - clinician funnels page loads
+# - open a funnel detail"
+"434","TV05_01D-TIERS-TO-PILLARS-CONTRACT ÔÇö ThomasÔÇÖ 3-Tier Journey als deterministischer Contract (Tier Ôåö Pillars/Funnels)","CLOSED","2026-01-02T12:52:05Z","2026-01-02T16:35:39Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/434","","","
+
+Ziel: Das Thomas-Konzept (Tier 1/2.5/2) wird im Produkt als konfigurierbarer, versionierbarer Contract abgebildet (ohne schon die ganze Ops-UI zu bauen).
+
+Scope (MVP)
+
+Ein ÔÇ×Program TierÔÇ£ Contract (JSON/TS + Validierung), der pro Tier definiert:
+
+aktivierte Pillars
+
+erlaubte/empfohlene Funnels (slugs + version constraints)
+
+(optional) minimaler ÔÇ×Schedule SkeletonÔÇ£ (Calls/Nurse Touchpoints als placeholders)
+
+Seeds / default config: Tier 1 (Essential) initial nur die v0.5 Stress/Resilienz-Flows.
+
+Dokumentation: wie Tier-Konfig sp├ñter in V05-Issues (Triage/Nurse/Settings) erweitert wird.
+
+Acceptance Criteria
+
+ Contract + Validator + Beispielkonfiguration eingecheckt
+
+ Catalog API kann optional ÔÇ×tier=ÔÇªÔÇ£ filtern (nur wenn trivial; sonst nur Contract liefern)
+
+ Keine PHI/PII
+
+ Tests
+
+Warum das wichtig ist: ThomasÔÇÖ SOP ist Tier-getrieben 
+
+Patient Journey Rhythmologicum ÔÇª
+
+, w├ñhrend eure Plattform-Module ├╝ber Pillars/Funnels organisiert sind 
+
+TV05_CLEANUP_AUDIT_ISSUE_MAP
+
+. Ohne diese Br├╝cke bleibt die S├ñulenlogik ÔÇ×technisch daÔÇ£, aber nicht als Programmlogik steuerbar."
+"439","TV05_03 Healthcheck","CLOSED","2026-01-02T18:42:10Z","2026-01-02T19:33:01Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/439","","","This section details on the original issue you should resolve
+
+<issue_title>TV05_03-HEALTHCHECK ÔÇö Environment Self-Check Endpoint (Supabase URL/Keys/Project)</issue_title>
+<issue_description>
+
+Problem
+Fehlerbilder wie ÔÇ£Invalid API keyÔÇØ f├╝hren zu 500ern und sind schwer zu debuggen; DB cleanup l├Âst das nicht. Ein deterministischer Env-Self-Check reduziert Diagnosezeit massiv.
+
+Ziel
+GET /api/health/env (server-only, admin-gated) pr├╝ft:
+
+Env vars vorhanden (SUPABASE_URL, anon/service role falls genutzt)
+
+Plausibilit├ñtschecks (Format, kein Whitespace)
+
+Optional: ÔÇ£can query pillars via authenticated server clientÔÇØ (ohne PHI; nur existence check)
+
+Acceptance Criteria
+
+401/403 korrekt.
+
+JSON Output enth├ñlt checks[] mit pass/fail + message (keine Secrets).
+
+Bei Fail: konkrete Hinweise (z. B. ÔÇ£service role key missing/invalid formatÔÇØ).
+
+Tests f├╝r gating + redaction.
+
+Verify (PowerShell)
+
+npm test
+npm run build</issue_description>"
+"448","V05-FIXOPT-01 ÔÇö Fix & Optimize: Patient Landing + Catalog Consistency + Broken Funnel Links + Post-Assessment Content/Results","CLOSED","2026-01-03T11:36:36Z","2026-01-03T12:54:24Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/448","","","## GitHub Issue: V05-FIXOPT-01 ÔÇö Fix & Optimize: Patient Landing + Catalog Consistency + Broken Funnel Links + Post-Assessment Content/Results
+
+### Summary
+
+Mehrere patient-facing UX/Flow-Probleme in v0.5.x f├╝hren aktuell zu:
+
+* falschem Post-Login Entry,
+* inkonsistenter Katalog-/Pillar-Kategorisierung,
+* ÔÇ£totenÔÇØ Funnel-Detailseiten (404),
+* und 404s nach Abschluss des Stress-Fragebogens (Content/Result-Aufl├Âsung).
+
+Ziel: **Deterministisch konsistenter Patient-Funnel-Flow** (Catalog ÔåÆ Funnel Detail ÔåÆ Questionnaire ÔåÆ Result/Report), ohne Request-Spam, mit sauberen HTTP-Semantiken und fail-closed UX.
+
+---
+
+## Context / Guardrails
+
+* PowerShell-only Verify
+* No PHI/secrets in logs; keine Roh-Errors/IDs+Patientendaten-Kombos
+* DB metadata (pg_*/information_schema) nur via SECURITY DEFINER RPC (falls ├╝berhaupt n├Âtig)
+* Determinism: Slugs/Keys/Counts nur via Registry/Seeds, keine Hardcodes
+* Auth-first / RBAC-first bei schreibenden Endpoints
+* HTTP semantics: 401 unauth-first; 404 vs 403 korrekt; 422 f├╝r Domain-Validation; optional: 413/415 etc. wo passend
+
+---
+
+## Observed Issues
+
+### A) Post-Login Landing ist falsch
+
+* Ist: nach Login landet Patient auf `/patient/assessment`
+* Soll: Patient landet auf `/patient/funnels` (Katalog / Pillar-Gruppierung)
+
+### B) Katalog-Kategorisierung inkonsistent (ÔÇ£Weitere AssessmentsÔÇØ)
+
+* Assessments wie ÔÇ×Cardiovascular Age AssessmentÔÇ£, ÔÇ×Heart Health NutritionÔÇ£ tauchen unten separat auf und nicht in Pillar-Kategorien.
+* Erwartung: Funnels sind deterministisch Pillars zugeordnet oder bewusst als ÔÇ£Unkategorisiert/Coming soonÔÇØ markiert.
+
+### C) Broken Funnel Detail (404) f├╝r mehrere Slugs
+
+Repro/Observed 404:
+
+* `/patient/funnel/cardiovascular-age`
+* `/patient/funnel/heart-health-nutrition`
+* `/patient/funnel/sleep-quality`
+
+Console:
+
+* `GET /api/funnels/<slug>/definition 404`
+* `GET /api/funnels/<slug>/content-pages 404`
+
+Erwartung: Kein ÔÇ£toter LinkÔÇØ aus Katalog. Entweder verf├╝gbar (200) oder explizit nicht verf├╝gbar (disabled/coming-soon + saubere Detail-UX).
+
+### D) Stress Assessment: nach Fragebogen 404 bei Content/Result
+
+Nach Abschluss von `stress-assessment`:
+
+* `GET /api/content/resolve?funnel=stress-assessment&category=intro 404`
+* `GET /api/funnels/stress-assessment/content-pages 404`
+* UI: ÔÇ£Fehler beim Laden der Ergebnisse.ÔÇØ
+
+Erwartung: deterministische Result/Report-Ansicht oder ÔÇ£Content noch nicht verf├╝gbarÔÇØ-UX (ohne 404-Spam).
+
+---
+
+## Goals
+
+1. Patient Login f├╝hrt deterministisch zu `/patient/funnels`.
+2. Katalog listet nur Funnels, die tats├ñchlich startbar sind **oder** markiert sie explizit als nicht verf├╝gbar (coming soon/disabled).
+3. Funnel Detail ist robust: keine Render-/Fetch-Schleifen; 404 wird in klare UX ├╝bersetzt.
+4. Stress Assessment Post-Completion l├ñdt Result/Content stabil (keine unhandled 404s).
+
+---
+
+## Proposed Implementation (minimal-diff)
+
+### 1) Post-Login Redirect vereinheitlichen
+
+* Patient-Redirect nach Login auf `/patient/funnels`.
+* Entscheidung:
+
+  * **Preferred**: `/patient/assessment` redirectet auf `/patient/funnels` (302/redirect), um Doppelpfade zu vermeiden.
+  * Alternative: `/patient/assessment` bleibt ÔÇ£Pilot ShortcutÔÇØ, aber nicht Default Landing.
+
+### 2) Catalog Availability & Kategorisierung deterministisch machen
+
+* Beim Erzeugen der Patient-Katalog-Response:
+
+  * Funnels m├╝ssen entweder:
+
+    * `AVAILABLE` (startbar) sein **nur wenn** Definition (und ggf. Content) existiert, oder
+    * `COMING_SOON/NOT_AVAILABLE` explizit markiert (UI zeigt disabled), oder
+    * gar nicht ausgeliefert werden.
+* Pillar-Zuordnung:
+
+  * Jeder Funnel hat validen `pillar_key` aus Registry **oder** expliziten `UNCATEGORIZED` Bucket (mit PHI-free Diagnose/Warnung).
+* Keine stillen ÔÇ£Weitere AssessmentsÔÇØ ohne belastbaren Backend-Status.
+
+### 3) Funnel Detail: Gate by Definition, handle 404 cleanly
+
+* Client:
+
+  * `/definition` ist Gate; wenn 404 ÔåÆ zeige ÔÇ£Nicht verf├╝gbarÔÇØ UI + CTA zur├╝ck zum Katalog.
+  * `/content-pages` nur fetchen, wenn Definition erfolgreich geladen wurde.
+  * Keine retries/render-loops.
+* Server/Routes:
+
+  * Falls `content-pages` optional: 200 mit `[]` statt 404.
+  * Falls required: Catalog muss den Funnel als nicht verf├╝gbar markieren bis Content existiert.
+
+### 4) Stress Assessment Result/Content Resolve contract stabilisieren
+
+* `/api/content/resolve`:
+
+  * Wenn Route fehlt: implementieren oder Client auf kanonischen Endpoint umstellen.
+  * Wenn Content optional: 200 mit `content: null` + status field (versioned schema) statt 404.
+  * Wenn Content required: UI zeigt ÔÇ£Content noch nicht verf├╝gbarÔÇØ statt generischem Fehler.
+* `/api/funnels/stress-assessment/content-pages`:
+
+  * Analog: optional ÔçÆ 200 mit leerer Liste statt 404; andernfalls Availability im Catalog korrekt.
+
+---
+
+## Acceptance Criteria
+
+### AC-1 Landing
+
+* Nach Patient-Login landet der User auf **`/patient/funnels`**.
+* `/patient/assessment` ist **nicht** mehr Default Landing (Redirect oder klarer optionaler Shortcut).
+
+### AC-2 Catalog Consistency
+
+* Katalog zeigt keine startbaren Links zu Funnels ohne Definition.
+* Funnels sind deterministisch kategorisiert:
+
+  * in Pillar-Kategorien **oder** explizit als ÔÇ£Unkategorisiert/Coming soonÔÇØ (kein stilles Wegdriften).
+
+### AC-3 Broken Funnels behoben (3 Slugs)
+
+F├╝r `cardiovascular-age`, `heart-health-nutrition`, `sleep-quality` gilt:
+
+* Kein unhandled 404-Fehlerzustand mehr.
+* Entweder:
+
+  * verf├╝gbar ÔçÆ Detailseite l├ñdt ohne console errors, oder
+  * nicht verf├╝gbar ÔçÆ im Katalog disabled/coming-soon + Detailseite zeigt ÔÇ£Nicht verf├╝gbarÔÇØ.
+
+### AC-4 Stress Post-Completion stabil
+
+* Nach Abschluss von `stress-assessment`:
+
+  * Result/Report l├ñdt **oder** es erscheint ein definierter ÔÇ£Content fehltÔÇØ-State.
+  * Keine 404-Spam-Requests; keine Render-Schleifen.
+
+### AC-5 Guardrails / Semantik
+
+* 401 unauth-first bleibt erhalten; 404/403/422 korrekt.
+* Keine PHI/secrets in Logs; keine raw error dumps.
+* Determinism: Slugs/Keys/Enums aus Registry/Seed; keine UI-Hardcodes.
+
+### AC-6 Tests
+
+* Unit tests (table-driven) f├╝r:
+
+  * Catalog availability mapping (AVAILABLE vs COMING_SOON vs hidden)
+  * Funnel detail gating (bei 404 definition ÔåÆ kein content-pages call, ÔÇ£Not availableÔÇØ UI)
+  * Content resolve ÔÇ£missing contentÔÇØ handling
+* `npm test` und `npm run build` sind gr├╝n.
+
+---
+
+## Definition of Done
+
+* Patient Landing korrekt
+* Catalog liefert nur konsistente, deterministisch markierte Funnels
+* Funnel Detail robust (keine dead links, kein request spam)
+* Stress Assessment Abschluss f├╝hrt zu stabiler Result/Content UX
+* Tests + Build gr├╝n, Dokumentation aktualisiert
+
+---
+
+## PowerShell Verify / Smoke
+
+```powershell
+npm test
+npm run build
+npm run dev
+```
+
+**Manual smoke checklist (Browser, narrow viewport):**
+
+1. Login als Patient ÔåÆ landet auf `/patient/funnels`
+2. Katalog:
+
+   * die genannten Funnels sind entweder startbar & funktionieren, oder disabled/coming soon
+3. Klick auf:
+
+   * `/patient/funnel/cardiovascular-age`
+   * `/patient/funnel/heart-health-nutrition`
+   * `/patient/funnel/sleep-quality`
+     ÔåÆ keine generischen 404-Fehlerzust├ñnde / keine console-spam loops
+4. `stress-assessment` komplett durchf├╝hren ÔåÆ Ergebnis/Empty-State erscheint deterministisch, ohne 404 spam.
+
+---
+
+## Notes / Links
+
+* Production URLs (Repro):
+
+  * `/patient/assessment` (current landing)
+  * `/patient/funnels` (expected landing)
+  * `/patient/funnel/cardiovascular-age`
+  * `/patient/funnel/heart-health-nutrition`
+  * `/patient/funnel/sleep-quality`
+"
+"469","V05-I06.4 ÔÇö Visual Block Editor (Manifest-based Section/Block Builder)","CLOSED","2026-01-04T21:00:11Z","2026-01-05T07:25:25Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/469","","","
+Goal
+Provide an internal UI to compose and edit funnel content manifests (pages ÔåÆ sections ÔåÆ blocks) using the existing registry + contracts, enabling non-code iteration of mobile content.
+
+Problem
+V05-I06.2 provides a renderer, but content creation/editing is still code-only. A minimal editor is required to build and maintain manifests safely and deterministically.
+
+Scope
+
+Create a basic editor UI for the existing FunnelContentManifest shape:
+
+List pages, sections, blocks
+
+Add/remove/reorder blocks within a section
+
+Edit block fields according to block type schema
+
+Validate with existing Zod contracts (strict, bounded)
+
+Persist changes to the existing storage location (whatever is canonical in repo: e.g., funnel_versions.content_manifest), via existing APIs/actions/patterns.
+
+Determinism:
+
+Stable ordering (explicit order indices or array order preserved)
+
+Canonical serialization for save (stable key ordering if needed)
+
+Fail-closed:
+
+Unknown block types cannot be edited; show controlled error UI, no silent coercion
+
+Non-goals
+
+No new SECTION_TYPE values
+
+No new permissions model
+
+No WYSIWYG rich text beyond what already exists (e.g., markdown text area is fine)
+
+No ÔÇ£publish workflowÔÇØ unless already present; this is an editor MVP
+
+Acceptance Criteria
+
+Editor supports existing section/block types only (registry-driven)
+
+Strict validation prevents saving invalid manifests
+
+Fail-closed on unknown types
+
+Changes persist and reload correctly
+
+No PHI is introduced into manifests (enforced by schema)
+
+Tests for:
+
+Schema validation gating save
+
+Deterministic ordering / stable serialization
+
+Fail-closed behavior for unknown types
+
+Evidence in PR: npm test, npm run build
+
+Tasks
+
+Identify canonical manifest source-of-truth and update mechanism.
+
+Build editor shell page (likely under clinician/admin tools) using existing routes only.
+
+Implement block form components per existing schemas.
+
+Implement reorder (up/down) with deterministic behavior.
+
+Add validation + fail-closed error handling.
+
+Add tests for validation + determinism + unknown type handling.
+
+Add brief docs under docs/mobile/ describing editor usage and constraints.
+
+Verify (PowerShell)
+
+npm test
+
+npm run build"
+"470","V05-I06.5 ÔÇö Integrate Content Block Renderer into Patient Pages","CLOSED","2026-01-04T21:00:46Z","2026-01-05T08:57:22Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/470","","","
+
+Goal
+Wire the V05-I06.2 Content Block Renderer into actual patient-facing routes so content manifests render in the app (intro/content pages), without introducing new routes/types.
+
+Problem
+Renderer exists but is not used by real pages yet, so mobile content remains disconnected from the manifest-driven model.
+
+Scope
+
+Integrate renderer into existing patient routes only:
+
+Patient funnel intro pages (existing route(s))
+
+Standalone content pages (existing route(s), if present)
+
+Load manifest server-side (existing patterns: DB fetch via funnel_versions.content_manifest, etc.)
+
+Render:
+
+Pages ÔåÆ sections ÔåÆ blocks via renderer
+
+Correct filtering by pageSlug/section
+
+Fail-closed:
+
+If manifest missing/invalid ÔåÆ return correct HTTP semantics (404/422 as per existing patterns)
+
+Unknown block type ÔåÆ controlled error UI; PHI-free logging only
+
+Non-goals
+
+No new SECTION_TYPE values
+
+No new manifest schema changes
+
+No editor (thatÔÇÖs I06.4)
+
+No redesign; just integration + minimal layout compliance with mobile shell
+
+Acceptance Criteria
+
+Existing patient pages render manifest-driven content via renderer
+
+Deterministic output (manifest order preserved; stable ordering rules)
+
+Server/client boundaries respected (manifest fetch server-side; rendering per existing component split)
+
+Fail-closed behavior for missing/invalid manifests
+
+Tests:
+
+One integration test for funnel intro route rendering expected blocks
+
+One integration test for standalone content page rendering (if route exists)
+
+Unknown block type causes controlled failure (not silent)
+
+Evidence in PR: npm test, npm run build
+
+Tasks
+
+Identify which existing patient routes correspond to ÔÇ£introÔÇØ and ÔÇ£content pagesÔÇØ.
+
+Implement server-side manifest load and pass to renderer.
+
+Add minimal error handling for missing manifest / invalid schema.
+
+Add deterministic pageSlug selection (no new slugs).
+
+Add tests for integration and fail-closed behavior.
+
+Add short doc note in docs/mobile/ that renderer is live on those routes.
+
+Verify (PowerShell)
+
+npm test
+
+npm run build"
+"497","Fix Issue","CLOSED","2026-01-10T07:16:07Z","2026-01-10T08:08:19Z","https://github.com/adaefler-art/rhythmologicum-connect/issues/497","","","Du bist GitHub Copilot (Chat) im Repo adaefler-art/rhythmologicum-connect. Ziel: v0.5 P0 abschlie├ƒen. Evidence-first, minimal diff, keine UI-Refactors au├ƒerhalb des Notwendigen.
+
+PROD Evidence (Vercel Logs):
+A) /api/content/resolve?funnel=stress-assessment&category=intro -> 404 FUNNEL_NOT_FOUND
+   requestId: 2366f0d8-df89-4d25-a4b1-99551b5c9287
+   log: [Content Resolver Funnel Not Found] { funnel:'stress-assessment', category:'intro' }
+
+B) /api/funnels/stress-assessment/definition -> 200 (direkt im gleichen Flow)
+   => Source-of-truth mismatch (definition says exists, resolver says not found)
+
+C) /api/funnels/stress-assessment/content-pages -> 500
+   requestId: aa04627e-f1f6-4530-b7f2-78d54f9c2136
+   log: [Funnel Content Pages Catalog Lookup Failed] { effectiveSlug:'stress-assessment', errorCode: undefined }
+   => fallback/catalog path throws or returns unclassified error ÔåÆ must not 500 for ÔÇ£no pagesÔÇØ.
+
+D) UI log:
+   [INTRO_PAGE] Manifest validation failed ÔÇª steps expected array, received undefined
+   => intro validates wrong object or wrong key (likely wrapper vs data).
+
+AUFGABEN (Acceptance Criteria):
+1) Make source-of-truth consistent:
+   - /api/content/resolve MUST treat funnels that exist in the funnel registry (same one used by /api/funnels/[slug]/definition) as ÔÇ£knownÔÇØ.
+   - If funnel is known but intro content is missing: return 200 with ÔÇ£missing content / empty stateÔÇØ (NOT 404 FUNNEL_NOT_FOUND).
+   - Only return 404 FUNNEL_NOT_FOUND if funnel is unknown to BOTH registry and DB.
+
+2) Fix /api/funnels/[slug]/content-pages:
+   - Never 500 on ÔÇ£catalog lookup failedÔÇØ if the real situation is ÔÇ£no content pagesÔÇØ.
+   - Behavior matrix:
+     a) known funnel, DB has no content pages -> 200 []
+     b) known funnel, DB schema mismatch (e.g. deleted_at missing) -> retry without soft-delete filter, then 200 [] or 200 pages
+     c) unknown funnel -> 404 FUNNEL_NOT_FOUND
+     d) true DB error (permission/RLS/etc) -> 500 with consistent error shape + server log includes supabase error code+message (no PHI)
+
+3) Fix Intro manifest validation:
+   - Identify where ÔÇ£manifestÔÇØ is validated in app/patient/funnel/[slug]/intro (client/server).
+   - Ensure the validated object contains steps array (likely definition.data.steps).
+   - After fix: intro page loads without manifest validation error for stress-assessment.
+
+4) Tests:
+   - Add/update route tests to cover:
+     - resolver: known funnel but missing intro content -> 200 (not 404)
+     - content-pages: known funnel but no DB pages -> 200 []
+     - content-pages: unknown funnel -> 404
+   - npm test + npm run build must be green.
+
+FILES TO INVESTIGATE (likely):
+- app/api/content/resolve/route.ts
+- app/api/funnels/[slug]/content-pages/route.ts
+- app/api/funnels/[slug]/definition/route.ts (registry usage)
+- app/patient/funnel/[slug]/intro/page.tsx and/or intro/client.tsx (manifest validation site)
+- any funnel registry module (e.g. lib/funnels/*)
+
+DELIVERABLE:
+- A single PR with minimal diffs implementing the above + tests.
+- Provide PowerShell verification commands.
+
+POWERHELL VERIFICATION (must run and paste results in PR):
+npm test
+Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
+npm run build
+"

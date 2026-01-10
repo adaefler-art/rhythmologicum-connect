@@ -1,0 +1,522 @@
+﻿[
+    {
+        "issueNumber":  341,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/341",
+        "prNumber":  345,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/345",
+        "mergeCommit":  "4dc3bb2fc29c2b8b269689ca079f0c8b53aa748a",
+        "mergedAt":  "2025-12-30T17:44:24Z"
+    },
+    {
+        "issueNumber":  342,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/342",
+        "prNumber":  346,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/346",
+        "mergeCommit":  "2ca9b2ef7ae76c8d47fda8734e53dced87e8f5f0",
+        "mergedAt":  "2025-12-30T19:31:46Z"
+    },
+    {
+        "issueNumber":  343,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/343",
+        "prNumber":  399,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/399",
+        "mergeCommit":  "128fb13820f81174b09ac27a31420454ad7f1d60",
+        "mergedAt":  "2025-12-30T20:33:35Z"
+    },
+    {
+        "issueNumber":  344,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/344",
+        "prNumber":  400,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/400",
+        "mergeCommit":  "557c5ae3db1cdcc33bf66f92a1764d20f1c98fe0",
+        "mergedAt":  "2025-12-30T20:58:37Z"
+    },
+    {
+        "issueNumber":  348,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/348",
+        "prNumber":  401,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/401",
+        "mergeCommit":  "b253c416cbebd6f186dcbf856143e05842e3cc9f",
+        "mergedAt":  "2025-12-30T21:59:29Z"
+    },
+    {
+        "issueNumber":  349,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/349",
+        "prNumber":  402,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/402",
+        "mergeCommit":  "0f4153349a470f8aafc2ade579f2c07f8ea00936",
+        "mergedAt":  "2025-12-31T09:26:36Z"
+    },
+    {
+        "issueNumber":  350,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/350",
+        "prNumber":  403,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/403",
+        "mergeCommit":  "b5f71f3c748aefa651d0add769659e299c919483",
+        "mergedAt":  "2025-12-31T10:39:36Z"
+    },
+    {
+        "issueNumber":  351,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/351",
+        "prNumber":  404,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/404",
+        "mergeCommit":  "eecf83d0d78532db76b93c11f2e275e399db9ed0",
+        "mergedAt":  "2025-12-31T14:12:21Z"
+    },
+    {
+        "issueNumber":  353,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/353",
+        "prNumber":  405,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/405",
+        "mergeCommit":  "547de3ff9b1147eb85cf3119b71387da1f406fc1",
+        "mergedAt":  "2025-12-31T16:08:09Z"
+    },
+    {
+        "issueNumber":  354,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/354",
+        "prNumber":  408,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/408",
+        "mergeCommit":  "8dfb6d1818a12a908bcec3e3625bb4ddc6f84288",
+        "mergedAt":  "2026-01-01T10:59:29Z"
+    },
+    {
+        "issueNumber":  355,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/355",
+        "prNumber":  409,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/409",
+        "mergeCommit":  "c64344c5d72614029192df9a6a4c070c2b984fa5",
+        "mergedAt":  "2026-01-01T11:35:16Z"
+    },
+    {
+        "issueNumber":  357,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/357",
+        "prNumber":  410,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/410",
+        "mergeCommit":  "a825d5281af37dfef2ab835319c62eec80a52b51",
+        "mergedAt":  "2026-01-01T12:29:57Z"
+    },
+    {
+        "issueNumber":  358,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/358",
+        "prNumber":  443,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/443",
+        "mergeCommit":  "e276f6e7f99fae2b005f159ccd6a8be975403447",
+        "mergedAt":  "2026-01-03T05:45:28Z"
+    },
+    {
+        "issueNumber":  359,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/359",
+        "prNumber":  444,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/444",
+        "mergeCommit":  "5d57233fae94f94fd585ea42e29e6c1e1e4d7500",
+        "mergedAt":  "2026-01-03T06:26:53Z"
+    },
+    {
+        "issueNumber":  360,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/360",
+        "prNumber":  445,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/445",
+        "mergeCommit":  "d206806879c148b282656f08548146544b51cdf2",
+        "mergedAt":  "2026-01-03T07:43:50Z"
+    },
+    {
+        "issueNumber":  362,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/362",
+        "prNumber":  446,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/446",
+        "mergeCommit":  "471568628c6fa7408620f27feb96ba367a10578c",
+        "mergedAt":  "2026-01-03T11:11:01Z"
+    },
+    {
+        "issueNumber":  363,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/363",
+        "prNumber":  450,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/450",
+        "mergeCommit":  "7b9f919bfa49e94c6192c44b573c143773ded92a",
+        "mergedAt":  "2026-01-03T14:24:58Z"
+    },
+    {
+        "issueNumber":  364,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/364",
+        "prNumber":  454,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/454",
+        "mergeCommit":  "1613f03dbc0e3de734b697422db95c2a8446fd48",
+        "mergedAt":  "2026-01-03T15:03:45Z"
+    },
+    {
+        "issueNumber":  366,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/366",
+        "prNumber":  456,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/456",
+        "mergeCommit":  "793db93db6ff7debc1b1a66c4f94f871e6a6dcf0",
+        "mergedAt":  "2026-01-03T17:26:50Z"
+    },
+    {
+        "issueNumber":  367,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/367",
+        "prNumber":  457,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/457",
+        "mergeCommit":  "fec912b45d7ce38f9a46bc861cace163e8542da9",
+        "mergedAt":  "2026-01-03T20:40:51Z"
+    },
+    {
+        "issueNumber":  368,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/368",
+        "prNumber":  458,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/458",
+        "mergeCommit":  "d7c1aff5eb29828bc29945627a87db38e6ab6d92",
+        "mergedAt":  "2026-01-03T21:41:04Z"
+    },
+    {
+        "issueNumber":  369,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/369",
+        "prNumber":  459,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/459",
+        "mergeCommit":  "9e8325e763943638d975732afb265ee16c6127fb",
+        "mergedAt":  "2026-01-04T06:41:27Z"
+    },
+    {
+        "issueNumber":  370,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/370",
+        "prNumber":  460,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/460",
+        "mergeCommit":  "71a3a5ce077d280159c5fda33ffd1f4862300fad",
+        "mergedAt":  "2026-01-04T08:12:06Z"
+    },
+    {
+        "issueNumber":  371,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/371",
+        "prNumber":  461,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/461",
+        "mergeCommit":  "692567771e353ba87d645eec5908c0111ef8972f",
+        "mergedAt":  "2026-01-04T10:10:58Z"
+    },
+    {
+        "issueNumber":  372,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/372",
+        "prNumber":  462,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/462",
+        "mergeCommit":  "2504357c498a975aa3563e76a86fb3843fe78858",
+        "mergedAt":  "2026-01-04T11:30:36Z"
+    },
+    {
+        "issueNumber":  373,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/373",
+        "prNumber":  463,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/463",
+        "mergeCommit":  "531bac8de8b63c4023e248c6490e7d5d80bae207",
+        "mergedAt":  "2026-01-04T13:36:29Z"
+    },
+    {
+        "issueNumber":  374,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/374",
+        "prNumber":  464,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/464",
+        "mergeCommit":  "d0435b522b82ba6137db58c72fe6374e9c427449",
+        "mergedAt":  "2026-01-04T19:59:23Z"
+    },
+    {
+        "issueNumber":  376,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/376",
+        "prNumber":  467,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/467",
+        "mergeCommit":  "a5e9a1d91273936248c8f0da362bf20ecca4112b",
+        "mergedAt":  "2026-01-04T20:29:36Z"
+    },
+    {
+        "issueNumber":  377,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/377",
+        "prNumber":  468,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/468",
+        "mergeCommit":  "382ef9da9a3a8a3591979a7f97bb6a81e0ab2d41",
+        "mergedAt":  "2026-01-04T21:05:56Z"
+    },
+    {
+        "issueNumber":  378,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/378",
+        "prNumber":  471,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/471",
+        "mergeCommit":  "f2b2786757152b6f227089633f7edfe2fd7e2297",
+        "mergedAt":  "2026-01-05T06:26:50Z"
+    },
+    {
+        "issueNumber":  380,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/380",
+        "prNumber":  474,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/474",
+        "mergeCommit":  "de1e4f74f01edb252b4673ae49948a8f2da0ff60",
+        "mergedAt":  "2026-01-05T11:59:09Z"
+    },
+    {
+        "issueNumber":  381,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/381",
+        "prNumber":  478,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/478",
+        "mergeCommit":  "0f4e54e4d20930363fb5160b31ecfab7d69f6c79",
+        "mergedAt":  "2026-01-05T14:30:42Z"
+    },
+    {
+        "issueNumber":  382,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/382",
+        "prNumber":  482,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/482",
+        "mergeCommit":  "5af433fff89325f55e24488dba3230271b3e0445",
+        "mergedAt":  "2026-01-05T15:35:37Z"
+    },
+    {
+        "issueNumber":  383,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/383",
+        "prNumber":  483,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/483",
+        "mergeCommit":  "15f4257dbda19110aa5d9fe7f0fc0b1d4605c299",
+        "mergedAt":  "2026-01-05T22:03:53Z"
+    },
+    {
+        "issueNumber":  385,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/385",
+        "prNumber":  484,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/484",
+        "mergeCommit":  "467397b32cb4cac1c7549c1d3f6eb86247e2a77e",
+        "mergedAt":  "2026-01-05T22:56:28Z"
+    },
+    {
+        "issueNumber":  386,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/386",
+        "prNumber":  485,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/485",
+        "mergeCommit":  "df5a53b4fb1c9e4b63e58179da5fb3dee3bfba4f",
+        "mergedAt":  "2026-01-06T11:11:38Z"
+    },
+    {
+        "issueNumber":  387,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/387",
+        "prNumber":  486,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/486",
+        "mergeCommit":  "770914cd229c04ef480bc32c5b56074c707ed276",
+        "mergedAt":  "2026-01-06T18:01:15Z"
+    },
+    {
+        "issueNumber":  388,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/388",
+        "prNumber":  487,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/487",
+        "mergeCommit":  "10b7bf489fbb4874bca04914ec041d75e7e3b8a5",
+        "mergedAt":  "2026-01-07T05:45:19Z"
+    },
+    {
+        "issueNumber":  390,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/390",
+        "prNumber":  488,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/488",
+        "mergeCommit":  "8338611a5b5aa2cf4a20c5d1633148912af193a6",
+        "mergedAt":  "2026-01-07T08:22:51Z"
+    },
+    {
+        "issueNumber":  391,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/391",
+        "prNumber":  489,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/489",
+        "mergeCommit":  "e247697f41d4126f0f79e52590b370b96f672007",
+        "mergedAt":  "2026-01-07T09:47:34Z"
+    },
+    {
+        "issueNumber":  392,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/392",
+        "prNumber":  490,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/490",
+        "mergeCommit":  "97aafec9b41ffb7ed9461f0abf430155ae26b8da",
+        "mergedAt":  "2026-01-07T10:27:17Z"
+    },
+    {
+        "issueNumber":  393,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/393",
+        "prNumber":  491,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/491",
+        "mergeCommit":  "516e039aac90a50378a9097a7a39e1d9e3a741a9",
+        "mergedAt":  "2026-01-07T12:53:06Z"
+    },
+    {
+        "issueNumber":  395,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/395",
+        "prNumber":  492,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/492",
+        "mergeCommit":  "1b68c4410fa74f6dbbd6ac9ef17ffae7016b4dac",
+        "mergedAt":  "2026-01-07T13:30:42Z"
+    },
+    {
+        "issueNumber":  396,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/396",
+        "prNumber":  493,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/493",
+        "mergeCommit":  "f92ed41f4519751702c9a5fe8f7527d202dcbbfd",
+        "mergedAt":  "2026-01-08T11:09:20Z"
+    },
+    {
+        "issueNumber":  397,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/397",
+        "prNumber":  494,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/494",
+        "mergeCommit":  "3a8bdff829d65a0eb7194f604170898ccfec2390",
+        "mergedAt":  "2026-01-08T11:54:29Z"
+    },
+    {
+        "issueNumber":  398,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/398",
+        "prNumber":  495,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/495",
+        "mergeCommit":  "5d3c3cb82c147fb34790e69a705e310866faed61",
+        "mergedAt":  "2026-01-08T13:49:41Z"
+    },
+    {
+        "issueNumber":  406,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/406",
+        "prNumber":  407,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/407",
+        "mergeCommit":  "eb4540121ba0516760ce2d7bf97c62788b7e77c6",
+        "mergedAt":  "2026-01-01T09:59:56Z"
+    },
+    {
+        "issueNumber":  415,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/415",
+        "prNumber":  416,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/416",
+        "mergeCommit":  "b2b968424398548ec0d9ef7483344c12d37b5c6d",
+        "mergedAt":  "2026-01-01T18:38:29Z"
+    },
+    {
+        "issueNumber":  417,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/417",
+        "prNumber":  420,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/420",
+        "mergeCommit":  "450df5f330c5384cee73f4c298e5758b187313a0",
+        "mergedAt":  "2026-01-01T19:26:29Z"
+    },
+    {
+        "issueNumber":  418,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/418",
+        "prNumber":  421,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/421",
+        "mergeCommit":  "3e8dde40e649ea6b5b2901820c0914924d3660b6",
+        "mergedAt":  "2026-01-01T21:48:47Z"
+    },
+    {
+        "issueNumber":  419,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/419",
+        "prNumber":  422,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/422",
+        "mergeCommit":  "4d8333f7c787d512292601a350089f8d1c17b6ad",
+        "mergedAt":  "2026-01-02T08:55:39Z"
+    },
+    {
+        "issueNumber":  423,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/423",
+        "prNumber":  424,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/424",
+        "mergeCommit":  "40a9f2b1e011d2958816924f33f8d272b95f9d4d",
+        "mergedAt":  "2026-01-02T10:01:33Z"
+    },
+    {
+        "issueNumber":  425,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/425",
+        "prNumber":  426,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/426",
+        "mergeCommit":  "7d141dd82aa551156476cd7beebd8b0822d4d050",
+        "mergedAt":  "2026-01-02T12:46:57Z"
+    },
+    {
+        "issueNumber":  427,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/427",
+        "prNumber":  437,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/437",
+        "mergeCommit":  "49daff34b184a9b347a9364f3c4b1d6617159c20",
+        "mergedAt":  "2026-01-02T18:37:20Z"
+    },
+    {
+        "issueNumber":  428,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/428",
+        "prNumber":  438,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/438",
+        "mergeCommit":  "32f641f775a846752e45cb6646346e7c545e562c",
+        "mergedAt":  "2026-01-02T18:40:34Z"
+    },
+    {
+        "issueNumber":  429,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/429",
+        "prNumber":  441,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/441",
+        "mergeCommit":  "33c51502f39b7181bec929cbff6554ddbfea0fca",
+        "mergedAt":  "2026-01-02T21:13:00Z"
+    },
+    {
+        "issueNumber":  430,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/430",
+        "prNumber":  442,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/442",
+        "mergeCommit":  "2dbbb18dff9e13e4e452c48929d635646a16a6f6",
+        "mergedAt":  "2026-01-02T21:34:17Z"
+    },
+    {
+        "issueNumber":  431,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/431",
+        "prNumber":  432,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/432",
+        "mergeCommit":  "277af97063869ca8c6e0b763833e4e0b122a6baa",
+        "mergedAt":  "2026-01-02T14:31:58Z"
+    },
+    {
+        "issueNumber":  433,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/433",
+        "prNumber":  435,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/435",
+        "mergeCommit":  "4ad2749f8281123f6533020ea519520205885ef7",
+        "mergedAt":  "2026-01-02T15:42:08Z"
+    },
+    {
+        "issueNumber":  434,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/434",
+        "prNumber":  436,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/436",
+        "mergeCommit":  "fe24897a4d7d4dcf97853dae5119d8297ad67bac",
+        "mergedAt":  "2026-01-02T16:35:38Z"
+    },
+    {
+        "issueNumber":  439,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/439",
+        "prNumber":  440,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/440",
+        "mergeCommit":  "53d7d955740bf55f7d06601cddae72007d7c183d",
+        "mergedAt":  "2026-01-02T19:33:00Z"
+    },
+    {
+        "issueNumber":  448,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/448",
+        "prNumber":  449,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/449",
+        "mergeCommit":  "a96916023ee4b6b93c60b9f17096f587fee7d58e",
+        "mergedAt":  "2026-01-03T12:54:23Z"
+    },
+    {
+        "issueNumber":  469,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/469",
+        "prNumber":  472,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/472",
+        "mergeCommit":  "15a4fd260a090baefbf882a3c7aeb5e308c3f31d",
+        "mergedAt":  "2026-01-05T07:25:24Z"
+    },
+    {
+        "issueNumber":  470,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/470",
+        "prNumber":  473,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/473",
+        "mergeCommit":  "6b241fed1ab60296b574950d79be8177b49359b5",
+        "mergedAt":  "2026-01-05T08:57:21Z"
+    },
+    {
+        "issueNumber":  497,
+        "issueUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/497",
+        "prNumber":  498,
+        "prUrl":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/498",
+        "mergeCommit":  "5ecaae72db09b2d3897b44258a67317509231386",
+        "mergedAt":  "2026-01-10T08:08:18Z"
+    }
+]

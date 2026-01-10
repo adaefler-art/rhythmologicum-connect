@@ -1,0 +1,18 @@
+﻿{
+    "repo":  "adaefler-art/rhythmologicum-connect",
+    "since":  "2025-12-30",
+    "generatedAt":  "2026-01-10T14:20:53",
+    "counts":  {
+                   "issues":  76,
+                   "prs":  84,
+                   "issuePrLinks":  65
+               },
+    "outputs":  {
+                    "issuesJson":  "issues_updated_since_2025-12-30.json",
+                    "issuesCsv":  "issues_updated_since_2025-12-30.csv",
+                    "prsJson":  "prs_merged_since_2025-12-30.json",
+                    "prsCsv":  "prs_merged_since_2025-12-30.csv",
+                    "linksJson":  "issue_pr_links_since_2025-12-30.json",
+                    "linksCsv":  "issue_pr_links_since_2025-12-30.csv"
+                }
+}

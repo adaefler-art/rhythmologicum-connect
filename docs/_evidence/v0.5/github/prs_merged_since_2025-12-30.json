@@ -1,0 +1,2319 @@
+﻿[
+    {
+        "number":  345,
+        "title":  "Reorganize docs/ into canon, releases, and memory",
+        "mergedAt":  "2025-12-30T17:44:24Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/345",
+        "mergeCommit":  "4dc3bb2fc29c2b8b269689ca079f0c8b53aa748a",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/canon/CONTRACTS.md",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/GLOSSARY.md",
+                      "docs/canon/PRINCIPLES.md",
+                      "docs/canon/REVIEW_CHECKLIST.md",
+                      "docs/memory/INDEX.md",
+                      "docs/releases/CURRENT.md",
+                      "docs/releases/v0.4/changelog.md",
+                      "docs/releases/v0.4/RELEASE.md",
+                      "docs/releases/v0.4/verdict.json",
+                      "docs/releases/v0.5/backlog.md",
+                      "docs/releases/v0.5/RELEASE.md",
+                      "docs/releases/v0.5/verdict.json",
+                      "README.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  341,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/341"
+                                    }
+    },
+    {
+        "number":  346,
+        "title":  "I502: Contract Registry + Environment Schema + CODEOWNERS Guardrails",
+        "mergedAt":  "2025-12-30T19:31:46Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/346",
+        "mergeCommit":  "2ca9b2ef7ae76c8d47fda8734e53dced87e8f5f0",
+        "changedFiles":  20,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/CODEOWNERS",
+                      ".github/PULL_REQUEST_TEMPLATE.md",
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "app/api/funnels/[slug]/definition/route.ts",
+                      "docs/canon/CONTRACTS.md",
+                      "eslint.config.mjs",
+                      "lib/__tests__/env.test.ts",
+                      "lib/api/authHelpers.ts",
+                      "lib/contracts/__tests__/registry.test.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/env.ts",
+                      "lib/featureFlags.ts",
+                      "lib/supabaseClient.ts",
+                      "lib/supabaseServer.ts",
+                      "lib/types/content.ts",
+                      "lib/types/funnel.ts",
+                      "lib/utils/contentResolver.ts",
+                      "lib/validation/requiredQuestions.ts",
+                      "package.json",
+                      "package-lock.json"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  342,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/342"
+                                    }
+    },
+    {
+        "number":  399,
+        "title":  "Add DB determinism enforcement: migration-first + drift check + typegen gate (PowerShell-conform)",
+        "mergedAt":  "2025-12-30T20:33:35Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/399",
+        "mergeCommit":  "128fb13820f81174b09ac27a31420454ad7f1d60",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/CODEOWNERS",
+                      ".github/workflows/db-determinism.yml",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/DB_DETERMINISM_CI_FLOW.md",
+                      "docs/I503_ACCEPTANCE_VERIFICATION.md",
+                      "docs/I503_IMPLEMENTATION_SUMMARY.md",
+                      "docs/POWERSHELL_MIGRATION_SUMMARY.md",
+                      "lib/types/README.md",
+                      "lib/types/supabase.ts",
+                      "package.json",
+                      "README.md",
+                      "scripts/verify-db-determinism.ps1",
+                      "supabase/config.toml"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  343,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/343"
+                                    }
+    },
+    {
+        "number":  400,
+        "title":  "I504: Finalize v0.4 verdict with evidence links and create v0.5 gate-based release plan",
+        "mergedAt":  "2025-12-30T20:58:37Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/400",
+        "mergeCommit":  "557c5ae3db1cdcc33bf66f92a1764d20f1c98fe0",
+        "changedFiles":  3,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/releases/v0.4/verdict.json",
+                      "docs/releases/v0.5/RELEASE.md",
+                      "docs/releases/v0.5/verdict.json"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  344,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/344"
+                                    }
+    },
+    {
+        "number":  401,
+        "title":  "Add v0.5 core schema: JSONB fields, multi-tenant, versioning, document extraction, audit (schema only)",
+        "mergedAt":  "2025-12-30T21:59:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/401",
+        "mergeCommit":  "b253c416cbebd6f186dcbf856143e05842e3cc9f",
+        "changedFiles":  6,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/canon/CONTRACTS.md",
+                      "docs/V05_I01_1_CONSTRAINTS_EVIDENCE.md",
+                      "docs/V05_SCHEMA_EVIDENCE.md",
+                      "PR_SUMMARY_V05.md",
+                      "scripts/verify-v05-schema.ps1",
+                      "supabase/migrations/20251230211228_v05_core_schema_jsonb_fields.sql"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  348,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/348"
+                                    }
+    },
+    {
+        "number":  402,
+        "title":  "Implement V0.5 multi-tenant RLS policies with same-org isolation",
+        "mergedAt":  "2025-12-31T09:26:36Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/402",
+        "mergeCommit":  "0f4153349a470f8aafc2ade579f2c07f8ea00936",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/canon/CONTRACTS.md",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/V05_RLS_EVIDENCE.md",
+                      "lib/types/supabase.ts",
+                      "scripts/rls/verify-rls.ps1",
+                      "scripts/rls/verify-rls.sql",
+                      "supabase/migrations/20251231072346_v05_comprehensive_rls_policies.sql"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  349,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/349"
+                                    }
+    },
+    {
+        "number":  403,
+        "title":  "V05-I01.3: Implement versioning contract for reproducible processing outputs",
+        "mergedAt":  "2025-12-31T10:39:36Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/403",
+        "mergeCommit":  "b5f71f3c748aefa651d0add769659e299c919483",
+        "changedFiles":  10,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/amy/stress-report/route.ts",
+                      "docs/canon/CONTRACTS.md",
+                      "docs/examples/versioning_demo.sql",
+                      "docs/V05_I01_3_VERSIONING_EVIDENCE.md",
+                      "lib/types/supabase.ts",
+                      "lib/versioning/__tests__/constants.test.ts",
+                      "lib/versioning/constants.ts",
+                      "scripts/verify-db-determinism.ps1",
+                      "supabase/migrations/20251231093345_v05_i01_3_versioning_contract.sql",
+                      "V05_I01_3_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  350,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/350"
+                                    }
+    },
+    {
+        "number":  404,
+        "title":  "V05-I01.4: Implement audit logging for decision-relevant events with hard PHI protection",
+        "mergedAt":  "2025-12-31T14:12:21Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/404",
+        "mergeCommit":  "eecf83d0d78532db76b93c11f2e275e399db9ed0",
+        "changedFiles":  16,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".gitattributes",
+                      ".github/workflows/db-determinism.yml",
+                      "app/api/amy/stress-report/route.ts",
+                      "AUDIT_LOG_IMPLEMENTATION.md",
+                      "docs/canon/CONTRACTS.md",
+                      "lib/audit/__tests__/redaction.test.ts",
+                      "lib/audit/__tests__/registry.test.ts",
+                      "lib/audit/index.ts",
+                      "lib/audit/log.ts",
+                      "lib/audit/README.md",
+                      "lib/contracts/registry.ts",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20251231104527_v05_i01_4_audit_log_extensions.sql",
+                      "tools/demo-audit-logging.mjs",
+                      "tools/verify-audit-implementation.ps1",
+                      "VERIFICATION_EVIDENCE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  351,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/351"
+                                    }
+    },
+    {
+        "number":  405,
+        "title":  "Implement 7-pillar funnel catalog with V05 core schema integration (V05-I02.1)",
+        "mergedAt":  "2025-12-31T16:08:09Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/405",
+        "mergeCommit":  "547de3ff9b1147eb85cf3119b71387da1f406fc1",
+        "changedFiles":  15,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/catalog/[slug]/route.ts",
+                      "app/api/funnels/catalog/__tests__/catalog.test.ts",
+                      "app/api/funnels/catalog/route.ts",
+                      "app/components/FunnelCard.tsx",
+                      "app/patient/assessment/client.tsx",
+                      "app/patient/funnels/client.tsx",
+                      "app/patient/funnels/page.tsx",
+                      "docs/V05_I02_1_CATALOG_IMPLEMENTATION.md",
+                      "docs/V05_I02_1_SCHEMA_VERIFICATION.md",
+                      "docs/V05_I02_1_VISUAL_EVIDENCE.md",
+                      "lib/contracts/registry.ts",
+                      "lib/types/catalog.ts",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20251231142000_create_funnel_catalog.sql",
+                      "supabase/migrations/20251231145000_fix_catalog_schema.sql"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  353,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/353"
+                                    }
+    },
+    {
+        "number":  407,
+        "title":  "Add DB schema manifest and migration linter to block non-canonical objects",
+        "mergedAt":  "2026-01-01T09:59:56Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/407",
+        "mergeCommit":  "eb4540121ba0516760ce2d7bf97c62788b7e77c6",
+        "changedFiles":  10,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/db-determinism.yml",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "docs/I505_IMPLEMENTATION_SUMMARY.md",
+                      "package.json",
+                      "scripts/db/fixtures/allowed.sql",
+                      "scripts/db/fixtures/forbidden.sql",
+                      "scripts/db/lint-migrations.ps1",
+                      "scripts/db/README.md",
+                      "scripts/db/test-linter.ps1"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  406,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/406"
+                                    }
+    },
+    {
+        "number":  408,
+        "title":  "Implement versioned funnel plugin manifest with Zod validation and patient flow integration (V05-I02.2)",
+        "mergedAt":  "2026-01-01T10:59:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/408",
+        "mergeCommit":  "8dfb6d1818a12a908bcec3e3625bb4ddc6f84288",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/patient/funnel/[slug]/intro/client.tsx",
+                      "app/patient/funnel/[slug]/intro/page.tsx",
+                      "app/patient/funnel/__tests__/manifestIntegration.test.ts",
+                      "docs/canon/CONTRACTS.md",
+                      "docs/V05_I02_2_IMPLEMENTATION_SUMMARY.md",
+                      "docs/V05_I02_2_PATIENT_FLOW_INTEGRATION.md",
+                      "lib/audit/log.ts",
+                      "lib/contracts/__tests__/funnelManifest.test.ts",
+                      "lib/contracts/funnelManifest.ts",
+                      "lib/funnels/__tests__/loadFunnelVersion.test.ts",
+                      "lib/funnels/loadFunnelVersion.ts",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20260101100200_v05_i02_2_plugin_manifest_constraints.sql"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  354,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/354"
+                                    }
+    },
+    {
+        "number":  409,
+        "title":  "Add 3 cardiovascular health funnels to catalog with versioned manifests",
+        "mergedAt":  "2026-01-01T11:35:16Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/409",
+        "mergeCommit":  "c64344c5d72614029192df9a6a4c070c2b984fa5",
+        "changedFiles":  9,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "DEPLOYMENT_VERIFICATION_V05_I02_3.md",
+                      "docs/canon/CONTRACTS.md",
+                      "docs/V05_I02_3_IMPLEMENTATION_SUMMARY.md",
+                      "EXPECTED_UI_CATALOG.txt",
+                      "lib/contracts/__tests__/newFunnels.test.ts",
+                      "lib/contracts/registry.ts",
+                      "supabase/migrations/20260101110320_v05_i02_3_additional_funnels.sql",
+                      "tools/mockCatalogVisualization.ts",
+                      "V05_I02_3_VALIDATION_EVIDENCE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  355,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/355"
+                                    }
+    },
+    {
+        "number":  410,
+        "title":  "Implement patient onboarding flow with consent capture and baseline profile",
+        "mergedAt":  "2026-01-01T12:29:57Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/410",
+        "mergeCommit":  "a825d5281af37dfef2ab835319c62eec80a52b51",
+        "changedFiles":  17,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/clinician/patient/[id]/PatientOverviewHeader.tsx",
+                      "app/patient/assessment/page.tsx",
+                      "app/patient/onboarding/consent/client.tsx",
+                      "app/patient/onboarding/consent/page.tsx",
+                      "app/patient/onboarding/profile/client.tsx",
+                      "app/patient/onboarding/profile/page.tsx",
+                      "app/patient/page.tsx",
+                      "docs/V05_I03_1_DB_GATES_EVIDENCE.md",
+                      "docs/V05_I03_1_EVIDENCE.md",
+                      "docs/V05_I03_1_IMPLEMENTATION.md",
+                      "docs/V05_I03_1_MERGE_CHECKLIST.md",
+                      "docs/V05_I03_1_TESTING_GUIDE.md",
+                      "lib/actions/onboarding.ts",
+                      "lib/audit/log.ts",
+                      "lib/contracts/__tests__/onboarding.test.ts",
+                      "lib/contracts/onboarding.ts",
+                      "lib/contracts/registry.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  357,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/357"
+                                    }
+    },
+    {
+        "number":  411,
+        "title":  "Harden /api/funnels/catalog (no more 500s)",
+        "mergedAt":  "2026-01-01T12:43:32Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/411",
+        "mergeCommit":  "09a0f51fb366971bcf197f0bec94481874c24be9",
+        "changedFiles":  6,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/catalog/__tests__/route.test.ts",
+                      "app/api/funnels/catalog/route.ts",
+                      "docs/canon/CONTRACTS.md",
+                      "docs/V05_I02_3_CATALOG_500_FIX.md",
+                      "lib/api/responses.ts",
+                      "lib/api/responseTypes.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  412,
+        "title":  "Harden /api/admin/funnels for v0.5 (no blind 500)",
+        "mergedAt":  "2026-01-01T16:08:19Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/412",
+        "mergeCommit":  "552875ffc0517ac44c6c48a7c98b48e77d797644",
+        "changedFiles":  4,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnels/__tests__/route.test.ts",
+                      "app/api/admin/funnels/route.ts",
+                      "app/clinician/funnels/page.tsx",
+                      "docs/canon/CONTRACTS.md"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  413,
+        "title":  "Fix /api/funnels/catalog pillars error mapping",
+        "mergedAt":  "2026-01-01T16:35:54Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/413",
+        "mergeCommit":  "436ba5a123bb2b6d7cd1f692038401fd1adf9e27",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/catalog/__tests__/route.test.ts",
+                      "app/api/funnels/catalog/route.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  414,
+        "title":  "Fix catalog pillars errors + admin funnels schema-cache mapping",
+        "mergedAt":  "2026-01-01T16:46:45Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/414",
+        "mergeCommit":  "ef49fc1b3060cfb3a9eb59cdd46fa4f1d5e55bc0",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnels/__tests__/route.test.ts",
+                      "app/api/admin/funnels/route.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  416,
+        "title":  "V05-HYGIENE: Canonical DB access patterns + hard guardrails",
+        "mergedAt":  "2026-01-01T18:38:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/416",
+        "mergeCommit":  "b2b968424398548ec0d9ef7483344c12d37b5c6d",
+        "changedFiles":  25,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/db-access-verification.yml",
+                      "app/api/funnels/catalog/__tests__/route.test.ts",
+                      "app/api/funnels/catalog/route.ts",
+                      "docs/canon/DB_ACCESS_DECISION.md",
+                      "docs/canon/DB_ACCESS_EVIDENCE.md",
+                      "docs/canon/DB_ACCESS_GUARDRAILS.md",
+                      "docs/canon/DB_ACCESS_IMPLEMENTATION.md",
+                      "docs/canon/DB_ACCESS_MATRIX.md",
+                      "docs/canon/DB_ACCESS_PATTERNS.md",
+                      "docs/canon/DB_ACCESS_REVIEW_FIXES.md",
+                      "eslint.config.mjs",
+                      "jest.config.js",
+                      "lib/__tests__/funnelHelpers.test.ts",
+                      "lib/db/errors.ts",
+                      "lib/db/supabase.admin.ts",
+                      "lib/db/supabase.public.ts",
+                      "lib/db/supabase.server.ts",
+                      "lib/funnelHelpers.ts",
+                      "lib/supabaseClient.ts",
+                      "lib/supabaseServer.ts",
+                      "package.json",
+                      "package-lock.json",
+                      "scripts/db/audit-db-access.js",
+                      "scripts/db/verify-db-access.js",
+                      "test/__mocks__/server-only.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  415,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/415"
+                                    }
+    },
+    {
+        "number":  420,
+        "title":  "Standardize admin funnel API routes to canonical DB client patterns",
+        "mergedAt":  "2026-01-01T19:26:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/420",
+        "mergeCommit":  "450df5f330c5384cee73f4c298e5758b187313a0",
+        "changedFiles":  8,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnels/[id]/route.ts",
+                      "app/api/admin/funnels/__tests__/route.test.ts",
+                      "app/api/admin/funnels/route.ts",
+                      "app/api/admin/funnel-step-questions/[id]/route.ts",
+                      "app/api/admin/funnel-steps/[id]/route.ts",
+                      "app/api/admin/funnel-steps/route.ts",
+                      "IMPLEMENTATION_V05_HYGIENE_A.md",
+                      "scripts/db/verify-db-access.js"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  417,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/417"
+                                    }
+    },
+    {
+        "number":  421,
+        "title":  "Migrate patient/clinician funnel surfaces to canonical DB clients",
+        "mergedAt":  "2026-01-01T21:48:47Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/421",
+        "mergeCommit":  "3e8dde40e649ea6b5b2901820c0914924d3660b6",
+        "changedFiles":  9,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+                      "app/api/funnels/catalog/[slug]/route.ts",
+                      "app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+                      "app/patient/funnel/[slug]/intro/page.tsx",
+                      "app/patient/funnel/[slug]/page.tsx",
+                      "app/patient/funnel/[slug]/result/page.tsx",
+                      "app/patient/funnels/page.tsx",
+                      "IMPLEMENTATION_V05_HYGIENE_B.md",
+                      "lib/types/catalog.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  418,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/418"
+                                    }
+    },
+    {
+        "number":  422,
+        "title":  "Migrate all DB access to canonical factories, eliminate 36 violations",
+        "mergedAt":  "2026-01-02T08:55:39Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/422",
+        "mergeCommit":  "4d8333f7c787d512292601a350089f8d1c17b6ad",
+        "changedFiles":  20,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/content-pages/[id]/route.ts",
+                      "app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+                      "app/api/admin/content-pages/[id]/sections/route.ts",
+                      "app/api/admin/content-pages/route.ts",
+                      "app/api/amy/stress-report/route.ts",
+                      "app/api/assessment-answers/save/route.ts",
+                      "app/api/consent/record/route.ts",
+                      "app/api/consent/status/route.ts",
+                      "app/api/content-pages/[slug]/route.ts",
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "app/api/funnels/[slug]/definition/route.ts",
+                      "app/api/patient-measures/export/route.ts",
+                      "app/api/patient-measures/history/route.ts",
+                      "docs/canon/DB_ACCESS_MATRIX.md",
+                      "docs/canon/DB_ACCESS_PATTERNS.md",
+                      "lib/actions/onboarding.ts",
+                      "lib/api/authHelpers.ts",
+                      "lib/validation/requiredQuestions.ts",
+                      "proxy.ts",
+                      "scripts/db/verify-db-access.js"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  419,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/419"
+                                    }
+    },
+    {
+        "number":  424,
+        "title":  "TV05-CLEANUP \u0026 AUDIT: Repo cleanup audit with issue mapping and prioritized backlog",
+        "mergedAt":  "2026-01-02T10:01:33Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/424",
+        "mergeCommit":  "40a9f2b1e011d2958816924f33f8d272b95f9d4d",
+        "changedFiles":  6,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/CLEANUP_AUDIT_README.md",
+                      "docs/TV05_CLEANUP_AUDIT_ISSUE_MAP.md",
+                      "docs/TV05_CLEANUP_AUDIT_UNUSED.md",
+                      "docs/TV05_CLEANUP_BACKLOG.md",
+                      "docs/TV05_CLEANUP_IMPLEMENTATION_SUMMARY.md",
+                      "scripts/tv05-cleanup-audit.ps1"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  423,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/423"
+                                    }
+    },
+    {
+        "number":  426,
+        "title":  "Add PHI-free runtime usage telemetry for API route cleanup audits",
+        "mergedAt":  "2026-01-02T12:46:57Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/426",
+        "mergeCommit":  "7d141dd82aa551156476cd7beebd8b0822d4d050",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".gitignore",
+                      "app/api/admin/usage/__tests__/route.test.ts",
+                      "app/api/admin/usage/route.ts",
+                      "app/api/amy/stress-report/route.ts",
+                      "app/api/amy/stress-summary/route.ts",
+                      "app/api/consent/record/route.ts",
+                      "app/api/content/resolve/route.ts",
+                      "docs/USAGE_TELEMETRY.md",
+                      "lib/monitoring/__tests__/usageTracker.test.ts",
+                      "lib/monitoring/usageTracker.ts",
+                      "lib/monitoring/usageTrackingWrapper.ts",
+                      "scripts/verify-usage-telemetry.ps1",
+                      "TV05_01_IMPLEMENTATION_SUMMARY.md",
+                      "TV05_01_VERIFICATION_EVIDENCE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  425,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/425"
+                                    }
+    },
+    {
+        "number":  432,
+        "title":  "Add PHI-free diagnostics endpoint for pillar/catalog source-of-truth audit with secure RPC and status codes",
+        "mergedAt":  "2026-01-02T14:31:58Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/432",
+        "mergeCommit":  "277af97063869ca8c6e0b763833e4e0b122a6baa",
+        "changedFiles":  9,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/diagnostics/pillars-sot/__tests__/route.test.ts",
+                      "app/api/admin/diagnostics/pillars-sot/route.ts",
+                      "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+                      "docs/PILLARS_SOT_AUDIT.md",
+                      "lib/env.ts",
+                      "lib/types/supabase.ts",
+                      "scripts/verify-pillars-sot-audit.ps1",
+                      "supabase/migrations/20260102140000_create_diagnostics_pillars_sot_function.sql",
+                      "TV05_01B_IMPLEMENTATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  431,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/431"
+                                    }
+    },
+    {
+        "number":  435,
+        "title":  "Unify admin/clinician funnels API to use catalog v2 model",
+        "mergedAt":  "2026-01-02T15:42:08Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/435",
+        "mergeCommit":  "4ad2749f8281123f6533020ea519520205885ef7",
+        "changedFiles":  21,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".githooks/pre-push",
+                      ".gitignore",
+                      "app/api/admin/content-pages/route.ts",
+                      "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+                      "app/api/admin/funnels/[id]/route.ts",
+                      "app/api/amy/stress-report/route.ts",
+                      "app/api/amy/stress-summary/route.ts",
+                      "app/api/funnels/[slug]/definition/route.ts",
+                      "app/clinician/funnels/[id]/page.tsx",
+                      "app/clinician/funnels/page.tsx",
+                      "app/components/ContentPageEditor.tsx",
+                      "app/components/SliderAnswerComponent.tsx",
+                      "app/content/[slug]/page.tsx",
+                      "eslint.config.mjs",
+                      "lib/env.ts",
+                      "lib/funnels/loadFunnelVersion.ts",
+                      "lib/monitoring/usageTrackingWrapper.ts",
+                      "package.json",
+                      "README.md",
+                      "tools/install-git-hooks.mjs",
+                      "tools/lint-changed-lines.mjs"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  433,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/433"
+                                    }
+    },
+    {
+        "number":  436,
+        "title":  "Add Program Tier Contract system for tier-driven patient journeys",
+        "mergedAt":  "2026-01-02T16:35:38Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/436",
+        "mergeCommit":  "fe24897a4d7d4dcf97853dae5119d8297ad67bac",
+        "changedFiles":  15,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/catalog/__tests__/catalog.test.ts",
+                      "app/api/funnels/catalog/route.ts",
+                      "app/patient/funnel/__tests__/manifestIntegration.test.ts",
+                      "docs/PROGRAM_TIER_CONTRACT.md",
+                      "lib/contracts/__tests__/registry.test.ts",
+                      "lib/contracts/programTier.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/contracts/tiers/__tests__/programTier.test.ts",
+                      "lib/contracts/tiers/index.ts",
+                      "lib/contracts/tiers/tier1-essential.ts",
+                      "lib/contracts/tiers/tier2-5-enhanced.ts",
+                      "lib/contracts/tiers/tier2-comprehensive.ts",
+                      "lib/db/supabase.public.ts",
+                      "TV05_01D_IMPLEMENTATION_SUMMARY.md",
+                      "TV05_01D_VERIFICATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  434,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/434"
+                                    }
+    },
+    {
+        "number":  437,
+        "title":  "Add External Client Registry and Usage Telemetry Toggle",
+        "mergedAt":  "2026-01-02T18:37:20Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/437",
+        "mergeCommit":  "49daff34b184a9b347a9364f3c4b1d6617159c20",
+        "changedFiles":  12,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".env.example",
+                      "app/api/admin/usage/__tests__/route.test.ts",
+                      "app/api/admin/usage/route.ts",
+                      "docs/API_ROUTE_OWNERSHIP.md",
+                      "docs/CLEANUP_AUDIT_README.md",
+                      "docs/EXTERNAL_CLIENTS.md",
+                      "docs/TV05_02_IMPLEMENTATION.md",
+                      "lib/env.ts",
+                      "lib/monitoring/__tests__/config.test.ts",
+                      "lib/monitoring/__tests__/usageTracker.test.ts",
+                      "lib/monitoring/config.ts",
+                      "lib/monitoring/usageTracker.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  427,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/427"
+                                    }
+    },
+    {
+        "number":  438,
+        "title":  "[WIP] Add environment self-check endpoint for health verification",
+        "mergedAt":  "2026-01-02T18:40:34Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/438",
+        "mergeCommit":  "32f641f775a846752e45cb6646346e7c545e562c",
+        "changedFiles":  0,
+        "labels":  {
+
+                   },
+        "files":  [
+
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  428,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/428"
+                                    }
+    },
+    {
+        "number":  440,
+        "title":  "Add environment self-check endpoint with fail-safe diagnostics",
+        "mergedAt":  "2026-01-02T19:33:00Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/440",
+        "mergeCommit":  "53d7d955740bf55f7d06601cddae72007d7c183d",
+        "changedFiles":  78,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/health/env/__tests__/route.test.ts",
+                      "app/api/health/env/route.ts",
+                      "docs/API_ROUTE_OWNERSHIP.md",
+                      "docs/ARCHITECTURE_V0_4.md",
+                      "docs/CLEANUP_AUDIT_README.md",
+                      "docs/CLINICIAN_DASHBOARD_CONCEPT.md",
+                      "docs/CONTENT_PAGE_RENDERER_IMPROVEMENT.md",
+                      "docs/CONTENT_PAGE_RENDERER_VISUAL_COMPARISON.md",
+                      "docs/DB_DETERMINISM_CI_FLOW.md",
+                      "docs/DEPRECATED_COMPONENTS.md",
+                      "docs/DESIGN_MOCKUP_BRIEFING.md",
+                      "docs/DESIGN_SYSTEM_COMPONENTS_SUMMARY.md",
+                      "docs/EXTERNAL_CLIENTS.md",
+                      "docs/HEALTHCHECK_QUICKSTART.md",
+                      "docs/I503_ACCEPTANCE_VERIFICATION.md",
+                      "docs/I503_IMPLEMENTATION_SUMMARY.md",
+                      "docs/I505_IMPLEMENTATION_SUMMARY.md",
+                      "docs/IMPLEMENTATION_EXAMPLE.md",
+                      "docs/LAYOUT_STANDARDS.md",
+                      "docs/LOGGING_EXAMPLES.md",
+                      "docs/LOGGING_PATTERNS.md",
+                      "docs/MIGRATIONS_RESET_PLAYBOOK.md",
+                      "docs/MOBILE_COMPONENTS_SSoT.md",
+                      "docs/MOBILE_FUNNEL_SELECTOR.md",
+                      "docs/MOBILE_FUNNEL_SELECTOR_VISUAL.md",
+                      "docs/MONITORING_INTEGRATION.md",
+                      "docs/NAVIGATION_ARCHITECTURE.md",
+                      "docs/PATIENT_DETAIL_PAGE_UI_STRUCTURE.md",
+                      "docs/PATIENT_DETAIL_PAGE_V0_4.md",
+                      "docs/PATIENT_FLOW_RENDERER_IMPLEMENTATION.md",
+                      "docs/PATIENT_FLOW_V2_DIAGRAM.md",
+                      "docs/PATIENT_FLOW_V2_STRUCTURE.md",
+                      "docs/PATIENT_MOBILE_UI_VERIFICATION.md",
+                      "docs/PILLARS_SOT_AUDIT.md",
+                      "docs/PLAN.md",
+                      "docs/POWERSHELL_MIGRATION_SUMMARY.md",
+                      "docs/PROGRAM_TIER_CONTRACT.md",
+                      "docs/ROLE_BASED_ROUTING_TESTING.md",
+                      "docs/ROLE_BASED_ROUTING_V2.md",
+                      "docs/TV05_02_IMPLEMENTATION.md",
+                      "docs/TV05_03_HEALTHCHECK_IMPLEMENTATION.md",
+                      "docs/TV05_CLEANUP_AUDIT_ISSUE_MAP.md",
+                      "docs/TV05_CLEANUP_AUDIT_UNUSED.md",
+                      "docs/TV05_CLEANUP_BACKLOG.md",
+                      "docs/TV05_CLEANUP_IMPLEMENTATION_SUMMARY.md",
+                      "docs/UI_COMPONENT_MIGRATION_STATUS.md",
+                      "docs/USAGE_TELEMETRY.md",
+                      "docs/V0_4_DESIGN_SYSTEM.md",
+                      "docs/V0_4_DESIGN_TOKENS.md",
+                      "docs/V0_4_E1_IMPLEMENTATION_SUMMARY.md",
+                      "docs/V0_4_E2_PATIENT_FLOW_V2.md",
+                      "docs/V0_4_E2_UI_DESIGN_IMPLEMENTATION.md",
+                      "docs/V0_4_E3_CONTENT_FLOW_ENGINE.md",
+                      "docs/V0_4_E4_CLINICIAN_DASHBOARD_V2.md",
+                      "docs/V0_4_E4_LAYOUT_DIAGRAM.md",
+                      "docs/V0_4_E4_SUMMARY.md",
+                      "docs/V0_4_FULL_PLAN_GITHUB.md",
+                      "docs/V0_4_GLOBAL_LAYOUT_IMPLEMENTATION.md",
+                      "docs/V0_4_MOBILE_CONTENT_PAGE.md",
+                      "docs/V0_4_MOBILE_QUESTION_SCREEN.md",
+                      "docs/V05_I01_1_CONSTRAINTS_EVIDENCE.md",
+                      "docs/V05_I01_3_VERSIONING_EVIDENCE.md",
+                      "docs/V05_I02_1_CATALOG_IMPLEMENTATION.md",
+                      "docs/V05_I02_1_SCHEMA_VERIFICATION.md",
+                      "docs/V05_I02_1_VISUAL_EVIDENCE.md",
+                      "docs/V05_I02_2_IMPLEMENTATION_SUMMARY.md",
+                      "docs/V05_I02_2_PATIENT_FLOW_INTEGRATION.md",
+                      "docs/V05_I02_3_CATALOG_500_FIX.md",
+                      "docs/V05_I02_3_IMPLEMENTATION_SUMMARY.md",
+                      "docs/V05_I03_1_DB_GATES_EVIDENCE.md",
+                      "docs/V05_I03_1_EVIDENCE.md",
+                      "docs/V05_I03_1_IMPLEMENTATION.md",
+                      "docs/V05_I03_1_MERGE_CHECKLIST.md",
+                      "docs/V05_I03_1_TESTING_GUIDE.md",
+                      "docs/V05_RLS_EVIDENCE.md",
+                      "docs/V05_SCHEMA_EVIDENCE.md",
+                      "docs/Z4_EXECUTIVE_SUMMARY_V0.3.md",
+                      "scripts/verify-healthcheck.ps1"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  439,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/439"
+                                    }
+    },
+    {
+        "number":  441,
+        "title":  "Add ESLint changed-files gate with robust SHA validation and debt tracking policy",
+        "mergedAt":  "2026-01-02T21:13:00Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/441",
+        "mergeCommit":  "33c51502f39b7181bec929cbff6554ddbfea0fca",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/lint-gate.yml",
+                      "docs/LINT_POLICY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  429,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/429"
+                                    }
+    },
+    {
+        "number":  442,
+        "title":  "Add V05 Milestones \u0026 Critical Path planning document (evidence-based)",
+        "mergedAt":  "2026-01-02T21:34:17Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/442",
+        "mergeCommit":  "2dbbb18dff9e13e4e452c48929d635646a16a6f6",
+        "changedFiles":  1,
+        "labels":  {
+
+                   },
+        "files":  "docs/V05_MILESTONES_CRITICAL_PATH.md",
+        "closingIssuesReferences":  {
+                                        "number":  430,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/430"
+                                    }
+    },
+    {
+        "number":  443,
+        "title":  "Implement adaptive questionnaire engine with conditional logic (V05-I03.2)",
+        "mergedAt":  "2026-01-03T05:45:28Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/443",
+        "mergeCommit":  "e276f6e7f99fae2b005f159ccd6a8be975403447",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "lib/questionnaire/__tests__/conditionalLogic.test.ts",
+                      "lib/questionnaire/__tests__/QuestionnaireRunner.test.ts",
+                      "lib/questionnaire/__tests__/QuestionRenderer.test.ts",
+                      "lib/questionnaire/__tests__/stateMachine.test.ts",
+                      "lib/questionnaire/conditionalLogic.ts",
+                      "lib/questionnaire/examples/stressAssessment.tsx",
+                      "lib/questionnaire/MANIFEST_WIRING.md",
+                      "lib/questionnaire/QuestionnaireRunner.tsx",
+                      "lib/questionnaire/QuestionRenderer.tsx",
+                      "lib/questionnaire/README.md",
+                      "lib/questionnaire/stateMachine.ts",
+                      "V05_I03_2_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I03_2_MERGE_READY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  358,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/358"
+                                    }
+    },
+    {
+        "number":  444,
+        "title":  "Implement save/resume with current_step_id persistence and fail-closed security for questionnaire runs",
+        "mergedAt":  "2026-01-03T06:26:53Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/444",
+        "mergeCommit":  "5d57233fae94f94fd585ea42e29e6c1e1e4d7500",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+                      "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+                      "app/api/funnels/__tests__/hardening.test.ts",
+                      "app/api/funnels/__tests__/save-resume.test.ts",
+                      "MANUAL_TEST_V05_I03_3.md",
+                      "V05_I03_3_HARDENING_SUMMARY.md",
+                      "V05_I03_3_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  359,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/359"
+                                    }
+    },
+    {
+        "number":  445,
+        "title":  "V05-I03.4: Add report library and key outcomes to result screen",
+        "mergedAt":  "2026-01-03T07:43:50Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/445",
+        "mergeCommit":  "d206806879c148b282656f08548146544b51cdf2",
+        "changedFiles":  9,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/patient/funnel/[slug]/result/client.tsx",
+                      "app/patient/funnel/[slug]/result/components/index.ts",
+                      "app/patient/funnel/[slug]/result/components/KeyOutcomesCard.tsx",
+                      "app/patient/funnel/[slug]/result/components/ReportLibrary.tsx",
+                      "app/patient/funnel/[slug]/result/page.tsx",
+                      "lib/db/queries/__tests__/reports.test.ts",
+                      "lib/db/queries/reports.ts",
+                      "V05_I03_4_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I03_4_SCHEMA_VERIFICATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  360,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/360"
+                                    }
+    },
+    {
+        "number":  446,
+        "title":  "Implement document upload with hardened storage, RLS, and parsing status state machine",
+        "mergedAt":  "2026-01-03T11:11:01Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/446",
+        "mergeCommit":  "471568628c6fa7408620f27feb96ba367a10578c",
+        "changedFiles":  12,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/documents/[id]/status/route.ts",
+                      "app/api/documents/upload/__tests__/route.test.ts",
+                      "app/api/documents/upload/route.ts",
+                      "docs/DOCUMENT_UPLOAD.md",
+                      "lib/api/responses.ts",
+                      "lib/api/responseTypes.ts",
+                      "lib/documents/__tests__/helpers.test.ts",
+                      "lib/documents/helpers.ts",
+                      "lib/types/documents.ts",
+                      "scripts/db/verify-db-access.js",
+                      "supabase/migrations/20260103075000_create_documents_storage_bucket.sql",
+                      "V05_I04_1_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  362,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/362"
+                                    }
+    },
+    {
+        "number":  447,
+        "title":  "fix(hydration): stabilize mobile/theme initial render",
+        "mergedAt":  "2026-01-03T11:24:00Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/447",
+        "mergeCommit":  "9e33708b09543a199040b666719f20d8422b2c6f",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "lib/contexts/ThemeContext.tsx",
+                      "lib/hooks/useIsMobile.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  449,
+        "title":  "V05-FIXOPT-01: Fix patient landing, catalog availability, and 404 handling for incomplete funnels",
+        "mergedAt":  "2026-01-03T12:54:23Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/449",
+        "mergeCommit":  "a96916023ee4b6b93c60b9f17096f587fee7d58e",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "app/api/funnels/catalog/__tests__/route.test.ts",
+                      "app/api/funnels/catalog/route.ts",
+                      "app/components/FunnelCard.tsx",
+                      "app/patient/assessment/page.tsx",
+                      "app/patient/funnel/[slug]/client.tsx",
+                      "app/patient/funnels/client.tsx",
+                      "app/patient/funnels/page.tsx",
+                      "app/patient/page.tsx",
+                      "lib/types/__tests__/catalog.test.ts",
+                      "lib/types/catalog.ts",
+                      "package.json",
+                      "package-lock.json",
+                      "V05_FIXOPT_01_IMPLEMENTATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  448,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/448"
+                                    }
+    },
+    {
+        "number":  450,
+        "title":  "V05-I04.2: AI extraction pipeline with versioned, idempotent document processing",
+        "mergedAt":  "2026-01-03T14:24:58Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/450",
+        "mergeCommit":  "7b9f919bfa49e94c6192c44b573c143773ded92a",
+        "changedFiles":  12,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/db-determinism.yml",
+                      "app/api/documents/[id]/extract/route.ts",
+                      "docs/DOCUMENT_EXTRACTION.md",
+                      "lib/contracts/registry.ts",
+                      "lib/extraction/__tests__/pipeline.test.ts",
+                      "lib/extraction/pipeline.ts",
+                      "lib/types/extraction.ts",
+                      "lib/types/supabase.ts",
+                      "scripts/lint-new-migrations-idempotency.sh",
+                      "scripts/verify-extraction-pipeline.ps1",
+                      "supabase/migrations/20260103130600_add_extraction_pipeline_fields.sql",
+                      "V05_I04_2_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  363,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/363"
+                                    }
+    },
+    {
+        "number":  451,
+        "title":  "Fix missing content endpoints + result handling",
+        "mergedAt":  "2026-01-03T13:18:40Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/451",
+        "mergeCommit":  "cced9e04dcfe2eeca25bd0df78eb57dfc67f0aea",
+        "changedFiles":  8,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/content/resolve/__tests__/route.test.ts",
+                      "app/api/content/resolve/route.ts",
+                      "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "app/patient/funnel/[slug]/intro/client.tsx",
+                      "app/patient/funnel/[slug]/result/client.tsx",
+                      "app/patient/funnel/[slug]/result/page.tsx",
+                      "lib/utils/contentResolver.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  452,
+        "title":  "Fix markdown table overflow",
+        "mergedAt":  "2026-01-03T13:31:00Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/452",
+        "mergeCommit":  "04362c4f597d0b69b3fafd11bf5bf462ef91504b",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/funnels/[slug]/content-pages/__tests__/route.test.ts",
+                      "app/components/MarkdownRenderer.tsx"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  453,
+        "title":  "Fix intro missing-content card width",
+        "mergedAt":  "2026-01-03T13:36:31Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/453",
+        "mergeCommit":  "44cfa78d93cc50cd2e7f640f808885236cf8dd25",
+        "changedFiles":  1,
+        "labels":  {
+
+                   },
+        "files":  "app/patient/funnel/[slug]/intro/client.tsx",
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  454,
+        "title":  "Add patient confirmation UI for AI-extracted document data",
+        "mergedAt":  "2026-01-03T15:03:45Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/454",
+        "mergeCommit":  "1613f03dbc0e3de734b697422db95c2a8446fd48",
+        "changedFiles":  11,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/patient/documents/[id]/confirm/client.tsx",
+                      "app/patient/documents/[id]/confirm/page.tsx",
+                      "lib/actions/__tests__/confirmations.test.ts",
+                      "lib/actions/confirmations.ts",
+                      "lib/audit/__tests__/registry.test.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/types/__tests__/confirmation.test.ts",
+                      "lib/types/extraction.ts",
+                      "scripts/verify-confirmation-ui.ps1",
+                      "SECURITY_HARDENING_V05_I04_3.md",
+                      "V05_I04_3_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  364,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/364"
+                                    }
+    },
+    {
+        "number":  455,
+        "title":  "Copilot/fix table overflow",
+        "mergedAt":  "2026-01-03T14:57:26Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/455",
+        "mergeCommit":  "c08b71e9a25ee3438e0e40b1ea487312fcbeb02c",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/db-determinism.yml",
+                      "scripts/lint-new-migrations-idempotency.sh"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  456,
+        "title":  "V05-I05.1: Processing orchestrator with idempotent job creation and PHI-free status tracking",
+        "mergedAt":  "2026-01-03T17:26:50Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/456",
+        "mergeCommit":  "793db93db6ff7debc1b1a66c4f94f871e6a6dcf0",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/__tests__/integration.test.ts",
+                      "app/api/processing/jobs/[jobId]/route.ts",
+                      "app/api/processing/start/route.ts",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "docs/V05_I05_1_PROCESSING_ORCHESTRATOR.md",
+                      "lib/contracts/__tests__/processingJob.test.ts",
+                      "lib/contracts/processingJob.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/types/supabase.ts",
+                      "scripts/db/verify-db-access.js",
+                      "supabase/migrations/20260103150000_v05_i05_1_create_processing_jobs.sql",
+                      "V05_I05_1_IMPLEMENTATION_EVIDENCE.md",
+                      "V05_I05_1_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  366,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/366"
+                                    }
+    },
+    {
+        "number":  457,
+        "title":  "Implement deterministic, versioned risk calculation bundle (V05-I05.2)",
+        "mergedAt":  "2026-01-03T20:40:51Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/457",
+        "mergeCommit":  "fec912b45d7ce38f9a46bc861cace163e8542da9",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/risk/route.ts",
+                      "lib/audit/__tests__/registry.test.ts",
+                      "lib/contracts/__tests__/riskBundle.test.ts",
+                      "lib/contracts/riskBundle.ts",
+                      "lib/processing/__tests__/riskStageProcessor.test.ts",
+                      "lib/processing/riskStageProcessor.ts",
+                      "lib/risk/__tests__/calculator.test.ts",
+                      "lib/risk/__tests__/scoringRules.test.ts",
+                      "lib/risk/calculator.ts",
+                      "lib/risk/persistence.ts",
+                      "lib/risk/scoringRules.ts",
+                      "supabase/migrations/20260103160000_v05_i05_2_create_risk_bundles.sql",
+                      "V05_I05_2_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  367,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/367"
+                                    }
+    },
+    {
+        "number":  458,
+        "title":  "Implement deterministic priority ranking with Impact ├ù Feasibility scoring + security hardening (V05-I05.3)",
+        "mergedAt":  "2026-01-03T21:41:04Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/458",
+        "mergeCommit":  "d7c1aff5eb29828bc29945627a87db38e6ab6d92",
+        "changedFiles":  11,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/ranking/route.ts",
+                      "lib/contracts/__tests__/priorityRanking.test.ts",
+                      "lib/contracts/priorityRanking.ts",
+                      "lib/processing/rankingStageProcessor.ts",
+                      "lib/ranking/__tests__/ranker.test.ts",
+                      "lib/ranking/interventionRegistry.ts",
+                      "lib/ranking/persistence.ts",
+                      "lib/ranking/ranker.ts",
+                      "package-lock.json",
+                      "supabase/migrations/20260103170000_v05_i05_3_create_priority_rankings.sql",
+                      "V05_I05_3_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  368,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/368"
+                                    }
+    },
+    {
+        "number":  459,
+        "title":  "V05-I05.4: Modular report sections with versioned prompts, PHI-free generation, and version evolution tracking",
+        "mergedAt":  "2026-01-04T06:41:27Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/459",
+        "mergeCommit":  "9e8325e763943638d975732afb265ee16c6127fb",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/content/route.ts",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/contracts/__tests__/reportSections.test.ts",
+                      "lib/contracts/reportSections.ts",
+                      "lib/processing/contentStageProcessor.ts",
+                      "lib/prompts/registry.ts",
+                      "lib/sections/__tests__/generator.test.ts",
+                      "lib/sections/generator.ts",
+                      "lib/sections/persistence.ts",
+                      "lib/types/supabase.ts",
+                      "package-lock.json",
+                      "supabase/migrations/20260103180000_v05_i05_4_create_report_sections.sql",
+                      "supabase/migrations/20260103185000_v05_i05_4b_add_prompt_versioning.sql",
+                      "V05_I05_4_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  369,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/369"
+                                    }
+    },
+    {
+        "number":  460,
+        "title":  "Implement Medical Validation Layer 1: Rules-based contraindication and plausibility checks",
+        "mergedAt":  "2026-01-04T08:12:06Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/460",
+        "mergeCommit":  "71a3a5ce077d280159c5fda33ffd1f4862300fad",
+        "changedFiles":  15,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/validation/route.ts",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/contracts/__tests__/medicalValidation.test.ts",
+                      "lib/contracts/medicalValidation.ts",
+                      "lib/processing/__tests__/validationStageProcessor.test.ts",
+                      "lib/processing/validationStageProcessor.ts",
+                      "lib/types/supabase.ts",
+                      "lib/validation/medical/__tests__/ruleRegistry.test.ts",
+                      "lib/validation/medical/__tests__/validator.test.ts",
+                      "lib/validation/medical/persistence.ts",
+                      "lib/validation/medical/ruleRegistry.ts",
+                      "lib/validation/medical/validator.ts",
+                      "supabase/migrations/20260104065439_v05_i05_5_create_medical_validations.sql",
+                      "supabase/migrations/20260104072559_v05_i05_5_add_ruleset_hash.sql",
+                      "V05_I05_5_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  370,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/370"
+                                    }
+    },
+    {
+        "number":  461,
+        "title":  "Implement Medical Validation Layer 2: AI-powered safety assessment with PHI-free guardrails",
+        "mergedAt":  "2026-01-04T10:10:58Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/461",
+        "mergeCommit":  "692567771e353ba87d645eec5908c0111ef8972f",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/safety/route.ts",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/contracts/__tests__/safetyCheck.test.ts",
+                      "lib/contracts/safetyCheck.ts",
+                      "lib/processing/safetyStageProcessor.ts",
+                      "lib/prompts/registry.ts",
+                      "lib/safety/__tests__/evaluator.test.ts",
+                      "lib/safety/evaluator.ts",
+                      "lib/safety/persistence.ts",
+                      "lib/types/supabase.ts",
+                      "scripts/db/lint-migrations.ps1",
+                      "supabase/migrations/20260104082908_v05_i05_6_create_safety_checks.sql",
+                      "V05_I05_6_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  371,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/371"
+                                    }
+    },
+    {
+        "number":  462,
+        "title":  "Implement medical review queue with deterministic sampling and RBAC workflow",
+        "mergedAt":  "2026-01-04T11:30:36Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/462",
+        "mergeCommit":  "2504357c498a975aa3563e76a86fb3843fe78858",
+        "changedFiles":  21,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/review/[id]/decide/route.ts",
+                      "app/api/review/[id]/route.ts",
+                      "app/api/review/__tests__/httpSemantics.test.ts",
+                      "app/api/review/queue/route.ts",
+                      "CODE_REVIEW_COMPLIANCE.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/audit/__tests__/registry.test.ts",
+                      "lib/audit/log.ts",
+                      "lib/contracts/__tests__/reviewRecord.test.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/contracts/reviewRecord.ts",
+                      "lib/env.ts",
+                      "lib/review/__tests__/queueHelper.test.ts",
+                      "lib/review/persistence.ts",
+                      "lib/review/queueHelper.ts",
+                      "lib/review/README.md",
+                      "lib/types/supabase.ts",
+                      "scripts/db/verify-db-access.js",
+                      "supabase/migrations/20260104101410_v05_i05_7_create_review_records.sql",
+                      "TYPE_GENERATION_REQUIRED.md",
+                      "V05_I05_7_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  372,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/372"
+                                    }
+    },
+    {
+        "number":  463,
+        "title":  "V05-I05.8: PDF Assembly with Secure Storage, Signed URLs, Hardened RBAC, and Fail-Closed Replacement",
+        "mergedAt":  "2026-01-04T13:36:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/463",
+        "mergeCommit":  "531bac8de8b63c4023e248c6490e7d5d80bae207",
+        "changedFiles":  22,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/processing/pdf/__tests__/route.auth-first.test.ts",
+                      "app/api/processing/pdf/route.ts",
+                      "app/api/reports/[reportId]/pdf/route.ts",
+                      "app/api/reports/__tests__/pdf.rbac.test.ts",
+                      "lib/contracts/pdfGeneration.ts",
+                      "lib/pdf/__tests__/canonicalHash.test.ts",
+                      "lib/pdf/__tests__/storage.test.ts",
+                      "lib/pdf/canonicalHash.ts",
+                      "lib/pdf/generator.tsx",
+                      "lib/pdf/README.md",
+                      "lib/pdf/storage.ts",
+                      "lib/pdf/templates.ts",
+                      "lib/processing/__tests__/pdfStageProcessor.idempotency.test.ts",
+                      "lib/processing/pdfStageProcessor.ts",
+                      "lib/review/__tests__/queueHelper.test.ts",
+                      "lib/types/supabase.ts",
+                      "package.json",
+                      "package-lock.json",
+                      "supabase/migrations/20260104113000_v05_i05_8_add_pdf_columns.sql",
+                      "V05_I05_8_FINALIZATION_EVIDENCE.md",
+                      "V05_I05_8_HARDENING_EVIDENCE.md",
+                      "V05_I05_8_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  373,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/373"
+                                    }
+    },
+    {
+        "number":  464,
+        "title":  "Implement delivery system with status-driven notifications, clinician dashboard, and hardened DB deployment pipeline",
+        "mergedAt":  "2026-01-04T19:59:23Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/464",
+        "mergeCommit":  "d0435b522b82ba6137db58c72fe6374e9c427449",
+        "changedFiles":  26,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/apply-migrations.yml",
+                      "app/api/notifications/[id]/route.ts",
+                      "app/api/notifications/route.ts",
+                      "app/api/processing/delivery/__tests__/route.test.ts",
+                      "app/api/processing/delivery/route.ts",
+                      "app/clinician/delivery/page.tsx",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "docs/DB_DEPLOYMENT_GUIDE.md",
+                      "docs/DB_DEPLOYMENT_QUICKREF.md",
+                      "eslint.config.mjs",
+                      "lib/contracts/__tests__/delivery.test.ts",
+                      "lib/contracts/delivery.ts",
+                      "lib/notifications/notificationService.server.ts",
+                      "lib/notifications/notificationService.ts",
+                      "lib/processing/deliveryStageProcessor.server.ts",
+                      "lib/processing/deliveryStageProcessor.ts",
+                      "lib/types/supabase.ts",
+                      "MIGRATION_PIPELINE_AUDIT.md",
+                      "MIGRATION_PIPELINE_HARDENING_COMPLETE.md",
+                      "package.json",
+                      "scripts/db/verify-db-access.js",
+                      "scripts/verify-migration-sync.ps1",
+                      "supabase/migrations/20260104134110_v05_i05_9_create_delivery_system.sql",
+                      "supabase/migrations/20260104163022_v05_i05_9_add_idempotency_constraints.sql",
+                      "V05_I05_9_HARDENING_SUMMARY.md",
+                      "V05_I05_9_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  374,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/374"
+                                    }
+    },
+    {
+        "number":  465,
+        "title":  "Copilot/fix update schema pg conn",
+        "mergedAt":  "2026-01-04T14:05:15Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/465",
+        "mergeCommit":  "e424be0310ea4948a9f43293504708b664e659c0",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      ".github/workflows/apply-migrations.yml",
+                      ".github/workflows/update-schema-on-merge.yml"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  466,
+        "title":  "Copilot/fix update schema pg conn",
+        "mergedAt":  "2026-01-04T16:48:59Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/466",
+        "mergeCommit":  "13ada3ad30df6e3a94eab3f44cfe2e7c34391c5f",
+        "changedFiles":  1,
+        "labels":  {
+
+                   },
+        "files":  ".github/workflows/update-schema-on-merge.yml",
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  467,
+        "title":  "Add mobile shell with fixed top and bottom navigation for patient routes",
+        "mergedAt":  "2026-01-04T20:29:36Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/467",
+        "mergeCommit":  "a5e9a1d91273936248c8f0da362bf20ecca4112b",
+        "changedFiles":  6,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/components/PatientNavigation.tsx",
+                      "app/layout.tsx",
+                      "app/patient/layout.tsx",
+                      "docs/mobile/SHELL_FOUNDATIONS.md",
+                      "lib/utils/__tests__/roleBasedRouting.patient.test.ts",
+                      "lib/utils/roleBasedRouting.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  376,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/376"
+                                    }
+    },
+    {
+        "number":  468,
+        "title":  "Implement manifest-driven Content Block Renderer for v0.5 Mobile UI with security hardening",
+        "mergedAt":  "2026-01-04T21:05:56Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/468",
+        "mergeCommit":  "382ef9da9a3a8a3591979a7f97bb6a81e0ab2d41",
+        "changedFiles":  24,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "docs/V05_I06_2_CONTENT_BLOCK_RENDERER.md",
+                      "jest.config.js",
+                      "lib/components/content/__tests__/ContentBlockRenderer.test.tsx",
+                      "lib/components/content/blocks/CTABlockRenderer.tsx",
+                      "lib/components/content/blocks/DividerBlockRenderer.tsx",
+                      "lib/components/content/blocks/HeroBlockRenderer.tsx",
+                      "lib/components/content/blocks/ImageBlockRenderer.tsx",
+                      "lib/components/content/blocks/MarkdownBlockRenderer.tsx",
+                      "lib/components/content/blocks/TextBlockRenderer.tsx",
+                      "lib/components/content/blocks/VideoBlockRenderer.tsx",
+                      "lib/components/content/CardRenderer.tsx",
+                      "lib/components/content/ContentBlockRenderer.tsx",
+                      "lib/components/content/index.ts",
+                      "lib/components/content/PageRenderer.tsx",
+                      "lib/components/content/SectionRenderer.tsx",
+                      "lib/contracts/funnelManifest.ts",
+                      "lib/utils/__tests__/urlSecurity.test.ts",
+                      "lib/utils/urlSecurity.ts",
+                      "package.json",
+                      "package-lock.json",
+                      "test/__mocks__/next/link.tsx",
+                      "test/__mocks__/react-markdown.tsx",
+                      "test/__mocks__/remark-gfm.ts",
+                      "test/setup.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  377,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/377"
+                                    }
+    },
+    {
+        "number":  471,
+        "title":  "Implement role-specific menu filtering with fail-closed security",
+        "mergedAt":  "2026-01-05T06:26:50Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/471",
+        "mergeCommit":  "f2b2786757152b6f227089633f7edfe2fd7e2297",
+        "changedFiles":  5,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/admin/layout.tsx",
+                      "app/clinician/layout.tsx",
+                      "app/patient/layout.tsx",
+                      "lib/utils/__tests__/roleBasedRouting.menus.test.ts",
+                      "lib/utils/roleBasedRouting.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  378,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/378"
+                                    }
+    },
+    {
+        "number":  472,
+        "title":  "V05-I06.4 ÔÇö Visual Block Editor for funnel content manifests (Security Hardened)",
+        "mergedAt":  "2026-01-05T07:25:24Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/472",
+        "mergeCommit":  "15a4fd260a090baefbf882a3c7aeb5e308c3f31d",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnel-versions/[id]/manifest/__tests__/validation.test.ts",
+                      "app/api/admin/funnel-versions/[id]/manifest/route.ts",
+                      "app/clinician/funnels/[id]/page.tsx",
+                      "app/clinician/funnels/[slug]/editor/page.tsx",
+                      "docs/mobile/BLOCK_EDITOR.md",
+                      "docs/mobile/BLOCK_EDITOR_SECURITY_AUDIT.md",
+                      "lib/contracts/funnelManifest.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  469,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/469"
+                                    }
+    },
+    {
+        "number":  473,
+        "title":  "Integrate ContentBlockRenderer into patient intro and content pages",
+        "mergedAt":  "2026-01-05T08:57:21Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/473",
+        "mergeCommit":  "6b241fed1ab60296b574950d79be8177b49359b5",
+        "changedFiles":  10,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/components/MobileHeader.tsx",
+                      "app/components/MobileWelcomeScreen.tsx",
+                      "app/patient/funnel/[slug]/content/[pageSlug]/__tests__/integration.test.tsx",
+                      "app/patient/funnel/[slug]/content/[pageSlug]/client.tsx",
+                      "app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+                      "app/patient/funnel/[slug]/intro/__tests__/integration.test.tsx",
+                      "app/patient/funnel/[slug]/intro/client.tsx",
+                      "app/patient/funnel/[slug]/intro/page.tsx",
+                      "docs/mobile/CONTENT_BLOCK_RENDERER_INTEGRATION.md",
+                      "V05_I06_5_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  470,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/470"
+                                    }
+    },
+    {
+        "number":  474,
+        "title":  "Add triage dashboard with assessment status tracking and fix route conflict",
+        "mergedAt":  "2026-01-05T11:59:09Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/474",
+        "mergeCommit":  "de1e4f74f01edb252b4673ae49948a8f2da0ff60",
+        "changedFiles":  9,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/clinician/funnels/[identifier]/editor/page.tsx",
+                      "app/clinician/funnels/[identifier]/page.tsx",
+                      "app/clinician/triage/page.tsx",
+                      "lib/utils/roleBasedRouting.ts",
+                      "V05_I07_1_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I07_1_MERGE_READY_SUMMARY.md",
+                      "V05_I07_1_VERIFICATION_CHECKLIST.md",
+                      "V05_I07_1_VISUAL_STRUCTURE.md",
+                      "verify-v05-i07-1.ps1"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  380,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/380"
+                                    }
+    },
+    {
+        "number":  475,
+        "title":  "fix(auth): resolve role from membership",
+        "mergedAt":  "2026-01-05T10:42:47Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/475",
+        "mergeCommit":  "6be0fe8ef4a8c0ac73041762b2a981a4a51f9560",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/admin/layout.tsx",
+                      "app/admin/page.tsx",
+                      "app/api/auth/resolve-role/__tests__/route.test.ts",
+                      "app/api/auth/resolve-role/route.ts",
+                      "app/clinician/layout.tsx",
+                      "app/page.tsx",
+                      "lib/utils/roleLanding.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  476,
+        "title":  "fix(auth): persist session for patient routes",
+        "mergedAt":  "2026-01-05T11:29:34Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/476",
+        "mergeCommit":  "b0f7a18a409d3ed386e3c75b355c2084b67dda89",
+        "changedFiles":  10,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/patient/funnel/[slug]/client.tsx",
+                      "app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+                      "app/patient/funnel/[slug]/intro/page.tsx",
+                      "app/patient/funnel/[slug]/page.tsx",
+                      "app/patient/funnel/[slug]/result/page.tsx",
+                      "app/patient/funnels/page.tsx",
+                      "app/patient/history/PatientHistoryClient.tsx",
+                      "app/patient/page.tsx",
+                      "lib/db/supabase.server.ts",
+                      "lib/utils/__tests__/roleLanding.test.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  477,
+        "title":  "test: stabilize jest web api polyfills",
+        "mergedAt":  "2026-01-05T11:58:51Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/477",
+        "mergeCommit":  "814443e041a509a18b9d79623ffcb0f8ed87461f",
+        "changedFiles":  5,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/documents/upload/__tests__/route.test.ts",
+                      "lib/__tests__/env.test.ts",
+                      "package.json",
+                      "package-lock.json",
+                      "test/setup.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  478,
+        "title":  "Add Key Labs, Medications, Findings/Scores, and Interventions to Patient Detail with Error State Handling",
+        "mergedAt":  "2026-01-05T14:30:42Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/478",
+        "mergeCommit":  "0f4e54e4d20930363fb5160b31ecfab7d69f6c79",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/clinician/patient/[id]/__tests__/helpers.test.ts",
+                      "app/clinician/patient/[id]/__tests__/sections.test.tsx",
+                      "app/clinician/patient/[id]/FindingsScoresSection.tsx",
+                      "app/clinician/patient/[id]/InterventionsSection.tsx",
+                      "app/clinician/patient/[id]/KeyLabsSection.tsx",
+                      "app/clinician/patient/[id]/MedicationsSection.tsx",
+                      "app/clinician/patient/[id]/page.tsx",
+                      "package-lock.json",
+                      "test-patient-detail.md",
+                      "V05_I07_2_EVIDENCE_VERIFICATION.md",
+                      "V05_I07_2_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I07_2_MERGE_READY.md",
+                      "V05_I07_2_REPRODUCIBILITY_REPORT.md",
+                      "V05_I07_2_VISUAL_STRUCTURE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  381,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/381"
+                                    }
+    },
+    {
+        "number":  479,
+        "title":  "Copilot/patient content legacy fallback",
+        "mergedAt":  "2026-01-05T12:36:12Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/479",
+        "mergeCommit":  "56e2ac42c2b0d1f25c663df44ec2ea052698aefd",
+        "changedFiles":  5,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/patient/funnel/[slug]/content/[pageSlug]/client.tsx",
+                      "app/patient/funnel/[slug]/intro/__tests__/integration.test.tsx",
+                      "app/patient/funnel/[slug]/intro/client.tsx",
+                      "app/patient/funnel/[slug]/intro/page.tsx",
+                      "lib/utils/__tests__/roleBasedRouting.menus.test.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  480,
+        "title":  "Fix funnel editor version id + manifest 404 semantics",
+        "mergedAt":  "2026-01-05T12:59:24Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/480",
+        "mergeCommit":  "5184f2e5cff32bd0f6a5e86e0d401f76a4948b9c",
+        "changedFiles":  3,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnel-versions/[id]/manifest/__tests__/route.test.ts",
+                      "app/api/admin/funnel-versions/[id]/manifest/route.ts",
+                      "app/clinician/funnels/[identifier]/editor/page.tsx"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  481,
+        "title":  "Fix admin content-pages GET for empty sections",
+        "mergedAt":  "2026-01-05T13:34:53Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/481",
+        "mergeCommit":  "3c25d729723bd382918c28f6429d700eca985806",
+        "changedFiles":  2,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/content-pages/[id]/__tests__/route.test.ts",
+                      "app/api/admin/content-pages/[id]/route.ts"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  482,
+        "title":  "Add QA Review Panel for Layer 1/2 findings with approve/reject workflow + security hardening",
+        "mergedAt":  "2026-01-05T15:35:37Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/482",
+        "mergeCommit":  "5af433fff89325f55e24488dba3230271b3e0445",
+        "changedFiles":  11,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/review/[id]/decide/route.ts",
+                      "app/api/review/[id]/details/__tests__/route.test.ts",
+                      "app/api/review/[id]/details/route.ts",
+                      "app/api/review/__tests__/httpSemantics.test.ts",
+                      "app/clinician/patient/[id]/page.tsx",
+                      "app/clinician/patient/[id]/QAReviewPanel.tsx",
+                      "lib/review/persistence.ts",
+                      "V05_I07_3_HARDENING_SUMMARY.md",
+                      "V05_I07_3_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I07_3_MERGE_READY.md",
+                      "V05_I07_3_VISUAL_STRUCTURE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  382,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/382"
+                                    }
+    },
+    {
+        "number":  483,
+        "title":  "Add task management API and UI for clinician workflow with security hardening (V05-I07.4)",
+        "mergedAt":  "2026-01-05T22:03:53Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/483",
+        "mergeCommit":  "15f4257dbda19110aa5d9fe7f0fc0b1d4605c299",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/patient-profiles/route.ts",
+                      "app/api/tasks/[id]/__tests__/route.test.ts",
+                      "app/api/tasks/[id]/route.ts",
+                      "app/api/tasks/__tests__/route.test.ts",
+                      "app/api/tasks/route.ts",
+                      "app/clinician/tasks/page.tsx",
+                      "app/clinician/tasks/TaskCreateDialog.tsx",
+                      "lib/contracts/task.ts",
+                      "lib/types/supabase.ts",
+                      "package-lock.json",
+                      "schema/schema.sql",
+                      "supabase/migrations/20260105161724_v05_i07_4_harden_tasks_table.sql",
+                      "V05_I07_4_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I07_4_MERGE_READY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  383,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/383"
+                                    }
+    },
+    {
+        "number":  484,
+        "title":  "V05-I08.1: Security Fix - Enforce nurse task assignment at RLS level",
+        "mergedAt":  "2026-01-05T22:56:28Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/484",
+        "mergeCommit":  "467397b32cb4cac1c7549c1d3f6eb86247e2a77e",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/tasks/route.ts",
+                      "app/clinician/tasks/page.tsx",
+                      "lib/contracts/task.ts",
+                      "lib/types/supabase.ts",
+                      "schema/schema.sql",
+                      "supabase/migrations/20260105222510_v05_i08_1_add_task_user_assignment.sql",
+                      "V05_I08_1_SECURITY_FIX_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  385,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/385"
+                                    }
+    },
+    {
+        "number":  485,
+        "title":  "Add pre-screening call script UI with PHI-free audit logging and org-scoped RLS",
+        "mergedAt":  "2026-01-06T11:11:38Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/485",
+        "mergeCommit":  "df5a53b4fb1c9e4b63e58179da5fb3dee3bfba4f",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/pre-screening-calls/route.ts",
+                      "app/clinician/pre-screening/page.tsx",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/contracts/preScreening.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/types/supabase.ts",
+                      "lib/utils/roleBasedRouting.ts",
+                      "supabase/migrations/20260105230000_v05_i08_2_create_pre_screening_calls.sql",
+                      "V05_I08_2_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I08_2_MERGE_READY.md",
+                      "V05_I08_2_SECURITY_VERIFICATION.md",
+                      "V05_I08_2_UI_STRUCTURE.md",
+                      "V05_I08_2_VISUAL_MOCKUP.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  386,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/386"
+                                    }
+    },
+    {
+        "number":  486,
+        "title":  "V05-I08.3: Add device shipment tracking with return management and automated reminders",
+        "mergedAt":  "2026-01-06T18:01:15Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/486",
+        "mergeCommit":  "770914cd229c04ef480bc32c5b56074c707ed276",
+        "changedFiles":  22,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/shipments/[id]/events/route.ts",
+                      "app/api/shipments/[id]/route.ts",
+                      "app/api/shipments/route.ts",
+                      "app/clinician/shipments/page.tsx",
+                      "app/clinician/shipments/ShipmentCreateDialog.tsx",
+                      "app/clinician/shipments/ShipmentDetailDialog.tsx",
+                      "docs/canon/DB_ACCESS_DECISION.md",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "eslint.config.mjs",
+                      "lib/contracts/delivery.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/contracts/shipment.ts",
+                      "lib/db/supabase.server.ts",
+                      "lib/shipment/reminderService.server.ts",
+                      "lib/types/supabase.ts",
+                      "lib/utils/roleBasedRouting.ts",
+                      "scripts/db/verify-db-access.js",
+                      "supabase/migrations/20260106000000_v05_i08_3_create_device_shipments.sql",
+                      "V05_I08_3_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I08_3_MERGE_READY.md",
+                      "V05_I08_3_SECURITY_FIXES.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  387,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/387"
+                                    }
+    },
+    {
+        "number":  487,
+        "title":  "V05-I08.4: Support case management with task escalation workflow (hardened)",
+        "mergedAt":  "2026-01-07T05:45:19Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/487",
+        "mergeCommit":  "10b7bf489fbb4874bca04914ec041d75e7e3b8a5",
+        "changedFiles":  21,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/support-cases/[id]/escalate/__tests__/route.test.ts",
+                      "app/api/support-cases/[id]/escalate/route.ts",
+                      "app/api/support-cases/[id]/route.ts",
+                      "app/api/support-cases/route.ts",
+                      "app/clinician/support-cases/EscalationDialog.tsx",
+                      "app/clinician/support-cases/page.tsx",
+                      "app/clinician/support-cases/UpdateCaseDialog.tsx",
+                      "app/patient/support/page.tsx",
+                      "app/patient/support/SupportCaseDialog.tsx",
+                      "app/patient/support/SupportCaseList.tsx",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/audit/log.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/contracts/supportCase.ts",
+                      "lib/contracts/task.ts",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20260106180000_v05_i08_4_create_support_cases.sql",
+                      "V05_I08_4_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I08_4_MERGE_READY.md",
+                      "V05_I08_4_SECURITY_HARDENING.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  388,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/388"
+                                    }
+    },
+    {
+        "number":  488,
+        "title":  "V05-I09.1: Database-driven navigation configuration UI",
+        "mergedAt":  "2026-01-07T08:22:51Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/488",
+        "mergeCommit":  "8338611a5b5aa2cf4a20c5d1633148912af193a6",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/admin/navigation/page.tsx",
+                      "app/api/admin/navigation/[role]/route.ts",
+                      "app/api/admin/navigation/route.ts",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/types/supabase.ts",
+                      "lib/utils/roleBasedRouting.ts",
+                      "schema/schema.sql",
+                      "scripts/generate-version.js",
+                      "supabase/migrations/20260107055200_v05_i09_1_create_navigation_config.sql",
+                      "tools/list-anthropic-models.cjs",
+                      "tools/test-funnel-api.js",
+                      "V05_I09_1_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I09_1_VISUAL_STRUCTURE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  390,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/390"
+                                    }
+    },
+    {
+        "number":  489,
+        "title":  "Add database-driven design token override system for multi-tenant customization",
+        "mergedAt":  "2026-01-07T09:47:34Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/489",
+        "mergeCommit":  "e247697f41d4126f0f79e52590b370b96f672007",
+        "changedFiles":  14,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/admin/design-tokens/page.tsx",
+                      "app/api/admin/design-tokens/route.ts",
+                      "app/components/ExampleTokenConsumer.tsx",
+                      "app/layout.tsx",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "docs/DESIGN_TOKEN_OVERRIDE_GUIDE.md",
+                      "lib/contexts/DesignTokensContext.tsx",
+                      "lib/design-tokens-loader.ts",
+                      "lib/types/supabase.ts",
+                      "schema/schema.sql",
+                      "supabase/migrations/20260107083000_v05_i09_2_create_design_tokens.sql",
+                      "V05_I09_2_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I09_2_VISUAL_STRUCTURE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  391,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/391"
+                                    }
+    },
+    {
+        "number":  490,
+        "title":  "V05-I09.3: Funnel version management API and UI",
+        "mergedAt":  "2026-01-07T10:27:17Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/490",
+        "mergeCommit":  "97aafec9b41ffb7ed9461f0abf430155ae26b8da",
+        "changedFiles":  4,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+                      "app/api/admin/funnel-versions/[id]/route.ts",
+                      "app/clinician/funnels/[identifier]/page.tsx",
+                      "V05_I09_3_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  392,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/392"
+                                    }
+    },
+    {
+        "number":  491,
+        "title":  "Add operational settings system with notification templates, re-assessment rules, and KPI thresholds",
+        "mergedAt":  "2026-01-07T12:53:06Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/491",
+        "mergeCommit":  "516e039aac90a50378a9097a7a39e1d9e3a741a9",
+        "changedFiles":  13,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/admin/operational-settings/page.tsx",
+                      "app/api/admin/kpi-thresholds/[id]/route.ts",
+                      "app/api/admin/kpi-thresholds/route.ts",
+                      "app/api/admin/notification-templates/[id]/route.ts",
+                      "app/api/admin/notification-templates/route.ts",
+                      "app/api/admin/operational-settings-audit/route.ts",
+                      "app/api/admin/reassessment-rules/[id]/route.ts",
+                      "app/api/admin/reassessment-rules/route.ts",
+                      "docs/canon/DB_MIGRATIONS.md",
+                      "docs/canon/DB_SCHEMA_MANIFEST.json",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20260107110000_v05_i09_4_create_operational_settings.sql",
+                      "V05_I09_4_IMPLEMENTATION_SUMMARY.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  393,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/393"
+                                    }
+    },
+    {
+        "number":  492,
+        "title":  "Add consent data to patient export endpoint for GDPR compliance",
+        "mergedAt":  "2026-01-07T13:30:42Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/492",
+        "mergeCommit":  "1b68c4410fa74f6dbbd6ac9ef17ffae7016b4dac",
+        "changedFiles":  4,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/patient-measures/export/route.ts",
+                      "docs/_archive_0_3/JSON_EXPORT.md",
+                      "V05_I10_1_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I10_1_VERIFICATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  395,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/395"
+                                    }
+    },
+    {
+        "number":  493,
+        "title":  "Implement account deletion/retention workflow with audit coverage (V05-I10.2)",
+        "mergedAt":  "2026-01-08T11:09:20Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/493",
+        "mergeCommit":  "f92ed41f4519751702c9a5fe8f7527d202dcbbfd",
+        "changedFiles":  8,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/account/deletion-request/route.ts",
+                      "docs/ACCOUNT_DELETION_RETENTION.md",
+                      "lib/audit/log.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/types/supabase.ts",
+                      "supabase/migrations/20260108062300_v05_i10_2_account_deletion_retention.sql",
+                      "V05_I10_2_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I10_2_VERIFICATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  396,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/396"
+                                    }
+    },
+    {
+        "number":  494,
+        "title":  "Add KPI tracking for completion rate, assessment duration, and time-to-report",
+        "mergedAt":  "2026-01-08T11:54:29Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/494",
+        "mergeCommit":  "3a8bdff829d65a0eb7194f604170898ccfec2390",
+        "changedFiles":  8,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/amy/stress-report/route.ts",
+                      "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+                      "app/api/funnels/[slug]/assessments/route.ts",
+                      "lib/audit/log.ts",
+                      "lib/monitoring/kpi.ts",
+                      "V05_I10_3_FINAL_SUMMARY.md",
+                      "V05_I10_3_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I10_3_VERIFICATION.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  397,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/397"
+                                    }
+    },
+    {
+        "number":  495,
+        "title":  "V05-I10.4: Content Safety Ops SLA + Sampling Rules SOP",
+        "mergedAt":  "2026-01-08T13:49:41Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/495",
+        "mergeCommit":  "5d3c3cb82c147fb34790e69a705e310866faed61",
+        "changedFiles":  5,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/clinician/review-queue/page.tsx",
+                      "docs/CONTENT_SAFETY_OPS_SOP.md",
+                      "docs/REVIEW_QUEUE_QUICK_REFERENCE.md",
+                      "V05_I10_4_IMPLEMENTATION_SUMMARY.md",
+                      "V05_I10_4_VISUAL_STRUCTURE.md"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  398,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/398"
+                                    }
+    },
+    {
+        "number":  496,
+        "title":  "Add deployment verification tooling for production drift diagnosis",
+        "mergedAt":  "2026-01-10T06:48:24Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/496",
+        "mergeCommit":  "62a035dd80322a5081baf19301cb27468ed40ccc",
+        "changedFiles":  7,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/content/resolve/route.ts",
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "docs/DEPLOYMENT_VERIFICATION.md",
+                      "IMPLEMENTATION_V05_P0_DEPLOY_VERIFICATION.md",
+                      "README.md",
+                      "REVIEW_EVIDENCE.md",
+                      "scripts/verify-routes.mjs"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    },
+    {
+        "number":  498,
+        "title":  "Fix source-of-truth mismatch between funnel registry and content resolver",
+        "mergedAt":  "2026-01-10T08:08:18Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/498",
+        "mergeCommit":  "5ecaae72db09b2d3897b44258a67317509231386",
+        "changedFiles":  5,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/api/content/resolve/__tests__/route.test.ts",
+                      "app/api/funnels/[slug]/content-pages/__tests__/route.test.ts",
+                      "app/api/funnels/[slug]/content-pages/route.ts",
+                      "lib/contracts/registry.ts",
+                      "lib/utils/contentResolver.ts"
+                  ],
+        "closingIssuesReferences":  {
+                                        "number":  497,
+                                        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/issues/497"
+                                    }
+    },
+    {
+        "number":  499,
+        "title":  "fix(v0.5): intro missing_content fallback + content-pages no-500",
+        "mergedAt":  "2026-01-10T12:54:43Z",
+        "url":  "https://github.com/adaefler-art/rhythmologicum-connect/pull/499",
+        "mergeCommit":  "ff939bee4f4dcaa2e785b22825fae5b189bd0b0c",
+        "changedFiles":  4,
+        "labels":  {
+
+                   },
+        "files":  [
+                      "app/components/layout/ContentContainer.tsx",
+                      "app/patient/funnel/[slug]/intro/client.tsx",
+                      "app/patient/funnel/[slug]/result/client.tsx",
+                      "docs/LAYOUT_STANDARDS.md"
+                  ],
+        "closingIssuesReferences":  {
+
+                                    }
+    }
+]
