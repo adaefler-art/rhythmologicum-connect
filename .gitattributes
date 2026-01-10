@@ -1,4 +1,6 @@
-﻿# keep markdown/csv/json deterministic
+﻿# Keep evidence + scripts deterministic (LF in repo)
+* text=auto
+
 *.md  text eol=lf
 *.csv text eol=lf
 *.json text eol=lf
