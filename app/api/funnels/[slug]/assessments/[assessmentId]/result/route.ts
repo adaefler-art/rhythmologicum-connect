@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import {
@@ -33,68 +33,78 @@ export async function GET(
 
     const supabase = await createServerSupabaseClient()
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-  if (authError || !user) {
-    logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result`, assessmentId })
-    return unauthorizedResponse()
-  }
+    if (authError || !user) {
+      logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result`, assessmentId })
+      return unauthorizedResponse()
+    }
 
-  const { data: patientProfile, error: profileError } = await supabase
-    .from('patient_profiles')
-    .select('id')
-    .eq('user_id', user.id)
-    .single()
+    const { data: patientProfile, error: profileError } = await supabase
+      .from('patient_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
 
-  if (profileError || !patientProfile) {
-    logDatabaseError({ userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` }, profileError)
-    return notFoundResponse('Benutzerprofil')
-  }
+    if (profileError || !patientProfile) {
+      logDatabaseError(
+        { userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
+        profileError,
+      )
+      return notFoundResponse('Benutzerprofil')
+    }
 
-  const { data: assessment, error: assessmentError } = await supabase
-    .from('assessments')
-    .select('id, patient_id, funnel, completed_at, status')
-    .eq('id', assessmentId)
-    .in('funnel', getFunnelSlugCandidates(slug))
-    .single()
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .select('id, patient_id, funnel, completed_at, status')
+      .eq('id', assessmentId)
+      .in('funnel', getFunnelSlugCandidates(slug))
+      .single()
 
-  if (assessmentError) {
-    logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` }, assessmentError)
-    return internalErrorResponse('Fehler beim Laden des Assessments.')
-  }
+    if (assessmentError) {
+      logDatabaseError(
+        { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
+        assessmentError,
+      )
+      return internalErrorResponse('Fehler beim Laden des Assessments.')
+    }
 
-  if (!assessment) {
-    return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
-  }
+    if (!assessment) {
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
+    }
 
-  if (assessment.patient_id !== patientProfile.id) {
-    logForbidden({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` }, 'Assessment does not belong to user')
-    return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
-  }
+    if (assessment.patient_id !== patientProfile.id) {
+      logForbidden(
+        { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
+        'Assessment does not belong to user',
+      )
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
+    }
 
-  const { data: funnelRow, error: funnelError } = await supabase
-    .from('funnels')
-    .select('title')
-    .eq('slug', assessment.funnel)
-    .maybeSingle()
+    const { data: funnelRow, error: funnelError } = await supabase
+      .from('funnels')
+      .select('title')
+      .eq('slug', assessment.funnel)
+      .maybeSingle()
 
-  if (funnelError) {
-    logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` }, funnelError)
-    return internalErrorResponse('Fehler beim Laden des Funnels.')
-  }
+    if (funnelError) {
+      logDatabaseError(
+        { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
+        funnelError,
+      )
+      return internalErrorResponse('Fehler beim Laden des Funnels.')
+    }
 
-    return NextResponse.json(
-      successResponse({
-        id: assessment.id,
-        funnel: assessment.funnel,
-        completedAt: assessment.completed_at,
-        status: assessment.status,
-        funnelTitle: funnelRow?.title ?? null,
-      }),
-    )
+    return successResponse({
+      id: assessment.id,
+      funnel: assessment.funnel,
+      completedAt: assessment.completed_at,
+      status: assessment.status,
+      funnelTitle: funnelRow?.title ?? null,
+    })
   } catch (error) {
     console.error('Error in GET /api/funnels/[slug]/assessments/[assessmentId]/result:', error)
     return internalErrorResponse('Internal server error')
