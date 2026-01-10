@@ -81,6 +81,9 @@ const baseEnvSchema = z.object({
 })
 
 const serverOnlyEnvSchema = baseEnvSchema.extend({
+  // OPTIONAL: Dev/Admin tooling feature flags
+  DEV_ENDPOINT_CATALOG: z.string().optional(),
+
   // REQUIRED (server runtime only): Supabase Admin
   SUPABASE_SERVICE_ROLE_KEY: requireServerSecrets
     ? z.preprocess(
@@ -142,6 +145,9 @@ export type Env = {
   NEXT_PHASE?: string
   VERCEL_ENV?: string
   USAGE_TELEMETRY_ENABLED?: string
+
+  // Dev/admin tooling
+  DEV_ENDPOINT_CATALOG?: string
 }
 
 /**
@@ -167,6 +173,7 @@ function getDefaultEnv(): Env {
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
     USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
+    DEV_ENDPOINT_CATALOG: process.env.DEV_ENDPOINT_CATALOG,
   }
 }
 
@@ -197,6 +204,7 @@ function parseEnv(): Env {
         NEXT_PHASE: parsed.NEXT_PHASE,
         VERCEL_ENV: parsed.VERCEL_ENV,
         USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
+        DEV_ENDPOINT_CATALOG: parsed.DEV_ENDPOINT_CATALOG,
       }
     }
 

@@ -1,0 +1,2001 @@
+{
+  "version": "v0.6",
+  "endpoints": [
+    {
+      "path": "/api/account/deletion-request",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/account/deletion-request/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/content-pages",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/content-pages/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/content/page.tsx",
+          "line": 60,
+          "apiPath": "/api/admin/content-pages",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/content-pages/[id]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "app/api/admin/content-pages/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/content/[id]/page.tsx",
+          "line": 22,
+          "apiPath": "/api/admin/content-pages/${pageId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/content-pages/[id]/sections",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/content-pages/[id]/sections/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 133,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 283,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "file": "app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 6,
+      "usedBy": [
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 314,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${sectionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 346,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 351,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${prevSection.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 386,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 391,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${nextSection.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 418,
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/design-tokens",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/design-tokens/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/design-tokens/page.tsx",
+          "line": 69,
+          "apiPath": "/api/admin/design-tokens",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/diagnostics/pillars-sot",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/diagnostics/pillars-sot/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/funnel-step-questions/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/admin/funnel-step-questions/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 343,
+          "apiPath": "/api/admin/funnel-step-questions/${questionId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-steps",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/admin/funnel-steps/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/funnel-steps/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/admin/funnel-steps/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 315,
+          "apiPath": "/api/admin/funnel-steps/${stepId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 377,
+          "apiPath": "/api/admin/funnel-steps/${stepId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 382,
+          "apiPath": "/api/admin/funnel-steps/${otherStep.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-versions/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/admin/funnel-versions/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 8,
+      "usedBy": [
+        {
+          "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "line": 108,
+          "apiPath": "/api/admin/funnel-versions/not-a-uuid",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "line": 137,
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "line": 175,
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "line": 213,
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "line": 327,
+          "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 402,
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 439,
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 466,
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-versions/[id]/manifest",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "file": "app/api/admin/funnel-versions/[id]/manifest/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
+          "line": 116,
+          "apiPath": "/api/admin/funnel-versions/${funnelVersion.id}/manifest",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
+          "line": 82,
+          "apiPath": "/api/admin/funnel-versions/${latestVersionId}/manifest",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnels",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/funnels/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 13,
+      "usedBy": [
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 161,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 210,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 257,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 283,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 321,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 356,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 387,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 424,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 465,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 509,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/__tests__/route.test.ts",
+          "line": 610,
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "app/clinician/funnels/page.tsx",
+          "line": 45,
+          "apiPath": "/api/admin/funnels",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/components/ContentPageEditor.tsx",
+          "line": 82,
+          "apiPath": "/api/admin/funnels",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnels/[id]",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "file": "app/api/admin/funnels/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 11,
+      "usedBy": [
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 180,
+          "apiPath": "/api/admin/funnels/stress-assessment",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 234,
+          "apiPath": "/api/admin/funnels/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 283,
+          "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 379,
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 423,
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 464,
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "line": 530,
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
+          "line": 64,
+          "apiPath": "/api/admin/funnels/${funnelSlug}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 126,
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 172,
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/funnels/[identifier]/page.tsx",
+          "line": 242,
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/kpi-thresholds",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/kpi-thresholds/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 117,
+          "apiPath": "/api/admin/kpi-thresholds",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/kpi-thresholds/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "app/api/admin/kpi-thresholds/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 191,
+          "apiPath": "/api/admin/kpi-thresholds/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/navigation",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/navigation/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/navigation/page.tsx",
+          "line": 86,
+          "apiPath": "/api/admin/navigation",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/navigation/[role]",
+      "methods": [
+        "PUT"
+      ],
+      "file": "app/api/admin/navigation/[role]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/navigation/page.tsx",
+          "line": 196,
+          "apiPath": "/api/admin/navigation/${selectedRole}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/notification-templates",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/notification-templates/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 101,
+          "apiPath": "/api/admin/notification-templates",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/notification-templates/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "app/api/admin/notification-templates/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 145,
+          "apiPath": "/api/admin/notification-templates/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/operational-settings-audit",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/operational-settings-audit/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 125,
+          "apiPath": "/api/admin/operational-settings-audit",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/reassessment-rules",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/admin/reassessment-rules/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 109,
+          "apiPath": "/api/admin/reassessment-rules",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/reassessment-rules/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "app/api/admin/reassessment-rules/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/admin/operational-settings/page.tsx",
+          "line": 169,
+          "apiPath": "/api/admin/reassessment-rules/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/usage",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/usage/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/amy/stress-report",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/amy/stress-report/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/amy/stress-summary",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/amy/stress-summary/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessment-answers/save",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/assessment-answers/save/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useAssessmentAnswer.ts",
+          "line": 63,
+          "apiPath": "/api/assessment-answers/save",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/assessment-validation/validate-step",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/assessment-validation/validate-step/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useStepValidation.ts",
+          "line": 52,
+          "apiPath": "/api/assessment-validation/validate-step",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/assessments/[id]/current-step",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/assessments/[id]/current-step/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessments/[id]/navigation",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/assessments/[id]/navigation/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessments/[id]/resume",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/assessments/[id]/resume/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useAssessmentNavigation.ts",
+          "line": 195,
+          "apiPath": "/api/assessments/${assessmentId}/resume",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/auth/callback",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/auth/callback/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/page.tsx",
+          "line": 15,
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/page.tsx",
+          "line": 154,
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/auth/resolve-role",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/auth/resolve-role/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "app/admin/AdminLayoutClient.tsx",
+          "line": 22,
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/ClinicianLayoutClient.tsx",
+          "line": 22,
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/page.tsx",
+          "line": 35,
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/consent/record",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/consent/record/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/consent/status",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/consent/status/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/content-pages/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/content-pages/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/content/[slug]/client.tsx",
+          "line": 30,
+          "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/content/[pageSlug]/client.tsx",
+          "line": 54,
+          "apiPath": "/api/content-pages/${pageSlug}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/content-resolver",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/content-resolver/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/content/resolve",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/content/resolve/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/intro/client.tsx",
+          "line": 81,
+          "apiPath": "/api/content/resolve",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/documents/[id]/extract",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/documents/[id]/extract/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/documents/[id]/status",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/documents/[id]/status/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/documents/upload",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/documents/upload/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 345,
+          "apiPath": "/api/funnels/${slug}/assessments",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 116,
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 5,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 156,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 226,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 475,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 92,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 393,
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/answers/save",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 443,
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/complete",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/result/client.tsx",
+          "line": 70,
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/result",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 4,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 272,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 333,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/hardening.test.ts",
+          "line": 401,
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
+          "kind": "request"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 502,
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/content-pages",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/[slug]/content-pages/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 259,
+          "apiPath": "/api/funnels/${slug}/content-pages",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/result/client.tsx",
+          "line": 93,
+          "apiPath": "/api/funnels/${payload.data.funnel}/content-pages",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/definition",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/[slug]/definition/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 5,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "line": 157,
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "line": 189,
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/client.tsx",
+          "line": 221,
+          "apiPath": "/api/funnels/${slug}/definition",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/patient/funnel/[slug]/intro/client.tsx",
+          "line": 54,
+          "apiPath": "/api/funnels/${funnelSlug}/definition",
+          "kind": "fetch"
+        },
+        {
+          "file": "lib/funnelHelpers.ts",
+          "line": 167,
+          "apiPath": "/api/funnels/${slug}/definition",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/active",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/active/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/assessment/client.tsx",
+          "line": 36,
+          "apiPath": "/api/funnels/active",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/catalog",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/catalog/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 11,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 157,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 185,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 221,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 255,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 328,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 365,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 407,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 425,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 464,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 504,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/patient/funnels/client.tsx",
+          "line": 30,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/catalog/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/funnels/catalog/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 6,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 106,
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 127,
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 153,
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 182,
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 211,
+          "apiPath": "/api/funnels/catalog/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "line": 256,
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/health/env",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/health/env/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/notifications",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/notifications/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/notifications/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/notifications/[id]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient-measures/export",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/patient-measures/export/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/history/PatientHistoryClient.tsx",
+          "line": 184,
+          "apiPath": "/api/patient-measures/export",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient-measures/history",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/patient-measures/history/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/history/PatientHistoryClient.tsx",
+          "line": 79,
+          "apiPath": "/api/patient-measures/history",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient-profiles",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/patient-profiles/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/clinician/shipments/ShipmentCreateDialog.tsx",
+          "line": 52,
+          "apiPath": "/api/patient-profiles",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/tasks/TaskCreateDialog.tsx",
+          "line": 50,
+          "apiPath": "/api/patient-profiles",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient/onboarding-status",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/patient/onboarding-status/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/page.tsx",
+          "line": 70,
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/pre-screening-calls",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/pre-screening-calls/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/pre-screening/page.tsx",
+          "line": 132,
+          "apiPath": "/api/pre-screening-calls",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/processing/content",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/content/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/delivery",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/delivery/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/jobs/[jobId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/processing/jobs/[jobId]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/jobs/[jobId]/download",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/processing/jobs/[jobId]/download/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/delivery/page.tsx",
+          "line": 153,
+          "apiPath": "/api/processing/jobs/${jobId}/download",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/processing/pdf",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/pdf/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/ranking",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/ranking/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/risk",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/risk/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/safety",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/safety/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/start",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/start/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/validation",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/processing/validation/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/reports/[reportId]/pdf",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/reports/[reportId]/pdf/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/review/[id]",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/review/[id]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/review-queue/page.tsx",
+          "line": 131,
+          "apiPath": "/api/review/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/review/[id]/decide",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/review/[id]/decide/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "line": 188,
+          "apiPath": "/api/review/${reviewId}/decide",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "line": 234,
+          "apiPath": "/api/review/${reviewId}/decide",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/review/[id]/details",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/review/[id]/details/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "line": 155,
+          "apiPath": "/api/review/${reviewId}/details",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/review/queue",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/review/queue/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/shipments",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/shipments/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/clinician/shipments/page.tsx",
+          "line": 67,
+          "apiPath": "/api/shipments",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/shipments/ShipmentCreateDialog.tsx",
+          "line": 92,
+          "apiPath": "/api/shipments",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/shipments/[id]",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "file": "app/api/shipments/[id]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/shipments/ShipmentDetailDialog.tsx",
+          "line": 87,
+          "apiPath": "/api/shipments/${shipment.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/shipments/[id]/events",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/shipments/[id]/events/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/support-cases",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/support-cases/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "app/clinician/support-cases/page.tsx",
+          "line": 60,
+          "apiPath": "/api/support-cases",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/patient/support/SupportCaseList.tsx",
+          "line": 46,
+          "apiPath": "/api/support-cases",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/patient/support/SupportCaseList.tsx",
+          "line": 69,
+          "apiPath": "/api/support-cases",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/support-cases/[id]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "app/api/support-cases/[id]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/support-cases/page.tsx",
+          "line": 117,
+          "apiPath": "/api/support-cases/${caseId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/support-cases/[id]/escalate",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/support-cases/[id]/escalate/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/clinician/support-cases/page.tsx",
+          "line": 86,
+          "apiPath": "/api/support-cases/${caseId}/escalate",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/tasks",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/tasks/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 7,
+      "usedBy": [
+        {
+          "file": "app/api/tasks/__tests__/route.test.ts",
+          "line": 131,
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/__tests__/route.test.ts",
+          "line": 164,
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/__tests__/route.test.ts",
+          "line": 197,
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/__tests__/route.test.ts",
+          "line": 239,
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/__tests__/route.test.ts",
+          "line": 299,
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "app/clinician/tasks/page.tsx",
+          "line": 80,
+          "apiPath": "/api/tasks",
+          "kind": "fetch"
+        },
+        {
+          "file": "app/clinician/tasks/TaskCreateDialog.tsx",
+          "line": 83,
+          "apiPath": "/api/tasks",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/tasks/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "app/api/tasks/[id]/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 7,
+      "usedBy": [
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 126,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 155,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 196,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 261,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 336,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/tasks/[id]/__tests__/route.test.ts",
+          "line": 367,
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "app/clinician/tasks/page.tsx",
+          "line": 109,
+          "apiPath": "/api/tasks/${taskId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    }
+  ],
+  "unknownCallsites": []
+}
