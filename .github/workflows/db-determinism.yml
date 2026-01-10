@@ -105,6 +105,12 @@ jobs:
           echo "📦 Applying all migrations via db reset..."
           supabase db reset
           echo "✅ Migrations applied successfully"
+
+      - name: Verify seed invariants
+        run: |
+          echo "🔒 Verifying baseline seed invariants..."
+          pwsh -File scripts/db/verify-seed-invariants.ps1
+          echo "✅ Seed invariants satisfied"
       
       # Check 3: Verify no schema drift
       - name: Check for schema drift
