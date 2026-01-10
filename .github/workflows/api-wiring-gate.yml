@@ -1,0 +1,54 @@
+name: API Wiring Gate (Endpoint Catalog)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'scripts/dev/endpoint-catalog/**'
+      - 'scripts/ci/verify-endpoint-catalog.ps1'
+      - 'docs/dev/endpoint-allowlist.json'
+      - 'package.json'
+      - 'jest.config.js'
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'scripts/dev/endpoint-catalog/**'
+      - 'scripts/ci/verify-endpoint-catalog.ps1'
+      - 'docs/dev/endpoint-allowlist.json'
+      - 'package.json'
+      - 'jest.config.js'
+
+permissions:
+  contents: read
+
+jobs:
+  endpoint-catalog:
+    runs-on: ubuntu-latest
+    name: Endpoint Catalog Gate
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run endpoint wiring gate
+        shell: pwsh
+        run: |
+          pwsh -File scripts/ci/verify-endpoint-catalog.ps1
+
+      - name: Run unit tests (matcher/parser)
+        run: npm test

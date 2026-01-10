@@ -1,0 +1,37 @@
+{
+  "allowedOrphans": [
+    "/api/account/deletion-request",
+    "/api/admin/diagnostics/pillars-sot",
+    "/api/admin/funnel-steps",
+    "/api/admin/usage",
+    "/api/amy/stress-report",
+    "/api/amy/stress-summary",
+    "/api/assessments/[id]/current-step",
+    "/api/assessments/[id]/navigation",
+    "/api/consent/record",
+    "/api/consent/status",
+    "/api/content-resolver",
+    "/api/documents/[id]/extract",
+    "/api/documents/[id]/status",
+    "/api/documents/upload",
+    "/api/health/env",
+    "/api/notifications",
+    "/api/notifications/[id]",
+    "/api/processing/content",
+    "/api/processing/delivery",
+    "/api/processing/jobs/[jobId]",
+    "/api/processing/pdf",
+    "/api/processing/ranking",
+    "/api/processing/risk",
+    "/api/processing/safety",
+    "/api/processing/start",
+    "/api/processing/validation",
+    "/api/reports/[reportId]/pdf",
+    "/api/review/queue",
+    "/api/shipments/[id]/events"
+  ],
+  "allowedIntents": [
+    "manual:webhook",
+    "manual:external"
+  ]
+}
