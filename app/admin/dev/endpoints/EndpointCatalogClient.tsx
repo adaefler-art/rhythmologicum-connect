@@ -244,9 +244,9 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                             Used By ({e.usedBy.length}):
                           </div>
                           <div className="space-y-1">
-                            {e.usedBy.map((usage, idx) => (
+                            {e.usedBy.map((usage) => (
                               <div
-                                key={idx}
+                                key={`${usage.file}:${usage.line}:${usage.apiPath}`}
                                 className="flex items-start gap-2 text-xs text-slate-600 bg-white rounded px-2 py-1.5 border border-slate-200"
                               >
                                 <span className="font-mono text-blue-700">{usage.file}</span>
