@@ -56,6 +56,12 @@ function cmpTuple(tupleA, tupleB) {
  * - Converts backslashes to forward slashes (Windows compatibility)
  * - Removes leading './' if present
  *
+ * NOTE: This function is available for future use when cross-platform path
+ * normalization is needed before sorting. Currently, the endpoint catalog
+ * sorting already produces deterministic results without explicit path
+ * normalization because all file operations use Node's path.join() which
+ * handles platform differences internally.
+ *
  * @param {string} p - Path to normalize
  * @returns {string} Normalized path
  */
