@@ -8,6 +8,8 @@ import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { SupportCaseList } from './SupportCaseList'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PatientSupportPage() {
   const supabase = await createServerSupabaseClient()
 
