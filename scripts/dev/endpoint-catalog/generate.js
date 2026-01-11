@@ -37,18 +37,26 @@ function parseArgs(argv) {
 
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i]
-    if (a === '--repo-root') args.repoRoot = argv[++i]
-    else if (a === '--out-dir') args.outDir = argv[++i]
-    else if (a === '--allowlist') {
+    if (a === '--repo-root') {
+      if (i + 1 < argv.length) {
+        args.repoRoot = argv[++i]
+      }
+    } else if (a === '--out-dir') {
+      if (i + 1 < argv.length) {
+        args.outDir = argv[++i]
+      }
+    } else if (a === '--allowlist') {
       allowlistRequested = true
-      const next = argv[i + 1]
+      const next = i + 1 < argv.length ? argv[i + 1] : undefined
       if (next && !String(next).startsWith('-')) {
         allowlistExplicitPath = next
         i += 1
       }
+    } else if (a === '--no-fail-unknown') {
+      args.failOnUnknown = false
+    } else if (a === '--no-fail-orphan') {
+      args.failOnOrphan = false
     }
-    else if (a === '--no-fail-unknown') args.failOnUnknown = false
-    else if (a === '--no-fail-orphan') args.failOnOrphan = false
   }
 
   if (allowlistRequested) {
@@ -324,6 +332,14 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 
 async function main() {
   const args = parseArgs(process.argv)
+
+  // Log allowlist status
+  if (args.allowlistPath) {
+    console.log(`Allowlist: enabled (${args.allowlistPath})`)
+  } else {
+    console.log('Allowlist: disabled')
+  }
+
   const res = await generateCatalog(args)
 
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'ENDPOINT_CATALOG.md'))}`)
