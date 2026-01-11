@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 
 type UsedByEntry = {
@@ -29,6 +29,16 @@ type EndpointCatalog = {
 
 function uniq<T>(items: T[]) {
   return Array.from(new Set(items))
+}
+
+function getRoleBadgeClass(role: string): string {
+  const roleColors: Record<string, string> = {
+    unknown: 'bg-yellow-100 text-yellow-800',
+    admin: 'bg-purple-100 text-purple-800',
+    clinician: 'bg-blue-100 text-blue-800',
+    patient: 'bg-green-100 text-green-800',
+  }
+  return roleColors[role] || 'bg-slate-100 text-slate-800'
 }
 
 export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCatalog }) {
@@ -186,10 +196,11 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
             {rows.map((e) => {
               const isExpanded = expandedRows.has(e.path)
               const hasUsedBy = e.usedBy && e.usedBy.length > 0
+              const roleBadgeClass = getRoleBadgeClass(e.accessRole)
 
               return (
-                <>
-                  <tr key={e.path} className="border-t border-slate-100 hover:bg-slate-50">
+                <React.Fragment key={e.path}>
+                  <tr className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="px-3 py-2">
                       {hasUsedBy && (
                         <button
@@ -209,17 +220,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                     <td className="px-3 py-2 text-slate-700">{e.methods.join(', ') || '—'}</td>
                     <td className="px-3 py-2">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          e.accessRole === 'unknown'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : e.accessRole === 'admin'
-                              ? 'bg-purple-100 text-purple-800'
-                              : e.accessRole === 'clinician'
-                                ? 'bg-blue-100 text-blue-800'
-                                : e.accessRole === 'patient'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-slate-100 text-slate-800'
-                        }`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${roleBadgeClass}`}
                       >
                         {e.accessRole}
                       </span>
@@ -237,7 +238,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                     </td>
                   </tr>
                   {isExpanded && hasUsedBy && (
-                    <tr key={`${e.path}-details`} className="border-t border-slate-100 bg-slate-50">
+                    <tr className="border-t border-slate-100 bg-slate-50">
                       <td colSpan={6} className="px-3 py-3">
                         <div className="ml-8">
                           <div className="text-xs font-semibold text-slate-700 mb-2">
@@ -265,7 +266,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               )
             })}
           </tbody>
