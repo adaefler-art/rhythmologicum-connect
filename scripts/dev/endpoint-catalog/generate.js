@@ -16,12 +16,7 @@ const {
   normalizeRepoRelative,
 } = require('./core')
 
-function stableCompare(a, b) {
-  const sa = String(a)
-  const sb = String(b)
-  if (sa === sb) return 0
-  return sa < sb ? -1 : 1
-}
+const { cmpStr, cmpTuple } = require('./sort-utils')
 
 function parseArgs(argv) {
   const args = {
@@ -72,7 +67,7 @@ async function listFilesRec(rootDir) {
   const out = []
   async function walk(dir) {
     const entries = await fsp.readdir(dir, { withFileTypes: true })
-    entries.sort((a, b) => stableCompare(a.name, b.name))
+    entries.sort((a, b) => cmpStr(a.name, b.name))
     for (const e of entries) {
       const full = path.join(dir, e.name)
       if (e.isDirectory()) {
@@ -91,7 +86,7 @@ async function findRouteFiles(appApiDir) {
   const files = await listFilesRec(appApiDir)
   return files
     .filter((f) => f.endsWith(`${path.sep}route.ts`))
-    .sort(stableCompare)
+    .sort(cmpStr)
 }
 
 async function readAllowlist(allowlistPath) {
@@ -161,7 +156,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     })
   }
 
-  const routePatterns = endpoints.map((e) => e.path).sort(stableCompare)
+  const routePatterns = endpoints.map((e) => e.path).sort(cmpStr)
 
   // Scan callsites in app/** and lib/**
   const callsites = []
@@ -173,7 +168,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     const all = await listFilesRec(root)
     const files = all
       .filter((f) => allowedExt.has(path.extname(f)))
-      .sort(stableCompare)
+      .sort(cmpStr)
 
     for (const f of files) {
       const source = await fsp.readFile(f, 'utf8')
@@ -193,12 +188,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     }
   }
 
-  callsites.sort((a, b) => {
-    const fa = `${a.file}:${a.line}`
-    const fb = `${b.file}:${b.line}`
-    if (fa !== fb) return stableCompare(fa, fb)
-    return stableCompare(a.apiPath, b.apiPath)
-  })
+  callsites.sort((a, b) => cmpTuple([a.file, a.line, a.apiPath], [b.file, b.line, b.apiPath]))
 
   const unknownCallsites = []
   const endpointByPath = new Map(endpoints.map((e) => [e.path, e]))
@@ -216,12 +206,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   }
 
   for (const ep of endpoints) {
-    ep.usedBy.sort((a, b) => {
-      const fa = `${a.file}:${a.line}`
-      const fb = `${b.file}:${b.line}`
-      if (fa !== fb) return stableCompare(fa, fb)
-      return stableCompare(a.apiPath, b.apiPath)
-    })
+    ep.usedBy.sort((a, b) => cmpTuple([a.file, a.line, a.apiPath], [b.file, b.line, b.apiPath]))
   }
 
   const orphanEndpoints = endpoints.filter(
@@ -232,7 +217,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     version: 'v0.6',
     endpoints: endpoints
       .slice()
-      .sort((a, b) => stableCompare(a.path, b.path))
+      .sort((a, b) => cmpStr(a.path, b.path))
       .map((e) => ({
         path: e.path,
         methods: e.methods,
@@ -282,7 +267,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   if (!orphanEndpoints.length) {
     orphanLines.push('- (none)')
   } else {
-    const sorted = orphanEndpoints.slice().sort((a, b) => stableCompare(a.path, b.path))
+    const sorted = orphanEndpoints.slice().sort((a, b) => cmpStr(a.path, b.path))
     for (const e of sorted) {
       const methods = e.methods.length ? e.methods.join(', ') : '(none)'
       orphanLines.push(`- ${e.path} [${methods}] (${e.file})${e.intent ? ` intent=${e.intent}` : ''}`)
