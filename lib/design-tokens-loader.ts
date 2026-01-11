@@ -7,7 +7,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import designTokens from './design-tokens'
+import designTokens from './design/tokens'
 
 /**
  * Deep merge function for combining default tokens with overrides
