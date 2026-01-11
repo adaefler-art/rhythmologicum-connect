@@ -1,0 +1,27 @@
+{
+  "riskBundleVersion": "v1",
+  "assessmentId": "123e4567-e89b-12d3-a456-426614174000",
+  "jobId": "223e4567-e89b-12d3-a456-426614174000",
+  "algorithmVersion": "v1.0.0",
+  "calculatedAt": "2026-01-03T21:00:00.000Z",
+  "riskScore": {
+    "overall": 75,
+    "riskLevel": "high",
+    "factors": [
+      {
+        "key": "stress",
+        "score": 80,
+        "label": "Stress",
+        "weight": 0.6,
+        "riskLevel": "high"
+      },
+      {
+        "key": "sleep",
+        "score": 65,
+        "label": "Sleep",
+        "weight": 0.4,
+        "riskLevel": "moderate"
+      }
+    ]
+  }
+}

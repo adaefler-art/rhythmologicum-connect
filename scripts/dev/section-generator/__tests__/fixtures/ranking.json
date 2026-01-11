@@ -1,0 +1,37 @@
+{
+  "rankingVersion": "v1",
+  "algorithmVersion": "v1.0.0",
+  "rankedAt": "2026-01-03T21:00:00.000Z",
+  "riskBundleId": "123e4567-e89b-12d3-a456-426614174000",
+  "jobId": "323e4567-e89b-12d3-a456-426614174000",
+  "topInterventions": [
+    {
+      "topic": {
+        "topicId": "stress-breathing-exercises",
+        "topicLabel": "Breathing Exercises",
+        "pillarKey": "mental-health",
+        "contentKey": "breathing-exercises"
+      },
+      "impactScore": {
+        "score": 85,
+        "signals": [
+          "high_impact_potential"
+        ],
+        "reasoning": "High impact"
+      },
+      "feasibilityScore": {
+        "score": 90,
+        "signals": [
+          "easy_to_implement"
+        ],
+        "reasoning": "Easy to implement"
+      },
+      "priorityScore": 76,
+      "rank": 1,
+      "tierCompatibility": [
+        "tier-1-essential"
+      ]
+    }
+  ],
+  "rankedInterventions": []
+}
