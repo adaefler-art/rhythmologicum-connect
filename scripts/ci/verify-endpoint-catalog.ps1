@@ -43,10 +43,10 @@ if (-not $SkipGitDiff) {
       Write-Host "❌ docs/api is out of date. Run:" -ForegroundColor Red
       Write-Host "  node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json" -ForegroundColor Yellow
       Write-Host "Then commit updated docs/api artifacts." -ForegroundColor Yellow
-      Write-Host "\nChanged files:" -ForegroundColor Red
+      Write-Host "`nChanged files:" -ForegroundColor Red
       $diff | ForEach-Object { Write-Host "- $_" -ForegroundColor Red }
 
-      Write-Host "\nDiff stat:" -ForegroundColor DarkGray
+      Write-Host "`nDiff stat:" -ForegroundColor DarkGray
       git diff --stat -- 'docs/api' | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
       exit 3
     }
