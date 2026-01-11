@@ -1,13 +1,7 @@
 const path = require('path')
+const { cmpStr } = require('./sort-utils')
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
-
-function stableCompare(a, b) {
-  const sa = String(a)
-  const sb = String(b)
-  if (sa === sb) return 0
-  return sa < sb ? -1 : 1
-}
 
 function normalizeSlashes(p) {
   return p.replace(/\\/g, '/')
@@ -37,7 +31,7 @@ function extractRouteMethods(sourceText) {
   while ((m = re.exec(sourceText))) {
     methods.add(String(m[1]).toUpperCase())
   }
-  return Array.from(methods).sort(stableCompare)
+  return Array.from(methods).sort(cmpStr)
 }
 
 function extractEndpointIntent(sourceText) {
