@@ -20,18 +20,34 @@ function parseArgs(argv) {
   const args = {
     repoRoot: process.cwd(),
     outDir: path.join(process.cwd(), 'docs', 'dev'),
-    allowlistPath: path.join(process.cwd(), 'docs', 'dev', 'endpoint-allowlist.json'),
+    allowlistPath: undefined,
     failOnUnknown: true,
     failOnOrphan: true,
   }
+
+  let allowlistRequested = false
+  let allowlistExplicitPath = null
 
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i]
     if (a === '--repo-root') args.repoRoot = argv[++i]
     else if (a === '--out-dir') args.outDir = argv[++i]
-    else if (a === '--allowlist') args.allowlistPath = argv[++i]
+    else if (a === '--allowlist') {
+      allowlistRequested = true
+      const next = argv[i + 1]
+      if (next && !String(next).startsWith('-')) {
+        allowlistExplicitPath = next
+        i += 1
+      }
+    }
     else if (a === '--no-fail-unknown') args.failOnUnknown = false
     else if (a === '--no-fail-orphan') args.failOnOrphan = false
+  }
+
+  if (allowlistRequested) {
+    args.allowlistPath = allowlistExplicitPath
+      ? allowlistExplicitPath
+      : path.join(args.outDir, 'endpoint-allowlist.json')
   }
 
   return args
@@ -63,6 +79,10 @@ async function findRouteFiles(appApiDir) {
 }
 
 async function readAllowlist(allowlistPath) {
+  if (!allowlistPath) {
+    return { allowedOrphans: new Set(), allowedIntents: new Set() }
+  }
+
   try {
     const raw = await fsp.readFile(allowlistPath, 'utf8')
     const json = JSON.parse(raw)
