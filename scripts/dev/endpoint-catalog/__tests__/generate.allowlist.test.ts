@@ -19,14 +19,34 @@ function runGenerator(args: string[]) {
 describe('endpoint-catalog generator allowlist flag', () => {
   const fixtureRepoRoot = path.join(__dirname, 'fixtures', 'simple-repo')
 
+  function snapshotOutputs(outDir: string) {
+    return {
+      json: fs.readFileSync(path.join(outDir, 'endpoint-catalog.json'), 'utf8'),
+      mdCatalog: fs.readFileSync(path.join(outDir, 'ENDPOINT_CATALOG.md'), 'utf8'),
+      mdOrphans: fs.readFileSync(path.join(outDir, 'ORPHAN_ENDPOINTS.md'), 'utf8'),
+      mdUnknown: fs.readFileSync(path.join(outDir, 'UNKNOWN_CALLSITES.md'), 'utf8'),
+    }
+  }
+
   it('supports --allowlist with no value (defaults to outDir/endpoint-allowlist.json)', () => {
     const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
 
-    const res = runGenerator(['--repo-root', fixtureRepoRoot, '--out-dir', outDir, '--allowlist'])
-    expect(res.status).toBe(0)
+    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir, '--allowlist']
 
+    const res1 = runGenerator(args)
+    expect(res1.status).toBe(0)
+
+    expect(fs.existsSync(path.join(outDir, 'endpoint-allowlist.json'))).toBe(true)
     expect(fs.existsSync(path.join(outDir, 'endpoint-catalog.json'))).toBe(true)
     expect(fs.existsSync(path.join(outDir, 'ENDPOINT_CATALOG.md'))).toBe(true)
+
+    const snap1 = snapshotOutputs(outDir)
+
+    const res2 = runGenerator(args)
+    expect(res2.status).toBe(0)
+
+    const snap2 = snapshotOutputs(outDir)
+    expect(snap2).toEqual(snap1)
   })
 
   it('supports --allowlist with explicit path', () => {
@@ -39,17 +59,26 @@ describe('endpoint-catalog generator allowlist flag', () => {
       'utf8',
     )
 
-    const res = runGenerator([
+    const args = [
       '--repo-root',
       fixtureRepoRoot,
       '--out-dir',
       outDir,
       '--allowlist',
       allowlistPath,
-    ])
+    ]
 
-    expect(res.status).toBe(0)
+    const res1 = runGenerator(args)
+    expect(res1.status).toBe(0)
     expect(fs.existsSync(path.join(outDir, 'endpoint-catalog.json'))).toBe(true)
     expect(fs.existsSync(path.join(outDir, 'ENDPOINT_CATALOG.md'))).toBe(true)
+
+    const snap1 = snapshotOutputs(outDir)
+
+    const res2 = runGenerator(args)
+    expect(res2.status).toBe(0)
+
+    const snap2 = snapshotOutputs(outDir)
+    expect(snap2).toEqual(snap1)
   })
 })
