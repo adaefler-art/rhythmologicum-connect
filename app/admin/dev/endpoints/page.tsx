@@ -16,6 +16,12 @@ type EndpointCatalog = {
     intent: string | null
     accessRole: string
     usedByCount: number
+    usedBy: Array<{
+      file: string
+      line: number
+      apiPath: string
+      kind: string
+    }>
     isOrphan: boolean
     isAllowedOrphan: boolean
   }>
