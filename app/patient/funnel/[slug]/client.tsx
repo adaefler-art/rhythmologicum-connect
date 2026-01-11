@@ -231,6 +231,14 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           throw new Error('Funnel konnte nicht geladen werden.')
         }
         const data: FunnelDefinition = await response.json()
+
+        // V0.5 wiring: If funnel exists but has no questionnaire steps, treat as "coming soon"
+        // without depending on 404 semantics.
+        if (!data.steps || data.steps.length === 0) {
+          setError('not_available')
+          setLoading(false)
+          return
+        }
         setFunnel(data)
       } catch (err) {
         console.error('Error loading funnel:', err)

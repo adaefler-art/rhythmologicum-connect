@@ -64,6 +64,7 @@ async function listFilesRec(rootDir) {
   const out = []
   async function walk(dir) {
     const entries = await fsp.readdir(dir, { withFileTypes: true })
+    entries.sort((a, b) => stableCompare(a.name, b.name))
     for (const e of entries) {
       const full = path.join(dir, e.name)
       if (e.isDirectory()) {
