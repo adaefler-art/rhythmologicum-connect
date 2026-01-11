@@ -16,6 +16,13 @@ const {
   normalizeRepoRelative,
 } = require('./core')
 
+function stableCompare(a, b) {
+  const sa = String(a)
+  const sb = String(b)
+  if (sa === sb) return 0
+  return sa < sb ? -1 : 1
+}
+
 function parseArgs(argv) {
   const args = {
     repoRoot: process.cwd(),
@@ -75,7 +82,7 @@ async function findRouteFiles(appApiDir) {
   const files = await listFilesRec(appApiDir)
   return files
     .filter((f) => f.endsWith(`${path.sep}route.ts`))
-    .sort((a, b) => a.localeCompare(b))
+    .sort(stableCompare)
 }
 
 async function readAllowlist(allowlistPath) {
@@ -145,7 +152,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     })
   }
 
-  const routePatterns = endpoints.map((e) => e.path).sort((a, b) => a.localeCompare(b))
+  const routePatterns = endpoints.map((e) => e.path).sort(stableCompare)
 
   // Scan callsites in app/** and lib/**
   const callsites = []
@@ -157,7 +164,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     const all = await listFilesRec(root)
     const files = all
       .filter((f) => allowedExt.has(path.extname(f)))
-      .sort((a, b) => a.localeCompare(b))
+      .sort(stableCompare)
 
     for (const f of files) {
       const source = await fsp.readFile(f, 'utf8')
@@ -180,8 +187,8 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   callsites.sort((a, b) => {
     const fa = `${a.file}:${a.line}`
     const fb = `${b.file}:${b.line}`
-    if (fa !== fb) return fa.localeCompare(fb)
-    return a.apiPath.localeCompare(b.apiPath)
+    if (fa !== fb) return stableCompare(fa, fb)
+    return stableCompare(a.apiPath, b.apiPath)
   })
 
   const unknownCallsites = []
@@ -203,8 +210,8 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     ep.usedBy.sort((a, b) => {
       const fa = `${a.file}:${a.line}`
       const fb = `${b.file}:${b.line}`
-      if (fa !== fb) return fa.localeCompare(fb)
-      return a.apiPath.localeCompare(b.apiPath)
+      if (fa !== fb) return stableCompare(fa, fb)
+      return stableCompare(a.apiPath, b.apiPath)
     })
   }
 
@@ -216,7 +223,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     version: 'v0.6',
     endpoints: endpoints
       .slice()
-      .sort((a, b) => a.path.localeCompare(b.path))
+      .sort((a, b) => stableCompare(a.path, b.path))
       .map((e) => ({
         path: e.path,
         methods: e.methods,
@@ -266,7 +273,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   if (!orphanEndpoints.length) {
     orphanLines.push('- (none)')
   } else {
-    const sorted = orphanEndpoints.slice().sort((a, b) => a.path.localeCompare(b.path))
+    const sorted = orphanEndpoints.slice().sort((a, b) => stableCompare(a.path, b.path))
     for (const e of sorted) {
       const methods = e.methods.length ? e.methods.join(', ') : '(none)'
       orphanLines.push(`- ${e.path} [${methods}] (${e.file})${e.intent ? ` intent=${e.intent}` : ''}`)
