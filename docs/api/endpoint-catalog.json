@@ -1001,7 +1001,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 337,
+          "line": 345,
           "apiPath": "/api/funnels/${slug}/assessments",
           "kind": "fetch"
         }
@@ -1065,7 +1065,7 @@
         },
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 385,
+          "line": 393,
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/answers/save",
           "kind": "fetch"
         }
@@ -1085,7 +1085,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 435,
+          "line": 443,
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/complete",
           "kind": "fetch"
         }
@@ -1143,7 +1143,7 @@
         },
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 494,
+          "line": 502,
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}",
           "kind": "fetch"
         }
@@ -1163,7 +1163,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 251,
+          "line": 259,
           "apiPath": "/api/funnels/${slug}/content-pages",
           "kind": "fetch"
         },
@@ -1185,8 +1185,20 @@
       "file": "app/api/funnels/[slug]/definition/route.ts",
       "intent": null,
       "accessRole": "unknown",
-      "usedByCount": 3,
+      "usedByCount": 5,
       "usedBy": [
+        {
+          "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "line": 157,
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "line": 189,
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
+        },
         {
           "file": "app/patient/funnel/[slug]/client.tsx",
           "line": 221,

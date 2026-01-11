@@ -26,7 +26,7 @@ function stableCompare(a, b) {
 function parseArgs(argv) {
   const args = {
     repoRoot: process.cwd(),
-    outDir: path.join(process.cwd(), 'docs', 'dev'),
+    outDir: path.join(process.cwd(), 'docs', 'api'),
     allowlistPath: undefined,
     failOnUnknown: true,
     failOnOrphan: true,

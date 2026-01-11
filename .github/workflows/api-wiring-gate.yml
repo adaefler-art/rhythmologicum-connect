@@ -8,7 +8,7 @@ on:
       - 'lib/**'
       - 'scripts/dev/endpoint-catalog/**'
       - 'scripts/ci/verify-endpoint-catalog.ps1'
-      - 'docs/dev/endpoint-allowlist.json'
+      - 'docs/api/endpoint-allowlist.json'
       - 'package.json'
       - 'jest.config.js'
   push:
@@ -18,7 +18,7 @@ on:
       - 'lib/**'
       - 'scripts/dev/endpoint-catalog/**'
       - 'scripts/ci/verify-endpoint-catalog.ps1'
-      - 'docs/dev/endpoint-allowlist.json'
+      - 'docs/api/endpoint-allowlist.json'
       - 'package.json'
       - 'jest.config.js'
 

@@ -19,7 +19,7 @@
     "db:verify-sync": "pwsh -File scripts/verify-migration-sync.ps1",
     "db:access-audit": "node scripts/db/audit-db-access.js",
     "db:access-verify": "node scripts/db/verify-db-access.js",
-    "api:catalog": "node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/dev --allowlist docs/dev/endpoint-allowlist.json",
+    "api:catalog": "node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json",
     "api:catalog:verify": "pwsh -File scripts/ci/verify-endpoint-catalog.ps1",
     "test": "jest",
     "test:watch": "jest --watch",

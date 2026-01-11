@@ -12,10 +12,10 @@ if (-not $RepoRoot) {
   $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..') | Select-Object -First 1).Path
 }
 if (-not $OutDir) {
-  $OutDir = Join-Path $RepoRoot 'docs\dev'
+  $OutDir = Join-Path $RepoRoot 'docs\api'
 }
 if (-not $Allowlist) {
-  $Allowlist = Join-Path $RepoRoot 'docs\dev\endpoint-allowlist.json'
+  $Allowlist = Join-Path $RepoRoot 'docs\api\endpoint-allowlist.json'
 }
 
 $generator = Join-Path $RepoRoot 'scripts\dev\endpoint-catalog\generate.js'
@@ -38,16 +38,16 @@ if (-not $SkipGitDiff) {
       Write-Host ("Git: {0}@{1}" -f $branch.Trim(), $sha.Trim()) -ForegroundColor DarkGray
     }
 
-    $diff = git diff --name-only -- 'docs/dev'
+    $diff = git diff --name-only -- 'docs/api'
     if ($diff) {
-      Write-Host "❌ docs/dev is out of date. Run:" -ForegroundColor Red
-      Write-Host "  node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/dev --allowlist docs/dev/endpoint-allowlist.json" -ForegroundColor Yellow
-      Write-Host "Then commit updated docs/dev artifacts." -ForegroundColor Yellow
+      Write-Host "❌ docs/api is out of date. Run:" -ForegroundColor Red
+      Write-Host "  node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json" -ForegroundColor Yellow
+      Write-Host "Then commit updated docs/api artifacts." -ForegroundColor Yellow
       Write-Host "\nChanged files:" -ForegroundColor Red
       $diff | ForEach-Object { Write-Host "- $_" -ForegroundColor Red }
 
       Write-Host "\nDiff stat:" -ForegroundColor DarkGray
-      git diff --stat -- 'docs/dev' | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
+      git diff --stat -- 'docs/api' | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
       exit 3
     }
   } finally {

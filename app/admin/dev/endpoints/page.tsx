@@ -23,7 +23,7 @@ type EndpointCatalog = {
 
 async function loadCatalog(): Promise<EndpointCatalog | null> {
   try {
-    const catalogPath = path.join(process.cwd(), 'docs', 'dev', 'endpoint-catalog.json')
+    const catalogPath = path.join(process.cwd(), 'docs', 'api', 'endpoint-catalog.json')
     const raw = await fs.readFile(catalogPath, 'utf8')
     return JSON.parse(raw) as EndpointCatalog
   } catch {
@@ -55,8 +55,8 @@ export default async function DevEndpointsPage() {
           Catalog file not found. Generate it via:
         </p>
         <pre className="text-xs bg-slate-50 border border-slate-200 rounded p-3 overflow-x-auto">
-          node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/dev --allowlist
-          docs/dev/endpoint-allowlist.json
+          node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist
+          docs/api/endpoint-allowlist.json
         </pre>
       </div>
     )
