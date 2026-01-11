@@ -11,6 +11,7 @@ function parseArgs(argv) {
     allowlistPath: undefined,
     method: 'template',
     sectionKeys: undefined,
+    fixedTimestamp: undefined,
   }
 
   let allowlistRequested = false
@@ -37,6 +38,10 @@ function parseArgs(argv) {
     } else if (a === '--sections') {
       if (i + 1 < argv.length) {
         args.sectionKeys = argv[++i].split(',')
+      }
+    } else if (a === '--timestamp') {
+      if (i + 1 < argv.length) {
+        args.fixedTimestamp = argv[++i]
       }
     } else if (a === '--allowlist') {
       allowlistRequested = true
@@ -93,6 +98,7 @@ async function generateSectionsSync(context, options) {
   // This is a simplified version for CLI testing
   const sectionKeys = options.sectionKeys || ['overview', 'risk-summary']
   const sections = []
+  const timestamp = options.fixedTimestamp || new Date().toISOString()
 
   for (const key of sectionKeys) {
     sections.push({
@@ -108,7 +114,7 @@ async function generateSectionsSync(context, options) {
       promptVersion: 'v1.0.0',
       modelConfig: undefined,
       generationMethod: options.method || 'template',
-      generatedAt: new Date().toISOString(),
+      generatedAt: timestamp,
     })
   }
 
@@ -119,7 +125,7 @@ async function generateSectionsSync(context, options) {
     rankingId: context.ranking?.jobId,
     programTier: context.programTier,
     sections,
-    generatedAt: new Date().toISOString(),
+    generatedAt: timestamp,
     metadata: {
       generationTimeMs: 0,
       llmCallCount: 0,
@@ -186,7 +192,7 @@ function generateTemplateContent(context, sectionKey) {
   }
 }
 
-async function generate({ inputBundle, inputRanking, outFile, allowlistPath, method, sectionKeys }) {
+async function generate({ inputBundle, inputRanking, outFile, allowlistPath, method, sectionKeys, fixedTimestamp }) {
   if (!inputBundle) {
     throw new Error('Missing required argument: --bundle')
   }
@@ -214,7 +220,7 @@ async function generate({ inputBundle, inputRanking, outFile, allowlistPath, met
     : undefined
 
   const context = {
-    jobId: bundleData.jobId || 'cli-job-' + Date.now(),
+    jobId: bundleData.jobId || 'cli-generated',
     riskBundle: bundleData,
     ranking: rankingData,
     programTier: bundleData.programTier,
@@ -225,6 +231,7 @@ async function generate({ inputBundle, inputRanking, outFile, allowlistPath, met
   const options = {
     method: method || 'template',
     sectionKeys: sectionKeys || undefined,
+    fixedTimestamp: fixedTimestamp || undefined,
   }
 
   const result = await generateSectionsSync(context, options)

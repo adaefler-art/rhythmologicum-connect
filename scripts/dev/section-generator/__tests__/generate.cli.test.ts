@@ -173,6 +173,8 @@ describe('section-generator CLI integration tests', () => {
       const outDir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'section-generator-'))
       const outFile2 = path.join(outDir2, 'sections.json')
 
+      const fixedTimestamp = '2026-01-11T12:00:00.000Z'
+
       const args1 = [
         '--bundle',
         bundlePath,
@@ -180,6 +182,8 @@ describe('section-generator CLI integration tests', () => {
         outFile1,
         '--method',
         'template',
+        '--timestamp',
+        fixedTimestamp,
       ]
 
       const args2 = [
@@ -189,6 +193,8 @@ describe('section-generator CLI integration tests', () => {
         outFile2,
         '--method',
         'template',
+        '--timestamp',
+        fixedTimestamp,
       ]
 
       const res1 = runGenerator(args1)
@@ -200,14 +206,10 @@ describe('section-generator CLI integration tests', () => {
       const output1 = JSON.parse(fs.readFileSync(outFile1, 'utf8'))
       const output2 = JSON.parse(fs.readFileSync(outFile2, 'utf8'))
 
-      // Remove timestamp fields for comparison
-      delete output1.generatedAt
-      delete output2.generatedAt
-      output1.sections.forEach((s: any) => delete s.generatedAt)
-      output2.sections.forEach((s: any) => delete s.generatedAt)
-
-      // Outputs should be identical (deterministic)
+      // With fixed timestamp, outputs should be byte-for-byte identical
       expect(output1).toEqual(output2)
+      expect(output1.generatedAt).toBe(fixedTimestamp)
+      expect(output1.sections[0].generatedAt).toBe(fixedTimestamp)
     })
 
     it('produces deterministic factor ordering', () => {

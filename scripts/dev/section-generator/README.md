@@ -32,6 +32,9 @@ node scripts/dev/section-generator/generate.js \
   - `hybrid` - Hybrid approach
 - `--sections <keys>` - Comma-separated section keys to generate (default: all applicable)
   - Available: `overview`, `risk-summary`, `recommendations`, `top-interventions`
+- `--timestamp <iso-string>` - Fixed timestamp for deterministic output (default: current time)
+  - Example: `2026-01-11T12:00:00.000Z`
+  - Useful for testing and reproducible builds
 - `--allowlist [path]` - Enable allowlist mode
   - Without value: Creates/uses `<outDir>/generator-allowlist.json`
   - With value: Uses specified path
@@ -65,6 +68,16 @@ node scripts/dev/section-generator/generate.js \
   --bundle fixtures/risk-bundle.json \
   --out output/sections.json \
   --sections overview,risk-summary
+```
+
+### Deterministic Output
+
+```bash
+# Generate with fixed timestamp for reproducible output
+node scripts/dev/section-generator/generate.js \
+  --bundle fixtures/risk-bundle.json \
+  --out output/sections.json \
+  --timestamp "2026-01-11T12:00:00.000Z"
 ```
 
 ### With Allowlist
@@ -161,14 +174,16 @@ The generator ensures deterministic output by:
 
 1. **Sorting factors** by score (descending), then key (ascending) for tie-breaking
 2. **Sorting interventions** by priority score (descending), then topicId (ascending) for tie-breaking
-3. **Consistent timestamp handling** in tests (timestamps excluded from comparison)
-4. **Stable JSON serialization** with consistent formatting
+3. **Fixed timestamps** via `--timestamp` flag for reproducible builds
+4. **Stable jobId** defaults to `"cli-generated"` instead of time-based value
+5. **Stable JSON serialization** with consistent formatting
 
-This ensures the same input always produces the same output, making the tool suitable for:
+When using `--timestamp`, the same input always produces **byte-for-byte identical output**, making the tool suitable for:
 - Regression testing
 - CI/CD pipelines
 - Snapshot comparisons
 - Cache validation
+- Deterministic builds
 
 ## Development
 
