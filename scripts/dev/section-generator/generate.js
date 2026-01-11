@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-
-const fs = require('fs')
 const fsp = require('fs/promises')
 const path = require('path')
 
@@ -206,6 +203,10 @@ async function generate({ inputBundle, inputRanking, outFile, allowlistPath, met
   } else {
     console.log('Allowlist: disabled')
   }
+
+  // Note: allowlist is loaded for future filtering functionality
+  // Currently sections are generated without filtering
+  void allowlist
 
   const bundleData = JSON.parse(await fsp.readFile(inputBundle, 'utf8'))
   const rankingData = inputRanking
