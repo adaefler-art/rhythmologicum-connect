@@ -32,6 +32,12 @@ if ($LASTEXITCODE -ne 0) {
 if (-not $SkipGitDiff) {
   Push-Location $RepoRoot
   try {
+    $branch = (git rev-parse --abbrev-ref HEAD 2>$null)
+    $sha = (git rev-parse --short HEAD 2>$null)
+    if ($branch -and $sha) {
+      Write-Host ("Git: {0}@{1}" -f $branch.Trim(), $sha.Trim()) -ForegroundColor DarkGray
+    }
+
     $diff = git diff --name-only -- 'docs/dev'
     if ($diff) {
       Write-Host "❌ docs/dev is out of date. Run:" -ForegroundColor Red
@@ -39,6 +45,9 @@ if (-not $SkipGitDiff) {
       Write-Host "Then commit updated docs/dev artifacts." -ForegroundColor Yellow
       Write-Host "\nChanged files:" -ForegroundColor Red
       $diff | ForEach-Object { Write-Host "- $_" -ForegroundColor Red }
+
+      Write-Host "\nDiff stat:" -ForegroundColor DarkGray
+      git diff --stat -- 'docs/dev' | ForEach-Object { Write-Host $_ -ForegroundColor DarkGray }
       exit 3
     }
   } finally {

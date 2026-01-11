@@ -102,6 +102,16 @@ async function readAllowlist(allowlistPath) {
     }
   } catch (e) {
     if (e && e.code === 'ENOENT') {
+      try {
+        await fsp.mkdir(path.dirname(allowlistPath), { recursive: true })
+        await fsp.writeFile(
+          allowlistPath,
+          `${JSON.stringify({ allowedOrphans: [], allowedIntents: [] }, null, 2)}\n`,
+          'utf8',
+        )
+      } catch {
+        // If we can't create it (permissions, etc), still treat as empty.
+      }
       return { allowedOrphans: new Set(), allowedIntents: new Set() }
     }
     throw e
