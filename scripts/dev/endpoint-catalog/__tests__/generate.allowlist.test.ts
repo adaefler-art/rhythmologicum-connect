@@ -81,4 +81,79 @@ describe('endpoint-catalog generator allowlist flag', () => {
     const snap2 = snapshotOutputs(outDir)
     expect(snap2).toEqual(snap1)
   })
+
+  it('works without --allowlist flag (disabled)', () => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
+
+    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir]
+
+    const res = runGenerator(args)
+    expect(res.status).toBe(0)
+    expect(res.stdout).toContain('Allowlist: disabled')
+
+    // Allowlist file should not exist when disabled
+    expect(fs.existsSync(path.join(outDir, 'endpoint-allowlist.json'))).toBe(false)
+    expect(fs.existsSync(path.join(outDir, 'endpoint-catalog.json'))).toBe(true)
+  })
+
+  it('handles --allowlist at end of args (no next argument)', () => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
+
+    const args = [
+      '--repo-root',
+      fixtureRepoRoot,
+      '--out-dir',
+      outDir,
+      '--no-fail-unknown',
+      '--allowlist',
+    ]
+
+    const res = runGenerator(args)
+    expect(res.status).toBe(0)
+    expect(res.stdout).toContain('Allowlist: enabled')
+    expect(fs.existsSync(path.join(outDir, 'endpoint-allowlist.json'))).toBe(true)
+  })
+
+  it('handles --allowlist followed by another flag', () => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
+
+    const args = [
+      '--repo-root',
+      fixtureRepoRoot,
+      '--out-dir',
+      outDir,
+      '--allowlist',
+      '--no-fail-orphan',
+    ]
+
+    const res = runGenerator(args)
+    expect(res.status).toBe(0)
+    expect(res.stdout).toContain('Allowlist: enabled')
+    expect(fs.existsSync(path.join(outDir, 'endpoint-allowlist.json'))).toBe(true)
+  })
+
+  it('creates stub allowlist file when missing', () => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
+    const customAllowlist = path.join(outDir, 'custom-allowlist.json')
+
+    const args = [
+      '--repo-root',
+      fixtureRepoRoot,
+      '--out-dir',
+      outDir,
+      '--allowlist',
+      customAllowlist,
+    ]
+
+    // File doesn't exist yet
+    expect(fs.existsSync(customAllowlist)).toBe(false)
+
+    const res = runGenerator(args)
+    expect(res.status).toBe(0)
+
+    // Stub file should be created
+    expect(fs.existsSync(customAllowlist)).toBe(true)
+    const content = JSON.parse(fs.readFileSync(customAllowlist, 'utf8'))
+    expect(content).toEqual({ allowedOrphans: [], allowedIntents: [] })
+  })
 })
