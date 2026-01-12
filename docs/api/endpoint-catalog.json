@@ -955,7 +955,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/intro/client.tsx",
-          "line": 81,
+          "line": 82,
           "apiPath": "/api/content/resolve",
           "kind": "fetch"
         }
@@ -1220,7 +1220,7 @@
         },
         {
           "file": "app/patient/funnel/[slug]/intro/client.tsx",
-          "line": 54,
+          "line": 55,
           "apiPath": "/api/funnels/${funnelSlug}/definition",
           "kind": "fetch"
         },
@@ -1326,7 +1326,7 @@
         },
         {
           "file": "app/patient/funnels/client.tsx",
-          "line": 30,
+          "line": 31,
           "apiPath": "/api/funnels/catalog",
           "kind": "fetch"
         }
