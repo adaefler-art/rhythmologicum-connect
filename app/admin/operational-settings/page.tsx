@@ -6,7 +6,9 @@ import { Button } from '@/lib/ui/Button'
 import { LoadingSpinner } from '@/lib/ui/LoadingSpinner'
 import { ErrorState } from '@/lib/ui/ErrorState'
 import { Badge } from '@/lib/ui/Badge'
+import { PageHeader } from '@/lib/ui/PageHeader'
 import { Eye, EyeOff, Clock, Target, Bell, Edit2 } from 'lucide-react'
+import { spacing } from '@/lib/design-tokens'
 
 type Tab = 'templates' | 'rules' | 'thresholds' | 'audit'
 
@@ -210,22 +212,20 @@ export default function OperationalSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Betriebseinstellungen</h1>
-        <p className="text-neutral-600">
-          Verwaltung von Benachrichtigungsvorlagen, Nachuntersuchungsregeln und KPI-Schwellenwerten
-        </p>
-      </div>
+    <div className="w-full">
+      <PageHeader
+        title="Betriebseinstellungen"
+        description="Verwaltung von Benachrichtigungsvorlagen, Nachuntersuchungsregeln und KPI-Schwellenwerten"
+      />
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-neutral-200">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700" style={{ marginBottom: spacing.lg }}>
         <button
           onClick={() => setActiveTab('templates')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 ${
             activeTab === 'templates'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-neutral-600 hover:text-neutral-900'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Bell className="inline-block w-4 h-4 mr-2" />
@@ -235,8 +235,8 @@ export default function OperationalSettingsPage() {
           onClick={() => setActiveTab('rules')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 ${
             activeTab === 'rules'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-neutral-600 hover:text-neutral-900'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Clock className="inline-block w-4 h-4 mr-2" />
@@ -246,8 +246,8 @@ export default function OperationalSettingsPage() {
           onClick={() => setActiveTab('thresholds')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 ${
             activeTab === 'thresholds'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-neutral-600 hover:text-neutral-900'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Target className="inline-block w-4 h-4 mr-2" />
@@ -257,8 +257,8 @@ export default function OperationalSettingsPage() {
           onClick={() => setActiveTab('audit')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 ${
             activeTab === 'audit'
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-neutral-600 hover:text-neutral-900'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           <Edit2 className="inline-block w-4 h-4 mr-2" />

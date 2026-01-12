@@ -11,7 +11,10 @@ import {
   Select,
   FormField,
   Table,
+  PageHeader,
+  SectionHeader,
 } from '@/lib/ui'
+import { spacing } from '@/lib/design-tokens'
 
 /**
  * Design System Showcase Page
@@ -67,25 +70,23 @@ export default function DesignSystemPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Header */}
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Design System v0.4</h1>
-          <p className="text-lg text-slate-600">
-            Comprehensive showcase of UI components and design tokens
-          </p>
-        </div>
+    <main className="w-full">
+      <div className="space-y-12" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Page Header */}
+        <PageHeader
+          title="Design System v0.4"
+          description="Comprehensive showcase of UI components and design tokens"
+        />
 
         {/* Buttons Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Buttons</h2>
+            <SectionHeader title="Buttons" />
 
             <div className="space-y-6">
               {/* Button Variants */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-4">Variants</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">Variants</h3>
                 <div className="flex flex-wrap gap-3">
                   <Button variant="primary">Primary</Button>
                   <Button variant="secondary">Secondary</Button>
@@ -97,7 +98,7 @@ export default function DesignSystemPage() {
 
               {/* Button Sizes */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-4">Sizes</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">Sizes</h3>
                 <div className="flex items-center flex-wrap gap-3">
                   <Button variant="primary" size="sm">
                     Small
@@ -113,7 +114,7 @@ export default function DesignSystemPage() {
 
               {/* Button States */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-4">States</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">States</h3>
                 <div className="flex flex-wrap gap-3">
                   <Button variant="primary" loading>
                     Loading
@@ -129,7 +130,7 @@ export default function DesignSystemPage() {
 
               {/* Button with Icon */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-4">With Icon</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">With Icon</h3>
                 <Button
                   variant="primary"
                   icon={
@@ -158,13 +159,13 @@ export default function DesignSystemPage() {
         {/* Cards Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Cards</h2>
+            <SectionHeader title="Cards" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Card */}
               <Card shadow="md">
                 <h3 className="text-lg font-semibold mb-2">Basic Card</h3>
-                <p className="text-slate-600">
+                <p className="text-slate-600 dark:text-slate-300">
                   This is a basic card with medium shadow and default padding.
                 </p>
               </Card>
@@ -174,7 +175,7 @@ export default function DesignSystemPage() {
                 header={<h3 className="text-lg font-semibold">Card with Header</h3>}
                 shadow="md"
               >
-                <p className="text-slate-600">Card content with a header section.</p>
+                <p className="text-slate-600 dark:text-slate-300">Card content with a header section.</p>
               </Card>
 
               {/* Card with Footer */}
@@ -192,13 +193,13 @@ export default function DesignSystemPage() {
                 }
                 shadow="md"
               >
-                <p className="text-slate-600">Card with both header and footer sections.</p>
+                <p className="text-slate-600 dark:text-slate-300">Card with both header and footer sections.</p>
               </Card>
 
               {/* Interactive Card */}
               <Card interactive onClick={() => alert('Card clicked!')} shadow="lg">
                 <h3 className="text-lg font-semibold mb-2">Interactive Card</h3>
-                <p className="text-slate-600">Click me! I have hover effects.</p>
+                <p className="text-slate-600 dark:text-slate-300">Click me! I have hover effects.</p>
               </Card>
             </div>
           </Card>
@@ -207,7 +208,7 @@ export default function DesignSystemPage() {
         {/* Form Components Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Form Components</h2>
+            <SectionHeader title="Form Components" />
 
             <div className="space-y-6">
               {/* Input */}
@@ -284,7 +285,7 @@ export default function DesignSystemPage() {
         {/* Table Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Table</h2>
+            <SectionHeader title="Table" />
 
             <Table
               columns={columns}
@@ -298,7 +299,7 @@ export default function DesignSystemPage() {
         {/* Alert Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Alerts</h2>
+            <SectionHeader title="Alerts" />
 
             <div className="space-y-4">
               {/* Info Alert */}
@@ -352,10 +353,10 @@ export default function DesignSystemPage() {
         {/* Modal Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Modal / Dialog</h2>
+            <SectionHeader title="Modal / Dialog" />
 
             <div className="space-y-4">
-              <p className="text-slate-600 mb-4">
+              <p className="text-slate-600 dark:text-slate-300 mb-4">
                 Modal component with accessibility features, focus management, and semantic tokens.
               </p>
 
@@ -386,10 +387,10 @@ export default function DesignSystemPage() {
                 }
               >
                 <div className="space-y-4">
-                  <p className="text-slate-700">
+                  <p className="text-slate-700 dark:text-slate-300">
                     This is a modal dialog built with semantic design tokens. It includes:
                   </p>
-                  <ul className="list-disc list-inside text-slate-600 space-y-2">
+                  <ul className="list-disc list-inside text-slate-600 dark:text-slate-400 space-y-2">
                     <li>Proper focus management and keyboard navigation</li>
                     <li>Backdrop click to close</li>
                     <li>Escape key support</li>
@@ -406,12 +407,12 @@ export default function DesignSystemPage() {
         {/* Color Palette Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Color Palette</h2>
+            <SectionHeader title="Color Palette" />
 
             <div className="space-y-6">
               {/* Primary Colors */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-3">Primary (Sky)</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">Primary (Sky)</h3>
                 <div className="grid grid-cols-5 gap-2">
                   {[50, 100, 200, 400, 500, 600, 700, 800, 900].map((shade) => (
                     <div key={shade} className="text-center">
@@ -427,7 +428,7 @@ export default function DesignSystemPage() {
 
               {/* Neutral Colors */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-3">Neutral (Slate)</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">Neutral (Slate)</h3>
                 <div className="grid grid-cols-5 gap-2">
                   {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
                     <div key={shade} className="text-center">
@@ -443,7 +444,7 @@ export default function DesignSystemPage() {
 
               {/* Semantic Colors */}
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 mb-3">Semantic</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">Semantic</h3>
                 <div className="grid grid-cols-4 gap-4">
                   <div className="text-center">
                     <div
@@ -482,36 +483,36 @@ export default function DesignSystemPage() {
         {/* Typography Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Typography</h2>
+            <SectionHeader title="Typography" />
 
             <div className="space-y-4">
               <div>
-                <h1 className="text-4xl font-bold text-slate-900">Heading 1 (4xl)</h1>
-                <p className="text-sm text-slate-500">font-size: 2.25rem (36px)</p>
+                <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-50">Heading 1 (4xl)</h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 2.25rem (36px)</p>
               </div>
               <div>
-                <h2 className="text-3xl font-bold text-slate-900">Heading 2 (3xl)</h2>
-                <p className="text-sm text-slate-500">font-size: 1.875rem (30px)</p>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Heading 2 (3xl)</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 1.875rem (30px)</p>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-slate-900">Heading 3 (2xl)</h3>
-                <p className="text-sm text-slate-500">font-size: 1.5rem (24px)</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Heading 3 (2xl)</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 1.5rem (24px)</p>
               </div>
               <div>
-                <h4 className="text-xl font-semibold text-slate-900">Heading 4 (xl)</h4>
-                <p className="text-sm text-slate-500">font-size: 1.25rem (20px)</p>
+                <h4 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Heading 4 (xl)</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 1.25rem (20px)</p>
               </div>
               <div>
-                <p className="text-base text-slate-700">Body text (base) - Default size</p>
-                <p className="text-sm text-slate-500">font-size: 1rem (16px)</p>
+                <p className="text-base text-slate-700 dark:text-slate-300">Body text (base) - Default size</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 1rem (16px)</p>
               </div>
               <div>
-                <p className="text-sm text-slate-600">Small text (sm)</p>
-                <p className="text-sm text-slate-500">font-size: 0.875rem (14px)</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Small text (sm)</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 0.875rem (14px)</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Extra small text (xs)</p>
-                <p className="text-sm text-slate-500">font-size: 0.75rem (12px)</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Extra small text (xs)</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 0.75rem (12px)</p>
               </div>
             </div>
           </Card>
@@ -520,7 +521,7 @@ export default function DesignSystemPage() {
         {/* Spacing Section */}
         <section>
           <Card>
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Spacing Scale</h2>
+            <SectionHeader title="Spacing Scale" />
 
             <div className="space-y-4">
               {[

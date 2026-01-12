@@ -92,3 +92,9 @@ export type { ModalProps, ModalSize } from './Modal'
 
 export { ErrorState } from './ErrorState'
 export type { ErrorStateProps } from './ErrorState'
+
+export { PageHeader } from './PageHeader'
+export type { PageHeaderProps } from './PageHeader'
+
+export { SectionHeader } from './SectionHeader'
+export type { SectionHeaderProps } from './SectionHeader'
