@@ -4,6 +4,7 @@
     "/api/admin/diagnostics/pillars-sot",
     "/api/admin/funnel-steps",
     "/api/admin/usage",
+    "/api/admin/dev/endpoint-catalog",
     "/api/amy/stress-report",
     "/api/amy/stress-summary",
     "/api/assessments/[id]/current-step",
