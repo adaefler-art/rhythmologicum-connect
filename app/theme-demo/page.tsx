@@ -4,6 +4,7 @@ import { Card, Button } from '@/lib/ui'
 import { useTheme } from '@/lib/contexts/ThemeContext'
 import { Sun, Moon, Palette, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import type { AccentColor } from '@/lib/ui/theme/themeConfig'
 
 const accentColors = [
   { value: 'sky', name: 'Sky Blue', color: '#0ea5e9', description: 'Default calm, medical theme' },
@@ -109,9 +110,7 @@ export default function ThemeDemoPage() {
             {accentColors.map((color) => (
               <button
                 key={color.value}
-                onClick={() =>
-                  setAccent(color.value as 'sky' | 'emerald' | 'violet' | 'amber')
-                }
+                onClick={() => setAccent(color.value as AccentColor)}
                 className={`
                   p-4 rounded-lg border-2 transition-all duration-200
                   ${

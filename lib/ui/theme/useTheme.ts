@@ -2,7 +2,7 @@
 
 import { useContext } from 'react'
 import { ThemeContext, type ThemeContextType } from './ThemeProvider'
-import { themeConfig, type ThemeMode, type AccentColor } from './themeConfig'
+import { themeConfig } from './themeConfig'
 
 /**
  * useTheme Hook
