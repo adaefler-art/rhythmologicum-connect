@@ -7,10 +7,9 @@ import {
   useState, 
   type ReactNode 
 } from 'react'
-import { accentPalettes } from '@/lib/ui/theme/themeConfig'
+import { accentPalettes, accentColors, type AccentColor } from '@/lib/ui/theme/themeConfig'
 
 type Theme = 'light' | 'dark'
-type AccentColor = 'sky' | 'emerald' | 'violet' | 'amber'
 
 interface ThemeContextType {
   theme: Theme
@@ -70,9 +69,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
       // Resolve accent
       const storedAccent = localStorage.getItem('theme-accent')
-      const validAccentColors: AccentColor[] = ['sky', 'emerald', 'violet', 'amber']
       const resolvedAccent: AccentColor =
-        storedAccent && validAccentColors.includes(storedAccent as AccentColor)
+        storedAccent && accentColors.includes(storedAccent as AccentColor)
           ? (storedAccent as AccentColor)
           : 'sky'
 

@@ -4,24 +4,14 @@ import { Card, Button } from '@/lib/ui'
 import { useTheme } from '@/lib/contexts/ThemeContext'
 import { Sun, Moon, Palette, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import type { AccentColor } from '@/lib/ui/theme/themeConfig'
+import { accentPalettes, type AccentColor } from '@/lib/ui/theme/themeConfig'
 
-const accentColors = [
-  { value: 'sky', name: 'Sky Blue', color: '#0ea5e9', description: 'Default calm, medical theme' },
-  {
-    value: 'emerald',
-    name: 'Emerald',
-    color: '#10b981',
-    description: 'Growth and wellness theme',
-  },
-  {
-    value: 'violet',
-    name: 'Violet',
-    color: '#8b5cf6',
-    description: 'Focus and mindfulness theme',
-  },
-  { value: 'amber', name: 'Amber', color: '#f59e0b', description: 'Energy and warmth theme' },
-] as const
+const accentColors = Object.entries(accentPalettes).map(([value, config]) => ({
+  value: value as AccentColor,
+  name: config.name,
+  color: config.primary[500],
+  description: config.description,
+}))
 
 /**
  * Theme Demo Page (Public Access)

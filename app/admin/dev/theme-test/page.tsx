@@ -3,14 +3,13 @@
 import { Card, Button } from '@/lib/ui'
 import { useTheme } from '@/lib/contexts/ThemeContext'
 import { Sun, Moon, Palette } from 'lucide-react'
-import type { AccentColor } from '@/lib/ui/theme/themeConfig'
+import { accentPalettes, type AccentColor } from '@/lib/ui/theme/themeConfig'
 
-const accentColors = [
-  { value: 'sky', name: 'Sky Blue', color: '#0ea5e9' },
-  { value: 'emerald', name: 'Emerald', color: '#10b981' },
-  { value: 'violet', name: 'Violet', color: '#8b5cf6' },
-  { value: 'amber', name: 'Amber', color: '#f59e0b' },
-] as const
+const accentColors = Object.entries(accentPalettes).map(([value, config]) => ({
+  value: value as AccentColor,
+  name: config.name,
+  color: config.primary[500],
+}))
 
 /**
  * Theme Test Page
