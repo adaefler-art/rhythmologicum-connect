@@ -46,7 +46,7 @@ export function ErrorText({
 
   return (
     <p
-      className={`text-red-600 ${className}`}
+      className={`text-red-600 dark:text-red-400 ${className}`}
       role="alert"
       style={{
         fontSize: sizeConfig[size],

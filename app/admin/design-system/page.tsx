@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import {
+  Alert,
   Button,
   Card,
   Input,
+  Modal,
   Textarea,
   Select,
   FormField,
@@ -27,6 +29,8 @@ export default function DesignSystemPage() {
   const [selectValue, setSelectValue] = useState('')
   const [hasError, setHasError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [alertVisible, setAlertVisible] = useState(true)
 
   // Sample data for table
   const sampleData = [
@@ -87,7 +91,7 @@ export default function DesignSystemPage() {
                   <Button variant="secondary">Secondary</Button>
                   <Button variant="outline">Outline</Button>
                   <Button variant="ghost">Ghost</Button>
-                  <Button variant="danger">Danger</Button>
+                  <Button variant="destructive">Destructive</Button>
                 </div>
               </div>
 
@@ -288,6 +292,114 @@ export default function DesignSystemPage() {
               hoverable
               onRowClick={(row) => alert(`Clicked: ${row.name}`)}
             />
+          </Card>
+        </section>
+
+        {/* Alert Section */}
+        <section>
+          <Card>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Alerts</h2>
+
+            <div className="space-y-4">
+              {/* Info Alert */}
+              <Alert variant="info" title="Information">
+                This is an informational message using semantic tokens.
+              </Alert>
+
+              {/* Success Alert */}
+              <Alert variant="success" title="Success!">
+                Your changes have been saved successfully.
+              </Alert>
+
+              {/* Warning Alert */}
+              <Alert variant="warning" title="Warning">
+                Your session will expire in 5 minutes.
+              </Alert>
+
+              {/* Error Alert */}
+              <Alert variant="error" title="Error">
+                An error occurred while processing your request.
+              </Alert>
+
+              {/* Dismissible Alert */}
+              {alertVisible && (
+                <Alert
+                  variant="info"
+                  title="Dismissible Alert"
+                  dismissible
+                  onDismiss={() => setAlertVisible(false)}
+                >
+                  Click the X button to dismiss this alert.
+                </Alert>
+              )}
+              {!alertVisible && (
+                <button
+                  onClick={() => setAlertVisible(true)}
+                  className="text-sm text-sky-600 hover:text-sky-700"
+                >
+                  Show dismissible alert again
+                </button>
+              )}
+
+              {/* Alert without title */}
+              <Alert variant="success">
+                Simple alert without a title - just a message.
+              </Alert>
+            </div>
+          </Card>
+        </section>
+
+        {/* Modal Section */}
+        <section>
+          <Card>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">Modal / Dialog</h2>
+
+            <div className="space-y-4">
+              <p className="text-slate-600 mb-4">
+                Modal component with accessibility features, focus management, and semantic tokens.
+              </p>
+
+              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+                Open Modal
+              </Button>
+
+              <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title="Example Modal"
+                size="md"
+                footer={
+                  <>
+                    <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        alert('Action confirmed!')
+                        setIsModalOpen(false)
+                      }}
+                    >
+                      Confirm
+                    </Button>
+                  </>
+                }
+              >
+                <div className="space-y-4">
+                  <p className="text-slate-700">
+                    This is a modal dialog built with semantic design tokens. It includes:
+                  </p>
+                  <ul className="list-disc list-inside text-slate-600 space-y-2">
+                    <li>Proper focus management and keyboard navigation</li>
+                    <li>Backdrop click to close</li>
+                    <li>Escape key support</li>
+                    <li>Body scroll lock when open</li>
+                    <li>Configurable sizes (sm, md, lg, xl)</li>
+                    <li>Optional header and footer sections</li>
+                  </ul>
+                </div>
+              </Modal>
+            </div>
           </Card>
         </section>
 

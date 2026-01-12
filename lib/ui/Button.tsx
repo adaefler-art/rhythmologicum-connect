@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { componentTokens } from '@/lib/design-tokens'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'danger'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -26,7 +26,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * Part of the V0.4 Design System.
  * 
  * Features:
- * - Multiple variants: primary, secondary, outline, ghost, danger
+ * - Multiple variants: primary, secondary, outline, ghost, destructive
  * - Three sizes: sm, md, lg
  * - Loading state with disabled interaction
  * - Optional icon support
@@ -125,6 +125,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         active:bg-slate-200 dark:active:bg-slate-600
         disabled:text-slate-400 dark:disabled:text-slate-500
       `,
+      destructive: `
+        bg-red-600 dark:bg-red-500 text-white
+        hover:bg-red-700 dark:hover:bg-red-600
+        active:bg-red-800 dark:active:bg-red-700
+        disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-400
+        shadow-md hover:shadow-lg
+      `,
+      // Deprecated: Use 'destructive' instead
       danger: `
         bg-red-600 dark:bg-red-500 text-white
         hover:bg-red-700 dark:hover:bg-red-600

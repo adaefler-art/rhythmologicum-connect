@@ -54,7 +54,7 @@ export function Label({
 
   return (
     <label
-      className={`block font-medium text-slate-700 ${className}`}
+      className={`block font-medium text-slate-700 dark:text-slate-300 ${className}`}
       style={{
         fontSize: config.fontSize,
         marginBottom: config.marginBottom,
@@ -63,7 +63,7 @@ export function Label({
     >
       {children}
       {required && (
-        <span className="text-red-600 ml-1" aria-label="required">
+        <span className="text-red-600 dark:text-red-400 ml-1" aria-label="required">
           *
         </span>
       )}

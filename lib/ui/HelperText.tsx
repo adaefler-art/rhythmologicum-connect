@@ -39,7 +39,7 @@ export function HelperText({
 
   return (
     <p
-      className={`text-slate-500 ${className}`}
+      className={`text-slate-500 dark:text-slate-400 ${className}`}
       style={{
         fontSize: sizeConfig[size],
         marginTop: spacing.xs,
