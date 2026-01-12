@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import FunnelCard from '@/app/components/FunnelCard'
+import { LoadingSpinner, ErrorState, Card } from '@/lib/ui'
 import { typography, radii } from '@/lib/design-tokens'
 import type { FunnelCatalogResponse } from '@/lib/types/catalog'
 import { PILLAR_KEY } from '@/lib/contracts/registry'
@@ -131,21 +132,9 @@ export default function FunnelCatalogClient() {
               </p>
             </div>
 
-            {loading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
-              </div>
-            )}
+            {loading && <LoadingSpinner size="lg" centered />}
 
-            {error && (
-              <div
-                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg p-4"
-                style={{ borderRadius: radii.lg }}
-              >
-                <p className="font-medium">Fehler</p>
-                <p className="text-sm">{error}</p>
-              </div>
-            )}
+            {error && <ErrorState message={error} />}
 
             {!loading && !error && catalog && (
               <div className="space-y-6">
@@ -153,38 +142,42 @@ export default function FunnelCatalogClient() {
                 {catalog.pillars.map((pillarData) => (
                   <div key={pillarData.pillar.id} className="space-y-3">
                     {/* Pillar header - clickable accordion */}
-                    <button
+                    <Card
+                      padding="md"
+                      radius="lg"
+                      interactive
                       onClick={() => togglePillar(pillarData.pillar.id)}
-                      className="w-full flex items-center gap-3 p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                      style={{ borderRadius: radii.lg }}
+                      className="cursor-pointer"
                     >
-                      <span className="text-2xl">{getPillarIcon(pillarData.pillar.key)}</span>
-                      <div className="flex-1 text-left">
-                        <h2 className="font-semibold text-slate-900 dark:text-slate-100">
-                          {pillarData.pillar.title}
-                        </h2>
-                        {pillarData.pillar.description && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {pillarData.pillar.description}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{getPillarIcon(pillarData.pillar.key)}</span>
+                        <div className="flex-1 text-left">
+                          <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                            {pillarData.pillar.title}
+                          </h2>
+                          {pillarData.pillar.description && (
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                              {pillarData.pillar.description}
+                            </p>
+                          )}
+                        </div>
+                        <svg
+                          className={`w-5 h-5 text-slate-400 transition-transform ${
+                            expandedPillars.has(pillarData.pillar.id) ? 'rotate-180' : ''
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
                       </div>
-                      <svg
-                        className={`w-5 h-5 text-slate-400 transition-transform ${
-                          expandedPillars.has(pillarData.pillar.id) ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
+                    </Card>
 
                     {/* Funnels in this pillar */}
                     {expandedPillars.has(pillarData.pillar.id) && (

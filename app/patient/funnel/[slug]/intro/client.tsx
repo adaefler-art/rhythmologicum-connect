@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Button, LoadingSpinner, Card } from '@/lib/ui'
 import type { ContentPage } from '@/lib/types/content'
 import type { QuestionnaireStep, ContentPage as ManifestContentPage, FunnelContentManifest } from '@/lib/contracts/funnelManifest'
 import MobileWelcomeScreen from '@/app/components/MobileWelcomeScreen'
@@ -117,38 +118,25 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (manifestError) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <div className="w-full max-w-md border-2 rounded-xl p-6"
-          style={{
-            backgroundColor: 'var(--background)',
-            borderColor: 'var(--color-red-300)',
-          }}
-        >
+        <Card padding="lg" radius="xl" className="w-full max-w-md border-2 border-red-300">
           <div className="text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-red-700)' }}>
+          <h2 className="text-xl font-bold mb-2 text-red-700">
             Konfigurationsfehler
           </h2>
-          <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
+          <p className="mb-4 text-neutral-700">
             {manifestError}
           </p>
-          <button
-            onClick={() => router.push('/patient/funnels')}
-            className="px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
-            style={{ backgroundColor: 'var(--color-primary-600)' }}
-          >
+          <Button variant="primary" fullWidth onClick={() => router.push('/patient/funnels')}>
             Zurück zur Übersicht
-          </button>
-        </div>
+          </Button>
+        </Card>
       </main>
     )
   }
 
   // Loading state
   if (loading) {
-    return (
-      <main className="flex items-center justify-center bg-muted py-20">
-        <p className="text-sm" style={{ color: 'var(--color-neutral-600)' }}>Bitte warten…</p>
-      </main>
-    )
+    return <LoadingSpinner size="lg" text="Bitte warten…" centered />
   }
 
   // V05-I06.5: Render manifest-driven content if available
@@ -172,13 +160,14 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
         {/* CTA Button */}
         <div className="bg-white border-t border-slate-200">
           <StandardContentContainer className="py-6">
-            <button
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
               onClick={handleStartAssessment}
-              className="w-full px-6 py-4 text-white rounded-lg hover:opacity-90 transition-opacity font-medium text-lg"
-              style={{ backgroundColor: 'var(--color-primary-600)' }}
             >
               Assessment starten
-            </button>
+            </Button>
           </StandardContentContainer>
         </div>
 
@@ -260,39 +249,42 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
     return (
       <main className="min-h-screen bg-muted">
         <ContentContainer className="px-4 py-10">
-          <div
+          <Card
             data-testid="intro-missing-content-fallback"
-            className="w-full min-w-[320px] rounded-xl border border-slate-200 bg-white p-6"
-            style={{ backgroundColor: 'var(--background)' }}
+            padding="lg"
+            radius="xl"
+            className="w-full min-w-[320px]"
           >
-            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--foreground)' }}>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-2 text-base sm:text-lg" style={{ color: 'var(--color-neutral-700)' }}>
+              <p className="mt-2 text-base sm:text-lg text-neutral-700">
                 {subtitle}
               </p>
             )}
             {description && (
-              <div className="prose max-w-none mt-4" style={{ color: 'var(--color-neutral-700)' }}>
+              <div className="prose max-w-none mt-4 text-neutral-700">
                 <p>{description}</p>
               </div>
             )}
 
             {!description && (
-              <p className="mt-4 text-base" style={{ color: 'var(--color-neutral-700)' }}>
+              <p className="mt-4 text-base text-neutral-700">
                 Inhalt ist noch nicht verfügbar.
               </p>
             )}
 
-            <button
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
               onClick={handleStartAssessment}
-              className="mt-6 w-full rounded-lg px-6 py-4 text-lg font-medium text-white hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: 'var(--color-primary-600)' }}
+              className="mt-6"
             >
               Direkt zum Assessment
-            </button>
-          </div>
+            </Button>
+          </Card>
         </ContentContainer>
       </main>
     )
@@ -301,23 +293,14 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (error || !introPage) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <div className="w-full max-w-md border-2 rounded-xl p-6"
-          style={{
-            backgroundColor: 'var(--background)',
-            borderColor: 'var(--color-neutral-200)',
-          }}
-        >
-          <p className="mb-4" style={{ color: 'var(--color-neutral-700)' }}>
+        <Card padding="lg" radius="xl" className="w-full max-w-md">
+          <p className="mb-4 text-neutral-700">
             {error || 'Intro-Seite konnte nicht geladen werden.'}
           </p>
-          <button
-            onClick={handleStartAssessment}
-            className="px-6 py-3 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
-            style={{ backgroundColor: 'var(--color-primary-600)' }}
-          >
+          <Button variant="primary" fullWidth onClick={handleStartAssessment}>
             Direkt zum Assessment
-          </button>
-        </div>
+          </Button>
+        </Card>
       </main>
     )
   }
