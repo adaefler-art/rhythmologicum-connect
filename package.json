@@ -12,6 +12,7 @@
     "hooks:install": "node tools/install-git-hooks.mjs",
     "lint:migrations": "bash scripts/check-migrations.sh",
     "lint:schema": "pwsh -File scripts/db/lint-migrations.ps1",
+    "tokens:export": "node scripts/design/export-tokens.js",
     "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",

@@ -1,4 +1,4 @@
-import designTokens from '@/lib/design-tokens'
+import designTokens from '@/lib/design/tokens'
 
 // Patient-scoped design tokens.
 // Intentionally static (no DB, no cookies/headers) so patient UI can evolve
