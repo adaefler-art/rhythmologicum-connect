@@ -74,39 +74,39 @@ if ($IsLinux -or $IsMacOS) {
 Write-Host "================================`n" -ForegroundColor Cyan
 
 # ========================================
-# Run design tokens export script
+# Export to temporary directory (don't modify committed file)
 # ========================================
-Write-Host "Running design tokens export..." -ForegroundColor Cyan
+Write-Host "Exporting design tokens to temporary directory..." -ForegroundColor Cyan
+$tempDir = [System.IO.Path]::GetTempPath()
+$tempOutput = Join-Path $tempDir "design-tokens-ci-verify-$(Get-Random).json"
 Write-Host "  Script: $exportScript" -ForegroundColor DarkGray
-Write-Host "  Output: $OutputPath" -ForegroundColor DarkGray
+Write-Host "  Temp Output: $tempOutput" -ForegroundColor DarkGray
+Write-Host "  Committed File: $OutputPath" -ForegroundColor DarkGray
 Write-Host ""
 
-& node $exportScript --out $OutputPath
+& node $exportScript --out $tempOutput
 if ($LASTEXITCODE -ne 0) {
+  Remove-Item $tempOutput -ErrorAction SilentlyContinue
   throw "Design tokens export failed with exit code $LASTEXITCODE"
 }
 
 # ========================================
-# Verify determinism (run twice)
+# Verify determinism (run twice to temp files)
 # ========================================
 Write-Host "`nVerifying deterministic output..." -ForegroundColor Cyan
 
-# Save first run
-$tempFile1 = [System.IO.Path]::GetTempFileName()
-Copy-Item $OutputPath $tempFile1
+# Run export again to a second temp file
+$tempOutput2 = Join-Path $tempDir "design-tokens-ci-verify2-$(Get-Random).json"
 
-# Run again
-& node $exportScript --out $OutputPath
+& node $exportScript --out $tempOutput2
 if ($LASTEXITCODE -ne 0) {
+  Remove-Item $tempOutput, $tempOutput2 -ErrorAction SilentlyContinue
   throw "Design tokens export (second run) failed with exit code $LASTEXITCODE"
 }
 
-# Compare
-$tempFile2 = [System.IO.Path]::GetTempFileName()
-Copy-Item $OutputPath $tempFile2
-
-$hash1 = (Get-FileHash $tempFile1 -Algorithm SHA256).Hash
-$hash2 = (Get-FileHash $tempFile2 -Algorithm SHA256).Hash
+# Compare two runs for determinism
+$hash1 = (Get-FileHash $tempOutput -Algorithm SHA256).Hash
+$hash2 = (Get-FileHash $tempOutput2 -Algorithm SHA256).Hash
 
 if ($hash1 -ne $hash2) {
   Write-Host "`n=== ❌ DETERMINISM FAILED ===" -ForegroundColor Red
@@ -116,78 +116,110 @@ if ($hash1 -ne $hash2) {
   Write-Host "Hash (run 1): $hash1" -ForegroundColor Yellow
   Write-Host "Hash (run 2): $hash2" -ForegroundColor Yellow
   
-  Remove-Item $tempFile1, $tempFile2 -ErrorAction SilentlyContinue
+  Remove-Item $tempOutput, $tempOutput2 -ErrorAction SilentlyContinue
   exit 2
 }
 
 Write-Host "  ✓ Export is deterministic (identical output on consecutive runs)" -ForegroundColor Green
-Remove-Item $tempFile1, $tempFile2 -ErrorAction SilentlyContinue
+Remove-Item $tempOutput2 -ErrorAction SilentlyContinue
 
 # ========================================
-# Verify no git changes
+# Compare with committed file
 # ========================================
 if (-not $SkipGitDiff) {
-  Push-Location $RepoRoot
-  try {
-    $diff = git diff --name-only -- 'docs/dev/design-tokens.json'
-    if ($diff) {
-      Write-Host "`n=== ❌ VERIFICATION FAILED ===" -ForegroundColor Red
-      Write-Host "docs/dev/design-tokens.json is out of date." -ForegroundColor Red
-      Write-Host "The design tokens export needs to be regenerated." -ForegroundColor Red
-      
-      Write-Host "`n--- Changed files ---" -ForegroundColor Yellow
-      $diff | ForEach-Object { 
-        $filePath = Join-Path $RepoRoot $_
-        $exists = Test-Path $filePath
-        if ($exists) {
-          Write-Host "  ✓ $_" -ForegroundColor Yellow
-        } else {
-          Write-Host "  ✗ $_ (missing)" -ForegroundColor Red
-        }
-      }
-
-      Write-Host "`n--- Diff statistics ---" -ForegroundColor Yellow
-      git diff --stat -- 'docs/dev/design-tokens.json' | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
-
-      # Show summary of design-tokens.json
-      if (Test-Path $OutputPath) {
-        Write-Host "`n--- Design tokens summary ---" -ForegroundColor Yellow
-        try {
-          $tokens = Get-Content $OutputPath | ConvertFrom-Json
-          Write-Host "  Version: $($tokens.version)" -ForegroundColor DarkGray
-          Write-Host "  Source: $($tokens.source)" -ForegroundColor DarkGray
-          if ($tokens.themes) {
-            $themeNames = ($tokens.themes | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) -join ', '
-            Write-Host "  Themes: $themeNames" -ForegroundColor DarkGray
-          }
-          if ($tokens.brands) {
-            $brandNames = ($tokens.brands | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) -join ', '
-            Write-Host "  Brands: $brandNames" -ForegroundColor DarkGray
-          }
-          if ($tokens.resolved) {
-            $resolvedNames = ($tokens.resolved | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) -join ', '
-            Write-Host "  Resolved: $resolvedNames" -ForegroundColor DarkGray
-          }
-        } catch {
-          Write-Host "  Could not parse JSON: $_" -ForegroundColor Red
-        }
-      } else {
-        Write-Host "`n--- design-tokens.json not found ---" -ForegroundColor Red
-        Write-Host "  Expected at: $OutputPath" -ForegroundColor Red
-      }
-
-      Write-Host "`n--- How to fix ---" -ForegroundColor Cyan
-      Write-Host "  Run the following command:" -ForegroundColor White
-      Write-Host "    node scripts/dev/design-tokens/export.js --out docs/dev/design-tokens.json" -ForegroundColor White
-      Write-Host "  Then commit the updated design-tokens.json file." -ForegroundColor White
-      Write-Host "========================================`n" -ForegroundColor Red
-      
-      exit 3
-    }
-  } finally {
-    Pop-Location
+  Write-Host "`nComparing with committed file..." -ForegroundColor Cyan
+  
+  # Check if committed file exists
+  if (-not (Test-Path $OutputPath)) {
+    Write-Host "`n=== ❌ VERIFICATION FAILED ===" -ForegroundColor Red
+    Write-Host "Committed design tokens file not found: $OutputPath" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "--- How to fix ---" -ForegroundColor Cyan
+    Write-Host "  Run the following command:" -ForegroundColor White
+    Write-Host "    node scripts/dev/design-tokens/export.js --out docs/dev/design-tokens.json" -ForegroundColor White
+    Write-Host "  Then commit the design-tokens.json file." -ForegroundColor White
+    Write-Host "========================================`n" -ForegroundColor Red
+    
+    Remove-Item $tempOutput -ErrorAction SilentlyContinue
+    exit 3
   }
+  
+  # Compare temp export with committed file
+  $committedHash = (Get-FileHash $OutputPath -Algorithm SHA256).Hash
+  $exportedHash = (Get-FileHash $tempOutput -Algorithm SHA256).Hash
+  
+  if ($committedHash -ne $exportedHash) {
+    Write-Host "`n=== ❌ VERIFICATION FAILED ===" -ForegroundColor Red
+    Write-Host "docs/dev/design-tokens.json is out of date." -ForegroundColor Red
+    Write-Host "The design tokens export needs to be regenerated." -ForegroundColor Red
+    
+    # Show file comparison details
+    Write-Host "`n--- Hash Comparison ---" -ForegroundColor Yellow
+    Write-Host "  Committed: $committedHash" -ForegroundColor DarkGray
+    Write-Host "  Generated: $exportedHash" -ForegroundColor DarkGray
+
+    # Try to show meaningful diff
+    Push-Location $RepoRoot
+    try {
+      # Temporarily copy the generated file for diff comparison
+      $tempCommitted = Join-Path $tempDir "committed-tokens.json"
+      Copy-Item $OutputPath $tempCommitted
+      
+      Write-Host "`n--- Diff Preview (first 20 lines) ---" -ForegroundColor Yellow
+      $diffOutput = git diff --no-index $tempCommitted $tempOutput 2>&1 | Select-Object -First 20
+      if ($diffOutput) {
+        $diffOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+      }
+      
+      Remove-Item $tempCommitted -ErrorAction SilentlyContinue
+    } catch {
+      Write-Host "  Could not generate diff: $_" -ForegroundColor DarkGray
+    } finally {
+      Pop-Location
+    }
+
+    # Show summary of both files
+    Write-Host "`n--- Current Committed File ---" -ForegroundColor Yellow
+    try {
+      $committedTokens = Get-Content $OutputPath | ConvertFrom-Json
+      Write-Host "  Version: $($committedTokens.version)" -ForegroundColor DarkGray
+      Write-Host "  Source: $($committedTokens.source)" -ForegroundColor DarkGray
+      if ($committedTokens.themes) {
+        $themeNames = ($committedTokens.themes | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) -join ', '
+        Write-Host "  Themes: $themeNames" -ForegroundColor DarkGray
+      }
+    } catch {
+      Write-Host "  Could not parse committed JSON: $_" -ForegroundColor Red
+    }
+    
+    Write-Host "`n--- Generated File (Expected) ---" -ForegroundColor Yellow
+    try {
+      $generatedTokens = Get-Content $tempOutput | ConvertFrom-Json
+      Write-Host "  Version: $($generatedTokens.version)" -ForegroundColor DarkGray
+      Write-Host "  Source: $($generatedTokens.source)" -ForegroundColor DarkGray
+      if ($generatedTokens.themes) {
+        $themeNames = ($generatedTokens.themes | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) -join ', '
+        Write-Host "  Themes: $themeNames" -ForegroundColor DarkGray
+      }
+    } catch {
+      Write-Host "  Could not parse generated JSON: $_" -ForegroundColor Red
+    }
+
+    Write-Host "`n--- How to fix ---" -ForegroundColor Cyan
+    Write-Host "  Run the following command:" -ForegroundColor White
+    Write-Host "    node scripts/dev/design-tokens/export.js --out docs/dev/design-tokens.json" -ForegroundColor White
+    Write-Host "  Then commit the updated design-tokens.json file." -ForegroundColor White
+    Write-Host "========================================`n" -ForegroundColor Red
+    
+    Remove-Item $tempOutput -ErrorAction SilentlyContinue
+    exit 3
+  }
+  
+  Write-Host "  ✓ Committed file matches generated output" -ForegroundColor Green
 }
+
+# Clean up temp file
+Remove-Item $tempOutput -ErrorAction SilentlyContinue
 
 Write-Host "`n✅ Design tokens verified successfully" -ForegroundColor Green
 Write-Host "  ✓ Export script runs without errors" -ForegroundColor Green
