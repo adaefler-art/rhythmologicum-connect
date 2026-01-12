@@ -9,12 +9,12 @@ import {
   unauthorizedResponse,
 } from '@/lib/api/responses'
 import { getCurrentUser } from '@/lib/db/supabase.server'
-import { env } from '@/lib/env'
+import { isDevEndpointCatalogEnabled } from '@/lib/env'
 import { logError, logForbidden, logUnauthorized } from '@/lib/logging/logger'
 
 export async function GET(_request: NextRequest) {
   // Feature flag gate (404 by design)
-  if (env.DEV_ENDPOINT_CATALOG !== '1') {
+  if (!isDevEndpointCatalogEnabled()) {
     return notFoundResponse('Resource')
   }
 

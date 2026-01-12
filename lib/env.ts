@@ -260,6 +260,17 @@ function parseEnv(): Env {
 export const env = parseEnv()
 
 /**
+ * Server-runtime feature flags.
+ *
+ * Note: Jest runs API route unit tests in a jsdom environment (window defined),
+ * but API routes are still server code. Do NOT rely on `env` for server-only
+ * flags in those tests.
+ */
+export function isDevEndpointCatalogEnabled(): boolean {
+  return process.env.DEV_ENDPOINT_CATALOG === '1'
+}
+
+/**
  * Helper function to check if we're in production
  */
 export function isProduction(): boolean {
