@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { Badge, Button, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { Badge, Button, Card, Table, LoadingSpinner, ErrorState, PageHeader, SectionHeader } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   Users,
@@ -13,6 +13,7 @@ import {
   Download,
   Settings,
 } from 'lucide-react'
+import { spacing } from '@/lib/design-tokens'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -279,35 +280,33 @@ export default function ClinicianOverviewPage() {
   return (
     <div className="w-full">
       {/* Page Header with Actions */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">Dashboard</h1>
-          <p className="text-slate-600 dark:text-slate-300">
-            Übersicht aller Patientinnen und Patienten mit aktuellen Assessments
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Settings className="w-4 h-4" />}
-            onClick={() => router.push('/clinician/funnels')}
-          >
-            Funnels verwalten
-          </Button>
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Download className="w-4 h-4" />}
-            onClick={() => window.print()}
-          >
-            Exportieren
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Übersicht aller Patientinnen und Patienten mit aktuellen Assessments"
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Settings className="w-4 h-4" />}
+              onClick={() => router.push('/clinician/funnels')}
+            >
+              Funnels verwalten
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<Download className="w-4 h-4" />}
+              onClick={() => window.print()}
+            >
+              Exportieren
+            </Button>
+          </>
+        }
+      />
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" style={{ marginBottom: spacing.xl }}>
           {/* Active Patients */}
           <Card padding="lg" shadow="md" radius="lg" className="hover:shadow-lg transition-shadow">
             <div className="flex items-start justify-between">
@@ -378,16 +377,10 @@ export default function ClinicianOverviewPage() {
         </div>
 
         {/* Recent Assessments Table */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Recent Assessments</h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                Aktuelle Messungen und Risikobewertungen
-              </p>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          title="Recent Assessments"
+          description="Aktuelle Messungen und Risikobewertungen"
+        />
 
       <Table
         columns={columns}

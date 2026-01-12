@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Button, Card, Badge, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { Button, Card, Badge, LoadingSpinner, ErrorState, PageHeader } from '@/lib/ui'
+import { spacing } from '@/lib/design-tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,18 +114,14 @@ export default function FunnelListPage() {
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-          Funnel Verwaltung
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300">
-          Übersicht und Verwaltung aller Funnel-Definitionen
-        </p>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title="Funnel Verwaltung"
+        description="Übersicht und Verwaltung aller Funnel-Definitionen"
+      />
 
       {/* Back to Dashboard */}
-      <div className="mb-6">
+      <div style={{ marginBottom: spacing.lg }}>
         <Link
           href="/clinician"
           className="inline-flex items-center text-sm text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 font-medium"
