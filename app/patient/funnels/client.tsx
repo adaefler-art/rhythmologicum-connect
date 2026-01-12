@@ -147,7 +147,6 @@ export default function FunnelCatalogClient() {
                       radius="lg"
                       interactive
                       onClick={() => togglePillar(pillarData.pillar.id)}
-                      className="cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{getPillarIcon(pillarData.pillar.key)}</span>

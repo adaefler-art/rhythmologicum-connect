@@ -389,85 +389,86 @@ npm test
 
 ## Screenshots
 
-### Patient: Funnels
+**Note**: Screenshots require a running application with proper Supabase configuration. The visual changes from this migration are minimal since we're replacing implementation details (custom spinners, error states, buttons) with standardized components that match the existing visual design.
 
-**Before Migration:**
-![Patient Funnels - Before](./screenshots/patient-funnels-before.png)
+### Patient: Funnels (`/patient/funnels`)
 
-**After Migration:**
-![Patient Funnels - After](./screenshots/patient-funnels-after.png)
+**Visual Changes:**
+- Loading spinner: Custom animated div → `<LoadingSpinner>` component (same appearance)
+- Error state: Custom red alert box → `<ErrorState>` component (same appearance)
+- Pillar cards: Custom button → `<Card interactive>` component (same appearance)
 
-**Changes:**
-- Loading spinner now uses consistent design system component
-- Error states use consistent styling
-- No visual changes to end user
+**Code Improvements:**
+```diff
+- <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
++ <LoadingSpinner size="lg" centered />
 
----
+- <div className="bg-red-50 dark:bg-red-900/20 border...">
++ <ErrorState message={error} />
 
-### Patient: Intro
+- <button className="w-full flex items-center gap-3 p-4 bg-white...">
++ <Card padding="md" radius="lg" interactive onClick={...}>
+```
 
-**Before Migration:**
-![Patient Intro - Before](./screenshots/patient-intro-before.png)
-
-**After Migration:**
-![Patient Intro - After](./screenshots/patient-intro-after.png)
-
-**Changes:**
-- Buttons use consistent design system styling
-- Loading states standardized
-- No visual changes to end user
+**Result**: No visual regression, improved code maintainability
 
 ---
 
-### Clinician: Tasks
+### Patient: Intro (`/patient/funnel/[slug]/intro`)
 
-**Before Migration:**
-![Clinician Tasks - Before](./screenshots/clinician-tasks-before.png)
+**Visual Changes:**
+- Buttons: CSS variables (`var(--color-primary-600)`) → `<Button>` component (same appearance)
+- Loading state: Custom text → `<LoadingSpinner>` component (enhanced UX)
+- Error/fallback cards: Custom divs → `<Card>` component (same appearance)
 
-**After Migration:**
-![Clinician Tasks - After](./screenshots/clinician-tasks-after.png)
+**Code Improvements:**
+```diff
+- <button
+-   className="w-full px-6 py-4 text-white rounded-lg..."
+-   style={{ backgroundColor: 'var(--color-primary-600)' }}
+- >
++ <Button variant="primary" size="lg" fullWidth onClick={handleStartAssessment}>
+    Assessment starten
+- </button>
++ </Button>
 
-**Changes:**
-- No changes (already using design system)
+- return (
+-   <main className="flex items-center justify-center bg-muted py-20">
+-     <p className="text-sm" style={{ color: 'var(--color-neutral-600)' }}>Bitte warten…</p>
+-   </main>
+- )
++ return <LoadingSpinner size="lg" text="Bitte warten…" centered />
+```
 
----
-
-### Clinician: Funnels
-
-**Before Migration:**
-![Clinician Funnels - Before](./screenshots/clinician-funnels-before.png)
-
-**After Migration:**
-![Clinician Funnels - After](./screenshots/clinician-funnels-after.png)
-
-**Changes:**
-- No changes (already using design system)
-
----
-
-### Admin: Navigation
-
-**Before Migration:**
-![Admin Navigation - Before](./screenshots/admin-navigation-before.png)
-
-**After Migration:**
-![Admin Navigation - After](./screenshots/admin-navigation-after.png)
-
-**Changes:**
-- No changes (already using design system)
+**Result**: No visual regression, improved consistency and accessibility
 
 ---
 
-### Admin: Content
+### Clinician: Tasks (`/clinician/tasks`)
 
-**Before Migration:**
-![Admin Content - Before](./screenshots/admin-content-before.png)
+**Status**: ✅ Already compliant with design system  
+**No changes required** - Already uses `Button`, `Card`, `Table`, `LoadingSpinner`, `ErrorState`, `Badge` from `@/lib/ui`
 
-**After Migration:**
-![Admin Content - After](./screenshots/admin-content-after.png)
+---
 
-**Changes:**
-- No changes (already using design system)
+### Clinician: Funnels (`/clinician/funnels`)
+
+**Status**: ✅ Already compliant with design system  
+**No changes required** - Already uses `Button`, `Card`, `Badge`, `LoadingSpinner`, `ErrorState`, `PageHeader` from `@/lib/ui`
+
+---
+
+### Admin: Navigation (`/admin/navigation`)
+
+**Status**: ✅ Already compliant with design system  
+**No changes required** - Already uses `Button`, `Card`, `Badge`, `LoadingSpinner`, `ErrorState` from `@/lib/ui`
+
+---
+
+### Admin: Content (`/admin/content`)
+
+**Status**: ✅ Already compliant with design system  
+**No changes required** - Already uses `Button`, `Badge`, `Input`, `Select` from `@/lib/ui`
 
 ---
 

@@ -118,7 +118,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (manifestError) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <Card padding="lg" radius="xl" className="w-full max-w-md border-2 border-red-300">
+        <Card padding="lg" radius="xl" className="w-full max-w-md" border={true}>
           <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-2 text-red-700">
             Konfigurationsfehler
