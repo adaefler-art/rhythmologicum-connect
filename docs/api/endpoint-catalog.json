@@ -157,6 +157,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/dev/endpoint-catalog",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/dev/endpoint-catalog/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"
