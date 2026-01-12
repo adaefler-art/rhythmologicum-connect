@@ -10,6 +10,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/content-pages/[id]/sections | GET, POST | admin |  | 2 | app/api/admin/content-pages/[id]/sections/route.ts |
 | /api/admin/content-pages/[id]/sections/[sectionId] | DELETE, PATCH | admin |  | 6 | app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts |
 | /api/admin/design-tokens | GET, POST | admin |  | 1 | app/api/admin/design-tokens/route.ts |
+| /api/admin/dev/endpoint-catalog | GET | admin |  | 0 | app/api/admin/dev/endpoint-catalog/route.ts |
 | /api/admin/diagnostics/pillars-sot | GET | admin |  | 0 | app/api/admin/diagnostics/pillars-sot/route.ts |
 | /api/admin/funnel-step-questions/[id] | PATCH | admin |  | 1 | app/api/admin/funnel-step-questions/[id]/route.ts |
 | /api/admin/funnel-steps | POST | admin |  | 0 | app/api/admin/funnel-steps/route.ts |
