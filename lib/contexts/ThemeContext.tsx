@@ -7,6 +7,7 @@ import {
   useState, 
   type ReactNode 
 } from 'react'
+import { accentPalettes, accentColors, type AccentColor } from '@/lib/ui/theme/themeConfig'
 
 type Theme = 'light' | 'dark'
 
@@ -14,6 +15,8 @@ interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
+  accent: AccentColor
+  setAccent: (accent: AccentColor) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -23,6 +26,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Reading localStorage/matchMedia during the initial client render can cause React hydration
   // error #418 if the server-rendered HTML differs from the client's first render.
   const [theme, setThemeState] = useState<Theme>('light')
+  const [accent, setAccentState] = useState<AccentColor>('sky')
   const [isInitialized, setIsInitialized] = useState(false)
 
   const applyTheme = (newTheme: Theme) => {
@@ -34,6 +38,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.classList.add('light')
       root.classList.remove('dark')
     }
+  }
+
+  const applyAccent = (newAccent: AccentColor) => {
+    const palette = accentPalettes[newAccent].primary
+    const root = document.documentElement
+
+    // Set CSS custom properties for primary colors
+    Object.entries(palette).forEach(([shade, color]) => {
+      root.style.setProperty(`--color-primary-${shade}`, color)
+    })
+
+    // Store accent as data attribute for potential CSS targeting
+    root.setAttribute('data-accent', newAccent)
   }
 
   // Resolve initial theme after mount (prefer DOM class set by the inline script in app/layout.tsx).
@@ -50,7 +67,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       const resolved: Theme = stored || domTheme || (prefersDark ? 'dark' : 'light')
 
+      // Resolve accent
+      const storedAccent = localStorage.getItem('theme-accent')
+      const resolvedAccent: AccentColor =
+        storedAccent && accentColors.includes(storedAccent as AccentColor)
+          ? (storedAccent as AccentColor)
+          : 'sky'
+
       setThemeState(resolved)
+      setAccentState(resolvedAccent)
     } catch {
       // keep default
     } finally {
@@ -63,6 +88,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (!isInitialized) return
     applyTheme(theme)
   }, [isInitialized, theme])
+
+  // Apply accent after initialization
+  useEffect(() => {
+    if (!isInitialized) return
+    applyAccent(accent)
+  }, [isInitialized, accent])
 
   // Listen for system preference changes
   useEffect(() => {
@@ -85,13 +116,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('theme', newTheme)
   }
 
+  const setAccent = (newAccent: AccentColor) => {
+    setAccentState(newAccent)
+    localStorage.setItem('theme-accent', newAccent)
+  }
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, accent, setAccent }}>
       {children}
     </ThemeContext.Provider>
   )
@@ -105,6 +141,8 @@ export function useTheme() {
       theme: 'light' as Theme,
       setTheme: () => {},
       toggleTheme: () => {},
+      accent: 'sky' as AccentColor,
+      setAccent: () => {},
     }
   }
   return context
