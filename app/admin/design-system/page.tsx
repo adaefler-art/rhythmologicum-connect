@@ -14,7 +14,6 @@ import {
   PageHeader,
   SectionHeader,
 } from '@/lib/ui'
-import { spacing } from '@/lib/design-tokens'
 
 /**
  * Design System Showcase Page
