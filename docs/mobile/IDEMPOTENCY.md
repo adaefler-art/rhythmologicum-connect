@@ -22,7 +22,7 @@ Content-Type: application/json
 
 ### 2. Server Processing
 
-- **First Request**: Server processes the request normally, caches the response
+- **First Request**: Server processes the request normally, caches the response (for 2xx success or 409 conflict)
 - **Duplicate Request**: Server returns the cached response without processing again
 - **Conflict**: If same key is used with different payload, returns `409 Conflict`
 
@@ -33,6 +33,17 @@ Cached responses include a special header:
 ```http
 X-Idempotency-Cached: true
 ```
+
+## Caching Policy
+
+The server caches responses based on status code:
+
+- **2xx Success (200-299)**: Cached for 24 hours
+- **409 Conflict**: Cached (deterministic error)
+- **Other 4xx (400, 401, 403, 404, etc.)**: NOT cached (may be temporary/fixable)
+- **5xx Server Errors**: NOT cached (should be retried)
+
+This means temporary validation errors (400) can be fixed by sending the same request again after correcting the payload.
 
 ## Supported Endpoints
 

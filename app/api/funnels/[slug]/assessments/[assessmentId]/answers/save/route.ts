@@ -63,10 +63,12 @@ export async function POST(
 ) {
   const { slug, assessmentId } = await context.params
 
-  // Parse request body for idempotency check
-  const body: unknown = await request.json()
-
   // E6.2.4: Wrap handler with idempotency support
+  // We need to parse the body here to pass it to both the handler and idempotency check
+  // Clone the request to allow reading body multiple times
+  const clonedRequest = request.clone()
+  const body: unknown = await clonedRequest.json()
+
   return withIdempotency(
     request,
     {

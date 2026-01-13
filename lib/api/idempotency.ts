@@ -77,11 +77,16 @@ export async function checkIdempotencyKey(
   } = await supabase.auth.getUser()
 
   if (!user) {
-    // If not authenticated, can't check idempotency
+    // If not authenticated, can't check idempotency (no user to scope keys to)
+    // This is acceptable because:
+    // 1. All write endpoints we protect require authentication
+    // 2. Unauthenticated requests will be rejected by the endpoint handler
+    // 3. Idempotency is a convenience feature, not a security feature
     return null
   }
 
   // Look up existing idempotency key
+  // TODO(E6.2.4): Remove type assertion after regenerating Supabase types with `npm run db:typegen`
   // Type assertion needed until Supabase types are regenerated
   const { data: existingKey, error } = await (supabase as any)
     .from('idempotency_keys')
@@ -161,7 +166,17 @@ export async function storeIdempotencyKey(
 
   // Clone response to read body without consuming it
   const responseClone = response.clone()
-  const responseBody = await responseClone.json()
+  let responseBody: unknown
+
+  try {
+    // Try to parse as JSON
+    responseBody = await responseClone.json()
+  } catch (error) {
+    // If not JSON, store the response without caching (non-JSON responses aren't idempotent)
+    console.warn('[idempotency] Response is not JSON, skipping cache:', error)
+    return
+  }
+
   const responseStatus = response.status
 
   // Compute request hash if payload provided
@@ -172,6 +187,7 @@ export async function storeIdempotencyKey(
   const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString()
 
   // Store idempotency key
+  // TODO(E6.2.4): Remove type assertion after regenerating Supabase types with `npm run db:typegen`
   // Type assertion needed until Supabase types are regenerated
   const { error } = await (supabase as any).from('idempotency_keys').insert({
     idempotency_key: idempotencyKey,
@@ -228,9 +244,15 @@ export async function withIdempotency<T extends NextResponse>(
   // Execute handler
   const response = await handler()
 
-  // Store idempotency key for successful requests (2xx or 4xx, but not 5xx)
-  // Don't cache server errors as they should be retryable
-  if (response.status < 500) {
+  // Store idempotency key for successful requests and conflict errors
+  // Cache 2xx success and 409 conflicts (which are deterministic)
+  // Don't cache other 4xx (could be temporary validation errors)
+  // Don't cache 5xx (server errors should be retryable)
+  const shouldCache = 
+    (response.status >= 200 && response.status < 300) || // 2xx success
+    response.status === 409 // 409 conflict is deterministic
+
+  if (shouldCache) {
     await storeIdempotencyKey(request, config, response, requestPayload)
   }
 
