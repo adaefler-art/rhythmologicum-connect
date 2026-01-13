@@ -20,6 +20,7 @@ import {
   logValidationFailure,
   logDatabaseError,
 } from '@/lib/logging/logger'
+import { withIdempotency } from '@/lib/api/idempotency'
 
 /**
  * B5/B8: Validate a step and determine next step
@@ -29,6 +30,9 @@ import {
  * Validates that all required questions in the given step have been answered.
  * If validation passes, returns the next step ID.
  * Prevents step-skipping by ensuring current step is complete before navigating forward.
+ * 
+ * E6.2.4: Supports idempotency via Idempotency-Key header.
+ * Duplicate requests with same key return cached response.
  * 
  * Response (B8 standardized):
  * Success with validation passed:
@@ -55,9 +59,28 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string; stepId: string }> },
 ) {
-  try {
-    const { slug, assessmentId, stepId } = await context.params
+  const { slug, assessmentId, stepId } = await context.params
 
+  // E6.2.4: Wrap handler with idempotency support
+  return withIdempotency(
+    request,
+    {
+      endpointPath: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
+      checkPayloadConflict: false, // No payload for this endpoint
+    },
+    async () => {
+      return handleValidateStep(request, slug, assessmentId, stepId)
+    },
+  )
+}
+
+async function handleValidateStep(
+  request: NextRequest,
+  slug: string,
+  assessmentId: string,
+  stepId: string,
+) {
+  try {
     // Validate parameters
     if (!slug || !assessmentId || !stepId) {
       return missingFieldsResponse('Fehlende Parameter.')

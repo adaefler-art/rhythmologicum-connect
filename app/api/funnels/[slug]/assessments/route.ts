@@ -15,6 +15,7 @@ import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type StartAssessmentResponseData,
 } from '@/lib/api/contracts/patient'
+import { withIdempotency } from '@/lib/api/idempotency'
 
 /**
  * B5/B8: Start a new assessment for a funnel
@@ -23,6 +24,9 @@ import {
  *
  * Creates a new assessment for the authenticated patient and returns
  * the assessment ID and first step information.
+ *
+ * E6.2.4: Supports idempotency via Idempotency-Key header.
+ * Duplicate requests with same key return cached response.
  *
  * Response (B8 standardized):
  * {
@@ -36,9 +40,23 @@ import {
  */
 
 export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
-  try {
-    const { slug } = await context.params
+  const { slug } = await context.params
 
+  // E6.2.4: Wrap handler with idempotency support
+  return withIdempotency(
+    request,
+    {
+      endpointPath: `/api/funnels/${slug}/assessments`,
+      checkPayloadConflict: false, // No payload for this endpoint
+    },
+    async () => {
+      return handleStartAssessment(request, slug)
+    },
+  )
+}
+
+async function handleStartAssessment(request: NextRequest, slug: string) {
+  try {
     // Validate slug parameter
     if (!slug) {
       return missingFieldsResponse('Funnel-Slug fehlt.')
