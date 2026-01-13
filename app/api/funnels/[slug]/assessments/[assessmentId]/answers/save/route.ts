@@ -25,6 +25,7 @@ import {
   SaveAnswerRequestSchema,
   type SaveAnswerResponseData,
 } from '@/lib/api/contracts/patient'
+import { withIdempotency } from '@/lib/api/idempotency'
 
 /**
  * B8: Save Assessment Answer (Save-on-Tap) - Funnel-based endpoint
@@ -36,6 +37,9 @@ import {
  * - Validates step belongs to funnel
  * - Prevents step-skipping
  * - Prevents saving to completed assessments
+ * 
+ * E6.2.4: Supports idempotency via Idempotency-Key header.
+ * Duplicate requests with same key return cached response.
  * 
  * Request Body:
  * {
@@ -57,12 +61,34 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
+  const { slug, assessmentId } = await context.params
+
+  // E6.2.4: Wrap handler with idempotency support
+  // We need to parse the body here to pass it to both the handler and idempotency check
+  // Clone the request to allow reading body multiple times
+  const clonedRequest = request.clone()
+  const body: unknown = await clonedRequest.json()
+
+  return withIdempotency(
+    request,
+    {
+      endpointPath: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+      checkPayloadConflict: true, // Check payload for conflicts
+    },
+    async () => {
+      return handleSaveAnswer(request, slug, assessmentId, body)
+    },
+    body, // Pass payload for conflict detection
+  )
+}
+
+async function handleSaveAnswer(
+  request: NextRequest,
+  slug: string,
+  assessmentId: string,
+  body: unknown,
+) {
   try {
-    const { slug, assessmentId } = await context.params
-
-    // Parse request body
-    const body: unknown = await request.json()
-
     // E6.2.3: Validate request against schema
     const validationResult = SaveAnswerRequestSchema.safeParse(body)
     if (!validationResult.success) {

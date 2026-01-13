@@ -22,6 +22,7 @@ import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type CompleteAssessmentResponseData,
 } from '@/lib/api/contracts/patient'
+import { withIdempotency } from '@/lib/api/idempotency'
 
 /**
  * B5/B8: Complete an assessment
@@ -31,6 +32,9 @@ import {
  * Performs full validation across all steps in the funnel.
  * If all required questions are answered, sets assessment status to 'completed'
  * and records the completion timestamp.
+ *
+ * E6.2.4: Supports idempotency via Idempotency-Key header.
+ * Duplicate requests with same key return cached response.
  *
  * Response (B8 standardized):
  * Success:
@@ -59,9 +63,27 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  try {
-    const { slug, assessmentId } = await context.params
+  const { slug, assessmentId } = await context.params
 
+  // E6.2.4: Wrap handler with idempotency support
+  return withIdempotency(
+    request,
+    {
+      endpointPath: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+      checkPayloadConflict: false, // No payload for this endpoint
+    },
+    async () => {
+      return handleCompleteAssessment(request, slug, assessmentId)
+    },
+  )
+}
+
+async function handleCompleteAssessment(
+  request: NextRequest,
+  slug: string,
+  assessmentId: string,
+) {
+  try {
     // Validate parameters
     if (!slug || !assessmentId) {
       return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
