@@ -14,6 +14,12 @@ This document defines the **guaranteed API surface** for the iOS mobile applicat
 
 **Version:** v0.7 (2026-01)
 
+**Related Documents:**
+- **`docs/mobile/CACHING_PAGINATION.md`** — Detailed caching and pagination implementation guide (E6.2.7)
+- `docs/PATIENT_API_CONTRACTS.md` — Patient endpoint contracts
+- `docs/API_ROUTE_OWNERSHIP.md` — API route ownership
+- `docs/mobile/AUTH_SESSION.md` — Session management guide
+
 ---
 
 ## Endpoint Categories
@@ -39,7 +45,7 @@ The mobile patient flow requires endpoints in these categories:
 | `POST /api/consent/record` | NICE | Yes | No | No | No | 10/min | `app/api/consent/record/route.ts` | `consent_version` |
 | `GET /api/consent/status` | NICE | Yes | Yes | No | No | 60/min | `app/api/consent/status/route.ts` | `consent_version` |
 | **Funnel Catalog** |
-| `GET /api/funnels/catalog` | **MUST** | Yes | Yes | Yes (5min) | No | 120/min | `app/api/funnels/catalog/route.ts` | `funnel_version_id` |
+| `GET /api/funnels/catalog` | **MUST** | Yes | Yes | Yes (5min) | Yes (cursor) | 120/min | `app/api/funnels/catalog/route.ts` | `funnel_version_id` |
 | `GET /api/funnels/catalog/[slug]` | **MUST** | Yes | Yes | Yes (5min) | No | 120/min | `app/api/funnels/catalog/[slug]/route.ts` | `funnel_version_id` |
 | `GET /api/funnels/[slug]/definition` | NICE | Yes | Yes | Yes (10min) | No | 60/min | `app/api/funnels/[slug]/definition/route.ts` | `funnel_version_id` |
 | **Assessment Lifecycle** |
@@ -166,6 +172,12 @@ The mobile patient flow requires endpoints in these categories:
 
 **Request Query Parameters:**
 - `tier` (optional): Filter by program tier (e.g., `tier-1-essential`)
+- `limit` (optional): Items per page (default: 50, max: 100) — **E6.2.7**
+- `cursor` (optional): Pagination cursor for next page — **E6.2.7**
+
+**Request Headers (Optional):**
+- `If-None-Match`: ETag for cache validation — **E6.2.7**
+- `If-Modified-Since`: HTTP date for cache validation — **E6.2.7**
 
 **Response:**
 ```typescript
@@ -185,18 +197,40 @@ The mobile patient flow requires endpoints in these categories:
         funnel_version_id: string  // Schema version tracking
       }>
     }>
+    pagination?: {                  // E6.2.7
+      limit: number
+      hasMore: boolean
+      nextCursor: string | null
+    }
   }
   error?: { code: string, message: string }
   requestId: string
 }
 ```
 
+**Response Headers (E6.2.7):**
+- `Cache-Control: public, max-age=300, must-revalidate` — Cache for 5 minutes
+- `ETag: "funnels:v1:timestamp"` — Entity tag for cache validation
+- `Last-Modified: <HTTP-date>` — Last modification timestamp
+
 **Status Codes:**
 - `200 OK` — Success (may return empty pillars array if no funnels)
+- `304 Not Modified` — Cached content still valid (when using If-None-Match/If-Modified-Since) — **E6.2.7**
+- `400 Bad Request` — Invalid cursor parameter — **E6.2.7**
 - `401 Unauthorized` — User not authenticated
 - `500 Internal Server Error` — Database or registry error
 
-**Caching:** Client can cache for 5 minutes
+**Caching (E6.2.7):** 
+- Client can cache for 5 minutes (Cache-Control: max-age=300)
+- Supports conditional requests with ETag and Last-Modified headers
+- 304 Not Modified responses when cache is still valid
+- See `docs/mobile/CACHING_PAGINATION.md` for full details
+
+**Pagination (E6.2.7):**
+- Cursor-based pagination (not offset-based)
+- Default page size: 50 items, max: 100 items
+- Deterministic sort order: `title ASC, slug ASC`
+- See `docs/mobile/CACHING_PAGINATION.md` for full details
 
 **Idempotency:** Safe
 
@@ -207,6 +241,24 @@ The mobile patient flow requires endpoints in these categories:
 - Organized by pillar structure from `program_tiers` registry
 - `funnel_version_id` enables version tracking for client compatibility
 - If `tier` parameter provided, filters using `lib/contracts/programTier`
+- **E6.2.7**: Stable sort order guarantees consistent pagination
+- **E6.2.7**: ETag/Last-Modified headers enable efficient caching
+
+**Example: First Page**
+```http
+GET /api/funnels/catalog?limit=20
+```
+
+**Example: Next Page**
+```http
+GET /api/funnels/catalog?limit=20&cursor=eyJ0aXRsZSI6IlN0cmVzcyBBc3Nlc3NtZW50Iiwic2x1ZyI6InN0cmVzcyJ9
+```
+
+**Example: Cache Validation**
+```http
+GET /api/funnels/catalog
+If-None-Match: "funnels:v1:2026-01-13T14:24:29.000Z"
+```
 
 ---
 
@@ -800,26 +852,99 @@ All endpoints return standardized error responses:
 
 ## Caching Guidelines
 
-**Cacheable Endpoints:**
+**Cacheable Endpoints (E6.2.7):**
 
-| Endpoint | Cache Duration | Cache Key |
-|----------|----------------|-----------|
-| `/api/funnels/catalog` | 5 minutes | `catalog:{tier}` |
-| `/api/funnels/catalog/[slug]` | 5 minutes | `catalog:${slug}` |
-| `/api/funnels/[slug]/definition` | 10 minutes | `definition:${slug}` |
-| `/api/patient-measures/history` | 2 minutes | `history:${userId}` |
-| `/api/patient-profiles` | 5 minutes | `profiles:${userId}` |
+| Endpoint | Cache Duration | Cache Headers | Cache Key | Details |
+|----------|----------------|---------------|-----------|---------|
+| `/api/funnels/catalog` | 5 minutes | `Cache-Control`, `ETag`, `Last-Modified` | `catalog:{tier}:{cursor}` | HTTP cache headers, 304 support |
+| `/api/funnels/catalog/[slug]` | 5 minutes | TBD | `catalog:${slug}` | Future enhancement |
+| `/api/funnels/[slug]/definition` | 10 minutes | TBD | `definition:${slug}` | Future enhancement |
+| `/api/patient-measures/history` | 2 minutes | TBD | `history:${userId}` | Future enhancement |
+| `/api/patient-profiles` | 5 minutes | TBD | `profiles:${userId}` | Future enhancement |
 
 **Non-Cacheable:**
 - All endpoints with dynamic state (assessment status, current step)
 - All POST/PUT/DELETE endpoints
 - Onboarding status (must be fresh for each check)
 
-**Client Implementation:**
-- Use HTTP cache headers (`Cache-Control`, `ETag`)
-- Implement in-memory cache for session duration
+**Client Implementation (E6.2.7):**
+- Use HTTP cache headers (`Cache-Control`, `ETag`, `Last-Modified`)
+- URLCache automatically handles 304 Not Modified responses
+- Send `If-None-Match` header for ETag validation
+- Send `If-Modified-Since` header for timestamp validation
 - Clear cache on user logout
 - Respect `no-store` directives
+- See `docs/mobile/CACHING_PAGINATION.md` for detailed implementation guide
+
+**Example: iOS URLCache Integration**
+```swift
+// URLSession configuration with cache
+let configuration = URLSessionConfiguration.default
+configuration.requestCachePolicy = .useProtocolCachePolicy
+configuration.urlCache = URLCache.shared
+
+let session = URLSession(configuration: configuration)
+```
+
+---
+
+## Pagination Support
+
+**Current Status (E6.2.7):** Pagination implemented for catalog endpoints.
+
+**Supported Endpoints:**
+
+| Endpoint | Pagination Type | Default Limit | Max Limit | Sort Order |
+|----------|-----------------|---------------|-----------|------------|
+| `/api/funnels/catalog` | Cursor-based | 50 | 100 | `title ASC, slug ASC` |
+
+**Pagination Response Format:**
+```typescript
+{
+  success: true,
+  data: {
+    items: [...],
+    pagination: {
+      limit: 50,          // Items per page
+      hasMore: boolean,   // More pages available
+      nextCursor: string | null  // Opaque cursor for next page
+    }
+  }
+}
+```
+
+**Pagination Query Parameters:**
+- `limit` (optional): Items per page (default: 50, max: 100)
+- `cursor` (optional): Opaque cursor from previous response's `nextCursor`
+
+**Cursor Format:**
+- Base64-encoded JSON object: `{ title: string, slug: string }`
+- Cursor is opaque to clients — do not parse or construct manually
+- Invalid cursor returns `400 Bad Request` with `INVALID_INPUT` error code
+
+**Stable Sort Order (E6.2.7):**
+All paginated endpoints guarantee deterministic, stable sort order:
+- Same query always returns items in same order
+- Pagination cursors remain valid across requests
+- No duplicate or skipped items across pages
+
+**Example: Paginated Catalog Fetch**
+```swift
+func fetchAllFunnels() async throws -> [CatalogFunnel] {
+    var allFunnels: [CatalogFunnel] = []
+    var cursor: String? = nil
+    
+    repeat {
+        let page = try await fetchCatalogPage(cursor: cursor, limit: 50)
+        allFunnels.append(contentsOf: page.funnels)
+        cursor = page.pagination.nextCursor
+    } while cursor != nil
+    
+    return allFunnels
+}
+```
+
+For complete pagination implementation details, see `docs/mobile/CACHING_PAGINATION.md`.
 
 ---
 
@@ -848,38 +973,6 @@ All endpoints return standardized error responses:
 - Schema version fields are **stable** (won't be removed)
 - Breaking changes will increment version
 - Backward-compatible changes may not increment version
-
----
-
-## Pagination Support
-
-**Current Status:** Most endpoints do **not** support pagination in v0.7.
-
-**Future Support:**
-
-Endpoints marked with `Pagination: Yes` will support:
-
-```typescript
-// Request
-?limit=20&offset=0
-
-// Response
-{
-  success: true,
-  data: {
-    items: [...],
-    pagination: {
-      total: 100,
-      limit: 20,
-      offset: 0,
-      hasMore: true
-    }
-  }
-}
-```
-
-**Affected Endpoints (future):**
-- `GET /api/patient-measures/history` (limit-based)
 
 ---
 
