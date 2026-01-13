@@ -16,6 +16,7 @@
 export enum ErrorCode {
   // Authentication & Authorization
   UNAUTHORIZED = 'UNAUTHORIZED',
+  SESSION_EXPIRED = 'SESSION_EXPIRED',
   FORBIDDEN = 'FORBIDDEN',
   
   // Validation

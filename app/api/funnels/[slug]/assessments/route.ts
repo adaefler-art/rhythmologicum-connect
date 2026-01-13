@@ -5,10 +5,12 @@ import {
   versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
+  sessionExpiredResponse,
   notFoundResponse,
   invalidInputResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
+import { isSessionExpired } from '@/lib/api/authHelpers'
 import { logUnauthorized, logDatabaseError, logAssessmentStarted } from '@/lib/logging/logger'
 import { trackAssessmentStarted } from '@/lib/monitoring/kpi'
 import {
@@ -64,13 +66,23 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
 
     const supabase = await createServerSupabaseClient()
 
-    // Check authentication
+    // E6.2.6: Check authentication with session expiry detection
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError) {
+      if (isSessionExpired(authError)) {
+        return sessionExpiredResponse()
+      }
+      logUnauthorized({
+        endpoint: `/api/funnels/${slug}/assessments`,
+      })
+      return unauthorizedResponse()
+    }
+
+    if (!user) {
       logUnauthorized({
         endpoint: `/api/funnels/${slug}/assessments`,
       })

@@ -5,10 +5,12 @@ import {
   versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
+  sessionExpiredResponse,
   notFoundResponse,
   forbiddenResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
+import { isSessionExpired } from '@/lib/api/authHelpers'
 import {
   logUnauthorized,
   logForbidden,
@@ -59,13 +61,21 @@ export async function GET(
 
     const supabase = await createServerSupabaseClient()
 
-    // Check authentication
+    // E6.2.6: Check authentication with session expiry detection
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+    if (authError) {
+      if (isSessionExpired(authError)) {
+        return sessionExpiredResponse()
+      }
+      logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`, assessmentId })
+      return unauthorizedResponse()
+    }
+
+    if (!user) {
       logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`, assessmentId })
       return unauthorizedResponse()
     }

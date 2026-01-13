@@ -2,12 +2,15 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { NextResponse } from 'next/server'
 import { User } from '@supabase/supabase-js'
 import { env } from '@/lib/env'
+import { sessionExpiredResponse } from './responses'
 
 /**
  * F10: Authentication and Authorization Helpers for API Routes
  * 
  * Provides reusable utilities for checking authentication and role-based authorization
  * in API routes, following the DRY principle.
+ * 
+ * E6.2.6: Enhanced to detect session expiry and return SESSION_EXPIRED error code
  */
 
 export interface AuthCheckResult {
@@ -16,8 +19,34 @@ export interface AuthCheckResult {
 }
 
 /**
+ * Checks if an auth error indicates an expired session
+ * E6.2.6: Session expiry detection
+ */
+export function isSessionExpired(error: unknown): boolean {
+  if (!error) return false
+  
+  // Check for common session expiry indicators
+  const errorStr = String(error)
+  const errorMessage = error && typeof error === 'object' && 'message' in error 
+    ? String((error as { message: unknown }).message).toLowerCase()
+    : errorStr.toLowerCase()
+  
+  // Common Supabase auth expiry patterns
+  return (
+    errorMessage.includes('jwt expired') ||
+    errorMessage.includes('token expired') ||
+    errorMessage.includes('session expired') ||
+    errorMessage.includes('refresh_token_not_found') ||
+    errorMessage.includes('invalid refresh token')
+  )
+}
+
+/**
  * Verifies that the user is authenticated
  * Returns the user object if authenticated, or an error response
+ * 
+ * E6.2.6: Returns SESSION_EXPIRED (401) when session has expired
+ * Returns UNAUTHORIZED (401) for other auth failures
  */
 export async function requireAuth(): Promise<AuthCheckResult> {
   try {
@@ -25,7 +54,23 @@ export async function requireAuth(): Promise<AuthCheckResult> {
 
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser()
+
+    if (userError) {
+      // E6.2.6: Detect session expiry
+      if (isSessionExpired(userError)) {
+        return {
+          user: null,
+          error: sessionExpiredResponse(),
+        }
+      }
+      
+      return {
+        user: null,
+        error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      }
+    }
 
     if (!user) {
       return {
@@ -37,6 +82,15 @@ export async function requireAuth(): Promise<AuthCheckResult> {
     return { user, error: null }
   } catch (error) {
     console.error('Error in requireAuth:', error)
+    
+    // E6.2.6: Check for session expiry in caught errors
+    if (isSessionExpired(error)) {
+      return {
+        user: null,
+        error: sessionExpiredResponse(),
+      }
+    }
+    
     return {
       user: null,
       error: NextResponse.json({ error: 'Internal server error' }, { status: 500 }),

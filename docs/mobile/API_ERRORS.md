@@ -64,8 +64,37 @@ The API uses standard HTTP status codes consistently:
 
 ### Authentication & Authorization
 
+#### `SESSION_EXPIRED` (401)
+**When:** User's session has expired and cannot be automatically refreshed  
+**Status Code:** 401  
+**Example:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "SESSION_EXPIRED",
+    "message": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+  }
+}
+```
+
+**Mobile Client Action:**
+- Clear local session and tokens immediately
+- Clear any cached user data
+- Redirect to login screen
+- Display message: "Your session has expired. Please log in again."
+- Do NOT retry automatically
+
+**Detection Patterns:**
+- JWT expired
+- Token expired
+- Refresh token not found
+- Invalid refresh token
+
+**See Also:** [Auth & Session Management](./AUTH_SESSION.md) for detailed session handling
+
 #### `UNAUTHORIZED` (401)
-**When:** User is not authenticated or session has expired  
+**When:** User is not authenticated (no session present) or general auth failure  
 **Status Code:** 401  
 **Example:**
 ```json
@@ -79,9 +108,11 @@ The API uses standard HTTP status codes consistently:
 ```
 
 **Mobile Client Action:**
-- Clear local session
 - Redirect to login screen
-- Prompt user to re-authenticate
+- May not need to show error message (user simply not logged in)
+- Clear any stale session data
+
+**Note:** `AUTH_REQUIRED` is an alias used in some endpoints for the same scenario.
 
 #### `FORBIDDEN` (403)
 **When:** User is authenticated but lacks required role or resource ownership  

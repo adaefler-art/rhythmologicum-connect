@@ -9,7 +9,7 @@ jest.mock('@/lib/db/supabase.server', () => {
 })
 
 describe('GET /api/auth/resolve-role', () => {
-  it('returns 401 when not authenticated', async () => {
+  it('returns 401 with AUTH_REQUIRED when not authenticated', async () => {
     const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
       createServerSupabaseClient: jest.Mock
     }
@@ -27,6 +27,50 @@ describe('GET /api/auth/resolve-role', () => {
     expect(json).toEqual({
       success: false,
       error: { code: 'AUTH_REQUIRED', message: 'Authentication required' },
+    })
+  })
+
+  it('returns 401 with SESSION_EXPIRED when JWT has expired', async () => {
+    const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
+      createServerSupabaseClient: jest.Mock
+    }
+
+    const expiredError = new Error('JWT expired')
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: expiredError }),
+      },
+    })
+
+    const res = await GET()
+    expect(res.status).toBe(401)
+
+    const json = await res.json()
+    expect(json).toEqual({
+      success: false,
+      error: { code: 'SESSION_EXPIRED', message: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.' },
+    })
+  })
+
+  it('returns 401 with SESSION_EXPIRED when refresh token is invalid', async () => {
+    const { createServerSupabaseClient } = require('@/lib/db/supabase.server') as {
+      createServerSupabaseClient: jest.Mock
+    }
+
+    const expiredError = new Error('Invalid refresh token')
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: expiredError }),
+      },
+    })
+
+    const res = await GET()
+    expect(res.status).toBe(401)
+
+    const json = await res.json()
+    expect(json).toEqual({
+      success: false,
+      error: { code: 'SESSION_EXPIRED', message: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.' },
     })
   })
 
