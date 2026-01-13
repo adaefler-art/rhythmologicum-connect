@@ -1262,65 +1262,107 @@
       "file": "app/api/funnels/catalog/route.ts",
       "intent": null,
       "accessRole": "unknown",
-      "usedByCount": 11,
+      "usedByCount": 18,
       "usedBy": [
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 157,
+          "line": 163,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 185,
+          "line": 191,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 221,
+          "line": 227,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 255,
+          "line": 261,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 328,
+          "line": 336,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 365,
+          "line": 373,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 407,
+          "line": 415,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 425,
+          "line": 433,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 464,
+          "line": 472,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 504,
+          "line": 512,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 574,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 633,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 638,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 726,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 757,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 794,
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/catalog/__tests__/route.test.ts",
+          "line": 800,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },

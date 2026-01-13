@@ -6,6 +6,8 @@
  * 
  * Auth: Requires authentication (any role)
  * DB Access: Uses admin client for catalog metadata (documented justification)
+ * 
+ * E6.2.7: Supports caching (ETag, Last-Modified, Cache-Control) and pagination
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
@@ -25,6 +27,18 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { getTierContract } from '@/lib/contracts/tiers'
 import { getActivePillars, getAllowedFunnels } from '@/lib/contracts/programTier'
 import { isValidProgramTier } from '@/lib/contracts/registry'
+import {
+  generateETag,
+  generateLastModified,
+  generateCacheControl,
+  checkETagMatch,
+  notModifiedResponse,
+  addCacheHeaders,
+  decodeCursor,
+  encodeCursor,
+  findMostRecentTimestamp,
+  type PaginationMetadata,
+} from '@/lib/api/caching'
 
 function isBlank(value: unknown): boolean {
   return typeof value !== 'string' || value.trim().length === 0
@@ -76,6 +90,8 @@ function getSupabaseErrorLogFields(error: unknown): {
  * 
  * Query Parameters:
  * - tier (optional): Filter by program tier (e.g., 'tier-1-essential')
+ * - limit (optional): Items per page (default: 50, max: 100)
+ * - cursor (optional): Pagination cursor for next page
  * 
  * Response structure:
  * {
@@ -83,9 +99,20 @@ function getSupabaseErrorLogFields(error: unknown): {
  *   data: {
  *     pillars: [{ pillar: {...}, funnels: [...] }],
  *     uncategorized_funnels: [...],
- *     tier: 'tier-1-essential' (if tier filter applied)
+ *     tier: 'tier-1-essential' (if tier filter applied),
+ *     pagination: {
+ *       limit: 50,
+ *       hasMore: true,
+ *       nextCursor: "base64_cursor"
+ *     }
  *   }
  * }
+ * 
+ * HTTP Cache Headers (E6.2.7):
+ * - Cache-Control: public, max-age=300, must-revalidate
+ * - ETag: "funnels:v1:timestamp"
+ * - Last-Modified: HTTP date
+ * - Supports 304 Not Modified responses
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
@@ -93,6 +120,24 @@ export async function GET(request: Request) {
   // Parse query parameters
   const url = new URL(request.url)
   const tierParam = url.searchParams.get('tier')
+  const limitParam = url.searchParams.get('limit')
+  const cursorParam = url.searchParams.get('cursor')
+  
+  // Parse and validate pagination parameters
+  const limit = Math.min(Math.max(parseInt(limitParam || '50', 10), 1), 100)
+  let cursorData: { title: string; slug: string } | null = null
+  
+  if (cursorParam) {
+    cursorData = decodeCursor(cursorParam)
+    if (!cursorData) {
+      return errorResponseWithRequestId(
+        ErrorCode.INVALID_INPUT,
+        'Pagination cursor is invalid or expired. Please restart from the first page.',
+        400,
+        requestId,
+      )
+    }
+  }
 
   try {
     // Early deterministic configuration guard (do not construct clients)
@@ -192,7 +237,8 @@ export async function GET(request: Request) {
     }
 
     // Fetch all active funnels with their pillar information
-    const { data: funnels, error: funnelsError } = await dataClient
+    // E6.2.7: Deterministic sort order (title ASC, slug ASC) + pagination support
+    let funnelsQuery = dataClient
       .from('funnels_catalog')
       .select(`
         id,
@@ -203,11 +249,26 @@ export async function GET(request: Request) {
         est_duration_min,
         outcomes,
         is_active,
-        default_version_id
+        default_version_id,
+        updated_at,
+        created_at
       `)
       .eq('is_active', true)
       .order('title', { ascending: true })
       .order('slug', { ascending: true })
+    
+    // Apply cursor-based pagination
+    if (cursorData) {
+      // Continue from cursor: (title > cursor.title) OR (title = cursor.title AND slug > cursor.slug)
+      funnelsQuery = funnelsQuery.or(
+        `title.gt.${cursorData.title},and(title.eq.${cursorData.title},slug.gt.${cursorData.slug})`
+      )
+    }
+    
+    // Fetch limit + 1 to check if there are more pages
+    funnelsQuery = funnelsQuery.limit(limit + 1)
+
+    const { data: funnels, error: funnelsError } = await funnelsQuery
 
     if (funnelsError) {
       const classified = classifySupabaseError(funnelsError)
@@ -342,9 +403,14 @@ export async function GET(request: Request) {
       })
     }
 
+    // E6.2.7: Handle pagination
+    // Separate the actual page items from the "hasMore" check item
+    const hasMore = funnels && funnels.length > limit
+    const pageFunnels = funnels ? funnels.slice(0, limit) : []
+    
     // Distribute funnels to pillars or uncategorized
-    if (funnels) {
-      funnels.forEach((funnel) => {
+    if (pageFunnels) {
+      pageFunnels.forEach((funnel) => {
         // If tier filtering is active, only include allowed funnels
         if (allowedFunnelSlugs && !allowedFunnelSlugs.includes(funnel.slug)) {
           return // Skip funnels not allowed in this tier
@@ -368,19 +434,49 @@ export async function GET(request: Request) {
         }
       })
     }
+    
+    // E6.2.7: Create pagination metadata
+    const lastFunnel = pageFunnels.length > 0 ? pageFunnels[pageFunnels.length - 1] : null
+    const pagination: PaginationMetadata = {
+      limit,
+      hasMore,
+      nextCursor: hasMore && lastFunnel ? 
+        encodeCursor({ title: lastFunnel.title, slug: lastFunnel.slug }) : null,
+    }
 
     // Convert map to array, preserving sort order
-    const catalogData: FunnelCatalogResponse & { tier?: string } = {
+    const catalogData: FunnelCatalogResponse & { tier?: string; pagination?: PaginationMetadata } = {
       pillars: Array.from(pillarMap.values()),
       uncategorized_funnels: uncategorizedFunnels,
+      pagination,
     }
     
     // Include tier in response if filtering was applied
     if (tierParam && tierContract) {
       catalogData.tier = tierParam
     }
-
-    return withRequestId(successResponse(catalogData), requestId)
+    
+    // E6.2.7: Generate cache headers
+    // Find most recent update timestamp across all funnels (fallback to created_at if updated_at is null)
+    const allTimestamps = pageFunnels.map((f) => f.updated_at || f.created_at)
+    const lastModifiedDate = findMostRecentTimestamp(allTimestamps)
+    
+    const etag = generateETag('funnels', '1', lastModifiedDate)
+    const cacheControl = generateCacheControl(300, true, true) // 5 minutes
+    
+    // Check if client cache is still valid
+    if (checkETagMatch(request, etag)) {
+      return withRequestId(notModifiedResponse(etag, cacheControl), requestId)
+    }
+    
+    // Create success response with cache headers
+    const response = successResponse(catalogData)
+    const lastModified = generateLastModified(lastModifiedDate)
+    
+    return withRequestId(
+      addCacheHeaders(response, etag, lastModified, cacheControl),
+      requestId,
+    )
   } catch (error) {
     logError({
       requestId,
