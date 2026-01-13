@@ -8,12 +8,12 @@
 
 import { NextRequest } from 'next/server'
 import { successResponse } from '@/lib/api/responses'
-import { getRequestId } from '@/lib/db/errors'
+import { getRequestId, withRequestId } from '@/lib/db/errors'
 
 export async function GET(request: NextRequest) {
   const requestId = getRequestId(request)
 
-  return successResponse(
+  const response = successResponse(
     {
       message: 'Correlation ID test endpoint',
       receivedRequestId: requestId,
@@ -22,4 +22,7 @@ export async function GET(request: NextRequest) {
     200,
     requestId,
   )
+
+  // Add correlation ID to response header
+  return withRequestId(response, requestId)
 }
