@@ -145,3 +145,24 @@ export function payloadTooLargeResponse(
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.PAYLOAD_TOO_LARGE, message, 413, details)
 }
+
+export function stateConflictResponse(
+  message: string,
+  details?: Record<string, unknown>,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.STATE_CONFLICT, message, 409, details)
+}
+
+export function versionMismatchResponse(
+  message: string,
+  details?: Record<string, unknown>,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.VERSION_MISMATCH, message, 409, details)
+}
+
+export function duplicateOperationResponse(
+  message: string,
+  details?: Record<string, unknown>,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.DUPLICATE_OPERATION, message, 409, details)
+}
