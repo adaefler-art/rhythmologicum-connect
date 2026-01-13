@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { CURRENT_CONSENT_VERSION } from '@/lib/contracts/onboarding'
+import { isSessionExpired } from '@/lib/api/authHelpers'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -45,8 +46,17 @@ export async function GET() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  // 401-first: no session / no authenticated user
-  if (userError || !user) {
+  // E6.2.6: 401-first with SESSION_EXPIRED detection
+  if (userError) {
+    // Check for session expiry
+    if (isSessionExpired(userError)) {
+      return fail('SESSION_EXPIRED', 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.', 401)
+    }
+    
+    return fail('AUTH_REQUIRED', 'Authentication required', 401)
+  }
+
+  if (!user) {
     return fail('AUTH_REQUIRED', 'Authentication required', 401)
   }
 

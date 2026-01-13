@@ -110,6 +110,12 @@ export function unauthorizedResponse(
   return errorResponse(ErrorCode.UNAUTHORIZED, message, 401)
 }
 
+export function sessionExpiredResponse(
+  message = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.SESSION_EXPIRED, message, 401)
+}
+
 export function forbiddenResponse(
   message = 'Sie haben keine Berechtigung für diese Aktion.',
 ): NextResponse<ErrorResponse> {
