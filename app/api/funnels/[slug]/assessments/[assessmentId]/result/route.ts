@@ -6,9 +6,13 @@ import {
   forbiddenResponse,
   notFoundResponse,
   internalErrorResponse,
-  successResponse,
+  versionedSuccessResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
+import {
+  PATIENT_ASSESSMENT_SCHEMA_VERSION,
+  type GetResultResponseData,
+} from '@/lib/api/contracts/patient'
 
 function getFunnelSlugCandidates(slug: string): string[] {
   const normalized = slug.toLowerCase().trim()
@@ -98,13 +102,15 @@ export async function GET(
       return internalErrorResponse('Fehler beim Laden des Funnels.')
     }
 
-    return successResponse({
+    const responseData: GetResultResponseData = {
       id: assessment.id,
       funnel: assessment.funnel,
       completedAt: assessment.completed_at,
       status: assessment.status,
       funnelTitle: funnelRow?.title ?? null,
-    })
+    }
+
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
   } catch (error) {
     console.error('Error in GET /api/funnels/[slug]/assessments/[assessmentId]/result:', error)
     return internalErrorResponse('Internal server error')

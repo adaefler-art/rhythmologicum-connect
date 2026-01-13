@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { validateAllRequiredQuestions } from '@/lib/validation/requiredQuestions'
 import {
-  successResponse,
+  versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
   notFoundResponse,
@@ -18,6 +18,10 @@ import {
   logAssessmentCompleted,
 } from '@/lib/logging/logger'
 import { trackAssessmentCompleted, calculateDurationSeconds } from '@/lib/monitoring/kpi'
+import {
+  PATIENT_ASSESSMENT_SCHEMA_VERSION,
+  type CompleteAssessmentResponseData,
+} from '@/lib/api/contracts/patient'
 
 /**
  * B5/B8: Complete an assessment
@@ -132,11 +136,12 @@ export async function POST(
 
     // Check if already completed
     if (assessment.status === 'completed') {
-      return successResponse({
+      const responseData: CompleteAssessmentResponseData = {
         assessmentId: assessment.id,
         status: 'completed',
         message: 'Assessment wurde bereits abgeschlossen.',
-      })
+      }
+      return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
     }
 
     // Verify funnel_id exists
@@ -223,10 +228,12 @@ export async function POST(
     })
 
     // Success response
-    return successResponse({
+    const responseData: CompleteAssessmentResponseData = {
       assessmentId: assessment.id,
       status: 'completed',
-    })
+    }
+
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
   } catch (error) {
     logDatabaseError(
       {
