@@ -947,6 +947,53 @@ export type Database = {
           },
         ]
       }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          endpoint_path: string
+          expires_at: string
+          http_method: string
+          id: string
+          idempotency_key: string
+          request_hash: string | null
+          response_body: Json
+          response_status: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint_path: string
+          expires_at?: string
+          http_method?: string
+          id?: string
+          idempotency_key: string
+          request_hash?: string | null
+          response_body: Json
+          response_status: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint_path?: string
+          expires_at?: string
+          http_method?: string
+          id?: string
+          idempotency_key?: string
+          request_hash?: string | null
+          response_body?: Json
+          response_status?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "idempotency_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       kpi_thresholds: {
         Row: {
           created_at: string
@@ -2652,6 +2699,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      cleanup_expired_idempotency_keys: { Args: never; Returns: number }
       compute_inputs_hash: { Args: { p_inputs: Json }; Returns: string }
       compute_safety_evaluation_key_hash: {
         Args: { p_prompt_version: string; p_sections_id: string }
