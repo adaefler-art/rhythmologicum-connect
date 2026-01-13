@@ -36,15 +36,15 @@ CREATE TABLE IF NOT EXISTS public.idempotency_keys (
 );
 
 -- Unique constraint: one key per user per endpoint
-CREATE UNIQUE INDEX idx_idempotency_keys_unique 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_idempotency_keys_unique 
     ON public.idempotency_keys(user_id, endpoint_path, idempotency_key);
 
 -- Index for cleanup of expired keys
-CREATE INDEX idx_idempotency_keys_expires_at 
+CREATE INDEX IF NOT EXISTS idx_idempotency_keys_expires_at 
     ON public.idempotency_keys(expires_at);
 
 -- Index for fast lookup
-CREATE INDEX idx_idempotency_keys_lookup 
+CREATE INDEX IF NOT EXISTS idx_idempotency_keys_lookup 
     ON public.idempotency_keys(user_id, idempotency_key);
 
 -- Comments
@@ -60,32 +60,61 @@ COMMENT ON COLUMN public.idempotency_keys.expires_at IS 'Expiration timestamp (d
 -- Row Level Security (RLS)
 ALTER TABLE public.idempotency_keys ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can only see their own idempotency keys
-CREATE POLICY idempotency_keys_select_own 
-    ON public.idempotency_keys
-    FOR SELECT
-    USING (auth.uid() = user_id);
+-- Policies (guarded for idempotency)
+DO $$
+BEGIN
+    -- Policy: Users can only see their own idempotency keys
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'idempotency_keys'
+          AND policyname = 'idempotency_keys_select_own'
+    ) THEN
+        CREATE POLICY idempotency_keys_select_own
+            ON public.idempotency_keys
+            FOR SELECT
+            USING (auth.uid() = user_id);
+    END IF;
 
--- Policy: Users can only insert their own idempotency keys
-CREATE POLICY idempotency_keys_insert_own 
-    ON public.idempotency_keys
-    FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    -- Policy: Users can only insert their own idempotency keys
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'idempotency_keys'
+          AND policyname = 'idempotency_keys_insert_own'
+    ) THEN
+        CREATE POLICY idempotency_keys_insert_own
+            ON public.idempotency_keys
+            FOR INSERT
+            WITH CHECK (auth.uid() = user_id);
+    END IF;
 
--- Policy: Clinicians and admins can view all idempotency keys (for debugging)
-CREATE POLICY idempotency_keys_select_clinician 
-    ON public.idempotency_keys
-    FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM auth.users
-            WHERE auth.users.id = auth.uid()
-            AND (
-                auth.users.raw_app_meta_data->>'role' = 'clinician'
-                OR auth.users.raw_app_meta_data->>'role' = 'admin'
-            )
-        )
-    );
+    -- Policy: Clinicians and admins can view all idempotency keys (for debugging)
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'idempotency_keys'
+          AND policyname = 'idempotency_keys_select_clinician'
+    ) THEN
+        CREATE POLICY idempotency_keys_select_clinician
+            ON public.idempotency_keys
+            FOR SELECT
+            USING (
+                EXISTS (
+                    SELECT 1 FROM auth.users
+                    WHERE auth.users.id = auth.uid()
+                      AND (
+                        auth.users.raw_app_meta_data->>'role' = 'clinician'
+                        OR auth.users.raw_app_meta_data->>'role' = 'admin'
+                      )
+                )
+            );
+    END IF;
+END;
+$$;
 
 -- Function: Clean up expired idempotency keys
 -- This should be called periodically (e.g., via cron job or scheduled function)
