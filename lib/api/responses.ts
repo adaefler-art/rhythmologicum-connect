@@ -22,6 +22,25 @@ export function successResponse<T>(data: T, status = 200): NextResponse<SuccessR
 }
 
 /**
+ * E6.2.3: Create a versioned success response with data and schemaVersion
+ * Used for patient-facing endpoints that require iOS compatibility
+ */
+export function versionedSuccessResponse<T>(
+  data: T,
+  schemaVersion: string,
+  status = 200,
+): NextResponse {
+  return NextResponse.json(
+    {
+      success: true,
+      data,
+      schemaVersion,
+    },
+    { status },
+  )
+}
+
+/**
  * Create an error response
  */
 export function errorResponse(
@@ -43,6 +62,36 @@ export function errorResponse(
     {
       success: false,
       error,
+    },
+    { status },
+  )
+}
+
+/**
+ * E6.2.3: Create a versioned error response
+ * Used for patient-facing endpoints that require iOS compatibility
+ */
+export function versionedErrorResponse(
+  code: ErrorCode,
+  message: string,
+  status: number,
+  schemaVersion: string,
+  details?: Record<string, unknown>,
+): NextResponse {
+  const error: ApiError = {
+    code,
+    message,
+  }
+
+  if (details) {
+    error.details = details
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error,
+      schemaVersion,
     },
     { status },
   )

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import {
-  successResponse,
+  versionedSuccessResponse,
   missingFieldsResponse,
   invalidInputResponse,
   unauthorizedResponse,
@@ -20,6 +20,11 @@ import {
   logForbidden,
   logDatabaseError,
 } from '@/lib/logging/logger'
+import {
+  PATIENT_ASSESSMENT_SCHEMA_VERSION,
+  SaveAnswerRequestSchema,
+  type SaveAnswerResponseData,
+} from '@/lib/api/contracts/patient'
 
 /**
  * B8: Save Assessment Answer (Save-on-Tap) - Funnel-based endpoint
@@ -39,19 +44,14 @@ import {
  *   answerValue: number (integer value of the answer)
  * }
  * 
- * Response (B8 standardized):
+ * Response (B8 standardized + E6.2.3 versioned):
  * {
  *   success: boolean,
  *   data?: { id: string, assessment_id: string, question_id: string, answer_value: number },
+ *   schemaVersion: string,
  *   error?: { code: string, message: string }
  * }
  */
-
-type RequestBody = {
-  stepId: string
-  questionId: string
-  answerValue: number
-}
 
 export async function POST(
   request: NextRequest,
@@ -61,22 +61,17 @@ export async function POST(
     const { slug, assessmentId } = await context.params
 
     // Parse request body
-    const body: RequestBody = await request.json()
-    const stepId = body.stepId
-    const questionId = body.questionId
-    const { answerValue } = body
+    const body: unknown = await request.json()
 
-    // Validate required fields
-    if (!assessmentId || !stepId || !questionId || answerValue === undefined || answerValue === null) {
-      return missingFieldsResponse(
-        'Fehlende Pflichtfelder. Bitte geben Sie stepId, questionId und answerValue an.',
+    // E6.2.3: Validate request against schema
+    const validationResult = SaveAnswerRequestSchema.safeParse(body)
+    if (!validationResult.success) {
+      return invalidInputResponse(
+        'Ungültige Anfragedaten. Bitte überprüfen Sie stepId, questionId und answerValue.',
       )
     }
 
-    // Validate answerValue is an integer
-    if (!Number.isInteger(answerValue)) {
-      return invalidInputResponse('Der Wert answerValue muss eine ganze Zahl sein.')
-    }
+    const { stepId, questionId, answerValue } = validationResult.data
 
     const supabase = await createServerSupabaseClient()
 
@@ -270,15 +265,14 @@ export async function POST(
     }
 
     // Success response with standardized format
-    return successResponse(
-      {
-        id: data.id,
-        assessment_id: data.assessment_id,
-        question_id: data.question_id,
-        answer_value: data.answer_value,
-      },
-      200,
-    )
+    const responseData: SaveAnswerResponseData = {
+      id: data.id,
+      assessment_id: data.assessment_id,
+      question_id: data.question_id,
+      answer_value: data.answer_value,
+    }
+
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200)
   } catch (error) {
     // Catch-all error handler
     logDatabaseError(

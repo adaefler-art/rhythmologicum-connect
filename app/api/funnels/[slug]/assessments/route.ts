@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
 import {
-  successResponse,
+  versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
   notFoundResponse,
@@ -11,6 +11,10 @@ import {
 } from '@/lib/api/responses'
 import { logUnauthorized, logDatabaseError, logAssessmentStarted } from '@/lib/logging/logger'
 import { trackAssessmentStarted } from '@/lib/monitoring/kpi'
+import {
+  PATIENT_ASSESSMENT_SCHEMA_VERSION,
+  type StartAssessmentResponseData,
+} from '@/lib/api/contracts/patient'
 
 /**
  * B5/B8: Start a new assessment for a funnel
@@ -153,18 +157,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
     })
 
     // Return success response
-    return successResponse(
-      {
-        assessmentId: assessment.id,
-        status: assessment.status,
-        currentStep: {
-          stepId: currentStep.stepId,
-          title: currentStep.title,
-          type: currentStep.type,
-          orderIndex: currentStep.orderIndex,
-          stepIndex: currentStep.stepIndex,
-        },
+    const responseData: StartAssessmentResponseData = {
+      assessmentId: assessment.id,
+      status: assessment.status,
+      currentStep: {
+        stepId: currentStep.stepId,
+        title: currentStep.title,
+        type: currentStep.type,
+        orderIndex: currentStep.orderIndex,
+        stepIndex: currentStep.stepIndex,
       },
+    }
+
+    return versionedSuccessResponse(
+      responseData,
+      PATIENT_ASSESSMENT_SCHEMA_VERSION,
       201,
     )
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
 import {
-  successResponse,
+  versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
   notFoundResponse,
@@ -16,6 +16,10 @@ import {
   logInfo,
   logWarn,
 } from '@/lib/logging/logger'
+import {
+  PATIENT_ASSESSMENT_SCHEMA_VERSION,
+  type ResumeAssessmentResponseData,
+} from '@/lib/api/contracts/patient'
 
 /**
  * B5/B8: Get assessment status and current step
@@ -195,7 +199,7 @@ export async function GET(
     const completedSteps = currentStep.stepIndex
 
     // Return success response
-    return successResponse({
+    const responseData: ResumeAssessmentResponseData = {
       assessmentId: assessment.id,
       status: assessment.status,
       currentStep: {
@@ -207,7 +211,9 @@ export async function GET(
       },
       completedSteps,
       totalSteps,
-    })
+    }
+
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
   } catch (error) {
     logDatabaseError({ endpoint: 'GET /api/funnels/[slug]/assessments/[assessmentId]' }, error)
     return internalErrorResponse()
