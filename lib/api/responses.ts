@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { ErrorCode, ApiError, SuccessResponse, ErrorResponse } from './responseTypes'
 
+// Re-export ErrorCode for external use
+export { ErrorCode } from './responseTypes'
+
 /**
  * B8: Standardized API Response Utilities
  * 

@@ -82,7 +82,8 @@ export async function checkIdempotencyKey(
   }
 
   // Look up existing idempotency key
-  const { data: existingKey, error } = await supabase
+  // Type assertion needed until Supabase types are regenerated
+  const { data: existingKey, error } = await (supabase as any)
     .from('idempotency_keys')
     .select('*')
     .eq('user_id', user.id)
@@ -171,7 +172,8 @@ export async function storeIdempotencyKey(
   const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString()
 
   // Store idempotency key
-  const { error } = await supabase.from('idempotency_keys').insert({
+  // Type assertion needed until Supabase types are regenerated
+  const { error } = await (supabase as any).from('idempotency_keys').insert({
     idempotency_key: idempotencyKey,
     user_id: user.id,
     endpoint_path: config.endpointPath,
