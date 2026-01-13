@@ -468,6 +468,30 @@ COMMENT ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."cleanup_expired_idempotency_keys"() RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+    deleted_count integer;
+BEGIN
+    DELETE FROM public.idempotency_keys
+    WHERE expires_at < now();
+    
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    RETURN deleted_count;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."cleanup_expired_idempotency_keys"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."cleanup_expired_idempotency_keys"() IS 'E6.2.4: Deletes expired idempotency keys (should be run periodically)';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") RETURNS "text"
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -1310,29 +1334,6 @@ $$;
 
 ALTER FUNCTION "public"."update_support_cases_updated_at"() OWNER TO "postgres";
 
-
-CREATE OR REPLACE FUNCTION "public"."cleanup_expired_idempotency_keys"() RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-DECLARE
-    deleted_count integer;
-BEGIN
-    DELETE FROM public.idempotency_keys
-    WHERE expires_at < now();
-    
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    
-    RETURN deleted_count;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."cleanup_expired_idempotency_keys"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."cleanup_expired_idempotency_keys"() IS 'E6.2.4: Deletes expired idempotency keys (should be run periodically)';
-
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -1403,55 +1404,6 @@ COMMENT ON COLUMN "public"."assessments"."funnel_id" IS 'Foreign key to funnels 
 
 
 COMMENT ON COLUMN "public"."assessments"."status" IS 'Lifecycle status of the assessment: in_progress or completed';
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."idempotency_keys" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "idempotency_key" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "endpoint_path" "text" NOT NULL,
-    "http_method" "text" DEFAULT 'POST'::"text" NOT NULL,
-    "response_status" integer NOT NULL,
-    "response_body" "jsonb" NOT NULL,
-    "request_hash" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "expires_at" timestamp with time zone DEFAULT ("now"() + '24:00:00'::interval) NOT NULL
-);
-
-
-ALTER TABLE "public"."idempotency_keys" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."idempotency_keys" IS 'E6.2.4: Stores idempotency keys and cached responses for retry-safe write operations';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."idempotency_key" IS 'Client-provided idempotency key (UUID recommended)';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."user_id" IS 'User who initiated the request for security isolation';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."endpoint_path" IS 'Endpoint path to scope keys (e.g., /api/funnels/stress/assessments)';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."response_status" IS 'Cached HTTP status code from original request';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."response_body" IS 'Cached response body from original request';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."request_hash" IS 'SHA-256 hash of request payload for conflict detection';
-
-
-
-COMMENT ON COLUMN "public"."idempotency_keys"."expires_at" IS 'Expiration timestamp (default 24 hours from creation)';
 
 
 
@@ -1992,6 +1944,55 @@ COMMENT ON COLUMN "public"."funnels_catalog"."outcomes" IS 'JSONB array of expec
 
 
 COMMENT ON COLUMN "public"."funnels_catalog"."default_version_id" IS 'Default version for new assessments';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."idempotency_keys" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "idempotency_key" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "endpoint_path" "text" NOT NULL,
+    "http_method" "text" DEFAULT 'POST'::"text" NOT NULL,
+    "response_status" integer NOT NULL,
+    "response_body" "jsonb" NOT NULL,
+    "request_hash" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "expires_at" timestamp with time zone DEFAULT ("now"() + '24:00:00'::interval) NOT NULL
+);
+
+
+ALTER TABLE "public"."idempotency_keys" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."idempotency_keys" IS 'E6.2.4: Stores idempotency keys and cached responses for retry-safe write operations';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."idempotency_key" IS 'Client-provided idempotency key (UUID recommended)';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."user_id" IS 'User who initiated the request for security isolation';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."endpoint_path" IS 'Endpoint path to scope keys (e.g., /api/funnels/stress/assessments)';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."response_status" IS 'Cached HTTP status code from original request';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."response_body" IS 'Cached response body from original request';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."request_hash" IS 'SHA-256 hash of request payload for conflict detection';
+
+
+
+COMMENT ON COLUMN "public"."idempotency_keys"."expires_at" IS 'Expiration timestamp (default 24 hours from creation)';
 
 
 
@@ -3403,11 +3404,6 @@ ALTER TABLE ONLY "public"."assessments"
 
 
 
-ALTER TABLE ONLY "public"."idempotency_keys"
-    ADD CONSTRAINT "idempotency_keys_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."audit_log"
     ADD CONSTRAINT "audit_log_pkey" PRIMARY KEY ("id");
 
@@ -3510,6 +3506,11 @@ ALTER TABLE ONLY "public"."funnels"
 
 ALTER TABLE ONLY "public"."funnels"
     ADD CONSTRAINT "funnels_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."idempotency_keys"
+    ADD CONSTRAINT "idempotency_keys_pkey" PRIMARY KEY ("id");
 
 
 
@@ -3845,18 +3846,6 @@ CREATE INDEX "idx_assessments_status" ON "public"."assessments" USING "btree" ("
 
 
 
-CREATE UNIQUE INDEX "idx_idempotency_keys_unique" ON "public"."idempotency_keys" USING "btree" ("user_id", "endpoint_path", "idempotency_key");
-
-
-
-CREATE INDEX "idx_idempotency_keys_expires_at" ON "public"."idempotency_keys" USING "btree" ("expires_at");
-
-
-
-CREATE INDEX "idx_idempotency_keys_lookup" ON "public"."idempotency_keys" USING "btree" ("user_id", "idempotency_key");
-
-
-
 CREATE INDEX "idx_audit_log_actor_user_id" ON "public"."audit_log" USING "btree" ("actor_user_id");
 
 
@@ -4058,6 +4047,18 @@ CREATE INDEX "idx_funnels_catalog_org_id" ON "public"."funnels_catalog" USING "b
 
 
 CREATE INDEX "idx_funnels_catalog_slug" ON "public"."funnels_catalog" USING "btree" ("slug");
+
+
+
+CREATE INDEX "idx_idempotency_keys_expires_at" ON "public"."idempotency_keys" USING "btree" ("expires_at");
+
+
+
+CREATE INDEX "idx_idempotency_keys_lookup" ON "public"."idempotency_keys" USING "btree" ("user_id", "idempotency_key");
+
+
+
+CREATE UNIQUE INDEX "idx_idempotency_keys_unique" ON "public"."idempotency_keys" USING "btree" ("user_id", "endpoint_path", "idempotency_key");
 
 
 
@@ -4686,11 +4687,6 @@ ALTER TABLE ONLY "public"."assessments"
 
 
 
-ALTER TABLE ONLY "public"."idempotency_keys"
-    ADD CONSTRAINT "idempotency_keys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."audit_log"
     ADD CONSTRAINT "audit_log_actor_user_id_fkey" FOREIGN KEY ("actor_user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
@@ -4827,6 +4823,11 @@ ALTER TABLE ONLY "public"."funnel_versions"
 
 ALTER TABLE ONLY "public"."funnels_catalog"
     ADD CONSTRAINT "funnels_catalog_default_version_id_fkey" FOREIGN KEY ("default_version_id") REFERENCES "public"."funnel_versions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."idempotency_keys"
+    ADD CONSTRAINT "idempotency_keys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -5199,20 +5200,6 @@ CREATE POLICY "Patients can view own assessments" ON "public"."assessments" FOR 
 
 
 
-CREATE POLICY "idempotency_keys_select_own" ON "public"."idempotency_keys" FOR SELECT USING (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "idempotency_keys_insert_own" ON "public"."idempotency_keys" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
-CREATE POLICY "idempotency_keys_select_clinician" ON "public"."idempotency_keys" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "auth"."users"
-  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
-
-
-
 CREATE POLICY "Patients can view own documents" ON "public"."documents" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."assessments"
   WHERE (("assessments"."id" = "documents"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
@@ -5418,9 +5405,6 @@ ALTER TABLE "public"."assessment_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."assessments" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."idempotency_keys" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."audit_log" ENABLE ROW LEVEL SECURITY;
 
 
@@ -5507,6 +5491,23 @@ ALTER TABLE "public"."funnels" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."funnels_catalog" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."idempotency_keys" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "idempotency_keys_insert_own" ON "public"."idempotency_keys" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "idempotency_keys_select_clinician" ON "public"."idempotency_keys" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
+
+
+
+CREATE POLICY "idempotency_keys_select_own" ON "public"."idempotency_keys" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
 
 
 ALTER TABLE "public"."kpi_thresholds" ENABLE ROW LEVEL SECURITY;
@@ -6110,6 +6111,12 @@ GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."cleanup_expired_idempotency_keys"() TO "anon";
+GRANT ALL ON FUNCTION "public"."cleanup_expired_idempotency_keys"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cleanup_expired_idempotency_keys"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."compute_inputs_hash"("p_inputs" "jsonb") TO "service_role";
@@ -6433,6 +6440,12 @@ GRANT ALL ON TABLE "public"."funnels_catalog" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."idempotency_keys" TO "anon";
+GRANT ALL ON TABLE "public"."idempotency_keys" TO "authenticated";
+GRANT ALL ON TABLE "public"."idempotency_keys" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."kpi_thresholds" TO "anon";
 GRANT ALL ON TABLE "public"."kpi_thresholds" TO "authenticated";
 GRANT ALL ON TABLE "public"."kpi_thresholds" TO "service_role";
@@ -6628,15 +6641,6 @@ GRANT ALL ON TABLE "public"."user_org_membership" TO "service_role";
 GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
-
-
-
-GRANT SELECT,INSERT ON TABLE "public"."idempotency_keys" TO "authenticated";
-GRANT ALL ON TABLE "public"."idempotency_keys" TO "service_role";
-
-
-
-GRANT EXECUTE ON FUNCTION "public"."cleanup_expired_idempotency_keys"() TO "service_role";
 
 
 
