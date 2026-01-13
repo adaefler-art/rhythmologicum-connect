@@ -35,7 +35,7 @@ import {
   notModifiedResponse,
   addCacheHeaders,
   decodeCursor,
-  createPaginationMetadata,
+  encodeCursor,
   findMostRecentTimestamp,
   type PaginationMetadata,
 } from '@/lib/api/caching'
@@ -250,7 +250,8 @@ export async function GET(request: Request) {
         outcomes,
         is_active,
         default_version_id,
-        updated_at
+        updated_at,
+        created_at
       `)
       .eq('is_active', true)
       .order('title', { ascending: true })
@@ -440,12 +441,7 @@ export async function GET(request: Request) {
       limit,
       hasMore,
       nextCursor: hasMore && lastFunnel ? 
-        createPaginationMetadata(
-          [lastFunnel],
-          1,
-          1,
-          (f) => ({ title: f.title, slug: f.slug })
-        ).nextCursor : null,
+        encodeCursor({ title: lastFunnel.title, slug: lastFunnel.slug }) : null,
     }
 
     // Convert map to array, preserving sort order
@@ -461,8 +457,8 @@ export async function GET(request: Request) {
     }
     
     // E6.2.7: Generate cache headers
-    // Find most recent update timestamp across all funnels
-    const allTimestamps = pageFunnels.map((f) => f.updated_at)
+    // Find most recent update timestamp across all funnels (fallback to created_at if updated_at is null)
+    const allTimestamps = pageFunnels.map((f) => f.updated_at || f.created_at)
     const lastModifiedDate = findMostRecentTimestamp(allTimestamps)
     
     const etag = generateETag('funnels', '1', lastModifiedDate)
