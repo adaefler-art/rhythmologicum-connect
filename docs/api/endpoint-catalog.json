@@ -2050,6 +2050,19 @@
       ],
       "isOrphan": false,
       "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/test/correlation-id",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/test/correlation-id/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     }
   ],
   "unknownCallsites": []

@@ -29,7 +29,8 @@
     "/api/processing/validation",
     "/api/reports/[reportId]/pdf",
     "/api/review/queue",
-    "/api/shipments/[id]/events"
+    "/api/shipments/[id]/events",
+    "/api/test/correlation-id"
   ],
   "allowedIntents": [
     "manual:webhook",

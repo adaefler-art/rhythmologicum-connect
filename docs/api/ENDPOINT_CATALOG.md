@@ -88,3 +88,4 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/support-cases/[id]/escalate | POST | unknown |  | 1 | app/api/support-cases/[id]/escalate/route.ts |
 | /api/tasks | GET, POST | unknown |  | 7 | app/api/tasks/route.ts |
 | /api/tasks/[id] | PATCH | unknown |  | 7 | app/api/tasks/[id]/route.ts |
+| /api/test/correlation-id | GET | unknown |  | 0 | app/api/test/correlation-id/route.ts |
