@@ -124,6 +124,40 @@ export async function requireAdminOrClinicianRole(): Promise<AuthCheckResult> {
 }
 
 /**
+ * E6.4.1: Verifies that the user is eligible for pilot features
+ * Returns the user object if eligible, or an error response (403)
+ * 
+ * This function ensures 401-first ordering by calling requireAuth() first,
+ * then checking pilot eligibility without additional DB calls in the auth path.
+ */
+export async function requirePilotEligibility(): Promise<AuthCheckResult> {
+  // Import here to avoid circular dependency
+  const { isPilotEligibleFull } = await import('./pilotEligibility')
+  const { pilotNotEligibleResponse } = await import('./responses')
+  
+  // First, check authentication (401-first)
+  const authResult = await requireAuth()
+  
+  if (authResult.error) {
+    return authResult
+  }
+  
+  const user = authResult.user!
+  
+  // Then check pilot eligibility
+  const isEligible = await isPilotEligibleFull(user)
+  
+  if (!isEligible) {
+    return {
+      user: null,
+      error: pilotNotEligibleResponse(),
+    }
+  }
+  
+  return { user, error: null }
+}
+
+/**
  * Checks if a user has a specific role
  */
 export function hasRole(user: User, requiredRole: string): boolean {
