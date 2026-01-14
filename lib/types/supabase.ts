@@ -1553,6 +1553,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
           sex: string | null
           user_id: string
         }
@@ -1561,6 +1562,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
           sex?: string | null
           user_id: string
         }
@@ -1569,6 +1571,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
           sex?: string | null
           user_id?: string
         }
@@ -2830,6 +2833,7 @@ export type Database = {
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
+      onboarding_status_enum: "not_started" | "in_progress" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
