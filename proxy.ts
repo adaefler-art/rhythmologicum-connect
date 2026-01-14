@@ -1,3 +1,8 @@
+/**
+ * Next.js 16 Proxy (formerly middleware.ts)
+ * Handles authentication and authorization for protected routes.
+ * @see https://nextjs.org/docs/messages/middleware-to-proxy
+ */
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
