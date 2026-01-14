@@ -2788,6 +2788,7 @@ export type Database = {
         | "READ"
         | "FAILED"
         | "CANCELLED"
+      onboarding_status_enum: "not_started" | "in_progress" | "completed"
       parsing_status:
         | "pending"
         | "processing"
@@ -2833,7 +2834,6 @@ export type Database = {
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
-      onboarding_status_enum: "not_started" | "in_progress" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2978,6 +2978,7 @@ export const Constants = {
         "FAILED",
         "CANCELLED",
       ],
+      onboarding_status_enum: ["not_started", "in_progress", "completed"],
       parsing_status: [
         "pending",
         "processing",
