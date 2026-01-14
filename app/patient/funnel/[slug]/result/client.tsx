@@ -130,8 +130,8 @@ export default function ResultClient({
         <ErrorState
           title="Fehler"
           message={error || 'Ergebnisse konnten nicht geladen werden.'}
-          onRetry={() => router.push('/patient')}
-          retryText="Zurück zur Übersicht"
+          onRetry={() => router.push('/patient/dashboard')}
+          retryText="Zurück zum Dashboard"
         />
       </main>
     )
@@ -350,11 +350,11 @@ Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. W
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
-            onClick={() => router.push('/patient')}
+            onClick={() => router.push('/patient/dashboard')}
             className="w-full sm:flex-1 px-6 py-4 bg-sky-600 text-white rounded-xl text-base font-semibold hover:bg-sky-700 active:bg-sky-800 transition-colors shadow-md"
             style={{ minHeight: '56px' }}
           >
-            Zur Übersicht
+            Zum Dashboard
           </button>
           <button
             onClick={() => router.push('/patient/history')}
