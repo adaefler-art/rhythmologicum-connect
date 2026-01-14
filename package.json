@@ -22,6 +22,8 @@
     "db:access-verify": "node scripts/db/verify-db-access.js",
     "api:catalog": "node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json",
     "api:catalog:verify": "pwsh -File scripts/ci/verify-endpoint-catalog.ps1",
+    "mobile:contracts": "node scripts/dev/mobile-contract/export.js --out docs/dev/mobile-contracts.v1.json",
+    "mobile:contracts:verify": "pwsh -File scripts/ci/verify-mobile-contracts.ps1",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

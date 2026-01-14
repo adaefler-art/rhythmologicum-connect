@@ -1,0 +1,381 @@
+{
+  "categories": {
+    "assessment-answers": {
+      "description": "Saving and retrieving user responses",
+      "endpoints": [
+        {
+          "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+          "method": "POST",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "idempotencyNote": "Upsert logic - safe to retry",
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "120/min",
+          "owner": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+          "schemaVersionField": null,
+          "description": "Save assessment answers (upsert)"
+        },
+        {
+          "path": "/api/assessment-answers/save",
+          "method": "POST",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "idempotencyNote": "Upsert logic - safe to retry",
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "120/min",
+          "owner": "app/api/assessment-answers/save/route.ts",
+          "schemaVersionField": null,
+          "description": "Alternative answer save endpoint (upsert)"
+        }
+      ],
+      "name": "Assessment Answers"
+    },
+    "assessment-lifecycle": {
+      "description": "Starting, resuming, and completing assessments",
+      "endpoints": [
+        {
+          "path": "/api/funnels/[slug]/assessments",
+          "method": "POST",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": false,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "30/min",
+          "owner": "app/api/funnels/[slug]/assessments/route.ts",
+          "schemaVersionField": null,
+          "description": "Start a new assessment session",
+          "statusCodes": {
+            "201": "Created",
+            "400": "Bad Request",
+            "401": "Unauthorized",
+            "404": "Funnel Not Found",
+            "500": "Internal Server Error"
+          }
+        },
+        {
+          "path": "/api/funnels/[slug]/assessments/[assessmentId]",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "120/min",
+          "owner": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+          "schemaVersionField": null,
+          "description": "Get assessment status and current step"
+        },
+        {
+          "path": "/api/assessments/[id]/resume",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/assessments/[id]/resume/route.ts",
+          "schemaVersionField": null,
+          "description": "Resume an in-progress assessment"
+        },
+        {
+          "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+          "method": "POST",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": false,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "20/min",
+          "owner": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+          "schemaVersionField": null,
+          "description": "Complete an assessment and trigger report generation"
+        }
+      ],
+      "name": "Assessment Lifecycle"
+    },
+    "assessment-step-validation": {
+      "description": "Validating user progress through assessment steps",
+      "endpoints": [
+        {
+          "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+          "method": "POST",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": false,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+          "schemaVersionField": null,
+          "description": "Validate step and get next step"
+        },
+        {
+          "path": "/api/assessment-validation/validate-step",
+          "method": "POST",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": false,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/assessment-validation/validate-step/route.ts",
+          "schemaVersionField": null,
+          "description": "Alternative step validation endpoint"
+        }
+      ],
+      "name": "Assessment Step Validation"
+    },
+    "authentication-onboarding": {
+      "description": "User session management and initial setup",
+      "endpoints": [
+        {
+          "path": "/api/patient/onboarding-status",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/patient/onboarding-status/route.ts",
+          "schemaVersionField": null,
+          "description": "Check if user has completed onboarding (consent + profile setup)"
+        },
+        {
+          "path": "/api/auth/resolve-role",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/auth/resolve-role/route.ts",
+          "schemaVersionField": null,
+          "description": "Resolve user role from session"
+        },
+        {
+          "path": "/api/consent/record",
+          "method": "POST",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": false,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "10/min",
+          "owner": "app/api/consent/record/route.ts",
+          "schemaVersionField": "consent_version",
+          "description": "Record user consent"
+        },
+        {
+          "path": "/api/consent/status",
+          "method": "GET",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/consent/status/route.ts",
+          "schemaVersionField": "consent_version",
+          "description": "Get current consent status"
+        }
+      ],
+      "name": "Authentication & Onboarding"
+    },
+    "funnel-catalog": {
+      "description": "Discovering available assessment funnels",
+      "endpoints": [
+        {
+          "path": "/api/funnels/catalog",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": true,
+          "cacheMaxAge": "5min",
+          "pagination": true,
+          "paginationType": "cursor",
+          "rateLimit": "120/min",
+          "owner": "app/api/funnels/catalog/route.ts",
+          "schemaVersionField": "funnel_version_id",
+          "description": "Get all active funnels organized by pillar",
+          "cacheHeaders": {
+            "Cache-Control": "public, max-age=300, must-revalidate",
+            "ETag": "funnels:v1:timestamp",
+            "Last-Modified": "HTTP-date"
+          },
+          "statusCodes": {
+            "200": "Success",
+            "304": "Not Modified (cached content valid)",
+            "400": "Bad Request (invalid cursor)",
+            "401": "Unauthorized",
+            "500": "Internal Server Error"
+          }
+        },
+        {
+          "path": "/api/funnels/catalog/[slug]",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": true,
+          "cacheMaxAge": "5min",
+          "pagination": false,
+          "rateLimit": "120/min",
+          "owner": "app/api/funnels/catalog/[slug]/route.ts",
+          "schemaVersionField": "funnel_version_id",
+          "description": "Get detailed information for a specific funnel",
+          "statusCodes": {
+            "200": "Success",
+            "401": "Unauthorized",
+            "404": "Not Found",
+            "500": "Internal Server Error"
+          }
+        },
+        {
+          "path": "/api/funnels/[slug]/definition",
+          "method": "GET",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": true,
+          "cacheMaxAge": "10min",
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/funnels/[slug]/definition/route.ts",
+          "schemaVersionField": "funnel_version_id",
+          "description": "Get complete funnel definition with steps and questions"
+        }
+      ],
+      "name": "Funnel Catalog"
+    },
+    "patient-profile": {
+      "description": "User profile information",
+      "endpoints": [
+        {
+          "path": "/api/patient-profiles",
+          "method": "GET",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": true,
+          "cacheMaxAge": "5min",
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/patient-profiles/route.ts",
+          "schemaVersionField": null,
+          "description": "Get patient profile information"
+        }
+      ],
+      "name": "Patient Profile"
+    },
+    "results-history": {
+      "description": "Viewing assessment results and past assessments",
+      "endpoints": [
+        {
+          "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+          "method": "GET",
+          "priority": "MUST",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "60/min",
+          "owner": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+          "schemaVersionField": null,
+          "description": "Get assessment result and report"
+        },
+        {
+          "path": "/api/patient-measures/history",
+          "method": "GET",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": true,
+          "cacheMaxAge": "2min",
+          "pagination": true,
+          "paginationType": "limit",
+          "rateLimit": "30/min",
+          "owner": "app/api/patient-measures/history/route.ts",
+          "schemaVersionField": null,
+          "description": "Get patient assessment history"
+        },
+        {
+          "path": "/api/patient-measures/export",
+          "method": "GET",
+          "priority": "NICE",
+          "authRequired": true,
+          "idempotent": true,
+          "cacheable": false,
+          "pagination": false,
+          "rateLimit": "10/min",
+          "owner": "app/api/patient-measures/export/route.ts",
+          "schemaVersionField": null,
+          "description": "Export patient measures as JSON"
+        }
+      ],
+      "name": "Results & History"
+    }
+  },
+  "description": "Mobile API contracts for iOS patient flow",
+  "guarantees": {
+    "authentication": {
+      "description": "All MUST endpoints require valid authenticated session",
+      "method": "Supabase Auth",
+      "sessionType": "Cookie-based",
+      "tokenRefresh": "Automatic"
+    },
+    "caching": {
+      "conditionalRequests": true,
+      "description": "Supports 304 Not Modified responses for efficient caching",
+      "reference": "docs/mobile/CACHING_PAGINATION.md",
+      "strategy": "ETag and Last-Modified headers"
+    },
+    "errorCodes": {
+      "AUTHENTICATION_REQUIRED": "User not authenticated",
+      "FORBIDDEN": "User lacks permission",
+      "INTERNAL_ERROR": "Server error",
+      "NOT_FOUND": "Resource not found",
+      "RATE_LIMIT_EXCEEDED": "Too many requests",
+      "VALIDATION_ERROR": "Input validation failed"
+    },
+    "responseFormat": {
+      "pagination": {
+        "hasMore": "boolean",
+        "limit": "number",
+        "nextCursor": "string | null"
+      },
+      "standard": {
+        "data": "object (optional)",
+        "error": "object (optional, contains code and message)",
+        "requestId": "string (for tracking)",
+        "success": "boolean"
+      }
+    },
+    "versioning": {
+      "description": "Enable mobile clients to detect API contract changes and handle migrations",
+      "fields": [
+        "funnel_version_id",
+        "consent_version"
+      ],
+      "strategy": "Schema version fields"
+    }
+  },
+  "lastUpdated": "2026-01",
+  "source": "docs/mobile/MOBILE_API_SURFACE.md",
+  "statistics": {
+    "cacheableEndpoints": 5,
+    "mustSupportEndpoints": 11,
+    "niceSupportEndpoints": 8,
+    "paginatedEndpoints": 2,
+    "totalEndpoints": 19
+  },
+  "version": "v0.7"
+}
