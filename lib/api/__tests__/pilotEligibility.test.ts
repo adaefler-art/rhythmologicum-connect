@@ -7,13 +7,13 @@
 
 describe('E6.4.1: Pilot Eligibility - Integration', () => {
   it('should have eligibility checking functions available', async () => {
-    const module = await import('../pilotEligibility')
+    const pilotModule = await import('../pilotEligibility')
     
-    expect(typeof module.isPilotEnabled).toBe('function')
-    expect(typeof module.isUserInAllowlist).toBe('function')
-    expect(typeof module.isOrgInAllowlist).toBe('function')
-    expect(typeof module.isPilotEnvironment).toBe('function')
-    expect(typeof module.isPilotEligible).toBe('function')
+    expect(typeof pilotModule.isPilotEnabled).toBe('function')
+    expect(typeof pilotModule.isUserInAllowlist).toBe('function')
+    expect(typeof pilotModule.isOrgInAllowlist).toBe('function')
+    expect(typeof pilotModule.isPilotEnvironment).toBe('function')
+    expect(typeof pilotModule.isPilotEligible).toBe('function')
   })
 
   it('should return boolean from isPilotEnabled', async () => {

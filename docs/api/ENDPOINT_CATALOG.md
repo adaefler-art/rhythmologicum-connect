@@ -63,6 +63,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient-measures/export | GET | unknown |  | 1 | app/api/patient-measures/export/route.ts |
 | /api/patient-measures/history | GET | unknown |  | 1 | app/api/patient-measures/history/route.ts |
 | /api/patient-profiles | GET | unknown |  | 2 | app/api/patient-profiles/route.ts |
+| /api/patient/dashboard | GET | patient |  | 0 | app/api/patient/dashboard/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 1 | app/api/patient/onboarding-status/route.ts |
 | /api/pre-screening-calls | GET, POST | unknown |  | 1 | app/api/pre-screening-calls/route.ts |
 | /api/processing/content | POST | unknown |  | 0 | app/api/processing/content/route.ts |

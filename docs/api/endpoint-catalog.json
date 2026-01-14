@@ -1532,6 +1532,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/dashboard",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/patient/dashboard/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"
