@@ -57,6 +57,7 @@
     "assessment_state",
     "assessment_status",
     "notification_status",
+    "onboarding_status_enum",
     "parsing_status",
     "processing_stage",
     "processing_status",
