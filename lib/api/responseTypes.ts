@@ -6,7 +6,8 @@
  * {
  *   success: boolean,
  *   data?: any,
- *   error?: { code: string, message: string }
+ *   error?: { code: string, message: string },
+ *   requestId?: string  // E6.2.8: Correlation ID for observability
  * }
  */
 
@@ -59,25 +60,31 @@ export type ApiError = {
 
 /**
  * Standard API response structure
+ * E6.2.8: Now includes optional requestId for correlation/observability
  */
 export type ApiResponse<T = unknown> = {
   success: boolean
   data?: T
   error?: ApiError
+  requestId?: string
 }
 
 /**
  * Helper type for success responses with data
+ * E6.2.8: Now includes optional requestId for correlation/observability
  */
 export type SuccessResponse<T> = {
   success: true
   data: T
+  requestId?: string
 }
 
 /**
  * Helper type for error responses
+ * E6.2.8: Now includes optional requestId for correlation/observability
  */
 export type ErrorResponse = {
   success: false
   error: ApiError
+  requestId?: string
 }

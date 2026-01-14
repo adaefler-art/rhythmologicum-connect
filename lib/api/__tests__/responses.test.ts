@@ -413,4 +413,76 @@ describe('E6.2.2: Standardized API Response Helpers', () => {
       })
     })
   })
+
+  describe('E6.2.8: Correlation IDs (Request IDs)', () => {
+    const testRequestId = '550e8400-e29b-41d4-a716-446655440000'
+
+    it('should include requestId in success response when provided', async () => {
+      const data = { id: '123', name: 'Test' }
+      const response = successResponse(data, 200, testRequestId)
+      
+      const body = await getResponseBody(response)
+      expect(body.success).toBe(true)
+      expect(body.requestId).toBe(testRequestId)
+    })
+
+    it('should not include requestId in success response when not provided', async () => {
+      const data = { id: '123', name: 'Test' }
+      const response = successResponse(data, 200)
+      
+      const body = await getResponseBody(response)
+      expect(body.success).toBe(true)
+      expect(body.requestId).toBeUndefined()
+    })
+
+    it('should include requestId in error response when provided', async () => {
+      const response = errorResponse(
+        ErrorCode.INVALID_INPUT,
+        'Invalid input',
+        400,
+        undefined,
+        testRequestId,
+      )
+      
+      const body = await getResponseBody(response)
+      expect(body.success).toBe(false)
+      expect(body.requestId).toBe(testRequestId)
+    })
+
+    it('should include requestId in unauthorized response', async () => {
+      const response = unauthorizedResponse('Not authorized', testRequestId)
+      
+      const body = await getResponseBody(response)
+      expect(body.requestId).toBe(testRequestId)
+    })
+
+    it('should include requestId in validation error response', async () => {
+      const response = validationErrorResponse(
+        'Validation failed',
+        { field: 'email' },
+        testRequestId,
+      )
+      
+      const body = await getResponseBody(response)
+      expect(body.requestId).toBe(testRequestId)
+    })
+
+    it('should include requestId in internal error response', async () => {
+      const response = internalErrorResponse('Server error', testRequestId)
+      
+      const body = await getResponseBody(response)
+      expect(body.requestId).toBe(testRequestId)
+    })
+
+    it('should include requestId in state conflict response', async () => {
+      const response = stateConflictResponse(
+        'Conflict',
+        { state: 'completed' },
+        testRequestId,
+      )
+      
+      const body = await getResponseBody(response)
+      expect(body.requestId).toBe(testRequestId)
+    })
+  })
 })

@@ -20,6 +20,7 @@ export type LogContext = {
   stepId?: string
   questionId?: string
   endpoint?: string
+  requestId?: string // E6.2.8: Add correlation ID support
   [key: string]: unknown
 }
 
