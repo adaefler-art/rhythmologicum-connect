@@ -1030,9 +1030,9 @@ CREATE OR REPLACE FUNCTION "public"."is_member_of_org"("org_id" "uuid") RETURNS 
     AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 
+        SELECT 1
         FROM public.user_org_membership
-        WHERE user_id = auth.uid() 
+        WHERE user_id = auth.uid()
           AND organization_id = org_id
           AND is_active = true
     );
@@ -1044,6 +1044,47 @@ ALTER FUNCTION "public"."is_member_of_org"("org_id" "uuid") OWNER TO "postgres";
 
 
 COMMENT ON FUNCTION "public"."is_member_of_org"("org_id" "uuid") IS 'V0.5: Checks if current user is member of specified organization';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    AS $$
+DECLARE
+  user_pilot_flag BOOLEAN;
+  org_pilot_flag BOOLEAN;
+BEGIN
+  -- Check user's pilot flag in user_profiles.metadata
+  SELECT COALESCE((metadata->>'pilot_enabled')::boolean, false)
+  INTO user_pilot_flag
+  FROM public.user_profiles
+  WHERE user_profiles.user_id = is_pilot_eligible.user_id
+  LIMIT 1;
+  
+  IF user_pilot_flag THEN
+    RETURN true;
+  END IF;
+  
+  -- Check if any of user's organizations has pilot enabled
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_org_membership uom
+    JOIN public.organizations o ON o.id = uom.organization_id
+    WHERE uom.user_id = is_pilot_eligible.user_id
+      AND uom.is_active = true
+      AND COALESCE((o.settings->>'pilot_enabled')::boolean, false) = true
+  )
+  INTO org_pilot_flag;
+  
+  RETURN org_pilot_flag;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") IS 'E6.4.1: Returns true if user is eligible for pilot features (checks user and org pilot flags)';
 
 
 
@@ -2415,7 +2456,7 @@ COMMENT ON TABLE "public"."organizations" IS 'V0.5: Organizations for multi-tena
 
 
 
-COMMENT ON COLUMN "public"."organizations"."settings" IS 'Organization-specific configuration (JSONB)';
+COMMENT ON COLUMN "public"."organizations"."settings" IS 'Organization-specific configuration (JSONB). E6.4.1: Can include pilot_enabled boolean for pilot eligibility.';
 
 
 
@@ -3374,6 +3415,9 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."user_profiles"."metadata" IS 'E6.4.1: Can include pilot_enabled boolean for pilot eligibility. Also used for other user-specific metadata.';
 
 
 COMMENT ON TABLE "public"."user_profiles" IS 'V0.5: Extended user profile information';

@@ -149,6 +149,13 @@ export function forbiddenResponse(
   return errorResponse(ErrorCode.FORBIDDEN, message, 403, undefined, requestId)
 }
 
+export function pilotNotEligibleResponse(
+  message = 'Zugriff auf Pilotfunktionen nicht verfügbar.',
+  requestId?: string,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.PILOT_NOT_ELIGIBLE, message, 403, undefined, requestId)
+}
+
 export function notFoundResponse(
   resource: string,
   message?: string,
