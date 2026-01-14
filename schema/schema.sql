@@ -1030,9 +1030,9 @@ CREATE OR REPLACE FUNCTION "public"."is_member_of_org"("org_id" "uuid") RETURNS 
     AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1
+        SELECT 1 
         FROM public.user_org_membership
-        WHERE user_id = auth.uid()
+        WHERE user_id = auth.uid() 
           AND organization_id = org_id
           AND is_active = true
     );
@@ -3417,10 +3417,11 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 
 
-COMMENT ON COLUMN "public"."user_profiles"."metadata" IS 'E6.4.1: Can include pilot_enabled boolean for pilot eligibility. Also used for other user-specific metadata.';
-
-
 COMMENT ON TABLE "public"."user_profiles" IS 'V0.5: Extended user profile information';
+
+
+
+COMMENT ON COLUMN "public"."user_profiles"."metadata" IS 'E6.4.1: Can include pilot_enabled boolean for pilot eligibility. Also used for other user-specific metadata.';
 
 
 
@@ -6267,6 +6268,12 @@ GRANT ALL ON FUNCTION "public"."is_clinician"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."is_member_of_org"("org_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."is_member_of_org"("org_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_member_of_org"("org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") TO "service_role";
 
 
 
