@@ -269,7 +269,7 @@ export async function saveBaselineProfile(
     let isUpdate = false
    
     if (existingProfile) {
-      // Update existing profile
+      // Update existing profile and mark onboarding as completed (E6.4.2 AC1)
       isUpdate = true
       const { data, error } = await supabase
         .from('patient_profiles')
@@ -277,6 +277,7 @@ export async function saveBaselineProfile(
           full_name: validationResult.data.full_name,
           birth_year: validationResult.data.birth_year,
           sex: validationResult.data.sex,
+          onboarding_status: 'completed',
         })
         .eq('id', (existingProfile as { id: string }).id)
         .select()
@@ -288,7 +289,7 @@ export async function saveBaselineProfile(
       }
       result = data as PatientProfile
     } else {
-      // Insert new profile
+      // Insert new profile and mark onboarding as completed (E6.4.2 AC1)
       const { data, error } = await supabase
         .from('patient_profiles')
         .insert({
@@ -296,6 +297,7 @@ export async function saveBaselineProfile(
           full_name: validationResult.data.full_name,
           birth_year: validationResult.data.birth_year,
           sex: validationResult.data.sex,
+          onboarding_status: 'completed',
         })
         .select()
         .single()
@@ -330,6 +332,7 @@ export async function saveBaselineProfile(
               full_name: validationResult.data.full_name,
               birth_year: validationResult.data.birth_year,
               sex: validationResult.data.sex,
+              onboarding_status: 'completed',
             })
             .eq('id', (retryExisting as { id: string }).id)
             .select()
@@ -453,10 +456,10 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
 
     const hasConsent = (consentData?.length ?? 0) > 0
 
-    // Check profile (must have at least full_name)
+    // Check profile (must have at least full_name) and get onboarding_status (E6.4.2)
     const { data: profileData, error: profileError } = await supabase
       .from('patient_profiles')
-      .select('id, full_name')
+      .select('id, full_name, onboarding_status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -468,6 +471,7 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
 
     const firstProfile = profileData?.[0]
     const hasProfile = !!(firstProfile && (firstProfile as { full_name?: string | null }).full_name)
+    const onboardingStatus = (firstProfile as { onboarding_status?: string })?.onboarding_status
 
     return {
       success: true,
@@ -475,6 +479,7 @@ export async function getOnboardingStatus(): Promise<ActionResult<OnboardingStat
         hasConsent,
         hasProfile,
         isComplete: hasConsent && hasProfile,
+        status: onboardingStatus as 'not_started' | 'in_progress' | 'completed' | undefined,
       },
     }
   } catch (err) {

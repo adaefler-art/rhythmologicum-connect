@@ -58,8 +58,8 @@ export function ProfileClient() {
       })
 
       if (result.success) {
-        // Navigate to assessment page
-        router.push('/patient/assessment')
+        // E6.4.2 AC2: Redirect to dashboard after onboarding completion
+        router.push('/patient/dashboard')
       } else {
         setError(result.error || 'Fehler beim Speichern des Profils')
       }

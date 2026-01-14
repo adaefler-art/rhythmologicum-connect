@@ -36,6 +36,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/assessments/[id]/current-step | GET | unknown |  | 0 | app/api/assessments/[id]/current-step/route.ts |
 | /api/assessments/[id]/navigation | GET | unknown |  | 0 | app/api/assessments/[id]/navigation/route.ts |
 | /api/assessments/[id]/resume | GET | unknown |  | 1 | app/api/assessments/[id]/resume/route.ts |
+| /api/assessments/in-progress | GET | unknown |  | 1 | app/api/assessments/in-progress/route.ts |
 | /api/auth/callback | POST | unknown |  | 2 | app/api/auth/callback/route.ts |
 | /api/auth/resolve-role | GET | unknown |  | 3 | app/api/auth/resolve-role/route.ts |
 | /api/consent/record | POST | unknown |  | 0 | app/api/consent/record/route.ts |

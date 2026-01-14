@@ -821,6 +821,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/assessments/in-progress",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/assessments/in-progress/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/dashboard/client.tsx",
+          "line": 38,
+          "apiPath": "/api/assessments/in-progress",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/auth/callback",
       "methods": [
         "POST"

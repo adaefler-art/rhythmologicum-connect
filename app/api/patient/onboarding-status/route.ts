@@ -16,6 +16,7 @@ type OnboardingStatusData = {
   needsConsent: boolean
   needsProfile: boolean
   completed: boolean
+  status?: 'not_started' | 'in_progress' | 'completed'
 }
 
 const NO_STORE_HEADERS = {
@@ -73,10 +74,10 @@ export async function GET() {
     return fail('CONSENT_STATUS_FAILED', 'Failed to check consent status', 500)
   }
 
-  // Profile: patient_profiles row with non-empty full_name
+  // Profile: patient_profiles row with non-empty full_name and onboarding_status (E6.4.2)
   const { data: profileData, error: profileError } = await supabase
     .from('patient_profiles')
-    .select('id, full_name')
+    .select('id, full_name, onboarding_status')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -88,6 +89,7 @@ export async function GET() {
   const hasConsent = (consentData?.length ?? 0) > 0
   const firstProfile = profileData?.[0]
   const hasProfile = !!(firstProfile && (firstProfile as { full_name?: string | null }).full_name)
+  const onboardingStatus = (firstProfile as { onboarding_status?: string })?.onboarding_status
 
   const needsConsent = !hasConsent
   const needsProfile = !hasProfile
@@ -96,5 +98,6 @@ export async function GET() {
     needsConsent,
     needsProfile,
     completed: !needsConsent && !needsProfile,
+    status: onboardingStatus as 'not_started' | 'in_progress' | 'completed' | undefined,
   })
 }
