@@ -82,6 +82,17 @@ export const BaselineProfileSchema = z.object({
 export type BaselineProfileData = z.infer<typeof BaselineProfileSchema>
 
 /**
+ * Onboarding status enum values (E6.4.2)
+ */
+export const ONBOARDING_STATUS = {
+  NOT_STARTED: 'not_started',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+} as const
+
+export type OnboardingStatusValue = (typeof ONBOARDING_STATUS)[keyof typeof ONBOARDING_STATUS]
+
+/**
  * Patient profile record from database
  */
 export const PatientProfileSchema = z.object({
@@ -91,6 +102,7 @@ export const PatientProfileSchema = z.object({
   full_name: z.string().nullable(),
   birth_year: z.number().nullable(),
   sex: z.string().nullable(),
+  onboarding_status: z.enum(['not_started', 'in_progress', 'completed']).optional(),
 })
 
 export type PatientProfile = z.infer<typeof PatientProfileSchema>
@@ -106,6 +118,7 @@ export const OnboardingStatusSchema = z.object({
   hasConsent: z.boolean(),
   hasProfile: z.boolean(),
   isComplete: z.boolean(),
+  status: z.enum(['not_started', 'in_progress', 'completed']).optional(),
 })
 
 export type OnboardingStatus = z.infer<typeof OnboardingStatusSchema>

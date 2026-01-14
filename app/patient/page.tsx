@@ -47,6 +47,6 @@ export default async function PatientIndexRedirect({
   }
 
   const query = buildQuery(searchParams)
-  // Onboarding complete - redirect to funnel catalog (V05-FIXOPT-01)
-  redirect(`/patient/funnels${query}`)
+  // E6.4.2 AC2: Onboarding complete - redirect to dashboard (not funnels)
+  redirect(`/patient/dashboard${query}`)
 }
