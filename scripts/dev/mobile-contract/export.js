@@ -6,10 +6,13 @@
  * This enables iOS development to consume API contracts with stable, predictable output.
  * 
  * Requirements:
- * - Reads from docs/mobile/MOBILE_API_SURFACE.md (source of truth)
- * - Extracts endpoint definitions, schemas, and guarantees
+ * - Based on docs/mobile/MOBILE_API_SURFACE.md (source of truth)
+ * - Contains endpoint definitions, schemas, and guarantees (manually synchronized)
  * - Deterministic sorting (no localeCompare - simple ASCII sort)
  * - Multiple runs produce identical output (for git diff verification)
+ * 
+ * Note: Contract definitions are hardcoded in this script and should be kept in sync
+ * with MOBILE_API_SURFACE.md. Future improvements could automate extraction from the markdown.
  * 
  * Usage:
  *   node scripts/dev/mobile-contract/export.js
@@ -49,8 +52,11 @@ function sortObjectKeys(obj) {
 /**
  * Mobile API Contracts (v0.7)
  * 
- * Based on docs/mobile/MOBILE_API_SURFACE.md
- * These contracts represent the guaranteed API surface for iOS mobile app
+ * Based on docs/mobile/MOBILE_API_SURFACE.md (manually synchronized)
+ * These contracts represent the guaranteed API surface for iOS mobile app.
+ * 
+ * IMPORTANT: Keep this data structure in sync with MOBILE_API_SURFACE.md.
+ * When updating the markdown file, update these contract definitions accordingly.
  */
 const mobileContracts = {
   version: 'v0.7',
@@ -508,7 +514,7 @@ function exportContracts() {
     fs.writeFileSync(outputPath, jsonContent + '\n', 'utf8') // Add trailing newline
     
     console.log('✓ Mobile contracts exported successfully!')
-    console.log(`  Source: docs/mobile/MOBILE_API_SURFACE.md`)
+    console.log(`  Based on: docs/mobile/MOBILE_API_SURFACE.md`)
     console.log(`  Output: ${outputPath}`)
     console.log(`  Size: ${(jsonContent.length / 1024).toFixed(2)} KB`)
     console.log('')
