@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/authHelpers'
 import { successResponse, internalErrorResponse } from '@/lib/api/responses'
+import { env } from '@/lib/env'
 
 /**
  * E6.4.1: Patient Dashboard API
@@ -37,7 +37,7 @@ export async function GET() {
   // This demonstrates the pattern but doesn't enforce it by default
   let pilotEligible: boolean | undefined = undefined
   
-  if (process.env.NEXT_PUBLIC_PILOT_ENABLED === 'true') {
+  if (env.NEXT_PUBLIC_PILOT_ENABLED === 'true') {
     try {
       const { isPilotEligibleFull } = await import('@/lib/api/pilotEligibility')
       pilotEligible = await isPilotEligibleFull(user)

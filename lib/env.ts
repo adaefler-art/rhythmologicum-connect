@@ -69,6 +69,10 @@ const baseEnvSchema = z.object({
   NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: z.string().optional(),
 
+  // OPTIONAL: E6.4.1 Pilot Feature Flags
+  NEXT_PUBLIC_PILOT_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_PILOT_ENV: z.string().optional(),
+
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
   NEXT_PHASE: z.string().optional(),
@@ -83,6 +87,10 @@ const baseEnvSchema = z.object({
 const serverOnlyEnvSchema = baseEnvSchema.extend({
   // OPTIONAL: Dev/Admin tooling feature flags
   DEV_ENDPOINT_CATALOG: z.string().optional(),
+
+  // OPTIONAL: E6.4.1 Pilot Allowlists (server-only)
+  PILOT_ORG_ALLOWLIST: z.string().optional(),
+  PILOT_USER_ALLOWLIST: z.string().optional(),
 
   // REQUIRED (server runtime only): Supabase Admin
   SUPABASE_SERVICE_ROLE_KEY: requireServerSecrets
@@ -112,6 +120,8 @@ function getRawClientEnv() {
     NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
       process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
     NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+    NEXT_PUBLIC_PILOT_ENABLED: process.env.NEXT_PUBLIC_PILOT_ENABLED,
+    NEXT_PUBLIC_PILOT_ENV: process.env.NEXT_PUBLIC_PILOT_ENV,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
@@ -139,6 +149,10 @@ export type Env = {
   NEXT_PUBLIC_FEATURE_AMY_ENABLED?: string
   NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED?: string
   NEXT_PUBLIC_FEATURE_CHARTS_ENABLED?: string
+  NEXT_PUBLIC_PILOT_ENABLED?: string
+  NEXT_PUBLIC_PILOT_ENV?: string
+  PILOT_ORG_ALLOWLIST?: string
+  PILOT_USER_ALLOWLIST?: string
   SUPABASE_URL?: string
   SUPABASE_SERVICE_KEY?: string
   NODE_ENV?: 'development' | 'production' | 'test'
@@ -167,6 +181,10 @@ function getDefaultEnv(): Env {
     NEXT_PUBLIC_FEATURE_AMY_ENABLED: process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
     NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
     NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+    NEXT_PUBLIC_PILOT_ENABLED: process.env.NEXT_PUBLIC_PILOT_ENABLED,
+    NEXT_PUBLIC_PILOT_ENV: process.env.NEXT_PUBLIC_PILOT_ENV,
+    PILOT_ORG_ALLOWLIST: process.env.PILOT_ORG_ALLOWLIST,
+    PILOT_USER_ALLOWLIST: process.env.PILOT_USER_ALLOWLIST,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
     NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test' | undefined,
@@ -198,6 +216,10 @@ function parseEnv(): Env {
         NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
           parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
         NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+        NEXT_PUBLIC_PILOT_ENABLED: parsed.NEXT_PUBLIC_PILOT_ENABLED,
+        NEXT_PUBLIC_PILOT_ENV: parsed.NEXT_PUBLIC_PILOT_ENV,
+        PILOT_ORG_ALLOWLIST: parsed.PILOT_ORG_ALLOWLIST,
+        PILOT_USER_ALLOWLIST: parsed.PILOT_USER_ALLOWLIST,
         SUPABASE_URL: parsed.SUPABASE_URL,
         SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
         NODE_ENV: parsed.NODE_ENV,
@@ -221,6 +243,10 @@ function parseEnv(): Env {
       NEXT_PUBLIC_FEATURE_AMY_ENABLED: parsed.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
       NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
       NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
+      NEXT_PUBLIC_PILOT_ENABLED: parsed.NEXT_PUBLIC_PILOT_ENABLED,
+      NEXT_PUBLIC_PILOT_ENV: parsed.NEXT_PUBLIC_PILOT_ENV,
+      PILOT_ORG_ALLOWLIST: undefined,
+      PILOT_USER_ALLOWLIST: undefined,
       SUPABASE_URL: undefined,
       SUPABASE_SERVICE_KEY: undefined,
       NODE_ENV: parsed.NODE_ENV,

@@ -1,5 +1,6 @@
 import { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { env } from '@/lib/env'
 
 /**
  * E6.4.1: Pilot Eligibility Checking
@@ -10,14 +11,14 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 /**
  * Environment-based pilot configuration
- * Functions read from process.env dynamically to support testing
+ * Functions read from env dynamically to support testing
  */
 
 /**
  * Get pilot organization allowlist
  */
 function getPilotOrgAllowlist(): string[] {
-  const allowlistEnv = process.env.PILOT_ORG_ALLOWLIST || ''
+  const allowlistEnv = env.PILOT_ORG_ALLOWLIST || ''
   return allowlistEnv.split(',').filter(Boolean)
 }
 
@@ -25,7 +26,7 @@ function getPilotOrgAllowlist(): string[] {
  * Get pilot user allowlist
  */
 function getPilotUserAllowlist(): string[] {
-  const allowlistEnv = process.env.PILOT_USER_ALLOWLIST || ''
+  const allowlistEnv = env.PILOT_USER_ALLOWLIST || ''
   return allowlistEnv.split(',').filter(Boolean)
 }
 
@@ -33,7 +34,7 @@ function getPilotUserAllowlist(): string[] {
  * Check if pilot features are enabled globally
  */
 export function isPilotEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_PILOT_ENABLED === 'true'
+  return env.NEXT_PUBLIC_PILOT_ENABLED === 'true'
 }
 
 /**
@@ -178,10 +179,11 @@ export async function isPilotEligible(user: User): Promise<boolean> {
  * Optional additional gate for staging-only pilots
  */
 export function isPilotEnvironment(): boolean {
-  const pilotEnv = process.env.NEXT_PUBLIC_PILOT_ENV || 'production'
+  const pilotEnv = env.NEXT_PUBLIC_PILOT_ENV || 'production'
+  const nodeEnv = env.NODE_ENV
   
   if (pilotEnv === 'all') return true
-  if (pilotEnv === 'staging' && process.env.NODE_ENV !== 'production') return true
+  if (pilotEnv === 'staging' && nodeEnv !== 'production') return true
   if (pilotEnv === 'production') return true
   return false
 }

@@ -1,7 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { NextResponse } from 'next/server'
 import { User } from '@supabase/supabase-js'
-import { env } from '@/lib/env'
 import { sessionExpiredResponse } from './responses'
 
 /**
