@@ -37,6 +37,8 @@ import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/l
 import { performWorkupCheck, getRulesetVersion } from '@/lib/workup'
 import { createEvidencePack } from '@/lib/workup/helpers'
 import type { WorkupCheckResponse } from '@/lib/types/workup'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { emitWorkupStarted, emitWorkupNeedsMoreData, emitWorkupReadyForReview } from '@/lib/telemetry/events'
 
 const WORKUP_SCHEMA_VERSION = 'v1' as const
 
@@ -46,9 +48,10 @@ export async function POST(
 ) {
   try {
     const { slug, assessmentId } = await context.params
+    const correlationId = getCorrelationId(request)
 
     if (!slug || !assessmentId) {
-      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.', correlationId)
     }
 
     const supabase = await createServerSupabaseClient()
@@ -64,7 +67,7 @@ export async function POST(
         endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/workup`,
         assessmentId,
       })
-      return unauthorizedResponse()
+      return unauthorizedResponse(undefined, correlationId)
     }
 
     // Get patient profile
@@ -82,7 +85,7 @@ export async function POST(
         },
         profileError,
       )
-      return notFoundResponse('Benutzerprofil')
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
     // Load assessment and verify ownership
@@ -102,7 +105,7 @@ export async function POST(
         },
         assessmentError,
       )
-      return notFoundResponse('Assessment')
+      return notFoundResponse('Assessment', undefined, correlationId)
     }
 
     // Verify ownership
@@ -117,6 +120,7 @@ export async function POST(
       )
       return forbiddenResponse(
         'Sie haben keine Berechtigung, dieses Assessment zu verarbeiten.',
+        correlationId,
       )
     }
 
@@ -124,8 +128,18 @@ export async function POST(
     if (assessment.status !== 'completed') {
       return internalErrorResponse(
         'Workup kann nur für abgeschlossene Assessments durchgeführt werden.',
+        correlationId,
       )
     }
+
+    // E6.4.8: Emit WORKUP_STARTED telemetry event
+    await emitWorkupStarted({
+      correlationId,
+      assessmentId,
+      patientId: patientProfile.id,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit WORKUP_STARTED event', err)
+    })
 
     // Create evidence pack from assessment data
     const evidencePack = await createEvidencePack(assessmentId, slug)
@@ -154,7 +168,27 @@ export async function POST(
         },
         updateError,
       )
-      return internalErrorResponse('Fehler beim Speichern der Workup-Ergebnisse.')
+      return internalErrorResponse('Fehler beim Speichern der Workup-Ergebnisse.', correlationId)
+    }
+
+    // E6.4.8: Emit workup status telemetry event
+    if (workupResult.isSufficient) {
+      await emitWorkupReadyForReview({
+        correlationId,
+        assessmentId,
+        patientId: patientProfile.id,
+      }).catch((err) => {
+        console.warn('[TELEMETRY] Failed to emit WORKUP_READY_FOR_REVIEW event', err)
+      })
+    } else {
+      await emitWorkupNeedsMoreData({
+        correlationId,
+        assessmentId,
+        missingDataCount: workupResult.missingDataFields.length,
+        patientId: patientProfile.id,
+      }).catch((err) => {
+        console.warn('[TELEMETRY] Failed to emit WORKUP_NEEDS_MORE_DATA event', err)
+      })
     }
 
     // Log workup completion
@@ -179,9 +213,9 @@ export async function POST(
       },
     }
 
-    return versionedSuccessResponse(responseData.data, WORKUP_SCHEMA_VERSION)
+    return versionedSuccessResponse(responseData.data, WORKUP_SCHEMA_VERSION, 200, correlationId)
   } catch (error) {
     console.error('Error in POST /api/funnels/[slug]/assessments/[assessmentId]/workup:', error)
-    return internalErrorResponse('Internal server error')
+    return internalErrorResponse('Internal server error', getCorrelationId(request))
   }
 }

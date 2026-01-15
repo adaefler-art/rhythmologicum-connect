@@ -166,12 +166,12 @@ export async function POST(request: NextRequest) {
     // Determine order_index (default to end of list)
     let orderIndex = body.order_index
     if (typeof orderIndex !== 'number') {
-      const { data: existingSteps } = await adminClient
+      const { data: existingSteps } = (await adminClient
         .from('funnel_steps')
         .select('order_index')
         .eq('funnel_id', body.funnel_id)
         .order('order_index', { ascending: false })
-        .limit(1)
+        .limit(1)) as { data: { order_index: number }[] | null }
 
       orderIndex = existingSteps && existingSteps.length > 0 
         ? existingSteps[0].order_index + 1 

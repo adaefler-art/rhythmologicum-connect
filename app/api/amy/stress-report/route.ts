@@ -21,6 +21,8 @@ import {
   calculateTimeToReport,
 } from '@/lib/monitoring/kpi'
 import { env } from '@/lib/env'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { emitTriageSubmitted, emitTriageRouted } from '@/lib/telemetry/events'
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
 const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'
@@ -223,7 +225,9 @@ async function createAmySummary(params: {
 
 export async function POST(req: Request) {
   const requestStartTime = Date.now()
-  console.log('[stress-report] POST request received')
+  // E6.4.8: Get correlation ID for telemetry
+  const correlationId = getCorrelationId(req)
+  console.log('[stress-report] POST request received', { correlationId })
 
   // Use admin client for accessing reports across users (RLS bypass for system operation)
   const supabase = createAdminSupabaseClient()
@@ -273,6 +277,15 @@ export async function POST(req: Request) {
     }
 
     const typedAnswers: AnswerRow[] = (answers ?? []) as AnswerRow[]
+
+    // E6.4.8: Emit TRIAGE_SUBMITTED event (best-effort)
+    await emitTriageSubmitted({
+      correlationId,
+      assessmentId,
+      patientId: assessment.patient_id,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit TRIAGE_SUBMITTED event', err)
+    })
 
     const { stressScore, sleepScore, riskLevel } = computeScores(typedAnswers)
 
@@ -441,6 +454,21 @@ export async function POST(req: Request) {
       stressScore,
       sleepScore,
       riskLevel,
+      correlationId,
+    })
+
+    // E6.4.8: Emit TRIAGE_ROUTED event (best-effort)
+    // Determine nextAction based on risk level
+    const nextAction = riskLevel === 'high' ? 'escalation' : 'funnel'
+    const tier = riskLevel || 'pending'
+    await emitTriageRouted({
+      correlationId,
+      assessmentId,
+      nextAction,
+      tier,
+      patientId: assessment.patient_id,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit TRIAGE_ROUTED event', err)
     })
 
     const response = NextResponse.json({

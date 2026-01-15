@@ -14,6 +14,7 @@ export { ErrorCode } from './responseTypes'
 /**
  * Create a success response with data
  * E6.2.8: Now includes optional requestId for correlation/observability
+ * E6.4.8: requestId serves as correlationId for telemetry
  */
 export function successResponse<T>(
   data: T,
@@ -29,13 +30,21 @@ export function successResponse<T>(
     body.requestId = requestId
   }
 
-  return NextResponse.json(body, { status })
+  const response = NextResponse.json(body, { status })
+  
+  // E6.4.8: Add correlation ID to response headers
+  if (requestId) {
+    response.headers.set('x-correlation-id', requestId)
+  }
+  
+  return response
 }
 
 /**
  * E6.2.3: Create a versioned success response with data and schemaVersion
  * Used for patient-facing endpoints that require iOS compatibility
  * E6.2.8: Now includes optional requestId for correlation/observability
+ * E6.4.8: requestId serves as correlationId for telemetry
  */
 export function versionedSuccessResponse<T>(
   data: T,
@@ -53,12 +62,20 @@ export function versionedSuccessResponse<T>(
     body.requestId = requestId
   }
 
-  return NextResponse.json(body, { status })
+  const response = NextResponse.json(body, { status })
+  
+  // E6.4.8: Add correlation ID to response headers
+  if (requestId) {
+    response.headers.set('x-correlation-id', requestId)
+  }
+  
+  return response
 }
 
 /**
  * Create an error response
  * E6.2.8: Now includes optional requestId for correlation/observability
+ * E6.4.8: requestId serves as correlationId for telemetry
  */
 export function errorResponse(
   code: ErrorCode,
@@ -85,7 +102,14 @@ export function errorResponse(
     body.requestId = requestId
   }
 
-  return NextResponse.json(body, { status })
+  const response = NextResponse.json(body, { status })
+  
+  // E6.4.8: Add correlation ID to response headers
+  if (requestId) {
+    response.headers.set('x-correlation-id', requestId)
+  }
+  
+  return response
 }
 
 /**

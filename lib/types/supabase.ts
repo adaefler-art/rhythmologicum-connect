@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -1626,6 +1621,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pilot_flow_events: {
+        Row: {
+          actor_role: Database["public"]["Enums"]["user_role"] | null
+          correlation_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: Database["public"]["Enums"]["pilot_event_type"]
+          from_state: string | null
+          id: string
+          org_id: string | null
+          patient_id: string | null
+          payload_hash: string | null
+          payload_json: Json | null
+          to_state: string | null
+        }
+        Insert: {
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          correlation_id: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: Database["public"]["Enums"]["pilot_event_type"]
+          from_state?: string | null
+          id?: string
+          org_id?: string | null
+          patient_id?: string | null
+          payload_hash?: string | null
+          payload_json?: Json | null
+          to_state?: string | null
+        }
+        Update: {
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          correlation_id?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: Database["public"]["Enums"]["pilot_event_type"]
+          from_state?: string | null
+          id?: string
+          org_id?: string | null
+          patient_id?: string | null
+          payload_hash?: string | null
+          payload_json?: Json | null
+          to_state?: string | null
+        }
+        Relationships: []
+      }
       pre_screening_calls: {
         Row: {
           call_date: string
@@ -2806,6 +2849,17 @@ export type Database = {
         | "completed"
         | "failed"
         | "partial"
+      pilot_event_type:
+        | "TRIAGE_SUBMITTED"
+        | "TRIAGE_ROUTED"
+        | "FUNNEL_STARTED"
+        | "FUNNEL_RESUMED"
+        | "FUNNEL_COMPLETED"
+        | "WORKUP_STARTED"
+        | "WORKUP_NEEDS_MORE_DATA"
+        | "WORKUP_READY_FOR_REVIEW"
+        | "ESCALATION_OFFER_SHOWN"
+        | "ESCALATION_OFFER_CLICKED"
       processing_stage:
         | "pending"
         | "risk"
@@ -2998,6 +3052,18 @@ export const Constants = {
         "failed",
         "partial",
       ],
+      pilot_event_type: [
+        "TRIAGE_SUBMITTED",
+        "TRIAGE_ROUTED",
+        "FUNNEL_STARTED",
+        "FUNNEL_RESUMED",
+        "FUNNEL_COMPLETED",
+        "WORKUP_STARTED",
+        "WORKUP_NEEDS_MORE_DATA",
+        "WORKUP_READY_FOR_REVIEW",
+        "ESCALATION_OFFER_SHOWN",
+        "ESCALATION_OFFER_CLICKED",
+      ],
       processing_stage: [
         "pending",
         "risk",
@@ -3045,3 +3111,4 @@ export const Constants = {
     },
   },
 } as const
+

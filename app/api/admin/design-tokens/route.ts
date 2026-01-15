@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Upsert token
-    const { data: token, error } = await supabase
+    const { data: token, error } = (await supabase
       .from('design_tokens')
       .upsert(
         {
@@ -188,9 +188,9 @@ export async function POST(request: NextRequest) {
         }
       )
       .select()
-      .single()
+      .single()) as { data: { id: string } | null; error: Error | null }
     
-    if (error) {
+    if (error || !token) {
       console.error('[design-tokens-api][POST] Database error', { requestId, error })
       return NextResponse.json(
         {
