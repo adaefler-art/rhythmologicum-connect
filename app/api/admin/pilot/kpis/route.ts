@@ -21,6 +21,8 @@ import {
 } from '@/lib/api/responses'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 
+type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
+
 interface PilotKPIs {
   funnelMetrics: {
     totalStarts: number
@@ -130,7 +132,7 @@ export async function GET(request: NextRequest) {
  * Build funnel metrics from pilot_flow_events table
  */
 async function buildFunnelMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   since?: string,
   until?: string,
 ): Promise<PilotKPIs['funnelMetrics']> {
@@ -156,15 +158,16 @@ async function buildFunnelMetrics(
   const events = data || []
   
   // Count starts and completes globally
-  const totalStarts = events.filter((e: any) => e.event_type === 'FUNNEL_STARTED').length
-  const totalCompletes = events.filter((e: any) => e.event_type === 'FUNNEL_COMPLETED').length
+  const totalStarts = events.filter((e) => e.event_type === 'FUNNEL_STARTED').length
+  const totalCompletes = events.filter((e) => e.event_type === 'FUNNEL_COMPLETED').length
   const completionRate = totalStarts > 0 ? Math.round((totalCompletes / totalStarts) * 100) : 0
 
   // Group by funnel slug
   const bySlug: Record<string, { starts: number; completes: number }> = {}
 
-  events.forEach((e: any) => {
-    const slug = e.payload_json?.funnelSlug || 'unknown'
+  events.forEach((e) => {
+    const payload = e.payload_json as { funnelSlug?: string } | null
+    const slug = payload?.funnelSlug || 'unknown'
     if (!bySlug[slug]) {
       bySlug[slug] = { starts: 0, completes: 0 }
     }
@@ -197,7 +200,7 @@ async function buildFunnelMetrics(
  * Build review metrics from review_records table
  */
 async function buildReviewMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   since?: string,
   until?: string,
 ): Promise<PilotKPIs['reviewMetrics']> {
@@ -220,10 +223,10 @@ async function buildReviewMetrics(
   const reviews = data || []
 
   const totalReviews = reviews.length
-  const approved = reviews.filter((r: any) => r.status === 'APPROVED').length
-  const rejected = reviews.filter((r: any) => r.status === 'REJECTED').length
-  const changesRequested = reviews.filter((r: any) => r.status === 'CHANGES_REQUESTED').length
-  const pending = reviews.filter((r: any) => r.status === 'PENDING').length
+  const approved = reviews.filter((r) => r.status === 'APPROVED').length
+  const rejected = reviews.filter((r) => r.status === 'REJECTED').length
+  const changesRequested = reviews.filter((r) => r.status === 'CHANGES_REQUESTED').length
+  const pending = reviews.filter((r) => r.status === 'PENDING').length
 
   return {
     totalReviews,
@@ -238,7 +241,7 @@ async function buildReviewMetrics(
  * Build support case metrics from support_cases table
  */
 async function buildSupportCaseMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   since?: string,
   until?: string,
 ): Promise<PilotKPIs['supportCaseMetrics']> {
@@ -261,11 +264,11 @@ async function buildSupportCaseMetrics(
   const cases = data || []
 
   const totalCases = cases.length
-  const open = cases.filter((c: any) => c.status === 'OPEN').length
-  const inProgress = cases.filter((c: any) => c.status === 'IN_PROGRESS').length
-  const resolved = cases.filter((c: any) => c.status === 'RESOLVED').length
-  const closed = cases.filter((c: any) => c.status === 'CLOSED').length
-  const escalated = cases.filter((c: any) => c.escalated_task_id !== null).length
+  const open = cases.filter((c) => c.status === 'open').length
+  const inProgress = cases.filter((c) => c.status === 'in_progress').length
+  const resolved = cases.filter((c) => c.status === 'resolved').length
+  const closed = cases.filter((c) => c.status === 'closed').length
+  const escalated = cases.filter((c) => c.escalated_task_id !== null).length
 
   return {
     totalCases,
@@ -281,7 +284,7 @@ async function buildSupportCaseMetrics(
  * Build workup metrics from pilot_flow_events table
  */
 async function buildWorkupMetrics(
-  supabase: any,
+  supabase: SupabaseClient,
   since?: string,
   until?: string,
 ): Promise<PilotKPIs['workupMetrics']> {
@@ -306,9 +309,9 @@ async function buildWorkupMetrics(
 
   const events = data || []
 
-  const totalWorkups = events.filter((e: any) => e.event_type === 'WORKUP_STARTED').length
-  const needsMoreData = events.filter((e: any) => e.event_type === 'WORKUP_NEEDS_MORE_DATA').length
-  const readyForReview = events.filter((e: any) => e.event_type === 'WORKUP_READY_FOR_REVIEW').length
+  const totalWorkups = events.filter((e) => e.event_type === 'WORKUP_STARTED').length
+  const needsMoreData = events.filter((e) => e.event_type === 'WORKUP_NEEDS_MORE_DATA').length
+  const readyForReview = events.filter((e) => e.event_type === 'WORKUP_READY_FOR_REVIEW').length
 
   return {
     totalWorkups,
