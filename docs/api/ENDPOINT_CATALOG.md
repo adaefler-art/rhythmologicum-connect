@@ -53,6 +53,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | unknown |  | 1 | app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/result | GET | unknown |  | 1 | app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | unknown |  | 4 | app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/workup | POST | unknown |  | 0 | app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts |
 | /api/funnels/[slug]/content-pages | GET | unknown |  | 2 | app/api/funnels/[slug]/content-pages/route.ts |
 | /api/funnels/[slug]/definition | GET | unknown |  | 5 | app/api/funnels/[slug]/definition/route.ts |
 | /api/funnels/active | GET | unknown |  | 1 | app/api/funnels/active/route.ts |
