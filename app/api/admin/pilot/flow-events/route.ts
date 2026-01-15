@@ -89,7 +89,6 @@ export async function GET(request: NextRequest) {
     }
     
     // Build query
-    // @ts-expect-error - pilot_flow_events table will be available after migration
     let query = supabase
       .from('pilot_flow_events')
       .select('*', { count: 'exact' })
