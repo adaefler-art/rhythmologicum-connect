@@ -105,11 +105,14 @@ export async function GET(
     }
 
     // Fetch funnel version
-    const { data: version, error: versionError } = await authClient
+    const { data: version, error: versionError } = (await authClient
       .from('funnel_versions')
       .select('id, funnel_id, version, content_manifest')
       .eq('id', versionId)
-      .single()
+      .single()) as {
+      data: { id: string; funnel_id: string; version: number; content_manifest: unknown } | null
+      error: Error | null
+    }
 
     if (versionError) {
       const sanitized = sanitizeSupabaseError(versionError)
