@@ -119,13 +119,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Get max order_index to append new section at the end
-    const { data: maxOrderData, error: orderError } = await supabase
+    const { data: maxOrderData, error: orderError } = (await supabase
       .from('content_page_sections')
       .select('order_index')
       .eq('content_page_id', id)
       .order('order_index', { ascending: false })
       .limit(1)
-      .maybeSingle()
+      .maybeSingle()) as { data: { order_index: number } | null; error: Error | null }
 
     if (orderError) {
       console.error('Error fetching section order index:', orderError)
