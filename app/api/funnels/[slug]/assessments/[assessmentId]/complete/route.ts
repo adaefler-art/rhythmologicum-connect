@@ -23,6 +23,8 @@ import {
   type CompleteAssessmentResponseData,
 } from '@/lib/api/contracts/patient'
 import { withIdempotency } from '@/lib/api/idempotency'
+import { performWorkupCheck, getRulesetVersion } from '@/lib/workup'
+import { createEvidencePack } from '@/lib/workup/helpers'
 
 /**
  * B5/B8: Complete an assessment
@@ -249,6 +251,13 @@ async function handleCompleteAssessment(
       console.error('[complete] Failed to track KPI event', err)
     })
 
+    // E6.4.5: Trigger workup check after completion
+    // This is async and non-blocking - workup runs in background
+    performWorkupCheckAsync(assessmentId, slug).catch((err) => {
+      // Don't fail the completion if workup fails
+      console.error('[complete] Failed to trigger workup check', err)
+    })
+
     // Success response
     const responseData: CompleteAssessmentResponseData = {
       assessmentId: assessment.id,
@@ -264,5 +273,54 @@ async function handleCompleteAssessment(
       error,
     )
     return internalErrorResponse()
+  }
+}
+
+/**
+ * E6.4.5: Perform workup check asynchronously
+ *
+ * Runs workup data sufficiency check in the background after assessment completion.
+ * Non-blocking - errors are logged but don't affect completion response.
+ *
+ * @param assessmentId - The assessment ID
+ * @param funnelSlug - The funnel slug
+ */
+async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string): Promise<void> {
+  try {
+    // Create evidence pack from assessment data
+    const evidencePack = await createEvidencePack(assessmentId, funnelSlug)
+
+    // Perform workup check (deterministic, rule-based)
+    const workupResult = performWorkupCheck(evidencePack)
+
+    // Get ruleset version
+    const rulesetVersion = getRulesetVersion(funnelSlug) ?? 'default'
+
+    // Store workup results in database
+    const supabase = await createServerSupabaseClient()
+    const { error: updateError } = await supabase
+      .from('assessments')
+      .update({
+        workup_status: workupResult.isSufficient ? 'ready_for_review' : 'needs_more_data',
+        missing_data_fields: workupResult.missingDataFields,
+      })
+      .eq('id', assessmentId)
+
+    if (updateError) {
+      console.error('[workup] Failed to update assessment with workup results:', updateError)
+      throw updateError
+    }
+
+    // Log workup completion
+    console.log('[workup] Workup completed', {
+      assessmentId,
+      funnel: funnelSlug,
+      workupStatus: workupResult.isSufficient ? 'ready_for_review' : 'needs_more_data',
+      missingFieldsCount: workupResult.missingDataFields.length,
+      rulesetVersion,
+    })
+  } catch (error) {
+    console.error('[workup] Error in async workup check:', error)
+    throw error
   }
 }
