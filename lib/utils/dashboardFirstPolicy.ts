@@ -14,6 +14,7 @@
  */
 
 import { cookies } from 'next/headers'
+import { env } from '@/lib/env'
 
 /**
  * Cookie name for tracking dashboard visit
@@ -46,8 +47,12 @@ const PROTECTED_ROUTES = [
 const EXEMPT_ROUTES = [
   '/patient/dashboard',
   '/patient/onboarding',
-  '/patient', // Root redirect handler
 ]
+
+/**
+ * Special case: patient root route (redirects to dashboard anyway)
+ */
+const PATIENT_ROOT = '/patient'
 
 /**
  * Checks if the user has visited the dashboard in this session
@@ -66,12 +71,14 @@ export async function hasDashboardVisit(): Promise<boolean> {
  */
 export async function markDashboardVisited(): Promise<void> {
   const cookieStore = await cookies()
+  const isProduction = env.NODE_ENV === 'production'
+  
   cookieStore.set(DASHBOARD_VISITED_COOKIE, 'true', {
     maxAge: COOKIE_MAX_AGE,
     httpOnly: true,
     sameSite: 'lax',
     path: '/patient',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
   })
 }
 
@@ -91,12 +98,21 @@ export async function clearDashboardVisit(): Promise<void> {
  * @returns boolean - true if route requires dashboard-first
  */
 export function requiresDashboardFirst(pathname: string): boolean {
-  // Exempt routes can always be accessed
-  if (EXEMPT_ROUTES.some((route) => pathname.startsWith(route))) {
+  // Special case: patient root is handled by its own redirect logic
+  if (pathname === PATIENT_ROOT) {
     return false
   }
 
-  // Protected routes require dashboard visit
+  // Check if it's an exempt route (exact match or subdirectory)
+  const isExempt = EXEMPT_ROUTES.some((route) => {
+    return pathname === route || pathname.startsWith(route + '/')
+  })
+  
+  if (isExempt) {
+    return false
+  }
+
+  // Check if it's a protected route
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 }
 
