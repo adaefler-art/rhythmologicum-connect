@@ -92,6 +92,22 @@ export async function clearDashboardVisit(): Promise<void> {
 }
 
 /**
+ * Helper: Checks if a pathname matches a route exactly or is a subdirectory
+ * 
+ * @param pathname - Current pathname (e.g., '/patient/dashboard')
+ * @param route - Route to check against (e.g., '/patient/onboarding')
+ * @returns boolean - true if exact match or subdirectory
+ * 
+ * @example
+ * matchesRoute('/patient/dashboard', '/patient/dashboard') // true (exact)
+ * matchesRoute('/patient/onboarding/consent', '/patient/onboarding') // true (subdir)
+ * matchesRoute('/patient/funnels', '/patient/funnel') // false (different)
+ */
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(route + '/')
+}
+
+/**
  * Checks if a route requires dashboard-first enforcement
  * 
  * @param pathname - The pathname to check (e.g., '/patient/funnels')
@@ -104,15 +120,13 @@ export function requiresDashboardFirst(pathname: string): boolean {
   }
 
   // Check if it's an exempt route (exact match or subdirectory)
-  const isExempt = EXEMPT_ROUTES.some((route) => {
-    return pathname === route || pathname.startsWith(route + '/')
-  })
+  const isExempt = EXEMPT_ROUTES.some((route) => matchesRoute(pathname, route))
   
   if (isExempt) {
     return false
   }
 
-  // Check if it's a protected route
+  // Check if it's a protected route (prefix match)
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
 }
 

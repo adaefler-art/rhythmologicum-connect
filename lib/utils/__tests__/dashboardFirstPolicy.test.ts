@@ -35,7 +35,10 @@ describe('dashboardFirstPolicy', () => {
       set: jest.fn(),
       delete: jest.fn(),
     }
-    ;(cookies as jest.Mock).mockResolvedValue(mockCookieStore)
+    
+    // Mock the cookies() function to return our mock store
+    const cookiesMock = cookies as jest.Mock
+    cookiesMock.mockResolvedValue(mockCookieStore)
   })
 
   afterEach(() => {
