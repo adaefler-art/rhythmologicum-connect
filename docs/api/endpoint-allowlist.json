@@ -4,6 +4,7 @@
     "/api/admin/diagnostics/pillars-sot",
     "/api/admin/funnel-steps",
     "/api/admin/pilot/flow-events",
+    "/api/admin/pilot/kpis",
     "/api/admin/usage",
     "/api/admin/dev/endpoint-catalog",
     "/api/amy/stress-report",

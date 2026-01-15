@@ -667,6 +667,19 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/admin/pilot/kpis",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/pilot/kpis/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/admin/reassessment-rules",
       "methods": [
         "GET",
