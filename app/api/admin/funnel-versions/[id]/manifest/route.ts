@@ -297,7 +297,7 @@ export async function PUT(
     // Update manifest using admin client for audit trail
     const adminClient = createAdminSupabaseClient()
 
-    const { data: updatedVersion, error: updateError } = await adminClient
+    const { data: updatedVersion, error: updateError } = (await adminClient
       .from('funnel_versions')
       .update({
         content_manifest: validatedManifest,
@@ -305,7 +305,10 @@ export async function PUT(
       })
       .eq('id', versionId)
       .select('id, funnel_id, version, content_manifest')
-      .single()
+      .single()) as {
+      data: { id: string; funnel_id: string; version: number; content_manifest: unknown } | null
+      error: Error | null
+    }
 
     if (updateError || !updatedVersion) {
       const sanitized = sanitizeSupabaseError(updateError)
