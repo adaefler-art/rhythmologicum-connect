@@ -72,18 +72,6 @@ CREATE TYPE "public"."assessment_status" AS ENUM (
 ALTER TYPE "public"."assessment_status" OWNER TO "postgres";
 
 
-CREATE TYPE "public"."workup_status" AS ENUM (
-    'needs_more_data',
-    'ready_for_review'
-);
-
-
-ALTER TYPE "public"."workup_status" OWNER TO "postgres";
-
-
-COMMENT ON TYPE "public"."workup_status" IS 'E6.4.4: Workup status for assessments - indicates if more data is needed or if ready for clinician review';
-
-
 CREATE TYPE "public"."notification_status" AS ENUM (
     'scheduled',
     'sent',
@@ -302,6 +290,19 @@ ALTER TYPE "public"."validation_status" OWNER TO "postgres";
 
 
 COMMENT ON TYPE "public"."validation_status" IS 'V05-I05.5: Medical validation overall status';
+
+
+
+CREATE TYPE "public"."workup_status" AS ENUM (
+    'needs_more_data',
+    'ready_for_review'
+);
+
+
+ALTER TYPE "public"."workup_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."workup_status" IS 'E6.4.4: Workup status for assessments - indicates if more data is needed or if ready for clinician review';
 
 
 
