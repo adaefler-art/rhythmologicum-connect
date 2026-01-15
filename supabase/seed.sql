@@ -39,11 +39,6 @@ ON CONFLICT (id) DO UPDATE SET
   slug = EXCLUDED.slug,
   settings = EXCLUDED.settings,
   is_active = EXCLUDED.is_active,
-  updated_at = NOW()
-ON CONFLICT (slug) DO UPDATE SET
-  name = EXCLUDED.name,
-  settings = EXCLUDED.settings,
-  is_active = EXCLUDED.is_active,
   updated_at = NOW();
 
 -- ============================================================
