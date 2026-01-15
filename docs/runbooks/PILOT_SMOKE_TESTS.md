@@ -425,6 +425,21 @@ else {
 $Cookie = "sb-localhost-auth-token=YOUR_COOKIE_VALUE_HERE"
 $BaseUrl = "http://localhost:3000"
 
+# Validation: Check if cookie placeholder wasn't updated
+if ($Cookie -eq "sb-localhost-auth-token=YOUR_COOKIE_VALUE_HERE") {
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host "ERROR: Cookie placeholder not updated!" -ForegroundColor Red
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Please update the `$Cookie variable with your actual auth token:" -ForegroundColor Yellow
+    Write-Host "1. Login at http://localhost:3000" -ForegroundColor Gray
+    Write-Host "2. Open DevTools > Application > Cookies" -ForegroundColor Gray
+    Write-Host "3. Copy value of 'sb-localhost-auth-token'" -ForegroundColor Gray
+    Write-Host "4. Replace YOUR_COOKIE_VALUE_HERE in line 425 with the actual value" -ForegroundColor Gray
+    Write-Host ""
+    exit 1
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "E6.4.7 Pilot Smoke Tests" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

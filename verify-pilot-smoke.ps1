@@ -21,7 +21,7 @@ param(
 
 # Validate parameters
 if (-not $BaseUrl) {
-    Write-Host "Error: BaseUrl is required. Set -BaseUrl parameter or PILOT_BASE_URL env var." -ForegroundColor Red
+    Write-Host "Error: BaseUrl is required. Provide -BaseUrl parameter or set `$env:PILOT_BASE_URL" -ForegroundColor Red
     Write-Host ""
     Write-Host "Usage:" -ForegroundColor Yellow
     Write-Host '  .\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."' -ForegroundColor Gray
@@ -34,10 +34,10 @@ if (-not $BaseUrl) {
 }
 
 if (-not $Cookie) {
-    Write-Host "Error: Cookie is required. Set -Cookie parameter or PILOT_AUTH_COOKIE env var." -ForegroundColor Red
+    Write-Host "Error: Cookie is required. Provide -Cookie parameter or set `$env:PILOT_AUTH_COOKIE" -ForegroundColor Red
     Write-Host ""
     Write-Host "To get your auth cookie:" -ForegroundColor Yellow
-    Write-Host "1. Login at $BaseUrl" -ForegroundColor Gray
+    Write-Host "1. Login at http://localhost:3000 (or your BaseUrl)" -ForegroundColor Gray
     Write-Host "2. Open DevTools > Application > Cookies" -ForegroundColor Gray
     Write-Host "3. Copy value of 'sb-localhost-auth-token'" -ForegroundColor Gray
     exit 1
@@ -58,6 +58,13 @@ $smokeResults = @{
     Smoke3 = $false
     Smoke4 = $false
     Smoke5 = $false
+}
+
+# State object to pass data between tests (avoids global variables)
+$testState = @{
+    AssessmentId = $null
+    FunnelSlug = $null
+    HasInProgress = $false
 }
 
 # Helper function for API calls
@@ -87,10 +94,20 @@ function Invoke-ApiCall {
     
     try {
         $response = Invoke-WebRequest @params
+        
+        # Try to parse JSON content
+        $content = $null
+        try {
+            $content = $response.Content | ConvertFrom-Json
+        }
+        catch {
+            Write-Host "  ! Warning: Response is not valid JSON" -ForegroundColor Yellow
+        }
+        
         return @{
             Success = $true
             StatusCode = $response.StatusCode
-            Content = ($response.Content | ConvertFrom-Json)
+            Content = $content
         }
     }
     catch {
@@ -151,14 +168,14 @@ if ($inProgressResponse.Success -and ($inProgressResponse.StatusCode -eq 200 -or
         Write-Host "    - Started: $($assessment.started_at)" -ForegroundColor Gray
         
         # Save for later tests
-        $global:AssessmentId = $assessment.id
-        $global:FunnelSlug = $assessment.funnel
-        $global:HasInProgress = $true
+        $testState.AssessmentId = $assessment.id
+        $testState.FunnelSlug = $assessment.funnel
+        $testState.HasInProgress = $true
     }
     else {
         Write-Host "  ✓ PASS - No in-progress assessment (404)" -ForegroundColor Green
         Write-Host "    - This is valid state (no active assessment)" -ForegroundColor Gray
-        $global:HasInProgress = $false
+        $testState.HasInProgress = $false
     }
     $smokeResults.Smoke2 = $true
 }
@@ -174,10 +191,10 @@ Write-Host ""
 # ============================================
 Write-Host "Smoke 3: Start/Resume Funnel" -ForegroundColor Yellow
 
-if ($global:HasInProgress) {
-    Write-Host "  Testing: GET /api/funnels/$($global:FunnelSlug)/assessments/$($global:AssessmentId) (Resume)" -ForegroundColor Gray
+if ($testState.HasInProgress) {
+    Write-Host "  Testing: GET /api/funnels/$($testState.FunnelSlug)/assessments/$($testState.AssessmentId) (Resume)" -ForegroundColor Gray
     
-    $resumeResponse = Invoke-ApiCall -Endpoint "/api/funnels/$($global:FunnelSlug)/assessments/$($global:AssessmentId)"
+    $resumeResponse = Invoke-ApiCall -Endpoint "/api/funnels/$($testState.FunnelSlug)/assessments/$($testState.AssessmentId)"
     
     if ($resumeResponse.Success -and $resumeResponse.StatusCode -eq 200) {
         Write-Host "  ✓ PASS - Resume works" -ForegroundColor Green
@@ -205,8 +222,8 @@ else {
         Write-Host "    - First step: $($assessmentData.currentStep.title)" -ForegroundColor Gray
         
         # Save for later tests
-        $global:AssessmentId = $assessmentData.assessmentId
-        $global:FunnelSlug = "stress"
+        $testState.AssessmentId = $assessmentData.assessmentId
+        $testState.FunnelSlug = "stress"
         $smokeResults.Smoke3 = $true
     }
     elseif ($startResponse.StatusCode -eq 409) {
@@ -228,11 +245,11 @@ Write-Host ""
 # ============================================
 Write-Host "Smoke 4: Workup Check (needs_more_data)" -ForegroundColor Yellow
 
-if ($global:AssessmentId -and $global:FunnelSlug) {
-    Write-Host "  Testing: POST /api/funnels/$($global:FunnelSlug)/assessments/$($global:AssessmentId)/workup" -ForegroundColor Gray
+if ($testState.AssessmentId -and $testState.FunnelSlug) {
+    Write-Host "  Testing: POST /api/funnels/$($testState.FunnelSlug)/assessments/$($testState.AssessmentId)/workup" -ForegroundColor Gray
     Write-Host "  Note: This requires a COMPLETED assessment" -ForegroundColor Gray
     
-    $workupResponse = Invoke-ApiCall -Endpoint "/api/funnels/$($global:FunnelSlug)/assessments/$($global:AssessmentId)/workup" -Method "POST"
+    $workupResponse = Invoke-ApiCall -Endpoint "/api/funnels/$($testState.FunnelSlug)/assessments/$($testState.AssessmentId)/workup" -Method "POST"
     
     if ($workupResponse.Success -and $workupResponse.StatusCode -eq 200) {
         Write-Host "  ✓ PASS - Workup check successful" -ForegroundColor Green
