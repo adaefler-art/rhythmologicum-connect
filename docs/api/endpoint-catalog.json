@@ -654,6 +654,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/pilot/flow-events",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/admin/pilot/flow-events/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/admin/reassessment-rules",
       "methods": [
         "GET",
