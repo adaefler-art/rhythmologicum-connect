@@ -33,6 +33,21 @@ This command will:
 2. Run all migrations
 3. Execute seed data from `supabase/seed.sql`
 
+### Verification
+
+After seeding, verify the data was loaded correctly:
+
+```bash
+npm run db:seed:verify
+```
+
+This will run automated checks to ensure:
+- All test users were created with deterministic UUIDs
+- Pilot organization exists
+- Funnels are configured correctly
+- Patient profiles and consents are set up
+- Org memberships are correct
+
 ### Alternative Commands
 
 ```bash
@@ -41,6 +56,9 @@ npm run db:migrate
 
 # Full reset with seed (same as db:reset)
 npm run db:seed
+
+# Reset and verify in one go
+npm run db:reset && npm run db:seed:verify
 
 # Generate TypeScript types after seeding
 npm run db:typegen
@@ -142,24 +160,39 @@ This ensures that:
 
 ## Verification
 
+### Quick Verification
+
+Use the automated verification script:
+
+```bash
+npm run db:seed:verify
+```
+
+This script (located at `verify-e6-4-10-seed.ps1`) checks:
+- Deterministic UUIDs (AC1)
+- All required data exists (AC2)
+- Proper role assignments
+- Onboarding states
+- Funnel configurations
+
 ### Acceptance Criteria (E6.4.10)
 
 #### AC1: Deterministic Seeds ✅
 ```bash
 # Run seed twice and verify identical results
 npm run db:reset
-npm run db:reset
+npm run db:seed:verify
 
-# Check that UUIDs are consistent
-psql -h localhost -p 54322 -U postgres -d postgres -c \
-  "SELECT id, slug FROM organizations WHERE id = '00000000-0000-0000-0000-000000000001'"
+npm run db:reset
+npm run db:seed:verify
+
+# Both should pass with same UUIDs
 ```
 
 #### AC2: Runnable Pilot ✅
 ```bash
-# After seed, verify funnels exist
-psql -h localhost -p 54322 -U postgres -d postgres -c \
-  "SELECT slug, title FROM funnels_catalog WHERE slug IN ('stress-assessment', 'sleep-quality')"
+# Verify funnels and test users exist
+npm run db:seed:verify
 ```
 
 #### AC3: Happy Path in <5 Minutes ✅
