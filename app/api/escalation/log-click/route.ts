@@ -6,25 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { logEscalationCtaClicked } from '@/lib/escalation/auditLog'
 import type { EscalationOfferType } from '@/lib/types/escalation'
 
 export async function POST(request: NextRequest) {
   try {
     // Get Supabase client for auth
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: () => {},
-        },
-      }
-    )
+    const supabase = await createServerSupabaseClient()
 
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
