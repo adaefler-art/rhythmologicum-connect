@@ -135,6 +135,7 @@ export async function emitPilotEvent(
     const supabase = await createServerSupabaseClient()
     
     // Insert event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await supabase
       .from('pilot_flow_events')
       .insert({
@@ -148,7 +149,7 @@ export async function emitPilotEvent(
         from_state: input.fromState,
         to_state: input.toState,
         payload_json: sanitizedPayload,
-      })
+      } as any)
       .select('id')
       .single()
     
