@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -110,10 +105,12 @@ export type Database = {
           funnel: string
           funnel_id: string | null
           id: string
+          missing_data_fields: Json | null
           patient_id: string
           started_at: string
           state: Database["public"]["Enums"]["assessment_state"] | null
           status: Database["public"]["Enums"]["assessment_status"]
+          workup_status: Database["public"]["Enums"]["workup_status"] | null
         }
         Insert: {
           completed_at?: string | null
@@ -121,10 +118,12 @@ export type Database = {
           funnel: string
           funnel_id?: string | null
           id?: string
+          missing_data_fields?: Json | null
           patient_id: string
           started_at?: string
           state?: Database["public"]["Enums"]["assessment_state"] | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          workup_status?: Database["public"]["Enums"]["workup_status"] | null
         }
         Update: {
           completed_at?: string | null
@@ -132,10 +131,12 @@ export type Database = {
           funnel?: string
           funnel_id?: string | null
           id?: string
+          missing_data_fields?: Json | null
           patient_id?: string
           started_at?: string
           state?: Database["public"]["Enums"]["assessment_state"] | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          workup_status?: Database["public"]["Enums"]["workup_status"] | null
         }
         Relationships: [
           {
@@ -2839,6 +2840,7 @@ export type Database = {
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
+      workup_status: "needs_more_data" | "ready_for_review"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3034,6 +3036,8 @@ export const Constants = {
       task_status: ["pending", "in_progress", "completed", "cancelled"],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],
+      workup_status: ["needs_more_data", "ready_for_review"],
     },
   },
 } as const
+
