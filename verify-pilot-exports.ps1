@@ -239,7 +239,8 @@ if (-not [string]::IsNullOrWhiteSpace($ReportId)) {
             
             # Parse error response if available
             try {
-                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                # Use GetAwaiter().GetResult() instead of .Result to avoid potential deadlocks
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
                 $errorData = $errorContent | ConvertFrom-Json
                 if ($errorData.error) {
                     Write-Host "   Error Code: $($errorData.error.code)" -ForegroundColor Red
