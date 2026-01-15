@@ -47,6 +47,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/documents/[id]/extract | POST | unknown |  | 0 | app/api/documents/[id]/extract/route.ts |
 | /api/documents/[id]/status | PATCH | unknown |  | 0 | app/api/documents/[id]/status/route.ts |
 | /api/documents/upload | POST | unknown |  | 0 | app/api/documents/upload/route.ts |
+| /api/escalation/log-click | POST | unknown |  | 1 | app/api/escalation/log-click/route.ts |
 | /api/funnels/[slug]/assessments | POST | unknown |  | 1 | app/api/funnels/[slug]/assessments/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | unknown |  | 1 | app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | unknown |  | 5 | app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |

@@ -19,7 +19,11 @@ import {
   ReportLibrary,
   KeyOutcomesCard,
   WorkupStatusCard,
+  EscalationOfferCard,
 } from './components'
+import { detectRedFlags } from '@/lib/escalation/detectRedFlags'
+import { logEscalationOfferShown } from '@/lib/escalation/auditLog'
+import type { EscalationOfferType } from '@/lib/types/escalation'
 
 const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
 
@@ -61,6 +65,13 @@ export default function ResultClient({
   const [assessment, setAssessment] = useState<AssessmentResult | null>(null)
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
   const [contentUnavailable, setContentUnavailable] = useState(false)
+  
+  // E6.4.6: Red flag detection state
+  const [escalationData, setEscalationData] = useState<{
+    shouldEscalate: boolean
+    reasons: string[]
+    correlationId: string
+  } | null>(null)
 
   const canonicalSlug = assessment?.funnel ?? slug
   const funnelTitle = assessment?.funnelTitle ?? ''
@@ -93,6 +104,36 @@ export default function ResultClient({
         }
 
         setAssessment(payload.data)
+        
+        // E6.4.6: Check for red flags
+        const redFlagCheck = detectRedFlags({
+          assessmentId: payload.data.id,
+          reportId: reports[0]?.id,
+          riskLevel: keyOutcomes?.risk_level || null,
+          workupStatus: payload.data.workupStatus || null,
+          missingDataFields: payload.data.missingDataFields || [],
+        })
+        
+        if (redFlagCheck.shouldEscalate) {
+          setEscalationData({
+            shouldEscalate: true,
+            reasons: redFlagCheck.redFlags.map((flag) => flag.reason),
+            correlationId: redFlagCheck.correlationId,
+          })
+          
+          // Log that escalation offer was shown
+          const highestFlag = redFlagCheck.redFlags[0]
+          if (highestFlag) {
+            await logEscalationOfferShown(
+              payload.data.id,
+              redFlagCheck.correlationId,
+              highestFlag.severity,
+              highestFlag.source
+            ).catch((err) => {
+              console.error('[escalation] Failed to log offer shown:', err)
+            })
+          }
+        }
 
         try {
           const pagesRes = await fetch(`/api/funnels/${payload.data.funnel}/content-pages`)
@@ -218,6 +259,34 @@ export default function ResultClient({
     //   actionLabel: 'Support kontaktieren (demnächst verfügbar)',
     // },
   ]
+  
+  // E6.4.6: Handle escalation CTA click
+  const handleEscalationCtaClick = async (offerType: EscalationOfferType) => {
+    if (!assessment || !escalationData) return
+    
+    try {
+      // Log the click event
+      await fetch('/api/escalation/log-click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          assessmentId: assessment.id,
+          correlationId: escalationData.correlationId,
+          offerType,
+        }),
+      }).catch((err) => {
+        console.error('[escalation] Failed to log CTA click:', err)
+      })
+      
+      // Navigate to placeholder page
+      router.push(
+        `/patient/escalation?type=${offerType}&correlation=${encodeURIComponent(escalationData.correlationId)}`
+      )
+    } catch (err) {
+      console.error('[escalation] Error handling CTA click:', err)
+    }
+  }
 
   return (
     <>
@@ -257,6 +326,15 @@ export default function ResultClient({
             }).format(new Date(assessment.completedAt))}
           </p>
         </div>
+
+        {/* E6.4.6: Escalation Offer Card - Show at top if red flags detected */}
+        {escalationData?.shouldEscalate && (
+          <EscalationOfferCard
+            reasons={escalationData.reasons}
+            correlationId={escalationData.correlationId}
+            onCtaClick={handleEscalationCtaClick}
+          />
+        )}
 
         {/* E6.4.4: Workup Status Card - Shows status and missing data */}
         <WorkupStatusCard

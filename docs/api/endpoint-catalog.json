@@ -1023,6 +1023,26 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/escalation/log-click",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/escalation/log-click/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/funnel/[slug]/result/client.tsx",
+          "line": 269,
+          "apiPath": "/api/escalation/log-click",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/funnels/[slug]/assessments",
       "methods": [
         "POST"
@@ -1138,7 +1158,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 75,
+          "line": 86,
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/result",
           "kind": "fetch"
         }
@@ -1215,7 +1235,7 @@
         },
         {
           "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 98,
+          "line": 139,
           "apiPath": "/api/funnels/${payload.data.funnel}/content-pages",
           "kind": "fetch"
         }
