@@ -183,11 +183,22 @@ export default function PatientDetailPage() {
         
         // First, get assessments for this patient to use as filter for related data
         // E6.4.4: Also fetch workup_status and missing_data_fields
-        const { data: assessmentsData, error: assessmentsError } = await supabase
+        // Type assertion needed as schema types not yet regenerated from migration
+        const { data: assessmentsData, error: assessmentsError } = (await supabase
           .from('assessments')
           .select('id, status, workup_status, missing_data_fields')
           .eq('patient_id', patientId)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false })) as {
+          data:
+            | {
+                id: string
+                status: string
+                workup_status?: 'needs_more_data' | 'ready_for_review' | null
+                missing_data_fields?: string[] | null
+              }[]
+            | null
+          error: unknown
+        }
 
         if (assessmentsError) {
           console.warn('[I07.2]', 'E_QUERY_ASSESSMENTS', 'assessments')
@@ -204,10 +215,10 @@ export default function PatientDetailPage() {
           const latestCompleted = assessmentsData.find((a) => a.status === 'completed')
           if (latestCompleted) {
             setLatestAssessmentId(latestCompleted.id)
-            setLatestWorkupStatus(latestCompleted.workup_status as WorkupStatus)
+            setLatestWorkupStatus((latestCompleted.workup_status as WorkupStatus) ?? null)
             setLatestMissingDataFields(
               Array.isArray(latestCompleted.missing_data_fields)
-                ? latestCompleted.missing_data_fields
+                ? (latestCompleted.missing_data_fields as string[])
                 : [],
             )
           }
