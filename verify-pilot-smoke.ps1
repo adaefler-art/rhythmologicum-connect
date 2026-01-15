@@ -230,6 +230,15 @@ else {
         Write-Host "  ⚠ WARNING - Assessment already exists (409)" -ForegroundColor Yellow
         Write-Host "    - This is expected if you already have an assessment" -ForegroundColor Gray
         Write-Host "    - Test passes (idempotency works)" -ForegroundColor Gray
+        
+        # Try to get the existing assessment ID from in-progress endpoint
+        $existingResponse = Invoke-ApiCall -Endpoint "/api/assessments/in-progress"
+        if ($existingResponse.StatusCode -eq 200) {
+            $testState.AssessmentId = $existingResponse.Content.data.id
+            $testState.FunnelSlug = $existingResponse.Content.data.funnel
+            Write-Host "    - Using existing assessment: $($testState.AssessmentId)" -ForegroundColor Gray
+        }
+        
         $smokeResults.Smoke3 = $true
     }
     else {
