@@ -63,7 +63,7 @@ export async function GET(
 
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id, funnel, completed_at, status')
+      .select('id, patient_id, funnel, completed_at, status, workup_status, missing_data_fields')
       .eq('id', assessmentId)
       .in('funnel', getFunnelSlugCandidates(slug))
       .single()
@@ -108,6 +108,10 @@ export async function GET(
       completedAt: assessment.completed_at,
       status: assessment.status,
       funnelTitle: funnelRow?.title ?? null,
+      workupStatus: assessment.workup_status ?? null,
+      missingDataFields: Array.isArray(assessment.missing_data_fields)
+        ? assessment.missing_data_fields
+        : [],
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)

@@ -13,8 +13,11 @@ import { MedicationsSection } from './MedicationsSection'
 import { FindingsScoresSection } from './FindingsScoresSection'
 import { InterventionsSection, type RankedIntervention } from './InterventionsSection'
 import { QAReviewPanel } from './QAReviewPanel'
+import { WorkupStatusSection } from './WorkupStatusSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
+
+type WorkupStatus = 'needs_more_data' | 'ready_for_review' | null
 
 type PatientMeasure = {
   id: string
@@ -117,6 +120,11 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
   
+  // E6.4.4: Workup status from latest completed assessment
+  const [latestWorkupStatus, setLatestWorkupStatus] = useState<WorkupStatus>(null)
+  const [latestMissingDataFields, setLatestMissingDataFields] = useState<string[]>([])
+  const [latestAssessmentId, setLatestAssessmentId] = useState<string | null>(null)
+  
   // V05-I07.2: Section states - distinguish "no data" from "data source error"
   const [labsState, setLabsState] = useState<SectionState<LabValue>>({ state: 'empty' })
   const [medsState, setMedsState] = useState<SectionState<Medication>>({ state: 'empty' })
@@ -174,9 +182,10 @@ export default function PatientDetailPage() {
         // All sections are presentational components that receive props and fail gracefully.
         
         // First, get assessments for this patient to use as filter for related data
+        // E6.4.4: Also fetch workup_status and missing_data_fields
         const { data: assessmentsData, error: assessmentsError } = await supabase
           .from('assessments')
-          .select('id')
+          .select('id, status, workup_status, missing_data_fields')
           .eq('patient_id', patientId)
           .order('created_at', { ascending: false })
 
@@ -190,6 +199,18 @@ export default function PatientDetailPage() {
           setInterventionsState({ state: 'empty' })
         } else if (assessmentsData && assessmentsData.length > 0) {
           const assessmentIds = assessmentsData.map((a) => a.id)
+
+          // E6.4.4: Get latest completed assessment's workup status
+          const latestCompleted = assessmentsData.find((a) => a.status === 'completed')
+          if (latestCompleted) {
+            setLatestAssessmentId(latestCompleted.id)
+            setLatestWorkupStatus(latestCompleted.workup_status as WorkupStatus)
+            setLatestMissingDataFields(
+              Array.isArray(latestCompleted.missing_data_fields)
+                ? latestCompleted.missing_data_fields
+                : [],
+            )
+          }
 
           // Load documents with extracted data (for Labs and Medications)
           const { data: docsData, error: docsError } = await supabase
@@ -492,6 +513,15 @@ export default function PatientDetailPage() {
                     <SleepChart measures={measures} />
                   </Card>
                 </div>
+              )}
+
+              {/* E6.4.4: Workup Status Section - Shows consistent status with patient view */}
+              {latestAssessmentId && (
+                <WorkupStatusSection
+                  workupStatus={latestWorkupStatus}
+                  missingDataFields={latestMissingDataFields}
+                  assessmentId={latestAssessmentId}
+                />
               )}
 
               {/* Key Labs and Medications Section */}
