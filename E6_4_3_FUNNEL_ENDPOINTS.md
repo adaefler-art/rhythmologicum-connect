@@ -239,6 +239,50 @@ This document catalogs all funnel-related API endpoints and their usage in the p
 
 ---
 
+### 7. Workup Check (E6.4.5)
+**Endpoint:** `POST /api/funnels/[slug]/assessments/[assessmentId]/workup`
+
+**Purpose:** Perform data sufficiency check on completed assessment
+
+**UI Reference:**
+- Auto-triggered by completion endpoint (background)
+- Can be manually triggered via API for testing/re-evaluation
+
+**Request:** None (POST body optional)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "assessmentId": "uuid",
+    "workupStatus": "needs_more_data",
+    "missingDataFields": ["sleep_quality"],
+    "followUpQuestions": [
+      {
+        "id": "followup_sleep_quality",
+        "fieldKey": "sleep_quality",
+        "questionText": "Wie würden Sie Ihre Schlafqualität...",
+        "inputType": "scale",
+        "priority": 10
+      }
+    ],
+    "evidencePackHash": "sha256-hash-string",
+    "rulesetVersion": "1.0.0"
+  },
+  "schemaVersion": "v1"
+}
+```
+
+**Features:**
+- Deterministic rule-based checking (no LLM)
+- Updates `workup_status` and `missing_data_fields` in database
+- Generates follow-up questions for missing data
+- NO DIAGNOSIS - purely data completeness check
+- Auto-triggered after assessment completion
+
+---
+
 ## Funnel Discovery Endpoints
 
 ### 7. Get Funnel Catalog
@@ -432,10 +476,11 @@ This document catalogs all funnel-related API endpoints and their usage in the p
 4. ✅ `POST /api/funnels/[slug]/assessments/[assessmentId]/answers/save` - Save answer
 5. ✅ `POST /api/funnels/[slug]/assessments/[assessmentId]/complete` - Complete assessment
 6. ✅ `GET /api/funnels/[slug]/assessments/[assessmentId]/result` - Get result
-7. ✅ `GET /api/funnels/catalog` - Browse funnels
-8. ✅ `GET /api/funnels/[slug]/definition` - Get funnel structure
-9. ✅ `GET /api/funnels/[slug]/content-pages` - Get content pages
-10. ✅ `GET /api/assessments/in-progress` - Dashboard resume detection
+7. ✅ `POST /api/funnels/[slug]/assessments/[assessmentId]/workup` - Workup check (E6.4.5, auto-triggered)
+8. ✅ `GET /api/funnels/catalog` - Browse funnels
+9. ✅ `GET /api/funnels/[slug]/definition` - Get funnel structure
+10. ✅ `GET /api/funnels/[slug]/content-pages` - Get content pages
+11. ✅ `GET /api/assessments/in-progress` - Dashboard resume detection
 
 ### Potentially Unused/Dead Endpoints
 
@@ -498,6 +543,10 @@ Dashboard
 [Last Step - Complete]
   ↓
   POST /api/funnels/[slug]/assessments/[id]/complete
+  ↓
+[Background: Workup Check] (E6.4.5)
+  ↓
+  POST /api/funnels/[slug]/assessments/[id]/workup
   ↓
 [View Results]
   ↓
