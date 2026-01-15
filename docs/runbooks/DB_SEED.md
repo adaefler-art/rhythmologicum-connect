@@ -196,18 +196,21 @@ npm run db:seed:verify
 ```
 
 #### AC3: Happy Path in <5 Minutes ✅
-```powershell
-# Run E6.4.2 happy path verification
-.\verify-e6-4-2-onboarding.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-access-token=..."
+```bash
+# Manual verification (start dev server)
+npm run dev
 
-# Or manually:
-# 1. Login as patient3@pilot.test
-# 2. Complete consent (should take ~30s)
-# 3. Complete profile (should take ~1min)
-# 4. Redirected to dashboard
-# 5. Start assessment
+# Then in browser:
+# 1. Go to http://localhost:3000
+# 2. Login as patient3@pilot.test / patient123
+# 3. Complete consent (should take ~30s)
+# 4. Complete profile (should take ~1min)
+# 5. Redirected to dashboard
+# 6. Start assessment
 # Total: < 5 minutes
 ```
+
+**Note:** The E6.4.2 verification script (`verify-e6-4-2-onboarding.ps1`) is a separate tool for testing the onboarding flow and is not part of this seed implementation.
 
 ---
 

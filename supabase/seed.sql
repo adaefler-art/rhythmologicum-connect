@@ -567,8 +567,6 @@ DO $$
 DECLARE
   v_stress_funnel_id UUID;
   v_sleep_funnel_id UUID;
-  v_stress_version_id UUID;
-  v_sleep_version_id UUID;
 BEGIN
   -- Ensure stress-assessment funnel exists
   SELECT id INTO v_stress_funnel_id FROM public.funnels_catalog WHERE slug = 'stress-assessment';
