@@ -1185,6 +1185,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/funnels/[slug]/content-pages",
       "methods": [
         "GET"
