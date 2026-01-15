@@ -206,7 +206,7 @@ export type CompleteAssessmentResponse = z.infer<typeof CompleteAssessmentRespon
 // ============================================================
 
 /**
- * Response data schema
+ * Response data schema - E6.4.4: Added workupStatus and missingDataFields
  */
 export const GetResultResponseDataSchema = z.object({
   id: z.string().uuid(),
@@ -214,6 +214,8 @@ export const GetResultResponseDataSchema = z.object({
   completedAt: z.string().datetime().nullable(),
   status: z.enum([ASSESSMENT_STATUS.IN_PROGRESS, ASSESSMENT_STATUS.COMPLETED]),
   funnelTitle: z.string().nullable(),
+  workupStatus: z.enum(['needs_more_data', 'ready_for_review']).nullable(),
+  missingDataFields: z.array(z.string()),
 })
 
 export type GetResultResponseData = z.infer<typeof GetResultResponseDataSchema>

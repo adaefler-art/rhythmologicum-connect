@@ -72,6 +72,18 @@ CREATE TYPE "public"."assessment_status" AS ENUM (
 ALTER TYPE "public"."assessment_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."workup_status" AS ENUM (
+    'needs_more_data',
+    'ready_for_review'
+);
+
+
+ALTER TYPE "public"."workup_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."workup_status" IS 'E6.4.4: Workup status for assessments - indicates if more data is needed or if ready for clinician review';
+
+
 CREATE TYPE "public"."notification_status" AS ENUM (
     'scheduled',
     'sent',
@@ -1439,7 +1451,9 @@ CREATE TABLE IF NOT EXISTS "public"."assessments" (
     "completed_at" timestamp with time zone,
     "status" "public"."assessment_status" DEFAULT 'in_progress'::"public"."assessment_status" NOT NULL,
     "state" "public"."assessment_state" DEFAULT 'in_progress'::"public"."assessment_state",
-    "current_step_id" "uuid"
+    "current_step_id" "uuid",
+    "workup_status" "public"."workup_status",
+    "missing_data_fields" "jsonb" DEFAULT '[]'::"jsonb"
 );
 
 
@@ -1455,6 +1469,14 @@ COMMENT ON COLUMN "public"."assessments"."funnel_id" IS 'Foreign key to funnels 
 
 
 COMMENT ON COLUMN "public"."assessments"."status" IS 'Lifecycle status of the assessment: in_progress or completed';
+
+
+
+COMMENT ON COLUMN "public"."assessments"."workup_status" IS 'E6.4.4: Workup status - NULL for in-progress, needs_more_data or ready_for_review for completed assessments';
+
+
+
+COMMENT ON COLUMN "public"."assessments"."missing_data_fields" IS 'E6.4.4: Array of missing data field identifiers (e.g., ["sleep_quality", "stress_triggers"])';
 
 
 
@@ -3911,6 +3933,14 @@ CREATE INDEX "idx_assessments_patient_status" ON "public"."assessments" USING "b
 
 
 CREATE INDEX "idx_assessments_status" ON "public"."assessments" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_assessments_workup_status" ON "public"."assessments" USING "btree" ("workup_status") WHERE ("workup_status" IS NOT NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_assessments_workup_status" IS 'E6.4.4: Index for filtering assessments by workup status';
 
 
 

@@ -1138,7 +1138,7 @@
       "usedBy": [
         {
           "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 70,
+          "line": 75,
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/result",
           "kind": "fetch"
         }
@@ -1202,7 +1202,7 @@
         },
         {
           "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 93,
+          "line": 98,
           "apiPath": "/api/funnels/${payload.data.funnel}/content-pages",
           "kind": "fetch"
         }

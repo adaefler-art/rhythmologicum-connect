@@ -18,9 +18,12 @@ import {
   AmyTextSection,
   ReportLibrary,
   KeyOutcomesCard,
+  WorkupStatusCard,
 } from './components'
 
 const GENERIC_ERROR = 'Fehler beim Laden der Ergebnisse.'
+
+type WorkupStatus = 'needs_more_data' | 'ready_for_review' | null
 
 type ResultClientProps = {
   slug: string
@@ -35,6 +38,8 @@ type AssessmentResult = {
   completedAt: string
   status: string
   funnelTitle: string | null
+  workupStatus?: WorkupStatus
+  missingDataFields?: string[]
 }
 
 type ResultResponse = {
@@ -165,8 +170,20 @@ export default function ResultClient({
     },
   ]
 
-  // Sample follow-up actions
+  // Sample follow-up actions - E6.4.4: Updated to include follow-up questions and escalation
   const followUpActions = [
+    // E6.4.4: Follow-up questions CTA (only if needs more data)
+    ...(assessment.workupStatus === 'needs_more_data'
+      ? [
+          {
+            title: 'Zusätzliche Fragen beantworten',
+            description:
+              'Ergänzen Sie fehlende Informationen, um eine vollständige Auswertung zu ermöglichen.',
+            actionLabel: 'Fragen beantworten',
+            onClick: () => router.push(`/patient/funnel/${canonicalSlug}`),
+          },
+        ]
+      : []),
     {
       title: 'Termin besprechen',
       description:
@@ -192,6 +209,14 @@ export default function ResultClient({
       actionLabel: 'Zur Historie',
       onClick: () => router.push('/patient/history'),
     },
+    // E6.4.4: Escalation offer CTA (stub) - disabled until feature is available
+    // Note: Commenting out instead of using alert() for better UX
+    // {
+    //   title: 'Rückfragen oder Unterstützung benötigt?',
+    //   description:
+    //     'Wenn Sie Fragen haben oder zusätzliche Unterstützung benötigen, können Sie sich jederzeit an Ihr Behandlungsteam wenden.',
+    //   actionLabel: 'Support kontaktieren (demnächst verfügbar)',
+    // },
   ]
 
   return (
@@ -233,13 +258,19 @@ export default function ResultClient({
           </p>
         </div>
 
+        {/* E6.4.4: Workup Status Card - Shows status and missing data */}
+        <WorkupStatusCard
+          status={assessment.workupStatus || null}
+          missingDataFields={assessment.missingDataFields || []}
+        />
+
         {/* Key Outcomes - Show real data if available */}
         <KeyOutcomesCard outcomes={keyOutcomes} />
 
         {/* Report Library */}
         <ReportLibrary reports={reports} />
 
-        {/* Score Card - Only if we have outcome data */}
+        {/* Score Card - Only if we have outcome data - E6.4.4: Keep for non-diagnostic metrics */}
         {keyOutcomes && keyOutcomes.score_numeric !== null && (
           <ScoreCard
             score={keyOutcomes.score_numeric}
@@ -256,32 +287,33 @@ export default function ResultClient({
           />
         )}
 
-        {/* AMY Text Section - Personalized Insights */}
+        {/* AMY Text Section - E6.4.4: Updated to focus on next steps, not diagnoses */}
         <AmyTextSection
           text={`## Vielen Dank für Ihre Teilnahme
 
 Ihre Antworten sind nun gesichert und werden für die weitere Betreuung verwendet.
 
-### Was bedeutet das?
+### Ihre nächsten Schritte
 
-Ihre Angaben helfen Ihrem Behandlungsteam dabei, ein besseres Verständnis Ihrer aktuellen Situation zu entwickeln. Die Ergebnisse werden vertraulich behandelt und nur mit autorisiertem medizinischem Personal geteilt.
+${
+  assessment.workupStatus === 'needs_more_data'
+    ? `Es werden noch einige zusätzliche Informationen benötigt, um eine vollständige Auswertung zu ermöglichen. Bitte beantworten Sie die fehlenden Fragen über die Schaltfläche "Zusätzliche Fragen beantworten" in den nächsten Schritten.
 
-### Nächste Schritte
+`
+    : ''
+}Ihre Angaben helfen Ihrem Behandlungsteam dabei, ein besseres Verständnis Ihrer aktuellen Situation zu entwickeln. Die Ergebnisse werden vertraulich behandelt und nur mit autorisiertem medizinischem Personal geteilt.
 
-Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. Weitere personalisierte Auswertungen werden in Kürze verfügbar sein.`}
-          title="Ihre persönliche Zusammenfassung"
+### Wie geht es weiter?
+
+Bei Ihrem nächsten Termin können die Ergebnisse gemeinsam besprochen werden. Ihr Behandlungsteam wird Sie über weitere Schritte informieren.`}
+          title="Ihre Zusammenfassung"
           icon="🤖"
         />
 
-        {/* Insight Cards - Key Findings */}
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
-            Wichtige Erkenntnisse
-          </h2>
-          <InsightCardsGroup insights={sampleInsights} />
-        </div>
+        {/* Insight Cards - E6.4.4: Removed to avoid showing diagnostic content */}
+        {/* Sample insights removed per AC1: Patient should not see diagnoses/differentials in v0.6 */}
 
-        {/* Stress Distribution Bar - Visual Breakdown */}
+        {/* Stress Distribution Bar - E6.4.4: Keep as non-diagnostic visual */}
         <StressDistributionBar />
 
         {/* Follow-Up Actions - What's Next */}

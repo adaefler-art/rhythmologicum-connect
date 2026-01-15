@@ -70,7 +70,8 @@
     "support_case_status",
     "task_status",
     "user_role",
-    "validation_status"
+    "validation_status",
+    "workup_status"
   ],
   "deprecated": {
     "tables": [

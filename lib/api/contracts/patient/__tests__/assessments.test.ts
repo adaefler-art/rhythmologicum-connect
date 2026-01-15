@@ -325,6 +325,8 @@ describe('Patient Assessment Contracts', () => {
           completedAt: '2024-01-01T12:00:00.000Z',
           status: ASSESSMENT_STATUS.COMPLETED,
           funnelTitle: 'Stress Assessment',
+          workupStatus: 'ready_for_review' as const,
+          missingDataFields: [],
         },
         schemaVersion: 'v1',
       }
@@ -342,6 +344,8 @@ describe('Patient Assessment Contracts', () => {
           completedAt: null,
           status: ASSESSMENT_STATUS.IN_PROGRESS,
           funnelTitle: null,
+          workupStatus: null,
+          missingDataFields: [],
         },
         schemaVersion: 'v1',
       }

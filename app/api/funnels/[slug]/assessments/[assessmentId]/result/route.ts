@@ -13,6 +13,7 @@ import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type GetResultResponseData,
 } from '@/lib/api/contracts/patient'
+import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 
 function getFunnelSlugCandidates(slug: string): string[] {
   const normalized = slug.toLowerCase().trim()
@@ -61,12 +62,14 @@ export async function GET(
       return notFoundResponse('Benutzerprofil')
     }
 
-    const { data: assessment, error: assessmentError } = await supabase
+    // E6.4.4: Fetch assessment with workup status and missing data fields
+    // Type assertion needed as schema types not yet regenerated from migration
+    const { data: assessment, error: assessmentError } = (await supabase
       .from('assessments')
-      .select('id, patient_id, funnel, completed_at, status')
+      .select('id, patient_id, funnel, completed_at, status, workup_status, missing_data_fields')
       .eq('id', assessmentId)
       .in('funnel', getFunnelSlugCandidates(slug))
-      .single()
+      .single()) as { data: AssessmentWithWorkup | null; error: unknown }
 
     if (assessmentError) {
       logDatabaseError(
@@ -106,8 +109,12 @@ export async function GET(
       id: assessment.id,
       funnel: assessment.funnel,
       completedAt: assessment.completed_at,
-      status: assessment.status,
+      status: assessment.status as 'in_progress' | 'completed',
       funnelTitle: funnelRow?.title ?? null,
+      workupStatus: assessment.workup_status ?? null,
+      missingDataFields: Array.isArray(assessment.missing_data_fields)
+        ? (assessment.missing_data_fields as string[])
+        : [],
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
