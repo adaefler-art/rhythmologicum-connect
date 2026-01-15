@@ -1559,6 +1559,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
           sex: string | null
           user_id: string
         }
@@ -1567,6 +1568,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
           sex?: string | null
           user_id: string
         }
@@ -1575,6 +1577,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
           sex?: string | null
           user_id?: string
         }
@@ -2839,6 +2842,7 @@ export type Database = {
         | "READ"
         | "FAILED"
         | "CANCELLED"
+      onboarding_status_enum: "not_started" | "in_progress" | "completed"
       parsing_status:
         | "pending"
         | "processing"
@@ -3040,6 +3044,7 @@ export const Constants = {
         "FAILED",
         "CANCELLED",
       ],
+      onboarding_status_enum: ["not_started", "in_progress", "completed"],
       parsing_status: [
         "pending",
         "processing",
