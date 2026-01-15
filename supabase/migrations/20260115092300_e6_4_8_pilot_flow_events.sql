@@ -114,6 +114,7 @@ COMMENT ON COLUMN public.pilot_flow_events.payload_hash IS
 ALTER TABLE public.pilot_flow_events ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Admin and clinician read access
+DROP POLICY IF EXISTS pilot_flow_events_admin_read ON public.pilot_flow_events;
 CREATE POLICY pilot_flow_events_admin_read 
   ON public.pilot_flow_events 
   FOR SELECT
@@ -123,6 +124,7 @@ CREATE POLICY pilot_flow_events_admin_read
   );
 
 -- Policy: System insert only (no user writes directly)
+DROP POLICY IF EXISTS pilot_flow_events_system_insert ON public.pilot_flow_events;
 CREATE POLICY pilot_flow_events_system_insert 
   ON public.pilot_flow_events 
   FOR INSERT
