@@ -5,7 +5,6 @@
  */
 
 import { performWorkupCheck, getRulesetVersion } from '../index'
-import { createEvidencePack } from '../helpers'
 import type { EvidencePack } from '@/lib/types/workup'
 
 // Mock the Supabase client

@@ -11,7 +11,6 @@ import type {
   DataSufficiencyRuleset,
   DataSufficiencyResult,
 } from '@/lib/types/workup'
-import { getFollowUpQuestions } from './followUpQuestions'
 import { generateEvidencePackHash } from './evidenceHash'
 
 /**
