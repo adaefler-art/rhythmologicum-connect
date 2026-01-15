@@ -93,6 +93,16 @@ COMMENT ON TYPE "public"."notification_status" IS 'V05-I05.9: Notification deliv
 
 
 
+CREATE TYPE "public"."onboarding_status_enum" AS ENUM (
+    'not_started',
+    'in_progress',
+    'completed'
+);
+
+
+ALTER TYPE "public"."onboarding_status_enum" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."parsing_status" AS ENUM (
     'pending',
     'processing',
@@ -2520,7 +2530,8 @@ CREATE TABLE IF NOT EXISTS "public"."patient_profiles" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "full_name" "text",
     "birth_year" integer,
-    "sex" "text"
+    "sex" "text",
+    "onboarding_status" "public"."onboarding_status_enum" DEFAULT 'not_started'::"public"."onboarding_status_enum" NOT NULL
 );
 
 
@@ -2528,6 +2539,10 @@ ALTER TABLE "public"."patient_profiles" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."patient_profiles" IS 'Patient profile data with RLS: patients see own data, clinicians see all';
+
+
+
+COMMENT ON COLUMN "public"."patient_profiles"."onboarding_status" IS 'E6.4.2: Tracks patient onboarding progress (not_started, in_progress, completed)';
 
 
 
@@ -3880,6 +3895,14 @@ CREATE INDEX "idx_assessment_events_created_at" ON "public"."assessment_events" 
 
 
 CREATE INDEX "idx_assessment_events_event_type" ON "public"."assessment_events" USING "btree" ("event_type");
+
+
+
+CREATE INDEX "idx_assessments_patient_in_progress" ON "public"."assessments" USING "btree" ("patient_id", "completed_at", "started_at" DESC) WHERE ("completed_at" IS NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_assessments_patient_in_progress" IS 'E6.4.2: Optimizes query for finding in-progress assessments by patient';
 
 
 
