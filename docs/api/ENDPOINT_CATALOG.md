@@ -26,7 +26,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/notification-templates | GET, POST | admin |  | 1 | app/api/admin/notification-templates/route.ts |
 | /api/admin/notification-templates/[id] | DELETE, PUT | admin |  | 1 | app/api/admin/notification-templates/[id]/route.ts |
 | /api/admin/operational-settings-audit | GET | admin |  | 1 | app/api/admin/operational-settings-audit/route.ts |
-| /api/admin/pilot/flow-events | GET | admin |  | 0 | app/api/admin/pilot/flow-events/route.ts |
+| /api/admin/pilot/flow-events | GET | admin | E6.4.8: Pilot flow events (telemetry) | 0 | app/api/admin/pilot/flow-events/route.ts |
+| /api/admin/pilot/kpis | GET | admin | E6.4.9: Pilot KPIs (funnel, review, support case metrics) | 0 | app/api/admin/pilot/kpis/route.ts |
 | /api/admin/reassessment-rules | GET, POST | admin |  | 1 | app/api/admin/reassessment-rules/route.ts |
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | app/api/admin/reassessment-rules/[id]/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | app/api/admin/usage/route.ts |
