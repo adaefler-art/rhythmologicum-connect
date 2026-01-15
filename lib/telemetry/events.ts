@@ -135,6 +135,7 @@ export async function emitPilotEvent(
     const supabase = await createServerSupabaseClient()
     
     // Insert event
+    // @ts-ignore - pilot_flow_events table will be available after migration
     const { data, error } = await supabase
       .from('pilot_flow_events')
       .insert({

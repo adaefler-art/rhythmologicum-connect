@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     if (limitParam) {
       const parsedLimit = parseInt(limitParam, 10)
       if (isNaN(parsedLimit) || parsedLimit < 1) {
-        return invalidInputResponse('Ungültiger "limit" Parameter.', correlationId)
+        return invalidInputResponse('Ungültiger "limit" Parameter.', undefined, correlationId)
       }
       limit = Math.min(parsedLimit, 500)
     }
@@ -83,12 +83,13 @@ export async function GET(request: NextRequest) {
     if (offsetParam) {
       const parsedOffset = parseInt(offsetParam, 10)
       if (isNaN(parsedOffset) || parsedOffset < 0) {
-        return invalidInputResponse('Ungültiger "offset" Parameter.', correlationId)
+        return invalidInputResponse('Ungültiger "offset" Parameter.', undefined, correlationId)
       }
       offset = parsedOffset
     }
     
     // Build query
+    // @ts-ignore - pilot_flow_events table will be available after migration
     let query = supabase
       .from('pilot_flow_events')
       .select('*', { count: 'exact' })

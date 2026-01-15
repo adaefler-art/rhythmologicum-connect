@@ -3,14 +3,21 @@
  *
  * API endpoint to log when a patient clicks an escalation CTA.
  * No PHI, only event type + timestamp + correlation ID.
+ * 
+ * E6.4.8: Emits ESCALATION_OFFER_CLICKED telemetry event.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { logEscalationCtaClicked } from '@/lib/escalation/auditLog'
 import type { EscalationOfferType } from '@/lib/types/escalation'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { emitEscalationOfferClicked } from '@/lib/telemetry/events'
 
 export async function POST(request: NextRequest) {
+  // E6.4.8: Get correlation ID for telemetry
+  const requestCorrelationId = getCorrelationId(request)
+  
   try {
     // Get Supabase client for auth
     const supabase = await createServerSupabaseClient()
@@ -58,7 +65,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the event
+    // Log the event (existing audit trail)
     const auditResult = await logEscalationCtaClicked(
       assessmentId,
       user.id,
@@ -70,6 +77,24 @@ export async function POST(request: NextRequest) {
       console.error('[escalation/log-click] Audit logging failed:', auditResult.error)
       // Don't fail the request if audit logging fails
     }
+
+    // E6.4.8: Emit ESCALATION_OFFER_CLICKED telemetry event (best-effort)
+    // Get patient ID for telemetry
+    const { data: patientProfile } = await supabase
+      .from('patient_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    await emitEscalationOfferClicked({
+      correlationId: requestCorrelationId,
+      assessmentId,
+      offerType,
+      escalationCorrelationId: correlationId,
+      patientId: patientProfile?.id,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit ESCALATION_OFFER_CLICKED event', err)
+    })
 
     return NextResponse.json({
       success: true,
