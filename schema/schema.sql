@@ -115,6 +115,27 @@ CREATE TYPE "public"."parsing_status" AS ENUM (
 ALTER TYPE "public"."parsing_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."pilot_event_type" AS ENUM (
+    'TRIAGE_SUBMITTED',
+    'TRIAGE_ROUTED',
+    'FUNNEL_STARTED',
+    'FUNNEL_RESUMED',
+    'FUNNEL_COMPLETED',
+    'WORKUP_STARTED',
+    'WORKUP_NEEDS_MORE_DATA',
+    'WORKUP_READY_FOR_REVIEW',
+    'ESCALATION_OFFER_SHOWN',
+    'ESCALATION_OFFER_CLICKED'
+);
+
+
+ALTER TYPE "public"."pilot_event_type" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."pilot_event_type" IS 'E6.4.8: Event types for pilot flow state transitions';
+
+
+
 CREATE TYPE "public"."processing_stage" AS ENUM (
     'pending',
     'risk',
@@ -2615,6 +2636,64 @@ COMMENT ON COLUMN "public"."pillars"."sort_order" IS 'Display order for pillars 
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."pilot_flow_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "org_id" "uuid",
+    "patient_id" "uuid",
+    "actor_role" "public"."user_role",
+    "correlation_id" "text" NOT NULL,
+    "event_type" "public"."pilot_event_type" NOT NULL,
+    "entity_type" "text" NOT NULL,
+    "entity_id" "text" NOT NULL,
+    "from_state" "text",
+    "to_state" "text",
+    "payload_json" "jsonb" DEFAULT '{}'::"jsonb",
+    "payload_hash" "text",
+    CONSTRAINT "pilot_flow_events_correlation_id_length" CHECK (("length"("correlation_id") <= 64)),
+    CONSTRAINT "pilot_flow_events_payload_size" CHECK (("pg_column_size"("payload_json") <= 2048))
+);
+
+
+ALTER TABLE "public"."pilot_flow_events" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."pilot_flow_events" IS 'E6.4.8: Append-only event log for pilot flow state transitions. PHI-safe telemetry for debugging and audit purposes.';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."correlation_id" IS 'Unique correlation ID for tracing requests across flows (max 64 chars)';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."event_type" IS 'Type of state transition event (triage, funnel, workup, escalation)';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."entity_type" IS 'Type of entity (e.g., "triage", "funnel", "workup", "assessment")';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."entity_id" IS 'UUID or identifier of the entity';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."from_state" IS 'Previous state before transition (nullable for initial events)';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."to_state" IS 'New state after transition (nullable for final events)';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."payload_json" IS 'PHI-safe metadata: allowlist keys only (nextAction, tier, redFlag booleans, counts, stable identifiers). Max size: 2KB. Include payloadVersion field for schema evolution.';
+
+
+
+COMMENT ON COLUMN "public"."pilot_flow_events"."payload_hash" IS 'Optional deterministic hash of payload for integrity verification';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."pre_screening_calls" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "patient_id" "uuid" NOT NULL,
@@ -3701,6 +3780,11 @@ ALTER TABLE ONLY "public"."pillars"
 
 
 
+ALTER TABLE ONLY "public"."pilot_flow_events"
+    ADD CONSTRAINT "pilot_flow_events_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."pre_screening_calls"
     ADD CONSTRAINT "pre_screening_calls_pkey" PRIMARY KEY ("id");
 
@@ -4326,6 +4410,22 @@ CREATE INDEX "idx_patient_measures_patient_id" ON "public"."patient_measures" US
 
 
 CREATE INDEX "idx_patient_measures_report_id" ON "public"."patient_measures" USING "btree" ("report_id");
+
+
+
+CREATE INDEX "idx_pilot_flow_events_correlation_id" ON "public"."pilot_flow_events" USING "btree" ("correlation_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_pilot_flow_events_created_at" ON "public"."pilot_flow_events" USING "btree" ("created_at" DESC, "id");
+
+
+
+CREATE INDEX "idx_pilot_flow_events_entity" ON "public"."pilot_flow_events" USING "btree" ("entity_type", "entity_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_pilot_flow_events_patient_id" ON "public"."pilot_flow_events" USING "btree" ("patient_id", "created_at" DESC) WHERE ("patient_id" IS NOT NULL);
 
 
 
@@ -5731,6 +5831,25 @@ ALTER TABLE "public"."patient_profiles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."pillars" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."pilot_flow_events" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "pilot_flow_events_admin_read" ON "public"."pilot_flow_events" FOR SELECT TO "authenticated" USING ((("auth"."jwt"() ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"])));
+
+
+
+COMMENT ON POLICY "pilot_flow_events_admin_read" ON "public"."pilot_flow_events" IS 'E6.4.8: Only admins and clinicians can read pilot flow events';
+
+
+
+CREATE POLICY "pilot_flow_events_system_insert" ON "public"."pilot_flow_events" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+COMMENT ON POLICY "pilot_flow_events_system_insert" ON "public"."pilot_flow_events" IS 'E6.4.8: All authenticated users can insert events (system-level operation)';
+
+
+
 ALTER TABLE "public"."pre_screening_calls" ENABLE ROW LEVEL SECURITY;
 
 
@@ -6638,6 +6757,12 @@ GRANT ALL ON TABLE "public"."pending_account_deletions" TO "service_role";
 GRANT ALL ON TABLE "public"."pillars" TO "anon";
 GRANT ALL ON TABLE "public"."pillars" TO "authenticated";
 GRANT ALL ON TABLE "public"."pillars" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pilot_flow_events" TO "anon";
+GRANT ALL ON TABLE "public"."pilot_flow_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."pilot_flow_events" TO "service_role";
 
 
 
