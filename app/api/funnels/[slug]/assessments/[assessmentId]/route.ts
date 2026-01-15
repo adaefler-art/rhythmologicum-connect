@@ -22,6 +22,8 @@ import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type ResumeAssessmentResponseData,
 } from '@/lib/api/contracts/patient'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { emitFunnelResumed } from '@/lib/telemetry/events'
 
 /**
  * B5/B8: Get assessment status and current step
@@ -53,10 +55,11 @@ export async function GET(
 ) {
   try {
     const { slug, assessmentId } = await context.params
+    const correlationId = getCorrelationId(request)
 
     // Validate parameters
     if (!slug || !assessmentId) {
-      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
+      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.', undefined, correlationId)
     }
 
     const supabase = await createServerSupabaseClient()
@@ -69,15 +72,15 @@ export async function GET(
 
     if (authError) {
       if (isSessionExpired(authError)) {
-        return sessionExpiredResponse()
+        return sessionExpiredResponse(undefined, correlationId)
       }
       logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`, assessmentId })
-      return unauthorizedResponse()
+      return unauthorizedResponse(undefined, correlationId)
     }
 
     if (!user) {
       logUnauthorized({ endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`, assessmentId })
-      return unauthorizedResponse()
+      return unauthorizedResponse(undefined, correlationId)
     }
 
     // Get patient profile
@@ -89,7 +92,7 @@ export async function GET(
 
     if (profileError || !patientProfile) {
       logDatabaseError({ userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, profileError)
-      return notFoundResponse('Benutzerprofil')
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
     // Load assessment and verify ownership
@@ -102,17 +105,17 @@ export async function GET(
 
     if (assessmentError) {
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, assessmentError)
-      return internalErrorResponse('Fehler beim Laden des Assessments.')
+      return internalErrorResponse('Fehler beim Laden des Assessments.', correlationId)
     }
 
     if (!assessment) {
-      return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
+      return notFoundResponse('Assessment', 'Assessment nicht gefunden.', correlationId)
     }
 
     // Verify ownership
     if (assessment.patient_id !== patientProfile.id) {
       logForbidden({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, 'Assessment does not belong to user')
-      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.', correlationId)
     }
 
     // Handle legacy assessments missing funnel_id
@@ -146,6 +149,7 @@ export async function GET(
         return notFoundResponse(
           'Funnel',
           `Der Funnel '${slug}' konnte nicht gefunden werden. Möglicherweise wurde er gelöscht oder umbenannt.`,
+          correlationId,
         )
       }
 
@@ -192,7 +196,7 @@ export async function GET(
 
     if (stepsError || !steps) {
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, stepsError)
-      return internalErrorResponse('Fehler beim Laden der Schritte.')
+      return internalErrorResponse('Fehler beim Laden der Schritte.', correlationId)
     }
 
     const totalSteps = steps.length
@@ -202,11 +206,23 @@ export async function GET(
 
     if (!currentStep) {
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, new Error('Failed to determine current step'))
-      return internalErrorResponse('Fehler beim Ermitteln des aktuellen Schritts.')
+      return internalErrorResponse('Fehler beim Ermitteln des aktuellen Schritts.', correlationId)
     }
 
     // Count completed steps (steps before current step where all required questions are answered)
     const completedSteps = currentStep.stepIndex
+
+    // E6.4.8: Emit FUNNEL_RESUMED telemetry event
+    await emitFunnelResumed({
+      correlationId,
+      assessmentId: assessment.id,
+      funnelSlug: slug,
+      patientId: patientProfile.id,
+      stepId: currentStep.stepId,
+      stepIndex: currentStep.stepIndex,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit FUNNEL_RESUMED event', err)
+    })
 
     // Return success response
     const responseData: ResumeAssessmentResponseData = {
@@ -223,9 +239,9 @@ export async function GET(
       totalSteps,
     }
 
-    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
   } catch (error) {
     logDatabaseError({ endpoint: 'GET /api/funnels/[slug]/assessments/[assessmentId]' }, error)
-    return internalErrorResponse()
+    return internalErrorResponse(undefined, getCorrelationId(request))
   }
 }

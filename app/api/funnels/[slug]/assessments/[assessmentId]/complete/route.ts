@@ -25,6 +25,8 @@ import {
 import { withIdempotency } from '@/lib/api/idempotency'
 import { performWorkupCheck, getRulesetVersion } from '@/lib/workup'
 import { createEvidencePack } from '@/lib/workup/helpers'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { emitFunnelCompleted } from '@/lib/telemetry/events'
 
 /**
  * B5/B8: Complete an assessment
@@ -86,9 +88,11 @@ async function handleCompleteAssessment(
   assessmentId: string,
 ) {
   try {
+    const correlationId = getCorrelationId(request)
+
     // Validate parameters
     if (!slug || !assessmentId) {
-      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.')
+      return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.', undefined, correlationId)
     }
 
     const supabase = await createServerSupabaseClient()
@@ -104,7 +108,7 @@ async function handleCompleteAssessment(
         endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         assessmentId,
       })
-      return unauthorizedResponse()
+      return unauthorizedResponse(undefined, correlationId)
     }
 
     // Get patient profile
@@ -122,7 +126,7 @@ async function handleCompleteAssessment(
         },
         profileError,
       )
-      return notFoundResponse('Benutzerprofil')
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
     // Load assessment and verify ownership
@@ -142,7 +146,7 @@ async function handleCompleteAssessment(
         },
         assessmentError,
       )
-      return notFoundResponse('Assessment')
+      return notFoundResponse('Assessment', undefined, correlationId)
     }
 
     // Verify ownership
@@ -155,7 +159,7 @@ async function handleCompleteAssessment(
         },
         'Assessment does not belong to user',
       )
-      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment abzuschließen.')
+      return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment abzuschließen.', correlationId)
     }
 
     // Check if already completed
@@ -165,12 +169,12 @@ async function handleCompleteAssessment(
         status: 'completed',
         message: 'Assessment wurde bereits abgeschlossen.',
       }
-      return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
+      return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
     }
 
     // Verify funnel_id exists
     if (!assessment.funnel_id) {
-      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+      return internalErrorResponse('Funnel-ID fehlt im Assessment.', correlationId)
     }
 
     // Perform full validation across all funnel steps
@@ -189,7 +193,7 @@ async function handleCompleteAssessment(
 
       return validationErrorResponse('Nicht alle Pflichtfragen wurden beantwortet.', {
         missingQuestions: validationResult.missingQuestions,
-      })
+      }, correlationId)
     }
 
     // All questions answered - mark assessment as completed
@@ -211,7 +215,7 @@ async function handleCompleteAssessment(
         },
         updateError,
       )
-      return internalErrorResponse('Fehler beim Abschließen des Assessments.')
+      return internalErrorResponse('Fehler beim Abschließen des Assessments.', correlationId)
     }
 
     // Log successful assessment completion
@@ -220,6 +224,16 @@ async function handleCompleteAssessment(
       assessmentId,
       endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
       funnel: slug,
+    })
+
+    // E6.4.8: Emit FUNNEL_COMPLETED telemetry event
+    await emitFunnelCompleted({
+      correlationId,
+      assessmentId,
+      funnelSlug: slug,
+      patientId: patientProfile.id,
+    }).catch((err) => {
+      console.warn('[TELEMETRY] Failed to emit FUNNEL_COMPLETED event', err)
     })
 
     // V05-I10.3: Track KPI - Assessment completion
@@ -253,7 +267,7 @@ async function handleCompleteAssessment(
 
     // E6.4.5: Trigger workup check after completion
     // This is async and non-blocking - workup runs in background
-    performWorkupCheckAsync(assessmentId, slug).catch((err) => {
+    performWorkupCheckAsync(assessmentId, slug, correlationId).catch((err) => {
       // Don't fail the completion if workup fails
       console.error('[complete] Failed to trigger workup check', err)
     })
@@ -264,7 +278,7 @@ async function handleCompleteAssessment(
       status: 'completed',
     }
 
-    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
+    return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
   } catch (error) {
     logDatabaseError(
       {
@@ -272,7 +286,7 @@ async function handleCompleteAssessment(
       },
       error,
     )
-    return internalErrorResponse()
+    return internalErrorResponse(undefined, getCorrelationId(request))
   }
 }
 
@@ -284,8 +298,9 @@ async function handleCompleteAssessment(
  *
  * @param assessmentId - The assessment ID
  * @param funnelSlug - The funnel slug
+ * @param correlationId - Correlation ID for telemetry
  */
-async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string): Promise<void> {
+async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string, correlationId: string): Promise<void> {
   try {
     // Create evidence pack from assessment data
     const evidencePack = await createEvidencePack(assessmentId, funnelSlug)
