@@ -144,7 +144,7 @@ export async function GET(req: Request) {
       const consents = await fetchUserConsents(supabase, user.id)
       const consentData = transformConsentsForExport(consents)
 
-      return NextResponse.json({
+      const exportResponse = {
         export_date: new Date().toISOString(),
         patient_id: patientId,
         user_id: user.id,
@@ -153,6 +153,18 @@ export async function GET(req: Request) {
         consents: consentData,
         consents_count: consentData.length,
         message: 'Keine Messungen gefunden.',
+      }
+
+      // Format date for filename (YYYY-MM-DD)
+      const dateStr = new Date().toISOString().split('T')[0]
+      const filename = `patient-export-${dateStr}.json`
+
+      return NextResponse.json(exportResponse, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
       })
     }
 
@@ -207,8 +219,8 @@ export async function GET(req: Request) {
     // 7. Prepare consent data for export
     const consentData = transformConsentsForExport(consents)
 
-    // 8. Return the complete export
-    return NextResponse.json({
+    // 8. Return the complete export with proper headers
+    const exportResponse = {
       export_date: new Date().toISOString(),
       patient_id: patientId,
       user_id: user.id,
@@ -216,6 +228,18 @@ export async function GET(req: Request) {
       total_count: exportData.length,
       consents: consentData,
       consents_count: consentData.length,
+    }
+
+    // Format date for filename (YYYY-MM-DD)
+    const dateStr = new Date().toISOString().split('T')[0]
+    const filename = `patient-export-${dateStr}.json`
+
+    return NextResponse.json(exportResponse, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
     })
   } catch (err: unknown) {
     console.error('[patient-measures/export] Unerwarteter Fehler:', err)
