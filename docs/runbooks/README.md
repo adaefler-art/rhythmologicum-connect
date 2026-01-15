@@ -4,6 +4,22 @@ This directory contains operational runbooks for deployment, testing, and troubl
 
 ## Available Runbooks
 
+### [DB_SEED.md](./DB_SEED.md)
+
+**Purpose:** Database seeding for pilot deployment
+
+**Covers:**
+- One-command database setup
+- Deterministic test data (org, users, funnels)
+- Test account credentials
+- Verification and troubleshooting
+
+**Quick Start:**
+```bash
+npm run db:reset
+# Creates pilot org, test users (admin/clinician/patients), and 2 funnels
+```
+
 ### [PILOT_SMOKE_TESTS.md](./PILOT_SMOKE_TESTS.md)
 
 **Purpose:** Copy-paste-ready smoke tests for pilot deployment
