@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { enforceDashboardFirst } from '@/lib/utils/dashboardFirstPolicy'
 import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import {
   getReportsForAssessment,
@@ -35,13 +36,21 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
   // Create Supabase server client (canonical)
   const supabase = await createServerSupabaseClient()
 
-  // Check authentication
+  // E6.5.1 AC3: Check authentication FIRST (401-first, no DB calls before auth)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/')
+  }
+
+  // E6.5.1 AC2: Enforce dashboard-first policy
+  const pathname = `/patient/funnel/${slug}/result`
+  const redirectUrl = await enforceDashboardFirst(pathname)
+  
+  if (redirectUrl) {
+    redirect(redirectUrl)
   }
 
   // Verify assessment ownership
