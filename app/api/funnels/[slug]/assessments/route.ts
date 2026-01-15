@@ -68,7 +68,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
   try {
     // Validate slug parameter
     if (!slug) {
-      return missingFieldsResponse('Funnel-Slug fehlt.', correlationId)
+      return missingFieldsResponse('Funnel-Slug fehlt.', undefined, correlationId)
     }
 
     const supabase = await createServerSupabaseClient()
@@ -114,7 +114,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         },
         profileError,
       )
-      return notFoundResponse('Benutzerprofil', correlationId)
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
     // Load funnel by slug and verify it's active
@@ -133,11 +133,11 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         },
         funnelError,
       )
-      return notFoundResponse('Funnel', correlationId)
+      return notFoundResponse('Funnel', undefined, correlationId)
     }
 
     if (!funnel.is_active) {
-      return invalidInputResponse('Dieser Funnel ist nicht aktiv.', correlationId)
+      return invalidInputResponse('Dieser Funnel ist nicht aktiv.', undefined, correlationId)
     }
 
     // Create new assessment with status = in_progress
