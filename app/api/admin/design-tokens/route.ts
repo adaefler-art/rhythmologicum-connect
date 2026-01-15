@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single()) as { data: { id: string } | null; error: Error | null }
     
-    if (error) {
+    if (error || !token) {
       console.error('[design-tokens-api][POST] Database error', { requestId, error })
       return NextResponse.json(
         {
