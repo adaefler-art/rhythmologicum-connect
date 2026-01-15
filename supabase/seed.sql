@@ -76,7 +76,7 @@ BEGIN
       '10000000-0000-0000-0000-000000000001'::uuid,
       '00000000-0000-0000-0000-000000000000'::uuid,
       'admin@pilot.test',
-      crypt('admin123', gen_salt('bf')), -- Password: admin123
+      crypt('admin123', '$2a$06$fixedsaltforseedXXXXXXXXX'), -- Password: admin123 (deterministic salt)
       NOW(),
       jsonb_build_object('role', 'admin'),
       jsonb_build_object('display_name', 'Admin User'),
@@ -109,7 +109,7 @@ BEGIN
       '10000000-0000-0000-0000-000000000002'::uuid,
       '00000000-0000-0000-0000-000000000000'::uuid,
       'clinician@pilot.test',
-      crypt('clinician123', gen_salt('bf')), -- Password: clinician123
+      crypt('clinician123', '$2a$06$fixedsaltforseedXXXXXXXXX'), -- Password: clinician123 (deterministic salt)
       NOW(),
       jsonb_build_object('role', 'clinician'),
       jsonb_build_object('display_name', 'Dr. Müller'),
@@ -142,7 +142,7 @@ BEGIN
       '10000000-0000-0000-0000-000000000101'::uuid,
       '00000000-0000-0000-0000-000000000000'::uuid,
       'patient1@pilot.test',
-      crypt('patient123', gen_salt('bf')), -- Password: patient123
+      crypt('patient123', '$2a$06$fixedsaltforseedXXXXXXXXX'), -- Password: patient123 (deterministic salt)
       NOW(),
       jsonb_build_object('role', 'patient'),
       jsonb_build_object('display_name', 'Max Mustermann'),
@@ -175,7 +175,7 @@ BEGIN
       '10000000-0000-0000-0000-000000000102'::uuid,
       '00000000-0000-0000-0000-000000000000'::uuid,
       'patient2@pilot.test',
-      crypt('patient123', gen_salt('bf')), -- Password: patient123
+      crypt('patient123', '$2a$06$fixedsaltforseedXXXXXXXXX'), -- Password: patient123 (deterministic salt)
       NOW(),
       jsonb_build_object('role', 'patient'),
       jsonb_build_object('display_name', 'Erika Musterfrau'),
@@ -208,7 +208,7 @@ BEGIN
       '10000000-0000-0000-0000-000000000103'::uuid,
       '00000000-0000-0000-0000-000000000000'::uuid,
       'patient3@pilot.test',
-      crypt('patient123', gen_salt('bf')), -- Password: patient123
+      crypt('patient123', '$2a$06$fixedsaltforseedXXXXXXXXX'), -- Password: patient123 (deterministic salt)
       NOW(),
       jsonb_build_object('role', 'patient'),
       jsonb_build_object('display_name', 'Anna Schmidt'),

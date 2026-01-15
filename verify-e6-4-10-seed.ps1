@@ -35,7 +35,12 @@ function Invoke-LocalPsql {
             return , $output
         }
         finally {
-            try { Remove-Item -Force $tempFile.FullName -ErrorAction SilentlyContinue } catch { }
+            try { 
+                Remove-Item -Force $tempFile.FullName -ErrorAction SilentlyContinue 
+            } 
+            catch { 
+                # Ignore file cleanup errors - file may already be deleted
+            }
         }
     }
     
