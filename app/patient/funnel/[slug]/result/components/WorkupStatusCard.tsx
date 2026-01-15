@@ -112,5 +112,6 @@ function formatFieldName(field: string): string {
     family_history: 'Familienanamnese',
   }
 
-  return fieldLabels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+  // Return German label if available, otherwise show technical field name
+  return fieldLabels[field] || `[${field}]`
 }

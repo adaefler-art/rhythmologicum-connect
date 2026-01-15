@@ -209,17 +209,14 @@ export default function ResultClient({
       actionLabel: 'Zur Historie',
       onClick: () => router.push('/patient/history'),
     },
-    // E6.4.4: Escalation offer CTA (stub)
-    {
-      title: 'Rückfragen oder Unterstützung benötigt?',
-      description:
-        'Wenn Sie Fragen haben oder zusätzliche Unterstützung benötigen, können Sie sich jederzeit an Ihr Behandlungsteam wenden.',
-      actionLabel: 'Support kontaktieren (demnächst verfügbar)',
-      onClick: () => {
-        // Stub for future escalation feature
-        alert('Diese Funktion wird in einer zukünftigen Version verfügbar sein.')
-      },
-    },
+    // E6.4.4: Escalation offer CTA (stub) - disabled until feature is available
+    // Note: Commenting out instead of using alert() for better UX
+    // {
+    //   title: 'Rückfragen oder Unterstützung benötigt?',
+    //   description:
+    //     'Wenn Sie Fragen haben oder zusätzliche Unterstützung benötigen, können Sie sich jederzeit an Ihr Behandlungsteam wenden.',
+    //   actionLabel: 'Support kontaktieren (demnächst verfügbar)',
+    // },
   ]
 
   return (

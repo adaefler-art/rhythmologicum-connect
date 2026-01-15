@@ -16,8 +16,7 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
-
-type WorkupStatus = 'needs_more_data' | 'ready_for_review' | null
+import type { WorkupStatus, AssessmentListItemWithWorkup } from '@/lib/types/workupStatus'
 
 type PatientMeasure = {
   id: string
@@ -189,14 +188,7 @@ export default function PatientDetailPage() {
           .select('id, status, workup_status, missing_data_fields')
           .eq('patient_id', patientId)
           .order('created_at', { ascending: false })) as {
-          data:
-            | {
-                id: string
-                status: string
-                workup_status?: 'needs_more_data' | 'ready_for_review' | null
-                missing_data_fields?: string[] | null
-              }[]
-            | null
+          data: AssessmentListItemWithWorkup[] | null
           error: unknown
         }
 

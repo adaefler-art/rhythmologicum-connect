@@ -13,6 +13,7 @@ import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type GetResultResponseData,
 } from '@/lib/api/contracts/patient'
+import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 
 function getFunnelSlugCandidates(slug: string): string[] {
   const normalized = slug.toLowerCase().trim()
@@ -63,23 +64,12 @@ export async function GET(
 
     // E6.4.4: Fetch assessment with workup status and missing data fields
     // Type assertion needed as schema types not yet regenerated from migration
-    const { data: assessment, error: assessmentError } = await supabase
+    const { data: assessment, error: assessmentError } = (await supabase
       .from('assessments')
       .select('id, patient_id, funnel, completed_at, status, workup_status, missing_data_fields')
       .eq('id', assessmentId)
       .in('funnel', getFunnelSlugCandidates(slug))
-      .single() as {
-      data: {
-        id: string
-        patient_id: string
-        funnel: string
-        completed_at: string | null
-        status: string
-        workup_status?: 'needs_more_data' | 'ready_for_review' | null
-        missing_data_fields?: string[] | null
-      } | null
-      error: unknown
-    }
+      .single()) as { data: AssessmentWithWorkup | null; error: unknown }
 
     if (assessmentError) {
       logDatabaseError(
