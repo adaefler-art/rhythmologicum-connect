@@ -80,6 +80,8 @@ const getQuickFillButtonStyles = (color: 'green' | 'amber' | 'red'): string => {
   
   return `${baseStyles} ${colorStyles[color]}`
 }
+
+// E6.6.9 AC2: Dev harness visibility configuration
 // Set to true only in development/preview environments
 // In production, this should be false to hide dev tools from end users
 // Note: Can be toggled via browser localStorage for testing:
@@ -111,7 +113,6 @@ const isDevHarnessEnabled = (): boolean => {
     hostname.includes('dev-')
   )
 }
-
 
 export function AMYComposer() {
   const router = useRouter()
