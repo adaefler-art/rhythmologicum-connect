@@ -3,30 +3,36 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
-import { Card, LoadingSpinner, ErrorState } from '@/lib/ui'
-import { typography } from '@/lib/design-tokens'
-
-type Assessment = {
-  id: string
-  funnel: string
-  funnel_id: string | null
-  started_at: string
-  completed_at: string | null
-}
+import { LoadingSpinner, ErrorState } from '@/lib/ui'
+import {
+  DashboardHeader,
+  AMYSlot,
+  NextStepCard,
+  ContentTilesGrid,
+  ProgressSummary,
+} from './components'
+import type { DashboardViewModelV1 } from '@/lib/api/contracts/patient/dashboard'
 
 /**
- * Patient Dashboard Client Component (E6.4.2)
+ * Patient Dashboard Client Component (E6.5.4)
  * 
- * Displays next steps for patient:
- * - Continue in-progress assessments (AC3)
- * - Start new assessments if none in progress (AC3)
- * - Access to funnel catalog
+ * Enhanced dashboard layout with sections:
+ * - Header with greeting (AC: empty states)
+ * - AMY slot (placeholder for E6.6)
+ * - Next Step card (AC3: always visible when available)
+ * - Content tiles grid
+ * - Progress summary (funnels/workup)
+ * 
+ * Acceptance Criteria:
+ * - AC1: Empty states render gracefully (no crashes)
+ * - AC2: Mobile responsive (shell)
+ * - AC3: NextStep CTA always visible when available
  */
 export default function DashboardClient() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [inProgressAssessment, setInProgressAssessment] = useState<Assessment | null>(null)
+  const [dashboardData, setDashboardData] = useState<DashboardViewModelV1 | null>(null)
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -34,22 +40,20 @@ export default function DashboardClient() {
         setLoading(true)
         setError(null)
 
-        // Check for in-progress assessments
-        const response = await fetch('/api/assessments/in-progress')
+        // E6.5.4: Fetch dashboard data from versioned API endpoint
+        const response = await fetch('/api/patient/dashboard')
         
         if (!response.ok) {
-          if (response.status === 404) {
-            // No in-progress assessments - this is fine
-            setInProgressAssessment(null)
-          } else {
-            throw new Error('Failed to load dashboard data')
-          }
-        } else {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setInProgressAssessment(data.data)
-          }
+          throw new Error('Failed to load dashboard data')
         }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to load dashboard')
+        }
+
+        setDashboardData(result.data)
       } catch (err) {
         console.error('[dashboard] Error loading data:', err)
         setError('Dashboard konnte nicht geladen werden.')
@@ -61,18 +65,24 @@ export default function DashboardClient() {
     loadDashboardData()
   }, [])
 
-  const handleContinueAssessment = () => {
-    if (inProgressAssessment) {
-      router.push(`/patient/funnel/${inProgressAssessment.funnel}`)
+  const handleRetry = () => {
+    window.location.reload()
+  }
+
+  const handleNextStepAction = () => {
+    if (dashboardData?.nextStep?.target) {
+      router.push(dashboardData.nextStep.target)
     }
   }
 
-  const handleStartAssessment = () => {
-    router.push('/patient/funnels')
+  const handleFunnelClick = (funnel: any) => {
+    router.push(`/patient/funnel/${funnel.slug}`)
   }
 
-  const handleViewHistory = () => {
-    router.push('/patient/history')
+  const handleTileClick = (tile: any) => {
+    if (tile.actionTarget) {
+      router.push(tile.actionTarget)
+    }
   }
 
   return (
@@ -89,109 +99,53 @@ export default function DashboardClient() {
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
         <div className="w-full max-w-4xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1
-              className="font-bold leading-tight text-slate-900 dark:text-slate-100"
-              style={{
-                fontSize: typography.fontSize['2xl'],
-                lineHeight: typography.lineHeight.tight,
-              }}
-            >
-              Willkommen zurück
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400">
-              Ihr persönliches Gesundheits-Dashboard
-            </p>
-          </div>
-
-          {loading && <LoadingSpinner size="lg" centered />}
-
-          {error && <ErrorState message={error} />}
-
-          {!loading && !error && (
-            <div className="space-y-4">
-              {/* Next Step Card - E6.4.2 AC3 */}
-              <Card padding="lg" radius="lg">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
-                      <span className="text-2xl">🎯</span>
-                    </div>
-                    <div className="flex-1">
-                      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                        Nächster Schritt
-                      </h2>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {inProgressAssessment
-                          ? 'Setzen Sie Ihr Assessment fort'
-                          : 'Starten Sie Ihr erstes Assessment'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {inProgressAssessment ? (
-                    <div className="space-y-3">
-                      <div className="p-4 bg-sky-50 dark:bg-sky-900/20 rounded-lg border border-sky-200 dark:border-sky-800">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-sky-900 dark:text-sky-100">
-                            {inProgressAssessment.funnel}
-                          </span>
-                          <span className="text-xs text-sky-700 dark:text-sky-300">
-                            In Bearbeitung
-                          </span>
-                        </div>
-                        <p className="text-xs text-sky-700 dark:text-sky-300">
-                          Gestartet am{' '}
-                          {new Date(inProgressAssessment.started_at).toLocaleDateString('de-DE')}
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleContinueAssessment}
-                        className="w-full px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors duration-200"
-                      >
-                        Assessment fortsetzen
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleStartAssessment}
-                      className="w-full px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors duration-200"
-                    >
-                      Neues Assessment starten
-                    </button>
-                  )}
-                </div>
-              </Card>
-
-              {/* Quick Actions */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Card padding="md" radius="lg" interactive onClick={handleStartAssessment}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📋</span>
-                    <div className="flex-1 text-left">
-                      <h3 className="font-medium text-slate-900 dark:text-slate-100">
-                        Assessments
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Alle verfügbaren Assessments
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card padding="md" radius="lg" interactive onClick={handleViewHistory}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">📊</span>
-                    <div className="flex-1 text-left">
-                      <h3 className="font-medium text-slate-900 dark:text-slate-100">Verlauf</h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Bisherige Assessments
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
+          {/* E6.5.4 AC1: Loading state renders gracefully */}
+          {loading && (
+            <div className="py-12">
+              <LoadingSpinner size="lg" text="Dashboard wird geladen..." centered />
             </div>
+          )}
+
+          {/* E6.5.4 AC1: Error state renders gracefully */}
+          {error && (
+            <ErrorState
+              title="Fehler beim Laden"
+              message={error}
+              onRetry={handleRetry}
+              centered
+            />
+          )}
+
+          {/* E6.5.4 AC1: Dashboard content with empty states */}
+          {!loading && !error && dashboardData && (
+            <>
+              {/* Header Section */}
+              <DashboardHeader />
+
+              {/* AMY Slot - Placeholder for E6.6 */}
+              <AMYSlot />
+
+              {/* E6.5.4 AC3: Next Step Card - Always visible when available */}
+              {dashboardData.nextStep && (
+                <NextStepCard
+                  nextStep={dashboardData.nextStep}
+                  onAction={handleNextStepAction}
+                />
+              )}
+
+              {/* Content Tiles Grid */}
+              <ContentTilesGrid
+                tiles={dashboardData.contentTiles}
+                onTileClick={handleTileClick}
+              />
+
+              {/* Progress Summary */}
+              <ProgressSummary
+                funnelSummaries={dashboardData.funnelSummaries}
+                workupSummary={dashboardData.workupSummary}
+                onFunnelClick={handleFunnelClick}
+              />
+            </>
           )}
         </div>
       </main>
