@@ -9,6 +9,7 @@ import {
 } from '@/lib/api/contracts/patient/dashboard'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { resolveNextStep, type NextStepResolverInput } from '@/lib/nextStep/resolver'
+import { fetchContentTilesForDashboard } from '@/lib/services/contentTiles'
 
 /**
  * E6.5.3: Patient Dashboard API - Enhanced with RLS and Bounded IO
@@ -154,6 +155,9 @@ export async function GET() {
     // E6.5.5 AC1: Resolve next step deterministically
     const resolution = resolveNextStep(resolverInput)
 
+    // E6.5.6: Fetch content tiles with deterministic ordering
+    const contentTiles = fetchContentTilesForDashboard(MAX_CONTENT_TILES)
+
     // E6.5.2: Build Dashboard View Model V1
     // For now, return mostly empty state with resolved nextStep
     const dashboardData: DashboardViewModelV1 = {
@@ -168,6 +172,7 @@ export async function GET() {
           total: (workupAssessments?.length || 0),
         },
       },
+      contentTiles,
     }
     
     // E6.5.2 AC2: Versioned success response with schemaVersion
