@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import MobileHeader from '@/app/components/MobileHeader'
 import { LoadingSpinner, ErrorState } from '@/lib/ui'
 import {
@@ -11,10 +11,11 @@ import {
   ContentTilesGrid,
   ProgressSummary,
 } from './components'
-import type { DashboardViewModelV1 } from '@/lib/api/contracts/patient/dashboard'
+import { useDashboardData } from '@/lib/hooks/useDashboardData'
+import { useAppFocus } from '@/lib/hooks/useAppFocus'
 
 /**
- * Patient Dashboard Client Component (E6.5.4)
+ * Patient Dashboard Client Component (E6.5.4 + E6.5.9)
  * 
  * Enhanced dashboard layout with sections:
  * - Header with greeting (AC: empty states)
@@ -23,51 +24,47 @@ import type { DashboardViewModelV1 } from '@/lib/api/contracts/patient/dashboard
  * - Content tiles grid
  * - Progress summary (funnels/workup)
  * 
- * Acceptance Criteria:
+ * E6.5.4 Acceptance Criteria:
  * - AC1: Empty states render gracefully (no crashes)
  * - AC2: Mobile responsive (shell)
  * - AC3: NextStep CTA always visible when available
+ * 
+ * E6.5.9 Acceptance Criteria:
+ * - AC1: After completing funnel, dashboard reflects new status without hard reload
+ * - AC2: Offline/failed fetch shows error state + retry (not blank)
+ * 
+ * Refresh Strategy:
+ * - Auto-refresh on app focus (mobile-friendly)
+ * - Refresh after funnel completion (via ?refresh=funnel)
+ * - Refresh after follow-up answered (via ?refresh=followup)
+ * - Stale-while-revalidate pattern (shows old data while fetching new)
  */
 export default function DashboardClient() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [dashboardData, setDashboardData] = useState<DashboardViewModelV1 | null>(null)
+  const searchParams = useSearchParams()
+  
+  // E6.5.9: Use dashboard data hook with stale-while-revalidate
+  const { data: dashboardData, state, error, isStale, refresh, retry } = useDashboardData()
 
+  // E6.5.9: Auto-refresh on app focus (mobile-friendly)
+  useAppFocus(() => {
+    refresh()
+  })
+
+  // E6.5.9: Refresh when returning from funnel completion or follow-up
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        // E6.5.4: Fetch dashboard data from versioned API endpoint
-        const response = await fetch('/api/patient/dashboard')
-        
-        if (!response.ok) {
-          throw new Error('Failed to load dashboard data')
-        }
-
-        const result = await response.json()
-        
-        if (!result.success) {
-          throw new Error(result.error?.message || 'Failed to load dashboard')
-        }
-
-        setDashboardData(result.data)
-      } catch (err) {
-        console.error('[dashboard] Error loading data:', err)
-        setError('Dashboard konnte nicht geladen werden.')
-      } finally {
-        setLoading(false)
-      }
+    const refreshTrigger = searchParams.get('refresh')
+    
+    if (refreshTrigger === 'funnel' || refreshTrigger === 'followup') {
+      // Clear the query param to avoid repeated refreshes
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('refresh')
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false })
+      
+      // Trigger refresh
+      refresh()
     }
-
-    loadDashboardData()
-  }, [])
-
-  const handleRetry = () => {
-    window.location.reload()
-  }
+  }, [searchParams, router, refresh])
 
   const handleNextStepAction = () => {
     if (dashboardData?.nextStep?.target) {
@@ -85,6 +82,7 @@ export default function DashboardClient() {
     }
   }
 
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 transition-colors duration-150">
       <MobileHeader
@@ -99,25 +97,36 @@ export default function DashboardClient() {
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
         <div className="w-full max-w-4xl mx-auto space-y-6">
-          {/* E6.5.4 AC1: Loading state renders gracefully */}
-          {loading && (
+          {/* E6.5.9: Loading state - show spinner only on initial load */}
+          {state === 'loading' && !dashboardData && (
             <div className="py-12">
               <LoadingSpinner size="lg" text="Dashboard wird geladen..." centered />
             </div>
           )}
 
-          {/* E6.5.4 AC1: Error state renders gracefully */}
+          {/* E6.5.9: Revalidating state - show subtle indicator while keeping content visible */}
+          {state === 'revalidating' && isStale && dashboardData && (
+            <div className="bg-sky-50 border border-sky-200 rounded-lg px-4 py-2 text-sm text-sky-700">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-sky-600 border-t-transparent rounded-full" />
+                <span>Aktualisiere Dashboard...</span>
+              </div>
+            </div>
+          )}
+
+          {/* E6.5.9 AC2: Error state with retry - not a blank screen */}
           {error && (
             <ErrorState
               title="Fehler beim Laden"
               message={error}
-              onRetry={handleRetry}
-              centered
+              onRetry={retry}
+              centered={!dashboardData}
             />
           )}
 
           {/* E6.5.4 AC1: Dashboard content with empty states */}
-          {!loading && !error && dashboardData && (
+          {/* E6.5.9: Show stale data during revalidation (stale-while-revalidate) */}
+          {dashboardData && (
             <>
               {/* Header Section */}
               <DashboardHeader />
