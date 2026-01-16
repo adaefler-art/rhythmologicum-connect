@@ -1,0 +1,66 @@
+name: Dashboard Contract Smoke Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'app/api/patient/dashboard/**'
+      - 'lib/api/contracts/patient/dashboard.ts'
+      - 'lib/api/responses.ts'
+      - 'lib/api/authHelpers.ts'
+      - 'lib/nextStep/**'
+      - 'lib/services/contentTiles.ts'
+      - '.github/workflows/dashboard-contract-gate.yml'
+      - 'package.json'
+      - 'jest.config.js'
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/api/patient/dashboard/**'
+      - 'lib/api/contracts/patient/dashboard.ts'
+      - 'lib/api/responses.ts'
+      - 'lib/api/authHelpers.ts'
+      - 'lib/nextStep/**'
+      - 'lib/services/contentTiles.ts'
+      - '.github/workflows/dashboard-contract-gate.yml'
+      - 'package.json'
+      - 'jest.config.js'
+
+permissions:
+  contents: read
+
+jobs:
+  dashboard-contract-smoke:
+    runs-on: ubuntu-latest
+    name: Dashboard Contract Smoke Tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run dashboard contract schema tests
+        run: npm test -- lib/api/contracts/patient/__tests__/dashboard.test.ts
+
+      - name: Run dashboard endpoint route tests
+        run: npm test -- app/api/patient/dashboard/__tests__/route.test.ts
+
+      - name: Success message
+        if: success()
+        run: |
+          echo "✅ Dashboard contract smoke tests passed!"
+          echo ""
+          echo "Summary:"
+          echo "  - Dashboard contract schema validation: ✓"
+          echo "  - Dashboard endpoint route tests: ✓"
+          echo "  - All dashboard schema tests passing"
+          echo ""
+          echo "E6.5.10 AC1: Failing schema change breaks CI ✓"
