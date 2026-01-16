@@ -854,17 +854,10 @@
       "file": "app/api/assessments/in-progress/route.ts",
       "intent": null,
       "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/dashboard/client.tsx",
-          "line": 38,
-          "apiPath": "/api/assessments/in-progress",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/callback",
@@ -1618,10 +1611,17 @@
       "file": "app/api/patient/dashboard/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/dashboard/client.tsx",
+          "line": 44,
+          "apiPath": "/api/patient/dashboard",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/patient/onboarding-status",

@@ -11,6 +11,7 @@
     "/api/amy/stress-summary",
     "/api/assessments/[id]/current-step",
     "/api/assessments/[id]/navigation",
+    "/api/assessments/in-progress",
     "/api/consent/record",
     "/api/consent/status",
     "/api/content-resolver",

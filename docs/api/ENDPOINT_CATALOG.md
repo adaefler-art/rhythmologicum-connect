@@ -38,7 +38,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/assessments/[id]/current-step | GET | unknown |  | 0 | app/api/assessments/[id]/current-step/route.ts |
 | /api/assessments/[id]/navigation | GET | unknown |  | 0 | app/api/assessments/[id]/navigation/route.ts |
 | /api/assessments/[id]/resume | GET | unknown |  | 1 | app/api/assessments/[id]/resume/route.ts |
-| /api/assessments/in-progress | GET | unknown |  | 1 | app/api/assessments/in-progress/route.ts |
+| /api/assessments/in-progress | GET | unknown |  | 0 | app/api/assessments/in-progress/route.ts |
 | /api/auth/callback | POST | unknown |  | 2 | app/api/auth/callback/route.ts |
 | /api/auth/resolve-role | GET | unknown |  | 3 | app/api/auth/resolve-role/route.ts |
 | /api/consent/record | POST | unknown |  | 0 | app/api/consent/record/route.ts |
@@ -68,7 +68,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient-measures/export | GET | unknown |  | 1 | app/api/patient-measures/export/route.ts |
 | /api/patient-measures/history | GET | unknown |  | 1 | app/api/patient-measures/history/route.ts |
 | /api/patient-profiles | GET | unknown |  | 2 | app/api/patient-profiles/route.ts |
-| /api/patient/dashboard | GET | patient |  | 0 | app/api/patient/dashboard/route.ts |
+| /api/patient/dashboard | GET | patient |  | 1 | app/api/patient/dashboard/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 1 | app/api/patient/onboarding-status/route.ts |
 | /api/pre-screening-calls | GET, POST | unknown |  | 1 | app/api/pre-screening-calls/route.ts |
 | /api/processing/content | POST | unknown |  | 0 | app/api/processing/content/route.ts |
