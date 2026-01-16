@@ -44,6 +44,8 @@ export const RED_FLAG_CATALOG_VERSION = '1.0.0' as const
 /**
  * Keyword patterns for each red flag type
  * Conservative approach: Better to escalate unnecessarily than miss a real emergency
+ *
+ * NOTE: All patterns MUST be lowercase for efficient matching
  */
 export const RED_FLAG_PATTERNS: Record<ClinicalRedFlag, readonly string[]> = {
   [CLINICAL_RED_FLAG.CHEST_PAIN]: [
@@ -260,9 +262,10 @@ export function detectClinicalRedFlags(normalizedInput: string): ClinicalRedFlag
   const detectedFlags: ClinicalRedFlag[] = []
 
   // Check each red flag type
+  // Note: patterns are pre-normalized to lowercase
   for (const [flagType, patterns] of Object.entries(RED_FLAG_PATTERNS)) {
     for (const pattern of patterns) {
-      if (normalizedInput.includes(pattern.toLowerCase())) {
+      if (normalizedInput.includes(pattern)) {
         detectedFlags.push(flagType as ClinicalRedFlag)
         break // One match per flag type is enough
       }
@@ -282,8 +285,9 @@ export function detectClinicalRedFlags(normalizedInput: string): ClinicalRedFlag
 export function hasAnyRedFlag(normalizedInput: string): boolean {
   const allKeywords = getAllRedFlagKeywords()
   
+  // Note: keywords are pre-normalized to lowercase
   for (const keyword of allKeywords) {
-    if (normalizedInput.includes(keyword.toLowerCase())) {
+    if (normalizedInput.includes(keyword)) {
       return true
     }
   }

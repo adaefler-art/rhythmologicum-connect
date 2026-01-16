@@ -467,7 +467,7 @@ const detectedFlags = detectClinicalRedFlags(normalizedInput)
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
-| 1.0.0 | 2026-01-16 | Initial red flag catalog with 8 clinical types | System |
+| 1.0.0 | 2025-01-16 | Initial red flag catalog with 8 clinical types | System |
 
 ---
 
