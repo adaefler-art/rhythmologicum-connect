@@ -130,6 +130,45 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
     })
+
+    it('should escalate for clinical red flags from catalog (CHEST_PAIN)', () => {
+      const input = {
+        inputText: 'Ich habe starke Brustschmerzen',
+        correlationId: 'test-123',
+      }
+
+      const result = runTriageEngine(input)
+
+      expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
+      expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
+      expect(result.redFlags).toContain('answer_pattern')
+    })
+
+    it('should escalate for clinical red flags from catalog (SEVERE_DYSPNEA)', () => {
+      const input = {
+        inputText: 'Ich kann nicht atmen',
+        correlationId: 'test-123',
+      }
+
+      const result = runTriageEngine(input)
+
+      expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
+      expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
+      expect(result.redFlags).toContain('answer_pattern')
+    })
+
+    it('should escalate for clinical red flags from catalog (SYNCOPE)', () => {
+      const input = {
+        inputText: 'Ich bin ohnmächtig geworden',
+        correlationId: 'test-123',
+      }
+
+      const result = runTriageEngine(input)
+
+      expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
+      expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
+      expect(result.redFlags).toContain('answer_pattern')
+    })
   })
 
   // ============================================================
