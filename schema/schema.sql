@@ -2694,6 +2694,64 @@ COMMENT ON COLUMN "public"."pilot_flow_events"."payload_hash" IS 'Optional deter
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."triage_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "correlation_id" "text" NOT NULL,
+    "tier" "text" NOT NULL,
+    "next_action" "text" NOT NULL,
+    "red_flags" "text"[] DEFAULT ARRAY[]::"text"[] NOT NULL,
+    "input_hash" "text" NOT NULL,
+    "rules_version" "text" NOT NULL,
+    "rationale" "text",
+    CONSTRAINT "triage_sessions_correlation_id_length" CHECK (("length"("correlation_id") <= 64)),
+    CONSTRAINT "triage_sessions_input_hash_check" CHECK (("length"("input_hash") = 64)),
+    CONSTRAINT "triage_sessions_next_action_check" CHECK (("next_action" = ANY (ARRAY['SHOW_CONTENT'::"text", 'START_FUNNEL_A'::"text", 'START_FUNNEL_B'::"text", 'RESUME_FUNNEL'::"text", 'SHOW_ESCALATION'::"text"]))),
+    CONSTRAINT "triage_sessions_rationale_length" CHECK ((("rationale" IS NULL) OR ("length"("rationale") <= 280))),
+    CONSTRAINT "triage_sessions_tier_check" CHECK (("tier" = ANY (ARRAY['INFO'::"text", 'ASSESSMENT'::"text", 'ESCALATE'::"text"])))
+);
+
+
+ALTER TABLE "public"."triage_sessions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."triage_sessions" IS 'E6.6.6: Triage session persistence for pilot debugging. PHI-safe: NO raw inputText stored, only SHA-256 hash. Stores triage decision metadata for observability.';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."patient_id" IS 'Patient who submitted the triage request';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."correlation_id" IS 'Correlation ID for request tracing (max 64 chars)';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."tier" IS 'Triage tier decision: INFO, ASSESSMENT, or ESCALATE';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."next_action" IS 'Next action routing: SHOW_CONTENT, START_FUNNEL_A, START_FUNNEL_B, RESUME_FUNNEL, or SHOW_ESCALATION';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."red_flags" IS 'Array of detected red flags from allowlist: report_risk_level, workup_check, answer_pattern';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."input_hash" IS 'SHA-256 hash of normalized input text (64 hex chars). NO raw text stored for PHI safety.';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."rules_version" IS 'Version of triage ruleset used (e.g., "1.0.0")';
+
+
+
+COMMENT ON COLUMN "public"."triage_sessions"."rationale" IS 'Optional bounded routing rationale (max 280 chars, no PHI)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."pre_screening_calls" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "patient_id" "uuid" NOT NULL,
@@ -3785,6 +3843,12 @@ ALTER TABLE ONLY "public"."pilot_flow_events"
 
 
 
+ALTER TABLE ONLY "public"."triage_sessions"
+    ADD CONSTRAINT "triage_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+
 ALTER TABLE ONLY "public"."pre_screening_calls"
     ADD CONSTRAINT "pre_screening_calls_pkey" PRIMARY KEY ("id");
 
@@ -4426,6 +4490,23 @@ CREATE INDEX "idx_pilot_flow_events_entity" ON "public"."pilot_flow_events" USIN
 
 
 CREATE INDEX "idx_pilot_flow_events_patient_id" ON "public"."pilot_flow_events" USING "btree" ("patient_id", "created_at" DESC) WHERE ("patient_id" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_triage_sessions_correlation_id" ON "public"."triage_sessions" USING "btree" ("correlation_id");
+
+
+
+CREATE INDEX "idx_triage_sessions_created_at" ON "public"."triage_sessions" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_triage_sessions_input_hash" ON "public"."triage_sessions" USING "btree" ("input_hash");
+
+
+
+CREATE INDEX "idx_triage_sessions_patient_id_created_at" ON "public"."triage_sessions" USING "btree" ("patient_id", "created_at" DESC);
+
 
 
 
@@ -5180,6 +5261,11 @@ ALTER TABLE ONLY "public"."tasks"
 
 
 
+ALTER TABLE ONLY "public"."triage_sessions"
+    ADD CONSTRAINT "triage_sessions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_consents"
     ADD CONSTRAINT "user_consents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -5834,6 +5920,10 @@ ALTER TABLE "public"."pillars" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."pilot_flow_events" ENABLE ROW LEVEL SECURITY;
 
 
+
+ALTER TABLE "public"."triage_sessions" ENABLE ROW LEVEL SECURITY;
+
+
 CREATE POLICY "pilot_flow_events_admin_read" ON "public"."pilot_flow_events" FOR SELECT TO "authenticated" USING ((("auth"."jwt"() ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"])));
 
 
@@ -5847,6 +5937,31 @@ CREATE POLICY "pilot_flow_events_system_insert" ON "public"."pilot_flow_events" 
 
 
 COMMENT ON POLICY "pilot_flow_events_system_insert" ON "public"."pilot_flow_events" IS 'E6.4.8: All authenticated users can insert events (system-level operation)';
+
+
+
+CREATE POLICY "triage_sessions_clinician_admin_read_all" ON "public"."triage_sessions" FOR SELECT TO "authenticated" USING ((("public"."has_role"('clinician'::"text") OR "public"."has_role"('admin'::"text"))));
+
+
+
+COMMENT ON POLICY "triage_sessions_clinician_admin_read_all" ON "public"."triage_sessions" IS 'E6.6.6 AC2: Clinicians and admins can read all triage sessions for pilot debugging';
+
+
+
+CREATE POLICY "triage_sessions_insert" ON "public"."triage_sessions" FOR INSERT TO "authenticated" WITH CHECK (("patient_id" = "auth"."uid"()));
+
+
+
+COMMENT ON POLICY "triage_sessions_insert" ON "public"."triage_sessions" IS 'E6.6.6 AC3: Authenticated users can insert triage sessions (own patient_id only)';
+
+
+
+CREATE POLICY "triage_sessions_patient_read_own" ON "public"."triage_sessions" FOR SELECT TO "authenticated" USING (("patient_id" = "auth"."uid"()));
+
+
+
+COMMENT ON POLICY "triage_sessions_patient_read_own" ON "public"."triage_sessions" IS 'E6.6.6 AC2: Patients can only read their own triage sessions';
+
 
 
 
@@ -6763,6 +6878,13 @@ GRANT ALL ON TABLE "public"."pillars" TO "service_role";
 GRANT ALL ON TABLE "public"."pilot_flow_events" TO "anon";
 GRANT ALL ON TABLE "public"."pilot_flow_events" TO "authenticated";
 GRANT ALL ON TABLE "public"."pilot_flow_events" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."triage_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."triage_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."triage_sessions" TO "service_role";
+
 
 
 
