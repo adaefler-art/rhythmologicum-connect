@@ -761,6 +761,26 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/amy/triage",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/amy/triage/route.ts",
+      "intent": null,
+      "accessRole": "unknown",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "app/patient/dashboard/components/AMYComposer.tsx",
+          "line": 64,
+          "apiPath": "/api/amy/triage",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/assessment-answers/save",
       "methods": [
         "POST"
