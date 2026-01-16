@@ -68,7 +68,18 @@ const DEV_QUICK_FILLS = [
   },
 ] as const
 
-// E6.6.9 AC2: Dev harness visibility configuration
+// E6.6.9: Helper to get button styles based on tier color
+const getQuickFillButtonStyles = (color: 'green' | 'amber' | 'red'): string => {
+  const baseStyles = 'px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  
+  const colorStyles = {
+    green: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50',
+    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50',
+    red: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50',
+  }
+  
+  return `${baseStyles} ${colorStyles[color]}`
+}
 // Set to true only in development/preview environments
 // In production, this should be false to hide dev tools from end users
 // Note: Can be toggled via browser localStorage for testing:
@@ -79,9 +90,16 @@ const isDevHarnessEnabled = (): boolean => {
   }
   
   // Check localStorage override first (for testing in deployed environments)
-  const storageOverride = localStorage.getItem('devHarnessEnabled')
-  if (storageOverride === 'true') {
-    return true
+  // Wrapped in try-catch to handle SecurityError in sandboxed environments
+  try {
+    const storageOverride = localStorage.getItem('devHarnessEnabled')
+    if (storageOverride === 'true') {
+      return true
+    }
+  } catch (error) {
+    // localStorage access failed (sandboxed environment, disabled storage, etc.)
+    // Continue to hostname checks
+    console.debug('[DevHarness] localStorage access failed, using hostname check only', error)
   }
   
   // Check hostname to auto-enable on localhost/preview deployments
@@ -253,13 +271,7 @@ export function AMYComposer() {
                       type="button"
                       onClick={() => handleDevQuickFill(fill.text)}
                       disabled={state === 'loading'}
-                      className={`px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        fill.color === 'green'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
-                          : fill.color === 'amber'
-                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
-                      }`}
+                      className={getQuickFillButtonStyles(fill.color)}
                     >
                       {fill.label}
                     </button>
