@@ -225,7 +225,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
       expect(body.data).toBeDefined()
 
       // AC4: Validate result conforms to schema
-      const result = body.data.data
+      const result = body.data
       expect(result.tier).toBe(TRIAGE_TIER.ASSESSMENT)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.START_FUNNEL_A)
       expect(result.version).toBe(TRIAGE_SCHEMA_VERSION)
@@ -246,7 +246,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
       const body = await response.json()
       expect(body.success).toBe(true)
 
-      const result = body.data.data
+      const result = body.data
       expect(result.tier).toBe(TRIAGE_TIER.INFO)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_CONTENT)
     })
@@ -262,7 +262,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
       const body = await response.json()
       expect(body.success).toBe(true)
 
-      const result = body.data.data
+      const result = body.data
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags.length).toBeGreaterThan(0)
@@ -282,7 +282,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
 
       const body = await response.json()
       expect(body.success).toBe(true)
-      expect(body.data.data.tier).toBe(TRIAGE_TIER.ASSESSMENT)
+      expect(body.data.tier).toBe(TRIAGE_TIER.ASSESSMENT)
     })
 
     it('should include correlationId in response', async () => {
@@ -295,7 +295,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
 
       const body = await response.json()
       expect(body.requestId).toBe('test-correlation-id')
-      expect(body.data.data.correlationId).toBe('test-correlation-id')
+      expect(body.data.correlationId).toBe('test-correlation-id')
     })
 
     it('should ensure rationale is bounded', async () => {
@@ -307,7 +307,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
       expect(response.status).toBe(200)
 
       const body = await response.json()
-      const result = body.data.data
+      const result = body.data
 
       // Rationale should be bounded (max 280 chars or 3 bullets)
       expect(result.rationale.length).toBeLessThanOrEqual(280)
@@ -322,7 +322,7 @@ describe('E6.6.4: POST /api/patient/triage', () => {
       expect(response.status).toBe(200)
 
       const body = await response.json()
-      const result = body.data.data
+      const result = body.data
 
       // All red flags should be from allowlist
       const allowlist = ['report_risk_level', 'workup_check', 'answer_pattern']

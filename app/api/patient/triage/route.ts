@@ -203,10 +203,7 @@ export async function POST(req: Request) {
 
     // Return success response with validated triage result
     const response = successResponse(
-      {
-        success: true,
-        data: triageResultV1,
-      },
+      triageResultV1,
       200,
       correlationId,
     )
