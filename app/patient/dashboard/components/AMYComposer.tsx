@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Textarea, Button, Alert } from '@/lib/ui'
 import { getNavigationTarget, isRoutableAction } from '@/lib/triage/router'
+import { storeTriageResult } from '@/lib/triage/storage'
 import type { TriageResultV1 } from '@/lib/api/contracts/triage'
 
 /**
@@ -80,13 +81,7 @@ export function AMYComposer() {
         setState('success')
 
         // E6.6.5: Store last triage result for rationale/retry
-        if (typeof window !== 'undefined') {
-          try {
-            window.sessionStorage.setItem('lastTriageResult', JSON.stringify(triageResult))
-          } catch (storageError) {
-            console.warn('[AMYComposer] Failed to store triage result', storageError)
-          }
-        }
+        storeTriageResult(triageResult)
       } else {
         throw new Error('Invalid response format')
       }
