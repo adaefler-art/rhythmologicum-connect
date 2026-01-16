@@ -52,8 +52,11 @@ export default function DashboardClient() {
   })
 
   // E6.5.9: Refresh when returning from funnel completion or follow-up
+  // E6.6.5: Handle scroll-to-content from triage router
   useEffect(() => {
     const refreshTrigger = searchParams.get('refresh')
+    const scrollTo = searchParams.get('scrollTo')
+    const action = searchParams.get('action')
     
     if (refreshTrigger === 'funnel' || refreshTrigger === 'followup') {
       // Clear the query param to avoid repeated refreshes
@@ -64,7 +67,36 @@ export default function DashboardClient() {
       // Trigger refresh
       refresh()
     }
-  }, [searchParams, router, refresh])
+
+    // E6.6.5: Handle scroll-to-content from triage SHOW_CONTENT action
+    if (scrollTo === 'content') {
+      // Scroll to content tiles after a short delay to allow render
+      setTimeout(() => {
+        const contentElement = document.getElementById('content-tiles')
+        if (contentElement) {
+          contentElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 300)
+
+      // Clear the query param
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('scrollTo')
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false })
+    }
+
+    // E6.6.5: Handle resume action from triage RESUME_FUNNEL
+    if (action === 'resume' && dashboardData?.nextStep?.target) {
+      // Auto-navigate to resume target
+      setTimeout(() => {
+        router.push(dashboardData.nextStep.target!)
+      }, 500)
+
+      // Clear the query param
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('action')
+      router.replace(newUrl.pathname + newUrl.search, { scroll: false })
+    }
+  }, [searchParams, router, refresh, dashboardData])
 
   const handleNextStepAction = () => {
     if (dashboardData?.nextStep?.target) {
@@ -142,11 +174,13 @@ export default function DashboardClient() {
                 />
               )}
 
-              {/* Content Tiles Grid */}
-              <ContentTilesGrid
-                tiles={dashboardData.contentTiles}
-                onTileClick={handleTileClick}
-              />
+              {/* Content Tiles Grid - E6.6.5: Add id for scroll-to navigation */}
+              <div id="content-tiles">
+                <ContentTilesGrid
+                  tiles={dashboardData.contentTiles}
+                  onTileClick={handleTileClick}
+                />
+              </div>
 
               {/* Progress Summary */}
               <ProgressSummary
