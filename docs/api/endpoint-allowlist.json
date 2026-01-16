@@ -23,6 +23,7 @@
     "/api/notifications",
     "/api/notifications/[id]",
     "/api/patient/dashboard",
+    "/api/patient/triage",
     "/api/processing/content",
     "/api/processing/delivery",
     "/api/processing/jobs/[jobId]",

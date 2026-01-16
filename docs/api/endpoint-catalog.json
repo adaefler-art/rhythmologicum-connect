@@ -1657,6 +1657,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/triage",
+      "methods": [
+        "POST"
+      ],
+      "file": "app/api/patient/triage/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/pre-screening-calls",
       "methods": [
         "GET",
