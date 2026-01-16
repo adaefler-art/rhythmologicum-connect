@@ -19,16 +19,24 @@ import {
   sanitizeRedFlags,
   boundRationale,
 } from '@/lib/api/contracts/triage'
+import { runTriageEngine } from '@/lib/triage/engine'
 
 /**
- * E6.6.2 — AMY Triage with TriageResult v1 Contract
+ * E6.6.3 — AMY Triage with Deterministic Rule-based Engine
  * 
- * Bounded, safe UX for patient-initiated AMY interactions.
+ * Deterministic classification + Red Flag detection + routing decision.
+ * NO LLM for pilot safety and governance.
  * 
  * Acceptance Criteria:
- * - AC1: Runtime validation with Zod schemas
- * - AC2: Invalid request returns 400; oversize returns 413 or 400
- * - AC3: rationale hard-bounded; redFlags from allowlist only
+ * - AC1: Same input → same output (determinism)
+ * - AC2: Red flag always dominates (ESCALATE)
+ * - AC3: No medical diagnosis text; rationale is generic routing rationale
+ * - AC4: Unit tests (≥10 representative cases)
+ * 
+ * E6.6.2 Compliance:
+ * - Runtime validation with Zod schemas
+ * - Invalid request returns 400; oversize returns 413 or 400
+ * - rationale hard-bounded; redFlags from allowlist only
  * 
  * Security Guardrails:
  * - Input bounded to prevent abuse
@@ -36,6 +44,13 @@ import {
  * - Rate limiting via existing infrastructure
  * - Best-effort telemetry (failures don't block)
  */
+
+// ============================================================
+// LEGACY AI-BASED TRIAGE (DEPRECATED - E6.6.3)
+// ============================================================
+// The following code is kept for reference but is no longer used.
+// E6.6.3 replaced AI-based triage with deterministic rule-based engine.
+// ============================================================
 
 // Legacy constant for backward compatibility - use TRIAGE_INPUT_MAX_LENGTH from contract
 const MAX_INPUT_LENGTH = TRIAGE_INPUT_MAX_LENGTH
@@ -47,6 +62,7 @@ const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) :
 
 /**
  * Legacy triage result structure (for internal AI response parsing)
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
 type LegacyTriageResult = {
   tier: 'low' | 'moderate' | 'high' | 'urgent'
@@ -57,6 +73,7 @@ type LegacyTriageResult = {
 
 /**
  * Map legacy tier to v1 tier
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
 function mapLegacyTierToV1(legacyTier: LegacyTriageResult['tier']): TriageResultV1['tier'] {
   switch (legacyTier) {
@@ -72,6 +89,7 @@ function mapLegacyTierToV1(legacyTier: LegacyTriageResult['tier']): TriageResult
 
 /**
  * Map legacy nextAction to v1 nextAction
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
 function mapLegacyNextActionToV1(
   legacyAction: LegacyTriageResult['nextAction']
@@ -89,7 +107,9 @@ function mapLegacyNextActionToV1(
 
 /**
  * Convert legacy result to v1 contract
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function convertToV1Result(
   legacy: LegacyTriageResult,
   correlationId: string
@@ -121,6 +141,7 @@ function convertToV1Result(
 
 /**
  * Fallback triage when AMY is unavailable
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
 function getFallbackTriage(): LegacyTriageResult {
   return {
@@ -135,7 +156,9 @@ function getFallbackTriage(): LegacyTriageResult {
 
 /**
  * Call Anthropic API for triage
+ * @deprecated No longer used in E6.6.3 - kept for reference only
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function performAITriage(concern: string): Promise<LegacyTriageResult> {
   // Feature flag disabled → Fallback
   if (!featureFlags.AMY_ENABLED) {
@@ -272,6 +295,10 @@ async function performAITriage(concern: string): Promise<LegacyTriageResult> {
   }
 }
 
+// ============================================================
+// END OF LEGACY CODE
+// ============================================================
+
 export async function POST(req: Request) {
   const requestStartTime = Date.now()
   const correlationId = getCorrelationId(req)
@@ -370,18 +397,41 @@ export async function POST(req: Request) {
       console.warn('[TELEMETRY] Failed to emit TRIAGE_SUBMITTED event', err)
     })
 
-    // Perform AI triage (gets legacy result)
-    const legacyTriageResult = await performAITriage(validatedRequest.inputText)
-    
-    // Convert to v1 contract (AC3: sanitize redFlags, bound rationale)
-    const triageResultV1 = convertToV1Result(legacyTriageResult, correlationId)
+    // E6.6.3: Use deterministic rule-based engine (replaces AI triage)
+    const triageResultV1 = runTriageEngine({
+      inputText: validatedRequest.inputText,
+      correlationId,
+    })
+
+    console.log('[amy/triage] Deterministic triage completed', {
+      tier: triageResultV1.tier,
+      nextAction: triageResultV1.nextAction,
+      redFlagsCount: triageResultV1.redFlags.length,
+    })
+
+    // Map v1 tier to legacy tier for telemetry compatibility
+    const legacyTier =
+      triageResultV1.tier === TRIAGE_TIER.INFO
+        ? 'low'
+        : triageResultV1.tier === TRIAGE_TIER.ASSESSMENT
+          ? 'moderate'
+          : 'high'
+
+    // Map v1 nextAction to legacy nextAction for telemetry compatibility
+    const legacyNextAction =
+      triageResultV1.nextAction === TRIAGE_NEXT_ACTION.SHOW_CONTENT
+        ? 'self-help'
+        : triageResultV1.nextAction === TRIAGE_NEXT_ACTION.START_FUNNEL_A ||
+            triageResultV1.nextAction === TRIAGE_NEXT_ACTION.START_FUNNEL_B
+          ? 'funnel'
+          : 'escalation'
 
     // Emit TRIAGE_ROUTED event (best-effort) - use legacy values for telemetry compatibility
     await emitTriageRouted({
       correlationId,
       assessmentId: syntheticAssessmentId,
-      nextAction: legacyTriageResult.nextAction,
-      tier: legacyTriageResult.tier,
+      nextAction: legacyNextAction,
+      tier: legacyTier,
       patientId: user.id,
     }).catch((err) => {
       console.warn('[TELEMETRY] Failed to emit TRIAGE_ROUTED event', err)
