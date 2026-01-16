@@ -1,17 +1,20 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Button } from '@/lib/ui'
 import { AlertTriangle, ArrowLeft, Phone, Mail, Video } from 'lucide-react'
 
 /**
- * E6.4.6: Escalation Placeholder Page
+ * E6.4.6 + E6.5.8: Escalation Placeholder Page
  *
  * Shown when patient clicks on escalation CTA.
  * NO SCHEDULING - placeholder information only.
+ * 
+ * E6.5.8: Updated to use router.push for dashboard navigation
  */
 export default function EscalationPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const offerType = searchParams.get('type') || 'unknown'
   const correlationId = searchParams.get('correlation') || 'unknown'
@@ -40,15 +43,15 @@ export default function EscalationPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      {/* Back Navigation */}
+      {/* Back Navigation - E6.5.8: Navigate to dashboard instead of browser history */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => window.history.back()}
+        onClick={() => router.push('/patient/dashboard')}
         className="mb-6 flex items-center gap-2"
       >
         <ArrowLeft className="w-4 h-4" />
-        Zurück zu den Ergebnissen
+        Zurück zum Dashboard
       </Button>
 
       {/* Main Card */}
