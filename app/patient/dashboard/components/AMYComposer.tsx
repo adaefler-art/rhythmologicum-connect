@@ -9,10 +9,11 @@ import type { TriageResultV1 } from '@/lib/api/contracts/triage'
 import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/safety/disclaimers'
 
 /**
- * E6.6.1 + E6.6.5 — AMY Composer Component
+ * E6.6.1 + E6.6.5 + E6.6.9 — AMY Composer Component
  * 
  * Bounded, guided mode for patient-initiated AMY interactions.
  * E6.6.5: Integrates triage router for navigation after triage.
+ * E6.6.9: Dev harness with quick-fill test inputs (dev-only).
  * 
  * Features:
  * - AC1: Max length enforced client-side (up to 800 chars, recommended 500)
@@ -20,6 +21,7 @@ import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/saf
  * - AC3: Non-emergency disclaimer visible
  * - AC4: Submit triggers triage API call and shows routed result
  * - E6.6.5: Router applies TriageResult → Navigation (Dashboard-first)
+ * - E6.6.9: Dev UI quick-fill buttons (non-prod only)
  * 
  * UX:
  * - Character counter
@@ -27,6 +29,7 @@ import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/saf
  * - Error state handling
  * - Clear result display with navigation CTA
  * - Optional: Suggested chips for guided input
+ * - Dev-only: Quick-fill test inputs for deterministic testing
  */
 
 const MAX_LENGTH = 800 // AC1: Client-side validation
@@ -42,17 +45,76 @@ const SUGGESTED_CONCERNS = [
   '😟 Sorgen',
 ]
 
+// E6.6.9: Dev harness - Quick-fill test inputs (deterministic)
+// AC2: Only shown in non-production environments
+const DEV_QUICK_FILLS = [
+  {
+    label: '💬 Info',
+    text: 'Was ist Stress und wie wirkt er sich auf meine Gesundheit aus?',
+    tier: 'INFO',
+    color: 'green',
+  },
+  {
+    label: '📋 Assessment',
+    text: 'Ich fühle mich sehr gestresst und erschöpft in letzter Zeit. Es fällt mir schwer, mich zu konzentrieren.',
+    tier: 'ASSESSMENT',
+    color: 'amber',
+  },
+  {
+    label: '🚨 Escalate',
+    text: 'Ich habe Suizidgedanken und weiß nicht mehr weiter. Alles fühlt sich hoffnungslos an.',
+    tier: 'ESCALATE',
+    color: 'red',
+  },
+] as const
+
+// E6.6.9 AC2: Dev harness visibility configuration
+// Set to true only in development/preview environments
+// In production, this should be false to hide dev tools from end users
+// Note: Can be toggled via browser localStorage for testing:
+//   localStorage.setItem('devHarnessEnabled', 'true')
+const isDevHarnessEnabled = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false // Server-side: disabled
+  }
+  
+  // Check localStorage override first (for testing in deployed environments)
+  const storageOverride = localStorage.getItem('devHarnessEnabled')
+  if (storageOverride === 'true') {
+    return true
+  }
+  
+  // Check hostname to auto-enable on localhost/preview deployments
+  const hostname = window.location.hostname
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.includes('preview') ||
+    hostname.includes('dev-')
+  )
+}
+
+
 export function AMYComposer() {
   const router = useRouter()
   const [concern, setConcern] = useState('')
   const [state, setState] = useState<TriageState>('idle')
   const [result, setResult] = useState<TriageResultV1 | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showDevHarness, setShowDevHarness] = useState(false)
 
   const charCount = concern.length
   const isOverLimit = charCount > MAX_LENGTH
   const isNearLimit = charCount > RECOMMENDED_LENGTH && charCount <= MAX_LENGTH
   const canSubmit = concern.trim().length >= 10 && !isOverLimit && state !== 'loading'
+
+  // E6.6.9: Handler for dev quick-fill buttons
+  const handleDevQuickFill = (text: string) => {
+    setConcern(text)
+    setState('idle')
+    setResult(null)
+    setError(null)
+  }
 
   const handleSubmit = async () => {
     if (!canSubmit) return
@@ -157,6 +219,59 @@ export function AMYComposer() {
             <strong>{NON_EMERGENCY_DISCLAIMER.title}:</strong> {NON_EMERGENCY_DISCLAIMER.text}
           </p>
         </Alert>
+
+        {/* E6.6.9: Dev Harness - Quick-fill test inputs (AC2: dev-only) */}
+        {isDevHarnessEnabled() && (
+          <div className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 bg-purple-50 dark:bg-purple-950/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg" role="img" aria-label="Developer">
+                  👨‍💻
+                </span>
+                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-300">
+                  Dev Harness - Test Inputs
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDevHarness(!showDevHarness)}
+                className="text-xs px-2 py-1 rounded bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-300 hover:bg-purple-300 dark:hover:bg-purple-700 transition-colors"
+              >
+                {showDevHarness ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            
+            {showDevHarness && (
+              <div className="space-y-2">
+                <p className="text-xs text-purple-700 dark:text-purple-400 mb-2">
+                  Deterministic test inputs for all router paths (INFO/ASSESSMENT/ESCALATE)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {DEV_QUICK_FILLS.map((fill) => (
+                    <button
+                      key={fill.label}
+                      type="button"
+                      onClick={() => handleDevQuickFill(fill.text)}
+                      disabled={state === 'loading'}
+                      className={`px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        fill.color === 'green'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                          : fill.color === 'amber'
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
+                      }`}
+                    >
+                      {fill.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                  ⚠️ Dev-only feature. Hidden in production.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Show input form when idle/loading/error */}
         {(state === 'idle' || state === 'loading' || state === 'error') && (
