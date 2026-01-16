@@ -1,16 +1,18 @@
 /**
- * E6.5.2: Patient Dashboard API Tests
+ * E6.5.3: Patient Dashboard API Tests
  * 
- * Tests for Dashboard Data Contract V1:
- * - E6.4.1 AC1: Unauthenticated → 401 (before any DB/IO)
+ * Tests for Dashboard Data Contract V1 with RLS and Bounded IO:
+ * - E6.5.3 AC1: Unauthenticated → 401 (401-first, no DB calls)
+ * - E6.5.3 AC2: Non-eligible → 403 with envelope
+ * - E6.5.3 AC3: Eligible patient sees only own data (RLS)
+ * - E6.5.3 AC4: Payload bounded (tiles max N, funnels max 2-5 summaries)
  * - E6.5.2 AC1: Contract as Zod schema with runtime validation
  * - E6.5.2 AC2: Response envelope + error semantics standardized
  * - E6.5.2 AC3: Version marker present
  */
 
 import { GET } from '../route'
-import { requireAuth } from '@/lib/api/authHelpers'
-import { isPilotEligibleFull } from '@/lib/api/pilotEligibility'
+import { requirePilotEligibility } from '@/lib/api/authHelpers'
 import { User } from '@supabase/supabase-js'
 import {
   DashboardResponseSchema,
@@ -23,11 +25,10 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/api/authHelpers')
-jest.mock('@/lib/api/pilotEligibility')
+jest.mock('@/lib/db/supabase.server')
 
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>
-const mockIsPilotEligibleFull = isPilotEligibleFull as jest.MockedFunction<
-  typeof isPilotEligibleFull
+const mockRequirePilotEligibility = requirePilotEligibility as jest.MockedFunction<
+  typeof requirePilotEligibility
 >
 
 function createMockUser(id = 'test-user-id'): User {
@@ -41,7 +42,7 @@ function createMockUser(id = 'test-user-id'): User {
   } as User
 }
 
-describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
+describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
@@ -53,10 +54,10 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
     process.env = originalEnv
   })
 
-  describe('E6.4.1 AC1: 401-first auth ordering', () => {
+  describe('E6.5.3 AC1: 401-first auth ordering', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock auth failure
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -76,7 +77,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
     })
 
     it('should return 401 for session expired', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -95,7 +96,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
     })
 
     it('should check auth before any business logic', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -109,17 +110,37 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
       await GET()
 
       // Verify auth was checked
-      expect(mockRequireAuth).toHaveBeenCalled()
-      
-      // Verify pilot eligibility was NOT checked (auth failed first)
-      expect(mockIsPilotEligibleFull).not.toHaveBeenCalled()
+      expect(mockRequirePilotEligibility).toHaveBeenCalled()
+    })
+  })
+
+  describe('E6.5.3 AC2: Non-eligible → 403 with envelope', () => {
+    it('should return 403 when user is not pilot eligible', async () => {
+      // Mock pilot eligibility failure
+      mockRequirePilotEligibility.mockResolvedValue({
+        user: null,
+        error: new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: 'PILOT_NOT_ELIGIBLE', message: 'Not eligible for pilot' },
+          }),
+          { status: 403 },
+        ),
+      })
+
+      const response = await GET()
+      expect(response.status).toBe(403)
+
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error.code).toBe('PILOT_NOT_ELIGIBLE')
     })
   })
 
   describe('E6.5.2: Dashboard Data Contract V1', () => {
     beforeEach(() => {
-      // Setup successful auth
-      mockRequireAuth.mockResolvedValue({
+      // Setup successful auth and eligibility
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -212,7 +233,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
 
   describe('E6.5.2: nextStep object structure', () => {
     beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -230,7 +251,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
 
   describe('E6.5.2: funnelSummaries array', () => {
     beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -246,7 +267,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
 
   describe('E6.5.2: workupSummary object', () => {
     beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -266,7 +287,7 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
 
   describe('E6.5.2: contentTiles array', () => {
     beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -281,11 +302,11 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
   })
 
   describe('Auth-first ordering guarantee', () => {
-    it('should always check auth before generating dashboard data', async () => {
+    it('should always check auth and eligibility before generating dashboard data', async () => {
       const callOrder: string[] = []
       
-      mockRequireAuth.mockImplementation(async () => {
-        callOrder.push('auth')
+      mockRequirePilotEligibility.mockImplementation(async () => {
+        callOrder.push('auth-eligibility')
         return {
           user: createMockUser(),
           error: null,
@@ -294,15 +315,15 @@ describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
 
       await GET()
       
-      // Auth should be checked first
-      expect(callOrder[0]).toBe('auth')
-      expect(mockRequireAuth).toHaveBeenCalled()
+      // Auth and eligibility should be checked first
+      expect(callOrder[0]).toBe('auth-eligibility')
+      expect(mockRequirePilotEligibility).toHaveBeenCalled()
     })
   })
 
   describe('Error handling', () => {
     beforeEach(() => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequirePilotEligibility.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
