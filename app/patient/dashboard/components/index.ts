@@ -11,6 +11,7 @@ export { DashboardHeader } from './DashboardHeader'
 export type { DashboardHeaderProps } from './DashboardHeader'
 
 export { AMYSlot } from './AMYSlot'
+export { AMYComposer } from './AMYComposer'
 
 export { NextStepCard } from './NextStepCard'
 export type { NextStepCardProps } from './NextStepCard'

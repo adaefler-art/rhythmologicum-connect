@@ -33,6 +33,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/usage | GET | admin |  | 0 | app/api/admin/usage/route.ts |
 | /api/amy/stress-report | POST | unknown |  | 0 | app/api/amy/stress-report/route.ts |
 | /api/amy/stress-summary | POST | unknown |  | 0 | app/api/amy/stress-summary/route.ts |
+| /api/amy/triage | POST | unknown |  | 1 | app/api/amy/triage/route.ts |
 | /api/assessment-answers/save | POST | unknown |  | 1 | app/api/assessment-answers/save/route.ts |
 | /api/assessment-validation/validate-step | POST | unknown |  | 1 | app/api/assessment-validation/validate-step/route.ts |
 | /api/assessments/[id]/current-step | GET | unknown |  | 0 | app/api/assessments/[id]/current-step/route.ts |
