@@ -772,7 +772,7 @@
       "usedBy": [
         {
           "file": "app/patient/dashboard/components/AMYComposer.tsx",
-          "line": 65,
+          "line": 146,
           "apiPath": "/api/amy/triage",
           "kind": "fetch"
         }
