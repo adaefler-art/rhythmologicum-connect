@@ -109,6 +109,7 @@ function mapLegacyNextActionToV1(
  * Convert legacy result to v1 contract
  * @deprecated No longer used in E6.6.3 - kept for reference only
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function convertToV1Result(
   legacy: LegacyTriageResult,
   correlationId: string
@@ -157,6 +158,7 @@ function getFallbackTriage(): LegacyTriageResult {
  * Call Anthropic API for triage
  * @deprecated No longer used in E6.6.3 - kept for reference only
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function performAITriage(concern: string): Promise<LegacyTriageResult> {
   // Feature flag disabled → Fallback
   if (!featureFlags.AMY_ENABLED) {
