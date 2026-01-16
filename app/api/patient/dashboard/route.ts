@@ -38,7 +38,7 @@ export const revalidate = 0
 // Currently documented for future implementation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_FUNNEL_SUMMARIES = 5
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const MAX_CONTENT_TILES = 10
 
 export async function GET() {
