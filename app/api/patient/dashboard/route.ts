@@ -113,11 +113,15 @@ export async function GET() {
       .limit(1)
 
     // E6.5.5: Build resolver input from queried data
-    const hasInProgressFunnel = inProgressAssessments && inProgressAssessments.length > 0
-    const inProgressFunnel = hasInProgressFunnel ? inProgressAssessments[0] : null
-    const funnelSlug = inProgressFunnel?.funnels_catalog
-      ? (inProgressFunnel.funnels_catalog as { slug: string }).slug
-      : null
+    const hasInProgressFunnel = Boolean(inProgressAssessments && inProgressAssessments.length > 0)
+    const inProgressFunnel = inProgressAssessments?.[0] || null
+    
+    // Extract funnel slug safely from joined data
+    let funnelSlug: string | null = null
+    if (inProgressFunnel?.funnels_catalog && typeof inProgressFunnel.funnels_catalog === 'object') {
+      const catalog = inProgressFunnel.funnels_catalog as Record<string, unknown>
+      funnelSlug = typeof catalog.slug === 'string' ? catalog.slug : null
+    }
 
     const workupNeedsMoreDataCount =
       workupAssessments?.filter((a) => a.workup_status === 'needs_more_data').length || 0
@@ -131,17 +135,17 @@ export async function GET() {
       workupState = WORKUP_STATE.READY_FOR_REVIEW
     }
 
-    const hasRedFlags = highRiskReports && highRiskReports.length > 0
-    const redFlagAssessmentId = hasRedFlags ? highRiskReports[0].assessment_id : null
+    const hasRedFlags = Boolean(highRiskReports && highRiskReports.length > 0)
+    const redFlagAssessmentId = highRiskReports?.[0]?.assessment_id || null
 
     const resolverInput: NextStepResolverInput = {
       onboardingStatus: patientProfile?.onboarding_status || 'not_started',
       workupState,
       workupNeedsMoreDataCount,
-      hasInProgressFunnel: hasInProgressFunnel,
+      hasInProgressFunnel,
       inProgressFunnelSlug: funnelSlug,
-      hasStartedAnyFunnel: allAssessments && allAssessments.length > 0,
-      hasRedFlags: hasRedFlags,
+      hasStartedAnyFunnel: Boolean(allAssessments && allAssessments.length > 0),
+      hasRedFlags,
       redFlagAssessmentId,
     }
 
