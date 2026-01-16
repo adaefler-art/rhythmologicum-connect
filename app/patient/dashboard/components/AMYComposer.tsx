@@ -1,36 +1,34 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, Textarea, Button, Alert } from '@/lib/ui'
+import { getNavigationTarget, isRoutableAction } from '@/lib/triage/router'
+import type { TriageResultV1 } from '@/lib/api/contracts/triage'
 
 /**
- * E6.6.1 — AMY Composer Component
+ * E6.6.1 + E6.6.5 — AMY Composer Component
  * 
  * Bounded, guided mode for patient-initiated AMY interactions.
+ * E6.6.5: Integrates triage router for navigation after triage.
  * 
  * Features:
  * - AC1: Max length enforced client-side (up to 800 chars, recommended 500)
  * - AC2: Single-turn interaction (no chat history)
  * - AC3: Non-emergency disclaimer visible
  * - AC4: Submit triggers triage API call and shows routed result
+ * - E6.6.5: Router applies TriageResult → Navigation (Dashboard-first)
  * 
  * UX:
  * - Character counter
  * - Loading state during API call
  * - Error state handling
- * - Clear result display
+ * - Clear result display with navigation CTA
  * - Optional: Suggested chips for guided input
  */
 
 const MAX_LENGTH = 800 // AC1: Client-side validation
 const RECOMMENDED_LENGTH = 500 // Soft recommendation
-
-type TriageResult = {
-  tier: 'low' | 'moderate' | 'high' | 'urgent'
-  nextAction: 'self-help' | 'funnel' | 'escalation' | 'emergency'
-  summary: string
-  suggestedResources?: string[]
-}
 
 type TriageState = 'idle' | 'loading' | 'success' | 'error'
 
@@ -43,9 +41,10 @@ const SUGGESTED_CONCERNS = [
 ]
 
 export function AMYComposer() {
+  const router = useRouter()
   const [concern, setConcern] = useState('')
   const [state, setState] = useState<TriageState>('idle')
-  const [result, setResult] = useState<TriageResult | null>(null)
+  const [result, setResult] = useState<TriageResultV1 | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const charCount = concern.length
@@ -76,8 +75,18 @@ export function AMYComposer() {
       }
 
       if (data.success && data.data) {
-        setResult(data.data)
+        const triageResult = data.data as TriageResultV1
+        setResult(triageResult)
         setState('success')
+
+        // E6.6.5: Store last triage result for rationale/retry
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.setItem('lastTriageResult', JSON.stringify(triageResult))
+          } catch (storageError) {
+            console.warn('[AMYComposer] Failed to store triage result', storageError)
+          }
+        }
       } else {
         throw new Error('Invalid response format')
       }
@@ -86,6 +95,26 @@ export function AMYComposer() {
       setError(err instanceof Error ? err.message : 'Ein unerwarteter Fehler ist aufgetreten.')
       setState('error')
     }
+  }
+
+  // E6.6.5: Handle navigation based on triage result
+  const handleNavigate = () => {
+    if (!result) return
+
+    // Validate nextAction is routable
+    if (!isRoutableAction(result.nextAction)) {
+      console.error('[AMYComposer] Invalid nextAction', { nextAction: result.nextAction })
+      setError('Ungültige Triage-Aktion. Bitte versuchen Sie es erneut.')
+      return
+    }
+
+    // Get navigation target from router
+    const { url, description } = getNavigationTarget(result.nextAction, result)
+
+    console.log('[AMYComposer] Navigating to', { url, description, tier: result.tier })
+
+    // Navigate to target
+    router.push(url)
   }
 
   const handleChipClick = (chip: string) => {
@@ -214,77 +243,57 @@ export function AMYComposer() {
         {/* Show result when successful */}
         {state === 'success' && result && (
           <div className="space-y-4">
-            {/* Tier badge */}
+            {/* Tier badge - E6.6.5: Use v1 tier format */}
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  result.tier === 'urgent'
+                  result.tier === 'ESCALATE'
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                    : result.tier === 'high'
-                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
-                      : result.tier === 'moderate'
-                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                        : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                    : result.tier === 'ASSESSMENT'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                 }`}
               >
-                {result.tier === 'urgent'
+                {result.tier === 'ESCALATE'
                   ? '🚨 Dringend'
-                  : result.tier === 'high'
-                    ? '⚠️ Hoch'
-                    : result.tier === 'moderate'
-                      ? '📋 Mittel'
-                      : '✅ Niedrig'}
+                  : result.tier === 'ASSESSMENT'
+                    ? '📋 Einschätzung empfohlen'
+                    : '✅ Information'}
               </span>
             </div>
 
-            {/* Summary */}
+            {/* Rationale - E6.6.5: Show rationale from v1 result */}
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                {result.summary}
+                {result.rationale}
               </p>
             </div>
 
-            {/* Suggested resources */}
-            {result.suggestedResources && result.suggestedResources.length > 0 && (
-              <div className="bg-sky-50 dark:bg-sky-900/20 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-sky-900 dark:text-sky-100 mb-2">
-                  Empfohlene nächste Schritte:
-                </h4>
-                <ul className="space-y-1">
-                  {result.suggestedResources.map((resource, idx) => (
-                    <li
-                      key={idx}
-                      className="text-sm text-sky-800 dark:text-sky-200 flex items-start gap-2"
-                    >
-                      <span className="text-sky-600 dark:text-sky-400">•</span>
-                      <span>{resource}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* E6.6.5: Navigation CTA based on nextAction */}
+            <div className="space-y-3">
+              <Button variant="primary" fullWidth onClick={handleNavigate}>
+                {result.nextAction === 'SHOW_CONTENT' && '📚 Inhalte ansehen'}
+                {result.nextAction === 'START_FUNNEL_A' && '📋 Fragebogen starten'}
+                {result.nextAction === 'START_FUNNEL_B' && '💤 Schlaf-Assessment starten'}
+                {result.nextAction === 'RESUME_FUNNEL' && '▶️ Fragebogen fortsetzen'}
+                {result.nextAction === 'SHOW_ESCALATION' && '🆘 Unterstützung erhalten'}
+              </Button>
 
-            {/* Next action based on tier */}
-            {result.nextAction === 'emergency' && (
+              {/* Secondary action: Try again */}
+              <Button variant="secondary" fullWidth onClick={handleReset}>
+                Neues Anliegen eingeben
+              </Button>
+            </div>
+
+            {/* Escalation warning for urgent cases */}
+            {result.tier === 'ESCALATE' && (
               <Alert variant="error">
                 <p className="text-sm font-medium">
-                  Bitte wenden Sie sich umgehend an einen Notdienst (112) oder Ihren Arzt.
+                  Bei akuten Notfällen wählen Sie bitte sofort 112 oder wenden Sie sich an
+                  Ihren Arzt.
                 </p>
               </Alert>
             )}
-
-            {result.nextAction === 'escalation' && (
-              <Alert variant="warning">
-                <p className="text-sm font-medium">
-                  Wir empfehlen, zeitnah einen Arzt aufzusuchen, um Ihre Symptome zu besprechen.
-                </p>
-              </Alert>
-            )}
-
-            {/* Reset button */}
-            <Button variant="secondary" fullWidth onClick={handleReset}>
-              Neues Anliegen eingeben
-            </Button>
           </div>
         )}
       </div>
