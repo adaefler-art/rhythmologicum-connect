@@ -246,6 +246,29 @@ export default function PatientHistoryClient() {
   if (state.status === 'error') {
     return (
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+        {/* E6.5.8: Back to Dashboard button in error state */}
+        <button
+          type="button"
+          onClick={() => router.push('/patient/dashboard')}
+          className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
+          aria-label="Zurück zum Dashboard"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Zurück zum Dashboard
+        </button>
+        
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -265,10 +288,10 @@ export default function PatientHistoryClient() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/patient/assessment')}
+              onClick={() => router.push('/patient/dashboard')}
               className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
-              Zum Fragebogen
+              Zum Dashboard
             </button>
           </div>
         </section>
@@ -282,6 +305,29 @@ export default function PatientHistoryClient() {
   if (measures.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+        {/* E6.5.8: Back to Dashboard button in empty state */}
+        <button
+          type="button"
+          onClick={() => router.push('/patient/dashboard')}
+          className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
+          aria-label="Zurück zum Dashboard"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Zurück zum Dashboard
+        </button>
+        
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -304,13 +350,13 @@ export default function PatientHistoryClient() {
             </p>
             <button
               type="button"
-              onClick={() => router.push('/patient/assessment')}
+              onClick={() => router.push('/patient/dashboard')}
               className="mt-6 inline-flex items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
               style={{
                 backgroundColor: 'var(--color-primary-600)',
               }}
             >
-              Zum Fragebogen
+              Zum Dashboard
             </button>
           </div>
         </section>
@@ -329,6 +375,29 @@ export default function PatientHistoryClient() {
       {/* Header */}
       <section>
         <div className="flex flex-col gap-3">
+          {/* E6.5.8: Back to Dashboard button */}
+          <button
+            type="button"
+            onClick={() => router.push('/patient/dashboard')}
+            className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
+            aria-label="Zurück zum Dashboard"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Zurück zum Dashboard
+          </button>
+          
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
