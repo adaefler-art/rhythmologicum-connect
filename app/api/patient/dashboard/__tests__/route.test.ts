@@ -1,15 +1,25 @@
 /**
- * E6.4.1: Patient Dashboard API Tests
+ * E6.5.2: Patient Dashboard API Tests
  * 
- * Tests AC1 and AC2:
- * - AC1: Unauthenticated → 401 (before any DB/IO)
- * - AC2: Authenticated but not eligible → 403 (when pilot gates enabled)
+ * Tests for Dashboard Data Contract V1:
+ * - E6.4.1 AC1: Unauthenticated → 401 (before any DB/IO)
+ * - E6.5.2 AC1: Contract as Zod schema with runtime validation
+ * - E6.5.2 AC2: Response envelope + error semantics standardized
+ * - E6.5.2 AC3: Version marker present
  */
 
 import { GET } from '../route'
 import { requireAuth } from '@/lib/api/authHelpers'
 import { isPilotEligibleFull } from '@/lib/api/pilotEligibility'
 import { User } from '@supabase/supabase-js'
+import {
+  DashboardResponseSchema,
+  PATIENT_DASHBOARD_SCHEMA_VERSION,
+  DASHBOARD_VERSION,
+  ONBOARDING_STATUS,
+  NEXT_STEP_TYPE,
+  WORKUP_STATE,
+} from '@/lib/api/contracts/patient/dashboard'
 
 // Mock dependencies
 jest.mock('@/lib/api/authHelpers')
@@ -31,7 +41,7 @@ function createMockUser(id = 'test-user-id'): User {
   } as User
 }
 
-describe('E6.4.1: Patient Dashboard API', () => {
+describe('E6.5.2: Patient Dashboard API - Data Contract V1', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
@@ -43,7 +53,7 @@ describe('E6.4.1: Patient Dashboard API', () => {
     process.env = originalEnv
   })
 
-  describe('AC1: 401-first auth ordering', () => {
+  describe('E6.4.1 AC1: 401-first auth ordering', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock auth failure
       mockRequireAuth.mockResolvedValue({
@@ -106,7 +116,7 @@ describe('E6.4.1: Patient Dashboard API', () => {
     })
   })
 
-  describe('AC2: Pilot eligibility checking', () => {
+  describe('E6.5.2: Dashboard Data Contract V1', () => {
     beforeEach(() => {
       // Setup successful auth
       mockRequireAuth.mockResolvedValue({
@@ -115,38 +125,163 @@ describe('E6.4.1: Patient Dashboard API', () => {
       })
     })
 
-    it('should allow access regardless of pilot status', async () => {
-      // When pilot checking is enabled/disabled via env, access is still granted
-      // The endpoint demonstrates the pattern but doesn't enforce by default
+    it('should return valid DashboardViewModelV1 schema', async () => {
       const response = await GET()
       expect(response.status).toBe(200)
 
       const body = await response.json()
-      expect(body.success).toBe(true)
-      expect(body.data.message).toBe('Patient dashboard access granted')
+      
+      // E6.5.2 AC1: Schema validation
+      const validationResult = DashboardResponseSchema.safeParse(body)
+      expect(validationResult.success).toBe(true)
     })
 
-    it('should include pilot_eligible when env is configured', async () => {
-      // If env.NEXT_PUBLIC_PILOT_ENABLED is 'true' (set at app startup),
-      // the endpoint will check and include pilot_eligible in response
-      // This test documents that behavior without setting env at runtime
-      
+    it('should include schemaVersion in response (E6.5.2 AC2)', async () => {
       const response = await GET()
       const body = await response.json()
-      
-      // pilot_eligible may or may not be present depending on env config
-      // It's either boolean or undefined
-      if ('pilot_eligible' in body.data) {
-        expect(typeof body.data.pilot_eligible).toBe('boolean')
-      }
+
+      expect(body.schemaVersion).toBe(PATIENT_DASHBOARD_SCHEMA_VERSION)
+      expect(body.schemaVersion).toBe('v1')
+    })
+
+    it('should include version marker in meta (E6.5.2 AC3)', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.data.meta.version).toBe(DASHBOARD_VERSION)
+      expect(body.data.meta.version).toBe(1)
+    })
+
+    it('should include correlationId in meta (E6.4.8 alignment)', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.data.meta.correlationId).toBeDefined()
+      expect(typeof body.data.meta.correlationId).toBe('string')
+      // Should be a valid UUID
+      expect(body.data.meta.correlationId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      )
+    })
+
+    it('should include correlationId in requestId field (E6.4.8 alignment)', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.requestId).toBeDefined()
+      expect(typeof body.requestId).toBe('string')
+    })
+
+    it('should return all required dashboard fields', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.success).toBe(true)
+      expect(body.data.onboardingStatus).toBeDefined()
+      expect(body.data.nextStep).toBeDefined()
+      expect(body.data.funnelSummaries).toBeDefined()
+      expect(body.data.workupSummary).toBeDefined()
+      expect(body.data.contentTiles).toBeDefined()
+      expect(body.data.meta).toBeDefined()
+    })
+
+    it('should return empty state as MVP implementation', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      // Empty state should have default values
+      expect(body.data.onboardingStatus).toBe(ONBOARDING_STATUS.NOT_STARTED)
+      expect(body.data.nextStep.type).toBe(NEXT_STEP_TYPE.ONBOARDING)
+      expect(body.data.funnelSummaries).toEqual([])
+      expect(body.data.workupSummary.state).toBe(WORKUP_STATE.NO_DATA)
+      expect(body.data.contentTiles).toEqual([])
+    })
+
+    it('should include generatedAt timestamp in meta', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.data.meta.generatedAt).toBeDefined()
+      expect(typeof body.data.meta.generatedAt).toBe('string')
+      // Should be a valid ISO 8601 timestamp
+      expect(body.data.meta.generatedAt).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      )
+    })
+  })
+
+  describe('E6.5.2: nextStep object structure', () => {
+    beforeEach(() => {
+      mockRequireAuth.mockResolvedValue({
+        user: createMockUser(),
+        error: null,
+      })
+    })
+
+    it('should include type, target, and label in nextStep', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.data.nextStep.type).toBeDefined()
+      expect(body.data.nextStep.target).toBeDefined()
+      expect(body.data.nextStep.label).toBeDefined()
+    })
+  })
+
+  describe('E6.5.2: funnelSummaries array', () => {
+    beforeEach(() => {
+      mockRequireAuth.mockResolvedValue({
+        user: createMockUser(),
+        error: null,
+      })
+    })
+
+    it('should return array for funnelSummaries', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(Array.isArray(body.data.funnelSummaries)).toBe(true)
+    })
+  })
+
+  describe('E6.5.2: workupSummary object', () => {
+    beforeEach(() => {
+      mockRequireAuth.mockResolvedValue({
+        user: createMockUser(),
+        error: null,
+      })
+    })
+
+    it('should include state and counts in workupSummary', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(body.data.workupSummary.state).toBeDefined()
+      expect(body.data.workupSummary.counts).toBeDefined()
+      expect(body.data.workupSummary.counts.needsMoreData).toBeDefined()
+      expect(body.data.workupSummary.counts.readyForReview).toBeDefined()
+      expect(body.data.workupSummary.counts.total).toBeDefined()
+    })
+  })
+
+  describe('E6.5.2: contentTiles array', () => {
+    beforeEach(() => {
+      mockRequireAuth.mockResolvedValue({
+        user: createMockUser(),
+        error: null,
+      })
+    })
+
+    it('should return array for contentTiles', async () => {
+      const response = await GET()
+      const body = await response.json()
+
+      expect(Array.isArray(body.data.contentTiles)).toBe(true)
     })
   })
 
   describe('Auth-first ordering guarantee', () => {
-    it('should always check auth before pilot eligibility', async () => {
-      // This test documents the auth-first guarantee
-      // Auth is checked synchronously before any async pilot checks
-      
+    it('should always check auth before generating dashboard data', async () => {
       const callOrder: string[] = []
       
       mockRequireAuth.mockImplementation(async () => {
@@ -173,14 +308,14 @@ describe('E6.4.1: Patient Dashboard API', () => {
       })
     })
 
-    it('should handle errors gracefully in production', async () => {
-      // If pilot checking throws an error, it's caught and logged
-      // The endpoint returns 500 to indicate server error
-      
+    it('should handle errors gracefully', async () => {
       const response = await GET()
       
-      // Should either succeed (pilot not enabled) or fail gracefully
-      expect([200, 500]).toContain(response.status)
+      // Should succeed with empty state
+      expect([200]).toContain(response.status)
+      
+      const body = await response.json()
+      expect(body.success).toBe(true)
     })
   })
 })
