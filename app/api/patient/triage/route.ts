@@ -27,6 +27,7 @@ import {
   safeValidateTriageRequest,
   getOversizeErrorStatus,
   validateTriageResult,
+  TRIAGE_INPUT_MAX_LENGTH,
 } from '@/lib/api/contracts/triage'
 import { runTriageEngine } from '@/lib/triage/engine'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
@@ -55,7 +56,15 @@ export async function POST(req: Request) {
       return authResult.error
     }
 
-    const user = authResult.user!
+    // Explicit null check before using non-null assertion
+    if (!authResult.user) {
+      return internalErrorResponse(
+        'Authentication succeeded but user is null',
+        correlationId,
+      )
+    }
+
+    const user = authResult.user
 
     // Parse request body
     const body = await req.json().catch((parseError) => {
@@ -95,14 +104,14 @@ export async function POST(req: Request) {
 
         if (oversizeStatus === 413) {
           return payloadTooLargeResponse(
-            'Input text is too large. Maximum 800 characters allowed.',
-            { maxLength: 800, actualLength: inputText.length },
+            `Input text is too large. Maximum ${TRIAGE_INPUT_MAX_LENGTH} characters allowed.`,
+            { maxLength: TRIAGE_INPUT_MAX_LENGTH, actualLength: inputText.length },
             correlationId,
           )
         } else {
           return invalidInputResponse(
-            'Input text exceeds maximum length of 800 characters.',
-            { maxLength: 800, actualLength: inputText.length },
+            `Input text exceeds maximum length of ${TRIAGE_INPUT_MAX_LENGTH} characters.`,
+            { maxLength: TRIAGE_INPUT_MAX_LENGTH, actualLength: inputText.length },
             correlationId,
           )
         }
