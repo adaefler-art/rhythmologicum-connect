@@ -3,9 +3,6 @@ import { versionedSuccessResponse, internalErrorResponse } from '@/lib/api/respo
 import { randomUUID } from 'crypto'
 import {
   PATIENT_DASHBOARD_SCHEMA_VERSION,
-  ONBOARDING_STATUS,
-  NEXT_STEP_TYPE,
-  WORKUP_STATE,
   createEmptyDashboardViewModel,
   type DashboardViewModelV1,
 } from '@/lib/api/contracts/patient/dashboard'
@@ -30,7 +27,11 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // E6.5.3 AC4: Bounded result sizes
+// These constants will be used when fetching real data in future iterations
+// Currently documented for future implementation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_FUNNEL_SUMMARIES = 5
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MAX_CONTENT_TILES = 10
 
 export async function GET() {
