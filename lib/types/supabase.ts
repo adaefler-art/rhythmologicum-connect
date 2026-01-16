@@ -2593,6 +2593,53 @@ export type Database = {
           },
         ]
       }
+      triage_sessions: {
+        Row: {
+          correlation_id: string
+          created_at: string
+          id: string
+          input_hash: string
+          next_action: string
+          patient_id: string
+          rationale: string | null
+          red_flags: string[]
+          rules_version: string
+          tier: string
+        }
+        Insert: {
+          correlation_id: string
+          created_at?: string
+          id?: string
+          input_hash: string
+          next_action: string
+          patient_id: string
+          rationale?: string | null
+          red_flags?: string[]
+          rules_version: string
+          tier: string
+        }
+        Update: {
+          correlation_id?: string
+          created_at?: string
+          id?: string
+          input_hash?: string
+          next_action?: string
+          patient_id?: string
+          rationale?: string | null
+          red_flags?: string[]
+          rules_version?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_sessions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_consents: {
         Row: {
           consent_version: string
