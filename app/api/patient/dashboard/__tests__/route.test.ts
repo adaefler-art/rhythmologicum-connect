@@ -26,7 +26,30 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/api/authHelpers')
-jest.mock('@/lib/db/supabase.server')
+jest.mock('@/lib/db/supabase.server', () => {
+  const createMockEqChain = () => ({
+    eq: jest.fn(() => createMockEqChain()),
+    single: jest.fn(() => Promise.resolve({ data: null, error: null })),
+    limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    order: jest.fn(() => ({
+      limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    })),
+    not: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    in: jest.fn(() => ({
+      limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    })),
+  })
+
+  return {
+    createServerSupabaseClient: jest.fn(() =>
+      Promise.resolve({
+        from: jest.fn(() => ({
+          select: jest.fn(() => createMockEqChain()),
+        })),
+      }),
+    ),
+  }
+})
 
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>
 
