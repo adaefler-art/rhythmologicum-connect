@@ -3,16 +3,17 @@
  * 
  * Tests for Dashboard Data Contract V1 with RLS and Bounded IO:
  * - E6.5.3 AC1: Unauthenticated → 401 (401-first, no DB calls)
- * - E6.5.3 AC2: Non-eligible → 403 with envelope
- * - E6.5.3 AC3: Eligible patient sees only own data (RLS)
+ * - E6.5.3 AC3: Authenticated patient sees only own data (RLS)
  * - E6.5.3 AC4: Payload bounded (tiles max N, funnels max 2-5 summaries)
  * - E6.5.2 AC1: Contract as Zod schema with runtime validation
  * - E6.5.2 AC2: Response envelope + error semantics standardized
  * - E6.5.2 AC3: Version marker present
+ * 
+ * Note: Pilot eligibility gate (AC2) removed to allow all authenticated users access.
  */
 
 import { GET } from '../route'
-import { requirePilotEligibility } from '@/lib/api/authHelpers'
+import { requireAuth } from '@/lib/api/authHelpers'
 import { User } from '@supabase/supabase-js'
 import {
   DashboardResponseSchema,
@@ -50,9 +51,7 @@ jest.mock('@/lib/db/supabase.server', () => {
   }
 })
 
-const mockRequirePilotEligibility = requirePilotEligibility as jest.MockedFunction<
-  typeof requirePilotEligibility
->
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>
 
 function createMockUser(id = 'test-user-id'): User {
   return {
@@ -80,7 +79,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
   describe('E6.5.3 AC1: 401-first auth ordering', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock auth failure
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -100,7 +99,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
     })
 
     it('should return 401 for session expired', async () => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -119,7 +118,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
     })
 
     it('should check auth before any business logic', async () => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: null,
         error: new Response(
           JSON.stringify({
@@ -133,37 +132,14 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
       await GET()
 
       // Verify auth was checked
-      expect(mockRequirePilotEligibility).toHaveBeenCalled()
-    })
-  })
-
-  describe('E6.5.3 AC2: Non-eligible → 403 with envelope', () => {
-    it('should return 403 when user is not pilot eligible', async () => {
-      // Mock pilot eligibility failure
-      mockRequirePilotEligibility.mockResolvedValue({
-        user: null,
-        error: new Response(
-          JSON.stringify({
-            success: false,
-            error: { code: 'PILOT_NOT_ELIGIBLE', message: 'Not eligible for pilot' },
-          }),
-          { status: 403 },
-        ),
-      })
-
-      const response = await GET()
-      expect(response.status).toBe(403)
-
-      const body = await response.json()
-      expect(body.success).toBe(false)
-      expect(body.error.code).toBe('PILOT_NOT_ELIGIBLE')
+      expect(mockRequireAuth).toHaveBeenCalled()
     })
   })
 
   describe('E6.5.2: Dashboard Data Contract V1', () => {
     beforeEach(() => {
-      // Setup successful auth and eligibility
-      mockRequirePilotEligibility.mockResolvedValue({
+      // Setup successful auth
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -256,7 +232,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
 
   describe('E6.5.2: nextStep object structure', () => {
     beforeEach(() => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -274,7 +250,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
 
   describe('E6.5.2: funnelSummaries array', () => {
     beforeEach(() => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -290,7 +266,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
 
   describe('E6.5.2: workupSummary object', () => {
     beforeEach(() => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -310,7 +286,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
 
   describe('E6.5.2: contentTiles array', () => {
     beforeEach(() => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
@@ -328,7 +304,7 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
     it('should always check auth and eligibility before generating dashboard data', async () => {
       const callOrder: string[] = []
       
-      mockRequirePilotEligibility.mockImplementation(async () => {
+      mockRequireAuth.mockImplementation(async () => {
         callOrder.push('auth-eligibility')
         return {
           user: createMockUser(),
@@ -340,13 +316,13 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
       
       // Auth and eligibility should be checked first
       expect(callOrder[0]).toBe('auth-eligibility')
-      expect(mockRequirePilotEligibility).toHaveBeenCalled()
+      expect(mockRequireAuth).toHaveBeenCalled()
     })
   })
 
   describe('Error handling', () => {
     beforeEach(() => {
-      mockRequirePilotEligibility.mockResolvedValue({
+      mockRequireAuth.mockResolvedValue({
         user: createMockUser(),
         error: null,
       })
