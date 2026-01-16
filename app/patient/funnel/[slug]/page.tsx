@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { enforceDashboardFirst } from '@/lib/utils/dashboardFirstPolicy'
 import FunnelClient from './client'
 import { getContentPage } from '@/lib/utils/contentResolver'
 
@@ -16,13 +17,22 @@ export default async function FunnelPage({ params, searchParams }: PageProps) {
   // Create Supabase server client (canonical)
   const supabase = await createServerSupabaseClient()
 
-  // Check authentication
+  // E6.5.1 AC3: Check authentication FIRST (401-first, no DB calls before auth)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/')
+  }
+
+  // E6.5.1 AC2: Enforce dashboard-first policy
+  // Prevent direct deep-linking to funnel routes
+  const pathname = `/patient/funnel/${slug}`
+  const redirectUrl = await enforceDashboardFirst(pathname)
+  
+  if (redirectUrl) {
+    redirect(redirectUrl)
   }
 
   // Check for intro page (F6 - Intro-Page Integration)

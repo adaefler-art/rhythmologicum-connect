@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { enforceDashboardFirst } from '@/lib/utils/dashboardFirstPolicy'
 import ContentPageClient from './client'
 import {
   loadFunnelVersionWithClient,
@@ -20,13 +21,21 @@ export default async function ContentPage({ params }: PageProps) {
   // Create Supabase server client (canonical)
   const supabase = await createServerSupabaseClient()
 
-  // Check authentication
+  // E6.5.1 AC3: Check authentication FIRST (401-first, no DB calls before auth)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/')
+  }
+
+  // E6.5.1 AC2: Enforce dashboard-first policy
+  const pathname = `/patient/funnel/${slug}/content/${pageSlug}`
+  const redirectUrl = await enforceDashboardFirst(pathname)
+  
+  if (redirectUrl) {
+    redirect(redirectUrl)
   }
 
   // V05-I06.5: Load funnel version manifest (server-side)
