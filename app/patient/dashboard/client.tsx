@@ -6,7 +6,7 @@ import MobileHeader from '@/app/components/MobileHeader'
 import { LoadingSpinner, ErrorState } from '@/lib/ui'
 import {
   DashboardHeader,
-  AMYSlot,
+  AMYComposer,
   NextStepCard,
   ContentTilesGrid,
   ProgressSummary,
@@ -131,8 +131,8 @@ export default function DashboardClient() {
               {/* Header Section */}
               <DashboardHeader />
 
-              {/* AMY Slot - Placeholder for E6.6 */}
-              <AMYSlot />
+              {/* E6.6.1: AMY Composer - Guided Mode for bounded input */}
+              <AMYComposer />
 
               {/* E6.5.4 AC3: Next Step Card - Always visible when available */}
               {dashboardData.nextStep && (
