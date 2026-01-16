@@ -9,7 +9,7 @@ import { Card, Textarea, Button, Alert } from '@/lib/ui'
  * Bounded, guided mode for patient-initiated AMY interactions.
  * 
  * Features:
- * - AC1: Max length enforced client-side (500-800 chars)
+ * - AC1: Max length enforced client-side (up to 800 chars, recommended 500)
  * - AC2: Single-turn interaction (no chat history)
  * - AC3: Non-emergency disclaimer visible
  * - AC4: Submit triggers triage API call and shows routed result
@@ -89,8 +89,9 @@ export function AMYComposer() {
   }
 
   const handleChipClick = (chip: string) => {
-    // Remove emoji and trim
-    const text = chip.replace(/[^\w\s-]/g, '').trim()
+    // Extract text after emoji (emojis are typically 1-2 chars at start)
+    // This preserves German characters (ä, ö, ü, ß)
+    const text = chip.slice(2).trim() // Remove emoji and leading space
     if (concern) {
       setConcern(concern + ', ' + text)
     } else {
