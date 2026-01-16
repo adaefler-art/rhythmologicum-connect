@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button } from '@/lib/ui'
-import { AlertTriangle, Video, Stethoscope, Phone } from 'lucide-react'
+import { Card, Button, EmergencyContactInfo } from '@/lib/ui'
+import { AlertTriangle, Video, Stethoscope } from 'lucide-react'
 import { typography } from '@/lib/design-tokens'
+import {
+  ESCALATION_DISCLAIMER,
+  RED_FLAG_EMERGENCY_WARNING,
+} from '@/lib/safety/disclaimers'
 
 type EscalationOfferCardProps = {
   reasons: string[]
@@ -15,6 +19,7 @@ type EscalationOfferCardProps = {
  * EscalationOfferCard Component
  *
  * E6.4.6: Displays emergency/high-risk warning with escalation CTAs.
+ * E6.6.8: Uses centralized disclaimers with stronger emergency guidance.
  * Shown when red flags are detected in assessment results.
  * NO SCHEDULING - placeholder links only.
  */
@@ -47,15 +52,15 @@ export function EscalationOfferCard({ reasons, correlationId, onCtaClick }: Esca
             Wichtiger Hinweis zu Ihrem Ergebnis
           </h3>
           <p className="text-sm text-red-800 dark:text-red-200">
-            Basierend auf Ihren Antworten empfehlen wir eine persönliche Rücksprache.
+            {ESCALATION_DISCLAIMER.intro}
           </p>
         </div>
       </div>
 
-      {/* Disclaimer */}
+      {/* Disclaimer - E6.6.8: Stronger language */}
       <div className="mb-6 p-4 bg-white dark:bg-slate-800 rounded-lg border border-red-200 dark:border-red-800">
         <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">
-          <strong>Bitte beachten Sie:</strong>
+          <strong>{ESCALATION_DISCLAIMER.title}:</strong>
         </p>
         <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
           {reasons.map((reason, index) => (
@@ -67,20 +72,16 @@ export function EscalationOfferCard({ reasons, correlationId, onCtaClick }: Esca
         </ul>
       </div>
 
-      {/* Emergency Notice */}
+      {/* Emergency Notice - E6.6.8: Use EmergencyContactInfo component with stronger warning */}
       <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
-        <div className="flex items-start gap-2">
-          <Phone className="w-5 h-5 text-red-700 dark:text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold text-red-900 dark:text-red-100 mb-1">
-              Bei akuter Gefahr:
-            </p>
-            <p className="text-red-800 dark:text-red-200">
-              Wählen Sie bitte umgehend den Notruf <strong>112</strong> oder wenden Sie sich an
-              die nächste Notaufnahme.
-            </p>
-          </div>
-        </div>
+        <EmergencyContactInfo
+          variant="compact"
+          title={RED_FLAG_EMERGENCY_WARNING.title}
+          showAll={false}
+        />
+        <p className="text-sm text-red-800 dark:text-red-200 mt-2 ml-6">
+          {RED_FLAG_EMERGENCY_WARNING.urgentAction}
+        </p>
       </div>
 
       {/* CTA Buttons */}

@@ -98,3 +98,5 @@ export type { PageHeaderProps } from './PageHeader'
 
 export { SectionHeader } from './SectionHeader'
 export type { SectionHeaderProps } from './SectionHeader'
+
+export { EmergencyContactInfo } from './components/EmergencyContactInfo'

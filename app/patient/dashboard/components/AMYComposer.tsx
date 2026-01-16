@@ -6,6 +6,7 @@ import { Card, Textarea, Button, Alert } from '@/lib/ui'
 import { getNavigationTarget, isRoutableAction } from '@/lib/triage/router'
 import { storeTriageResult } from '@/lib/triage/storage'
 import type { TriageResultV1 } from '@/lib/api/contracts/triage'
+import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/safety/disclaimers'
 
 /**
  * E6.6.1 + E6.6.5 — AMY Composer Component
@@ -150,11 +151,10 @@ export function AMYComposer() {
           </div>
         </div>
 
-        {/* AC3: Non-emergency disclaimer */}
+        {/* AC3: Non-emergency disclaimer - E6.6.8: Use centralized disclaimer */}
         <Alert variant="info">
           <p className="text-sm">
-            <strong>Hinweis:</strong> Dies ist kein Notfalldienst. Bei akuten medizinischen Notfällen
-            wählen Sie bitte 112.
+            <strong>{NON_EMERGENCY_DISCLAIMER.title}:</strong> {NON_EMERGENCY_DISCLAIMER.text}
           </p>
         </Alert>
 
@@ -280,12 +280,12 @@ export function AMYComposer() {
               </Button>
             </div>
 
-            {/* Escalation warning for urgent cases */}
+            {/* Escalation warning for urgent cases - E6.6.8: Use centralized guidance */}
             {result.tier === 'ESCALATE' && (
               <Alert variant="error">
                 <p className="text-sm font-medium">
-                  Bei akuten Notfällen wählen Sie bitte sofort 112 oder wenden Sie sich an
-                  Ihren Arzt.
+                  <strong>{STANDARD_EMERGENCY_GUIDANCE.title}:</strong>{' '}
+                  {STANDARD_EMERGENCY_GUIDANCE.text}
                 </p>
               </Alert>
             )}
