@@ -2,16 +2,18 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, Button } from '@/lib/ui'
+import { Card, Button, EmergencyContactInfo } from '@/lib/ui'
 import { AlertTriangle, ArrowLeft, Phone, Mail, Video } from 'lucide-react'
+import { RED_FLAG_EMERGENCY_WARNING } from '@/lib/safety/disclaimers'
 
 /**
- * E6.4.6 + E6.5.8: Escalation Placeholder Page
+ * E6.4.6 + E6.5.8 + E6.6.8: Escalation Placeholder Page
  *
  * Shown when patient clicks on escalation CTA.
  * NO SCHEDULING - placeholder information only.
  * 
  * E6.5.8: Updated to use router.push for dashboard navigation
+ * E6.6.8: Uses centralized emergency contact info
  */
 export default function EscalationPage() {
   const router = useRouter()
@@ -87,33 +89,13 @@ export default function EscalationPage() {
           </div>
         </div>
 
-        {/* Emergency Contact */}
+        {/* Emergency Contact - E6.6.8: Use EmergencyContactInfo component */}
         <div className="mb-8 p-6 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-          <div className="flex items-start gap-3">
-            <Phone className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-red-900 dark:text-red-100 mb-2">
-                Bei akuter Gefahr
-              </h3>
-              <p className="text-sm text-red-800 dark:text-red-200 mb-3">
-                Wenden Sie sich bitte umgehend an:
-              </p>
-              <ul className="space-y-2 text-sm text-red-800 dark:text-red-200">
-                <li className="flex items-center gap-2">
-                  <span className="font-mono font-bold">112</span>
-                  <span>— Notarzt / Rettungsdienst</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="font-mono font-bold">116 117</span>
-                  <span>— Ärztlicher Bereitschaftsdienst</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="font-mono font-bold">0800 111 0 111</span>
-                  <span>— Telefonseelsorge (kostenfrei, 24/7)</span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <EmergencyContactInfo
+            title={RED_FLAG_EMERGENCY_WARNING.title}
+            description={RED_FLAG_EMERGENCY_WARNING.text}
+            showAll={true}
+          />
         </div>
 
         {/* Regular Contact Options */}
