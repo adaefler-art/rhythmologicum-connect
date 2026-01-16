@@ -75,6 +75,8 @@ export function getLastTriageResult(): TriageResultV1 | null {
 
 /**
  * Clears the stored triage result
+ * 
+ * @returns void
  */
 export function clearTriageResult(): void {
   if (typeof window === 'undefined' || !window.sessionStorage) {

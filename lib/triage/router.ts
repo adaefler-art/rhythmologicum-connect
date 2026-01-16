@@ -2,7 +2,7 @@
  * E6.6.5 — Triage Router
  *
  * Maps TriageResultV1.nextAction to concrete navigation routes.
- * This is the "productlogic" that converts triage decisions into user journeys.
+ * This is the "product logic" that converts triage decisions into user journeys.
  *
  * Key Principles:
  * - AC1: Each nextAction maps to exactly one route (deterministic)
