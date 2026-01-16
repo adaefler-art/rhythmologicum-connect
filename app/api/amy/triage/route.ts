@@ -13,6 +13,7 @@ import {
   TRIAGE_SCHEMA_VERSION,
   TRIAGE_TIER,
   TRIAGE_NEXT_ACTION,
+  TRIAGE_INPUT_MAX_LENGTH,
   safeValidateTriageRequest,
   getOversizeErrorStatus,
   sanitizeRedFlags,
@@ -36,7 +37,8 @@ import {
  * - Best-effort telemetry (failures don't block)
  */
 
-const MAX_INPUT_LENGTH = 800 // Legacy constant for backward compatibility
+// Legacy constant for backward compatibility - use TRIAGE_INPUT_MAX_LENGTH from contract
+const MAX_INPUT_LENGTH = TRIAGE_INPUT_MAX_LENGTH
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
 const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'

@@ -54,7 +54,7 @@ export const RED_FLAG_ALLOWLIST = [
   'report_risk_level',
   'workup_check',
   'answer_pattern',
-] as const
+] as const satisfies readonly string[]
 
 export type RedFlagType = typeof RED_FLAG_ALLOWLIST[number]
 
@@ -77,6 +77,7 @@ export type AgeRangeBucket = typeof AGE_RANGE_BUCKET[keyof typeof AGE_RANGE_BUCK
 
 export const TRIAGE_INPUT_MIN_LENGTH = 10
 export const TRIAGE_INPUT_MAX_LENGTH = 800
+export const TRIAGE_INPUT_VERY_LARGE_THRESHOLD = TRIAGE_INPUT_MAX_LENGTH * 2 // 1600 chars
 export const TRIAGE_RATIONALE_MAX_LENGTH = 280
 export const TRIAGE_RATIONALE_MAX_BULLETS = 3
 
@@ -171,7 +172,10 @@ export const TriageResultV1Schema = z.object({
     TRIAGE_NEXT_ACTION.RESUME_FUNNEL,
     TRIAGE_NEXT_ACTION.SHOW_ESCALATION,
   ]),
-  redFlags: z.array(z.enum(RED_FLAG_ALLOWLIST as unknown as [string, ...string[]])).default([]),
+  redFlags: z.array(z.string()).refine(
+    (flags) => flags.every(flag => RED_FLAG_ALLOWLIST.includes(flag as RedFlagType)),
+    { message: 'All red flags must be from the allowlist' }
+  ).default([]),
   rationale: z.string()
     .refine(validateRationale, {
       message: `Rationale must be ≤${TRIAGE_RATIONALE_MAX_LENGTH} chars or bullet list with max ${TRIAGE_RATIONALE_MAX_BULLETS} items`,
@@ -273,7 +277,7 @@ export function getOversizeErrorStatus(inputText: string): 400 | 413 | null {
   if (inputText.length > TRIAGE_INPUT_MAX_LENGTH) {
     // Very large inputs get 413 (Request Entity Too Large)
     // Moderately over limit gets 400 (Bad Request)
-    return inputText.length > TRIAGE_INPUT_MAX_LENGTH * 2 ? 413 : 400
+    return inputText.length > TRIAGE_INPUT_VERY_LARGE_THRESHOLD ? 413 : 400
   }
   return null
 }
