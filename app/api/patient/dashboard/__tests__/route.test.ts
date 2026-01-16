@@ -205,16 +205,18 @@ describe('E6.5.3: Patient Dashboard API - RLS and Bounded IO', () => {
       expect(body.data.meta).toBeDefined()
     })
 
-    it('should return empty state as MVP implementation', async () => {
+    it('should return content tiles in dashboard (E6.5.6)', async () => {
       const response = await GET()
       const body = await response.json()
 
-      // Empty state should have default values
+      // E6.5.6: Should now include content tiles
       expect(body.data.onboardingStatus).toBe(ONBOARDING_STATUS.NOT_STARTED)
       expect(body.data.nextStep.type).toBe(NEXT_STEP_TYPE.ONBOARDING)
       expect(body.data.funnelSummaries).toEqual([])
       expect(body.data.workupSummary.state).toBe(WORKUP_STATE.NO_DATA)
-      expect(body.data.contentTiles).toEqual([])
+      expect(body.data.contentTiles).toBeDefined()
+      expect(Array.isArray(body.data.contentTiles)).toBe(true)
+      expect(body.data.contentTiles.length).toBeGreaterThan(0)
     })
 
     it('should include generatedAt timestamp in meta', async () => {
