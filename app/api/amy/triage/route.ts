@@ -8,17 +8,27 @@ import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitTriageSubmitted, emitTriageRouted } from '@/lib/telemetry/events'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
+import {
+  type TriageResultV1,
+  TRIAGE_SCHEMA_VERSION,
+  TRIAGE_TIER,
+  TRIAGE_NEXT_ACTION,
+  TRIAGE_INPUT_MAX_LENGTH,
+  safeValidateTriageRequest,
+  getOversizeErrorStatus,
+  sanitizeRedFlags,
+  boundRationale,
+} from '@/lib/api/contracts/triage'
 
 /**
- * E6.6.1 — AMY Composer (Guided Mode) - Triage API
+ * E6.6.2 — AMY Triage with TriageResult v1 Contract
  * 
  * Bounded, safe UX for patient-initiated AMY interactions.
  * 
  * Acceptance Criteria:
- * - AC1: Max length enforced client-side + server-side (500-800 chars)
- * - AC2: Single-turn interaction (no chat history needed for v0.6)
- * - AC3: Non-emergency disclaimer visible in UI
- * - AC4: Submit triggers triage API call and shows routed result
+ * - AC1: Runtime validation with Zod schemas
+ * - AC2: Invalid request returns 400; oversize returns 413 or 400
+ * - AC3: rationale hard-bounded; redFlags from allowlist only
  * 
  * Security Guardrails:
  * - Input bounded to prevent abuse
@@ -27,8 +37,8 @@ import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper'
  * - Best-effort telemetry (failures don't block)
  */
 
-const MAX_INPUT_LENGTH = 800 // AC1: Server-side validation
-const MIN_INPUT_LENGTH = 10
+// Legacy constant for backward compatibility - use TRIAGE_INPUT_MAX_LENGTH from contract
+const MAX_INPUT_LENGTH = TRIAGE_INPUT_MAX_LENGTH
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
 const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'
@@ -36,9 +46,9 @@ const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
 
 /**
- * Triage result structure
+ * Legacy triage result structure (for internal AI response parsing)
  */
-export type TriageResult = {
+type LegacyTriageResult = {
   tier: 'low' | 'moderate' | 'high' | 'urgent'
   nextAction: 'self-help' | 'funnel' | 'escalation' | 'emergency'
   summary: string
@@ -46,9 +56,73 @@ export type TriageResult = {
 }
 
 /**
+ * Map legacy tier to v1 tier
+ */
+function mapLegacyTierToV1(legacyTier: LegacyTriageResult['tier']): TriageResultV1['tier'] {
+  switch (legacyTier) {
+    case 'low':
+      return TRIAGE_TIER.INFO
+    case 'moderate':
+      return TRIAGE_TIER.ASSESSMENT
+    case 'high':
+    case 'urgent':
+      return TRIAGE_TIER.ESCALATE
+  }
+}
+
+/**
+ * Map legacy nextAction to v1 nextAction
+ */
+function mapLegacyNextActionToV1(
+  legacyAction: LegacyTriageResult['nextAction']
+): TriageResultV1['nextAction'] {
+  switch (legacyAction) {
+    case 'self-help':
+      return TRIAGE_NEXT_ACTION.SHOW_CONTENT
+    case 'funnel':
+      return TRIAGE_NEXT_ACTION.START_FUNNEL_A
+    case 'escalation':
+    case 'emergency':
+      return TRIAGE_NEXT_ACTION.SHOW_ESCALATION
+  }
+}
+
+/**
+ * Convert legacy result to v1 contract
+ */
+function convertToV1Result(
+  legacy: LegacyTriageResult,
+  correlationId: string
+): TriageResultV1 {
+  const tier = mapLegacyTierToV1(legacy.tier)
+  const nextAction = mapLegacyNextActionToV1(legacy.nextAction)
+  
+  // Determine red flags based on tier
+  const redFlags: string[] = []
+  if (tier === TRIAGE_TIER.ESCALATE) {
+    redFlags.push('report_risk_level')
+  }
+  
+  // Sanitize red flags to allowlist
+  const sanitizedRedFlags = sanitizeRedFlags(redFlags)
+  
+  // Bound rationale
+  const rationale = boundRationale(legacy.summary)
+
+  return {
+    tier,
+    nextAction,
+    redFlags: sanitizedRedFlags,
+    rationale,
+    version: TRIAGE_SCHEMA_VERSION,
+    correlationId,
+  }
+}
+
+/**
  * Fallback triage when AMY is unavailable
  */
-function getFallbackTriage(): TriageResult {
+function getFallbackTriage(): LegacyTriageResult {
   return {
     tier: 'moderate',
     nextAction: 'funnel',
@@ -62,7 +136,7 @@ function getFallbackTriage(): TriageResult {
 /**
  * Call Anthropic API for triage
  */
-async function performAITriage(concern: string): Promise<TriageResult> {
+async function performAITriage(concern: string): Promise<LegacyTriageResult> {
   // Feature flag disabled → Fallback
   if (!featureFlags.AMY_ENABLED) {
     console.log('[amy/triage] AMY feature disabled, using fallback')
@@ -144,7 +218,7 @@ async function performAITriage(concern: string): Promise<TriageResult> {
         return getFallbackTriage()
       }
 
-      return parsed as TriageResult
+      return parsed as LegacyTriageResult
     } catch (parseError) {
       console.error('[amy/triage] Failed to parse JSON response', {
         error: parseError,
@@ -224,33 +298,65 @@ export async function POST(req: Request) {
       return null
     })
 
-    const concern = body?.concern as string | undefined
-
-    // AC1: Server-side validation - max length
-    if (!concern || typeof concern !== 'string') {
-      console.warn('[amy/triage] Missing or invalid concern')
-      return NextResponse.json({ error: 'Concern text is required' }, { status: 400 })
-    }
-
-    if (concern.length < MIN_INPUT_LENGTH) {
-      console.warn('[amy/triage] Concern too short', { length: concern.length })
+    if (!body) {
       return NextResponse.json(
-        { error: `Concern must be at least ${MIN_INPUT_LENGTH} characters` },
-        { status: 400 },
+        {
+          success: false,
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
       )
     }
 
-    if (concern.length > MAX_INPUT_LENGTH) {
-      console.warn('[amy/triage] Concern exceeds max length', { length: concern.length })
+    // AC2: Validate request with TriageRequestV1 schema
+    const validatedRequest = safeValidateTriageRequest({
+      inputText: body.concern || body.inputText,
+      locale: body.locale,
+      patientContext: body.patientContext,
+    })
+
+    if (!validatedRequest) {
+      // Check if it's an oversize error for AC2
+      const inputText = (body.concern || body.inputText || '') as string
+      const oversizeStatus = getOversizeErrorStatus(inputText)
+      
+      if (oversizeStatus) {
+        console.warn('[amy/triage] Input exceeds max length', { 
+          length: inputText.length,
+          status: oversizeStatus,
+        })
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: oversizeStatus === 413 ? 'REQUEST_TOO_LARGE' : 'VALIDATION_FAILED',
+              message: `Input must not exceed ${MAX_INPUT_LENGTH} characters`,
+            },
+          },
+          { status: oversizeStatus }
+        )
+      }
+
+      // Other validation error
+      console.warn('[amy/triage] Request validation failed', { body })
       return NextResponse.json(
-        { error: `Concern must not exceed ${MAX_INPUT_LENGTH} characters` },
-        { status: 400 },
+        {
+          success: false,
+          error: {
+            code: 'VALIDATION_FAILED',
+            message: 'Request validation failed. Input must be 10-800 characters.',
+          },
+        },
+        { status: 400 }
       )
     }
 
     console.log('[amy/triage] Processing triage request', {
       userId: user.id,
-      concernLength: concern.length,
+      inputLength: validatedRequest.inputText.length,
     })
 
     // Emit TRIAGE_SUBMITTED event (best-effort)
@@ -264,15 +370,18 @@ export async function POST(req: Request) {
       console.warn('[TELEMETRY] Failed to emit TRIAGE_SUBMITTED event', err)
     })
 
-    // Perform AI triage
-    const triageResult = await performAITriage(concern)
+    // Perform AI triage (gets legacy result)
+    const legacyTriageResult = await performAITriage(validatedRequest.inputText)
+    
+    // Convert to v1 contract (AC3: sanitize redFlags, bound rationale)
+    const triageResultV1 = convertToV1Result(legacyTriageResult, correlationId)
 
-    // Emit TRIAGE_ROUTED event (best-effort)
+    // Emit TRIAGE_ROUTED event (best-effort) - use legacy values for telemetry compatibility
     await emitTriageRouted({
       correlationId,
       assessmentId: syntheticAssessmentId,
-      nextAction: triageResult.nextAction,
-      tier: triageResult.tier,
+      nextAction: legacyTriageResult.nextAction,
+      tier: legacyTriageResult.tier,
       patientId: user.id,
     }).catch((err) => {
       console.warn('[TELEMETRY] Failed to emit TRIAGE_ROUTED event', err)
@@ -281,14 +390,15 @@ export async function POST(req: Request) {
     const totalDuration = Date.now() - requestStartTime
     console.log('[amy/triage] Request completed successfully', {
       duration: `${totalDuration}ms`,
-      tier: triageResult.tier,
-      nextAction: triageResult.nextAction,
+      tier: triageResultV1.tier,
+      nextAction: triageResultV1.nextAction,
       correlationId,
     })
 
+    // AC1: Return TriageResultV1 compliant response
     const response = NextResponse.json({
       success: true,
-      data: triageResult,
+      data: triageResultV1,
     })
 
     // Track usage (fire and forget)
@@ -315,10 +425,13 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json(
       {
-        error: 'Internal server error',
-        message: error?.message ?? String(err),
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error',
+        },
       },
-      { status: 500 },
+      { status: 500 }
     )
 
     // Track usage (fire and forget)
