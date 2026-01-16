@@ -1,4 +1,4 @@
-import { requirePilotEligibility } from '@/lib/api/authHelpers'
+import { requireAuth } from '@/lib/api/authHelpers'
 import { versionedSuccessResponse, internalErrorResponse } from '@/lib/api/responses'
 import { randomUUID } from 'crypto'
 import {
@@ -12,15 +12,17 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
  * E6.5.3: Patient Dashboard API - Enhanced with RLS and Bounded IO
  * 
  * Returns dashboard view model with stable, versioned schema.
- * Enforces 401-first auth ordering and pilot eligibility.
+ * Enforces 401-first auth ordering.
  * 
  * E6.5.3 AC1: Unauthenticated → 401 (401-first, no DB calls)
- * E6.5.3 AC2: Non-eligible → 403 with envelope
- * E6.5.3 AC3: Eligible patient sees only own data (RLS)
+ * E6.5.3 AC3: Authenticated patient sees only own data (RLS)
  * E6.5.3 AC4: Payload bounded (tiles max N, funnels max 2-5 summaries)
  * E6.5.2 AC1: Contract as Zod schema with runtime check
  * E6.5.2 AC2: Response envelope + error semantics standardized
  * E6.5.2 AC3: Version marker (dashboardVersion: 1) present
+ * 
+ * Note: Pilot eligibility gate removed to allow all authenticated users access.
+ * Re-enable requirePilotEligibility when pilot rollout is configured.
  */
 
 export const dynamic = 'force-dynamic'
@@ -35,12 +37,12 @@ const MAX_FUNNEL_SUMMARIES = 5
 const MAX_CONTENT_TILES = 10
 
 export async function GET() {
-  // E6.5.3 AC1 + AC2: Auth and eligibility check FIRST, before any DB/IO operations
-  // This enforces 401-first ordering and pilot eligibility gate
-  const authResult = await requirePilotEligibility()
+  // E6.5.3 AC1: Auth check FIRST, before any DB/IO operations
+  // This enforces 401-first ordering
+  const authResult = await requireAuth()
   
   if (authResult.error) {
-    // Returns 401 for unauthenticated/session expired, or 403 for not eligible
+    // Returns 401 for unauthenticated/session expired
     return authResult.error
   }
   
