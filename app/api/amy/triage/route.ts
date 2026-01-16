@@ -20,6 +20,7 @@ import {
   boundRationale,
 } from '@/lib/api/contracts/triage'
 import { runTriageEngine } from '@/lib/triage/engine'
+import { insertTriageSession } from '@/lib/triage/sessionStorage'
 
 /**
  * E6.6.3 — AMY Triage with Deterministic Rule-based Engine
@@ -407,6 +408,19 @@ export async function POST(req: Request) {
       tier: triageResultV1.tier,
       nextAction: triageResultV1.nextAction,
       redFlagsCount: triageResultV1.redFlags.length,
+    })
+
+    // E6.6.6 AC3: Persist triage session after validation (best-effort, non-blocking)
+    await insertTriageSession({
+      patientId: user.id,
+      correlationId,
+      inputText: validatedRequest.inputText,
+      triageResult: triageResultV1,
+    }).catch((err) => {
+      console.warn('[amy/triage] Failed to persist triage session (non-blocking)', {
+        error: err,
+        correlationId,
+      })
     })
 
     // Map v1 tier to legacy tier for telemetry compatibility

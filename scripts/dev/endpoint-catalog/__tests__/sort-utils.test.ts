@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+ 
 
 const { cmpStr, cmpTuple, normalizePath } = require('../sort-utils')
 

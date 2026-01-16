@@ -50,6 +50,7 @@
     "support_cases",
     "rls_test_results",
     "tasks",
+    "triage_sessions",
     "user_consents",
     "user_org_membership",
     "user_profiles"

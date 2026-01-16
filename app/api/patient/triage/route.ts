@@ -30,6 +30,7 @@ import {
   TRIAGE_INPUT_MAX_LENGTH,
 } from '@/lib/api/contracts/triage'
 import { runTriageEngine } from '@/lib/triage/engine'
+import { insertTriageSession } from '@/lib/triage/sessionStorage'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitTriageSubmitted, emitTriageRouted } from '@/lib/telemetry/events'
 import { TRIAGE_TIER, TRIAGE_NEXT_ACTION } from '@/lib/api/contracts/triage'
@@ -173,6 +174,19 @@ export async function POST(req: Request) {
         correlationId,
       )
     }
+
+    // E6.6.6 AC3: Persist triage session after validation (best-effort, non-blocking)
+    await insertTriageSession({
+      patientId: user.id,
+      correlationId,
+      inputText: validatedRequest.inputText,
+      triageResult: triageResultV1,
+    }).catch((err) => {
+      console.warn('[patient/triage] Failed to persist triage session (non-blocking)', {
+        error: err,
+        correlationId,
+      })
+    })
 
     // Map v1 tier to legacy tier for telemetry compatibility
     const legacyTier =
