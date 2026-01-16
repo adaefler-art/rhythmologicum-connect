@@ -18,6 +18,7 @@ import type {
   RedFlagType,
 } from '@/lib/api/contracts/triage'
 import { TRIAGE_TIER, TRIAGE_NEXT_ACTION, TRIAGE_SCHEMA_VERSION } from '@/lib/api/contracts/triage'
+import { hasAnyRedFlag, detectClinicalRedFlags } from './redFlagCatalog'
 
 /**
  * Ruleset version for governance and auditing
@@ -35,37 +36,14 @@ export type TriageEngineInput = {
 }
 
 /**
- * Red flag keyword patterns (case-insensitive allowlist)
- * These keywords trigger immediate escalation
+ * Red flag detection now uses the clinical red flag catalog (E6.6.7)
+ * See: lib/triage/redFlagCatalog.ts and docs/clinical/triage_red_flags_v1.md
+ *
+ * This ensures:
+ * - Allowlist-only red flags (no ad-hoc additions)
+ * - Conservative patterns (better false positives than false negatives)
+ * - Versioned catalog for governance
  */
-const RED_FLAG_KEYWORDS = [
-  // German emergency/crisis keywords
-  'suizid',
-  'selbstmord',
-  'umbringen',
-  'sterben will',
-  'nicht mehr leben',
-  'selbstverletzung',
-  'verletze mich',
-  'selbstschädigung',
-  'notfall',
-  'akute gefahr',
-  'panikattacke',
-  'herzinfarkt',
-  'atemnot',
-  // English emergency/crisis keywords
-  'suicide',
-  'kill myself',
-  'end my life',
-  'self-harm',
-  'self harm',
-  'hurt myself',
-  'emergency',
-  'panic attack',
-  'heart attack',
-  'cant breathe',
-  'cannot breathe',
-] as const
 
 /**
  * Assessment keywords - indicate need for structured assessment
@@ -135,23 +113,18 @@ export function normalizeInput(inputText: string): string {
  * Detect red flags in normalized input
  * Rule: Any red flag keyword triggers ESCALATE tier
  *
+ * Uses the clinical red flag catalog (E6.6.7) for allowlist-based detection.
+ *
  * @returns Array of detected red flag types
  */
 export function detectRedFlagsInInput(normalizedInput: string): RedFlagType[] {
-  const detectedFlags: RedFlagType[] = []
-
-  // Check each red flag keyword
-  for (const keyword of RED_FLAG_KEYWORDS) {
-    if (normalizedInput.includes(keyword)) {
-      // Use 'answer_pattern' as the red flag type for keyword matches
-      if (!detectedFlags.includes('answer_pattern')) {
-        detectedFlags.push('answer_pattern')
-      }
-      break // One red flag is enough to trigger escalation
-    }
+  // Check if any clinical red flag is present
+  if (hasAnyRedFlag(normalizedInput)) {
+    // Return 'answer_pattern' as the red flag type for triage contract compatibility
+    return ['answer_pattern']
   }
 
-  return detectedFlags
+  return []
 }
 
 /**
