@@ -61,7 +61,7 @@ export default function QuestionStepRenderer({
         question={question}
         questionIndex={step.orderIndex}
         totalQuestions={totalQuestions || 1}
-        value={answers[question.key]}
+        value={answers[question.id]}
         onChange={handleMobileChange}
         onNext={onNextStep}
         onPrevious={onPreviousStep}
@@ -83,7 +83,7 @@ export default function QuestionStepRenderer({
           key={question.id}
           index={index + 1}
           question={question}
-          value={answers[question.key]}
+          value={answers[question.id]}
           onChange={onAnswerChange}
           hasError={validationErrors.some((err) => err.questionId === question.id)}
         />
@@ -120,8 +120,8 @@ const QuestionCard = memo(function QuestionCard({
 
   // Memoize the onChange handler for this specific question
   const handleChange = useCallback(
-    (val: number | string) => onChange(question.key, val),
-    [onChange, question.key],
+    (val: number | string) => onChange(question.id, val),
+    [onChange, question.id],
   )
 
   // Determine the effective options based on question type

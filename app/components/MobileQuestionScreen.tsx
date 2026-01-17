@@ -71,12 +71,12 @@ const MobileQuestionScreen = memo(function MobileQuestionScreen({
 
   // Handle answer change
   const handleAnswerChange = (newValue: number | string) => {
-    onChange(question.key, newValue)
+    onChange(question.id, newValue)
   }
 
   // Handle binary answer change (accepts boolean too)
   const handleBinaryAnswerChange = (newValue: number | string | boolean) => {
-    onChange(question.key, newValue as number | string)
+    onChange(question.id, newValue as number | string)
   }
 
   // Render answer component based on question type

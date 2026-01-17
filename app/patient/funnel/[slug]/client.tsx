@@ -466,7 +466,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
 
-  const handleAnswerChange = useCallback(async (questionKey: string, value: number | string, retryAttempt: number = 0) => {
+  const handleAnswerChange = useCallback(async (questionId: string, value: number | string, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
 
     const maxRetries = 2
@@ -475,9 +475,9 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // Update local state immediately for UI responsiveness
     setAnswers((prev) => ({
       ...prev,
-      [questionKey]: value,
+      [questionId]: value,
     }))
-    setValidationErrors((prev) => prev.filter((err) => err.questionKey !== questionKey))
+    setValidationErrors((prev) => prev.filter((err) => err.questionId !== questionId))
     setError(null)
 
     // Save to server with retry logic
@@ -493,7 +493,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           credentials: 'include',
           body: JSON.stringify({
             stepId: currentStep.id,
-            questionId: questionKey,
+            questionId,
             answerValue: value,
           }),
         },
@@ -504,7 +504,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         if ((response.status >= 500 || response.status === 0) && retryAttempt < maxRetries) {
           console.log(`Retrying answer save in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
           await new Promise((resolve) => setTimeout(resolve, retryDelay))
-          return handleAnswerChange(questionKey, value, retryAttempt + 1)
+          return handleAnswerChange(questionId, value, retryAttempt + 1)
         }
 
         const errorData = await response.json()
@@ -520,7 +520,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       if (retryAttempt < maxRetries) {
         console.log(`Retrying answer save after error in ${retryDelay}ms (attempt ${retryAttempt + 1}/${maxRetries})`)
         await new Promise((resolve) => setTimeout(resolve, retryDelay))
-        return handleAnswerChange(questionKey, value, retryAttempt + 1)
+        return handleAnswerChange(questionId, value, retryAttempt + 1)
       }
       
       // Show warning but don't block user - answer is saved locally
