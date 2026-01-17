@@ -53,6 +53,11 @@ jest.mock('@/lib/logging/clientLogger', () => ({
   logValidationError: jest.fn(),
   logErrorDisplayed: jest.fn(),
   logClientEvent: (...args: unknown[]) => mockLogClientEvent(...args),
+  ClientEventType: {
+    ASSESSMENT_CREATE_FAILED: 'assessment_create_failed',
+    ASSESSMENT_404_FALLBACK: 'assessment_404_fallback',
+    ASSESSMENT_404_RECOVERED: 'assessment_404_recovered',
+  },
 }))
 
 import { render, waitFor, screen } from '@testing-library/react'
@@ -324,7 +329,7 @@ describe('FunnelClient 404 fallback', () => {
       () => {
         // Check that fallback telemetry was logged
         expect(mockLogClientEvent).toHaveBeenCalledWith(
-          'ASSESSMENT_404_FALLBACK',
+          'assessment_404_fallback',
           expect.objectContaining({
             slug: 'test-funnel',
             staleAssessmentId: 'stale-assessment-789',
@@ -336,7 +341,7 @@ describe('FunnelClient 404 fallback', () => {
 
     // Verify recovery telemetry
     expect(mockLogClientEvent).toHaveBeenCalledWith(
-      'ASSESSMENT_404_RECOVERED',
+      'assessment_404_recovered',
       expect.objectContaining({
         slug: 'test-funnel',
         oldAssessmentId: 'stale-assessment-789',
@@ -394,7 +399,7 @@ describe('FunnelClient 404 fallback', () => {
 
     // Verify NO fallback telemetry was logged
     expect(mockLogClientEvent).not.toHaveBeenCalledWith(
-      'ASSESSMENT_404_FALLBACK',
+      'assessment_404_fallback',
       expect.anything(),
     )
 
@@ -443,7 +448,7 @@ describe('FunnelClient 404 fallback', () => {
 
     // Verify NO fallback telemetry was logged
     expect(mockLogClientEvent).not.toHaveBeenCalledWith(
-      'ASSESSMENT_404_FALLBACK',
+      'assessment_404_fallback',
       expect.anything(),
     )
   })

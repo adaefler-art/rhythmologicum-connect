@@ -19,6 +19,7 @@ import {
   logValidationError,
   logErrorDisplayed,
   logClientEvent,
+  ClientEventType,
 } from '@/lib/logging/clientLogger'
 
 type RecoveryState = {
@@ -74,7 +75,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
       const errorMsg = errorData.error?.message || 'Assessment konnte nicht erstellt werden.'
 
       // Log the failure
-      logClientEvent('ASSESSMENT_CREATE_FAILED', {
+      logClientEvent(ClientEventType.ASSESSMENT_CREATE_FAILED, {
         slug,
         errorCode,
         httpStatus: response.status,
@@ -201,7 +202,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
               })
 
               // Log telemetry for the fallback
-              logClientEvent('ASSESSMENT_404_FALLBACK', {
+              logClientEvent(ClientEventType.ASSESSMENT_404_FALLBACK, {
                 slug,
                 staleAssessmentId: assessmentId,
                 errorCode,
@@ -218,7 +219,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
                 })
 
                 // Log telemetry for successful recovery
-                logClientEvent('ASSESSMENT_404_RECOVERED', {
+                logClientEvent(ClientEventType.ASSESSMENT_404_RECOVERED, {
                   slug,
                   oldAssessmentId: assessmentId,
                   newAssessmentId,

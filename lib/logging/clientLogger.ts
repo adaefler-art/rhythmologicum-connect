@@ -15,6 +15,9 @@ export enum ClientEventType {
   ASSESSMENT_STARTED = 'assessment_started',
   ASSESSMENT_RESUMED = 'assessment_resumed',
   ASSESSMENT_COMPLETED = 'assessment_completed',
+  ASSESSMENT_CREATE_FAILED = 'assessment_create_failed',
+  ASSESSMENT_404_FALLBACK = 'assessment_404_fallback',
+  ASSESSMENT_404_RECOVERED = 'assessment_404_recovered',
   
   // Navigation events
   STEP_NAVIGATED = 'step_navigated',
