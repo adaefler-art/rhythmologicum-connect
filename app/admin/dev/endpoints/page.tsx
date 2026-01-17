@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { env } from '@/lib/env'
 import { getCurrentUser, getUserRole } from '@/lib/db/supabase.server'
 import EndpointCatalogClient from './EndpointCatalogClient'
@@ -37,9 +37,40 @@ async function loadCatalog(): Promise<EndpointCatalog | null> {
   }
 }
 
+/**
+ * Feature Disabled UI Component
+ * Shown when DEV_ENDPOINT_CATALOG is not enabled
+ */
+function FeatureDisabledUI() {
+  return (
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+          <h1 className="text-xl font-semibold text-amber-900">
+            🔒 Endpoint Catalog Disabled
+          </h1>
+          <p className="mt-2 text-sm text-amber-800">
+            This developer tool is currently disabled in this environment.
+          </p>
+          <div className="mt-4 rounded bg-amber-100 p-3">
+            <p className="text-xs font-mono text-amber-900">
+              Reason: DEV_ENDPOINT_CATALOG environment variable is not set to &apos;1&apos;
+            </p>
+          </div>
+          <p className="mt-4 text-xs text-amber-700">
+            To enable this feature, set <code className="bg-amber-100 px-1 rounded">DEV_ENDPOINT_CATALOG=1</code> in
+            your environment variables.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default async function DevEndpointsPage() {
+  // Feature flag check - show disabled UI instead of 404
   if (env.DEV_ENDPOINT_CATALOG !== '1') {
-    notFound()
+    return <FeatureDisabledUI />
   }
 
   const user = await getCurrentUser()

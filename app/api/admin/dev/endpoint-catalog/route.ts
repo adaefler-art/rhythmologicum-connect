@@ -5,17 +5,34 @@ import fs from 'fs/promises'
 import {
   forbiddenResponse,
   internalErrorResponse,
-  notFoundResponse,
   unauthorizedResponse,
 } from '@/lib/api/responses'
 import { getCurrentUser } from '@/lib/db/supabase.server'
 import { isDevEndpointCatalogEnabled } from '@/lib/env'
 import { logError, logForbidden, logUnauthorized } from '@/lib/logging/logger'
 
+/**
+ * Response type for disabled feature state
+ */
+type FeatureDisabledResponse = {
+  enabled: false
+  reason: string
+}
+
 export async function GET(_request: NextRequest) {
-  // Feature flag gate (404 by design)
+  // Feature flag check - return disabled status instead of 404
   if (!isDevEndpointCatalogEnabled()) {
-    return notFoundResponse('Resource')
+    const response: FeatureDisabledResponse = {
+      enabled: false,
+      reason: 'DEV_ENDPOINT_CATALOG environment variable is not set to "1"',
+    }
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    })
   }
 
   // Auth gate (401-first)
@@ -40,7 +57,15 @@ export async function GET(_request: NextRequest) {
 
   try {
     const raw = await fs.readFile(catalogPath, 'utf8')
-    return new Response(raw, {
+    const catalogData = JSON.parse(raw)
+    
+    // Wrap in enabled response
+    const response = {
+      enabled: true,
+      ...catalogData,
+    }
+    
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',

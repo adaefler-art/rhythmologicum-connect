@@ -33,15 +33,30 @@ describe('GET /api/admin/dev/endpoint-catalog', () => {
     process.env.DEV_ENDPOINT_CATALOG = originalFlag
   })
 
-  it('returns 404 when DEV_ENDPOINT_CATALOG is not enabled', async () => {
+  it('returns 200 with enabled:false when DEV_ENDPOINT_CATALOG is not enabled', async () => {
     process.env.DEV_ENDPOINT_CATALOG = '0'
 
     const request = new NextRequest('http://localhost/api/admin/dev/endpoint-catalog')
     const response = await GET(request)
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.enabled).toBe(false)
+    expect(body.reason).toContain('DEV_ENDPOINT_CATALOG')
     expect(mockGetCurrentUser).not.toHaveBeenCalled()
     expect(mockReadFile).not.toHaveBeenCalled()
+  })
+
+  it('returns 200 with enabled:false when DEV_ENDPOINT_CATALOG is undefined', async () => {
+    delete process.env.DEV_ENDPOINT_CATALOG
+
+    const request = new NextRequest('http://localhost/api/admin/dev/endpoint-catalog')
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.enabled).toBe(false)
+    expect(mockGetCurrentUser).not.toHaveBeenCalled()
   })
 
   it('returns 401 when unauthenticated (auth gate before filesystem)', async () => {
@@ -53,5 +68,44 @@ describe('GET /api/admin/dev/endpoint-catalog', () => {
 
     expect(response.status).toBe(401)
     expect(mockReadFile).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 when user is not admin', async () => {
+    process.env.DEV_ENDPOINT_CATALOG = '1'
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'user-123',
+      app_metadata: { role: 'patient' },
+      user_metadata: {},
+    } as never)
+
+    const request = new NextRequest('http://localhost/api/admin/dev/endpoint-catalog')
+    const response = await GET(request)
+
+    expect(response.status).toBe(403)
+    expect(mockReadFile).not.toHaveBeenCalled()
+  })
+
+  it('returns 200 with enabled:true and catalog data when enabled and admin', async () => {
+    process.env.DEV_ENDPOINT_CATALOG = '1'
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-123',
+      app_metadata: { role: 'admin' },
+      user_metadata: {},
+    } as never)
+    
+    const mockCatalog = {
+      version: '1.0.0',
+      endpoints: [{ path: '/api/test', methods: ['GET'] }],
+    }
+    mockReadFile.mockResolvedValue(JSON.stringify(mockCatalog))
+
+    const request = new NextRequest('http://localhost/api/admin/dev/endpoint-catalog')
+    const response = await GET(request)
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.enabled).toBe(true)
+    expect(body.version).toBe('1.0.0')
+    expect(body.endpoints).toHaveLength(1)
   })
 })
