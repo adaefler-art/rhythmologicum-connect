@@ -26,6 +26,7 @@ import {
   type SaveAnswerResponseData,
 } from '@/lib/api/contracts/patient'
 import { withIdempotency } from '@/lib/api/idempotency'
+import { randomUUID } from 'crypto'
 
 /**
  * B8: Save Assessment Answer (Save-on-Tap) - Funnel-based endpoint
@@ -61,25 +62,43 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
-  const { slug, assessmentId } = await context.params
+  const requestId = randomUUID()
+  
+  try {
+    const { slug, assessmentId } = await context.params
 
-  // E6.2.4: Wrap handler with idempotency support
-  // We need to parse the body here to pass it to both the handler and idempotency check
-  // Clone the request to allow reading body multiple times
-  const clonedRequest = request.clone()
-  const body: unknown = await clonedRequest.json()
+    // Parse body with error handling
+    const clonedRequest = request.clone()
+    let body: unknown
+    try {
+      body = await clonedRequest.json()
+    } catch (parseError) {
+      console.error('[answers/save] JSON parse error', {
+        requestId,
+        error: parseError instanceof Error ? parseError.message : 'Unknown parse error',
+      })
+      return invalidInputResponse('Ungültiges JSON im Request Body.')
+    }
 
-  return withIdempotency(
-    request,
-    {
-      endpointPath: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
-      checkPayloadConflict: true, // Check payload for conflicts
-    },
-    async () => {
-      return handleSaveAnswer(request, slug, assessmentId, body)
-    },
-    body, // Pass payload for conflict detection
-  )
+    // E6.2.4: Wrap handler with idempotency support
+    return withIdempotency(
+      request,
+      {
+        endpointPath: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+        checkPayloadConflict: true,
+      },
+      async () => {
+        return handleSaveAnswer(request, slug, assessmentId, body, requestId)
+      },
+      body,
+    )
+  } catch (error) {
+    console.error('[answers/save] Unexpected error in POST handler', {
+      requestId,
+      error: error instanceof Error ? { name: error.name, message: error.message } : error,
+    })
+    return internalErrorResponse('Ein unerwarteter Fehler ist aufgetreten.')
+  }
 }
 
 async function handleSaveAnswer(
@@ -87,8 +106,15 @@ async function handleSaveAnswer(
   slug: string,
   assessmentId: string,
   body: unknown,
+  requestId: string,
 ) {
   try {
+    console.log('[answers/save] Processing request', {
+      requestId,
+      slug,
+      assessmentId,
+      bodyKeys: body && typeof body === 'object' ? Object.keys(body) : [],
+    })
     // E6.2.3: Validate request against schema
     const validationResult = SaveAnswerRequestSchema.safeParse(body)
     if (!validationResult.success) {
@@ -339,6 +365,13 @@ async function handleSaveAnswer(
       // This is non-critical - resume will still work based on answered questions
     }
 
+    console.log('[answers/save] Success', {
+      requestId,
+      assessmentId,
+      questionId,
+      dataId: data.id,
+    })
+
     // Success response with standardized format
     // For V0.5 with encoded question_id, return the original questionId
     const responseData: SaveAnswerResponseData = {
@@ -351,10 +384,19 @@ async function handleSaveAnswer(
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200)
   } catch (error) {
-    // Catch-all error handler
+    // Catch-all error handler with detailed logging
+    console.error('[answers/save] Unhandled exception', {
+      requestId,
+      slug,
+      assessmentId,
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+    })
     logDatabaseError(
       {
         endpoint: 'POST /api/funnels/[slug]/assessments/[assessmentId]/answers/save',
+        requestId,
       },
       error,
     )
