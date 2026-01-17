@@ -236,6 +236,40 @@ export const GetResultResponseDataSchema = z.object({
   funnelTitle: z.string().nullable(),
   workupStatus: z.enum(['needs_more_data', 'ready_for_review']).nullable(),
   missingDataFields: z.array(z.string()),
+  result: z.object({
+    kind: z.literal('poc'),
+    summaryTitle: z.string(),
+    summaryBullets: z.array(z.string()),
+    derived: z
+      .object({
+        cardiovascularAgeYears: z.number().nullable().optional(),
+        riskBand: z.enum(['low', 'medium', 'high', 'unknown']).optional(),
+      })
+      .optional(),
+    answersEcho: z
+      .array(
+        z.object({
+          questionId: z.string(),
+          value: z.union([z.string(), z.number(), z.boolean()]),
+        }),
+      )
+      .optional(),
+  }),
+  nextActions: z
+    .array(
+      z.object({
+        kind: z.string(),
+        label: z.string(),
+        status: z.string().optional(),
+      }),
+    )
+    .optional(),
+  report: z
+    .object({
+      id: z.string().uuid().nullable().optional(),
+      status: z.enum(['not_generated', 'generated']),
+    })
+    .optional(),
 })
 
 export type GetResultResponseData = z.infer<typeof GetResultResponseDataSchema>

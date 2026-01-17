@@ -44,6 +44,18 @@ type AssessmentResult = {
   funnelTitle: string | null
   workupStatus?: WorkupStatus
   missingDataFields?: string[]
+  result?: {
+    kind: 'poc'
+    summaryTitle: string
+    summaryBullets: string[]
+    derived?: {
+      cardiovascularAgeYears?: number | null
+      riskBand?: 'low' | 'medium' | 'high' | 'unknown'
+    }
+    answersEcho?: { questionId: string; value: string | number | boolean }[]
+  }
+  nextActions?: { kind: string; label: string; status?: string }[]
+  report?: { id?: string | null; status: 'not_generated' | 'generated' }
 }
 
 type ResultResponse = {
@@ -319,12 +331,14 @@ export default function ResultClient({
           <p className="text-base sm:text-lg" style={{ color: 'var(--color-neutral-600)' }}>
             {funnelTitle || 'Ihr Assessment'} wurde erfolgreich gespeichert
           </p>
-          <p className="text-sm mt-2" style={{ color: 'var(--color-neutral-500)' }}>
-            {new Intl.DateTimeFormat('de-DE', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-            }).format(new Date(assessment.completedAt))}
-          </p>
+          {assessment.completedAt && !Number.isNaN(Date.parse(assessment.completedAt)) && (
+            <p className="text-sm mt-2" style={{ color: 'var(--color-neutral-500)' }}>
+              {new Intl.DateTimeFormat('de-DE', {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              }).format(new Date(assessment.completedAt))}
+            </p>
+          )}
         </div>
 
         {/* E6.4.6: Escalation Offer Card - Show at top if red flags detected */}
@@ -341,6 +355,35 @@ export default function ResultClient({
           status={assessment.workupStatus || null}
           missingDataFields={assessment.missingDataFields || []}
         />
+
+        {/* POC Result Summary */}
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl flex-shrink-0">🧾</span>
+            <div className="flex-1">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
+                {assessment.result?.summaryTitle || 'Ergebnis wird vorbereitet'}
+              </h3>
+              <ul className="text-sm sm:text-base text-slate-600 space-y-1 list-disc pl-5">
+                {(assessment.result?.summaryBullets?.length
+                  ? assessment.result.summaryBullets
+                  : [
+                      'Ihre Antworten wurden gespeichert.',
+                      'Die Auswertung ist in Vorbereitung.',
+                      'Bitte prüfen Sie später erneut.',
+                    ]
+                ).map((bullet, index) => (
+                  <li key={index}>{bullet}</li>
+                ))}
+              </ul>
+              {assessment.result?.derived?.cardiovascularAgeYears !== undefined && (
+                <p className="text-sm text-slate-500 mt-3">
+                  Erfasste Altersangabe: {assessment.result.derived.cardiovascularAgeYears ?? '—'}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Key Outcomes - Show real data if available */}
         <KeyOutcomesCard outcomes={keyOutcomes} />

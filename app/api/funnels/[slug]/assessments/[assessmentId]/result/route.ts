@@ -121,6 +121,29 @@ export async function GET(
       funnelTitle = catalogRow?.title ?? null
     }
 
+    const { data: answers, error: answersError } = await supabase
+      .from('assessment_answers')
+      .select('question_id, answer_value, answer_data')
+      .eq('assessment_id', assessmentId)
+
+    if (answersError) {
+      logDatabaseError(
+        { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
+        answersError,
+      )
+    }
+
+    const answersEcho = (answers || [])
+      .map((row) => ({
+        questionId: row.question_id,
+        value: row.answer_data ?? row.answer_value,
+      }))
+      .filter((row) => row.value !== null && row.value !== undefined)
+
+    const ageAnswer = answersEcho.find((row) => row.questionId === 'q1-age')
+    const cardiovascularAgeYears =
+      typeof ageAnswer?.value === 'number' ? ageAnswer.value : null
+
     const responseData: GetResultResponseData = {
       id: assessment.id,
       funnel: assessment.funnel,
@@ -131,6 +154,31 @@ export async function GET(
       missingDataFields: Array.isArray(assessment.missing_data_fields)
         ? (assessment.missing_data_fields as string[])
         : [],
+      result: {
+        kind: 'poc',
+        summaryTitle: 'Ergebnis wird vorbereitet',
+        summaryBullets: [
+          'Ihre Antworten wurden erfolgreich gespeichert.',
+          'Die Auswertung wird aktuell vorbereitet.',
+          'Sie erhalten die Ergebnisse in Kürze.',
+        ],
+        derived: {
+          cardiovascularAgeYears,
+          riskBand: 'unknown',
+        },
+        answersEcho,
+      },
+      nextActions: [
+        {
+          kind: 'clinicianReview',
+          label: 'Zur ärztlichen Prüfung',
+          status: assessment.workup_status ?? 'ready_for_review',
+        },
+      ],
+      report: {
+        id: null,
+        status: 'not_generated',
+      },
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
