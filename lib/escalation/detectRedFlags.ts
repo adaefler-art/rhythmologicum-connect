@@ -5,7 +5,7 @@
  * NO DIAGNOSIS - this checks for safety/emergency indicators only.
  */
 
-import { randomUUID } from 'crypto'
+import { generateCorrelationId as generateBaseCorrelationId } from '@/lib/telemetry/correlationId'
 import type {
   RedFlag,
   EscalationCheckResult,
@@ -68,7 +68,7 @@ export function detectRedFlags(input: RedFlagCheckInput): EscalationCheckResult 
  * Uses crypto.randomUUID() for security
  */
 function generateCorrelationId(): string {
-  return `esc-${randomUUID()}`
+  return `esc-${generateBaseCorrelationId()}`
 }
 
 /**
