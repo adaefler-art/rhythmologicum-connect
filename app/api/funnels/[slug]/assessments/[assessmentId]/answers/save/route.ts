@@ -333,9 +333,18 @@ async function handleSaveAnswer(
         },
         upsertError,
       )
+        const errorCode = (upsertError as { code?: string })?.code
         // FK violation: assessment does not exist
-        if ((upsertError as { code?: string })?.code === '23503') {
+        if (errorCode === '23503') {
           return notFoundResponse('Assessment')
+        }
+        // NOT NULL violation (z.B. falsche Datenstruktur)
+        if (errorCode === '23502') {
+          return invalidInputResponse('Fehlende Felder oder ungültige Daten beim Speichern der Antwort.')
+        }
+        // Unique violation (sollte bei upsert nicht auftreten, aber zur Sicherheit)
+        if (errorCode === '23505') {
+          return invalidInputResponse('Antwort für diese Frage existiert bereits.')
         }
         return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
     }
