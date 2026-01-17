@@ -49,13 +49,13 @@ export type PatientFlowRendererProps = {
   funnel: FunnelDefinition
   assessmentStatus: AssessmentStatus
   currentStep: StepDefinition
-  answers: Record<string, number>
+  answers: Record<string, number | string>
   validationErrors: ValidationError[]
   error: string | null
   submitting: boolean
   answeredCount: number
   showRecoveryBanner: boolean
-  onAnswerChange: (questionKey: string, value: number) => void
+  onAnswerChange: (questionKey: string, value: number | string) => void
   onNextStep: () => void
   onPreviousStep: () => void
   isFirstStep: boolean

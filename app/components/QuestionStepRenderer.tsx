@@ -12,21 +12,15 @@ import MobileQuestionScreen from './MobileQuestionScreen'
  * Displays all questions in the step with their answer controls.
  * On mobile (<640px), uses the new adaptive MobileQuestionScreen layout.
  * On desktop, uses the traditional card-based layout.
+ * 
+ * Supports question types: number, radio, scale (with options or minValue/maxValue)
  */
-
-const SCALE = [
-  { value: 0, label: 'Nie' },
-  { value: 1, label: 'Selten' },
-  { value: 2, label: 'Manchmal' },
-  { value: 3, label: 'Oft' },
-  { value: 4, label: 'Sehr häufig' },
-]
 
 export type QuestionStepRendererProps = {
   step: QuestionStepDefinition
-  answers: Record<string, number>
+  answers: Record<string, number | string>
   validationErrors: ValidationError[]
-  onAnswerChange: (questionKey: string, value: number) => void
+  onAnswerChange: (questionKey: string, value: number | string) => void
   onNextStep?: () => void
   onPreviousStep?: () => void
   isFirstStep?: boolean
@@ -57,13 +51,9 @@ export default function QuestionStepRenderer({
     const hasError = validationErrors.some((err) => err.questionId === question.id)
     const errorMsg = hasError ? 'Diese Pflichtfrage muss beantwortet werden' : null
 
-    // Wrap the onChange handler to convert string to number if needed
+    // Wrap the onChange handler - pass through directly for string values
     const handleMobileChange = (questionKey: string, value: number | string) => {
-      // If the value is a string and represents a number, convert it
-      const numValue = typeof value === 'string' ? parseFloat(value) : value
-      if (!isNaN(numValue)) {
-        onAnswerChange(questionKey, numValue)
-      }
+      onAnswerChange(questionKey, value)
     }
 
     return (
@@ -105,10 +95,19 @@ export default function QuestionStepRenderer({
 type QuestionCardProps = {
   index: number
   question: QuestionDefinition
-  value?: number
-  onChange: (key: string, value: number) => void
+  value?: number | string
+  onChange: (key: string, value: number | string) => void
   hasError?: boolean
 }
+
+// Default Likert scale for legacy 'scale' questions without explicit options
+const DEFAULT_SCALE = [
+  { value: 0, label: 'Nie' },
+  { value: 1, label: 'Selten' },
+  { value: 2, label: 'Manchmal' },
+  { value: 3, label: 'Oft' },
+  { value: 4, label: 'Sehr häufig' },
+]
 
 const QuestionCard = memo(function QuestionCard({
   index,
@@ -117,13 +116,135 @@ const QuestionCard = memo(function QuestionCard({
   onChange,
   hasError,
 }: QuestionCardProps) {
-  const isAnswered = value !== undefined
+  const isAnswered = value !== undefined && value !== null && value !== ''
 
   // Memoize the onChange handler for this specific question
   const handleChange = useCallback(
-    (val: number) => onChange(question.key, val),
+    (val: number | string) => onChange(question.key, val),
     [onChange, question.key],
   )
+
+  // Determine the effective options based on question type
+  const getEffectiveOptions = () => {
+    // If question has explicit options, use them
+    if (question.options && question.options.length > 0) {
+      return question.options
+    }
+
+    // For scale questions, generate options from minValue/maxValue or use default
+    if (question.questionType === 'scale') {
+      const min = question.minValue ?? 0
+      const max = question.maxValue ?? 4
+      // If it's the standard 0-4 range, use labeled default scale
+      if (min === 0 && max === 4) {
+        return DEFAULT_SCALE
+      }
+      // Otherwise generate numeric options
+      return Array.from({ length: max - min + 1 }, (_, i) => ({
+        value: min + i,
+        label: String(min + i),
+      }))
+    }
+
+    return null
+  }
+
+  // Render number input for 'number' type questions
+  const renderNumberInput = () => {
+    const min = question.minValue ?? undefined
+    const max = question.maxValue ?? undefined
+
+    return (
+      <div className="ml-0 sm:ml-11">
+        <input
+          type="number"
+          id={`question-${question.id}-input`}
+          name={question.id}
+          value={value ?? ''}
+          onChange={(e) => {
+            const numValue = e.target.value === '' ? '' : parseFloat(e.target.value)
+            handleChange(numValue as number | string)
+          }}
+          min={min}
+          max={max}
+          className="w-full max-w-[200px] px-4 py-3 text-lg border-2 border-slate-300 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+          style={{ minHeight: '48px' }}
+          aria-label={question.label}
+        />
+        {(min !== undefined || max !== undefined) && (
+          <p className="text-xs text-slate-500 mt-1">
+            {min !== undefined && max !== undefined
+              ? `Bereich: ${min} - ${max}`
+              : min !== undefined
+                ? `Minimum: ${min}`
+                : `Maximum: ${max}`}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // Render radio buttons for 'radio' type or questions with options
+  const renderRadioOptions = (options: { value: string | number; label: string }[]) => {
+    return (
+      <div className="flex flex-wrap gap-2 sm:gap-2.5 ml-0 sm:ml-11">
+        {options.map((option) => {
+          const id = `${question.id}-${option.value}`
+          const checked = value === option.value
+          return (
+            <label
+              key={String(option.value)}
+              htmlFor={id}
+              className={`flex-1 min-w-[70px] sm:min-w-[90px] md:min-w-[100px] flex flex-col items-center justify-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all touch-manipulation ${
+                checked
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
+                  : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm active:scale-95'
+              }`}
+              style={{ minHeight: '44px', minWidth: '44px' }}
+            >
+              <input
+                id={id}
+                type="radio"
+                className="sr-only"
+                name={question.id}
+                value={String(option.value)}
+                checked={checked}
+                onChange={() => handleChange(option.value)}
+                aria-label={`${option.label}`}
+              />
+              {typeof option.value === 'number' && (
+                <span className="text-lg sm:text-xl md:text-2xl font-bold">{option.value}</span>
+              )}
+              <span className="text-xs sm:text-sm font-medium text-center leading-tight">
+                {option.label}
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    )
+  }
+
+  // Render the appropriate input based on question type
+  const renderQuestionInput = () => {
+    const questionType = question.questionType?.toLowerCase() || 'scale'
+
+    // Number input for 'number' type
+    if (questionType === 'number') {
+      return renderNumberInput()
+    }
+
+    // Get effective options for radio/scale types
+    const options = getEffectiveOptions()
+
+    // If we have options (radio, scale, or checkbox), render as radio buttons
+    if (options && options.length > 0) {
+      return renderRadioOptions(options)
+    }
+
+    // Fallback: use default scale for unknown types
+    return renderRadioOptions(DEFAULT_SCALE)
+  }
 
   return (
     <div
@@ -179,37 +300,7 @@ const QuestionCard = memo(function QuestionCard({
           ⚠️ Bitte wählen Sie eine Antwort aus
         </p>
       )}
-      <div className="flex flex-wrap gap-2 sm:gap-2.5">
-        {SCALE.map((option) => {
-          const id = `${question.id}-${option.value}`
-          const checked = value === option.value
-          return (
-            <label
-              key={option.value}
-              htmlFor={id}
-              className={`flex-1 min-w-[70px] sm:min-w-[90px] md:min-w-[100px] flex flex-col items-center justify-center gap-0.5 px-2 py-2.5 sm:px-3 sm:py-3 rounded-lg border-2 cursor-pointer transition-all touch-manipulation ${
-                checked
-                  ? 'bg-sky-600 text-white border-sky-600 shadow-md scale-105'
-                  : 'bg-white text-slate-700 border-slate-300 hover:border-sky-400 hover:bg-sky-50 hover:shadow-sm active:scale-95'
-              }`}
-              style={{ minHeight: '44px', minWidth: '44px' }}
-            >
-              <input
-                id={id}
-                type="radio"
-                className="sr-only"
-                name={question.id}
-                value={option.value}
-                checked={checked}
-                onChange={() => handleChange(option.value)}
-                aria-label={`${option.label} (Wert ${option.value})`}
-              />
-              <span className="text-lg sm:text-xl md:text-2xl font-bold">{option.value}</span>
-              <span className="text-xs sm:text-sm font-medium text-center leading-tight">{option.label}</span>
-            </label>
-          )
-        })}
-      </div>
+      {renderQuestionInput()}
     </div>
   )
 })

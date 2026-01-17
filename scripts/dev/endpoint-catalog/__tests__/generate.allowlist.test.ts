@@ -19,6 +19,9 @@ function runGenerator(args: string[]) {
 describe('endpoint-catalog generator allowlist flag', () => {
   const fixtureRepoRoot = path.join(__dirname, 'fixtures', 'simple-repo')
 
+  // Base flags to disable fail-on-* checks (these tests focus on allowlist behavior, not validation)
+  const noFailFlags = ['--no-fail-orphan', '--no-fail-unknown', '--no-fail-unknown-access']
+
   function snapshotOutputs(outDir: string) {
     return {
       json: fs.readFileSync(path.join(outDir, 'endpoint-catalog.json'), 'utf8'),
@@ -31,7 +34,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
   it('supports --allowlist with no value (defaults to outDir/endpoint-allowlist.json)', () => {
     const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
 
-    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir, '--allowlist']
+    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir, '--allowlist', ...noFailFlags]
 
     const res1 = runGenerator(args)
     expect(res1.status).toBe(0)
@@ -66,6 +69,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
       outDir,
       '--allowlist',
       allowlistPath,
+      ...noFailFlags,
     ]
 
     const res1 = runGenerator(args)
@@ -85,7 +89,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
   it('works without --allowlist flag (disabled)', () => {
     const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'endpoint-catalog-'))
 
-    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir]
+    const args = ['--repo-root', fixtureRepoRoot, '--out-dir', outDir, ...noFailFlags]
 
     const res = runGenerator(args)
     expect(res.status).toBe(0)
@@ -104,7 +108,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
       fixtureRepoRoot,
       '--out-dir',
       outDir,
-      '--no-fail-unknown',
+      ...noFailFlags,
       '--allowlist',
     ]
 
@@ -123,7 +127,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
       '--out-dir',
       outDir,
       '--allowlist',
-      '--no-fail-orphan',
+      ...noFailFlags,
     ]
 
     const res = runGenerator(args)
@@ -143,6 +147,7 @@ describe('endpoint-catalog generator allowlist flag', () => {
       outDir,
       '--allowlist',
       customAllowlist,
+      ...noFailFlags,
     ]
 
     // File doesn't exist yet

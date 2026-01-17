@@ -41,7 +41,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
   const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus | null>(null)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [answers, setAnswers] = useState<Record<string, number | string>>({})
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
@@ -466,7 +466,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funnel, slug])
 
-  const handleAnswerChange = useCallback(async (questionKey: string, value: number, retryAttempt: number = 0) => {
+  const handleAnswerChange = useCallback(async (questionKey: string, value: number | string, retryAttempt: number = 0) => {
     if (!assessmentStatus || !funnel) return
 
     const maxRetries = 2

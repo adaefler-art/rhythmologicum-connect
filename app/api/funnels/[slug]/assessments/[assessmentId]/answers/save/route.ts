@@ -170,68 +170,81 @@ async function handleSaveAnswer(
       return assessmentCompletedResponse()
     }
 
-    // Verify funnel_id exists
-    if (!assessment.funnel_id) {
-      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
-    }
+    // Determine if this is a V0.5 catalog funnel (funnel_id is null)
+    const isV05CatalogFunnel = assessment.funnel_id === null
 
-    // B8: Verify step belongs to funnel
-    const stepBelongsValidation = await ensureStepBelongsToFunnel(
-      supabase,
-      stepId,
-      assessment.funnel_id,
-    )
+    if (isV05CatalogFunnel) {
+      // V0.5 path: Validate against manifest-based questions
+      // Step/question validation is done client-side via questionnaire_config
+      // Here we only verify the assessment ownership and status (already done above)
+      console.log('[answers/save] V0.5 catalog funnel detected, using manifest-based validation', {
+        assessmentId,
+        slug,
+        stepId,
+        questionId,
+      })
 
-    if (!stepBelongsValidation.valid) {
-      // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
-      if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
-        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
-      }
-      if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
-        return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
-      }
-      return forbiddenResponse(stepBelongsValidation.error!.message)
-    }
+      // For V0.5 funnels, we trust the client's step/question IDs from the manifest
+      // The client gets these from GET /api/funnels/{slug}/definition which is authoritative
+    } else {
+      // Legacy path: Verify funnel_id exists and validate via DB tables
+      // TypeScript: funnel_id is guaranteed non-null here due to the if check above
+      const funnelId = assessment.funnel_id!
 
-    // B8: Verify question belongs to step
-    const questionBelongsValidation = await ensureQuestionBelongsToStep(
-      supabase,
-      questionId,
-      stepId,
-    )
+      // B8: Verify step belongs to funnel
+      const stepBelongsValidation = await ensureStepBelongsToFunnel(supabase, stepId, funnelId)
 
-    if (!questionBelongsValidation.valid) {
-      // V05-I03.3 Hardening: Return 404 for "not found" scenarios
-      if (
-        questionBelongsValidation.error!.code === 'QUESTION_NOT_FOUND' ||
-        questionBelongsValidation.error!.code === 'QUESTION_NOT_IN_STEP'
-      ) {
-        return notFoundResponse('Frage', questionBelongsValidation.error!.message)
+      if (!stepBelongsValidation.valid) {
+        // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
+        if (stepBelongsValidation.error!.code === 'STEP_NOT_FOUND') {
+          return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+        }
+        if (stepBelongsValidation.error!.code === 'STEP_NOT_IN_FUNNEL') {
+          return notFoundResponse('Schritt', stepBelongsValidation.error!.message)
+        }
+        return forbiddenResponse(stepBelongsValidation.error!.message)
       }
-      return invalidInputResponse(questionBelongsValidation.error!.message)
-    }
 
-    // B8: Prevent step-skipping
-    const stepValidation = await ensureStepIsCurrent(
-      supabase,
-      assessmentId,
-      stepId,
-      assessment.funnel_id,
-      user.id,
-    )
+      // B8: Verify question belongs to step
+      const questionBelongsValidation = await ensureQuestionBelongsToStep(
+        supabase,
+        questionId,
+        stepId,
+      )
 
-    if (!stepValidation.valid) {
-      // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
-      if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
-        return notFoundResponse('Schritt', stepValidation.error!.message)
+      if (!questionBelongsValidation.valid) {
+        // V05-I03.3 Hardening: Return 404 for "not found" scenarios
+        if (
+          questionBelongsValidation.error!.code === 'QUESTION_NOT_FOUND' ||
+          questionBelongsValidation.error!.code === 'QUESTION_NOT_IN_STEP'
+        ) {
+          return notFoundResponse('Frage', questionBelongsValidation.error!.message)
+        }
+        return invalidInputResponse(questionBelongsValidation.error!.message)
       }
-      if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
-        return notFoundResponse('Schritt', stepValidation.error!.message)
+
+      // B8: Prevent step-skipping
+      const stepValidation = await ensureStepIsCurrent(
+        supabase,
+        assessmentId,
+        stepId,
+        funnelId,
+        user.id,
+      )
+
+      if (!stepValidation.valid) {
+        // V05-I03.3 Hardening: Return 404 for "not found", 403 for authorization issues
+        if (stepValidation.error!.code === 'CURRENT_STEP_NOT_FOUND') {
+          return notFoundResponse('Schritt', stepValidation.error!.message)
+        }
+        if (stepValidation.error!.code === 'STEP_NOT_FOUND') {
+          return notFoundResponse('Schritt', stepValidation.error!.message)
+        }
+        if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
+          return forbiddenResponse(stepValidation.error!.message)
+        }
+        return internalErrorResponse(stepValidation.error!.message)
       }
-      if (stepValidation.error!.code === 'STEP_SKIPPING_PREVENTED') {
-        return forbiddenResponse(stepValidation.error!.message)
-      }
-      return internalErrorResponse(stepValidation.error!.message)
     }
 
     // Perform upsert operation

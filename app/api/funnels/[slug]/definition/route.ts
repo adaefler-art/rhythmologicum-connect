@@ -76,6 +76,8 @@ export async function GET(
             maxValue: q.maxValue ?? null,
             isRequired: q.required ?? false,
             orderIndex: questionIndex,
+            // Include options for radio/checkbox/select questions
+            options: q.options ?? null,
           }))
 
           totalQuestions += questions.length

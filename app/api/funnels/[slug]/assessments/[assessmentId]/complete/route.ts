@@ -27,6 +27,7 @@ import { performWorkupCheck, getRulesetVersion } from '@/lib/workup'
 import { createEvidencePack } from '@/lib/workup/helpers'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelCompleted } from '@/lib/telemetry/events'
+import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 
 /**
  * B5/B8: Complete an assessment
@@ -172,13 +173,19 @@ async function handleCompleteAssessment(
       return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
     }
 
-    // Verify funnel_id exists
-    if (!assessment.funnel_id) {
-      return internalErrorResponse('Funnel-ID fehlt im Assessment.', correlationId)
-    }
+    // Determine if this is a V0.5 catalog funnel (funnel_id is null)
+    const isV05CatalogFunnel = assessment.funnel_id === null
 
-    // Perform full validation across all funnel steps
-    const validationResult = await validateAllRequiredQuestions(assessmentId, assessment.funnel_id)
+    // Perform full validation based on funnel type
+    let validationResult: { isValid: boolean; missingQuestions: Array<{ questionId: string; questionKey: string; questionLabel: string; orderIndex: number }> }
+
+    if (isV05CatalogFunnel) {
+      // V0.5 path: Validate using manifest-based logic
+      validationResult = await validateV05AllRequiredQuestions(supabase, slug, assessmentId)
+    } else {
+      // Legacy path: Validate via DB tables
+      validationResult = await validateAllRequiredQuestions(assessmentId, assessment.funnel_id!)
+    }
 
     // If validation failed, return missing questions
     if (!validationResult.isValid) {
@@ -256,7 +263,7 @@ async function handleCompleteAssessment(
       actor_user_id: user.id,
       assessment_id: assessmentId,
       funnel_slug: slug,
-      funnel_id: assessment.funnel_id,
+      funnel_id: assessment.funnel_id ?? undefined,
       started_at: assessment.started_at,
       completed_at: completedAt,
       duration_seconds: durationSeconds,
@@ -337,5 +344,70 @@ async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string,
   } catch (error) {
     console.error('[workup] Error in async workup check:', error)
     throw error
+  }
+}
+
+/**
+ * V0.5 Catalog Funnel validation - checks all required questions from manifest
+ */
+async function validateV05AllRequiredQuestions(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  slug: string,
+  assessmentId: string,
+): Promise<{ isValid: boolean; missingQuestions: Array<{ questionId: string; questionKey: string; questionLabel: string; orderIndex: number }> }> {
+  console.log('[complete] V0.5 catalog funnel detected, using manifest-based validation', {
+    slug,
+    assessmentId,
+  })
+
+  // Load the manifest to get all required questions
+  let manifest
+  try {
+    const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+    manifest = loadedVersion.manifest.questionnaire_config
+  } catch (err) {
+    console.error('[complete] Failed to load manifest:', err)
+    throw new Error('Funnel-Manifest konnte nicht geladen werden.')
+  }
+
+  // Get all answered questions for this assessment
+  const { data: answeredQuestions, error: answersError } = await supabase
+    .from('assessment_answers')
+    .select('question_id')
+    .eq('assessment_id', assessmentId)
+
+  if (answersError) {
+    console.error('[complete] Error fetching answers:', answersError)
+    throw new Error('Antworten konnten nicht geladen werden.')
+  }
+
+  const answeredIds = new Set(answeredQuestions?.map((a) => a.question_id) || [])
+
+  // Collect all missing required questions across all steps
+  const missingQuestions: Array<{
+    questionId: string
+    questionKey: string
+    questionLabel: string
+    orderIndex: number
+  }> = []
+
+  let globalQuestionIndex = 0
+  for (const step of manifest.steps) {
+    for (const q of step.questions) {
+      if (q.required && !answeredIds.has(q.id)) {
+        missingQuestions.push({
+          questionId: q.id,
+          questionKey: q.key,
+          questionLabel: q.label,
+          orderIndex: globalQuestionIndex,
+        })
+      }
+      globalQuestionIndex++
+    }
+  }
+
+  return {
+    isValid: missingQuestions.length === 0,
+    missingQuestions,
   }
 }

@@ -116,6 +116,12 @@ export type ActiveQuestion = {
 // B1: Structured Funnel Definition Types
 // ============================================================
 
+// Option for radio/checkbox/select questions
+export type QuestionOption = {
+  value: string | number
+  label: string
+}
+
 // Question with metadata for UI rendering
 export type QuestionDefinition = {
   id: string
@@ -127,6 +133,7 @@ export type QuestionDefinition = {
   maxValue: number | null
   isRequired: boolean
   orderIndex: number
+  options?: QuestionOption[] | null
 }
 
 // Base step interface

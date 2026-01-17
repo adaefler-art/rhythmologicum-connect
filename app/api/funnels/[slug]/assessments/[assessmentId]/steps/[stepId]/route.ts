@@ -21,6 +21,7 @@ import {
   logDatabaseError,
 } from '@/lib/logging/logger'
 import { withIdempotency } from '@/lib/api/idempotency'
+import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 
 /**
  * B5/B8: Validate a step and determine next step
@@ -153,17 +154,20 @@ async function handleValidateStep(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment zu validieren.')
     }
 
-    // Verify step belongs to funnel
-    if (!assessment.funnel_id) {
-      return internalErrorResponse('Funnel-ID fehlt im Assessment.')
+    // Determine if this is a V0.5 catalog funnel (funnel_id is null)
+    const isV05CatalogFunnel = assessment.funnel_id === null
+
+    if (isV05CatalogFunnel) {
+      // V0.5 path: Validate using manifest-based logic
+      return handleV05StepValidation(supabase, slug, assessmentId, stepId, patientProfile.id, user.id)
     }
 
+    // Legacy path: Verify step belongs to funnel via DB tables
+    // TypeScript: funnel_id is guaranteed non-null here due to the if check above
+    const funnelId = assessment.funnel_id!
+
     // Use centralized step-funnel validation
-    const stepBelongsValidation = await ensureStepBelongsToFunnel(
-      supabase,
-      stepId,
-      assessment.funnel_id,
-    )
+    const stepBelongsValidation = await ensureStepBelongsToFunnel(supabase, stepId, funnelId)
 
     if (!stepBelongsValidation.valid) {
       // V05-I03.3 Hardening: Return 404 for "not found" scenarios, 403 for authorization issues
@@ -181,7 +185,7 @@ async function handleValidateStep(
       supabase,
       assessmentId,
       stepId,
-      assessment.funnel_id,
+      funnelId,
       user.id,
     )
 
@@ -228,7 +232,7 @@ async function handleValidateStep(
     // Validation passed - determine next step using B3 navigation
     // First, recalculate the current step (after this validation the runtime
     // may have advanced to the next unanswered step already).
-    const navigationStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
+    const navigationStep = await getCurrentStep(supabase, assessmentId, funnelId)
 
     let nextStep = null
 
@@ -299,6 +303,140 @@ async function handleValidateStep(
       },
       error,
     )
+    return internalErrorResponse()
+  }
+}
+
+/**
+ * V0.5 Catalog Funnel step validation handler
+ * 
+ * For V0.5 funnels, step/question IDs come from the manifest (questionnaire_config),
+ * not from the legacy funnel_steps/funnel_step_questions tables.
+ */
+async function handleV05StepValidation(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  slug: string,
+  assessmentId: string,
+  stepId: string,
+  patientProfileId: string,
+  userId: string,
+) {
+  try {
+    console.log('[steps/validate] V0.5 catalog funnel detected', {
+      slug,
+      assessmentId,
+      stepId,
+    })
+
+    // Load the manifest to get step/question definitions
+    let manifest
+    try {
+      const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+      manifest = loadedVersion.manifest.questionnaire_config
+    } catch (err) {
+      console.error('[steps/validate] Failed to load manifest:', err)
+      return internalErrorResponse('Funnel-Manifest konnte nicht geladen werden.')
+    }
+
+    // Find the requested step in the manifest
+    const stepIndex = manifest.steps.findIndex((s: { id: string }) => s.id === stepId)
+    if (stepIndex === -1) {
+      return notFoundResponse('Schritt', `Step ${stepId} nicht im Manifest gefunden.`)
+    }
+
+    const currentStep = manifest.steps[stepIndex]
+
+    // Get all answered questions for this assessment
+    const { data: answeredQuestions, error: answersError } = await supabase
+      .from('assessment_answers')
+      .select('question_id, answer_value')
+      .eq('assessment_id', assessmentId)
+
+    if (answersError) {
+      console.error('[steps/validate] Error fetching answers:', answersError)
+      return internalErrorResponse('Antworten konnten nicht geladen werden.')
+    }
+
+    const answeredIds = new Set(answeredQuestions?.map((a) => a.question_id) || [])
+
+    // Check required questions in this step
+    const missingQuestions: Array<{
+      questionId: string
+      questionKey: string
+      questionLabel: string
+      orderIndex: number
+    }> = []
+
+    for (let i = 0; i < currentStep.questions.length; i++) {
+      const q = currentStep.questions[i]
+      if (q.required && !answeredIds.has(q.id)) {
+        missingQuestions.push({
+          questionId: q.id,
+          questionKey: q.key,
+          questionLabel: q.label,
+          orderIndex: i,
+        })
+      }
+    }
+
+    // If validation failed, return missing questions
+    if (missingQuestions.length > 0) {
+      logValidationFailure(
+        {
+          userId,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}/validate`,
+        },
+        missingQuestions,
+      )
+
+      return successResponse({
+        isValid: false,
+        missingQuestions,
+      })
+    }
+
+    // Validation passed - determine next step from manifest
+    let nextStep = null
+    if (stepIndex + 1 < manifest.steps.length) {
+      const next = manifest.steps[stepIndex + 1]
+      nextStep = {
+        stepId: next.id,
+        title: next.title,
+        type: 'question_step',
+        orderIndex: stepIndex + 1,
+      }
+    }
+
+    // Persist current_step_id for save/resume functionality
+    const stepToSave = nextStep ? nextStep.stepId : stepId
+    const { error: updateError } = await supabase
+      .from('assessments')
+      .update({ current_step_id: stepToSave })
+      .eq('id', assessmentId)
+      .eq('patient_id', patientProfileId)
+
+    if (updateError) {
+      logDatabaseError(
+        {
+          userId,
+          assessmentId,
+          stepId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}`,
+        },
+        updateError,
+      )
+      // Non-critical - continue with success response
+    }
+
+    return successResponse({
+      isValid: true,
+      missingQuestions: [],
+      nextStep,
+    })
+  } catch (error) {
+    console.error('[steps/validate] V0.5 handler error:', error)
     return internalErrorResponse()
   }
 }
