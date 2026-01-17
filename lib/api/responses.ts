@@ -299,3 +299,11 @@ export function duplicateOperationResponse(
 ): NextResponse<ErrorResponse> {
   return errorResponse(ErrorCode.DUPLICATE_OPERATION, message, 409, details, requestId)
 }
+
+export function funnelNotSupportedResponse(
+  message: string,
+  details?: Record<string, unknown>,
+  requestId?: string,
+): NextResponse<ErrorResponse> {
+  return errorResponse(ErrorCode.FUNNEL_NOT_SUPPORTED, message, 409, details, requestId)
+}
