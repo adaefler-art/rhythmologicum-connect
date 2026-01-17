@@ -320,8 +320,20 @@ async function handleSaveAnswer(
         assessmentId,
         questionId,
         error: upsertError,
+        errorType: typeof upsertError,
         errorCode: (upsertError as { code?: string })?.code,
         errorMessage: (upsertError as { message?: string })?.message,
+        errorStack: (upsertError as { stack?: string })?.stack,
+        errorDetails: upsertError,
+        answerValue,
+        numericValue,
+        isV05CatalogFunnel,
+        upsertPayload: {
+          assessment_id: assessmentId,
+          question_id: questionId,
+          answer_value: numericValue,
+          answer_data: isV05CatalogFunnel ? answerValue : undefined,
+        },
       })
       logDatabaseError(
         {
