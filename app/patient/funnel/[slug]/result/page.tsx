@@ -77,10 +77,7 @@ export default async function FunnelResultPage({ params, searchParams }: PagePro
     redirect(`/patient/funnel/${slug}?error=invalid_assessment`)
   }
 
-  // If assessment is not completed, redirect back to funnel
-  if (assessment.status !== 'completed') {
-    redirect(`/patient/funnel/${slug}`)
-  }
+  // If assessment is not completed, still render result page with fallback UI
 
   // Fetch reports and key outcomes for this assessment
   const { data: reports } = await getReportsForAssessment(assessmentId)

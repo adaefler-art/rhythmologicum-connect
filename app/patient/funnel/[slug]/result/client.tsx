@@ -111,7 +111,8 @@ export default function ResultClient({
         }
 
         if (payload.data.status !== 'completed') {
-          router.replace(`/patient/funnel/${payload.data.funnel}`)
+          setAssessment(payload.data)
+          setLoading(false)
           return
         }
 
