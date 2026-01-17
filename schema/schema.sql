@@ -1429,7 +1429,8 @@ CREATE TABLE IF NOT EXISTS "public"."assessment_answers" (
     "assessment_id" "uuid" NOT NULL,
     "question_id" "text" NOT NULL,
     "answer_value" integer NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "answer_data" "jsonb"
 );
 
 
@@ -1437,6 +1438,10 @@ ALTER TABLE "public"."assessment_answers" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."assessment_answers" IS 'Assessment answers with RLS: patients see own data, clinicians see all';
+
+
+
+COMMENT ON COLUMN "public"."assessment_answers"."answer_data" IS 'V0.5+: Stores answer value as JSONB to support multiple types (string, number, boolean). For Legacy funnels, answer_value INTEGER is used.';
 
 
 
@@ -4041,6 +4046,10 @@ CREATE INDEX "funnel_steps_funnel_id_idx" ON "public"."funnel_steps" USING "btre
 
 
 CREATE INDEX "funnel_steps_order_index_idx" ON "public"."funnel_steps" USING "btree" ("order_index");
+
+
+
+CREATE INDEX "idx_assessment_answers_data" ON "public"."assessment_answers" USING "gin" ("answer_data") WHERE ("answer_data" IS NOT NULL);
 
 
 
