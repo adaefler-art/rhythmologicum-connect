@@ -31,9 +31,11 @@ and use `funnels_catalog` + `funnel_versions.questionnaire_config` JSONB instead
 
 ## answers/save POC Proof
 
-### Problem Identified (400 Bad Request)
+### Problem Identified (400 → 500)
 
-The original `SaveAnswerRequestSchema` only accepted `answerValue: z.number().int()`.  
+1. **Original 400**: `SaveAnswerRequestSchema` only accepted `answerValue: z.number().int()`
+2. **Then 500**: JSON parse errors uncaught, question_id::value encoding caused issues
+
 V0.5 Catalog Funnels have multiple question types requiring different value types:
 
 | Question Type | Example | Value Type |
@@ -54,20 +56,30 @@ V0.5 Catalog Funnels have multiple question types requiring different value type
    ])
    ```
 
-2. **Route Handler** (`answers/save/route.ts`):
-   - V0.5 path: Encodes string values in `question_id` field (e.g., `q2-gender::male`)
-   - Numeric values stored directly in `answer_value` (INTEGER)
+2. **Database Migration** (`20260117150000_v05_answer_data_jsonb.sql`):
+   ```sql
+   ALTER TABLE public.assessment_answers
+     ADD COLUMN IF NOT EXISTS answer_data JSONB;
+   ```
+
+3. **Route Handler** (`answers/save/route.ts`):
+   - Added `requestId` UUID tracking for all requests
+   - JSON parse wrapped in try-catch (prevents uncaught 500)
+   - V0.5 path: Stores original value in `answer_data` JSONB column
+   - Numeric values stored in `answer_value` (INTEGER)
    - Boolean values converted to 1/0
-   - No new migration required — works with existing schema
-   - Response returns original `questionId` and `answerValue` for client compatibility
+   - Detailed error logging with requestId, error codes, stack traces
 
-### Root Cause Analysis (500 Error)
+### Root Cause Analysis (500 Errors)
 
-**Problem**: Code attempted to write to `answer_data` JSONB column that didn't exist in production.
+**Problem 1**: JSON parse not wrapped in try-catch → uncaught exception → 500
+**Fix**: Wrapped `await clonedRequest.json()` in try-catch, returns 400 on parse error
 
-**Evidence**: Migration `20260117150000_v05_answer_data_jsonb.sql` was created locally but not deployed to Supabase production.
+**Problem 2**: question_id::value encoding caused duplicate rows on answer change
+**Fix**: Use `answer_data` JSONB column for original value, keep `question_id` clean
 
-**Fix**: Removed dependency on `answer_data` column. POC now uses existing `question_id` field to encode non-numeric values using `::` separator.
+**Problem 3**: Missing requestId made debugging impossible
+**Fix**: Generate UUID requestId at start, include in all logs and error responses
 
 ### Contract (Request)
 
