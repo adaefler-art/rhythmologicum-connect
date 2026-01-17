@@ -247,25 +247,45 @@ async function handleSaveAnswer(
       }
     }
 
-    // Perform upsert operation
-    // Using ON CONFLICT clause to update if the answer already exists
-    const { data, error: upsertError } = await supabase
-      .from('assessment_answers')
-      .upsert(
-        {
+    // Prepare upsert data based on funnel type
+    // V0.5: Store in answer_data (JSONB), set answer_value to 0 (placeholder)
+    // Legacy: Store in answer_value (INTEGER)
+    const upsertData = isV05CatalogFunnel
+      ? {
           assessment_id: assessmentId,
           question_id: questionId,
-          answer_value: answerValue,
-        },
-        {
-          onConflict: 'assessment_id,question_id',
-          ignoreDuplicates: false, // Update existing records
-        },
-      )
-      .select()
-      .single()
+          answer_value: typeof answerValue === 'number' ? answerValue : 0, // Legacy compat
+          answer_data: answerValue, // Store original value as JSONB
+        }
+      : {
+          assessment_id: assessmentId,
+          question_id: questionId,
+          answer_value: typeof answerValue === 'number' ? answerValue : 0,
+        }
 
-    if (upsertError) {
+    // Perform upsert operation
+    // Using ON CONFLICT clause to update if the answer already exists
+    // Type assertion needed as answer_data column not yet in generated types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error: upsertError } = (await (supabase
+      .from('assessment_answers') as any)
+      .upsert(upsertData, {
+        onConflict: 'assessment_id,question_id',
+        ignoreDuplicates: false, // Update existing records
+      })
+      .select()
+      .single()) as {
+      data: {
+        id: string
+        assessment_id: string
+        question_id: string
+        answer_value: number
+        answer_data?: unknown
+      } | null
+      error: unknown
+    }
+
+    if (upsertError || !data) {
       logDatabaseError(
         {
           userId: user.id,
@@ -309,6 +329,7 @@ async function handleSaveAnswer(
       assessment_id: data.assessment_id,
       question_id: data.question_id,
       answer_value: data.answer_value,
+      answer_data: (data.answer_data as string | number | boolean | null) ?? null,
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200)

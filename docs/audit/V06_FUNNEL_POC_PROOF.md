@@ -1,8 +1,8 @@
 # V0.6 Funnel POC Proof — cardiovascular-age
 
 **Status**: ✅ Technically POC Functional  
-**Date**: 2026-01-17  
-**Validated by**: Automated Build + Test Suite (2026/2026 tests passing)
+**Date**: 2026-01-17 (Updated)  
+**Validated by**: Automated Build + Test Suite (2040/2040 tests passing)
 
 ---
 
@@ -22,10 +22,101 @@ and use `funnels_catalog` + `funnel_versions.questionnaire_config` JSONB instead
 | 1 | `/api/funnels/cardiovascular-age/assessments` | POST | ✅ Works | Creates assessment with `funnel_id = null` |
 | 2 | `/api/funnels/cardiovascular-age/definition` | GET | ✅ Works | Returns steps + questions from manifest |
 | 3 | `/api/funnels/cardiovascular-age/assessments/{id}` | GET | ✅ Works | Returns current step, status |
-| 4 | `/api/funnels/cardiovascular-age/assessments/{id}/answers/save` | POST | ✅ Fixed | V0.5 branch bypasses Legacy validation |
+| 4 | `/api/funnels/cardiovascular-age/assessments/{id}/answers/save` | POST | ✅ Fixed (v2) | Multi-type support via `answer_data` JSONB |
 | 5 | `/api/funnels/cardiovascular-age/assessments/{id}/steps/{stepId}` | POST | ✅ Fixed | V0.5 branch uses `handleV05StepValidation` |
 | 6 | `/api/funnels/cardiovascular-age/assessments/{id}/complete` | POST | ✅ Fixed | V0.5 branch uses `validateV05AllRequiredQuestions` |
 | 7 | `/api/funnels/cardiovascular-age/assessments/{id}/result` | GET | ✅ Works | Already V0.5 compatible (no funnel_id check) |
+
+---
+
+## answers/save POC Proof
+
+### Problem Identified (400 Bad Request)
+
+The original `SaveAnswerRequestSchema` only accepted `answerValue: z.number().int()`.  
+V0.5 Catalog Funnels have multiple question types requiring different value types:
+
+| Question Type | Example | Value Type |
+|--------------|---------|------------|
+| `number` | Age (18-120) | `number` |
+| `radio` | Gender (male/female/other) | `string` |
+| `scale` | Exercise days (0-7) | `number` |
+| `checkbox` | Consent | `boolean` |
+
+### Solution Implemented
+
+1. **Schema Update** (`lib/api/contracts/patient/assessments.ts`):
+   ```typescript
+   export const AnswerValueSchema = z.union([
+     z.number(),
+     z.string(),
+     z.boolean(),
+   ])
+   ```
+
+2. **Database Migration** (`20260117150000_v05_answer_data_jsonb.sql`):
+   ```sql
+   ALTER TABLE public.assessment_answers
+     ADD COLUMN IF NOT EXISTS answer_data JSONB;
+   ```
+
+3. **Route Handler** (`answers/save/route.ts`):
+   - V0.5 path stores original value in `answer_data` (JSONB)
+   - Legacy path continues using `answer_value` (INTEGER)
+   - Backward compatible: `answer_value` defaults to 0 for non-numeric values
+
+### Contract (Request)
+
+```json
+{
+  "stepId": "step-1",
+  "questionId": "q1-age",
+  "answerValue": 45
+}
+```
+
+or
+
+```json
+{
+  "stepId": "step-1",
+  "questionId": "q2-gender",
+  "answerValue": "male"
+}
+```
+
+### Contract (Response)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "<uuid>",
+    "assessment_id": "<uuid>",
+    "question_id": "q1-age",
+    "answer_value": 45,
+    "answer_data": 45
+  },
+  "schemaVersion": "1.0.0"
+}
+```
+
+### Tests Added
+
+- `v05-schema.test.ts`: 14 tests for multi-type answer validation
+- Updated `assessments.test.ts`: Removed integer-only constraint tests
+
+### Smoke Commands
+
+```powershell
+# Build
+npm run build
+
+# Tests
+npm test
+
+# Expected: 2040 passed, 0 failed
+```
 
 ---
 

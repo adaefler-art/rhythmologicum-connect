@@ -202,15 +202,38 @@ describe('Patient Assessment Contracts', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject non-integer answerValue', () => {
-      const invalidRequest = {
+    it('should accept float answerValue (V0.5: number type, not just integer)', () => {
+      const request = {
         stepId: '123e4567-e89b-12d3-a456-426614174000',
         questionId: 'stress_frequency',
         answerValue: 3.5,
       }
 
-      const result = SaveAnswerRequestSchema.safeParse(invalidRequest)
-      expect(result.success).toBe(false)
+      const result = SaveAnswerRequestSchema.safeParse(request)
+      // V0.5: answerValue accepts any number (float or integer)
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept string answerValue (V0.5: radio options)', () => {
+      const request = {
+        stepId: 'step-1',
+        questionId: 'q2-gender',
+        answerValue: 'male',
+      }
+
+      const result = SaveAnswerRequestSchema.safeParse(request)
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept boolean answerValue (V0.5: yes/no questions)', () => {
+      const request = {
+        stepId: 'step-1',
+        questionId: 'q-consent',
+        answerValue: true,
+      }
+
+      const result = SaveAnswerRequestSchema.safeParse(request)
+      expect(result.success).toBe(true)
     })
 
     it('should reject empty questionId', () => {

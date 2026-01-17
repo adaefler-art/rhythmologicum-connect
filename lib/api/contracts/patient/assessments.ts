@@ -131,26 +131,46 @@ export type ResumeAssessmentResponse = z.infer<typeof ResumeAssessmentResponseSc
 // ============================================================
 
 /**
+ * Answer value type - supports multiple types for V0.5 Catalog Funnels
+ * - number: for number inputs (age, scale)
+ * - string: for radio/checkbox options
+ * - boolean: for yes/no questions
+ */
+export const AnswerValueSchema = z.union([
+  z.number(),
+  z.string(),
+  z.boolean(),
+])
+
+export type AnswerValue = z.infer<typeof AnswerValueSchema>
+
+/**
  * Request body schema
  * Note: stepId validation is kept lenient (string instead of strict UUID)
  * to allow downstream validation to provide more specific error codes (404 vs 400)
+ * 
+ * V0.5: answerValue accepts number | string | boolean for manifest-based funnels
+ * Legacy: answerValue is typically integer (Likert scale)
  */
 export const SaveAnswerRequestSchema = z.object({
   stepId: z.string().min(1),
   questionId: z.string().min(1),
-  answerValue: z.number().int(),
+  answerValue: AnswerValueSchema,
 })
 
 export type SaveAnswerRequest = z.infer<typeof SaveAnswerRequestSchema>
 
 /**
  * Response data schema
+ * V0.5: answer_data contains the raw JSONB value
+ * Legacy: answer_value contains the integer value
  */
 export const SaveAnswerResponseDataSchema = z.object({
   id: z.string().uuid(),
   assessment_id: z.string().uuid(),
   question_id: z.string(),
-  answer_value: z.number().int(),
+  answer_value: z.number().int().nullable(),
+  answer_data: AnswerValueSchema.nullable().optional(),
 })
 
 export type SaveAnswerResponseData = z.infer<typeof SaveAnswerResponseDataSchema>
