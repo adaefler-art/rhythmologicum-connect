@@ -18,6 +18,7 @@ import {
   logStepNavigated,
   logValidationError,
   logErrorDisplayed,
+  logClientEvent,
 } from '@/lib/logging/clientLogger'
 
 type RecoveryState = {
@@ -25,6 +26,9 @@ type RecoveryState = {
   recoveryAttempt: number
   recoveryMessage: string | null
 }
+
+// Guard to prevent infinite 404-fallback loops (max 1 fallback per mount)
+let fallbackAttemptedThisMount = false
 
 type FunnelClientProps = {
   slug: string
@@ -45,6 +49,43 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     recoveryAttempt: 0,
     recoveryMessage: null,
   })
+
+  // Reset fallback guard on mount
+  useEffect(() => {
+    fallbackAttemptedThisMount = false
+    return () => {
+      fallbackAttemptedThisMount = false
+    }
+  }, [])
+
+  /**
+   * Create a new assessment via POST /api/funnels/{slug}/assessments
+   * Returns the new assessmentId or throws on error
+   */
+  const createAssessment = useCallback(async (): Promise<string> => {
+    const response = await fetch(`/api/funnels/${slug}/assessments`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorCode = errorData.error?.code || 'UNKNOWN'
+      const errorMsg = errorData.error?.message || 'Assessment konnte nicht erstellt werden.'
+
+      // Log the failure
+      logClientEvent('ASSESSMENT_CREATE_FAILED', {
+        slug,
+        errorCode,
+        httpStatus: response.status,
+      })
+
+      throw new Error(errorMsg)
+    }
+
+    const { data } = await response.json()
+    return data.assessmentId
+  }, [slug])
 
   const loadExistingAnswers = useCallback(async (assessmentId: string, retryAttempt: number = 0) => {
     const maxRetries = 2
@@ -135,17 +176,71 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         if (!response.ok) {
           // Try to extract error message from response
           let errorMessage = 'Assessment-Status konnte nicht geladen werden.'
+          let errorCode = 'UNKNOWN'
           try {
             const errorData = await response.json()
             if (errorData.error?.message) {
               errorMessage = errorData.error.message
+            }
+            if (errorData.error?.code) {
+              errorCode = errorData.error.code
             }
           } catch {
             // If JSON parsing fails, use default message
           }
 
           if (response.status === 404) {
+            // 404 = Assessment not found. Try to create a new one (fallback)
+            // Guard: only attempt fallback once per mount to prevent loops
+            if (!fallbackAttemptedThisMount) {
+              fallbackAttemptedThisMount = true
+
+              console.warn('[FunnelClient] Assessment not found (404), attempting fallback create', {
+                staleAssessmentId: assessmentId,
+                slug,
+              })
+
+              // Log telemetry for the fallback
+              logClientEvent('ASSESSMENT_404_FALLBACK', {
+                slug,
+                staleAssessmentId: assessmentId,
+                errorCode,
+              })
+
+              try {
+                // Create new assessment
+                const newAssessmentId = await createAssessment()
+
+                console.info('[FunnelClient] Fallback successful, created new assessment', {
+                  oldAssessmentId: assessmentId,
+                  newAssessmentId,
+                  slug,
+                })
+
+                // Log telemetry for successful recovery
+                logClientEvent('ASSESSMENT_404_RECOVERED', {
+                  slug,
+                  oldAssessmentId: assessmentId,
+                  newAssessmentId,
+                })
+
+                // Log assessment start
+                logAssessmentStarted(newAssessmentId, slug)
+
+                // Recursively load the new assessment status
+                return loadAssessmentStatus(newAssessmentId, 0)
+              } catch (createErr) {
+                console.error('[FunnelClient] Fallback create failed:', createErr)
+                // Fall through to throw the original 404 error
+              }
+            } else {
+              console.warn('[FunnelClient] 404 fallback already attempted, not retrying')
+            }
+
             throw new Error('Assessment nicht gefunden. Möglicherweise wurde es gelöscht.')
+          } else if (response.status === 401 || response.status === 403) {
+            // Auth errors - do NOT fallback, just throw
+            throw new Error(errorMessage)
           } else if (response.status >= 500) {
             // Retry on server errors
             if (retryAttempt < maxRetries) {
@@ -210,7 +305,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         throw err // Re-throw so caller knows it failed
       }
     },
-    [loadExistingAnswers, slug],
+    [createAssessment, loadExistingAnswers, slug],
   )
 
 
