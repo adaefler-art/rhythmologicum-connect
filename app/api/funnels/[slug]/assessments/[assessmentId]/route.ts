@@ -150,26 +150,74 @@ export async function GET(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.', correlationId)
     }
 
-    // Handle legacy assessments missing funnel_id
-    // Legacy assessments were created before the funnel_id foreign key was added.
-    // They only have a text-based 'funnel' field (slug). We attempt to backfill
-    // the funnel_id by looking up the funnel by slug.
+    // Handle assessments with missing funnel_id
+    // Two cases:
+    // 1. Legacy assessments: created before funnel_id FK was added (backfill from funnels table)
+    // 2. V0.5 catalog assessments: intentionally created with funnel_id=null (skip backfill)
     if (!assessment.funnel_id) {
-      logInfo('Legacy assessment detected (missing funnel_id), attempting backfill', {
-        assessmentId,
-        slug,
-        endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
-      })
-
-      const { data: funnelRow, error: funnelLookupError } = await supabase
-        .from('funnels')
+      // First check if this is a V0.5 catalog funnel (no backfill needed)
+      const { data: catalogFunnel } = await supabase
+        .from('funnels_catalog')
         .select('id')
         .eq('slug', slug)
         .maybeSingle()
 
-      if (funnelLookupError) {
-        // PGRST116 is handled by maybeSingle() returning null, other errors are logged
-        if (funnelLookupError.code !== 'PGRST116') {
+      if (catalogFunnel?.id) {
+        // V0.5 catalog funnel - funnel_id=null is intentional, proceed without backfill
+        logInfo('V0.5 catalog funnel detected, proceeding without funnel_id backfill', {
+          assessmentId,
+          slug,
+          catalogFunnelId: catalogFunnel.id,
+        })
+        // For V0.5 funnels, we don't need funnel_id for step navigation
+        // The questionnaire_config is derived from the manifest, not funnel_steps table
+      } else {
+        // Legacy assessment - attempt backfill from funnels table
+        logInfo('Legacy assessment detected (missing funnel_id), attempting backfill', {
+          assessmentId,
+          slug,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+        })
+
+        const { data: funnelRow, error: funnelLookupError } = await supabase
+          .from('funnels')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle()
+
+        if (funnelLookupError) {
+          // PGRST116 is handled by maybeSingle() returning null, other errors are logged
+          if (funnelLookupError.code !== 'PGRST116') {
+            logDatabaseError(
+              {
+                userId: user.id,
+                assessmentId,
+                slug,
+                endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+              },
+              funnelLookupError,
+            )
+          }
+        }
+
+        if (!funnelRow?.id) {
+          // Funnel doesn't exist in either table - this is an error
+          logNotFound('Funnel (legacy lookup)', { userId: user.id, assessmentId, slug })
+          return notFoundResponse(
+            'Funnel',
+            `Der Funnel '${slug}' konnte nicht gefunden werden. Möglicherweise wurde er gelöscht oder umbenannt.`,
+            correlationId,
+          )
+        }
+
+        // Attempt to backfill the funnel_id
+        const { error: repairError } = await supabase
+          .from('assessments')
+          .update({ funnel_id: funnelRow.id })
+          .eq('id', assessment.id)
+
+        if (repairError) {
+          // Log the error but continue - we can still use the funnel_id we just looked up
           logDatabaseError(
             {
               userId: user.id,
@@ -177,71 +225,75 @@ export async function GET(
               slug,
               endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
             },
-            funnelLookupError,
+            repairError,
           )
-        }
-      }
-
-      if (!funnelRow?.id) {
-        // Funnel doesn't exist in the database - expected for catalog-only funnels
-        logNotFound('Funnel (legacy lookup)', { userId: user.id, assessmentId, slug })
-        return notFoundResponse(
-          'Funnel',
-          `Der Funnel '${slug}' konnte nicht gefunden werden. Möglicherweise wurde er gelöscht oder umbenannt.`,
-          correlationId,
-        )
-      }
-
-      // Attempt to backfill the funnel_id
-      const { error: repairError } = await supabase
-        .from('assessments')
-        .update({ funnel_id: funnelRow.id })
-        .eq('id', assessment.id)
-
-      if (repairError) {
-        // Log the error but continue - we can still use the funnel_id we just looked up
-        logDatabaseError(
-          {
-            userId: user.id,
+          logWarn('Failed to backfill funnel_id for legacy assessment, proceeding with in-memory value', {
             assessmentId,
             slug,
-            endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
-          },
-          repairError,
-        )
-        logWarn('Failed to backfill funnel_id for legacy assessment, proceeding with in-memory value', {
-          assessmentId,
-          slug,
-          funnelId: funnelRow.id,
-        })
-      } else {
-        logInfo('Successfully backfilled funnel_id for legacy assessment', {
-          assessmentId,
-          slug,
-          funnelId: funnelRow.id,
-        })
+            funnelId: funnelRow.id,
+          })
+        } else {
+          logInfo('Successfully backfilled funnel_id for legacy assessment', {
+            assessmentId,
+            slug,
+            funnelId: funnelRow.id,
+          })
+        }
+
+        // Use the looked-up funnel_id for this request
+        assessment.funnel_id = funnelRow.id
+      }
+    }
+
+    // For V0.5 catalog funnels (funnel_id is still null), use manifest-based navigation
+    // For legacy funnels, use funnel_steps table
+    let totalSteps = 0
+    let currentStep: Awaited<ReturnType<typeof getCurrentStep>> = null
+
+    if (assessment.funnel_id) {
+      // Legacy path: use funnel_steps table
+      const { data: steps, error: stepsError } = await supabase
+        .from('funnel_steps')
+        .select('id, order_index')
+        .eq('funnel_id', assessment.funnel_id)
+        .order('order_index', { ascending: true })
+
+      if (stepsError || !steps) {
+        logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, stepsError)
+        return internalErrorResponse('Fehler beim Laden der Schritte.', correlationId)
       }
 
-      // Use the looked-up funnel_id for this request
-      assessment.funnel_id = funnelRow.id
+      totalSteps = steps.length
+      currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
+    } else {
+      // V0.5 path: use manifest-based navigation
+      const { loadFunnelVersionWithClient } = await import('@/lib/funnels/loadFunnelVersion')
+      
+      try {
+        const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+        const steps = loadedVersion.manifest.questionnaire_config?.steps || []
+        totalSteps = steps.length
+
+        if (steps.length > 0) {
+          // For V0.5, we determine current step from answered questions
+          // For now, return the first step (this can be enhanced later)
+          const firstStep = steps[0]
+          currentStep = {
+            stepId: firstStep.id,
+            title: firstStep.title,
+            type: 'question_step',
+            orderIndex: 0,
+            stepIndex: 0,
+            hasQuestions: true,
+            requiredQuestions: [],
+            answeredQuestions: [],
+          }
+        }
+      } catch (err) {
+        logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, err)
+        return internalErrorResponse('Fehler beim Laden der Funnel-Konfiguration.', correlationId)
+      }
     }
-
-    // Get total steps count
-    const { data: steps, error: stepsError } = await supabase
-      .from('funnel_steps')
-      .select('id, order_index')
-      .eq('funnel_id', assessment.funnel_id)
-      .order('order_index', { ascending: true })
-
-    if (stepsError || !steps) {
-      logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, stepsError)
-      return internalErrorResponse('Fehler beim Laden der Schritte.', correlationId)
-    }
-
-    const totalSteps = steps.length
-
-    // Determine current step using B3 navigation logic
-    const currentStep = await getCurrentStep(supabase, assessmentId, assessment.funnel_id)
 
     if (!currentStep) {
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, new Error('Failed to determine current step'))

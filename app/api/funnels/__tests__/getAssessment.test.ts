@@ -14,6 +14,18 @@ import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
 // Mock dependencies
 jest.mock('@/lib/db/supabase.server')
 jest.mock('@/lib/navigation/assessmentNavigation')
+jest.mock('@/lib/funnels/loadFunnelVersion', () => ({
+  loadFunnelVersionWithClient: jest.fn().mockResolvedValue({
+    manifest: {
+      questionnaire_config: {
+        steps: [
+          { id: 'v05-step-1', title: 'Step 1' },
+          { id: 'v05-step-2', title: 'Step 2' },
+        ],
+      },
+    },
+  }),
+}))
 jest.mock('@/lib/telemetry/correlationId', () => ({
   getCorrelationId: jest.fn(() => 'test-correlation-id'),
 }))
@@ -96,6 +108,17 @@ function createMockSupabase(overrides: {
         eq: jest.fn().mockReturnThis(),
         maybeSingle: jest.fn().mockResolvedValue({
           data: { id: 'funnel-123' },
+          error: null,
+        }),
+      }
+    }
+    if (table === 'funnels_catalog') {
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({
+          // Return catalog funnel for V0.5 tests, null for legacy tests
+          data: overrides.assessment?.funnel_id === null ? { id: 'catalog-funnel-123' } : null,
           error: null,
         }),
       }
