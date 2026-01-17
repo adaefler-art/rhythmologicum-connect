@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import type { FunnelDefinition } from '@/lib/types/funnel'
 import type { ContentPage } from '@/lib/types/content'
@@ -37,6 +37,9 @@ type FunnelClientProps = {
 
 export default function FunnelClient({ slug }: FunnelClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const startOver = searchParams.get('startOver') === 'true'
+  const [startOverConsumed, setStartOverConsumed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [funnel, setFunnel] = useState<FunnelDefinition | null>(null)
@@ -415,26 +418,28 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
           throw new Error('Benutzerprofil konnte nicht geladen werden.')
         }
 
-        // Check for existing in_progress assessment
-        const { data: existingAssessments } = await supabase
-          .from('assessments')
-          .select('id, status, completed_at')
-          .eq('patient_id', profileData.id)
-          .eq('funnel', slug)
-          .order('started_at', { ascending: false })
-          .limit(1)
+        // Check for existing in_progress assessment unless startOver is requested
+        if (!startOver || startOverConsumed) {
+          const { data: existingAssessments } = await supabase
+            .from('assessments')
+            .select('id, status, completed_at')
+            .eq('patient_id', profileData.id)
+            .eq('funnel', slug)
+            .order('started_at', { ascending: false })
+            .limit(1)
 
-        // If an in-progress assessment exists, resume it; otherwise start a new one
-        if (existingAssessments && existingAssessments.length > 0) {
-          const latest = existingAssessments[0]
+          // If an in-progress assessment exists, resume it; otherwise start a new one
+          if (existingAssessments && existingAssessments.length > 0) {
+            const latest = existingAssessments[0]
 
-          if (latest.status === 'in_progress') {
-            await loadAssessmentStatus(latest.id)
-            return
+            if (latest.status === 'in_progress') {
+              await loadAssessmentStatus(latest.id)
+              return
+            }
+
+            // For completed assessments, always start a fresh assessment instead of redirecting to result
+            // so users can take the test again without manual query params.
           }
-
-          // For completed assessments, always start a fresh assessment instead of redirecting to result
-          // so users can take the test again without manual query params.
         }
 
         // Start new assessment via API
@@ -451,6 +456,11 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
         
         // Log assessment start
         logAssessmentStarted(data.assessmentId, slug)
+
+        if (startOver && !startOverConsumed) {
+          setStartOverConsumed(true)
+          router.replace(`/patient/funnel/${slug}?skipIntro=true`)
+        }
         
         await loadAssessmentStatus(data.assessmentId)
       } catch (err) {

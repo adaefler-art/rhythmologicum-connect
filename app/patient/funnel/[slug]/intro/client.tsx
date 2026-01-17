@@ -111,7 +111,8 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
 
   const handleStartAssessment = () => {
     // Add skipIntro parameter to avoid redirect loop
-    router.push(`/patient/funnel/${funnelSlug}?skipIntro=true`)
+    // startOver=true forces a fresh assessment instance
+    router.push(`/patient/funnel/${funnelSlug}?skipIntro=true&startOver=true`)
   }
 
   // V05-I06.5: Handle manifest error (422 - invalid manifest)
