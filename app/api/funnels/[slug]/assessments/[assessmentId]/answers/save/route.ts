@@ -274,36 +274,22 @@ async function handleSaveAnswer(
     }
 
     // Prepare upsert data
-    // For POC: Store numeric value in answer_value, encode non-numeric as JSON string in question_id suffix
-    // This works without the answer_data migration being deployed
-    // TODO: Once migration 20260117150000 is deployed, use answer_data JSONB column
+    // V0.5 Catalog Funnels: Use answer_data JSONB column for any type
+    // Legacy Funnels: Use answer_value INTEGER column
     let numericValue: number
     if (typeof answerValue === 'number') {
-      numericValue = answerValue
+      numericValue = Math.round(answerValue) // Ensure integer for DB
     } else if (typeof answerValue === 'boolean') {
       numericValue = answerValue ? 1 : 0
     } else {
-      // String values (radio options): hash to integer for storage
-      // Store actual value in question_id as suffix: "q2-gender::male"
+      // String values: store 0 in numeric field, actual value in answer_data
       numericValue = 0
     }
 
-    // For V0.5 with string answers, encode the value in a way that can be retrieved
-    // Use the question_id field to store both ID and value for non-numeric answers
-    const storageQuestionId = typeof answerValue === 'string' && isV05CatalogFunnel
-      ? `${questionId}::${answerValue}`
-      : questionId
-
-    const upsertData = {
-      assessment_id: assessmentId,
-      question_id: storageQuestionId,
-      answer_value: numericValue,
-    }
-
     console.log('[answers/save] Upserting answer', {
+      requestId,
       assessmentId,
       questionId,
-      storageQuestionId,
       answerValueType: typeof answerValue,
       numericValue,
       isV05CatalogFunnel,
@@ -313,17 +299,26 @@ async function handleSaveAnswer(
     // Using ON CONFLICT clause to update if the answer already exists
     const { data, error: upsertError } = await supabase
       .from('assessment_answers')
-      .upsert(upsertData, {
-        onConflict: 'assessment_id,question_id',
-        ignoreDuplicates: false, // Update existing records
-      })
+      .upsert(
+        {
+          assessment_id: assessmentId,
+          question_id: questionId,
+          answer_value: numericValue,
+          answer_data: isV05CatalogFunnel ? answerValue : undefined,
+        },
+        {
+          onConflict: 'assessment_id,question_id',
+          ignoreDuplicates: false, // Update existing records
+        },
+      )
       .select()
       .single()
 
     if (upsertError || !data) {
       console.error('[answers/save] Upsert failed', {
+        requestId,
         assessmentId,
-        questionId: storageQuestionId,
+        questionId,
         error: upsertError,
         errorCode: (upsertError as { code?: string })?.code,
         errorMessage: (upsertError as { message?: string })?.message,
@@ -333,7 +328,7 @@ async function handleSaveAnswer(
           userId: user.id,
           assessmentId,
           stepId,
-          questionId: storageQuestionId,
+          questionId,
           endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         upsertError,
