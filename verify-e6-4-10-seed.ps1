@@ -18,33 +18,8 @@ Write-Host ""
 function Invoke-LocalPsql {
     param([Parameter(Mandatory = $true)][string]$Query)
     
-    # Check if supabase CLI is available
-    $supabaseCmd = Get-Command supabase -ErrorAction SilentlyContinue
-    if ($supabaseCmd) {
-        $tempFile = New-TemporaryFile
-        try {
-            [System.IO.File]::WriteAllText(
-                $tempFile.FullName,
-                $Query,
-                (New-Object System.Text.UTF8Encoding($false))
-            )
-            $output = supabase db query --local --file $tempFile.FullName 2>&1
-            if ($LASTEXITCODE -ne 0) {
-                throw ($output | Out-String)
-            }
-            return , $output
-        }
-        finally {
-            try { 
-                Remove-Item -Force $tempFile.FullName -ErrorAction SilentlyContinue 
-            } 
-            catch { 
-                # Ignore file cleanup errors - file may already be deleted
-            }
-        }
-    }
-    
-    # Fallback to docker exec
+    # Use docker exec directly to connect to local Supabase DB
+    # The supabase db query --local flag is deprecated in newer CLI versions
     $container = (docker ps --format "{{.Names}}" --filter "name=supabase_db_" | Select-Object -First 1)
     if (-not $container) {
         throw "No running Supabase database container found. Run 'supabase start' first."
