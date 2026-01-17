@@ -409,26 +409,8 @@ async function handleV05StepValidation(
       }
     }
 
-    // Persist current_step_id for save/resume functionality
-    const stepToSave = nextStep ? nextStep.stepId : stepId
-    const { error: updateError } = await supabase
-      .from('assessments')
-      .update({ current_step_id: stepToSave })
-      .eq('id', assessmentId)
-      .eq('patient_id', patientProfileId)
-
-    if (updateError) {
-      logDatabaseError(
-        {
-          userId,
-          assessmentId,
-          stepId,
-          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/steps/${stepId}`,
-        },
-        updateError,
-      )
-      // Non-critical - continue with success response
-    }
+    // NOTE: V0.5 catalog funnels use manifest step IDs (string), so we do not
+    // write current_step_id (UUID) here. Progression is derived from answers.
 
     return successResponse({
       isValid: true,
