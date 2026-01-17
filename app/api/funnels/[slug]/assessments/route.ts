@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
+import { loadFunnelWithClient, loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 import {
   versionedSuccessResponse,
   missingFieldsResponse,
@@ -117,27 +118,47 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
-    // Load funnel by slug and verify it's active
-    const { data: funnel, error: funnelError } = await supabase
+    // Try to load funnel from legacy table first, then fall back to funnels_catalog
+    let funnelId: string
+    let funnelTitle: string
+    let isLegacyFunnel = false
+    
+    // First try legacy funnels table
+    const { data: legacyFunnel } = await supabase
       .from('funnels')
       .select('id, title, is_active')
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
 
-    if (funnelError || !funnel) {
-      logDatabaseError(
-        {
-          userId: user.id,
-          endpoint: `/api/funnels/${slug}/assessments`,
-          requestId: correlationId,
-        },
-        funnelError,
-      )
-      return notFoundResponse('Funnel', undefined, correlationId)
-    }
+    if (legacyFunnel) {
+      if (!legacyFunnel.is_active) {
+        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', undefined, correlationId)
+      }
+      funnelId = legacyFunnel.id
+      funnelTitle = legacyFunnel.title
+      isLegacyFunnel = true
+    } else {
+      // Fall back to funnels_catalog (V0.5 path)
+      const catalogFunnel = await loadFunnelWithClient(supabase, slug)
+      
+      if (!catalogFunnel) {
+        logDatabaseError(
+          {
+            userId: user.id,
+            endpoint: `/api/funnels/${slug}/assessments`,
+            requestId: correlationId,
+          },
+          new Error('Funnel not found in legacy table or catalog'),
+        )
+        return notFoundResponse('Funnel', undefined, correlationId)
+      }
 
-    if (!funnel.is_active) {
-      return invalidInputResponse('Dieser Funnel ist nicht aktiv.', undefined, correlationId)
+      if (!catalogFunnel.isActive) {
+        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', undefined, correlationId)
+      }
+      
+      funnelId = catalogFunnel.id
+      funnelTitle = catalogFunnel.title
     }
 
     // Create new assessment with status = in_progress
@@ -146,7 +167,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .insert({
         patient_id: patientProfile.id,
         funnel: slug,
-        funnel_id: funnel.id,
+        funnel_id: funnelId,
         status: 'in_progress',
       })
       .select()
@@ -164,8 +185,31 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       return internalErrorResponse('Fehler beim Erstellen des Assessments.', correlationId)
     }
 
-    // Determine first step using B3 navigation logic
-    const currentStep = await getCurrentStep(supabase, assessment.id, funnel.id)
+    // Determine first step using appropriate method
+    let currentStep: { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number } | null = null
+    
+    if (isLegacyFunnel) {
+      // Legacy path: use B3 navigation logic with funnel_steps table
+      currentStep = await getCurrentStep(supabase, assessment.id, funnelId)
+    } else {
+      // V0.5 path: derive first step from questionnaire_config
+      try {
+        const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+        const firstStep = loadedVersion.manifest.questionnaire_config.steps[0]
+        
+        if (firstStep) {
+          currentStep = {
+            stepId: firstStep.id,
+            title: firstStep.title,
+            type: 'question_step',
+            orderIndex: 0,
+            stepIndex: 0,
+          }
+        }
+      } catch (err) {
+        console.warn('[assessments] Failed to load V0.5 funnel version:', err)
+      }
+    }
 
     if (!currentStep) {
       logDatabaseError(
@@ -194,7 +238,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       actor_user_id: user.id,
       assessment_id: assessment.id,
       funnel_slug: slug,
-      funnel_id: funnel.id,
+      funnel_id: funnelId,
     }).catch((err) => {
       // Don't fail the request if KPI tracking fails
       console.error('[assessments] Failed to track KPI event', err)

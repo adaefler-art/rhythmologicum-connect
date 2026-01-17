@@ -1,0 +1,743 @@
+{
+  "meta": {
+    "generated_from": ".audit/v06/evidence/",
+    "baseline_sha": "6de6c86c826447ce2c93c19b74a08e8133f9deb0",
+    "head_sha": "dd1d997a9186825d583078292a8e67f696ff9d84",
+    "baseline_tag": "v0.5.0",
+    "pr_count": 59,
+    "prs_with_file_evidence": 12,
+    "prs_without_file_evidence": 47
+  },
+  "prs": [
+    {
+      "number": 630,
+      "title": "Add contract tests and governance validation for /api/patient/triage endpoint",
+      "mergedAt": "2026-01-16T21:01:10Z",
+      "mergeCommit": "c03163bcfe23cb41a0c15d6bfa3bd9e106379297",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API"],
+      "files": [
+        "E6_6_10_COMPLETE.md",
+        "E6_6_10_IMPLEMENTATION_SUMMARY.md",
+        "E6_6_10_VERIFICATION_GUIDE.md",
+        "lib/api/contracts/patient/__tests__/triage.test.ts"
+      ]
+    },
+    {
+      "number": 629,
+      "title": "E6.6.9 — Add deterministic triage test inputs with dev harness",
+      "mergedAt": "2026-01-16T20:44:10Z",
+      "mergeCommit": "18f24eb05d6e3fa887b768beb18a0a217c7ec81d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 628,
+      "title": "E6.6.8 — Centralize safety disclaimers and emergency guidance",
+      "mergedAt": "2026-01-16T20:20:57Z",
+      "mergeCommit": "35e30df39961a8f50e2d3301195507ac8110c643",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 627,
+      "title": "E6.6.7 — Red Flag Catalog v1 (Allowlist, patterns, docs + tests)",
+      "mergedAt": "2026-01-16T20:05:15Z",
+      "mergeCommit": "d15cfe2aa3a8b215dfadc2cc7a9d15e59917ba3a",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API"],
+      "files": [
+        "E6_6_7_IMPLEMENTATION_SUMMARY.md",
+        "docs/clinical/triage_red_flags_v1.md",
+        "lib/triage/__tests__/engine.test.ts",
+        "lib/triage/__tests__/redFlagCatalog.test.ts",
+        "lib/triage/engine.ts",
+        "lib/triage/redFlagCatalog.ts"
+      ]
+    },
+    {
+      "number": 626,
+      "title": "E6.6.6: Add PHI-safe triage session persistence with SHA-256 hashing",
+      "mergedAt": "2026-01-16T16:47:27Z",
+      "mergeCommit": "b8a681975eccbd0798176cfee8fb2c67494efea3",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API", "DB"],
+      "files": [
+        "E6_6_6_COMPLETE.md",
+        "E6_6_6_IMPLEMENTATION_SUMMARY.md",
+        "app/api/amy/triage/route.ts",
+        "app/api/patient/dashboard/route.ts",
+        "app/api/patient/triage/route.ts",
+        "docs/canon/DB_SCHEMA_MANIFEST.json",
+        "lib/telemetry/events.ts",
+        "lib/triage/__tests__/sessionStorage.test.ts",
+        "lib/triage/sessionStorage.ts",
+        "lib/types/supabase.ts",
+        "schema/schema.sql",
+        "scripts/dev/endpoint-catalog/__tests__/core.test.ts",
+        "scripts/dev/endpoint-catalog/__tests__/sort-utils.test.ts",
+        "scripts/dev/endpoint-catalog/generate.js",
+        "supabase/migrations/20260116160600_e6_6_6_create_triage_sessions.sql",
+        "test/e6-6-6-triage-sessions-rls.sql",
+        "verify-e6-6-6-triage-sessions.ps1"
+      ]
+    },
+    {
+      "number": 625,
+      "title": "E6.6.5: Add triage router for nextAction → navigation mapping",
+      "mergedAt": "2026-01-16T16:02:30Z",
+      "mergeCommit": "b9c4a28abc49294acb0e3979323045579757c908",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 624,
+      "title": "E6.6.4: Add POST /api/patient/triage endpoint with 401-first auth and contract validation",
+      "mergedAt": "2026-01-16T15:45:23Z",
+      "mergeCommit": "50f8b41188bc9d90c356820a36c2b303bc9de42f",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API", "Auth"],
+      "files": [
+        "E6_6_4_IMPLEMENTATION_SUMMARY.md",
+        "E6_6_4_VERIFICATION_GUIDE.md",
+        "app/api/patient/triage/__tests__/route.test.ts",
+        "app/api/patient/triage/route.ts",
+        "docs/api/ENDPOINT_CATALOG.md",
+        "docs/api/endpoint-allowlist.json",
+        "docs/api/endpoint-catalog.json"
+      ]
+    },
+    {
+      "number": 623,
+      "title": "[WIP] Implement triage decision pipeline for v0.6",
+      "mergedAt": "2026-01-16T14:34:07Z",
+      "mergeCommit": "5e5ff2d0480499553e10d2d613b3614515d379cd",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API"],
+      "files": [
+        "E6_6_3_IMPLEMENTATION_SUMMARY.md",
+        "app/api/amy/triage/route.ts",
+        "lib/triage/__tests__/engine.test.ts",
+        "lib/triage/engine.ts"
+      ]
+    },
+    {
+      "number": 622,
+      "title": "E6.6.2 — Define TriageResult v1 contract with runtime validation",
+      "mergedAt": "2026-01-16T11:46:27Z",
+      "mergeCommit": "f4f3f6f9e97c47cff1ec607e2d709aea864c416b",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 621,
+      "title": "E6.6.1: Add AMY Composer with bounded input and AI triage",
+      "mergedAt": "2026-01-16T11:12:26Z",
+      "mergeCommit": "3b356a241748e4e1e38bc7768e548fa14a262a4f",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API", "UI"],
+      "files": [
+        "E6_6_1_COMPLETE.md",
+        "E6_6_1_IMPLEMENTATION_SUMMARY.md",
+        "E6_6_1_VERIFICATION_GUIDE.md",
+        "E6_6_1_VISUAL_STRUCTURE.md",
+        "app/api/amy/triage/route.ts",
+        "app/patient/dashboard/client.tsx",
+        "app/patient/dashboard/components/AMYComposer.tsx",
+        "app/patient/dashboard/components/index.ts",
+        "docs/api/ENDPOINT_CATALOG.md",
+        "docs/api/endpoint-catalog.json"
+      ]
+    },
+    {
+      "number": 620,
+      "title": "Add CI gate for dashboard contract schema validation and endpoint catalog verification",
+      "mergedAt": "2026-01-16T10:31:17Z",
+      "mergeCommit": "b338e4525a51cc78bec2f00d0fdc6ec02fcee586",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 619,
+      "title": "E6.5.9: Mobile-friendly dashboard refresh with stale-while-revalidate",
+      "mergedAt": "2026-01-16T10:12:50Z",
+      "mergeCommit": "bf546652744f36b8e34d00a5d29b995ddc490d3e",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 618,
+      "title": "Fix navigation 404s and enforce dashboard-first return policy",
+      "mergedAt": "2026-01-16T09:47:09Z",
+      "mergeCommit": "528f81815280840546a719803b1e312a9806dabc",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["UI"],
+      "files": [
+        "E6_5_8_IMPLEMENTATION_SUMMARY.md",
+        "app/patient/escalation/client.tsx",
+        "app/patient/history/PatientHistoryClient.tsx",
+        "app/patient/onboarding/page.tsx"
+      ]
+    },
+    {
+      "number": 617,
+      "title": "E6.5.7 — Content page rendering with XSS protection and 404 handling",
+      "mergedAt": "2026-01-16T09:24:07Z",
+      "mergeCommit": "8607cf74e7444e092a25184b14e957da79845b5d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 616,
+      "title": "E6.5.6: Content Tiles MVP with deterministic ordering",
+      "mergedAt": "2026-01-16T09:05:11Z",
+      "mergeCommit": "926c48a8c00c62f55fc14fb7d62ada6724595847",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 615,
+      "title": "E6.5.5: Implement deterministic Next Step Resolver v1",
+      "mergedAt": "2026-01-16T08:43:04Z",
+      "mergeCommit": "df3a72997a62b6d726f48a9ab3377b886048de56",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 614,
+      "title": "E6.5.4: Implement patient dashboard layout components",
+      "mergedAt": "2026-01-16T06:29:24Z",
+      "mergeCommit": "b3211b874b0e20a3fe739526b53cc1824b66cf53",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["UI"],
+      "files": [
+        "E6_5_4_IMPLEMENTATION_SUMMARY.md",
+        "app/patient/dashboard/client.tsx",
+        "app/patient/dashboard/components/AMYSlot.tsx",
+        "app/patient/dashboard/components/ContentTilesGrid.tsx",
+        "app/patient/dashboard/components/DashboardHeader.tsx",
+        "app/patient/dashboard/components/NextStepCard.tsx",
+        "app/patient/dashboard/components/ProgressSummary.tsx",
+        "app/patient/dashboard/components/index.ts",
+        "docs/api/ENDPOINT_CATALOG.md",
+        "docs/api/endpoint-allowlist.json",
+        "docs/api/endpoint-catalog.json"
+      ]
+    },
+    {
+      "number": 613,
+      "title": "E6.5.3: Enforce pilot eligibility and bounded IO on dashboard API",
+      "mergedAt": "2026-01-16T06:04:36Z",
+      "mergeCommit": "16ef1cfe22450ab930d3e13e6814562ce808b33a",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API", "Auth"],
+      "files": [
+        "E6_5_3_IMPLEMENTATION_SUMMARY.md",
+        "app/api/patient/dashboard/__tests__/route.test.ts",
+        "app/api/patient/dashboard/route.ts",
+        "verify-e6-5-3-dashboard.ps1"
+      ]
+    },
+    {
+      "number": 612,
+      "title": "E6.5.2: Dashboard Data Contract v1 with Zod schemas and versioning",
+      "mergedAt": "2026-01-16T05:49:27Z",
+      "mergeCommit": "95a8c6c84b9ab6abffd885b1256431fa5aaa6b20",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["API"],
+      "files": [
+        "E6_5_2_IMPLEMENTATION_SUMMARY.md",
+        "E6_5_2_VERIFICATION_GUIDE.md",
+        "app/api/patient/dashboard/__tests__/route.test.ts",
+        "app/api/patient/dashboard/route.ts",
+        "lib/api/contracts/patient/__tests__/dashboard.test.ts",
+        "lib/api/contracts/patient/dashboard.ts",
+        "lib/api/contracts/patient/index.ts"
+      ]
+    },
+    {
+      "number": 611,
+      "title": "E6.5.1 — Enforce dashboard-first entry policy for patient routes",
+      "mergedAt": "2026-01-16T05:31:29Z",
+      "mergeCommit": "2cde7b6071d6c747243c2380b10e6b6dc41056c1",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["UI", "Auth"],
+      "files": [
+        "E6_5_1_IMPLEMENTATION_SUMMARY.md",
+        "app/patient/dashboard/page.tsx",
+        "app/patient/escalation/client.tsx",
+        "app/patient/escalation/page.tsx",
+        "app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+        "app/patient/funnel/[slug]/intro/page.tsx",
+        "app/patient/funnel/[slug]/page.tsx",
+        "app/patient/funnel/[slug]/result/page.tsx",
+        "app/patient/funnels/page.tsx",
+        "app/patient/history/page.tsx",
+        "app/patient/support/page.tsx",
+        "lib/utils/__tests__/dashboardFirstPolicy.test.ts",
+        "lib/utils/dashboardFirstPolicy.ts"
+      ]
+    },
+    {
+      "number": 610,
+      "title": "E6.4.10 — Deterministic seed data for pilot deployment",
+      "mergedAt": "2026-01-15T21:35:55Z",
+      "mergeCommit": "839a314c41669e1f849439f892676d27c071197d",
+      "labels": [],
+      "evidence_missing": false,
+      "risk_flags": ["DB", "Tooling"],
+      "files": [
+        "E6_4_10_IMPLEMENTATION_SUMMARY.md",
+        "docs/runbooks/DB_SEED.md",
+        "docs/runbooks/README.md",
+        "package.json",
+        "supabase/seed.sql",
+        "verify-e6-4-10-seed.ps1"
+      ]
+    },
+    {
+      "number": 609,
+      "title": "E6.4.9: Add pilot KPIs endpoint and critical endpoint tracking",
+      "mergedAt": "2026-01-15T21:11:57Z",
+      "mergeCommit": "7073748a4e5dd060b883a4c58c2cf13b67c07d7b",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 608,
+      "title": "E6.4.8: Minimal telemetry for pilot observability",
+      "mergedAt": "2026-01-15T20:42:31Z",
+      "mergeCommit": "aadb610a96e59b7845863ad1ebed86d8245cc987",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 607,
+      "title": "E6.4.8 — Audit and document data export endpoints for pilot evaluation",
+      "mergedAt": "2026-01-15T09:18:31Z",
+      "mergeCommit": "e8bf55ee029e5e6acc59fde8fc93f9ad9a95a110",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 606,
+      "title": "E6.4.7 — Operational Runbook + Smoke Tests (PowerShell) for Pilot",
+      "mergedAt": "2026-01-15T09:02:40Z",
+      "mergeCommit": "f24fa450eaaab91fbd3b547860b31e6bcc8cb2e6",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 605,
+      "title": "E6.4.6 — Red flag escalation stub: deterministic detection + placeholder UI",
+      "mergedAt": "2026-01-15T08:16:08Z",
+      "mergeCommit": "72a550bc739f5d24ab3b213d63c7d5a8795c24ab",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 604,
+      "title": "E6.4.5: Implement deterministic workup data sufficiency check",
+      "mergedAt": "2026-01-15T07:06:28Z",
+      "mergeCommit": "d7885bc90ae5f3259d3f0238b146fdc5264ac640",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 603,
+      "title": "E6.4.4 — Replace report surface with workup status (needs_more_data/ready_for_review)",
+      "mergedAt": "2026-01-15T06:31:13Z",
+      "mergeCommit": "017d53724debcebae78b0cb4129cad369f6b144d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 602,
+      "title": "E6.4.3 — Complete patient funnel flow wiring for pilot",
+      "mergedAt": "2026-01-15T04:57:06Z",
+      "mergeCommit": "5e8038325e50cf27d9304c38cdf5f0c0787b2248",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 601,
+      "title": "E6.4.2 — Persistent onboarding status with dashboard landing page",
+      "mergedAt": "2026-01-14T21:05:16Z",
+      "mergeCommit": "45e044ccab3e34ba4232e54d9292dbf3b76c37b8",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 600,
+      "title": "E6.4.1: Implement pilot eligibility gates with 401-first auth ordering",
+      "mergedAt": "2026-01-14T10:28:56Z",
+      "mergeCommit": "c0f20b533516c0bd2d4b34f89c90c09dfeb5ebe2",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 599,
+      "title": "Add deterministic mobile contract export with CI drift detection",
+      "mergedAt": "2026-01-14T05:27:31Z",
+      "mergeCommit": "e7c27cfae89b181cfca6c608eb4196ca668e0591",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 598,
+      "title": "Add iOS Integration Pack documentation (E6.2.9)",
+      "mergedAt": "2026-01-14T04:53:57Z",
+      "mergeCommit": "39736103bb5b70b448d0664aabca970f9b2d7904",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 597,
+      "title": "Add correlation ID middleware and observability infrastructure",
+      "mergedAt": "2026-01-14T04:34:00Z",
+      "mergeCommit": "d7a8842dd2abc83725c7923b69d0a7eb05ebbff5",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 596,
+      "title": "E6.2.7: Add HTTP caching and cursor pagination to funnels catalog",
+      "mergedAt": "2026-01-13T16:40:32Z",
+      "mergeCommit": "b8b8bc53012467339564e1589382e9d04d81a600",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 595,
+      "title": "E6.2.6: Add SESSION_EXPIRED error code for deterministic mobile session handling",
+      "mergedAt": "2026-01-13T14:22:57Z",
+      "mergeCommit": "cd0f9e8ef20bab5c74ddb67d715967cd35a5648d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 594,
+      "title": "Add deep link contract specification for iOS v0.7",
+      "mergedAt": "2026-01-13T13:45:44Z",
+      "mergeCommit": "8e02c73c8e67323ef3a0696de1f85583a024ed8e",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 593,
+      "title": "E6.2.4: Add idempotency key support for mobile retry scenarios",
+      "mergedAt": "2026-01-13T08:33:22Z",
+      "mergeCommit": "7e12ae949d5e67bbbc9fd5d1326135db00000e69",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 592,
+      "title": "Add versioned Zod contract schemas for patient assessment endpoints",
+      "mergedAt": "2026-01-13T06:25:06Z",
+      "mergeCommit": "7b1b388e6162aa393767e906c26bf821852cf0da",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 591,
+      "title": "E6.2.2: Add 409 conflict error codes and mobile API error documentation",
+      "mergedAt": "2026-01-13T05:58:35Z",
+      "mergeCommit": "ed8ce627bece18f072d775731b12408ecde8a2e4",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 590,
+      "title": "E6.2.1 — Add Mobile API Surface documentation for v0.7 iOS",
+      "mergedAt": "2026-01-13T05:44:18Z",
+      "mergeCommit": "0e644134a338d793688da6cc6b1f11cd148a57b4",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 589,
+      "title": "Fix design tokens CI verification to detect drift",
+      "mergedAt": "2026-01-12T21:18:00Z",
+      "mergeCommit": "1916ccbe87de2c296876d070fb940f9a19fd7493",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 588,
+      "title": "E6.1.9 — Migrate representative screens to design system components",
+      "mergedAt": "2026-01-12T21:05:45Z",
+      "mergeCommit": "da038be6848c54ebeed8f1e31fd7049de18dca25",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 587,
+      "title": "Standardize Clinician/Admin layout patterns with reusable header components",
+      "mergedAt": "2026-01-12T20:34:42Z",
+      "mergeCommit": "30e1dbd880b0baf7330e496b158e2d12ac2c3cd9",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 586,
+      "title": "Document Patient Mobile Shell layout patterns (E6.1.7)",
+      "mergedAt": "2026-01-12T20:09:48Z",
+      "mergeCommit": "46d67bdb7a40519cc2fafb31cd7b90224c02d42d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 585,
+      "title": "E6.1.6: Add Alert and Modal components with semantic token system",
+      "mergedAt": "2026-01-12T17:07:58Z",
+      "mergeCommit": "d96e5c578d98b90f1616d532a1fa52e5f5034436",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 584,
+      "title": "Map semantic design tokens to CSS variables with Tailwind integration",
+      "mergedAt": "2026-01-12T15:29:16Z",
+      "mergeCommit": "4616464070d4c00d789e6bc95250ccf8d58c103c",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 583,
+      "title": "E6.1.4 — Export design tokens as deterministic JSON for iOS",
+      "mergedAt": "2026-01-12T14:46:41Z",
+      "mergeCommit": "4d116d25d2c4c32cf3f3fd290c58994b7a4f0e3a",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 582,
+      "title": "E6.1.3 — Theme Config + Runtime Switching (Light/Dark/Accent)",
+      "mergedAt": "2026-01-12T14:14:08Z",
+      "mergeCommit": "45aabbd9febf6c9c4b840cf42d21922c614d165d",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 559,
+      "title": "Implement semantic token system with theme and brand override support",
+      "mergedAt": "2026-01-12T13:02:52Z",
+      "mergeCommit": "62733426d6416af3aff3bc096baa571332c03665",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 555,
+      "title": "Establish canonical design token schema with export pipeline",
+      "mergedAt": "2026-01-12T12:16:22Z",
+      "mergeCommit": "953b82a3c0ed73a47758151d98895fb84b8c0ee8",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 554,
+      "title": "Verify endpoint catalog artifacts are deterministic and current",
+      "mergedAt": "2026-01-11T16:38:34Z",
+      "mergeCommit": "2d620c5301a09934df5be050c3d8ede82d8506ad",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 553,
+      "title": "Add endpoint catalog UI with orphan/unknown filtering and collapsible usage details",
+      "mergedAt": "2026-01-11T16:21:47Z",
+      "mergeCommit": "df3aa85d1e71e0da7d62503950f794d79796eeb2",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 552,
+      "title": "I6.3.4: Add environment diagnostics and structured failure output to verify-endpoint-catalog.ps1",
+      "mergedAt": "2026-01-11T14:41:35Z",
+      "mergeCommit": "f9138465b6001a874e624a275f4ab11e329a99ef",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 540,
+      "title": "Add CLI integration tests for section generator with deterministic output",
+      "mergedAt": "2026-01-11T14:23:41Z",
+      "mergeCommit": "d9cd112ee400dfbb999abd139d9151697d619e42",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 528,
+      "title": "I6.3.2 — Replace locale-sensitive sorting with deterministic codepoint comparison",
+      "mergedAt": "2026-01-11T13:13:09Z",
+      "mergeCommit": "65f36d05c56fb574bad5f3f697766542d18dfac3",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 516,
+      "title": "Fix --allowlist CLI flag parsing to handle missing values",
+      "mergedAt": "2026-01-11T12:46:30Z",
+      "mergeCommit": "5f94b93794e0fc817b0b3dd9fe6363a3c6447748",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 507,
+      "title": "Fix endpoint catalog determinism and allowlist flag",
+      "mergedAt": "2026-01-11T09:36:40Z",
+      "mergeCommit": "ca7b9f2aa3f214346a7a85897a3cd5d8d05a859f",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    },
+    {
+      "number": 506,
+      "title": "fix(endpoint-catalog): allow --allowlist flag without value",
+      "mergedAt": "2026-01-11T10:00:57Z",
+      "mergeCommit": "8bfdcf6a94b6c05dc738b7093b00b19252d8b858",
+      "labels": [],
+      "evidence_missing": true,
+      "risk_flags": [],
+      "files": []
+    }
+  ],
+  "npm_scripts": {
+    "dev": "next dev",
+    "prebuild": "node scripts/generate-version.js",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "lint:changed": "node tools/lint-changed-lines.mjs",
+    "hooks:install": "node tools/install-git-hooks.mjs",
+    "lint:migrations": "bash scripts/check-migrations.sh",
+    "lint:schema": "pwsh -File scripts/db/lint-migrations.ps1",
+    "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration up",
+    "db:seed": "supabase db reset",
+    "db:seed:verify": "pwsh -File verify-e6-4-10-seed.ps1",
+    "db:diff": "supabase db diff",
+    "db:verify": "pwsh -File scripts/verify-db-determinism.ps1",
+    "db:verify-sync": "pwsh -File scripts/verify-migration-sync.ps1",
+    "db:access-audit": "node scripts/db/audit-db-access.js",
+    "db:access-verify": "node scripts/db/verify-db-access.js",
+    "api:catalog": "node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json",
+    "api:catalog:verify": "pwsh -File scripts/ci/verify-endpoint-catalog.ps1",
+    "mobile:contracts": "node scripts/dev/mobile-contract/export.js --out docs/dev/mobile-contracts.v1.json",
+    "mobile:contracts:verify": "pwsh -File scripts/ci/verify-mobile-contracts.ps1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "risk_summary": {
+    "api": 8,
+    "ui": 4,
+    "db": 2,
+    "auth": 3,
+    "tooling": 1
+  }
+}

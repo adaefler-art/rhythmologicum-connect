@@ -9,6 +9,7 @@
 
 import type { NextStep } from '@/lib/api/contracts/patient/dashboard'
 import type { OnboardingStatusValue, WorkupStateValue } from '@/lib/api/contracts/patient/dashboard'
+import { DEFAULT_PATIENT_FUNNEL, isFunnelPatientReachable } from '@/lib/config/funnelAllowlist'
 
 /**
  * Next Step Rules Version
@@ -93,24 +94,28 @@ export function resolveNextStep(input: NextStepResolverInput): NextStepResolutio
     }
   }
 
-  // Rule 3: Funnel in progress → resume_funnel
+  // Rule 3: Funnel in progress → resume_funnel (only if patient-reachable)
   if (input.hasInProgressFunnel && input.inProgressFunnelSlug) {
-    return {
-      nextStep: {
-        type: 'funnel',
-        target: `/patient/funnel/${input.inProgressFunnelSlug}`,
-        label: 'Fragebogen fortsetzen',
-      },
-      rulesVersion: NEXT_STEP_RULES_VERSION,
+    // Only offer resume if the funnel is patient-reachable
+    if (isFunnelPatientReachable(input.inProgressFunnelSlug)) {
+      return {
+        nextStep: {
+          type: 'funnel',
+          target: `/patient/funnel/${input.inProgressFunnelSlug}`,
+          label: 'Fragebogen fortsetzen',
+        },
+        rulesVersion: NEXT_STEP_RULES_VERSION,
+      }
     }
+    // Non-reachable in-progress funnel: fall through to start new or view content
   }
 
-  // Rule 4: No funnel started → start_funnel (default to stress-assessment)
+  // Rule 4: No funnel started → start_funnel (uses default from allowlist)
   if (!input.hasStartedAnyFunnel) {
     return {
       nextStep: {
         type: 'funnel',
-        target: '/patient/funnel/stress-assessment',
+        target: `/patient/funnel/${DEFAULT_PATIENT_FUNNEL}`,
         label: 'Stress-Assessment starten',
       },
       rulesVersion: NEXT_STEP_RULES_VERSION,

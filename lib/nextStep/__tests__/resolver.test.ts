@@ -150,16 +150,34 @@ describe('E6.5.5: Next Step Resolver v1', () => {
     })
 
     it('should use the correct funnel slug in target URL', () => {
+      // Use stress-assessment which is in the allowlist
+      const input = createDefaultResolverInput({
+        onboardingStatus: 'completed',
+        workupState: 'no_data',
+        hasInProgressFunnel: true,
+        inProgressFunnelSlug: 'stress-assessment',
+      })
+
+      const result = resolveNextStep(input)
+
+      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+    })
+
+    it('should fall through to next rule for non-reachable in-progress funnel', () => {
+      // resilience-assessment is not in the allowlist, so should fall through
       const input = createDefaultResolverInput({
         onboardingStatus: 'completed',
         workupState: 'no_data',
         hasInProgressFunnel: true,
         inProgressFunnelSlug: 'resilience-assessment',
+        hasStartedAnyFunnel: true, // already started, so won't trigger rule 4
       })
 
       const result = resolveNextStep(input)
 
-      expect(result.nextStep.target).toBe('/patient/funnel/resilience-assessment')
+      // Falls through to Rule 6 (fallback - view content)
+      expect(result.nextStep.type).toBe('content')
+      expect(result.nextStep.target).toBe('/patient/funnels')
     })
 
     it('should not trigger if hasInProgressFunnel is false', () => {

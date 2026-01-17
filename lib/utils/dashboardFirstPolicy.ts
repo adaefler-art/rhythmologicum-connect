@@ -15,6 +15,7 @@
 
 import { cookies } from 'next/headers'
 import { env } from '@/lib/env'
+import { isFunnelPatientReachable } from '@/lib/config/funnelAllowlist'
 
 /**
  * Cookie name for tracking dashboard visit
@@ -53,6 +54,34 @@ const EXEMPT_ROUTES = [
  * Special case: patient root route (redirects to dashboard anyway)
  */
 const PATIENT_ROOT = '/patient'
+
+/**
+ * Funnel route prefix for slug extraction
+ */
+const FUNNEL_ROUTE_PREFIX = '/patient/funnel/'
+
+/**
+ * Extracts the funnel slug from a pathname
+ * @param pathname - e.g., '/patient/funnel/stress-assessment'
+ * @returns The slug or null if not a funnel route
+ */
+export function extractFunnelSlug(pathname: string): string | null {
+  if (!pathname.startsWith(FUNNEL_ROUTE_PREFIX)) {
+    return null
+  }
+  // Extract slug: '/patient/funnel/stress-assessment' → 'stress-assessment'
+  // Handle nested routes: '/patient/funnel/stress-assessment/result' → 'stress-assessment'
+  const remainder = pathname.slice(FUNNEL_ROUTE_PREFIX.length)
+  const slugEnd = remainder.indexOf('/')
+  return slugEnd === -1 ? remainder : remainder.slice(0, slugEnd)
+}
+
+/**
+ * Check if a pathname is a funnel route
+ */
+export function isFunnelRoute(pathname: string): boolean {
+  return pathname.startsWith(FUNNEL_ROUTE_PREFIX)
+}
 
 /**
  * Checks if the user has visited the dashboard in this session
@@ -124,6 +153,15 @@ export function requiresDashboardFirst(pathname: string): boolean {
   
   if (isExempt) {
     return false
+  }
+
+  // Special case: patient-reachable funnels are exempt from dashboard-first
+  // This allows direct access to allowlisted funnels like stress-assessment
+  if (isFunnelRoute(pathname)) {
+    const slug = extractFunnelSlug(pathname)
+    if (slug && isFunnelPatientReachable(slug)) {
+      return false
+    }
   }
 
   // Check if it's a protected route (prefix match)

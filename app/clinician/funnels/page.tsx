@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button, Card, Badge, LoadingSpinner, ErrorState, PageHeader } from '@/lib/ui'
 import { spacing } from '@/lib/design-tokens'
+import { isFunnelPatientReachable } from '@/lib/config/funnelAllowlist'
 
 export const dynamic = 'force-dynamic'
 
@@ -148,6 +149,13 @@ export default function FunnelListPage() {
                     <Badge variant={funnel.is_active ? 'success' : 'secondary'} size="sm">
                       {funnel.is_active ? 'Aktiv' : 'Inaktiv'}
                     </Badge>
+                    {!isFunnelPatientReachable(funnel.slug) && (
+                      <span title="Nur für Clinicians sichtbar, Patienten können diesen Funnel nicht starten">
+                        <Badge variant="warning" size="sm">
+                          ADMIN-ONLY
+                        </Badge>
+                      </span>
+                    )}
                   </div>
 
                   {funnel.description && (

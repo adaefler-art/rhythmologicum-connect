@@ -13,6 +13,8 @@ import {
   clearDashboardVisit,
   requiresDashboardFirst,
   enforceDashboardFirst,
+  extractFunnelSlug,
+  isFunnelRoute,
 } from '../dashboardFirstPolicy'
 import { cookies } from 'next/headers'
 
@@ -111,8 +113,23 @@ describe('dashboardFirstPolicy', () => {
       expect(requiresDashboardFirst('/patient')).toBe(false)
     })
 
-    it('returns true for funnel routes', () => {
-      expect(requiresDashboardFirst('/patient/funnel/stress-assessment')).toBe(true)
+    // Funnel reachability tests
+    it('returns false for patient-reachable funnel (stress-assessment)', () => {
+      expect(requiresDashboardFirst('/patient/funnel/stress-assessment')).toBe(false)
+      expect(requiresDashboardFirst('/patient/funnel/stress-assessment/result')).toBe(false)
+    })
+
+    it('returns false for patient-reachable funnel (cardiovascular-age)', () => {
+      expect(requiresDashboardFirst('/patient/funnel/cardiovascular-age')).toBe(false)
+      expect(requiresDashboardFirst('/patient/funnel/cardiovascular-age/result')).toBe(false)
+    })
+
+    it('returns true for non-allowlisted funnel (sleep-quality)', () => {
+      expect(requiresDashboardFirst('/patient/funnel/sleep-quality')).toBe(true)
+      expect(requiresDashboardFirst('/patient/funnel/sleep-quality/result')).toBe(true)
+    })
+
+    it('returns true for funnels list route', () => {
       expect(requiresDashboardFirst('/patient/funnels')).toBe(true)
     })
 
@@ -161,14 +178,41 @@ describe('dashboardFirstPolicy', () => {
       expect(result).toBe('/patient/dashboard?return=%2Fpatient%2Ffunnels')
     })
 
-    it('returns redirect URL with encoded pathname', async () => {
+    // Funnel reachability tests for enforceDashboardFirst
+    it('returns null for allowlisted funnel (stress-assessment) even without dashboard visit', async () => {
       mockCookieStore.get.mockReturnValue(undefined)
 
       const result = await enforceDashboardFirst('/patient/funnel/stress-assessment')
 
+      // Allowlisted funnel should be directly accessible
+      expect(result).toBeNull()
+    })
+
+    it('returns null for allowlisted funnel (cardiovascular-age) even without dashboard visit', async () => {
+      mockCookieStore.get.mockReturnValue(undefined)
+
+      const result = await enforceDashboardFirst('/patient/funnel/cardiovascular-age')
+
+      // Allowlisted funnel should be directly accessible
+      expect(result).toBeNull()
+    })
+
+    it('returns redirect URL for non-allowlisted funnel (sleep-quality) without dashboard visit', async () => {
+      mockCookieStore.get.mockReturnValue(undefined)
+
+      const result = await enforceDashboardFirst('/patient/funnel/sleep-quality')
+
       expect(result).toBe(
-        '/patient/dashboard?return=%2Fpatient%2Ffunnel%2Fstress-assessment'
+        '/patient/dashboard?return=%2Fpatient%2Ffunnel%2Fsleep-quality'
       )
+    })
+
+    it('returns null for non-allowlisted funnel when dashboard has been visited', async () => {
+      mockCookieStore.get.mockReturnValue({ value: 'true' })
+
+      const result = await enforceDashboardFirst('/patient/funnel/sleep-quality')
+
+      expect(result).toBeNull()
     })
 
     it('returns redirect URL for history route when not visited', async () => {
@@ -177,6 +221,36 @@ describe('dashboardFirstPolicy', () => {
       const result = await enforceDashboardFirst('/patient/history')
 
       expect(result).toBe('/patient/dashboard?return=%2Fpatient%2Fhistory')
+    })
+  })
+
+  describe('extractFunnelSlug', () => {
+    it('extracts slug from simple funnel route', () => {
+      expect(extractFunnelSlug('/patient/funnel/stress-assessment')).toBe('stress-assessment')
+    })
+
+    it('extracts slug from nested funnel route', () => {
+      expect(extractFunnelSlug('/patient/funnel/stress-assessment/result')).toBe('stress-assessment')
+      expect(extractFunnelSlug('/patient/funnel/cardiovascular-age/intro')).toBe('cardiovascular-age')
+    })
+
+    it('returns null for non-funnel routes', () => {
+      expect(extractFunnelSlug('/patient/dashboard')).toBeNull()
+      expect(extractFunnelSlug('/patient/funnels')).toBeNull()
+      expect(extractFunnelSlug('/clinician/funnels/stress-assessment')).toBeNull()
+    })
+  })
+
+  describe('isFunnelRoute', () => {
+    it('returns true for funnel routes', () => {
+      expect(isFunnelRoute('/patient/funnel/stress-assessment')).toBe(true)
+      expect(isFunnelRoute('/patient/funnel/cardiovascular-age/result')).toBe(true)
+    })
+
+    it('returns false for non-funnel routes', () => {
+      expect(isFunnelRoute('/patient/funnels')).toBe(false)
+      expect(isFunnelRoute('/patient/dashboard')).toBe(false)
+      expect(isFunnelRoute('/clinician/funnels/stress-assessment')).toBe(false)
     })
   })
 })

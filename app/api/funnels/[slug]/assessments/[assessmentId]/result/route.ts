@@ -91,6 +91,9 @@ export async function GET(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
     }
 
+    // Try legacy funnels table first, then funnels_catalog
+    let funnelTitle: string | null = null
+    
     const { data: funnelRow, error: funnelError } = await supabase
       .from('funnels')
       .select('title')
@@ -105,12 +108,25 @@ export async function GET(
       return internalErrorResponse('Fehler beim Laden des Funnels.')
     }
 
+    funnelTitle = funnelRow?.title ?? null
+
+    // Fallback to funnels_catalog if legacy table has no title
+    if (!funnelTitle) {
+      const { data: catalogRow } = await supabase
+        .from('funnels_catalog')
+        .select('title')
+        .eq('slug', assessment.funnel)
+        .maybeSingle()
+      
+      funnelTitle = catalogRow?.title ?? null
+    }
+
     const responseData: GetResultResponseData = {
       id: assessment.id,
       funnel: assessment.funnel,
       completedAt: assessment.completed_at,
       status: assessment.status as 'in_progress' | 'completed',
-      funnelTitle: funnelRow?.title ?? null,
+      funnelTitle,
       workupStatus: assessment.workup_status ?? null,
       missingDataFields: Array.isArray(assessment.missing_data_fields)
         ? (assessment.missing_data_fields as string[])
