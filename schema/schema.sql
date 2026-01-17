@@ -5458,6 +5458,12 @@ CREATE POLICY "Patients can insert own profile" ON "public"."patient_profiles" F
 
 
 
+CREATE POLICY "Patients can update own assessment answers" ON "public"."assessment_answers" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."assessments"
+  WHERE (("assessments"."id" = "assessment_answers"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
+
+
+
 CREATE POLICY "Patients can update own assessments" ON "public"."assessments" FOR UPDATE USING (("patient_id" = "public"."get_my_patient_profile_id"())) WITH CHECK (("patient_id" = "public"."get_my_patient_profile_id"()));
 
 
