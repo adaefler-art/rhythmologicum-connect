@@ -136,20 +136,26 @@ export async function GET(
     const answersEcho = (answers || [])
       .map((row) => {
         const rawValue = row.answer_data ?? row.answer_value
-        let value: string | number | boolean | null = null
 
         if (typeof rawValue === 'string' || typeof rawValue === 'number' || typeof rawValue === 'boolean') {
-          value = rawValue
-        } else if (rawValue !== null && rawValue !== undefined) {
-          value = JSON.stringify(rawValue)
+          return {
+            questionId: row.question_id,
+            value: rawValue,
+          }
         }
 
-        return {
-          questionId: row.question_id,
-          value,
+        if (rawValue !== null && rawValue !== undefined) {
+          return {
+            questionId: row.question_id,
+            value: JSON.stringify(rawValue),
+          }
         }
+
+        return null
       })
-      .filter((row) => row.value !== null)
+      .filter(
+        (row): row is { questionId: string; value: string | number | boolean } => row !== null,
+      )
 
     const ageAnswer = answersEcho.find((row) => row.questionId === 'q1-age')
     const cardiovascularAgeYears =
