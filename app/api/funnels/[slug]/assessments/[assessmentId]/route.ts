@@ -104,6 +104,15 @@ export async function GET(
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
+    // E6.5+ Evidence logging: Log lookup parameters for debugging
+    console.log('[getAssessment] Lookup parameters:', {
+      correlationId,
+      assessmentId,
+      slug,
+      userId: user.id,
+      patientProfileId: patientProfile.id,
+    })
+
     // Load assessment and verify ownership
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
@@ -111,6 +120,14 @@ export async function GET(
       .eq('id', assessmentId)
       .eq('funnel', slug)
       .maybeSingle()
+
+    // E6.5+ Evidence logging: Log query result for debugging
+    console.log('[getAssessment] Query result:', {
+      correlationId,
+      found: !!assessment,
+      errorCode: assessmentError?.code,
+      errorMessage: assessmentError?.message,
+    })
 
     if (assessmentError) {
       // PGRST116 = no rows found (expected for non-existent assessments)

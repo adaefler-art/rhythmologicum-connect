@@ -192,6 +192,15 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
     // Create new assessment with status = in_progress
     // Note: funnel_id FK only works with legacy funnels table, not funnels_catalog
     // For V0.5 funnels (catalog-based), we set funnel_id to null and rely on funnel (slug) column
+    // E6.5+ Evidence logging: Log insert parameters for debugging
+    console.log('[createAssessment] Insert parameters:', {
+      correlationId,
+      slug,
+      userId: user.id,
+      patientProfileId: patientProfile.id,
+      isLegacyFunnel,
+    })
+
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .insert({
@@ -244,6 +253,15 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       
       return internalErrorResponse('Fehler beim Erstellen des Assessments.', correlationId)
     }
+
+    // E6.5+ Evidence logging: Log created assessment for debugging roundtrip
+    console.log('[createAssessment] Created assessment:', {
+      correlationId,
+      assessmentId: assessment.id,
+      patientIdStored: assessment.patient_id,
+      funnelStored: assessment.funnel,
+      status: assessment.status,
+    })
 
     // Determine first step using appropriate method
     let currentStep: { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number } | null = null

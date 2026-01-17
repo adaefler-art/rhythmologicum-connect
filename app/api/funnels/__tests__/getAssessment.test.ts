@@ -278,4 +278,91 @@ describe('GET /api/funnels/:slug/assessments/:assessmentId', () => {
       // Should be NOT_FOUND for profile, not error-level log
     })
   })
+
+  describe('roundtrip consistency', () => {
+    it('should return 200 for assessment created with same patient_id', async () => {
+      // This test verifies the core bug fix: an assessment created with patient_id X
+      // must be readable by a user whose patient_profile.id is also X
+      const userId = 'user-roundtrip-123'
+      const patientId = 'patient-roundtrip-456'
+      const assessmentId = 'assessment-roundtrip-789'
+
+      const mockSupabase = createMockSupabase({
+        user: { id: userId },
+        patientProfile: { id: patientId },
+        assessment: {
+          id: assessmentId,
+          patient_id: patientId, // Same as patientProfile.id - this is the key!
+          funnel: 'cardiovascular-age',
+          funnel_id: null, // Catalog funnel (V0.5)
+          status: 'in_progress',
+        },
+      })
+      mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase)
+      mockGetCurrentStep.mockResolvedValue({
+        stepId: 'step-1',
+        title: 'First Step',
+        type: 'question_step',
+        orderIndex: 0,
+        stepIndex: 0,
+      })
+
+      const { GET } = await import('../[slug]/assessments/[assessmentId]/route')
+
+      const mockRequest = new Request(
+        `http://localhost/api/funnels/cardiovascular-age/assessments/${assessmentId}`,
+        { method: 'GET' },
+      )
+
+      const response = await GET(mockRequest as never, {
+        params: Promise.resolve({ slug: 'cardiovascular-age', assessmentId }),
+      })
+
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.success).toBe(true)
+      expect(body.data.assessmentId).toBe(assessmentId)
+
+      // Verify no error logs were triggered
+      expect(mockLogDatabaseError).not.toHaveBeenCalled()
+      expect(mockLogNotFound).not.toHaveBeenCalled()
+    })
+
+    it('should return 404 when RLS blocks due to patient_id mismatch', async () => {
+      // This simulates the bug: assessment exists but RLS returns 0 rows
+      // because patient_id stored != get_my_patient_profile_id()
+      const userId = 'user-mismatch-123'
+      const patientId = 'patient-mismatch-456'
+      const assessmentId = 'assessment-blocked-789'
+
+      const mockSupabase = createMockSupabase({
+        user: { id: userId },
+        patientProfile: { id: patientId },
+        // RLS would return null/empty - simulated by assessment: null
+        assessment: null,
+      })
+      mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase)
+
+      const { GET } = await import('../[slug]/assessments/[assessmentId]/route')
+
+      const mockRequest = new Request(
+        `http://localhost/api/funnels/cardiovascular-age/assessments/${assessmentId}`,
+        { method: 'GET' },
+      )
+
+      const response = await GET(mockRequest as never, {
+        params: Promise.resolve({ slug: 'cardiovascular-age', assessmentId }),
+      })
+
+      // When RLS blocks, we get 404 (not 500)
+      expect(response.status).toBe(404)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error.code).toBe('NOT_FOUND')
+
+      // logNotFound should be called, not logDatabaseError
+      expect(mockLogNotFound).toHaveBeenCalled()
+      expect(mockLogDatabaseError).not.toHaveBeenCalled()
+    })
+  })
 })
