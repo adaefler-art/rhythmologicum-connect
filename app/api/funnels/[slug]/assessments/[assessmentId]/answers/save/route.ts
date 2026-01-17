@@ -333,7 +333,11 @@ async function handleSaveAnswer(
         },
         upsertError,
       )
-      return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
+        // FK violation: assessment does not exist
+        if ((upsertError as { code?: string })?.code === '23503') {
+          return notFoundResponse('Assessment')
+        }
+        return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
     }
 
     // V05-I03.3: Update current_step_id for save/resume functionality
