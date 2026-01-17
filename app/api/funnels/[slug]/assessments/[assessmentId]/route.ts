@@ -275,18 +275,47 @@ export async function GET(
         totalSteps = steps.length
 
         if (steps.length > 0) {
-          // For V0.5, use persisted current_step_id when available
-          const targetStepId = assessment.current_step_id ?? steps[0]?.id
-          const resolvedIndex = steps.findIndex((step) => step.id === targetStepId)
-          const safeIndex = resolvedIndex >= 0 ? resolvedIndex : 0
-          const resolvedStep = steps[safeIndex]
+          const { data: answeredRows, error: answeredError } = await supabase
+            .from('assessment_answers')
+            .select('question_id')
+            .eq('assessment_id', assessmentId)
+
+          if (answeredError) {
+            logDatabaseError(
+              { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` },
+              answeredError,
+            )
+            return internalErrorResponse('Fehler beim Laden der Antworten.', correlationId)
+          }
+
+          const answeredIds = new Set(answeredRows?.map((row) => row.question_id) || [])
+
+          let resolvedIndex = steps.length - 1
+          for (let i = 0; i < steps.length; i++) {
+            const step = steps[i]
+            const requiredQuestions = step.questions?.filter(
+              (q: { required?: boolean; is_required?: boolean }) =>
+                (q.required ?? q.is_required) === true,
+            )
+
+            const hasMissing = requiredQuestions?.some(
+              (q: { id: string }) => !answeredIds.has(q.id),
+            )
+
+            if (hasMissing) {
+              resolvedIndex = i
+              break
+            }
+          }
+
+          const resolvedStep = steps[resolvedIndex]
 
           currentStep = {
             stepId: resolvedStep.id,
             title: resolvedStep.title,
             type: 'question_step',
-            orderIndex: safeIndex,
-            stepIndex: safeIndex,
+            orderIndex: resolvedIndex,
+            stepIndex: resolvedIndex,
             hasQuestions: true,
             requiredQuestions: [],
             answeredQuestions: [],
