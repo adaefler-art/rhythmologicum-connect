@@ -13,7 +13,7 @@ import {
   funnelNotSupportedResponse,
 } from '@/lib/api/responses'
 import { isSessionExpired } from '@/lib/api/authHelpers'
-import { logUnauthorized, logDatabaseError, logAssessmentStarted } from '@/lib/logging/logger'
+import { logUnauthorized, logDatabaseError, logAssessmentStarted, logNotFound, logWarn } from '@/lib/logging/logger'
 import { trackAssessmentStarted } from '@/lib/monitoring/kpi'
 import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
@@ -66,7 +66,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
 async function handleStartAssessment(request: NextRequest, slug: string) {
   // E6.4.8: Get correlation ID for telemetry
   const correlationId = getCorrelationId(request)
-  
+
+  console.log('[assessments] POST start:', { requestId: correlationId, slug })
+
   try {
     // Validate slug parameter
     if (!slug) {
@@ -105,17 +107,25 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profileError || !patientProfile) {
-      logDatabaseError(
-        {
-          userId: user.id,
-          endpoint: `/api/funnels/${slug}/assessments`,
-          requestId: correlationId,
-        },
-        profileError,
-      )
+    if (profileError) {
+      // PGRST116 = no rows found (expected, not a DB error)
+      if (profileError.code !== 'PGRST116') {
+        logDatabaseError(
+          {
+            userId: user.id,
+            endpoint: `/api/funnels/${slug}/assessments`,
+            requestId: correlationId,
+          },
+          profileError,
+        )
+      }
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
+    }
+
+    if (!patientProfile) {
+      logNotFound('Patient profile', { userId: user.id, slug, requestId: correlationId })
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
@@ -341,10 +351,26 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       correlationId,
     )
   } catch (error) {
+    // Classify the error
+    const errorClass =
+      error instanceof Error && error.message.includes('network')
+        ? 'network'
+        : error instanceof Error && error.message.includes('timeout')
+          ? 'timeout'
+          : 'unexpected'
+
+    console.error('[assessments] Unhandled error in POST handler:', {
+      requestId: correlationId,
+      slug,
+      errorClass,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    })
+
     logDatabaseError(
       {
         endpoint: 'POST /api/funnels/[slug]/assessments',
         requestId: correlationId,
+        errorClass,
       },
       error,
     )

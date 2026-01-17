@@ -17,6 +17,7 @@ import {
   logDatabaseError,
   logInfo,
   logWarn,
+  logNotFound,
 } from '@/lib/logging/logger'
 import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
@@ -88,10 +89,18 @@ export async function GET(
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (profileError || !patientProfile) {
-      logDatabaseError({ userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, profileError)
+    if (profileError) {
+      // Only log actual DB errors, not "no rows found" (PGRST116)
+      if (profileError.code !== 'PGRST116') {
+        logDatabaseError({ userId: user.id, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, profileError)
+      }
+      return notFoundResponse('Benutzerprofil', undefined, correlationId)
+    }
+
+    if (!patientProfile) {
+      logWarn('Patient profile not found', { userId: user.id, assessmentId, slug })
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
@@ -104,11 +113,17 @@ export async function GET(
       .maybeSingle()
 
     if (assessmentError) {
+      // PGRST116 = no rows found (expected for non-existent assessments)
+      if (assessmentError.code === 'PGRST116') {
+        logNotFound('Assessment', { userId: user.id, assessmentId, slug })
+        return notFoundResponse('Assessment', 'Assessment nicht gefunden.', correlationId)
+      }
       logDatabaseError({ userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` }, assessmentError)
       return internalErrorResponse('Fehler beim Laden des Assessments.', correlationId)
     }
 
     if (!assessment) {
+      logNotFound('Assessment', { userId: user.id, assessmentId, slug })
       return notFoundResponse('Assessment', 'Assessment nicht gefunden.', correlationId)
     }
 
@@ -133,19 +148,26 @@ export async function GET(
         .from('funnels')
         .select('id')
         .eq('slug', slug)
-        .single()
+        .maybeSingle()
 
-      if (funnelLookupError || !funnelRow?.id) {
-        // Funnel doesn't exist in the database - this is a data integrity issue
-        logDatabaseError(
-          {
-            userId: user.id,
-            assessmentId,
-            slug,
-            endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
-          },
-          funnelLookupError || new Error(`Funnel with slug '${slug}' not found in database`),
-        )
+      if (funnelLookupError) {
+        // PGRST116 is handled by maybeSingle() returning null, other errors are logged
+        if (funnelLookupError.code !== 'PGRST116') {
+          logDatabaseError(
+            {
+              userId: user.id,
+              assessmentId,
+              slug,
+              endpoint: `/api/funnels/${slug}/assessments/${assessmentId}`,
+            },
+            funnelLookupError,
+          )
+        }
+      }
+
+      if (!funnelRow?.id) {
+        // Funnel doesn't exist in the database - expected for catalog-only funnels
+        logNotFound('Funnel (legacy lookup)', { userId: user.id, assessmentId, slug })
         return notFoundResponse(
           'Funnel',
           `Der Funnel '${slug}' konnte nicht gefunden werden. Möglicherweise wurde er gelöscht oder umbenannt.`,

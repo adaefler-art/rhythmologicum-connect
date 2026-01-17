@@ -29,6 +29,8 @@ jest.mock('@/lib/logging/logger', () => ({
   logUnauthorized: jest.fn(),
   logDatabaseError: jest.fn(),
   logAssessmentStarted: jest.fn(),
+  logNotFound: jest.fn(),
+  logWarn: jest.fn(),
 }))
 jest.mock('@/lib/api/idempotency', () => ({
   withIdempotency: jest.fn((_req, _opts, handler) => handler()),
@@ -55,7 +57,7 @@ function createMockSupabase(overrides: {
       return {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
+        maybeSingle: jest.fn().mockResolvedValue({
           data: overrides.patientProfile ?? { id: 'patient-123' },
           error: overrides.profileError ?? null,
         }),

@@ -151,6 +151,17 @@ export function logDatabaseError(context: LogContext, error: unknown): void {
   logError('Database error', context, error)
 }
 
+/**
+ * Log expected "not found" scenarios (PGRST116 etc.) - warn level, not error
+ */
+export function logNotFound(resource: string, context: LogContext): void {
+  logWarn(`${resource} not found`, {
+    ...context,
+    type: 'not_found',
+    resource,
+  })
+}
+
 export function logApiRequest(endpoint: string, method: string, context?: LogContext): void {
   logInfo(`API Request: ${method} ${endpoint}`, {
     ...context,
