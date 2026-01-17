@@ -116,7 +116,7 @@ export async function GET(
     // Load assessment and verify ownership
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
-      .select('id, patient_id, funnel, funnel_id, status, started_at, completed_at')
+      .select('id, patient_id, funnel, funnel_id, status, started_at, completed_at, current_step_id')
       .eq('id', assessmentId)
       .eq('funnel', slug)
       .maybeSingle()
@@ -275,15 +275,18 @@ export async function GET(
         totalSteps = steps.length
 
         if (steps.length > 0) {
-          // For V0.5, we determine current step from answered questions
-          // For now, return the first step (this can be enhanced later)
-          const firstStep = steps[0]
+          // For V0.5, use persisted current_step_id when available
+          const targetStepId = assessment.current_step_id ?? steps[0]?.id
+          const resolvedIndex = steps.findIndex((step) => step.id === targetStepId)
+          const safeIndex = resolvedIndex >= 0 ? resolvedIndex : 0
+          const resolvedStep = steps[safeIndex]
+
           currentStep = {
-            stepId: firstStep.id,
-            title: firstStep.title,
+            stepId: resolvedStep.id,
+            title: resolvedStep.title,
             type: 'question_step',
-            orderIndex: 0,
-            stepIndex: 0,
+            orderIndex: safeIndex,
+            stepIndex: safeIndex,
             hasQuestions: true,
             requiredQuestions: [],
             answeredQuestions: [],
