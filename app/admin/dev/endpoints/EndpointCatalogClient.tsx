@@ -94,17 +94,17 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-h-screen bg-slate-900 text-slate-100 p-6">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Endpoint Catalog</h1>
-        <p className="text-sm text-slate-600">Version: {catalog.version}</p>
+        <h1 className="text-xl font-semibold text-white">Endpoint Catalog</h1>
+        <p className="text-sm text-slate-400">Version: {catalog.version}</p>
       </div>
 
       <div className="flex flex-wrap gap-3 items-end">
         <label className="text-sm">
-          <span className="block text-slate-600">Access</span>
+          <span className="block text-slate-400">Access</span>
           <select
-            className="border border-slate-300 rounded px-2 py-1"
+            className="border border-slate-600 bg-slate-800 text-slate-100 rounded px-2 py-1"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
           >
@@ -117,9 +117,9 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
         </label>
 
         <label className="text-sm">
-          <span className="block text-slate-600">Method</span>
+          <span className="block text-slate-400">Method</span>
           <select
-            className="border border-slate-300 rounded px-2 py-1"
+            className="border border-slate-600 bg-slate-800 text-slate-100 rounded px-2 py-1"
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
           >
@@ -137,7 +137,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
             checked={showUnused}
             onChange={(e) => setShowUnused(e.target.checked)}
           />
-          <span className="text-slate-700">Unused only</span>
+          <span className="text-slate-300">Unused only</span>
         </label>
 
         <label className="text-sm flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
             checked={showManual}
             onChange={(e) => setShowManual(e.target.checked)}
           />
-          <span className="text-slate-700">Manual only</span>
+          <span className="text-slate-300">Manual only</span>
         </label>
 
         <label className="text-sm flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
             checked={showOrphan}
             onChange={(e) => setShowOrphan(e.target.checked)}
           />
-          <span className="text-slate-700">Orphan only</span>
+          <span className="text-slate-300">Orphan only</span>
         </label>
 
         <label className="text-sm flex items-center gap-2">
@@ -164,13 +164,13 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
             checked={showUnknown}
             onChange={(e) => setShowUnknown(e.target.checked)}
           />
-          <span className="text-slate-700">Unknown only</span>
+          <span className="text-slate-300">Unknown only</span>
         </label>
 
         <label className="text-sm">
-          <span className="block text-slate-600">Search</span>
+          <span className="block text-slate-400">Search</span>
           <input
-            className="border border-slate-300 rounded px-2 py-1"
+            className="border border-slate-600 bg-slate-800 text-slate-100 rounded px-2 py-1"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="/api/..."
@@ -178,18 +178,18 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
         </label>
       </div>
 
-      <div className="text-sm text-slate-600">Showing {rows.length} endpoints</div>
+      <div className="text-sm text-slate-400">Showing {rows.length} endpoints</div>
 
-      <div className="overflow-x-auto border border-slate-200 rounded">
+      <div className="overflow-x-auto border border-slate-700 rounded">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-slate-700">
+          <thead className="bg-slate-800 text-slate-200">
             <tr>
               <th className="text-left px-3 py-2 w-8"></th>
               <th className="text-left px-3 py-2">Path</th>
               <th className="text-left px-3 py-2">Methods</th>
               <th className="text-left px-3 py-2">Access</th>
               <th className="text-left px-3 py-2">Intent</th>
-              <th className="text-right px-3 py-2">Used</th>
+              <th className="text-right px-3 py-2">StaticUsed</th>
             </tr>
           </thead>
           <tbody>
@@ -200,12 +200,12 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
 
               return (
                 <React.Fragment key={e.path}>
-                  <tr className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr className="border-t border-slate-700 hover:bg-slate-800">
                     <td className="px-3 py-2">
                       {hasUsedBy && (
                         <button
                           onClick={() => toggleRow(e.path)}
-                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          className="text-slate-400 hover:text-slate-200 transition-colors"
                           aria-label={isExpanded ? 'Collapse' : 'Expand'}
                         >
                           {isExpanded ? (
@@ -216,8 +216,8 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                         </button>
                       )}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-slate-800">{e.path}</td>
-                    <td className="px-3 py-2 text-slate-700">{e.methods.join(', ') || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-slate-100">{e.path}</td>
+                    <td className="px-3 py-2 text-slate-300">{e.methods.join(', ') || '—'}</td>
                     <td className="px-3 py-2">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${roleBadgeClass}`}
@@ -225,7 +225,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                         {e.accessRole}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-slate-700">
+                    <td className="px-3 py-2 text-slate-300">
                       {e.intent ? e.intent : e.isAllowedOrphan ? 'allowlisted' : '—'}
                       {e.isOrphan && !e.isAllowedOrphan && (
                         <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
@@ -233,30 +233,30 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-slate-700">
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-300">
                       {e.usedByCount}
                     </td>
                   </tr>
                   {isExpanded && hasUsedBy && (
-                    <tr className="border-t border-slate-100 bg-slate-50">
+                    <tr className="border-t border-slate-700 bg-slate-800">
                       <td colSpan={6} className="px-3 py-3">
                         <div className="ml-8">
-                          <div className="text-xs font-semibold text-slate-700 mb-2">
-                            Used By ({e.usedBy.length}):
+                          <div className="text-xs font-semibold text-slate-200 mb-2">
+                            Static Usages ({e.usedBy.length}):
                           </div>
                           <div className="space-y-1">
                             {e.usedBy.map((usage) => (
                               <div
                                 key={`${usage.file}:${usage.line}:${usage.apiPath}:${usage.kind}`}
-                                className="flex items-start gap-2 text-xs text-slate-600 bg-white rounded px-2 py-1.5 border border-slate-200"
+                                className="flex items-start gap-2 text-xs text-slate-300 bg-slate-900 rounded px-2 py-1.5 border border-slate-700"
                               >
-                                <span className="font-mono text-blue-700">{usage.file}</span>
+                                <span className="font-mono text-blue-400">{usage.file}</span>
                                 <span className="text-slate-400">:</span>
                                 <span className="text-slate-500">L{usage.line}</span>
                                 <span className="text-slate-400">•</span>
-                                <span className="font-mono text-slate-600">{usage.apiPath}</span>
+                                <span className="font-mono text-slate-300">{usage.apiPath}</span>
                                 <span className="text-slate-400">•</span>
-                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                                <span className="px-1.5 py-0.5 rounded bg-slate-700 text-slate-200">
                                   {usage.kind}
                                 </span>
                               </div>
@@ -273,8 +273,9 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
         </table>
       </div>
 
-      <p className="text-xs text-slate-500">
-        Note: “Unused” is based on in-repo string/template callsite scanning (app/** and lib/**).
+      <p className="text-xs text-slate-400">
+        Note: &quot;StaticUsed&quot; is based on in-repo string/template callsite scanning (app/** and
+        lib/**).
       </p>
     </div>
   )

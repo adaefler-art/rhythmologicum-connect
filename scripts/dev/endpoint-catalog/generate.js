@@ -25,6 +25,7 @@ function parseArgs(argv) {
     allowlistPath: undefined,
     failOnUnknown: true,
     failOnOrphan: true,
+    failOnUnknownAccess: true,
   }
 
   let allowlistRequested = false
@@ -51,6 +52,8 @@ function parseArgs(argv) {
       args.failOnUnknown = false
     } else if (a === '--no-fail-orphan') {
       args.failOnOrphan = false
+    } else if (a === '--no-fail-unknown-access') {
+      args.failOnUnknownAccess = false
     }
   }
 
@@ -132,7 +135,7 @@ function mdEscape(s) {
   return String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ')
 }
 
-async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown, failOnOrphan }) {
+async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown, failOnOrphan, failOnUnknownAccess }) {
   const appApiDir = path.join(repoRoot, 'app', 'api')
   if (!fs.existsSync(appApiDir)) {
     throw new Error(`app/api not found at ${appApiDir}`)
@@ -211,6 +214,10 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 
   const orphanEndpoints = endpoints.filter(
     (e) => e.usedBy.length === 0 && !isAllowedOrphan(e, allowlist),
+  )
+
+  const unknownAccessEndpoints = endpoints.filter(
+    (e) => e.accessRole === 'unknown',
   )
 
   const catalogJson = {
@@ -303,14 +310,39 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     'utf8',
   )
 
+  // UNKNOWN_ACCESS_ENDPOINTS.md
+  const unknownAccessLines = []
+  unknownAccessLines.push('# Unknown Access Role Endpoints')
+  unknownAccessLines.push('')
+  unknownAccessLines.push('Endpoints with accessRole="unknown" (path heuristic could not determine role).')
+  unknownAccessLines.push('')
+
+  if (!unknownAccessEndpoints.length) {
+    unknownAccessLines.push('- (none)')
+  } else {
+    const sorted = unknownAccessEndpoints.slice().sort((a, b) => cmpStr(a.path, b.path))
+    for (const e of sorted) {
+      const methods = e.methods.length ? e.methods.join(', ') : '(none)'
+      unknownAccessLines.push(`- ${e.path} [${methods}] (${e.file})`)
+    }
+  }
+
+  await fsp.writeFile(
+    path.join(outDir, 'UNKNOWN_ACCESS_ENDPOINTS.md'),
+    `${unknownAccessLines.join('\n')}\n`,
+    'utf8',
+  )
+
   const shouldFail =
     (failOnUnknown && unknownCallsites.length > 0) ||
-    (failOnOrphan && orphanEndpoints.length > 0)
+    (failOnOrphan && orphanEndpoints.length > 0) ||
+    (failOnUnknownAccess && unknownAccessEndpoints.length > 0)
 
   return {
     jsonPath,
     orphanCount: orphanEndpoints.length,
     unknownCount: unknownCallsites.length,
+    unknownAccessCount: unknownAccessEndpoints.length,
     shouldFail,
   }
 }
@@ -331,11 +363,13 @@ async function main() {
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'endpoint-catalog.json'))}`)
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'ORPHAN_ENDPOINTS.md'))}`)
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'UNKNOWN_CALLSITES.md'))}`)
+  console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'UNKNOWN_ACCESS_ENDPOINTS.md'))}`)
 
   if (res.shouldFail) {
     console.error('❌ Endpoint wiring gate failed')
     console.error(`Unknown callsites: ${res.unknownCount}`)
     console.error(`Orphan endpoints: ${res.orphanCount}`)
+    console.error(`Unknown access endpoints: ${res.unknownAccessCount}`)
     process.exit(2)
   }
 
