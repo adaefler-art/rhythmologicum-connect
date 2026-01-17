@@ -247,51 +247,67 @@ async function handleSaveAnswer(
       }
     }
 
-    // Prepare upsert data based on funnel type
-    // V0.5: Store in answer_data (JSONB), set answer_value to 0 (placeholder)
-    // Legacy: Store in answer_value (INTEGER)
-    const upsertData = isV05CatalogFunnel
-      ? {
-          assessment_id: assessmentId,
-          question_id: questionId,
-          answer_value: typeof answerValue === 'number' ? answerValue : 0, // Legacy compat
-          answer_data: answerValue, // Store original value as JSONB
-        }
-      : {
-          assessment_id: assessmentId,
-          question_id: questionId,
-          answer_value: typeof answerValue === 'number' ? answerValue : 0,
-        }
+    // Prepare upsert data
+    // For POC: Store numeric value in answer_value, encode non-numeric as JSON string in question_id suffix
+    // This works without the answer_data migration being deployed
+    // TODO: Once migration 20260117150000 is deployed, use answer_data JSONB column
+    let numericValue: number
+    if (typeof answerValue === 'number') {
+      numericValue = answerValue
+    } else if (typeof answerValue === 'boolean') {
+      numericValue = answerValue ? 1 : 0
+    } else {
+      // String values (radio options): hash to integer for storage
+      // Store actual value in question_id as suffix: "q2-gender::male"
+      numericValue = 0
+    }
+
+    // For V0.5 with string answers, encode the value in a way that can be retrieved
+    // Use the question_id field to store both ID and value for non-numeric answers
+    const storageQuestionId = typeof answerValue === 'string' && isV05CatalogFunnel
+      ? `${questionId}::${answerValue}`
+      : questionId
+
+    const upsertData = {
+      assessment_id: assessmentId,
+      question_id: storageQuestionId,
+      answer_value: numericValue,
+    }
+
+    console.log('[answers/save] Upserting answer', {
+      assessmentId,
+      questionId,
+      storageQuestionId,
+      answerValueType: typeof answerValue,
+      numericValue,
+      isV05CatalogFunnel,
+    })
 
     // Perform upsert operation
     // Using ON CONFLICT clause to update if the answer already exists
-    // Type assertion needed as answer_data column not yet in generated types
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error: upsertError } = (await (supabase
-      .from('assessment_answers') as any)
+    const { data, error: upsertError } = await supabase
+      .from('assessment_answers')
       .upsert(upsertData, {
         onConflict: 'assessment_id,question_id',
         ignoreDuplicates: false, // Update existing records
       })
       .select()
-      .single()) as {
-      data: {
-        id: string
-        assessment_id: string
-        question_id: string
-        answer_value: number
-        answer_data?: unknown
-      } | null
-      error: unknown
-    }
+      .single()
 
     if (upsertError || !data) {
+      console.error('[answers/save] Upsert failed', {
+        assessmentId,
+        questionId: storageQuestionId,
+        error: upsertError,
+        errorCode: (upsertError as { code?: string })?.code,
+        errorMessage: (upsertError as { message?: string })?.message,
+      })
       logDatabaseError(
         {
           userId: user.id,
           assessmentId,
           stepId,
-          questionId,
+          questionId: storageQuestionId,
           endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
         },
         upsertError,
@@ -324,12 +340,13 @@ async function handleSaveAnswer(
     }
 
     // Success response with standardized format
+    // For V0.5 with encoded question_id, return the original questionId
     const responseData: SaveAnswerResponseData = {
       id: data.id,
       assessment_id: data.assessment_id,
-      question_id: data.question_id,
+      question_id: questionId, // Return original questionId, not encoded one
       answer_value: data.answer_value,
-      answer_data: (data.answer_data as string | number | boolean | null) ?? null,
+      answer_data: answerValue ?? null, // Return original value
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200)

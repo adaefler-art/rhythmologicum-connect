@@ -54,16 +54,20 @@ V0.5 Catalog Funnels have multiple question types requiring different value type
    ])
    ```
 
-2. **Database Migration** (`20260117150000_v05_answer_data_jsonb.sql`):
-   ```sql
-   ALTER TABLE public.assessment_answers
-     ADD COLUMN IF NOT EXISTS answer_data JSONB;
-   ```
+2. **Route Handler** (`answers/save/route.ts`):
+   - V0.5 path: Encodes string values in `question_id` field (e.g., `q2-gender::male`)
+   - Numeric values stored directly in `answer_value` (INTEGER)
+   - Boolean values converted to 1/0
+   - No new migration required — works with existing schema
+   - Response returns original `questionId` and `answerValue` for client compatibility
 
-3. **Route Handler** (`answers/save/route.ts`):
-   - V0.5 path stores original value in `answer_data` (JSONB)
-   - Legacy path continues using `answer_value` (INTEGER)
-   - Backward compatible: `answer_value` defaults to 0 for non-numeric values
+### Root Cause Analysis (500 Error)
+
+**Problem**: Code attempted to write to `answer_data` JSONB column that didn't exist in production.
+
+**Evidence**: Migration `20260117150000_v05_answer_data_jsonb.sql` was created locally but not deployed to Supabase production.
+
+**Fix**: Removed dependency on `answer_data` column. POC now uses existing `question_id` field to encode non-numeric values using `::` separator.
 
 ### Contract (Request)
 
@@ -100,6 +104,14 @@ or
   "schemaVersion": "1.0.0"
 }
 ```
+
+### Storage Encoding (POC)
+
+| Input Type | `question_id` stored | `answer_value` stored |
+|------------|---------------------|----------------------|
+| `number` (45) | `q1-age` | `45` |
+| `string` ("male") | `q2-gender::male` | `0` |
+| `boolean` (true) | `q-consent` | `1` |
 
 ### Tests Added
 
