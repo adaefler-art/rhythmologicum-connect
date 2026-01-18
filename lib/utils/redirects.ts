@@ -26,6 +26,7 @@ export function buildRedirectUrl({
       area: 'routing',
       missing: getMissingBaseUrlKey(pathPrefix),
       pathPrefix,
+      action: pathPrefix === 'patient' ? 'not_found' : 'redirect_blocked',
     })
     return null
   }
