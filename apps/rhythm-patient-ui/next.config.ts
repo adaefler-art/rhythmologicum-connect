@@ -1,8 +1,7 @@
 import type { NextConfig } from 'next'
 import path from 'path'
-import { env } from '../../lib/env'
 
-const engineBaseUrl = env.ENGINE_BASE_URL
+const engineBaseUrl = process.env.ENGINE_BASE_URL
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -14,7 +13,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   compiler: {
     removeConsole:
-      env.NODE_ENV === 'production'
+      process.env.NODE_ENV === 'production'
         ? {
             exclude: ['error', 'warn'],
           }
