@@ -175,7 +175,7 @@ export function isNotFoundPostgrestError(error: unknown): boolean {
 
   const safeError = sanitizeSupabaseError(error)
   const code = safeError.code
-  const message = safeError.message.toLowerCase()
+  const message = safeError.message?.toLowerCase() || ''
 
   // PGRST116: .single() or .maybeSingle() could not coerce result (0 rows found)
   if (code === 'PGRST116') {
@@ -184,11 +184,14 @@ export function isNotFoundPostgrestError(error: unknown): boolean {
 
   // Additional PostgREST "no rows" patterns
   // These are defensive checks for other ways PostgREST might signal "not found"
-  if (
-    message.includes('no rows') ||
-    (message.includes('0 rows') && message.includes('returned')) ||
-    (message.includes('json object requested') && message.includes('no') && message.includes('rows'))
-  ) {
+  const hasNoRows = message.includes('no rows')
+  const hasZeroRowsReturned = message.includes('0 rows') && message.includes('returned')
+  const hasJsonObjectNoRows = 
+    message.includes('json object requested') && 
+    message.includes('no') && 
+    message.includes('rows')
+
+  if (hasNoRows || hasZeroRowsReturned || hasJsonObjectNoRows) {
     return true
   }
 

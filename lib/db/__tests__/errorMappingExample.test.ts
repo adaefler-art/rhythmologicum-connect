@@ -7,7 +7,7 @@
  * 3. Map real DB errors to HTTP 500 with DATABASE_ERROR or INTERNAL_ERROR
  */
 
-import { isNotFoundPostgrestError } from '@/lib/db/errors'
+import { isNotFoundPostgrestError } from '../errors'
 
 /**
  * Example API route handler demonstrating proper error mapping
