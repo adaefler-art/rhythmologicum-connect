@@ -150,12 +150,33 @@ export async function GET() {
       // Continue with null profile - will use empty state
     }
     
-    // V061-I04: If no patient profile, return empty state (deterministic)
+    // E6.5.6: Fetch content tiles with deterministic ordering
+    // V061-I04: Fetch tiles BEFORE patient profile check since they're static/non-patient-specific
+    let contentTiles: ContentTile[] = []
+    try {
+      contentTiles = fetchContentTilesForDashboard(MAX_CONTENT_TILES)
+      console.log('[DASHBOARD_API] STEP=fetchContentTiles success=true', {
+        correlationId,
+        tileCount: contentTiles.length,
+      })
+    } catch (tilesError) {
+      console.error('[DASHBOARD_API] STEP=fetchContentTiles exception', {
+        correlationId,
+        errorType: tilesError instanceof Error ? tilesError.name : 'unknown',
+      })
+      // Fallback to empty tiles array
+      contentTiles = []
+    }
+    
+    // V061-I04: If no patient profile, return empty state with static content tiles
     if (!patientProfile) {
       console.log('[DASHBOARD_API] STEP=buildDashboard reason=noPatientProfile', {
         correlationId,
       })
-      const dashboardData: DashboardViewModelV1 = createEmptyDashboardViewModel(correlationId)
+      const dashboardData: DashboardViewModelV1 = {
+        ...createEmptyDashboardViewModel(correlationId),
+        contentTiles, // Include static content tiles even without patient profile
+      }
       return versionedSuccessResponse(
         dashboardData,
         PATIENT_DASHBOARD_SCHEMA_VERSION,
@@ -327,32 +348,17 @@ export async function GET() {
         errorType: resolverError instanceof Error ? resolverError.name : 'unknown',
         errorMessage: resolverError instanceof Error ? resolverError.message : String(resolverError),
       })
-      // V061-I04: Fallback to empty state with default next step
-      const dashboardData: DashboardViewModelV1 = createEmptyDashboardViewModel(correlationId)
+      // V061-I04: Fallback to empty state with default next step and content tiles
+      const dashboardData: DashboardViewModelV1 = {
+        ...createEmptyDashboardViewModel(correlationId),
+        contentTiles, // Include content tiles even on resolver failure
+      }
       return versionedSuccessResponse(
         dashboardData,
         PATIENT_DASHBOARD_SCHEMA_VERSION,
         200,
         correlationId,
       )
-    }
-
-    // E6.5.6: Fetch content tiles with deterministic ordering
-    // V061-I04: Wrap in try-catch to prevent tiles fetch crashes
-    let contentTiles: ContentTile[] = []
-    try {
-      contentTiles = fetchContentTilesForDashboard(MAX_CONTENT_TILES)
-      console.log('[DASHBOARD_API] STEP=fetchContentTiles success=true', {
-        correlationId,
-        tileCount: contentTiles.length,
-      })
-    } catch (tilesError) {
-      console.error('[DASHBOARD_API] STEP=fetchContentTiles exception', {
-        correlationId,
-        errorType: tilesError instanceof Error ? tilesError.name : 'unknown',
-      })
-      // Fallback to empty tiles array
-      contentTiles = []
     }
 
     // E6.5.2: Build Dashboard View Model V1
