@@ -12,11 +12,16 @@ export const dynamic = 'force-dynamic'
  * Shows next steps for patient (start/continue assessments).
  * 
  * E6.5.1: Dashboard-first entry point - marks dashboard as visited
+ * V061-I04: Crash-proof hardening - all operations guarded with try-catch
  * 
  * Route: /patient/dashboard
  */
 export default async function PatientDashboardPage() {
+  // V061-I04: Deterministic logging - no PHI, only step markers
+  console.log('[PATIENT_DASHBOARD] STEP=pageRender start=true')
+  
   // STEP 1: Create Supabase server client
+  // V061-I04: Already has try-catch with deterministic redirect
   let supabase
   try {
     supabase = await createServerSupabaseClient()
@@ -31,6 +36,7 @@ export default async function PatientDashboardPage() {
   }
 
   // STEP 2: Check authentication (AC3: 401-first, no DB calls before auth)
+  // V061-I04: Already has try-catch with deterministic redirect
   let user
   try {
     const { data, error } = await supabase.auth.getUser()
@@ -60,6 +66,7 @@ export default async function PatientDashboardPage() {
 
   // STEP 3: E6.5.1 AC1: Mark dashboard as visited for this session
   // This allows subsequent navigation to funnels/results
+  // V061-I04: Already has try-catch - cookie error is non-fatal
   try {
     await markDashboardVisited()
     console.log('[PATIENT_DASHBOARD] STEP=markDashboardVisited success=true')
@@ -73,6 +80,7 @@ export default async function PatientDashboardPage() {
   }
 
   // STEP 4: Render client component
-  console.log('[PATIENT_DASHBOARD] STEP=render')
+  // V061-I04: Client component handles its own errors via useDashboardData hook
+  console.log('[PATIENT_DASHBOARD] STEP=render success=true')
   return <DashboardClient />
 }
