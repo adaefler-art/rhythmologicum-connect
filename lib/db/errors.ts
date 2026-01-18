@@ -147,6 +147,57 @@ export function classifySupabaseError(error: unknown): ClassifiedError {
 }
 
 /**
+ * V061-I01: Checks if a Supabase error represents a "not found" condition (0 rows)
+ * 
+ * This helper provides a single source of truth for detecting PostgREST errors
+ * that indicate a resource was not found, rather than a genuine database error.
+ * 
+ * Common use case: `.single()` queries that find 0 rows return PGRST116
+ * 
+ * @param error - Raw error from Supabase (any type, null-safe)
+ * @returns true if error represents "not found" (should map to HTTP 404), false otherwise
+ * 
+ * @example
+ * ```typescript
+ * const { data, error } = await supabase.from('table').select('*').eq('id', id).single()
+ * if (error) {
+ *   if (isNotFoundPostgrestError(error)) {
+ *     return notFoundResponse('Resource')  // HTTP 404
+ *   }
+ *   return databaseErrorResponse()  // HTTP 500
+ * }
+ * ```
+ */
+export function isNotFoundPostgrestError(error: unknown): boolean {
+  if (!error) {
+    return false
+  }
+
+  const safeError = sanitizeSupabaseError(error)
+  const code = safeError.code
+  const lowerMessage = safeError.message?.toLowerCase() || ''
+
+  // PGRST116: .single() or .maybeSingle() could not coerce result (0 rows found)
+  if (code === 'PGRST116') {
+    return true
+  }
+
+  // Additional PostgREST "no rows" patterns
+  // These are defensive checks for other ways PostgREST might signal "not found"
+  const hasNoRows = lowerMessage.includes('no rows')
+  const hasZeroRowsReturned = lowerMessage.includes('0 rows') && lowerMessage.includes('returned')
+  const hasJsonObjectNoRows = 
+    lowerMessage.includes('json object requested') && 
+    lowerMessage.includes('no rows')
+
+  if (hasNoRows || hasZeroRowsReturned || hasJsonObjectNoRows) {
+    return true
+  }
+
+  return false
+}
+
+/**
  * Generates a unique request ID
  * 
  * @param request - Optional Request object to extract existing ID from headers
