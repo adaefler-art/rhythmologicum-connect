@@ -30,6 +30,7 @@ jest.mock('next/navigation', () => ({
     push: mockPush,
     replace: jest.fn(),
   }),
+  useSearchParams: () => new URLSearchParams(),
 }))
 
 const mockSupabaseAuth = {

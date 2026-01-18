@@ -350,6 +350,11 @@ describe('Patient Assessment Contracts', () => {
           funnelTitle: 'Stress Assessment',
           workupStatus: 'ready_for_review' as const,
           missingDataFields: [],
+          result: {
+            kind: 'poc',
+            summaryTitle: 'Ergebnis wird vorbereitet',
+            summaryBullets: ['Antworten gespeichert', 'Auswertung vorbereitet', 'Ergebnis folgt'],
+          },
         },
         schemaVersion: 'v1',
       }
@@ -369,6 +374,11 @@ describe('Patient Assessment Contracts', () => {
           funnelTitle: null,
           workupStatus: null,
           missingDataFields: [],
+          result: {
+            kind: 'poc',
+            summaryTitle: 'Ergebnis wird vorbereitet',
+            summaryBullets: ['Antworten gespeichert', 'Auswertung vorbereitet', 'Ergebnis folgt'],
+          },
         },
         schemaVersion: 'v1',
       }
