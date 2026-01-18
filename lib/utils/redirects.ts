@@ -7,20 +7,43 @@ type BuildRedirectUrlInput = {
   searchParams?: RedirectSearchParams
 }
 
+import { logError } from '@/lib/logging/logger'
+
+function getMissingBaseUrlKey(pathPrefix: string) {
+  if (pathPrefix === 'patient') return 'PATIENT_BASE_URL'
+  if (pathPrefix === 'admin' || pathPrefix === 'clinician') return 'STUDIO_BASE_URL'
+  return 'REDIRECT_BASE_URL'
+}
+
 export function buildRedirectUrl({
   baseUrl,
   pathPrefix,
   pathSegments,
   searchParams,
-}: BuildRedirectUrlInput): string {
+}: BuildRedirectUrlInput): string | null {
   if (!baseUrl) {
-    throw new Error(`Missing redirect base URL for ${pathPrefix}`)
+    logError('Missing redirect base URL', {
+      area: 'routing',
+      missing: getMissingBaseUrlKey(pathPrefix),
+      pathPrefix,
+    })
+    return null
   }
 
-  const normalizedBase = baseUrl.replace(/\/+$/, '')
   const segments = [pathPrefix, ...(pathSegments || [])].filter(Boolean)
   const path = segments.join('/')
-  const url = new URL(`${normalizedBase}/${path}`)
+  let url: URL
+  try {
+    const normalizedBase = baseUrl.replace(/\/+$/, '')
+    url = new URL(`${normalizedBase}/${path}`)
+  } catch (error) {
+    logError('Invalid redirect base URL', {
+      area: 'routing',
+      missing: getMissingBaseUrlKey(pathPrefix),
+      pathPrefix,
+    }, error)
+    return null
+  }
 
   if (searchParams) {
     const params = new URLSearchParams()

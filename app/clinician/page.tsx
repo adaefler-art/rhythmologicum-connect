@@ -15,5 +15,18 @@ export default function ClinicianRedirectPage({
     searchParams,
   })
 
+  if (!target) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white px-6 text-center">
+        <div>
+          <h1 className="text-lg font-semibold text-neutral-900">Routing error</h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            Clinician routing is temporarily unavailable. Please try again later.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   redirect(target)
 }
