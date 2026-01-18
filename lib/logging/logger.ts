@@ -33,7 +33,37 @@ type LogEntry = {
     message: string
     stack?: string
     name?: string
+    digest?: string
+    cause?: string
     [key: string]: unknown
+  }
+}
+
+const SENSITIVE_ERROR_KEYS = new Set([
+  'authorization',
+  'cookie',
+  'set-cookie',
+  'token',
+  'accessToken',
+  'refreshToken',
+  'password',
+  'secret',
+  'body',
+  'request',
+  'headers',
+])
+
+function safeStringifyCause(cause: unknown): string | undefined {
+  if (cause === undefined || cause === null) return undefined
+  if (cause instanceof Error) return cause.message
+  if (typeof cause === 'string') return cause
+  try {
+    return JSON.stringify(cause, (key, value) => {
+      if (SENSITIVE_ERROR_KEYS.has(key)) return '[REDACTED]'
+      return value
+    })
+  } catch {
+    return undefined
   }
 }
 
@@ -61,6 +91,10 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: unk
             message: error.message,
             stack: error.stack,
             name: error.name,
+            digest: typeof (error as { digest?: unknown }).digest === 'string'
+              ? (error as { digest?: string }).digest
+              : undefined,
+            cause: safeStringifyCause((error as { cause?: unknown }).cause),
           }
         : {
             message: typeof error === 'string' ? error : JSON.stringify(error),

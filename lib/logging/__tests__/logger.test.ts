@@ -113,7 +113,21 @@ describe('Assessment Lifecycle Logging', () => {
       expect(loggedData.message).toBe('Assessment error')
       expect(loggedData.error.message).toBe('Test assessment error')
       expect(loggedData.error.stack).toBeDefined()
+      expect(loggedData.error.name).toBe('Error')
       expect(loggedData.context.assessmentId).toBe('assessment-456')
+    })
+
+    it('should include digest and cause when present', () => {
+      const context: LogContext = { assessmentId: 'assessment-999' }
+      const testError = new Error('RSC error')
+      ;(testError as { digest?: string }).digest = 'digest-123'
+      ;(testError as { cause?: unknown }).cause = 'root-cause'
+
+      logAssessmentError(context, testError)
+
+      const loggedData = JSON.parse(consoleErrorSpy.mock.calls[0][0])
+      expect(loggedData.error.digest).toBe('digest-123')
+      expect(loggedData.error.cause).toBe('root-cause')
     })
 
     it('should handle non-Error objects', () => {
