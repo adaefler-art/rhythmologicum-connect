@@ -20,7 +20,7 @@ export function getPostLoginRedirect({
     target = getLandingForRole(role)
   }
 
-  console.log('[AUTH_REDIRECT_DECISION]', { role, target })
+  console.log(`[AUTH_LANDING] role=${role} target=${target}`)
 
   return target
 }
