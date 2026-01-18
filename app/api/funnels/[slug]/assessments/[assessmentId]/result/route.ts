@@ -7,6 +7,7 @@ import {
   notFoundResponse,
   internalErrorResponse,
   versionedSuccessResponse,
+  assessmentNotCompletedResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
 import {
@@ -89,6 +90,22 @@ export async function GET(
         'Assessment does not belong to user',
       )
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
+    }
+
+    // V061-I02: Result endpoint only returns data for completed assessments
+    // - incomplete → 409 (STATE_CONFLICT)
+    // - completed → 200 with result data
+    if (assessment.status !== 'completed') {
+      console.log('[result] Assessment not completed', {
+        assessmentId,
+        slug,
+        status: assessment.status,
+        userId: user.id,
+      })
+      return assessmentNotCompletedResponse(
+        undefined,
+        { assessmentId, status: assessment.status },
+      )
     }
 
     // Try legacy funnels table first, then funnels_catalog
