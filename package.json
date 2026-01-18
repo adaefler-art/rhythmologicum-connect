@@ -8,8 +8,14 @@
   ],
   "scripts": {
     "dev": "next dev",
+    "dev:engine": "npm run --workspace apps/rhythm-engine dev",
+    "dev:studio": "npm run --workspace apps/rhythm-studio-ui dev",
+    "dev:patient": "npm run --workspace apps/rhythm-patient-ui dev",
     "prebuild": "node scripts/generate-version.js",
     "build": "next build",
+    "build:engine": "npm run --workspace apps/rhythm-engine build",
+    "build:studio": "npm run --workspace apps/rhythm-studio-ui build",
+    "build:patient": "npm run --workspace apps/rhythm-patient-ui build",
     "start": "next start",
     "lint": "eslint",
     "lint:changed": "node tools/lint-changed-lines.mjs",
@@ -32,6 +38,7 @@
     "mobile:contracts": "node scripts/dev/mobile-contract/export.js --out docs/dev/mobile-contracts.v1.json",
     "mobile:contracts:verify": "pwsh -File scripts/ci/verify-mobile-contracts.ps1",
     "test": "jest",
+    "test:core": "npm run --workspace packages/rhythm-core --if-present test",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },

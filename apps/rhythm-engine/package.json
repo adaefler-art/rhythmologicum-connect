@@ -3,5 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Engine app placeholder (current Next.js app remains at repo root for now)",
-  "scripts": {}
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  }
 }

@@ -1,0 +1,44 @@
+name: Engine CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/rhythm-engine/**'
+      - 'packages/rhythm-core/**'
+      - 'app/**'
+      - 'lib/**'
+      - 'next.config.ts'
+      - 'tsconfig.json'
+  push:
+    paths:
+      - 'apps/rhythm-engine/**'
+      - 'packages/rhythm-core/**'
+      - 'app/**'
+      - 'lib/**'
+      - 'next.config.ts'
+      - 'tsconfig.json'
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Build Engine
+        run: npm run build
+      - name: Test Engine
+        run: npm test
+      - name: Upload lint artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-lint-artifacts
+          path: .lint-artifacts
+          if-no-files-found: ignore
