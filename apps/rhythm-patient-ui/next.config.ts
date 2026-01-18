@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   compiler: {
     removeConsole:
-      process.env.NODE_ENV === 'production'
+      env.NODE_ENV === 'production'
         ? {
             exclude: ['error', 'warn'],
           }
