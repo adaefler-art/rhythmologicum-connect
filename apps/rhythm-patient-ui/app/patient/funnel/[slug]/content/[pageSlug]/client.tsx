@@ -50,8 +50,11 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
           }
         }
 
-        // Fallback: Load content page via API (legacy path)
-        const response = await fetch(`/api/content-pages/${pageSlug}`)
+        // V061-I03: Use canonical content resolver
+        const response = await fetch(
+          `/api/content/resolve?funnel=${funnelSlug}&slug=${pageSlug}`,
+        )
+
         if (!response.ok) {
           if (response.status === 404) {
             setError('Diese Seite wurde nicht gefunden.')
@@ -62,8 +65,16 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
           return
         }
 
-        const data: ContentPageWithFunnel = await response.json()
-        setContentPage(data)
+        const data = await response.json()
+
+        // Check for missing content (200 with missing_content status)
+        if (data.status === 'missing_content' || !data.page) {
+          setError('Diese Seite wurde nicht gefunden.')
+          setLoading(false)
+          return
+        }
+
+        setContentPage(data.page)
         setLoading(false)
       } catch (err) {
         console.error('Error loading content page:', err)

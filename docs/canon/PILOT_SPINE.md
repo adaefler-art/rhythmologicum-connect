@@ -16,6 +16,53 @@
 - GET  /api/funnels/{slug}/definition
 - GET  /api/funnels/{slug}/content-pages
 
+## Content Resolution (V061-I03)
+
+**Canonical Resolver:** `GET /api/content/resolve`
+
+The canonical content resolver endpoint for all patient UI content lookups.
+
+**Query Parameters:**
+- `funnel` (required): Funnel slug or UUID
+- `category` (optional): Page category (e.g., 'intro', 'info', 'result')
+- `slug` (optional): Specific page slug
+- `includeDrafts` (optional): Whether to include draft pages (default: false)
+
+**Response Format:**
+```json
+{
+  "success": true,
+  "version": "v1",
+  "status": "ok",
+  "page": { /* ContentPage object */ },
+  "strategy": "direct-match",
+  "requestId": "uuid"
+}
+```
+
+**Error Semantics:**
+- `404 NOT_FOUND` - Unknown funnel (not in registry or database)
+- `200 missing_content` - Known funnel but no matching content page
+- `422 VALIDATION_FAILED` - Missing required parameters or invalid category
+- `500 INTERNAL_ERROR` - Server error
+
+**Examples:**
+```powershell
+# Fetch intro page for stress funnel
+Invoke-WebRequest -Uri "http://localhost:3000/api/content/resolve?funnel=stress&category=intro"
+
+# Fetch specific content page by slug
+Invoke-WebRequest -Uri "http://localhost:3000/api/content/resolve?funnel=cardiovascular-age&slug=intro"
+
+# Expected 404 for unknown funnel
+Invoke-WebRequest -Uri "http://localhost:3000/api/content/resolve?funnel=unknown-funnel&category=intro" -SkipHttpErrorCheck
+# Returns: 404 { "success": false, "error": { "code": "FUNNEL_NOT_FOUND" } }
+
+# Expected 200 for known funnel with no content
+Invoke-WebRequest -Uri "http://localhost:3000/api/content/resolve?funnel=stress&category=nonexistent"
+# Returns: 200 { "success": true, "status": "missing_content", "page": null }
+```
+
 ## Single Sources of Truth
 - Contracts: packages/rhythm-core/src/contracts
 - Fixtures: packages/rhythm-core/src/fixtures
