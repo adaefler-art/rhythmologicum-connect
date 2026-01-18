@@ -22,6 +22,190 @@
 - Manifest: funnel_versions.questionnaire_config (V0.5)
 
 ## Smoke Tests (PowerShell)
+
+### V061-I02: Deterministic Lifecycle Smoke Sequence
+
+This smoke test validates the full cardiovascular-age assessment lifecycle with deterministic behavior guarantees.
+
+**Prerequisites:**
+- Local dev server running (`npm run dev`)
+- Valid auth session (cookies stored in browser/session)
+- Patient user with profile created
+
+**Authentication Note:**
+PowerShell `Invoke-WebRequest` does NOT automatically handle cookies. You have two options:
+
+1. **Manual Cookie Extraction** (recommended for CI/automation):
+   - Login via browser
+   - Extract cookies from browser DevTools (Application → Cookies)
+   - Pass cookies explicitly in PowerShell requests
+
+2. **Session Container** (recommended for interactive testing):
+   - Use `-SessionVariable` to persist cookies across requests
+
+#### Option 1: With Manual Cookies
+
+```powershell
+# Step 0: Extract cookies from browser after login
+# In browser DevTools → Application → Cookies → http://localhost:3000
+# Copy values for: sb-access-token, sb-refresh-token
+
+$base = "http://localhost:3000"
+$cookies = @{
+  "sb-access-token" = "your-access-token-here"
+  "sb-refresh-token" = "your-refresh-token-here"
+}
+
+# Helper function to make authenticated requests
+function Invoke-AuthRequest {
+  param($Uri, $Method = "GET", $Body = $null)
+  $params = @{
+    Uri = $Uri
+    Method = $Method
+    SkipHttpErrorCheck = $true
+    WebSession = $session
+  }
+  if ($Body) {
+    $params.ContentType = "application/json"
+    $params.Body = $Body
+  }
+  Invoke-WebRequest @params
+}
+
+# 1. CREATE: Start assessment (expect 201, returns assessmentId)
+$createResp = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments" -Method Post
+Write-Host "CREATE Status: $($createResp.StatusCode)" -ForegroundColor $(if($createResp.StatusCode -eq 201){'Green'}else{'Red'})
+$createData = $createResp.Content | ConvertFrom-Json
+$aid = $createData.data.assessmentId
+Write-Host "Assessment ID: $aid" -ForegroundColor Cyan
+Write-Host "Schema Version: $($createData.schemaVersion)" -ForegroundColor Cyan
+
+if ($createResp.StatusCode -ne 201 -or -not $aid) {
+  Write-Host "CREATE FAILED - stopping smoke test" -ForegroundColor Red
+  exit 1
+}
+
+# 2. SAVE: Save first answer (expect 200)
+$saveBody = @{
+  stepId = "step-1"
+  questionId = "q1-age"
+  answerValue = 54
+} | ConvertTo-Json
+
+$saveResp = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/answers/save" -Method Post -Body $saveBody
+Write-Host "SAVE Status: $($saveResp.StatusCode)" -ForegroundColor $(if($saveResp.StatusCode -eq 200){'Green'}else{'Red'})
+
+# 3. SAVE: Save second answer (expect 200)
+$saveBody2 = @{
+  stepId = "step-1"
+  questionId = "q2-gender"
+  answerValue = "male"
+} | ConvertTo-Json
+
+$saveResp2 = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/answers/save" -Method Post -Body $saveBody2
+Write-Host "SAVE (2) Status: $($saveResp2.StatusCode)" -ForegroundColor $(if($saveResp2.StatusCode -eq 200){'Green'}else{'Red'})
+
+# 4. SAVE: Save third answer (expect 200)
+$saveBody3 = @{
+  stepId = "step-2"
+  questionId = "q3-blood-pressure"
+  answerValue = "normal"
+} | ConvertTo-Json
+
+$saveResp3 = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/answers/save" -Method Post -Body $saveBody3
+Write-Host "SAVE (3) Status: $($saveResp3.StatusCode)" -ForegroundColor $(if($saveResp3.StatusCode -eq 200){'Green'}else{'Red'})
+
+# 5. RESULT (before complete): Expect 409 STATE_CONFLICT
+$resultBeforeResp = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/result" -Method Get
+Write-Host "RESULT (before complete) Status: $($resultBeforeResp.StatusCode)" -ForegroundColor $(if($resultBeforeResp.StatusCode -eq 409){'Green'}else{'Red'})
+$resultBeforeData = $resultBeforeResp.Content | ConvertFrom-Json
+if ($resultBeforeResp.StatusCode -eq 409) {
+  Write-Host "  ✓ Correctly returned 409 for incomplete assessment" -ForegroundColor Green
+  Write-Host "  Error code: $($resultBeforeData.error.code)" -ForegroundColor Gray
+} else {
+  Write-Host "  ✗ FAILED: Expected 409, got $($resultBeforeResp.StatusCode)" -ForegroundColor Red
+}
+
+# 6. COMPLETE: Complete assessment (expect 200)
+$completeResp = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/complete" -Method Post
+Write-Host "COMPLETE Status: $($completeResp.StatusCode)" -ForegroundColor $(if($completeResp.StatusCode -eq 200){'Green'}else{'Red'})
+$completeData = $completeResp.Content | ConvertFrom-Json
+Write-Host "  Status: $($completeData.data.status)" -ForegroundColor Cyan
+
+# 7. COMPLETE (idempotency): Call again, expect 200 (not 500 or 409)
+$completeResp2 = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/complete" -Method Post
+Write-Host "COMPLETE (2nd call) Status: $($completeResp2.StatusCode)" -ForegroundColor $(if($completeResp2.StatusCode -eq 200){'Green'}else{'Red'})
+$completeData2 = $completeResp2.Content | ConvertFrom-Json
+if ($completeResp2.StatusCode -eq 200 -and $completeData2.data.message -like "*bereits*") {
+  Write-Host "  ✓ Idempotency verified: already completed message" -ForegroundColor Green
+} else {
+  Write-Host "  ✗ FAILED: Idempotency check failed" -ForegroundColor Red
+}
+
+# 8. RESULT (after complete): Expect 200
+$resultResp = Invoke-AuthRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/result" -Method Get
+Write-Host "RESULT (after complete) Status: $($resultResp.StatusCode)" -ForegroundColor $(if($resultResp.StatusCode -eq 200){'Green'}else{'Red'})
+$resultData = $resultResp.Content | ConvertFrom-Json
+if ($resultResp.StatusCode -eq 200) {
+  Write-Host "  ✓ Result retrieved successfully" -ForegroundColor Green
+  Write-Host "  Assessment ID: $($resultData.data.id)" -ForegroundColor Cyan
+  Write-Host "  Status: $($resultData.data.status)" -ForegroundColor Cyan
+  Write-Host "  Funnel: $($resultData.data.funnel)" -ForegroundColor Cyan
+} else {
+  Write-Host "  ✗ FAILED: Could not retrieve result" -ForegroundColor Red
+}
+
+# Summary
+Write-Host "`n========== SMOKE TEST SUMMARY ==========" -ForegroundColor Yellow
+Write-Host "CREATE:            $($createResp.StatusCode) $(if($createResp.StatusCode -eq 201){'✓'}else{'✗'})" -ForegroundColor $(if($createResp.StatusCode -eq 201){'Green'}else{'Red'})
+Write-Host "SAVE (1):          $($saveResp.StatusCode) $(if($saveResp.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($saveResp.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "SAVE (2):          $($saveResp2.StatusCode) $(if($saveResp2.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($saveResp2.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "SAVE (3):          $($saveResp3.StatusCode) $(if($saveResp3.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($saveResp3.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "RESULT (pre):      $($resultBeforeResp.StatusCode) $(if($resultBeforeResp.StatusCode -eq 409){'✓'}else{'✗'})" -ForegroundColor $(if($resultBeforeResp.StatusCode -eq 409){'Green'}else{'Red'})
+Write-Host "COMPLETE:          $($completeResp.StatusCode) $(if($completeResp.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($completeResp.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "COMPLETE (2):      $($completeResp2.StatusCode) $(if($completeResp2.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($completeResp2.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "RESULT (post):     $($resultResp.StatusCode) $(if($resultResp.StatusCode -eq 200){'✓'}else{'✗'})" -ForegroundColor $(if($resultResp.StatusCode -eq 200){'Green'}else{'Red'})
+Write-Host "=========================================" -ForegroundColor Yellow
+
+$allPassed = (
+  $createResp.StatusCode -eq 201 -and
+  $saveResp.StatusCode -eq 200 -and
+  $saveResp2.StatusCode -eq 200 -and
+  $saveResp3.StatusCode -eq 200 -and
+  $resultBeforeResp.StatusCode -eq 409 -and
+  $completeResp.StatusCode -eq 200 -and
+  $completeResp2.StatusCode -eq 200 -and
+  $resultResp.StatusCode -eq 200
+)
+
+if ($allPassed) {
+  Write-Host "`n✓ ALL CHECKS PASSED" -ForegroundColor Green
+  exit 0
+} else {
+  Write-Host "`n✗ SOME CHECKS FAILED" -ForegroundColor Red
+  exit 1
+}
+```
+
+#### Option 2: With Session Variable (Interactive)
+
+```powershell
+$base = "http://localhost:3000"
+
+# Step 0: Login first (adjust to your login mechanism)
+# This creates a session with cookies
+$loginResp = Invoke-WebRequest -Uri "$base/auth/login" `
+  -Method Post `
+  -Body '{"email":"patient@example.com","password":"yourpassword"}' `
+  -ContentType "application/json" `
+  -SessionVariable session
+
+# Then use $session for all subsequent requests
+# (Same request sequence as above, but with -WebSession $session)
+```
+
+### Legacy Smoke Tests (Simple)
+
 ```powershell
 $base = "http://localhost:3000"
 $aid = "<ASSESSMENT_ID>"

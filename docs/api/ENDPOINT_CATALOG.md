@@ -51,11 +51,11 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/documents/[id]/status | PATCH | system |  | 0 | app/api/documents/[id]/status/route.ts |
 | /api/documents/upload | POST | system |  | 0 | app/api/documents/upload/route.ts |
 | /api/escalation/log-click | POST | patient |  | 0 | app/api/escalation/log-click/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 9 | app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 10 | app/api/funnels/[slug]/assessments/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 7 | app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 4 | app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 0 | app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 0 | app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 6 | app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 2 | app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 3 | app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 3 | app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/workup | POST | patient |  | 0 | app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts |
 | /api/funnels/[slug]/content-pages | GET | patient |  | 0 | app/api/funnels/[slug]/content-pages/route.ts |

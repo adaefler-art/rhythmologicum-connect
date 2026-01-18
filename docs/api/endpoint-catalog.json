@@ -879,8 +879,14 @@
       "file": "app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 9,
+      "usedByCount": 10,
       "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 163,
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
           "line": 126,
@@ -1003,8 +1009,20 @@
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 6,
       "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 225,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 264,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
           "line": 156,
@@ -1041,10 +1059,23 @@
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 361,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 413,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
@@ -1054,10 +1085,29 @@
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 467,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 532,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "line": 577,
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",

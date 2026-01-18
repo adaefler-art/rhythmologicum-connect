@@ -7,8 +7,9 @@ import {
   notFoundResponse,
   internalErrorResponse,
   versionedSuccessResponse,
+  assessmentNotCompletedResponse,
 } from '@/lib/api/responses'
-import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
+import { logUnauthorized, logForbidden, logDatabaseError, logIncompleteAssessmentAccess } from '@/lib/logging/logger'
 import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type GetResultResponseData,
@@ -89,6 +90,25 @@ export async function GET(
         'Assessment does not belong to user',
       )
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
+    }
+
+    // V061-I02: Result endpoint only returns data for completed assessments
+    // - incomplete → 409 (STATE_CONFLICT)
+    // - completed → 200 with result data
+    if (assessment.status !== 'completed') {
+      logIncompleteAssessmentAccess(
+        {
+          assessmentId,
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result`,
+        },
+        assessment.status,
+      )
+      // Use default message from helper function
+      return assessmentNotCompletedResponse(
+        'Dieses Assessment wurde noch nicht abgeschlossen. Bitte schließen Sie das Assessment ab, um die Ergebnisse zu sehen.',
+        { assessmentId, status: assessment.status },
+      )
     }
 
     // Try legacy funnels table first, then funnels_catalog
