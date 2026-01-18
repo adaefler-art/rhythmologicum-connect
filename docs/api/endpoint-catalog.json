@@ -8,11 +8,11 @@
       ],
       "file": "app/api/account/deletion-request/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/content-pages",
@@ -23,17 +23,10 @@
       "file": "app/api/admin/content-pages/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/content/page.tsx",
-          "line": 60,
-          "apiPath": "/api/admin/content-pages",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/content-pages/[id]",
@@ -45,17 +38,10 @@
       "file": "app/api/admin/content-pages/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/content/[id]/page.tsx",
-          "line": 22,
-          "apiPath": "/api/admin/content-pages/${pageId}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/content-pages/[id]/sections",
@@ -144,17 +130,10 @@
       "file": "app/api/admin/design-tokens/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/design-tokens/page.tsx",
-          "line": 69,
-          "apiPath": "/api/admin/design-tokens",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/dev/endpoint-catalog",
@@ -167,7 +146,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/diagnostics/pillars-sot",
@@ -180,7 +159,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-step-questions/[id]",
@@ -190,17 +169,10 @@
       "file": "app/api/admin/funnel-step-questions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 343,
-          "apiPath": "/api/admin/funnel-step-questions/${questionId}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-steps",
@@ -213,7 +185,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-steps/[id]",
@@ -223,29 +195,10 @@
       "file": "app/api/admin/funnel-steps/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 3,
-      "usedBy": [
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 315,
-          "apiPath": "/api/admin/funnel-steps/${stepId}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 377,
-          "apiPath": "/api/admin/funnel-steps/${stepId}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 382,
-          "apiPath": "/api/admin/funnel-steps/${otherStep.id}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-versions/[id]",
@@ -255,7 +208,7 @@
       "file": "app/api/admin/funnel-versions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 8,
+      "usedByCount": 5,
       "usedBy": [
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
@@ -286,24 +239,6 @@
           "line": 327,
           "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
           "kind": "request"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 402,
-          "apiPath": "/api/admin/funnel-versions/${versionId}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 439,
-          "apiPath": "/api/admin/funnel-versions/${versionId}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 466,
-          "apiPath": "/api/admin/funnel-versions/${versionId}",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -318,23 +253,10 @@
       "file": "app/api/admin/funnel-versions/[id]/manifest/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
-          "line": 116,
-          "apiPath": "/api/admin/funnel-versions/${funnelVersion.id}/manifest",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
-          "line": 82,
-          "apiPath": "/api/admin/funnel-versions/${latestVersionId}/manifest",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnels",
@@ -344,7 +266,7 @@
       "file": "app/api/admin/funnels/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 13,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
@@ -413,12 +335,6 @@
           "kind": "request"
         },
         {
-          "file": "app/clinician/funnels/page.tsx",
-          "line": 47,
-          "apiPath": "/api/admin/funnels",
-          "kind": "fetch"
-        },
-        {
           "file": "app/components/ContentPageEditor.tsx",
           "line": 82,
           "apiPath": "/api/admin/funnels",
@@ -437,7 +353,7 @@
       "file": "app/api/admin/funnels/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 11,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
@@ -480,30 +396,6 @@
           "line": 530,
           "apiPath": "/api/admin/funnels/test-funnel",
           "kind": "request"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/editor/page.tsx",
-          "line": 64,
-          "apiPath": "/api/admin/funnels/${funnelSlug}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 126,
-          "apiPath": "/api/admin/funnels/${identifier}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 172,
-          "apiPath": "/api/admin/funnels/${identifier}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/funnels/[identifier]/page.tsx",
-          "line": 242,
-          "apiPath": "/api/admin/funnels/${identifier}",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -518,17 +410,10 @@
       "file": "app/api/admin/kpi-thresholds/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 119,
-          "apiPath": "/api/admin/kpi-thresholds",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/kpi-thresholds/[id]",
@@ -539,17 +424,10 @@
       "file": "app/api/admin/kpi-thresholds/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 193,
-          "apiPath": "/api/admin/kpi-thresholds/${id}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/navigation",
@@ -559,17 +437,10 @@
       "file": "app/api/admin/navigation/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/navigation/page.tsx",
-          "line": 86,
-          "apiPath": "/api/admin/navigation",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/navigation/[role]",
@@ -579,17 +450,10 @@
       "file": "app/api/admin/navigation/[role]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/navigation/page.tsx",
-          "line": 196,
-          "apiPath": "/api/admin/navigation/${selectedRole}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/notification-templates",
@@ -600,17 +464,10 @@
       "file": "app/api/admin/notification-templates/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 103,
-          "apiPath": "/api/admin/notification-templates",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/notification-templates/[id]",
@@ -621,17 +478,10 @@
       "file": "app/api/admin/notification-templates/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 147,
-          "apiPath": "/api/admin/notification-templates/${id}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/operational-settings-audit",
@@ -641,17 +491,10 @@
       "file": "app/api/admin/operational-settings-audit/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 127,
-          "apiPath": "/api/admin/operational-settings-audit",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/pilot/flow-events",
@@ -664,7 +507,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/pilot/kpis",
@@ -677,7 +520,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/reassessment-rules",
@@ -688,17 +531,10 @@
       "file": "app/api/admin/reassessment-rules/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 111,
-          "apiPath": "/api/admin/reassessment-rules",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/reassessment-rules/[id]",
@@ -709,17 +545,10 @@
       "file": "app/api/admin/reassessment-rules/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/admin/operational-settings/page.tsx",
-          "line": 171,
-          "apiPath": "/api/admin/reassessment-rules/${id}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/usage",
@@ -732,7 +561,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-report",
@@ -741,11 +570,11 @@
       ],
       "file": "app/api/amy/stress-report/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-summary",
@@ -754,11 +583,11 @@
       ],
       "file": "app/api/amy/stress-summary/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/triage",
@@ -767,18 +596,11 @@
       ],
       "file": "app/api/amy/triage/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/dashboard/components/AMYComposer.tsx",
-          "line": 146,
-          "apiPath": "/api/amy/triage",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessment-answers/save",
@@ -787,7 +609,7 @@
       ],
       "file": "app/api/assessment-answers/save/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 1,
       "usedBy": [
         {
@@ -807,7 +629,7 @@
       ],
       "file": "app/api/assessment-validation/validate-step/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 1,
       "usedBy": [
         {
@@ -827,11 +649,11 @@
       ],
       "file": "app/api/assessments/[id]/current-step/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/navigation",
@@ -840,11 +662,11 @@
       ],
       "file": "app/api/assessments/[id]/navigation/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/resume",
@@ -853,7 +675,7 @@
       ],
       "file": "app/api/assessments/[id]/resume/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 1,
       "usedBy": [
         {
@@ -873,11 +695,11 @@
       ],
       "file": "app/api/assessments/in-progress/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/callback",
@@ -886,7 +708,7 @@
       ],
       "file": "app/api/auth/callback/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "public",
       "usedByCount": 2,
       "usedBy": [
         {
@@ -912,21 +734,9 @@
       ],
       "file": "app/api/auth/resolve-role/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 3,
+      "accessRole": "public",
+      "usedByCount": 1,
       "usedBy": [
-        {
-          "file": "app/admin/AdminLayoutClient.tsx",
-          "line": 22,
-          "apiPath": "/api/auth/resolve-role",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/ClinicianLayoutClient.tsx",
-          "line": 22,
-          "apiPath": "/api/auth/resolve-role",
-          "kind": "fetch"
-        },
         {
           "file": "app/page.tsx",
           "line": 35,
@@ -944,11 +754,11 @@
       ],
       "file": "app/api/consent/record/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/consent/status",
@@ -957,11 +767,11 @@
       ],
       "file": "app/api/consent/status/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/content-pages/[slug]",
@@ -970,19 +780,13 @@
       ],
       "file": "app/api/content-pages/[slug]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 2,
+      "accessRole": "patient",
+      "usedByCount": 1,
       "usedBy": [
         {
           "file": "app/content/[slug]/client.tsx",
           "line": 30,
           "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/content/[pageSlug]/client.tsx",
-          "line": 54,
-          "apiPath": "/api/content-pages/${pageSlug}",
           "kind": "fetch"
         }
       ],
@@ -996,11 +800,11 @@
       ],
       "file": "app/api/content-resolver/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/content/resolve",
@@ -1009,18 +813,11 @@
       ],
       "file": "app/api/content/resolve/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/funnel/[slug]/intro/client.tsx",
-          "line": 82,
-          "apiPath": "/api/content/resolve",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/extract",
@@ -1029,11 +826,11 @@
       ],
       "file": "app/api/documents/[id]/extract/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/status",
@@ -1042,11 +839,11 @@
       ],
       "file": "app/api/documents/[id]/status/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/upload",
@@ -1055,11 +852,11 @@
       ],
       "file": "app/api/documents/upload/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/escalation/log-click",
@@ -1068,18 +865,11 @@
       ],
       "file": "app/api/escalation/log-click/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 269,
-          "apiPath": "/api/escalation/log-click",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments",
@@ -1088,68 +878,62 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 10,
+      "accessRole": "patient",
+      "usedByCount": 9,
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 124,
+          "line": 126,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 147,
+          "line": 149,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 190,
+          "line": 192,
           "apiPath": "/api/funnels/cardiovascular-age/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 230,
+          "line": 232,
           "apiPath": "/api/funnels/cardiovascular-age/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 256,
+          "line": 258,
           "apiPath": "/api/funnels/nonexistent-funnel/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 281,
+          "line": 283,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 305,
+          "line": 307,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 329,
+          "line": 331,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 349,
+          "line": 351,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 345,
-          "apiPath": "/api/funnels/${slug}/assessments",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -1162,14 +946,50 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
+      "accessRole": "patient",
+      "usedByCount": 7,
       "usedBy": [
         {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 116,
-          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}",
-          "kind": "fetch"
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 159,
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 191,
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 232,
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 265,
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 290,
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 336,
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "app/api/funnels/__tests__/getAssessment.test.ts",
+          "line": 372,
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -1182,8 +1002,8 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 5,
+      "accessRole": "patient",
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
@@ -1208,12 +1028,6 @@
           "line": 92,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
           "kind": "request"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 393,
-          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/answers/save",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -1226,18 +1040,11 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 443,
-          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/complete",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
@@ -1246,18 +1053,11 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 86,
-          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/result",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
@@ -1266,8 +1066,8 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 4,
+      "accessRole": "patient",
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
@@ -1286,12 +1086,6 @@
           "line": 401,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
           "kind": "request"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 502,
-          "apiPath": "/api/funnels/${slug}/assessments/${assessmentStatus.assessmentId}/steps/${currentStep.id}",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -1304,11 +1098,11 @@
       ],
       "file": "app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/content-pages",
@@ -1317,24 +1111,11 @@
       ],
       "file": "app/api/funnels/[slug]/content-pages/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 259,
-          "apiPath": "/api/funnels/${slug}/content-pages",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/result/client.tsx",
-          "line": 139,
-          "apiPath": "/api/funnels/${payload.data.funnel}/content-pages",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/definition",
@@ -1343,8 +1124,8 @@
       ],
       "file": "app/api/funnels/[slug]/definition/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 5,
+      "accessRole": "patient",
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
@@ -1357,18 +1138,6 @@
           "line": 189,
           "apiPath": "/api/funnels/nope/definition",
           "kind": "request"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/client.tsx",
-          "line": 221,
-          "apiPath": "/api/funnels/${slug}/definition",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/patient/funnel/[slug]/intro/client.tsx",
-          "line": 55,
-          "apiPath": "/api/funnels/${funnelSlug}/definition",
-          "kind": "fetch"
         },
         {
           "file": "lib/funnelHelpers.ts",
@@ -1387,18 +1156,11 @@
       ],
       "file": "app/api/funnels/active/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/assessment/client.tsx",
-          "line": 36,
-          "apiPath": "/api/funnels/active",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/catalog",
@@ -1407,8 +1169,8 @@
       ],
       "file": "app/api/funnels/catalog/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 18,
+      "accessRole": "patient",
+      "usedByCount": 17,
       "usedBy": [
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
@@ -1511,12 +1273,6 @@
           "line": 800,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
-        },
-        {
-          "file": "app/patient/funnels/client.tsx",
-          "line": 31,
-          "apiPath": "/api/funnels/catalog",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -1529,7 +1285,7 @@
       ],
       "file": "app/api/funnels/catalog/[slug]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 6,
       "usedBy": [
         {
@@ -1579,11 +1335,11 @@
       ],
       "file": "app/api/health/env/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "public",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications",
@@ -1592,11 +1348,11 @@
       ],
       "file": "app/api/notifications/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications/[id]",
@@ -1605,11 +1361,11 @@
       ],
       "file": "app/api/notifications/[id]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "patient",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient-measures/export",
@@ -1618,18 +1374,11 @@
       ],
       "file": "app/api/patient-measures/export/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/history/PatientHistoryClient.tsx",
-          "line": 184,
-          "apiPath": "/api/patient-measures/export",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient-measures/history",
@@ -1638,18 +1387,11 @@
       ],
       "file": "app/api/patient-measures/history/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/patient/history/PatientHistoryClient.tsx",
-          "line": 79,
-          "apiPath": "/api/patient-measures/history",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient-profiles",
@@ -1658,24 +1400,11 @@
       ],
       "file": "app/api/patient-profiles/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "app/clinician/shipments/ShipmentCreateDialog.tsx",
-          "line": 52,
-          "apiPath": "/api/patient-profiles",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/tasks/TaskCreateDialog.tsx",
-          "line": 50,
-          "apiPath": "/api/patient-profiles",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/dashboard",
@@ -1688,7 +1417,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/onboarding-status",
@@ -1721,7 +1450,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/pre-screening-calls",
@@ -1731,18 +1460,11 @@
       ],
       "file": "app/api/pre-screening-calls/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/pre-screening/page.tsx",
-          "line": 132,
-          "apiPath": "/api/pre-screening-calls",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/content",
@@ -1751,11 +1473,11 @@
       ],
       "file": "app/api/processing/content/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/delivery",
@@ -1764,11 +1486,11 @@
       ],
       "file": "app/api/processing/delivery/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]",
@@ -1777,11 +1499,11 @@
       ],
       "file": "app/api/processing/jobs/[jobId]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]/download",
@@ -1790,18 +1512,11 @@
       ],
       "file": "app/api/processing/jobs/[jobId]/download/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/delivery/page.tsx",
-          "line": 153,
-          "apiPath": "/api/processing/jobs/${jobId}/download",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/pdf",
@@ -1810,11 +1525,11 @@
       ],
       "file": "app/api/processing/pdf/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/ranking",
@@ -1823,11 +1538,11 @@
       ],
       "file": "app/api/processing/ranking/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/risk",
@@ -1836,11 +1551,11 @@
       ],
       "file": "app/api/processing/risk/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/safety",
@@ -1849,11 +1564,11 @@
       ],
       "file": "app/api/processing/safety/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/start",
@@ -1862,11 +1577,11 @@
       ],
       "file": "app/api/processing/start/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/validation",
@@ -1875,11 +1590,11 @@
       ],
       "file": "app/api/processing/validation/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/reports/[reportId]/pdf",
@@ -1888,11 +1603,11 @@
       ],
       "file": "app/api/reports/[reportId]/pdf/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "clinician",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]",
@@ -1901,18 +1616,11 @@
       ],
       "file": "app/api/review/[id]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/review-queue/page.tsx",
-          "line": 131,
-          "apiPath": "/api/review/queue",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]/decide",
@@ -1921,24 +1629,11 @@
       ],
       "file": "app/api/review/[id]/decide/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
-          "line": 188,
-          "apiPath": "/api/review/${reviewId}/decide",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
-          "line": 234,
-          "apiPath": "/api/review/${reviewId}/decide",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]/details",
@@ -1947,18 +1642,11 @@
       ],
       "file": "app/api/review/[id]/details/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/patient/[id]/QAReviewPanel.tsx",
-          "line": 155,
-          "apiPath": "/api/review/${reviewId}/details",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/queue",
@@ -1967,11 +1655,11 @@
       ],
       "file": "app/api/review/queue/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "clinician",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/shipments",
@@ -1981,24 +1669,11 @@
       ],
       "file": "app/api/shipments/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "app/clinician/shipments/ShipmentCreateDialog.tsx",
-          "line": 92,
-          "apiPath": "/api/shipments",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/shipments/page.tsx",
-          "line": 67,
-          "apiPath": "/api/shipments",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/shipments/[id]",
@@ -2008,18 +1683,11 @@
       ],
       "file": "app/api/shipments/[id]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/shipments/ShipmentDetailDialog.tsx",
-          "line": 87,
-          "apiPath": "/api/shipments/${shipment.id}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/shipments/[id]/events",
@@ -2029,11 +1697,11 @@
       ],
       "file": "app/api/shipments/[id]/events/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "clinician",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases",
@@ -2043,30 +1711,11 @@
       ],
       "file": "app/api/support-cases/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 3,
-      "usedBy": [
-        {
-          "file": "app/clinician/support-cases/page.tsx",
-          "line": 60,
-          "apiPath": "/api/support-cases",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/patient/support/SupportCaseList.tsx",
-          "line": 46,
-          "apiPath": "/api/support-cases",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/patient/support/SupportCaseList.tsx",
-          "line": 69,
-          "apiPath": "/api/support-cases",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases/[id]",
@@ -2077,18 +1726,11 @@
       ],
       "file": "app/api/support-cases/[id]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/support-cases/page.tsx",
-          "line": 117,
-          "apiPath": "/api/support-cases/${caseId}",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases/[id]/escalate",
@@ -2097,18 +1739,11 @@
       ],
       "file": "app/api/support-cases/[id]/escalate/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "app/clinician/support-cases/page.tsx",
-          "line": 86,
-          "apiPath": "/api/support-cases/${caseId}/escalate",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/tasks",
@@ -2118,8 +1753,8 @@
       ],
       "file": "app/api/tasks/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 7,
+      "accessRole": "clinician",
+      "usedByCount": 5,
       "usedBy": [
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
@@ -2150,18 +1785,6 @@
           "line": 299,
           "apiPath": "/api/tasks",
           "kind": "request"
-        },
-        {
-          "file": "app/clinician/tasks/TaskCreateDialog.tsx",
-          "line": 83,
-          "apiPath": "/api/tasks",
-          "kind": "fetch"
-        },
-        {
-          "file": "app/clinician/tasks/page.tsx",
-          "line": 80,
-          "apiPath": "/api/tasks",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -2174,8 +1797,8 @@
       ],
       "file": "app/api/tasks/[id]/route.ts",
       "intent": null,
-      "accessRole": "unknown",
-      "usedByCount": 7,
+      "accessRole": "clinician",
+      "usedByCount": 6,
       "usedBy": [
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
@@ -2212,12 +1835,6 @@
           "line": 367,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
-        },
-        {
-          "file": "app/clinician/tasks/page.tsx",
-          "line": 109,
-          "apiPath": "/api/tasks/${taskId}",
-          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -2230,11 +1847,11 @@
       ],
       "file": "app/api/test/correlation-id/route.ts",
       "intent": null,
-      "accessRole": "unknown",
+      "accessRole": "system",
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     }
   ],
   "unknownCallsites": []
