@@ -311,6 +311,9 @@ export function funnelNotSupportedResponse(
 /**
  * V061-I02: Assessment not completed response (409 STATE_CONFLICT)
  * Used when attempting to access results for an incomplete assessment.
+ * 
+ * Note: This is a specialized wrapper around stateConflictResponse with a
+ * domain-specific default message for better API clarity and consistency.
  */
 export function assessmentNotCompletedResponse(
   message = 'Dieses Assessment wurde noch nicht abgeschlossen. Bitte schließen Sie das Assessment ab, um die Ergebnisse zu sehen.',

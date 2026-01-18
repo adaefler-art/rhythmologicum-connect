@@ -9,7 +9,7 @@ import {
   versionedSuccessResponse,
   assessmentNotCompletedResponse,
 } from '@/lib/api/responses'
-import { logUnauthorized, logForbidden, logDatabaseError } from '@/lib/logging/logger'
+import { logUnauthorized, logForbidden, logDatabaseError, logIncompleteAssessmentAccess } from '@/lib/logging/logger'
 import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type GetResultResponseData,
@@ -96,12 +96,14 @@ export async function GET(
     // - incomplete → 409 (STATE_CONFLICT)
     // - completed → 200 with result data
     if (assessment.status !== 'completed') {
-      console.log('[result] Assessment not completed', {
-        assessmentId,
-        slug,
-        status: assessment.status,
-        userId: user.id,
-      })
+      logIncompleteAssessmentAccess(
+        {
+          assessmentId,
+          userId: user.id,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result`,
+        },
+        assessment.status,
+      )
       return assessmentNotCompletedResponse(
         undefined,
         { assessmentId, status: assessment.status },

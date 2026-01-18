@@ -189,6 +189,17 @@ export function logAssessmentCompleted(context: LogContext): void {
   })
 }
 
+/**
+ * V061-I02: Log access to incomplete assessment result
+ */
+export function logIncompleteAssessmentAccess(context: LogContext, status: string): void {
+  logWarn('Access to incomplete assessment result', {
+    ...context,
+    type: 'incomplete_assessment_access',
+    status,
+  })
+}
+
 export function logAssessmentError(context: LogContext, error: unknown): void {
   logError('Assessment error', context, error)
 }
