@@ -2,6 +2,10 @@
   "name": "walkingskeleton",
   "version": "0.4.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/generate-version.js",
@@ -32,6 +36,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "rhythm-core": "workspace:*",
     "@anthropic-ai/sdk": "^0.71.0",
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/ssr": "^0.8.0",
