@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useEffect, useState } from 'react'
 import { getUserRole, getRoleDisplayName, getNavItemsForRole } from '@/lib/utils/roleBasedRouting'
@@ -12,7 +12,6 @@ import type { User } from '@supabase/supabase-js'
 
 export default function PatientLayoutClient({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
@@ -38,8 +37,8 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
   }, [])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    await fetch('/api/auth/signout', { method: 'POST' })
+    window.location.assign('/')
   }
 
   // Get navigation items from shared configuration

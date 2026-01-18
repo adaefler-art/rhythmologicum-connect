@@ -123,8 +123,8 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
   }, [router])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+    await fetch('/api/auth/signout', { method: 'POST' })
+    window.location.assign('/')
   }
 
   if (loading) {
