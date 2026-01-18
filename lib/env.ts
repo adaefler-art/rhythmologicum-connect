@@ -88,6 +88,11 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   // OPTIONAL: Dev/Admin tooling feature flags
   DEV_ENDPOINT_CATALOG: z.string().optional(),
 
+  // OPTIONAL: UI split routing (Package 2)
+  STUDIO_BASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
+  PATIENT_BASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
+  ENGINE_BASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
+
   // OPTIONAL: E6.4.1 Pilot Allowlists (server-only)
   PILOT_ORG_ALLOWLIST: z.string().optional(),
   PILOT_USER_ALLOWLIST: z.string().optional(),
@@ -162,6 +167,9 @@ export type Env = {
 
   // Dev/admin tooling
   DEV_ENDPOINT_CATALOG?: string
+  STUDIO_BASE_URL?: string
+  PATIENT_BASE_URL?: string
+  ENGINE_BASE_URL?: string
 }
 
 /**
@@ -192,6 +200,9 @@ function getDefaultEnv(): Env {
     VERCEL_ENV: process.env.VERCEL_ENV,
     USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
     DEV_ENDPOINT_CATALOG: process.env.DEV_ENDPOINT_CATALOG,
+    STUDIO_BASE_URL: process.env.STUDIO_BASE_URL,
+    PATIENT_BASE_URL: process.env.PATIENT_BASE_URL,
+    ENGINE_BASE_URL: process.env.ENGINE_BASE_URL,
   }
 }
 
