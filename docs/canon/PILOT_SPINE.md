@@ -49,14 +49,15 @@ Invoke-WebRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/re
 
 ## Package 2 — UI Split (Studio vs Patient)
 
-### Routing Strategy (B: Engine Proxy Redirects)
-The engine keeps stable URLs and redirects to dedicated UI apps via env vars:
+### Routing Strategy (Primary: Engine Proxy Redirects)
+The engine keeps stable URLs and redirects to dedicated UI apps via env vars. This is the only routing strategy used in Package 2:
 
 - `STUDIO_BASE_URL` → Studio UI (hosts `/admin/**` and `/clinician/**`)
 - `PATIENT_BASE_URL` → Patient UI (hosts `/patient/**`)
 - `ENGINE_BASE_URL` → Engine API base (used by UI app rewrites for `/api/**`)
 
 Redirect behavior is implemented in the engine routes and preserves path + query.
+No loops: engine redirects only `/admin/**`, `/clinician/**`, `/patient/**`; UI apps only rewrite `/api/**` to the engine.
 
 ### Local Run (PowerShell)
 ```powershell
@@ -64,10 +65,10 @@ Redirect behavior is implemented in the engine routes and preserves path + query
 npm run dev
 
 # Studio UI (admin/clinician)
-npm run --workspace apps/rhythm-studio-ui dev
+$env:PORT=3001; npm run --workspace apps/rhythm-studio-ui dev
 
 # Patient UI (patient portal)
-npm run --workspace apps/rhythm-patient-ui dev
+$env:PORT=3002; npm run --workspace apps/rhythm-patient-ui dev
 ```
 
 ### Package 2 Verification (PowerShell)

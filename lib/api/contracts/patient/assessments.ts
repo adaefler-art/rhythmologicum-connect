@@ -1,3 +1,14 @@
+import {
+  SaveAnswerRequestSchema,
+  SaveAnswerResponseSchema,
+  CompleteAssessmentResponseSchema,
+  GetResultResponseSchema,
+  type SaveAnswerRequest,
+  type SaveAnswerResponse,
+  type CompleteAssessmentResponse,
+  type GetResultResponse,
+} from 'rhythm-core/contracts/patient/assessments'
+
 export * from 'rhythm-core/contracts/patient/assessments'
 
 /**

@@ -13,10 +13,11 @@
 - Patient routes moved to apps/rhythm-patient-ui/app/patient.
 
 ## Routing Stability
-- Engine now redirects:
+- Primary strategy: engine redirect proxy (single source of URL stability).
+- Engine redirects:
   - /admin/** and /clinician/** → STUDIO_BASE_URL
   - /patient/** → PATIENT_BASE_URL
-- UI apps rewrite /api/** → ENGINE_BASE_URL
+- UI apps rewrite /api/** → ENGINE_BASE_URL (API only; no UI path rewrites).
 - Redirects preserve path + query and avoid logging PHI.
 
 ## Workspace Wiring

@@ -134,7 +134,7 @@ export const DashboardViewModelV1Schema = z.object({
   nextStep: NextStepSchema,
   funnelSummaries: z.array(FunnelSummarySchema),
   workupSummary: WorkupSummarySchema,
-  contentTiles: z.array(ContentTileSchema),
+  contentTiles: z.array(ContentTileSchema).default([]),
   meta: DashboardMetaSchema,
 })
 

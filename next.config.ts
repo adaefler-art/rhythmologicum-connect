@@ -1,4 +1,5 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   /* Performance optimizations */
@@ -28,6 +29,11 @@ const nextConfig: NextConfig = {
   // experimental: {
   //   optimizeCss: true,
   // },
-};
+  experimental: {
+    externalDir: true,
+  },
+  outputFileTracingRoot: path.join(__dirname, '.'),
+  transpilePackages: ['rhythm-core'],
+}
 
-export default nextConfig;
+export default nextConfig

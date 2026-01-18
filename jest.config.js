@@ -5,6 +5,8 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx', '**/?(*.)+(spec|test).ts', '**/?(*.)+(spec|test).tsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^rhythm-core$': '<rootDir>/packages/rhythm-core/src/index.ts',
+    '^rhythm-core/(.*)$': '<rootDir>/packages/rhythm-core/src/$1',
     '^server-only$': '<rootDir>/test/__mocks__/server-only.ts',
     '^react-markdown$': '<rootDir>/test/__mocks__/react-markdown.tsx',
     '^remark-gfm$': '<rootDir>/test/__mocks__/remark-gfm.ts',
