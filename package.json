@@ -43,7 +43,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "rhythm-core": "workspace:*",
+    "rhythm-core": "file:packages/rhythm-core",
     "@anthropic-ai/sdk": "^0.71.0",
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/ssr": "^0.8.0",
