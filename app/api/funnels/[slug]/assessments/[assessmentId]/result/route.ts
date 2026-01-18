@@ -104,8 +104,9 @@ export async function GET(
         },
         assessment.status,
       )
+      // Use default message from helper function
       return assessmentNotCompletedResponse(
-        undefined,
+        'Dieses Assessment wurde noch nicht abgeschlossen. Bitte schließen Sie das Assessment ab, um die Ergebnisse zu sehen.',
         { assessmentId, status: assessment.status },
       )
     }
