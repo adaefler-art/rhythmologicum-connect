@@ -46,3 +46,48 @@ Invoke-WebRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/co
 Invoke-WebRequest -Uri "$base/api/funnels/cardiovascular-age/assessments/$aid/result" -Method Get -SkipHttpErrorCheck |
   Select-Object StatusCode,Content
 ```
+
+## Package 2 — UI Split (Studio vs Patient)
+
+### Routing Strategy (B: Engine Proxy Redirects)
+The engine keeps stable URLs and redirects to dedicated UI apps via env vars:
+
+- `STUDIO_BASE_URL` → Studio UI (hosts `/admin/**` and `/clinician/**`)
+- `PATIENT_BASE_URL` → Patient UI (hosts `/patient/**`)
+- `ENGINE_BASE_URL` → Engine API base (used by UI app rewrites for `/api/**`)
+
+Redirect behavior is implemented in the engine routes and preserves path + query.
+
+### Local Run (PowerShell)
+```powershell
+# Engine (API host + redirect proxy)
+npm run dev
+
+# Studio UI (admin/clinician)
+npm run --workspace apps/rhythm-studio-ui dev
+
+# Patient UI (patient portal)
+npm run --workspace apps/rhythm-patient-ui dev
+```
+
+### Package 2 Verification (PowerShell)
+```powershell
+# Root checks
+npm test
+npm run build
+
+# Per-app builds
+npm run --workspace apps/rhythm-studio-ui build
+npm run --workspace apps/rhythm-patient-ui build
+
+# Redirect smoke checks (expect 307/308 depending on environment)
+$engine = "http://localhost:3000"
+Invoke-WebRequest -Uri "$engine/admin" -MaximumRedirection 0 -SkipHttpErrorCheck | Select-Object StatusCode,Headers
+Invoke-WebRequest -Uri "$engine/clinician" -MaximumRedirection 0 -SkipHttpErrorCheck | Select-Object StatusCode,Headers
+Invoke-WebRequest -Uri "$engine/patient" -MaximumRedirection 0 -SkipHttpErrorCheck | Select-Object StatusCode,Headers
+
+# Patient spine manual flow (UI)
+# 1) /patient/funnels → start cardiovascular-age
+# 2) answer → save → continue
+# 3) complete → result page renders
+```

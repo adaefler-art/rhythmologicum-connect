@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next'
 import path from 'path'
+import { env } from '../../lib/env'
 
-const engineBaseUrl = process.env.ENGINE_BASE_URL
+const engineBaseUrl = env.ENGINE_BASE_URL
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
