@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { featureFlags } from '@/lib/featureFlags'
 import { ThemeToggle, Input } from '@/lib/ui'
-import { getLandingForRole, type ResolvedUserRole } from '@/lib/utils/roleLanding'
+import type { ResolvedUserRole } from '@/lib/utils/roleLanding'
+import { getPostLoginRedirect } from '@/lib/utils/authRedirect'
 
 async function syncServerSession() {
   const { data } = await supabase.auth.getSession()
@@ -78,10 +78,22 @@ async function getPatientRedirectFromOnboardingStatus(): Promise<
 
     if (parsed.data.needsConsent) return { kind: 'ok', path: '/patient/onboarding/consent' }
     if (parsed.data.needsProfile) return { kind: 'ok', path: '/patient/onboarding/profile' }
-    return { kind: 'ok', path: '/patient' }
+    return { kind: 'fallback' }
   } catch {
     return { kind: 'fallback' }
   }
+}
+
+async function resolvePostLoginRedirect(role: ResolvedUserRole): Promise<string | null> {
+  if (role === 'patient') {
+    const onboarding = await getPatientRedirectFromOnboardingStatus()
+    if (onboarding.kind === 'unauthenticated') return null
+    if (onboarding.kind === 'ok') {
+      return getPostLoginRedirect({ role, patientOnboardingPath: onboarding.path })
+    }
+  }
+
+  return getPostLoginRedirect({ role })
 }
 
 
@@ -122,25 +134,10 @@ export default function LoginPage() {
 
         const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-        if (role === 'patient') {
-          const onboarding = await getPatientRedirectFromOnboardingStatus()
-          if (onboarding.kind === 'unauthenticated') return
-          if (onboarding.kind === 'ok') {
-            router.replace(onboarding.path)
-            return
-          }
-
-          // Fallback: don't block UX
-          router.replace('/patient')
-          return
+        const target = await resolvePostLoginRedirect(role)
+        if (target) {
+          router.replace(target)
         }
-
-        if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
-          router.replace('/patient')
-          return
-        }
-
-        router.replace(getLandingForRole(role))
       }
     }
 
@@ -252,29 +249,13 @@ export default function LoginPage() {
 
       const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-      if (role === 'patient') {
-        const onboarding = await getPatientRedirectFromOnboardingStatus()
-        if (onboarding.kind === 'unauthenticated') {
-          setError('Bitte einloggen.')
-          return
-        }
-        if (onboarding.kind === 'ok') {
-          router.replace(onboarding.path)
-          return
-        }
-
-        // Fallback: don't block UX
-        router.replace('/patient')
+      const target = await resolvePostLoginRedirect(role)
+      if (!target) {
+        setError('Bitte einloggen.')
         return
       }
 
-      // Redirect based on role
-      if (role === 'clinician' && !featureFlags.CLINICIAN_DASHBOARD_ENABLED) {
-        // If clinician dashboard is disabled, redirect clinicians to patient flow
-        router.replace('/patient')
-      } else {
-        router.replace(getLandingForRole(role))
-      }
+      router.replace(target)
     } catch (err: unknown) {
       console.error(err)
       const error = err as { message?: string; error_description?: string }
