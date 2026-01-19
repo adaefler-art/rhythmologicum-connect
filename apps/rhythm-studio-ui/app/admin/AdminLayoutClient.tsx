@@ -135,6 +135,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
   }, [router])
 
   const handleSignOut = async () => {
+    await supabase.auth.signOut()
     await fetch('/api/auth/signout', { method: 'POST' })
     window.location.assign('/')
   }
