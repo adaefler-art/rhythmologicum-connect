@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { parseEnvBoolean } from '@/lib/featureFlags'
-import { env } from '@/lib/env'
+import { getEngineEnv } from '@/lib/env'
 
 // Check if clinician dashboard feature is enabled
 function isClinicianDashboardEnabled(): boolean {
@@ -20,6 +20,7 @@ async function logUnauthorizedAccess(path: string, userId?: string, reason?: str
 }
 
 export async function proxy(request: NextRequest) {
+  const engineEnv = getEngineEnv()
   const { pathname } = request.nextUrl
 
   // Only protect /clinician and /admin routes
@@ -40,8 +41,8 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    engineEnv.NEXT_PUBLIC_SUPABASE_URL,
+    engineEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {

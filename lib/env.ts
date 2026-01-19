@@ -115,6 +115,35 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   SUPABASE_SERVICE_KEY: z.preprocess(sanitizeEnvString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
 })
 
+const patientEnvSchema = baseEnvSchema.extend({
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(
+    sanitizeEnvString,
+    z.string().url('NEXT_PUBLIC_SUPABASE_URL is required'),
+  ),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(
+    sanitizeEnvString,
+    z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  ),
+  ENGINE_BASE_URL: z.preprocess(sanitizeEnvString, z.string().url('ENGINE_BASE_URL is required')),
+})
+
+const studioEnvSchema = baseEnvSchema.extend({
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(
+    sanitizeEnvString,
+    z.string().url('NEXT_PUBLIC_SUPABASE_URL is required'),
+  ),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(
+    sanitizeEnvString,
+    z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  ),
+})
+
+const engineEnvSchema = serverOnlyEnvSchema
+
+export type PatientEnv = z.infer<typeof patientEnvSchema>
+export type StudioEnv = z.infer<typeof studioEnvSchema>
+export type EngineEnv = z.infer<typeof engineEnvSchema>
+
 function getRawClientEnv() {
   return {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -131,6 +160,23 @@ function getRawClientEnv() {
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
     USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
+  }
+}
+
+function getRawServerEnv() {
+  return {
+    DEV_ENDPOINT_CATALOG: process.env.DEV_ENDPOINT_CATALOG,
+    STUDIO_BASE_URL: process.env.STUDIO_BASE_URL,
+    PATIENT_BASE_URL: process.env.PATIENT_BASE_URL,
+    ENGINE_BASE_URL: process.env.ENGINE_BASE_URL,
+    PILOT_ORG_ALLOWLIST: process.env.PILOT_ORG_ALLOWLIST,
+    PILOT_USER_ALLOWLIST: process.env.PILOT_USER_ALLOWLIST,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    ANTHROPIC_API_TOKEN: process.env.ANTHROPIC_API_TOKEN,
+    ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
   }
 }
 
@@ -206,95 +252,126 @@ function getDefaultEnv(): Env {
   }
 }
 
-/**
- * Parse and validate environment variables
- * This will throw an error if required variables are missing or invalid
- */
-function parseEnv(): Env {
-  try {
-    if (isServerRuntime) {
-      const parsed = serverOnlyEnvSchema.parse(process.env)
-      return {
-        NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || parsed.SUPABASE_URL || '',
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-        SUPABASE_SERVICE_ROLE_KEY: parsed.SUPABASE_SERVICE_ROLE_KEY || parsed.SUPABASE_SERVICE_KEY || '',
-        ANTHROPIC_API_KEY: parsed.ANTHROPIC_API_KEY || parsed.ANTHROPIC_API_TOKEN,
-        ANTHROPIC_API_TOKEN: parsed.ANTHROPIC_API_TOKEN,
-        ANTHROPIC_MODEL: parsed.ANTHROPIC_MODEL,
-        REVIEW_SAMPLING_PERCENTAGE: parsed.REVIEW_SAMPLING_PERCENTAGE,
-        REVIEW_SAMPLING_SALT: parsed.REVIEW_SAMPLING_SALT,
-        NEXT_PUBLIC_FEATURE_AMY_ENABLED: parsed.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
-        NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
-          parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
-        NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
-        NEXT_PUBLIC_PILOT_ENABLED: parsed.NEXT_PUBLIC_PILOT_ENABLED,
-        NEXT_PUBLIC_PILOT_ENV: parsed.NEXT_PUBLIC_PILOT_ENV,
-        PILOT_ORG_ALLOWLIST: parsed.PILOT_ORG_ALLOWLIST,
-        PILOT_USER_ALLOWLIST: parsed.PILOT_USER_ALLOWLIST,
-        SUPABASE_URL: parsed.SUPABASE_URL,
-        SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
-        NODE_ENV: parsed.NODE_ENV,
-        NEXT_PHASE: parsed.NEXT_PHASE,
-        VERCEL_ENV: parsed.VERCEL_ENV,
-        USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
-        DEV_ENDPOINT_CATALOG: parsed.DEV_ENDPOINT_CATALOG,
-      }
+function getMissingEnvKeys(issues: z.ZodIssue[]): string[] {
+  const keys = new Set<string>()
+  issues.forEach((issue) => {
+    const pathKey = issue.path[0]
+    if (typeof pathKey === 'string') {
+      keys.add(pathKey)
     }
+  })
+  return Array.from(keys)
+}
 
-    const parsed = baseEnvSchema.parse(getRawClientEnv())
+type ParseOptions = {
+  strict?: boolean
+  scope?: string
+}
+
+function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions = {}): z.infer<T> {
+  const rawEnv = isServerRuntime
+    ? { ...getRawClientEnv(), ...getRawServerEnv() }
+    : getRawClientEnv()
+
+  try {
+    const parsed = schema.parse(rawEnv) as Env
     return {
-      NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || '',
+      NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || parsed.SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      SUPABASE_SERVICE_ROLE_KEY: '',
-      ANTHROPIC_API_KEY: undefined,
-      ANTHROPIC_API_TOKEN: undefined,
-      ANTHROPIC_MODEL: undefined,
+      SUPABASE_SERVICE_ROLE_KEY: parsed.SUPABASE_SERVICE_ROLE_KEY || parsed.SUPABASE_SERVICE_KEY || '',
+      ANTHROPIC_API_KEY: parsed.ANTHROPIC_API_KEY || parsed.ANTHROPIC_API_TOKEN,
+      ANTHROPIC_API_TOKEN: parsed.ANTHROPIC_API_TOKEN,
+      ANTHROPIC_MODEL: parsed.ANTHROPIC_MODEL,
       REVIEW_SAMPLING_PERCENTAGE: parsed.REVIEW_SAMPLING_PERCENTAGE,
       REVIEW_SAMPLING_SALT: parsed.REVIEW_SAMPLING_SALT,
       NEXT_PUBLIC_FEATURE_AMY_ENABLED: parsed.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
-      NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
+      NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED:
+        parsed.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
       NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: parsed.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
       NEXT_PUBLIC_PILOT_ENABLED: parsed.NEXT_PUBLIC_PILOT_ENABLED,
       NEXT_PUBLIC_PILOT_ENV: parsed.NEXT_PUBLIC_PILOT_ENV,
-      PILOT_ORG_ALLOWLIST: undefined,
-      PILOT_USER_ALLOWLIST: undefined,
-      SUPABASE_URL: undefined,
-      SUPABASE_SERVICE_KEY: undefined,
+      PILOT_ORG_ALLOWLIST: parsed.PILOT_ORG_ALLOWLIST,
+      PILOT_USER_ALLOWLIST: parsed.PILOT_USER_ALLOWLIST,
+      SUPABASE_URL: parsed.SUPABASE_URL,
+      SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
       VERCEL_ENV: parsed.VERCEL_ENV,
       USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
-    }
+      DEV_ENDPOINT_CATALOG: parsed.DEV_ENDPOINT_CATALOG,
+      STUDIO_BASE_URL: parsed.STUDIO_BASE_URL,
+      PATIENT_BASE_URL: parsed.PATIENT_BASE_URL,
+      ENGINE_BASE_URL: parsed.ENGINE_BASE_URL,
+    } as z.infer<T>
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const missingKeys = getMissingEnvKeys(error.issues)
+      const message = missingKeys.length
+        ? `Missing env: ${missingKeys.join(', ')}`
+        : 'Invalid environment variables'
+
       console.error('❌ Environment variable validation failed:')
       console.error(error.issues.map((e) => `  - ${e.path.join('.')}: ${e.message}`).join('\n'))
-      
+
       // During build, allow with defaults
       if (isBuildTime) {
         console.warn('⚠️  Build time: Continuing with default values')
-        return getDefaultEnv()
+        return getDefaultEnv() as z.infer<T>
       }
 
-      // In production, fail fast only on the server.
-      // In the browser we never throw (avoid hard-crashing the UI).
-      if (process.env.NODE_ENV === 'production' && isServerRuntime) {
-        throw new Error('Invalid environment variables')
+      if (options.strict && isServerRuntime) {
+        throw new Error(message)
       }
-      
-      // In development, warn but allow build to continue with default values
-      console.warn('⚠️  Continuing with default values for development')
-      return getDefaultEnv()
+
+      // In development or non-strict mode, warn but allow build to continue with default values
+      console.warn(
+        `⚠️  Continuing with default values for ${options.scope ?? 'base'} environment`,
+      )
+      return getDefaultEnv() as z.infer<T>
     }
     throw error
   }
 }
 
 /**
+ * Parse and validate environment variables
+ * This will not throw in base mode to avoid import-time crashes
+ */
+function parseEnv(): Env {
+  const schema = isServerRuntime ? serverOnlyEnvSchema : baseEnvSchema
+  return parseScopedEnv(schema, { strict: false, scope: 'base' })
+}
+
+/**
  * Validated and type-safe environment variables
  * Access all environment variables through this object
  */
-export const env = parseEnv()
+let cachedEnv: Env | null = null
+
+export function getEnv(): Env {
+  if (!cachedEnv) {
+    cachedEnv = parseEnv()
+  }
+  return cachedEnv
+}
+
+export function getPatientEnv(): PatientEnv {
+  return parseScopedEnv(patientEnvSchema, { strict: true, scope: 'patient' })
+}
+
+export function getStudioEnv(): StudioEnv {
+  return parseScopedEnv(studioEnvSchema, { strict: true, scope: 'studio' })
+}
+
+export function getEngineEnv(): EngineEnv {
+  return parseScopedEnv(engineEnvSchema, { strict: true, scope: 'engine' })
+}
+
+export const env = new Proxy({} as Env, {
+  get(_target, prop) {
+    return getEnv()[prop as keyof Env]
+  },
+})
 
 /**
  * Server-runtime feature flags.

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { env } from '@/lib/env'
+import { getEngineEnv } from '@/lib/env'
 import { buildRedirectUrl, type RedirectSearchParams } from '@/lib/utils/redirects'
 
 export const dynamic = 'force-dynamic'
@@ -9,8 +9,9 @@ export default function ClinicianRedirectPage({
 }: {
   searchParams?: RedirectSearchParams
 }) {
+  const engineEnv = getEngineEnv()
   const target = buildRedirectUrl({
-    baseUrl: env.STUDIO_BASE_URL,
+    baseUrl: engineEnv.STUDIO_BASE_URL,
     pathPrefix: 'clinician',
     searchParams,
   })

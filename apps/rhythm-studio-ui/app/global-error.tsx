@@ -22,13 +22,17 @@ export default function GlobalError({
     logError('Global application error', { type: 'ui_error', area: 'global' }, error)
   }, [error])
 
+  const message = error?.message?.startsWith('Missing env:')
+    ? error.message
+    : 'Beim Laden der Anwendung ist ein Fehler aufgetreten. Bitte laden Sie die Seite neu.'
+
   return (
     <html lang="de">
       <body>
         <div className="w-full min-h-screen flex items-center justify-center bg-white px-4">
           <ErrorState
             title="Ein Fehler ist aufgetreten"
-            message="Beim Laden der Anwendung ist ein Fehler aufgetreten. Bitte laden Sie die Seite neu."
+            message={message}
             onRetry={reset}
             centered
           />

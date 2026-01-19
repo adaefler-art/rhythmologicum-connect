@@ -119,8 +119,9 @@ describe('Environment schema', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
 
       expect(() => {
-        require('../env')
-      }).toThrow('Invalid environment variables')
+        const { getEngineEnv } = require('../env')
+        getEngineEnv()
+      }).toThrow('Missing env')
 
       consoleErrorSpy.mockRestore()
     })

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import LoginPage from '@/app/page'
 import { getOnboardingStatus } from '@/lib/actions/onboarding'
-import { env } from '@/lib/env'
+import { getPatientEnv } from '@/lib/env'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,21 +29,14 @@ export default async function PatientIndexRedirect({
 }: {
   searchParams?: SearchParams
 }) {
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL
-  const supabaseAnonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[PATIENT_ENTRY] Missing Supabase env configuration')
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-white px-6 text-center">
-        <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Konfiguration fehlt</h1>
-          <p className="mt-2 text-sm text-neutral-600">
-            Supabase ist nicht konfiguriert. Bitte wenden Sie sich an den Support.
-          </p>
-        </div>
-      </main>
-    )
+  try {
+    getPatientEnv()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Missing env'
+    console.error('[PATIENT_ENTRY] Missing environment configuration', {
+      message,
+    })
+    throw new Error(message)
   }
 
   // Check onboarding status
