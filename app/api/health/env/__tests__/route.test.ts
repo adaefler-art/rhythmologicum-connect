@@ -26,9 +26,11 @@ jest.mock('@/lib/env', () => ({
     NEXT_PUBLIC_SUPABASE_ANON_KEY:
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjQyODQwMCwiZXhwIjoxOTU4MDA0NDAwfQ.test',
   },
+  getEngineEnv: jest.fn(),
 }))
 
 import { GET } from '../route'
+import { getEngineEnv } from '@/lib/env'
 import {
   getCurrentUser,
   hasAdminOrClinicianRole,
@@ -42,10 +44,12 @@ const mockHasAdminOrClinicianRole = hasAdminOrClinicianRole as jest.MockedFuncti
 const mockCreateServerSupabaseClient = createServerSupabaseClient as jest.MockedFunction<
   typeof createServerSupabaseClient
 >
+const mockGetEngineEnv = getEngineEnv as jest.MockedFunction<typeof getEngineEnv>
 
 describe('GET /api/health/env', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockGetEngineEnv.mockReturnValue({} as any)
   })
 
   describe('Authentication and Authorization', () => {
@@ -272,19 +276,20 @@ describe('GET /api/health/env', () => {
     })
 
     it('handles missing environment configuration', async () => {
-      mockCreateServerSupabaseClient.mockRejectedValue(
-        new Error('Supabase configuration missing'),
-      )
+      mockGetEngineEnv.mockImplementation(() => {
+        throw new Error('Missing env: ENGINE_BASE_URL')
+      })
 
       const request = new NextRequest('http://localhost/api/health/env')
       const response = await GET(request)
 
-      const json = await response.json()
-      expect(json.data.status).toBe('RED')
+      expect(response.status).toBe(500)
 
-      const dbCheck = json.data.checks.find((c: any) => c.name === 'Database Connectivity')
-      expect(dbCheck?.ok).toBe(false)
-      expect(dbCheck?.message).toBe('Missing environment configuration')
+      const json = await response.json()
+      expect(json).toEqual({
+        error: 'Missing env: ENGINE_BASE_URL',
+        missing: ['ENGINE_BASE_URL'],
+      })
     })
   })
 

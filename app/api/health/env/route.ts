@@ -5,6 +5,7 @@ import {
   forbiddenResponse,
   internalErrorResponse,
 } from '@/lib/api/responses'
+import { requireEngineEnv } from '@/lib/api/requireEngineEnv'
 import { getCurrentUser, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { env } from '@/lib/env'
@@ -231,6 +232,10 @@ async function performDatabaseConnectivityCheck(): Promise<HealthCheckResult> {
 }
 
 export async function GET(request: NextRequest) {
+  const envError = requireEngineEnv()
+  if (envError) {
+    return envError
+  }
   const requestId = crypto.randomUUID()
 
   try {

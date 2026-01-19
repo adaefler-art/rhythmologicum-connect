@@ -138,7 +138,16 @@ const studioEnvSchema = baseEnvSchema.extend({
   ),
 })
 
-const engineEnvSchema = serverOnlyEnvSchema
+const engineEnvSchema = serverOnlyEnvSchema.extend({
+  NEXT_PUBLIC_SUPABASE_URL: z.preprocess(
+    sanitizeEnvString,
+    z.string().url('NEXT_PUBLIC_SUPABASE_URL is required'),
+  ),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(
+    sanitizeEnvString,
+    z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  ),
+})
 
 export type PatientEnv = z.infer<typeof patientEnvSchema>
 export type StudioEnv = z.infer<typeof studioEnvSchema>
@@ -339,7 +348,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
  */
 function parseEnv(): Env {
   const schema = isServerRuntime ? serverOnlyEnvSchema : baseEnvSchema
-  return parseScopedEnv(schema, { strict: false, scope: 'base' })
+  return parseScopedEnv(schema, { strict: false, scope: 'base' }) as Env
 }
 
 /**
@@ -370,6 +379,11 @@ export function getEngineEnv(): EngineEnv {
 export const env = new Proxy({} as Env, {
   get(_target, prop) {
     return getEnv()[prop as keyof Env]
+  },
+  set(_target, prop, value) {
+    const current = getEnv()
+    ;(current as Record<string, unknown>)[prop as string] = value
+    return true
   },
 })
 
