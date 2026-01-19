@@ -3,16 +3,20 @@ import { env } from '@/lib/env'
 
 const BASE_COOKIE_NAMES = ['sb-access-token', 'sb-refresh-token', 'sb-auth-token', 'sb-localhost-auth-token']
 
-function getSupabaseAuthCookieName() {
+function getProjectCookieNames() {
   const baseUrl = env.NEXT_PUBLIC_SUPABASE_URL
-  if (!baseUrl) return null
+  if (!baseUrl) return [] as string[]
   try {
     const hostname = new URL(baseUrl).hostname
     const projectRef = hostname.split('.')[0]
-    if (!projectRef) return null
-    return `sb-${projectRef}-auth-token`
+    if (!projectRef) return []
+    return [
+      `sb-${projectRef}-auth-token`,
+      `sb-${projectRef}-access-token`,
+      `sb-${projectRef}-refresh-token`,
+    ]
   } catch {
-    return null
+    return []
   }
 }
 
@@ -20,9 +24,8 @@ function buildSignoutResponse() {
   console.log('[AUTH_SIGNOUT]')
 
   const response = NextResponse.json({ success: true }, { status: 200 })
-  const authCookie = getSupabaseAuthCookieName()
   const cookieNames = new Set(BASE_COOKIE_NAMES)
-  if (authCookie) cookieNames.add(authCookie)
+  getProjectCookieNames().forEach((name) => cookieNames.add(name))
 
   cookieNames.forEach((name) => {
     response.cookies.set({

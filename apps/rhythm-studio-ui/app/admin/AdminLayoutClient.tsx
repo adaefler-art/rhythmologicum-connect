@@ -11,11 +11,23 @@ import {
   getRoleDisplayName,
 } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
-import type { User } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
 
 type ResolvedUserRole = 'patient' | 'clinician' | 'admin' | 'nurse'
 
 type RoleResolution = { role: ResolvedUserRole | null; status: number | null }
+
+async function notifyAuthCallback(event: string, session: Session | null) {
+  try {
+    await fetch('/api/auth/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, session }),
+    })
+  } catch {
+    // Best-effort cookie sync; failures are handled by auth guards.
+  }
+}
 
 async function resolveRole(): Promise<RoleResolution> {
   try {
@@ -56,6 +68,13 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
         return
       }
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (session) {
+        await notifyAuthCallback('SIGNED_IN', session)
+      }
+
       // Prefer DB membership role resolution (fail-closed)
       const resolution = await resolveRole()
       if (resolution.role) {
@@ -84,6 +103,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      await notifyAuthCallback(event, session ?? null)
       if (event === 'SIGNED_OUT') {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
