@@ -3,15 +3,9 @@ import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getAmyFallbackText, type RiskLevel } from '@/lib/amyFallbacks';
 import { trackUsage } from '@/lib/monitoring/usageTrackingWrapper';
-import { env } from '@/lib/env';
+import { getEngineEnv } from '@/lib/env';
 
-// Anthropic API configuration
-const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN;
-const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929';
-
-const anthropic = anthropicApiKey
-  ? new Anthropic({ apiKey: anthropicApiKey })
-  : null;
+const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929';
 
 interface StressSummaryRequest {
   stressScore: number | null;
@@ -98,7 +92,9 @@ function validateInput(body: unknown): {
  * Creates a short interpretation using Anthropic API
  */
 async function generateSummary(
-  params: StressSummaryRequest
+  params: StressSummaryRequest,
+  anthropic: Anthropic | null,
+  model: string
 ): Promise<StressSummaryResponse> {
   const { stressScore, sleepScore, riskLevel } = params;
 
@@ -130,7 +126,7 @@ async function generateSummary(
       `Duzen ist erlaubt. Keine Überschriften oder Bulletpoints verwenden - nur Fließtext.`;
 
     const response = await anthropic.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 600,
       temperature: 0.3,
       system:
@@ -192,7 +188,7 @@ async function generateSummary(
       duration: `${duration}ms`,
       errorType,
       errorMessage,
-      model: MODEL,
+      model,
     });
 
     // LLM-Fehler → Fallback-Text verwenden
@@ -234,6 +230,10 @@ function extractRecommendations(text: string): string[] {
  * Generates a short interpretation based on stress/sleep scores and risk level
  */
 export async function POST(req: Request) {
+  const engineEnv = getEngineEnv();
+  const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN;
+  const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK;
+  const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null;
   const requestStartTime = Date.now();
   console.log('[stress-summary] POST request received');
 
@@ -267,7 +267,7 @@ export async function POST(req: Request) {
     }
 
     // Generate summary
-    const summary = await generateSummary(validation.data!);
+    const summary = await generateSummary(validation.data!, anthropic, model);
     
     const totalDuration = Date.now() - requestStartTime;
     console.log('[stress-summary] Request completed successfully', {

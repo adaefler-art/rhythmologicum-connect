@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { featureFlags } from '@/lib/featureFlags'
 import { logError } from '@/lib/logging/logger'
-import { env } from '@/lib/env'
+import { getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitTriageSubmitted, emitTriageRouted } from '@/lib/telemetry/events'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
@@ -56,10 +56,7 @@ import { insertTriageSession } from '@/lib/triage/sessionStorage'
 // Legacy constant for backward compatibility - use TRIAGE_INPUT_MAX_LENGTH from contract
 const MAX_INPUT_LENGTH = TRIAGE_INPUT_MAX_LENGTH
 
-const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
-const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'
-
-const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
+const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 
 /**
  * Legacy triage result structure (for internal AI response parsing)
@@ -161,6 +158,10 @@ function getFallbackTriage(): LegacyTriageResult {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function performAITriage(concern: string): Promise<LegacyTriageResult> {
+  const engineEnv = getEngineEnv()
+  const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
+  const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
+  const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
   // Feature flag disabled → Fallback
   if (!featureFlags.AMY_ENABLED) {
     console.log('[amy/triage] AMY feature disabled, using fallback')
@@ -176,13 +177,13 @@ async function performAITriage(concern: string): Promise<LegacyTriageResult> {
   const startTime = Date.now()
 
   console.log('[amy/triage] Starting triage request', {
-    model: MODEL,
+    model,
     concernLength: concern.length,
   })
 
   try {
     const response = await anthropic.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 400,
       temperature: 0.3,
       system:
@@ -222,7 +223,7 @@ async function performAITriage(concern: string): Promise<LegacyTriageResult> {
 
     console.log('[amy/triage] Triage request completed', {
       duration: `${duration}ms`,
-      model: MODEL,
+      model,
       responseLength: responseText.length,
     })
 
@@ -277,7 +278,7 @@ async function performAITriage(concern: string): Promise<LegacyTriageResult> {
       duration: `${duration}ms`,
       errorType,
       errorMessage,
-      model: MODEL,
+      model,
     })
 
     // Log structured error
@@ -286,7 +287,7 @@ async function performAITriage(concern: string): Promise<LegacyTriageResult> {
       {
         endpoint: '/api/amy/triage',
         errorType,
-        model: MODEL,
+        model,
         duration,
       },
       error,

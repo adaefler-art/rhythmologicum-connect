@@ -151,6 +151,7 @@ const engineEnvSchema = serverOnlyEnvSchema.extend({
 
 export type PatientEnv = z.infer<typeof patientEnvSchema>
 export type StudioEnv = z.infer<typeof studioEnvSchema>
+export type BaseEnv = Partial<Env>
 export type EngineEnv = z.infer<typeof engineEnvSchema>
 
 function getRawClientEnv() {
@@ -346,18 +347,18 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
  * Parse and validate environment variables
  * This will not throw in base mode to avoid import-time crashes
  */
-function parseEnv(): Env {
+function parseEnv(): BaseEnv {
   const schema = isServerRuntime ? serverOnlyEnvSchema : baseEnvSchema
-  return parseScopedEnv(schema, { strict: false, scope: 'base' }) as Env
+  return parseScopedEnv(schema, { strict: false, scope: 'base' }) as BaseEnv
 }
 
 /**
  * Validated and type-safe environment variables
  * Access all environment variables through this object
  */
-let cachedEnv: Env | null = null
+let cachedEnv: BaseEnv | null = null
 
-export function getEnv(): Env {
+export function getEnv(): BaseEnv {
   if (!cachedEnv) {
     cachedEnv = parseEnv()
   }
@@ -376,7 +377,7 @@ export function getEngineEnv(): EngineEnv {
   return parseScopedEnv(engineEnvSchema, { strict: true, scope: 'engine' })
 }
 
-export const env = new Proxy({} as Env, {
+export const env = new Proxy({} as BaseEnv, {
   get(_target, prop) {
     return getEnv()[prop as keyof Env]
   },

@@ -20,20 +20,16 @@ import {
   trackReportGenerationFailed,
   calculateTimeToReport,
 } from '@/lib/monitoring/kpi'
-import { env } from '@/lib/env'
+import { getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitTriageSubmitted, emitTriageRouted } from '@/lib/telemetry/events'
 
-const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
-const MODEL = env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-5-20250929'
-
-const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
+const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 
 type AnswerRow = {
   question_id: string | null
   answer_value: number | null
 }
-
 const STRESS_KEYS = ['stress_q1', 'stress_q2', 'stress_q3', 'stress_q4', 'stress_q5']
 
 const SLEEP_KEYS = ['sleep_q1', 'sleep_q2', 'sleep_q3']
@@ -102,8 +98,10 @@ async function createAmySummary(params: {
   sleepScore: number | null
   riskLevel: RiskLevel | null
   answers: AnswerRow[]
+  anthropic: Anthropic | null
+  model: string
 }) {
-  const { stressScore, sleepScore, riskLevel, answers } = params
+  const { stressScore, sleepScore, riskLevel, answers, anthropic, model } = params
 
   // Feature flag disabled → Fallback-Text
   if (!featureFlags.AMY_ENABLED) {
@@ -121,16 +119,15 @@ async function createAmySummary(params: {
   const startTime = Date.now()
 
   console.log('[stress-report/createAmySummary] Starting AMY request', {
-    model: MODEL,
+    model,
     stressScore,
     sleepScore,
-    riskLevel,
     answersCount: answers.length,
   })
 
   try {
     const response = await anthropic.messages.create({
-      model: MODEL,
+      model,
       max_tokens: 500,
       temperature: 0.3,
       system:
@@ -168,7 +165,7 @@ async function createAmySummary(params: {
 
     console.log('[stress-report/createAmySummary] AMY request completed successfully', {
       duration: `${duration}ms`,
-      model: MODEL,
+      model,
       responseLength: reportText.length,
       contentBlocks: response.content.length,
     })
@@ -203,7 +200,7 @@ async function createAmySummary(params: {
       duration: `${duration}ms`,
       errorType,
       errorMessage,
-      model: MODEL,
+      model,
     })
 
     // Log structured error for monitoring
@@ -212,7 +209,7 @@ async function createAmySummary(params: {
       {
         endpoint: '/api/amy/stress-report',
         errorType,
-        model: MODEL,
+        model,
         duration,
       },
       error,
@@ -224,6 +221,11 @@ async function createAmySummary(params: {
 }
 
 export async function POST(req: Request) {
+  const engineEnv = getEngineEnv()
+  const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
+  const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
+  const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
+
   const requestStartTime = Date.now()
   // E6.4.8: Get correlation ID for telemetry
   const correlationId = getCorrelationId(req)
@@ -294,6 +296,8 @@ export async function POST(req: Request) {
       sleepScore,
       riskLevel,
       answers: typedAnswers,
+      anthropic,
+      model,
     })
 
     // V05-I01.3: Generate versioned report with full traceability
