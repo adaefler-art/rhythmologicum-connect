@@ -37,8 +37,9 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
   }, [])
 
   const handleSignOut = async () => {
-    await fetch('/api/auth/signout', { method: 'POST' })
-    window.location.assign('/')
+    await supabase.auth.signOut()
+    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' })
+    window.location.assign('/patient')
   }
 
   // Get navigation items from shared configuration
