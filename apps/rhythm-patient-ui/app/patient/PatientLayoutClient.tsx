@@ -38,7 +38,11 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' })
+    try {
+      await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' })
+    } catch {
+      // Ignore network errors; client session is already cleared
+    }
     window.location.assign('/patient')
   }
 
