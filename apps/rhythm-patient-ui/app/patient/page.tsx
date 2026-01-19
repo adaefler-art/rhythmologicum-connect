@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import LoginPage from '@/app/page'
 import { getOnboardingStatus } from '@/lib/actions/onboarding'
 
 export const dynamic = 'force-dynamic'
@@ -31,8 +32,8 @@ export default async function PatientIndexRedirect({
   const statusResult = await getOnboardingStatus()
 
   if (!statusResult.success) {
-    // Not authenticated - redirect to login
-    redirect('/')
+    // Not authenticated - render login UI
+    return <LoginPage />
   }
 
   const status = statusResult.data!
