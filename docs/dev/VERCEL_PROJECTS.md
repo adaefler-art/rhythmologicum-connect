@@ -28,6 +28,9 @@
 
 ## Studio UI
 
+- Root Directory: apps/rhythm-studio-ui
+- Framework: Next.js
+
 ### Required env (Studio UI)
 
 - NEXT_PUBLIC_SUPABASE_URL
