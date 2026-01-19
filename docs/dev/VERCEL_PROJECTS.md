@@ -5,6 +5,20 @@
 - Root Directory: apps/rhythm-patient-ui
 - Uses local vercel.json in the app directory
 
+### Required env (Patient UI)
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- ENGINE_BASE_URL
+
+## Studio UI
+
+### Required env (Studio UI)
+
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- ENGINE_BASE_URL
+
 ## Verification (PowerShell)
 
 ```powershell
