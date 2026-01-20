@@ -35,7 +35,6 @@
   ],
   "exclude": [
     "node_modules",
-    "docs/clinician_dashboard",
-    "docs/mobile"
+    "docs/**"
   ]
 }
