@@ -186,6 +186,35 @@ import { Heart } from 'lucide-react'
 
 ## Usage Guidelines
 
+### Layout and Max-Width
+
+**CRITICAL: Always use `max-w-7xl` for page containers to ensure proper width utilization.**
+
+Mobile-v2 pages should utilize the full viewport width appropriately. Do NOT use narrow constraints like `max-w-2xl`, `max-w-xl`, or `max-w-lg` for main page containers as this creates an undesirable narrow column appearance.
+
+❌ **Bad** (causes narrow column issue):
+```tsx
+<div className="min-h-screen p-6">
+  <div className="max-w-2xl mx-auto">  {/* Too narrow! */}
+    <Card>Content</Card>
+  </div>
+</div>
+```
+
+✅ **Good** (proper width utilization):
+```tsx
+<div className="min-h-screen p-6">
+  <div className="max-w-7xl mx-auto">  {/* Correct width */}
+    <Card>Content</Card>
+  </div>
+</div>
+```
+
+**Standard Container Classes:**
+- **Page container**: `max-w-7xl mx-auto` - For main page layout
+- **Content sections**: Use Grid/Flex for responsive layouts within the page
+- **Individual cards**: Let them flow naturally within the grid
+
 ### Single Source of Truth
 
 All styling should reference tokens, not hardcoded values:

@@ -13,7 +13,7 @@ import { Heart, Activity, Moon, TrendingUp, Clock, Calendar } from 'lucide-react
 export default function WellnessDashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-neutral-50 p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Card */}
         <Card padding="lg" shadow="md">
           <div className="flex items-center justify-between mb-4">

@@ -13,7 +13,7 @@ import { Heart, Star, CheckCircle, AlertCircle } from 'lucide-react'
 export default function MobileV2DemoPage() {
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <Card padding="lg" shadow="md">
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">
