@@ -41,7 +41,7 @@ export function ErrorState({
         
         {onRetry && (
           <Button
-            variant="danger"
+            variant="primary"
             size="md"
             onClick={onRetry}
             icon={<RefreshCw className="w-4 h-4" />}
