@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import StudioLoginClient from '@/app/components/StudioLoginClient'
+import StudioLoginClient from './components/StudioLoginClient'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getStudioEnv } from '@/lib/env'
 
