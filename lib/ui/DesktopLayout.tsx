@@ -7,8 +7,6 @@ import {
   LayoutDashboard, 
   Workflow, 
   FileText, 
-  Menu, 
-  X,
   ChevronLeft,
   LogOut,
   User
@@ -63,7 +61,6 @@ export function DesktopLayout({
   children,
 }: DesktopLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
   // Icon mapping for common routes
@@ -98,7 +95,7 @@ export function DesktopLayout({
       {/* Desktop Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-40 h-screen bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
+          fixed left-0 top-0 bottom-0 z-40 h-dvh bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           hidden lg:flex flex-col shrink-0
           transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? 'w-16' : 'w-64'}
@@ -116,7 +113,7 @@ export function DesktopLayout({
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronLeft 
@@ -169,7 +166,7 @@ export function DesktopLayout({
                 sidebarCollapsed ? 'justify-center' : ''
               }`}
             >
-              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
               {!sidebarCollapsed && (
@@ -204,7 +201,8 @@ export function DesktopLayout({
         )}
       </aside>
 
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu (hidden for now) */}
+      {/*
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
@@ -217,7 +215,6 @@ export function DesktopLayout({
         )}
       </button>
 
-      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
@@ -225,10 +222,9 @@ export function DesktopLayout({
         />
       )}
 
-      {/* Mobile Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-40 h-screen w-72 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
+          fixed left-0 top-0 bottom-0 z-40 h-dvh w-72 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           flex flex-col lg:hidden
           transition-transform duration-300 ease-in-out
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -300,6 +296,7 @@ export function DesktopLayout({
           </div>
         )}
       </aside>
+      */}
 
       {/* Main Content Area */}
       <div
@@ -307,7 +304,7 @@ export function DesktopLayout({
           flex-1 min-w-0
           transition-all duration-300 ease-in-out
           ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
-          min-h-screen
+          min-h-dvh
         `}
       >
         {/* Topbar */}
