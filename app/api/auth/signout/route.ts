@@ -19,7 +19,7 @@ function getSupabaseAuthCookieName() {
 function buildSignoutResponse(req: NextRequest) {
   console.log('[AUTH_SIGNOUT]')
 
-  const response = NextResponse.redirect(new URL('/', req.url))
+  const response = NextResponse.redirect(new URL('/', req.url), 302)
   const authCookie = getSupabaseAuthCookieName()
   const cookieNames = new Set(BASE_COOKIE_NAMES)
   if (authCookie) cookieNames.add(authCookie)
