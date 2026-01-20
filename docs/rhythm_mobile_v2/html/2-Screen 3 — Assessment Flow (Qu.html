@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4A90E2',
+                        'secondary': '#5CB85C',
+                        'accent': '#6C63FF',
+                        'warning': '#F0AD4E',
+                        'danger': '#D9534F',
+                        'neutral': '#F7F9FC',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>::-webkit-scrollbar { display: none;}</style>
+</head>
+<body class="bg-neutral font-sans">
+
+<div id="mobile-assessment" class="w-full max-w-[375px] mx-auto bg-neutral min-h-screen">
+
+    <header id="header" class="bg-white px-5 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <button id="back-button" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fa-solid fa-arrow-left text-gray-700 text-xl"></i>
+        </button>
+        <h1 class="text-base font-semibold text-gray-800">Health Assessment</h1>
+        <button id="close-button" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fa-solid fa-times text-gray-700 text-xl"></i>
+        </button>
+    </header>
+
+    <div id="progress-bar-container" class="bg-white px-5 py-3 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-medium text-gray-600">Step 3 of 10</span>
+            <span class="text-xs font-medium text-primary">30%</span>
+        </div>
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div id="progress-fill" class="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500" style="width: 30%;"></div>
+        </div>
+    </div>
+
+    <main id="main-content" class="px-5 pb-32 pt-6">
+
+        <section id="question-section" class="mb-8">
+            <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <div class="flex items-start gap-3 mb-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-heart-pulse text-primary text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="inline-block px-3 py-1 bg-blue-50 text-primary text-xs font-medium rounded-full mb-2">Cardiovascular Health</span>
+                        <h2 class="text-lg font-semibold text-gray-800 leading-snug">How would you rate your overall energy level today?</h2>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 leading-relaxed">This helps us understand your daily vitality and activity capacity.</p>
+            </div>
+        </section>
+
+        <section id="answer-options-section" class="mb-6">
+            <div class="space-y-3">
+                <button id="option-1" class="answer-option w-full bg-white rounded-xl p-5 shadow-sm border-2 border-transparent hover:border-primary hover:bg-blue-50 transition-all flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-battery-full text-secondary text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-800 font-semibold text-base">Excellent</p>
+                            <p class="text-gray-500 text-xs">Full of energy and vitality</p>
+                        </div>
+                    </div>
+                    <div class="option-check w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-xs hidden"></i>
+                    </div>
+                </button>
+
+                <button id="option-2" class="answer-option w-full bg-white rounded-xl p-5 shadow-sm border-2 border-transparent hover:border-primary hover:bg-blue-50 transition-all flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-battery-three-quarters text-primary text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-800 font-semibold text-base">Good</p>
+                            <p class="text-gray-500 text-xs">Feeling energetic most of the day</p>
+                        </div>
+                    </div>
+                    <div class="option-check w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-xs hidden"></i>
+                    </div>
+                </button>
+
+                <button id="option-3" class="answer-option w-full bg-white rounded-xl p-5 shadow-sm border-2 border-transparent hover:border-primary hover:bg-blue-50 transition-all flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-battery-half text-warning text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-800 font-semibold text-base">Moderate</p>
+                            <p class="text-gray-500 text-xs">Some energy, occasional fatigue</p>
+                        </div>
+                    </div>
+                    <div class="option-check w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-xs hidden"></i>
+                    </div>
+                </button>
+
+                <button id="option-4" class="answer-option w-full bg-white rounded-xl p-5 shadow-sm border-2 border-transparent hover:border-primary hover:bg-blue-50 transition-all flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-battery-quarter text-orange-500 text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-800 font-semibold text-base">Low</p>
+                            <p class="text-gray-500 text-xs">Often tired, limited energy</p>
+                        </div>
+                    </div>
+                    <div class="option-check w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-xs hidden"></i>
+                    </div>
+                </button>
+
+                <button id="option-5" class="answer-option w-full bg-white rounded-xl p-5 shadow-sm border-2 border-transparent hover:border-primary hover:bg-blue-50 transition-all flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-battery-empty text-danger text-xl"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-gray-800 font-semibold text-base">Very Low</p>
+                            <p class="text-gray-500 text-xs">Constantly exhausted</p>
+                        </div>
+                    </div>
+                    <div class="option-check w-6 h-6 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-xs hidden"></i>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <section id="additional-info-section" class="mb-6">
+            <button id="toggle-info" class="w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-circle-info text-primary text-lg"></i>
+                    <span class="text-gray-700 font-medium text-sm">Why we ask this question</span>
+                </div>
+                <i id="info-chevron" class="fa-solid fa-chevron-down text-gray-400 text-sm transition-transform"></i>
+            </button>
+            <div id="info-content" class="hidden bg-white rounded-xl p-4 shadow-sm mt-2">
+                <p class="text-sm text-gray-600 leading-relaxed">Energy levels are an important indicator of cardiovascular health and overall well-being. Changes in energy can help identify potential health concerns early and allow us to provide better personalized recommendations.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="bottom-action-bar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-5 py-4 max-w-[375px] mx-auto shadow-lg">
+        <div class="flex items-center gap-3">
+            <button id="skip-button" class="flex-1 bg-gray-100 text-gray-700 px-6 py-4 rounded-xl font-semibold text-base hover:bg-gray-200 transition-colors">
+                Skip
+            </button>
+            <button id="next-button" class="flex-[2] bg-gradient-to-r from-primary to-accent text-white px-6 py-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                <span>Continue</span>
+                <i class="fa-solid fa-arrow-right text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const answerOptions = document.querySelectorAll('.answer-option');
+    const nextButton = document.getElementById('next-button');
+    const toggleInfo = document.getElementById('toggle-info');
+    const infoContent = document.getElementById('info-content');
+    const infoChevron = document.getElementById('info-chevron');
+    let selectedOption = null;
+
+    answerOptions.forEach((option, index) => {
+        option.addEventListener('click', function() {
+            answerOptions.forEach(opt => {
+                opt.classList.remove('border-primary', 'bg-blue-50');
+                opt.classList.add('border-transparent');
+                const checkCircle = opt.querySelector('.option-check');
+                checkCircle.classList.remove('bg-primary', 'border-primary');
+                checkCircle.classList.add('border-gray-300');
+                checkCircle.querySelector('i').classList.add('hidden');
+            });
+
+            this.classList.remove('border-transparent');
+            this.classList.add('border-primary', 'bg-blue-50');
+            const checkCircle = this.querySelector('.option-check');
+            checkCircle.classList.remove('border-gray-300');
+            checkCircle.classList.add('bg-primary', 'border-primary');
+            checkCircle.querySelector('i').classList.remove('hidden');
+
+            selectedOption = index;
+            nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            nextButton.removeAttribute('disabled');
+        });
+    });
+
+    toggleInfo.addEventListener('click', function() {
+        if (infoContent.classList.contains('hidden')) {
+            infoContent.classList.remove('hidden');
+            infoChevron.classList.add('rotate-180');
+        } else {
+            infoContent.classList.add('hidden');
+            infoChevron.classList.remove('rotate-180');
+        }
+    });
+
+    nextButton.addEventListener('click', function() {
+        if (selectedOption !== null) {
+            const progressFill = document.getElementById('progress-fill');
+            progressFill.style.width = '40%';
+            
+            setTimeout(() => {
+                window.location.href = '#next-question';
+            }, 300);
+        }
+    });
+
+    document.getElementById('back-button').addEventListener('click', function() {
+        window.history.back();
+    });
+
+    document.getElementById('close-button').addEventListener('click', function() {
+        if (confirm('Are you sure you want to exit the assessment? Your progress will be saved.')) {
+            window.location.href = '#dashboard';
+        }
+    });
+
+    document.getElementById('skip-button').addEventListener('click', function() {
+        const progressFill = document.getElementById('progress-fill');
+        progressFill.style.width = '40%';
+        
+        setTimeout(() => {
+            window.location.href = '#next-question';
+        }, 300);
+    });
+</script>
+
+</body>
+</html>

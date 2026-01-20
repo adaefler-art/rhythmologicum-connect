@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialog & Next Steps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4A90E2',
+                        'secondary': '#5CB85C',
+                        'accent': '#6C63FF',
+                        'warning': '#F0AD4E',
+                        'danger': '#D9534F',
+                        'neutral': '#F7F9FC',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>::-webkit-scrollbar { display: none;}</style>
+</head>
+<body class="bg-neutral font-sans">
+
+<div id="mobile-dialog-screen" class="w-full max-w-[375px] mx-auto bg-neutral min-h-screen">
+
+    <header id="header" class="bg-white px-5 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <button id="back-button" class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fa-solid fa-arrow-left text-gray-700 text-xl"></i>
+        </button>
+        <h1 class="text-base font-semibold text-gray-800">Results & Next Steps</h1>
+        <button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+            <i class="fa-solid fa-ellipsis-vertical text-gray-700 text-xl"></i>
+        </button>
+    </header>
+
+    <main id="main-content" class="px-5 pb-24">
+
+        <section id="amy-summary-section" class="pt-5 pb-4">
+            <div class="bg-gradient-to-br from-accent to-primary rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-robot text-accent text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-white font-semibold text-base">AMY Analysis Complete</h2>
+                            <p class="text-white text-xs opacity-90">Based on your assessment</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-sm leading-relaxed">Your health assessment has been reviewed. I've identified some areas that need attention and prepared personalized recommendations for you.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="diagnosis-summary-section" class="mb-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-clipboard-check text-primary text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-800">Current Situation</h3>
+                </div>
+                
+                <div class="space-y-3">
+                    <div id="finding-1" class="flex items-start gap-3 pb-3 border-b border-gray-100">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i class="fa-solid fa-check text-secondary text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-800 font-medium text-sm">Blood Pressure Stable</p>
+                            <p class="text-gray-500 text-xs mt-1 leading-relaxed">Your readings remain within healthy range (120/80 mmHg). Continue current medication.</p>
+                        </div>
+                    </div>
+
+                    <div id="finding-2" class="flex items-start gap-3 pb-3 border-b border-gray-100">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i class="fa-solid fa-exclamation text-warning text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-800 font-medium text-sm">Sleep Quality Needs Attention</p>
+                            <p class="text-gray-500 text-xs mt-1 leading-relaxed">Average 6.2 hours per night. Recommend consulting sleep specialist for improvement strategies.</p>
+                        </div>
+                    </div>
+
+                    <div id="finding-3" class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i class="fa-solid fa-info text-purple-600 text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-800 font-medium text-sm">Activity Level Excellent</p>
+                            <p class="text-gray-500 text-xs mt-1 leading-relaxed">Meeting weekly exercise goals consistently. Keep up the great work!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="recommended-actions-section" class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommended Actions</h3>
+            
+            <div class="space-y-3">
+                <button id="action-download-report" class="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-file-pdf text-primary text-xl"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-gray-800 font-semibold text-sm">Download Full Report</p>
+                            <p class="text-gray-500 text-xs mt-0.5">Complete diagnosis and recommendations (PDF)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-download text-white text-sm"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-secondary text-xs"></i>
+                        <p class="text-gray-500 text-xs">Secure & encrypted document</p>
+                    </div>
+                </button>
+
+                <button id="action-video-consultation" class="w-full bg-gradient-to-br from-secondary to-green-600 rounded-xl p-4 shadow-md hover:shadow-lg transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-video text-secondary text-xl"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-white font-semibold text-sm">Start Video Consultation</p>
+                            <p class="text-white text-xs mt-0.5 opacity-90">Speak with a doctor now (avg. wait: 5 min)</p>
+                        </div>
+                        <div class="w-8 h-8 bg-white bg-opacity-30 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-right text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-white border-opacity-20 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="flex -space-x-2">
+                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" alt="Doctor" class="w-6 h-6 rounded-full border-2 border-white object-cover">
+                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg" alt="Doctor" class="w-6 h-6 rounded-full border-2 border-white object-cover">
+                            </div>
+                            <p class="text-white text-xs opacity-90">3 doctors available</p>
+                        </div>
+                        <span class="px-2 py-1 bg-white bg-opacity-20 rounded-full text-white text-xs font-medium">Instant</span>
+                    </div>
+                </button>
+
+                <button id="action-book-appointment" class="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-calendar-plus text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-gray-800 font-semibold text-sm">Book In-Person Visit</p>
+                            <p class="text-gray-500 text-xs mt-0.5">Schedule appointment with specialist</p>
+                        </div>
+                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-right text-gray-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-gray-400 text-xs"></i>
+                                <p class="text-gray-500 text-xs">Next available: Tomorrow 2:00 PM</p>
+                            </div>
+                            <i class="fa-solid fa-location-dot text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+                </button>
+
+                <button id="action-continue-amy" class="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all border-2 border-accent">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-comments text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-gray-800 font-semibold text-sm">Continue Dialog with AMY</p>
+                            <p class="text-gray-500 text-xs mt-0.5">Ask questions about your results</p>
+                        </div>
+                        <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-message text-white text-sm"></i>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <section id="trust-indicators-section" class="mb-6">
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <i class="fa-solid fa-shield-halved text-primary text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-gray-800 font-semibold text-sm mb-2">Your Data is Protected</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle text-secondary text-xs"></i>
+                                <p class="text-gray-600 text-xs">End-to-end encrypted consultations</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle text-secondary text-xs"></i>
+                                <p class="text-gray-600 text-xs">HIPAA compliant medical records</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-check-circle text-secondary text-xs"></i>
+                                <p class="text-gray-600 text-xs">Licensed healthcare professionals only</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="next-steps-info-section" class="mb-6">
+            <div class="bg-white rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-lightbulb text-warning text-lg"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-gray-800">What Happens Next?</h3>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs font-semibold">1</span>
+                            </div>
+                            <div class="w-0.5 h-full bg-gray-200 mt-1"></div>
+                        </div>
+                        <div class="flex-1 pb-3">
+                            <p class="text-gray-800 font-medium text-sm">Choose Your Preferred Action</p>
+                            <p class="text-gray-500 text-xs mt-1">Select from video call, appointment, or download report</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs font-semibold">2</span>
+                            </div>
+                            <div class="w-0.5 h-full bg-gray-200 mt-1"></div>
+                        </div>
+                        <div class="flex-1 pb-3">
+                            <p class="text-gray-800 font-medium text-sm">Receive Personalized Care</p>
+                            <p class="text-gray-500 text-xs mt-1">Connect with healthcare professionals tailored to your needs</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-white text-xs font-semibold">3</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-800 font-medium text-sm">Track Your Progress</p>
+                            <p class="text-gray-500 text-xs mt-1">Monitor improvements and get ongoing support from AMY</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="support-section" class="mb-6">
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-headset text-secondary text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-800 font-semibold text-sm">Need Help?</p>
+                            <p class="text-gray-500 text-xs">We're here 24/7</p>
+                        </div>
+                    </div>
+                    <button class="px-4 py-2 bg-secondary text-white rounded-lg text-xs font-medium hover:bg-green-600 transition-colors">
+                        Contact Support
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-5 py-3 max-w-[375px] mx-auto">
+        <div class="flex items-center justify-between">
+            <button class="flex flex-col items-center gap-1 flex-1">
+                <i class="fa-regular fa-house text-gray-400 text-xl"></i>
+                <span class="text-gray-400 text-xs">Home</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 flex-1">
+                <i class="fa-regular fa-clipboard text-gray-400 text-xl"></i>
+                <span class="text-gray-400 text-xs">Assess</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 flex-1">
+                <i class="fa-solid fa-comments text-primary text-xl"></i>
+                <span class="text-primary text-xs font-medium">Dialog</span>
+            </button>
+            <button class="flex flex-col items-center gap-1 flex-1">
+                <i class="fa-regular fa-user text-gray-400 text-xl"></i>
+                <span class="text-gray-400 text-xs">Profile</span>
+            </button>
+        </div>
+    </nav>
+
+</div>
+
+<script>
+    const backButton = document.getElementById('back-button');
+    
+    backButton.addEventListener('click', function() {
+        window.history.back();
+    });
+
+    const actionButtons = document.querySelectorAll('[id^="action-"]');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const actionId = this.id;
+            console.log('Action clicked:', actionId);
+        });
+    });
+</script>
+
+</body>
+</html>
