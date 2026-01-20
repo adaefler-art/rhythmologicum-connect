@@ -5,6 +5,7 @@
   "/impressum/page": "/impressum",
   "/page": "/",
   "/patient/assess/page": "/patient/assess",
+  "/patient/assessment-flow-v2/page": "/patient/assessment-flow-v2",
   "/patient/assessment/page": "/patient/assessment",
   "/patient/assessments-v2/page": "/patient/assessments-v2",
   "/patient/content/[slug]/page": "/patient/content/[slug]",
@@ -25,5 +26,6 @@
   "/patient/onboarding/profile/page": "/patient/onboarding/profile",
   "/patient/page": "/patient",
   "/patient/profile/page": "/patient/profile",
+  "/patient/results-v2/page": "/patient/results-v2",
   "/patient/support/page": "/patient/support"
 }

@@ -129,6 +129,12 @@
       "namedRegex": "^/patient/assessment(?:/)?$"
     },
     {
+      "page": "/patient/assessment-flow-v2",
+      "regex": "^/patient/assessment\\-flow\\-v2(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/assessment\\-flow\\-v2(?:/)?$"
+    },
+    {
       "page": "/patient/assessments-v2",
       "regex": "^/patient/assessments\\-v2(?:/)?$",
       "routeKeys": {},
@@ -193,6 +199,12 @@
       "regex": "^/patient/profile(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/patient/profile(?:/)?$"
+    },
+    {
+      "page": "/patient/results-v2",
+      "regex": "^/patient/results\\-v2(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/results\\-v2(?:/)?$"
     },
     {
       "page": "/patient/support",
