@@ -100,6 +100,86 @@ Returns a **list of all published content pages** for a funnel (used for navigat
 
 ## Smoke Tests (PowerShell)
 
+### V061-I06: Pilot Smoke Runner (Evidence Pack)
+
+**One Command → Evidence Pack (Pass/Fail)**
+
+This script performs a comprehensive smoke test of the pilot deployment and generates a timestamped evidence pack with detailed results.
+
+**Location:** `scripts/audit/run-v061-smoke.ps1`
+
+**Usage:**
+```powershell
+# Full test (build + tests + URL checks)
+./scripts/audit/run-v061-smoke.ps1 -BaseUrl http://localhost:3000
+
+# Skip build step
+./scripts/audit/run-v061-smoke.ps1 -BaseUrl http://localhost:3000 -SkipBuild
+
+# Skip both build and test steps
+./scripts/audit/run-v061-smoke.ps1 -BaseUrl http://localhost:3000 -SkipBuild -SkipTest
+
+# Production deployment check
+./scripts/audit/run-v061-smoke.ps1 -BaseUrl https://your-production-url.com -SkipBuild -SkipTest
+```
+
+**What it tests:**
+1. **Optional Build** (`npm run build`) - Skippable with `-SkipBuild`
+2. **Optional Tests** (`npm test`) - Skippable with `-SkipTest`
+3. **URL Smoke Tests:**
+   - `/patient/dashboard` - Expects 200 or 302 (not 500)
+   - `/admin` - Expects 200 or 302 (not 500)
+   - `/clinician` - Expects 200 or 302 (not 500)
+   - `/api/health/env` - Expects 200, 401, or 403 (with fallback to `/api/health` or `/api/ready`)
+
+**Evidence Pack Output:**
+
+The script generates a timestamped directory under `.audit/v061/<timestamp>/` with:
+
+- `summary.md` - Human-readable summary with Pass/Fail status
+- `summary.json` - Machine-readable results for CI/CD integration
+- `http.log` - Detailed HTTP request/response logs (with sensitive headers redacted)
+
+**Example Output:**
+```
+.audit/v061/20260120-153000/
+├── summary.md
+├── summary.json
+└── http.log
+```
+
+**Exit Codes:**
+- `0` - All checks passed
+- `1` - One or more checks failed
+
+**Security Note:**
+The script automatically redacts sensitive headers (cookies, tokens, api-keys, authorization) from the HTTP logs to prevent credential leakage.
+
+**Example Evidence Pack (summary.md):**
+```markdown
+# V061-I06 Smoke Test Results
+
+**Timestamp:** 20260120-153000  
+**Base URL:** http://localhost:3000  
+**Overall Status:** PASS
+
+## Build & Test
+
+- **Build:** PASS
+- **Test:** PASS
+
+## URL Smoke Tests
+
+| URL | Expected | Actual | Result |
+|-----|----------|--------|--------|
+| http://localhost:3000/patient/dashboard | 200, 302 | 302 | ✅ PASS |
+| http://localhost:3000/admin | 200, 302 | 302 | ✅ PASS |
+| http://localhost:3000/clinician | 200, 302 | 302 | ✅ PASS |
+| http://localhost:3000/api/health/env | 200, 401, 403 | 401 | ✅ PASS |
+```
+
+---
+
 ### V061-I02: Deterministic Lifecycle Smoke Sequence
 
 This smoke test validates the full cardiovascular-age assessment lifecycle with deterministic behavior guarantees.
