@@ -1,0 +1,2335 @@
+{
+  "metadata": {
+    "generatedAt": "2026-01-20T14:31:03.375Z",
+    "version": "v0.6.1",
+    "issueId": "V061-I05"
+  },
+  "summary": {
+    "totalPages": 56,
+    "totalAPIRoutes": 99,
+    "pagesWithAPICalls": 16,
+    "apiRoutesWithDBAccess": 91,
+    "orphanedAPIs": 65,
+    "pagesWithoutAPICalls": 40
+  },
+  "pages": [
+    {
+      "path": "app/admin/[...path]/page.tsx",
+      "route": "/admin/[...path]",
+      "app": "main"
+    },
+    {
+      "path": "app/admin/page.tsx",
+      "route": "/admin",
+      "app": "main"
+    },
+    {
+      "path": "app/theme-demo/page.tsx",
+      "route": "/theme-demo",
+      "app": "main"
+    },
+    {
+      "path": "app/patient/[...path]/page.tsx",
+      "route": "/patient/[...path]",
+      "app": "main"
+    },
+    {
+      "path": "app/patient/page.tsx",
+      "route": "/patient",
+      "app": "main"
+    },
+    {
+      "path": "app/datenschutz/page.tsx",
+      "route": "/datenschutz",
+      "app": "main"
+    },
+    {
+      "path": "app/clinician/[...path]/page.tsx",
+      "route": "/clinician/[...path]",
+      "app": "main"
+    },
+    {
+      "path": "app/clinician/page.tsx",
+      "route": "/clinician",
+      "app": "main"
+    },
+    {
+      "path": "app/content/[slug]/page.tsx",
+      "route": "/content/[slug]",
+      "app": "main"
+    },
+    {
+      "path": "app/page.tsx",
+      "route": "/",
+      "app": "main"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/design-system/page.tsx",
+      "route": "/admin/design-system",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+      "route": "/admin/operational-settings",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/dev/endpoints/page.tsx",
+      "route": "/admin/dev/endpoints",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/dev/theme-test/page.tsx",
+      "route": "/admin/dev/theme-test",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/content/new/page.tsx",
+      "route": "/admin/content/new",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+      "route": "/admin/content/[id]",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/content/page.tsx",
+      "route": "/admin/content",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/navigation/page.tsx",
+      "route": "/admin/navigation",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/design-tokens/page.tsx",
+      "route": "/admin/design-tokens",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/admin/page.tsx",
+      "route": "/admin",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/datenschutz/page.tsx",
+      "route": "/datenschutz",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/impressum/page.tsx",
+      "route": "/impressum",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/patient/[id]/page.tsx",
+      "route": "/clinician/patient/[id]",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/support-cases/page.tsx",
+      "route": "/clinician/support-cases",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
+      "route": "/clinician/funnels/[identifier]/editor",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+      "route": "/clinician/funnels/[identifier]",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/funnels/page.tsx",
+      "route": "/clinician/funnels",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
+      "route": "/clinician/tasks",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/pre-screening/page.tsx",
+      "route": "/clinician/pre-screening",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+      "route": "/clinician/review-queue",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/report/[id]/page.tsx",
+      "route": "/clinician/report/[id]",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/shipments/page.tsx",
+      "route": "/clinician/shipments",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+      "route": "/clinician/triage",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/delivery/page.tsx",
+      "route": "/clinician/delivery",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/clinician/page.tsx",
+      "route": "/clinician",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/page.tsx",
+      "route": "/",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/dashboard/page.tsx",
+      "route": "/patient/dashboard",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/result/page.tsx",
+      "route": "/patient/funnel/[slug]/result",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/intro/page.tsx",
+      "route": "/patient/funnel/[slug]/intro",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+      "route": "/patient/funnel/[slug]/content/[pageSlug]",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/page.tsx",
+      "route": "/patient/funnel/[slug]",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnels/[slug]/page.tsx",
+      "route": "/patient/funnels/[slug]",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/funnels/page.tsx",
+      "route": "/patient/funnels",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/documents/[id]/confirm/page.tsx",
+      "route": "/patient/documents/[id]/confirm",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/support/page.tsx",
+      "route": "/patient/support",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/content/[slug]/page.tsx",
+      "route": "/patient/content/[slug]",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/onboarding/profile/page.tsx",
+      "route": "/patient/onboarding/profile",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/onboarding/consent/page.tsx",
+      "route": "/patient/onboarding/consent",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/onboarding/page.tsx",
+      "route": "/patient/onboarding",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/escalation/page.tsx",
+      "route": "/patient/escalation",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/history/page.tsx",
+      "route": "/patient/history",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/page.tsx",
+      "route": "/patient",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/patient/assessment/page.tsx",
+      "route": "/patient/assessment",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/datenschutz/page.tsx",
+      "route": "/datenschutz",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/impressum/page.tsx",
+      "route": "/impressum",
+      "app": "patient-ui"
+    },
+    {
+      "path": "apps/rhythm-patient-ui/app/page.tsx",
+      "route": "/",
+      "app": "patient-ui"
+    }
+  ],
+  "apiRoutes": [
+    {
+      "path": "app/api/admin/funnels/route.ts",
+      "endpoint": "/api/admin/funnels",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnels/[id]/route.ts",
+      "endpoint": "/api/admin/funnels/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/reassessment-rules/route.ts",
+      "endpoint": "/api/admin/reassessment-rules",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/reassessment-rules/[id]/route.ts",
+      "endpoint": "/api/admin/reassessment-rules/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/usage/route.ts",
+      "endpoint": "/api/admin/usage",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/kpi-thresholds/route.ts",
+      "endpoint": "/api/admin/kpi-thresholds",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/kpi-thresholds/[id]/route.ts",
+      "endpoint": "/api/admin/kpi-thresholds/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/content-pages/route.ts",
+      "endpoint": "/api/admin/content-pages",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/content-pages/[id]/route.ts",
+      "endpoint": "/api/admin/content-pages/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/content-pages/[id]/sections/route.ts",
+      "endpoint": "/api/admin/content-pages/[id]/sections",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+      "endpoint": "/api/admin/content-pages/[id]/sections/[sectionId]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/pilot/kpis/route.ts",
+      "endpoint": "/api/admin/pilot/kpis",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/pilot/flow-events/route.ts",
+      "endpoint": "/api/admin/pilot/flow-events",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnel-steps/route.ts",
+      "endpoint": "/api/admin/funnel-steps",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnel-steps/[id]/route.ts",
+      "endpoint": "/api/admin/funnel-steps/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/diagnostics/pillars-sot/route.ts",
+      "endpoint": "/api/admin/diagnostics/pillars-sot",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/dev/endpoint-catalog/route.ts",
+      "endpoint": "/api/admin/dev/endpoint-catalog",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/navigation/route.ts",
+      "endpoint": "/api/admin/navigation",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/navigation/[role]/route.ts",
+      "endpoint": "/api/admin/navigation/[role]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnel-versions/[id]/route.ts",
+      "endpoint": "/api/admin/funnel-versions/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnel-versions/[id]/manifest/route.ts",
+      "endpoint": "/api/admin/funnel-versions/[id]/manifest",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/funnel-step-questions/[id]/route.ts",
+      "endpoint": "/api/admin/funnel-step-questions/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/design-tokens/route.ts",
+      "endpoint": "/api/admin/design-tokens",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/operational-settings-audit/route.ts",
+      "endpoint": "/api/admin/operational-settings-audit",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/notification-templates/route.ts",
+      "endpoint": "/api/admin/notification-templates",
+      "app": "main"
+    },
+    {
+      "path": "app/api/admin/notification-templates/[id]/route.ts",
+      "endpoint": "/api/admin/notification-templates/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/health/env/route.ts",
+      "endpoint": "/api/health/env",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient-profiles/route.ts",
+      "endpoint": "/api/patient-profiles",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient/dashboard/route.ts",
+      "endpoint": "/api/patient/dashboard",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient/triage/route.ts",
+      "endpoint": "/api/patient/triage",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient/onboarding-status/route.ts",
+      "endpoint": "/api/patient/onboarding-status",
+      "app": "main"
+    },
+    {
+      "path": "app/api/support-cases/route.ts",
+      "endpoint": "/api/support-cases",
+      "app": "main"
+    },
+    {
+      "path": "app/api/support-cases/[id]/escalate/route.ts",
+      "endpoint": "/api/support-cases/[id]/escalate",
+      "app": "main"
+    },
+    {
+      "path": "app/api/support-cases/[id]/route.ts",
+      "endpoint": "/api/support-cases/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/active/route.ts",
+      "endpoint": "/api/funnels/active",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/content-pages/route.ts",
+      "endpoint": "/api/funnels/[slug]/content-pages",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
+      "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/[slug]/definition/route.ts",
+      "endpoint": "/api/funnels/[slug]/definition",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/catalog/route.ts",
+      "endpoint": "/api/funnels/catalog",
+      "app": "main"
+    },
+    {
+      "path": "app/api/funnels/catalog/[slug]/route.ts",
+      "endpoint": "/api/funnels/catalog/[slug]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/pre-screening-calls/route.ts",
+      "endpoint": "/api/pre-screening-calls",
+      "app": "main"
+    },
+    {
+      "path": "app/api/documents/upload/route.ts",
+      "endpoint": "/api/documents/upload",
+      "app": "main"
+    },
+    {
+      "path": "app/api/documents/[id]/extract/route.ts",
+      "endpoint": "/api/documents/[id]/extract",
+      "app": "main"
+    },
+    {
+      "path": "app/api/documents/[id]/status/route.ts",
+      "endpoint": "/api/documents/[id]/status",
+      "app": "main"
+    },
+    {
+      "path": "app/api/tasks/route.ts",
+      "endpoint": "/api/tasks",
+      "app": "main"
+    },
+    {
+      "path": "app/api/tasks/[id]/route.ts",
+      "endpoint": "/api/tasks/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/notifications/route.ts",
+      "endpoint": "/api/notifications",
+      "app": "main"
+    },
+    {
+      "path": "app/api/notifications/[id]/route.ts",
+      "endpoint": "/api/notifications/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/reports/[reportId]/pdf/route.ts",
+      "endpoint": "/api/reports/[reportId]/pdf",
+      "app": "main"
+    },
+    {
+      "path": "app/api/content-pages/[slug]/route.ts",
+      "endpoint": "/api/content-pages/[slug]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/auth/signout/route.ts",
+      "endpoint": "/api/auth/signout",
+      "app": "main"
+    },
+    {
+      "path": "app/api/auth/resolve-role/route.ts",
+      "endpoint": "/api/auth/resolve-role",
+      "app": "main"
+    },
+    {
+      "path": "app/api/auth/callback/route.ts",
+      "endpoint": "/api/auth/callback",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessment-validation/validate-step/route.ts",
+      "endpoint": "/api/assessment-validation/validate-step",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessment-answers/save/route.ts",
+      "endpoint": "/api/assessment-answers/save",
+      "app": "main"
+    },
+    {
+      "path": "app/api/shipments/route.ts",
+      "endpoint": "/api/shipments",
+      "app": "main"
+    },
+    {
+      "path": "app/api/shipments/[id]/events/route.ts",
+      "endpoint": "/api/shipments/[id]/events",
+      "app": "main"
+    },
+    {
+      "path": "app/api/shipments/[id]/route.ts",
+      "endpoint": "/api/shipments/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/amy/triage/route.ts",
+      "endpoint": "/api/amy/triage",
+      "app": "main"
+    },
+    {
+      "path": "app/api/amy/stress-report/route.ts",
+      "endpoint": "/api/amy/stress-report",
+      "app": "main"
+    },
+    {
+      "path": "app/api/amy/stress-summary/route.ts",
+      "endpoint": "/api/amy/stress-summary",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/pdf/route.ts",
+      "endpoint": "/api/processing/pdf",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/safety/route.ts",
+      "endpoint": "/api/processing/safety",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/ranking/route.ts",
+      "endpoint": "/api/processing/ranking",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/jobs/[jobId]/route.ts",
+      "endpoint": "/api/processing/jobs/[jobId]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/jobs/[jobId]/download/route.ts",
+      "endpoint": "/api/processing/jobs/[jobId]/download",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/content/route.ts",
+      "endpoint": "/api/processing/content",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/start/route.ts",
+      "endpoint": "/api/processing/start",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/delivery/route.ts",
+      "endpoint": "/api/processing/delivery",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/risk/route.ts",
+      "endpoint": "/api/processing/risk",
+      "app": "main"
+    },
+    {
+      "path": "app/api/processing/validation/route.ts",
+      "endpoint": "/api/processing/validation",
+      "app": "main"
+    },
+    {
+      "path": "app/api/content-resolver/route.ts",
+      "endpoint": "/api/content-resolver",
+      "app": "main"
+    },
+    {
+      "path": "app/api/content/resolve/route.ts",
+      "endpoint": "/api/content/resolve",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessments/in-progress/route.ts",
+      "endpoint": "/api/assessments/in-progress",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessments/[id]/current-step/route.ts",
+      "endpoint": "/api/assessments/[id]/current-step",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessments/[id]/resume/route.ts",
+      "endpoint": "/api/assessments/[id]/resume",
+      "app": "main"
+    },
+    {
+      "path": "app/api/assessments/[id]/navigation/route.ts",
+      "endpoint": "/api/assessments/[id]/navigation",
+      "app": "main"
+    },
+    {
+      "path": "app/api/test/correlation-id/route.ts",
+      "endpoint": "/api/test/correlation-id",
+      "app": "main"
+    },
+    {
+      "path": "app/api/review/queue/route.ts",
+      "endpoint": "/api/review/queue",
+      "app": "main"
+    },
+    {
+      "path": "app/api/review/[id]/route.ts",
+      "endpoint": "/api/review/[id]",
+      "app": "main"
+    },
+    {
+      "path": "app/api/review/[id]/decide/route.ts",
+      "endpoint": "/api/review/[id]/decide",
+      "app": "main"
+    },
+    {
+      "path": "app/api/review/[id]/details/route.ts",
+      "endpoint": "/api/review/[id]/details",
+      "app": "main"
+    },
+    {
+      "path": "app/api/escalation/log-click/route.ts",
+      "endpoint": "/api/escalation/log-click",
+      "app": "main"
+    },
+    {
+      "path": "app/api/consent/record/route.ts",
+      "endpoint": "/api/consent/record",
+      "app": "main"
+    },
+    {
+      "path": "app/api/consent/status/route.ts",
+      "endpoint": "/api/consent/status",
+      "app": "main"
+    },
+    {
+      "path": "app/api/account/deletion-request/route.ts",
+      "endpoint": "/api/account/deletion-request",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient-measures/export/route.ts",
+      "endpoint": "/api/patient-measures/export",
+      "app": "main"
+    },
+    {
+      "path": "app/api/patient-measures/history/route.ts",
+      "endpoint": "/api/patient-measures/history",
+      "app": "main"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/api/auth/signout/route.ts",
+      "endpoint": "/api/auth/signout",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/api/auth/resolve-role/route.ts",
+      "endpoint": "/api/auth/resolve-role",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/api/auth/callback/route.ts",
+      "endpoint": "/api/auth/callback",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/api/auth/debug/route.ts",
+      "endpoint": "/api/auth/debug",
+      "app": "studio-ui"
+    },
+    {
+      "path": "apps/rhythm-studio-ui/app/api/auth/debug-cookie/route.ts",
+      "endpoint": "/api/auth/debug-cookie",
+      "app": "studio-ui"
+    }
+  ],
+  "mappings": {
+    "uiToAPI": [
+      {
+        "page": "app/page.tsx",
+        "pageRoute": "/",
+        "apiCalls": [
+          "/api/auth/callback",
+          "/api/auth/resolve-role",
+          "/api/patient/onboarding-status"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+        "pageRoute": "/admin/operational-settings",
+        "apiCalls": [
+          "/api/admin/notification-templates",
+          "/api/admin/reassessment-rules",
+          "/api/admin/kpi-thresholds",
+          "/api/admin/operational-settings-audit?limit=50",
+          "/api/admin/notification-templates/${id}",
+          "/api/admin/reassessment-rules/${id}",
+          "/api/admin/kpi-thresholds/${id}",
+          "/api/admin/notification-templates/",
+          "/api/admin/reassessment-rules/",
+          "/api/admin/kpi-thresholds/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/dev/endpoints/page.tsx",
+        "pageRoute": "/admin/dev/endpoints",
+        "apiCalls": [
+          "/api/admin/dev/endpoint-catalog"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+        "pageRoute": "/admin/content/[id]",
+        "apiCalls": [
+          "/api/admin/content-pages/${pageId}",
+          "/api/admin/content-pages/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/content/page.tsx",
+        "pageRoute": "/admin/content",
+        "apiCalls": [
+          "/api/admin/content-pages"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/navigation/page.tsx",
+        "pageRoute": "/admin/navigation",
+        "apiCalls": [
+          "/api/admin/navigation",
+          "/api/admin/navigation/${selectedRole}",
+          "/api/admin/navigation/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/admin/design-tokens/page.tsx",
+        "pageRoute": "/admin/design-tokens",
+        "apiCalls": [
+          "/api/admin/design-tokens",
+          "/api/admin/design-tokens?organization_id=${organizationId}",
+          "/api/admin/design-tokens?organization_id="
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/support-cases/page.tsx",
+        "pageRoute": "/clinician/support-cases",
+        "apiCalls": [
+          "/api/support-cases?${params.toString()}",
+          "/api/support-cases/${caseId}/escalate",
+          "/api/support-cases/${caseId}",
+          "/api/support-cases?",
+          "/api/support-cases/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
+        "pageRoute": "/clinician/funnels/[identifier]/editor",
+        "apiCalls": [
+          "/api/admin/funnels/${funnelSlug}",
+          "/api/admin/funnel-versions/${latestVersionId}/manifest",
+          "/api/admin/funnel-versions/${funnelVersion.id}/manifest",
+          "/api/admin/funnels/",
+          "/api/admin/funnel-versions/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+        "pageRoute": "/clinician/funnels/[identifier]",
+        "apiCalls": [
+          "/api/admin/funnels/${identifier}",
+          "/api/admin/funnel-steps/${stepId}",
+          "/api/admin/funnel-step-questions/${questionId}",
+          "/api/admin/funnel-steps/${otherStep.id}",
+          "/api/admin/funnel-versions/${versionId}",
+          "/api/admin/funnels/",
+          "/api/admin/funnel-steps/",
+          "/api/admin/funnel-step-questions/",
+          "/api/admin/funnel-versions/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/funnels/page.tsx",
+        "pageRoute": "/clinician/funnels",
+        "apiCalls": [
+          "/api/admin/funnels"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
+        "pageRoute": "/clinician/tasks",
+        "apiCalls": [
+          "/api/tasks?${params.toString()}",
+          "/api/tasks/${taskId}",
+          "/api/tasks?",
+          "/api/tasks/"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/pre-screening/page.tsx",
+        "pageRoute": "/clinician/pre-screening",
+        "apiCalls": [
+          "/api/pre-screening-calls"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+        "pageRoute": "/clinician/review-queue",
+        "apiCalls": [
+          "/api/review/queue?${params}",
+          "/api/review/queue?"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/shipments/page.tsx",
+        "pageRoute": "/clinician/shipments",
+        "apiCalls": [
+          "/api/shipments?${params.toString()}",
+          "/api/shipments?"
+        ]
+      },
+      {
+        "page": "apps/rhythm-studio-ui/app/clinician/delivery/page.tsx",
+        "pageRoute": "/clinician/delivery",
+        "apiCalls": [
+          "/api/processing/jobs/${jobId}/download",
+          "/api/processing/jobs/"
+        ]
+      }
+    ],
+    "apiToDB": [
+      {
+        "apiPath": "app/api/admin/funnels/route.ts",
+        "endpoint": "/api/admin/funnels",
+        "hasAccess": true,
+        "tables": [
+          "pillars",
+          "funnels_catalog",
+          "funnel_versions"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnels/[id]/route.ts",
+        "endpoint": "/api/admin/funnels/[id]",
+        "hasAccess": true,
+        "tables": [
+          "funnels_catalog",
+          "pillars",
+          "funnel_versions"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/reassessment-rules/route.ts",
+        "endpoint": "/api/admin/reassessment-rules",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/reassessment-rules/[id]/route.ts",
+        "endpoint": "/api/admin/reassessment-rules/[id]",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/usage/route.ts",
+        "endpoint": "/api/admin/usage",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/kpi-thresholds/route.ts",
+        "endpoint": "/api/admin/kpi-thresholds",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/kpi-thresholds/[id]/route.ts",
+        "endpoint": "/api/admin/kpi-thresholds/[id]",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/content-pages/route.ts",
+        "endpoint": "/api/admin/content-pages",
+        "hasAccess": true,
+        "tables": [
+          "content_pages"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/content-pages/[id]/route.ts",
+        "endpoint": "/api/admin/content-pages/[id]",
+        "hasAccess": true,
+        "tables": [
+          "content_pages",
+          "content_page_sections",
+          "funnels"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/content-pages/[id]/sections/route.ts",
+        "endpoint": "/api/admin/content-pages/[id]/sections",
+        "hasAccess": true,
+        "tables": [
+          "content_page_sections",
+          "content_pages"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+        "endpoint": "/api/admin/content-pages/[id]/sections/[sectionId]",
+        "hasAccess": true,
+        "tables": [
+          "content_page_sections"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/pilot/kpis/route.ts",
+        "endpoint": "/api/admin/pilot/kpis",
+        "hasAccess": true,
+        "tables": [
+          "pilot_flow_events",
+          "review_records",
+          "support_cases"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/pilot/flow-events/route.ts",
+        "endpoint": "/api/admin/pilot/flow-events",
+        "hasAccess": true,
+        "tables": [
+          "pilot_flow_events"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnel-steps/route.ts",
+        "endpoint": "/api/admin/funnel-steps",
+        "hasAccess": true,
+        "tables": [
+          "funnels",
+          "content_pages",
+          "funnel_steps"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnel-steps/[id]/route.ts",
+        "endpoint": "/api/admin/funnel-steps/[id]",
+        "hasAccess": true,
+        "tables": [
+          "content_pages",
+          "funnel_steps"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/diagnostics/pillars-sot/route.ts",
+        "endpoint": "/api/admin/diagnostics/pillars-sot",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/dev/endpoint-catalog/route.ts",
+        "endpoint": "/api/admin/dev/endpoint-catalog",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/navigation/route.ts",
+        "endpoint": "/api/admin/navigation",
+        "hasAccess": true,
+        "tables": [
+          "navigation_items",
+          "navigation_item_configs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/navigation/[role]/route.ts",
+        "endpoint": "/api/admin/navigation/[role]",
+        "hasAccess": true,
+        "tables": [
+          "navigation_item_configs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnel-versions/[id]/route.ts",
+        "endpoint": "/api/admin/funnel-versions/[id]",
+        "hasAccess": true,
+        "tables": [
+          "funnel_versions",
+          "funnels_catalog"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnel-versions/[id]/manifest/route.ts",
+        "endpoint": "/api/admin/funnel-versions/[id]/manifest",
+        "hasAccess": true,
+        "tables": [
+          "funnel_versions",
+          "audit_log"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/funnel-step-questions/[id]/route.ts",
+        "endpoint": "/api/admin/funnel-step-questions/[id]",
+        "hasAccess": true,
+        "tables": [
+          "funnel_step_questions"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/design-tokens/route.ts",
+        "endpoint": "/api/admin/design-tokens",
+        "hasAccess": true,
+        "tables": [
+          "design_tokens"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/operational-settings-audit/route.ts",
+        "endpoint": "/api/admin/operational-settings-audit",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/notification-templates/route.ts",
+        "endpoint": "/api/admin/notification-templates",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/admin/notification-templates/[id]/route.ts",
+        "endpoint": "/api/admin/notification-templates/[id]",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/health/env/route.ts",
+        "endpoint": "/api/health/env",
+        "hasAccess": true,
+        "tables": [
+          "pillars"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/patient-profiles/route.ts",
+        "endpoint": "/api/patient-profiles",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/patient/dashboard/route.ts",
+        "endpoint": "/api/patient/dashboard",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "reports"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/patient/onboarding-status/route.ts",
+        "endpoint": "/api/patient/onboarding-status",
+        "hasAccess": true,
+        "tables": [
+          "user_consents",
+          "patient_profiles"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/support-cases/route.ts",
+        "endpoint": "/api/support-cases",
+        "hasAccess": true,
+        "tables": [
+          "user_org_membership",
+          "patient_profiles",
+          "support_cases"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/support-cases/[id]/escalate/route.ts",
+        "endpoint": "/api/support-cases/[id]/escalate",
+        "hasAccess": true,
+        "tables": [
+          "user_org_membership",
+          "support_cases",
+          "tasks"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/support-cases/[id]/route.ts",
+        "endpoint": "/api/support-cases/[id]",
+        "hasAccess": true,
+        "tables": [
+          "support_cases"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/active/route.ts",
+        "endpoint": "/api/funnels/active",
+        "hasAccess": true,
+        "tables": [
+          "funnels"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/content-pages/route.ts",
+        "endpoint": "/api/funnels/[slug]/content-pages",
+        "hasAccess": true,
+        "tables": [
+          "funnels",
+          "funnels_catalog",
+          "content_pages"
+        ],
+        "clientType": "admin"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "funnels",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "funnels_catalog",
+          "funnels",
+          "funnel_steps",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "funnels",
+          "funnels_catalog",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "funnel_steps",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/[slug]/definition/route.ts",
+        "endpoint": "/api/funnels/[slug]/definition",
+        "hasAccess": true,
+        "tables": [
+          "funnels",
+          "funnel_steps",
+          "funnel_step_questions",
+          "questions",
+          "content_pages"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/catalog/route.ts",
+        "endpoint": "/api/funnels/catalog",
+        "hasAccess": true,
+        "tables": [
+          "pillars",
+          "funnels_catalog",
+          "funnels",
+          "funnel_versions"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/funnels/catalog/[slug]/route.ts",
+        "endpoint": "/api/funnels/catalog/[slug]",
+        "hasAccess": true,
+        "tables": [
+          "funnels_catalog",
+          "pillars",
+          "funnel_versions",
+          "patient_profiles",
+          "patient_funnels"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/pre-screening-calls/route.ts",
+        "endpoint": "/api/pre-screening-calls",
+        "hasAccess": true,
+        "tables": [
+          "user_org_membership",
+          "pre_screening_calls"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/documents/upload/route.ts",
+        "endpoint": "/api/documents/upload",
+        "hasAccess": true,
+        "tables": [
+          "documents"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/documents/[id]/extract/route.ts",
+        "endpoint": "/api/documents/[id]/extract",
+        "hasAccess": true,
+        "tables": [
+          "documents",
+          "assessments",
+          "patient_profiles"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/documents/[id]/status/route.ts",
+        "endpoint": "/api/documents/[id]/status",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/tasks/route.ts",
+        "endpoint": "/api/tasks",
+        "hasAccess": true,
+        "tables": [
+          "user_org_membership",
+          "tasks"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/tasks/[id]/route.ts",
+        "endpoint": "/api/tasks/[id]",
+        "hasAccess": true,
+        "tables": [
+          "tasks"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/notifications/route.ts",
+        "endpoint": "/api/notifications",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/notifications/[id]/route.ts",
+        "endpoint": "/api/notifications/[id]",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/reports/[reportId]/pdf/route.ts",
+        "endpoint": "/api/reports/[reportId]/pdf",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/content-pages/[slug]/route.ts",
+        "endpoint": "/api/content-pages/[slug]",
+        "hasAccess": true,
+        "tables": [
+          "content_pages",
+          "content_page_sections"
+        ],
+        "clientType": "admin"
+      },
+      {
+        "apiPath": "app/api/auth/resolve-role/route.ts",
+        "endpoint": "/api/auth/resolve-role",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/auth/callback/route.ts",
+        "endpoint": "/api/auth/callback",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessment-validation/validate-step/route.ts",
+        "endpoint": "/api/assessment-validation/validate-step",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessment-answers/save/route.ts",
+        "endpoint": "/api/assessment-answers/save",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/shipments/route.ts",
+        "endpoint": "/api/shipments",
+        "hasAccess": true,
+        "tables": [
+          "user_org_membership",
+          "patient_profiles",
+          "device_shipments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/shipments/[id]/events/route.ts",
+        "endpoint": "/api/shipments/[id]/events",
+        "hasAccess": true,
+        "tables": [
+          "device_shipments",
+          "shipment_events"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/shipments/[id]/route.ts",
+        "endpoint": "/api/shipments/[id]",
+        "hasAccess": true,
+        "tables": [
+          "device_shipments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/amy/triage/route.ts",
+        "endpoint": "/api/amy/triage",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/amy/stress-report/route.ts",
+        "endpoint": "/api/amy/stress-report",
+        "hasAccess": true,
+        "tables": [
+          "assessments",
+          "assessment_answers",
+          "reports",
+          "patient_measures"
+        ],
+        "clientType": "admin"
+      },
+      {
+        "apiPath": "app/api/processing/pdf/route.ts",
+        "endpoint": "/api/processing/pdf",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/safety/route.ts",
+        "endpoint": "/api/processing/safety",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/ranking/route.ts",
+        "endpoint": "/api/processing/ranking",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/jobs/[jobId]/route.ts",
+        "endpoint": "/api/processing/jobs/[jobId]",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs",
+          "patient_profiles",
+          "assessments",
+          "clinician_patient_assignments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/jobs/[jobId]/download/route.ts",
+        "endpoint": "/api/processing/jobs/[jobId]/download",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs",
+          "patient_profiles",
+          "assessments",
+          "clinician_patient_assignments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/content/route.ts",
+        "endpoint": "/api/processing/content",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/start/route.ts",
+        "endpoint": "/api/processing/start",
+        "hasAccess": true,
+        "tables": [
+          "assessments",
+          "patient_profiles",
+          "clinician_patient_assignments",
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/delivery/route.ts",
+        "endpoint": "/api/processing/delivery",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/risk/route.ts",
+        "endpoint": "/api/processing/risk",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/processing/validation/route.ts",
+        "endpoint": "/api/processing/validation",
+        "hasAccess": true,
+        "tables": [
+          "processing_jobs"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessments/in-progress/route.ts",
+        "endpoint": "/api/assessments/in-progress",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessments/[id]/current-step/route.ts",
+        "endpoint": "/api/assessments/[id]/current-step",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessments/[id]/resume/route.ts",
+        "endpoint": "/api/assessments/[id]/resume",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments",
+          "assessment_answers"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/assessments/[id]/navigation/route.ts",
+        "endpoint": "/api/assessments/[id]/navigation",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles",
+          "assessments"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/review/queue/route.ts",
+        "endpoint": "/api/review/queue",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/review/[id]/route.ts",
+        "endpoint": "/api/review/[id]",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/review/[id]/decide/route.ts",
+        "endpoint": "/api/review/[id]/decide",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/review/[id]/details/route.ts",
+        "endpoint": "/api/review/[id]/details",
+        "hasAccess": true,
+        "tables": [
+          "medical_validation_results",
+          "safety_check_results"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/escalation/log-click/route.ts",
+        "endpoint": "/api/escalation/log-click",
+        "hasAccess": true,
+        "tables": [
+          "patient_profiles"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/consent/record/route.ts",
+        "endpoint": "/api/consent/record",
+        "hasAccess": true,
+        "tables": [
+          "user_consents"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/consent/status/route.ts",
+        "endpoint": "/api/consent/status",
+        "hasAccess": true,
+        "tables": [
+          "user_consents"
+        ],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/account/deletion-request/route.ts",
+        "endpoint": "/api/account/deletion-request",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "app/api/patient-measures/export/route.ts",
+        "endpoint": "/api/patient-measures/export",
+        "hasAccess": true,
+        "tables": [
+          "user_consents",
+          "patient_profiles",
+          "patient_measures",
+          "reports"
+        ],
+        "clientType": "admin"
+      },
+      {
+        "apiPath": "app/api/patient-measures/history/route.ts",
+        "endpoint": "/api/patient-measures/history",
+        "hasAccess": true,
+        "tables": [
+          "patient_measures",
+          "reports"
+        ],
+        "clientType": "admin"
+      },
+      {
+        "apiPath": "apps/rhythm-studio-ui/app/api/auth/resolve-role/route.ts",
+        "endpoint": "/api/auth/resolve-role",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "apps/rhythm-studio-ui/app/api/auth/callback/route.ts",
+        "endpoint": "/api/auth/callback",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      },
+      {
+        "apiPath": "apps/rhythm-studio-ui/app/api/auth/debug/route.ts",
+        "endpoint": "/api/auth/debug",
+        "hasAccess": true,
+        "tables": [],
+        "clientType": "server"
+      }
+    ]
+  },
+  "orphans": {
+    "apis": [
+      {
+        "path": "app/api/admin/usage/route.ts",
+        "endpoint": "/api/admin/usage",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/content-pages/[id]/sections/route.ts",
+        "endpoint": "/api/admin/content-pages/[id]/sections",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+        "endpoint": "/api/admin/content-pages/[id]/sections/[sectionId]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/pilot/kpis/route.ts",
+        "endpoint": "/api/admin/pilot/kpis",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/pilot/flow-events/route.ts",
+        "endpoint": "/api/admin/pilot/flow-events",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/funnel-steps/route.ts",
+        "endpoint": "/api/admin/funnel-steps",
+        "app": "main"
+      },
+      {
+        "path": "app/api/admin/diagnostics/pillars-sot/route.ts",
+        "endpoint": "/api/admin/diagnostics/pillars-sot",
+        "app": "main"
+      },
+      {
+        "path": "app/api/health/env/route.ts",
+        "endpoint": "/api/health/env",
+        "app": "main"
+      },
+      {
+        "path": "app/api/patient-profiles/route.ts",
+        "endpoint": "/api/patient-profiles",
+        "app": "main"
+      },
+      {
+        "path": "app/api/patient/dashboard/route.ts",
+        "endpoint": "/api/patient/dashboard",
+        "app": "main"
+      },
+      {
+        "path": "app/api/patient/triage/route.ts",
+        "endpoint": "/api/patient/triage",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/active/route.ts",
+        "endpoint": "/api/funnels/active",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/content-pages/route.ts",
+        "endpoint": "/api/funnels/[slug]/content-pages",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
+        "endpoint": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/[slug]/definition/route.ts",
+        "endpoint": "/api/funnels/[slug]/definition",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/catalog/route.ts",
+        "endpoint": "/api/funnels/catalog",
+        "app": "main"
+      },
+      {
+        "path": "app/api/funnels/catalog/[slug]/route.ts",
+        "endpoint": "/api/funnels/catalog/[slug]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/documents/upload/route.ts",
+        "endpoint": "/api/documents/upload",
+        "app": "main"
+      },
+      {
+        "path": "app/api/documents/[id]/extract/route.ts",
+        "endpoint": "/api/documents/[id]/extract",
+        "app": "main"
+      },
+      {
+        "path": "app/api/documents/[id]/status/route.ts",
+        "endpoint": "/api/documents/[id]/status",
+        "app": "main"
+      },
+      {
+        "path": "app/api/notifications/route.ts",
+        "endpoint": "/api/notifications",
+        "app": "main"
+      },
+      {
+        "path": "app/api/notifications/[id]/route.ts",
+        "endpoint": "/api/notifications/[id]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/reports/[reportId]/pdf/route.ts",
+        "endpoint": "/api/reports/[reportId]/pdf",
+        "app": "main"
+      },
+      {
+        "path": "app/api/content-pages/[slug]/route.ts",
+        "endpoint": "/api/content-pages/[slug]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/auth/signout/route.ts",
+        "endpoint": "/api/auth/signout",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessment-validation/validate-step/route.ts",
+        "endpoint": "/api/assessment-validation/validate-step",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessment-answers/save/route.ts",
+        "endpoint": "/api/assessment-answers/save",
+        "app": "main"
+      },
+      {
+        "path": "app/api/shipments/[id]/events/route.ts",
+        "endpoint": "/api/shipments/[id]/events",
+        "app": "main"
+      },
+      {
+        "path": "app/api/shipments/[id]/route.ts",
+        "endpoint": "/api/shipments/[id]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/amy/triage/route.ts",
+        "endpoint": "/api/amy/triage",
+        "app": "main"
+      },
+      {
+        "path": "app/api/amy/stress-report/route.ts",
+        "endpoint": "/api/amy/stress-report",
+        "app": "main"
+      },
+      {
+        "path": "app/api/amy/stress-summary/route.ts",
+        "endpoint": "/api/amy/stress-summary",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/pdf/route.ts",
+        "endpoint": "/api/processing/pdf",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/safety/route.ts",
+        "endpoint": "/api/processing/safety",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/ranking/route.ts",
+        "endpoint": "/api/processing/ranking",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/jobs/[jobId]/route.ts",
+        "endpoint": "/api/processing/jobs/[jobId]",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/content/route.ts",
+        "endpoint": "/api/processing/content",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/start/route.ts",
+        "endpoint": "/api/processing/start",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/delivery/route.ts",
+        "endpoint": "/api/processing/delivery",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/risk/route.ts",
+        "endpoint": "/api/processing/risk",
+        "app": "main"
+      },
+      {
+        "path": "app/api/processing/validation/route.ts",
+        "endpoint": "/api/processing/validation",
+        "app": "main"
+      },
+      {
+        "path": "app/api/content-resolver/route.ts",
+        "endpoint": "/api/content-resolver",
+        "app": "main"
+      },
+      {
+        "path": "app/api/content/resolve/route.ts",
+        "endpoint": "/api/content/resolve",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessments/in-progress/route.ts",
+        "endpoint": "/api/assessments/in-progress",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessments/[id]/current-step/route.ts",
+        "endpoint": "/api/assessments/[id]/current-step",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessments/[id]/resume/route.ts",
+        "endpoint": "/api/assessments/[id]/resume",
+        "app": "main"
+      },
+      {
+        "path": "app/api/assessments/[id]/navigation/route.ts",
+        "endpoint": "/api/assessments/[id]/navigation",
+        "app": "main"
+      },
+      {
+        "path": "app/api/test/correlation-id/route.ts",
+        "endpoint": "/api/test/correlation-id",
+        "app": "main"
+      },
+      {
+        "path": "app/api/review/[id]/decide/route.ts",
+        "endpoint": "/api/review/[id]/decide",
+        "app": "main"
+      },
+      {
+        "path": "app/api/review/[id]/details/route.ts",
+        "endpoint": "/api/review/[id]/details",
+        "app": "main"
+      },
+      {
+        "path": "app/api/escalation/log-click/route.ts",
+        "endpoint": "/api/escalation/log-click",
+        "app": "main"
+      },
+      {
+        "path": "app/api/consent/record/route.ts",
+        "endpoint": "/api/consent/record",
+        "app": "main"
+      },
+      {
+        "path": "app/api/consent/status/route.ts",
+        "endpoint": "/api/consent/status",
+        "app": "main"
+      },
+      {
+        "path": "app/api/account/deletion-request/route.ts",
+        "endpoint": "/api/account/deletion-request",
+        "app": "main"
+      },
+      {
+        "path": "app/api/patient-measures/export/route.ts",
+        "endpoint": "/api/patient-measures/export",
+        "app": "main"
+      },
+      {
+        "path": "app/api/patient-measures/history/route.ts",
+        "endpoint": "/api/patient-measures/history",
+        "app": "main"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/api/auth/signout/route.ts",
+        "endpoint": "/api/auth/signout",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/api/auth/debug/route.ts",
+        "endpoint": "/api/auth/debug",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/api/auth/debug-cookie/route.ts",
+        "endpoint": "/api/auth/debug-cookie",
+        "app": "studio-ui"
+      }
+    ],
+    "pages": [
+      {
+        "path": "app/admin/[...path]/page.tsx",
+        "route": "/admin/[...path]",
+        "app": "main"
+      },
+      {
+        "path": "app/admin/page.tsx",
+        "route": "/admin",
+        "app": "main"
+      },
+      {
+        "path": "app/theme-demo/page.tsx",
+        "route": "/theme-demo",
+        "app": "main"
+      },
+      {
+        "path": "app/patient/[...path]/page.tsx",
+        "route": "/patient/[...path]",
+        "app": "main"
+      },
+      {
+        "path": "app/patient/page.tsx",
+        "route": "/patient",
+        "app": "main"
+      },
+      {
+        "path": "app/datenschutz/page.tsx",
+        "route": "/datenschutz",
+        "app": "main"
+      },
+      {
+        "path": "app/clinician/[...path]/page.tsx",
+        "route": "/clinician/[...path]",
+        "app": "main"
+      },
+      {
+        "path": "app/clinician/page.tsx",
+        "route": "/clinician",
+        "app": "main"
+      },
+      {
+        "path": "app/content/[slug]/page.tsx",
+        "route": "/content/[slug]",
+        "app": "main"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/admin/design-system/page.tsx",
+        "route": "/admin/design-system",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/admin/dev/theme-test/page.tsx",
+        "route": "/admin/dev/theme-test",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/admin/content/new/page.tsx",
+        "route": "/admin/content/new",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/admin/page.tsx",
+        "route": "/admin",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/datenschutz/page.tsx",
+        "route": "/datenschutz",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/impressum/page.tsx",
+        "route": "/impressum",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/clinician/patient/[id]/page.tsx",
+        "route": "/clinician/patient/[id]",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/clinician/report/[id]/page.tsx",
+        "route": "/clinician/report/[id]",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+        "route": "/clinician/triage",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/clinician/page.tsx",
+        "route": "/clinician",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-studio-ui/app/page.tsx",
+        "route": "/",
+        "app": "studio-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/dashboard/page.tsx",
+        "route": "/patient/dashboard",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/result/page.tsx",
+        "route": "/patient/funnel/[slug]/result",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/intro/page.tsx",
+        "route": "/patient/funnel/[slug]/intro",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/content/[pageSlug]/page.tsx",
+        "route": "/patient/funnel/[slug]/content/[pageSlug]",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnel/[slug]/page.tsx",
+        "route": "/patient/funnel/[slug]",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnels/[slug]/page.tsx",
+        "route": "/patient/funnels/[slug]",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/funnels/page.tsx",
+        "route": "/patient/funnels",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/documents/[id]/confirm/page.tsx",
+        "route": "/patient/documents/[id]/confirm",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/support/page.tsx",
+        "route": "/patient/support",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/content/[slug]/page.tsx",
+        "route": "/patient/content/[slug]",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/onboarding/profile/page.tsx",
+        "route": "/patient/onboarding/profile",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/onboarding/consent/page.tsx",
+        "route": "/patient/onboarding/consent",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/onboarding/page.tsx",
+        "route": "/patient/onboarding",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/escalation/page.tsx",
+        "route": "/patient/escalation",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/history/page.tsx",
+        "route": "/patient/history",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/page.tsx",
+        "route": "/patient",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/patient/assessment/page.tsx",
+        "route": "/patient/assessment",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/datenschutz/page.tsx",
+        "route": "/datenschutz",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/impressum/page.tsx",
+        "route": "/impressum",
+        "app": "patient-ui"
+      },
+      {
+        "path": "apps/rhythm-patient-ui/app/page.tsx",
+        "route": "/",
+        "app": "patient-ui"
+      }
+    ]
+  }
+}

@@ -42,6 +42,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/assessments/in-progress | GET | patient |  | 0 | app/api/assessments/in-progress/route.ts |
 | /api/auth/callback | POST | public |  | 2 | app/api/auth/callback/route.ts |
 | /api/auth/resolve-role | GET | public |  | 1 | app/api/auth/resolve-role/route.ts |
+| /api/auth/signout | GET, POST | public |  | 0 | app/api/auth/signout/route.ts |
 | /api/consent/record | POST | patient |  | 0 | app/api/consent/record/route.ts |
 | /api/consent/status | GET | patient |  | 0 | app/api/consent/status/route.ts |
 | /api/content-pages/[slug] | GET | patient |  | 1 | app/api/content-pages/[slug]/route.ts |

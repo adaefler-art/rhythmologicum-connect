@@ -28,6 +28,7 @@
     "/api/assessments/[id]/current-step",
     "/api/assessments/[id]/navigation",
     "/api/assessments/in-progress",
+    "/api/auth/signout",
     "/api/consent/record",
     "/api/consent/status",
     "/api/content/resolve",

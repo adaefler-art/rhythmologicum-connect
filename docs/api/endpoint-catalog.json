@@ -719,7 +719,7 @@
         },
         {
           "file": "app/page.tsx",
-          "line": 154,
+          "line": 151,
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
@@ -746,6 +746,20 @@
       ],
       "isOrphan": false,
       "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/auth/signout",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "app/api/auth/signout/route.ts",
+      "intent": null,
+      "accessRole": "public",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/consent/record",
