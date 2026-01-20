@@ -17,6 +17,7 @@
 
 import { createServerClient as createSsrServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { NextRequest, NextResponse } from 'next/server'
 import { env } from '@/lib/env'
 import type { Database } from '@/lib/types/supabase'
 
@@ -83,6 +84,51 @@ export async function createServerSupabaseClient() {
       },
     },
   })
+}
+
+/**
+ * Creates a server-side Supabase client for Route Handlers with cookie sync.
+ *
+ * This helper collects cookie mutations so they can be applied to a NextResponse.
+ * Use applyCookies(response) before returning.
+ */
+export function createRouteSupabaseClient(req: NextRequest) {
+  const url = env.NEXT_PUBLIC_SUPABASE_URL
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !anonKey) {
+    throw new Error(
+      'Supabase configuration missing. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.'
+    )
+  }
+
+  const pendingCookies: Array<{
+    name: string
+    value: string
+    options?: Parameters<NextResponse['cookies']['set']>[2]
+  }> = []
+
+  const supabase = createSsrServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          pendingCookies.push({ name, value, options })
+        })
+      },
+    },
+  })
+
+  const applyCookies = (response: NextResponse) => {
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options)
+    })
+    return response
+  }
+
+  return { supabase, applyCookies }
 }
 
 /**

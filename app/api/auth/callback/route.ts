@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { isSessionExpired } from '@/lib/api/authHelpers'
+import { createRouteSupabaseClient } from '@/lib/db/supabase.server'
 
 /**
  * E6.2.6: Auth callback endpoint for handling session events from client
@@ -11,9 +11,14 @@ import { isSessionExpired } from '@/lib/api/authHelpers'
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient()
+    const { supabase, applyCookies } = createRouteSupabaseClient(req)
     const body = await req.json()
     const { event, session } = body
+
+    let payload: { ok: true } | { ok: false; error: { code: string; message: string } } = {
+      ok: true,
+    }
+    let status = 200
 
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
       if (session) {
@@ -22,28 +27,26 @@ export async function POST(req: NextRequest) {
         if (error) {
           // E6.2.6: Detect if the session being set is already expired
           if (isSessionExpired(error)) {
-            return NextResponse.json(
-              { 
-                ok: false, 
-                error: { 
-                  code: 'SESSION_EXPIRED', 
-                  message: 'Die bereitgestellte Sitzung ist bereits abgelaufen.' 
-                } 
+            payload = {
+              ok: false,
+              error: {
+                code: 'SESSION_EXPIRED',
+                message: 'Die bereitgestellte Sitzung ist bereits abgelaufen.',
               },
-              { status: 401 }
-            )
+            }
+            status = 401
           }
           
-          return NextResponse.json(
-            { 
-              ok: false, 
-              error: { 
-                code: 'SESSION_SET_FAILED', 
-                message: 'Fehler beim Setzen der Sitzung.' 
-              } 
-            },
-            { status: 400 }
-          )
+          if (status === 200) {
+            payload = {
+              ok: false,
+              error: {
+                code: 'SESSION_SET_FAILED',
+                message: 'Fehler beim Setzen der Sitzung.',
+              },
+            }
+            status = 400
+          }
         }
       }
     }
@@ -52,8 +55,21 @@ export async function POST(req: NextRequest) {
       await supabase.auth.signOut()
     }
 
-    return NextResponse.json({ ok: true })
+    return applyCookies(NextResponse.json(payload, { status }))
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Supabase configuration missing')) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: 'CONFIG',
+            message:
+              'Supabase ist nicht konfiguriert. Bitte NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_ANON_KEY setzen.',
+          },
+        },
+        { status: 500 },
+      )
+    }
     console.error('Error in auth callback:', error)
     return NextResponse.json(
       { 
