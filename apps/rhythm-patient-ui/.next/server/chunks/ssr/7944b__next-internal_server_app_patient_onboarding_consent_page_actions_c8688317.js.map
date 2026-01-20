@@ -1,1 +1,0 @@
-{"version":3,"sources":["../../../../../../apps/rhythm-patient-ui/.next-internal/server/app/patient/onboarding/consent/page/actions.js%20%28server%20actions%20loader%29"],"sourcesContent":["export {recordConsent as '403595fa6e7b7d1b348c37040bb72197646de953f1'} from 'ACTIONS_MODULE0'\n"],"names":[],"mappings":"uCAAA,IAAA,EAAA,EAAA,CAAA,CAAA"}

@@ -1,5 +1,0 @@
-1:"$Sreact.fragment"
-2:I[97367,["/_next/static/chunks/3afea75e42cf2bd4.js","/_next/static/chunks/1bceca9e97e612f1.js","/_next/static/chunks/cb59110e2f30e8f4.js","/_next/static/chunks/791570ea46e1c5b5.js"],"ViewportBoundary"]
-3:I[97367,["/_next/static/chunks/3afea75e42cf2bd4.js","/_next/static/chunks/1bceca9e97e612f1.js","/_next/static/chunks/cb59110e2f30e8f4.js","/_next/static/chunks/791570ea46e1c5b5.js"],"MetadataBoundary"]
-4:"$Sreact.suspense"
-0:{"buildId":"oAWvxJ8coDxnb2bwlpwe-","rsc":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Rhythmologicum Connect"}],["$","meta","1",{"name":"description","content":"Stress- & Resilienz-Assessment Plattform"}]]}]}]}],null]}],"loading":null,"isPartial":false}
