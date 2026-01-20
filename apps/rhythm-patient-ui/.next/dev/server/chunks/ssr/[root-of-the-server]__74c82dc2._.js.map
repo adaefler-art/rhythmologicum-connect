@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 38, "column": 0}, "map": {"version":3,"sources":["file:///home/runner/work/rhythmologicum-connect/rhythmologicum-connect/apps/rhythm-patient-ui/app/patient/assess/page.tsx"],"sourcesContent":["import { redirect } from 'next/navigation'\n\n/**\n * V2 Assessment Landing Page\n * \n * This route redirects to the funnel catalog (/patient/funnels) for now.\n * In the future, this could be a dedicated assessment landing page.\n * \n * Route: /patient/assess\n */\nexport default async function AssessPage() {\n  // Redirect to funnel catalog\n  redirect('/patient/funnels')\n}\n"],"names":[],"mappings":";;;;AAAA;AAAA;;AAUe,eAAe;IAC5B,6BAA6B;IAC7B,IAAA,iMAAQ,EAAC;AACX"}}]
+}

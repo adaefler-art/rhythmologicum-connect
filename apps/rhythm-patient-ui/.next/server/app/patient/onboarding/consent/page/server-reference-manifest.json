@@ -1,0 +1,20 @@
+{
+  "node": {
+    "403595fa6e7b7d1b348c37040bb72197646de953f1": {
+      "workers": {
+        "app/patient/onboarding/consent/page": {
+          "moduleId": 52353,
+          "async": false,
+          "exportedName": "recordConsent",
+          "filename": "lib/actions/onboarding.ts"
+        }
+      },
+      "layer": {
+        "app/patient/onboarding/consent/page": "action-browser"
+      },
+      "exportedName": "recordConsent",
+      "filename": "lib/actions/onboarding.ts"
+    }
+  },
+  "edge": {}
+}
