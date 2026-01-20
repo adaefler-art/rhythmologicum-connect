@@ -141,14 +141,9 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       active: pathname?.startsWith('/admin/content') ?? false,
     },
     {
-      href: '/admin/navigation',
-      label: 'Navigation',
-      active: pathname?.startsWith('/admin/navigation') ?? false,
-    },
-    {
-      href: '/admin/design-system',
-      label: 'Design System',
-      active: pathname?.startsWith('/admin/design-system') ?? false,
+      href: '/admin/dev/endpoints',
+      label: 'Endpoints',
+      active: pathname?.startsWith('/admin/dev/endpoints') ?? false,
     },
   ]
 }

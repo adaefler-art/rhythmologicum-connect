@@ -5,6 +5,7 @@
   "description": "Patient UI (mobile-first)",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node ../../scripts/generate-version.js --out-dir public --app rhythm-patient-ui --version v0.6",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

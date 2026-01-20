@@ -10,6 +10,30 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
+function parseArgs(argv) {
+  const args = {}
+  for (let i = 0; i < argv.length; i += 1) {
+    const value = argv[i]
+    if (value === '--out-dir') {
+      args.outDir = argv[i + 1]
+      i += 1
+    } else if (value === '--app') {
+      args.app = argv[i + 1]
+      i += 1
+    } else if (value === '--version') {
+      args.version = argv[i + 1]
+      i += 1
+    }
+  }
+  return args
+}
+
+function normalizeBaseUrl(value) {
+  if (!value) return ''
+  if (value.startsWith('http://') || value.startsWith('https://')) return value
+  return `https://${value}`
+}
+
 function getGitInfo() {
   try {
     // Get commit hash
@@ -40,19 +64,43 @@ function getGitInfo() {
 }
 
 function generateVersionFile() {
+  const args = parseArgs(process.argv.slice(2))
   const versionInfo = getGitInfo()
-  const outputPath = path.join(__dirname, '..', 'public', 'version.json')
+  const outDir = args.outDir ? path.resolve(process.cwd(), args.outDir) : path.join(__dirname, '..', 'public')
+  const outputPath = path.join(outDir, 'version.json')
+  const app = args.app || process.env.APP_NAME || 'engine'
+  const version = args.version || process.env.APP_VERSION || 'v0.6'
+  const baseUrl = normalizeBaseUrl(
+    process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.STUDIO_BASE_URL ||
+      process.env.PATIENT_BASE_URL ||
+      process.env.ENGINE_BASE_URL ||
+      process.env.VERCEL_URL,
+  )
   
   // Ensure public directory exists
-  const publicDir = path.join(__dirname, '..', 'public')
-  if (!fs.existsSync(publicDir)) {
-    fs.mkdirSync(publicDir, { recursive: true })
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true })
   }
   
+  const payload = {
+    app,
+    version,
+    commitSha: versionInfo.commitHash,
+    generatedAt: new Date().toISOString(),
+    baseUrl,
+    commitHash: versionInfo.commitHash,
+    commitHashShort: versionInfo.commitHashShort,
+    commitDate: versionInfo.commitDate,
+    buildDate: versionInfo.buildDate,
+  }
+
   // Write version info to file
-  fs.writeFileSync(outputPath, JSON.stringify(versionInfo, null, 2))
+  fs.writeFileSync(outputPath, JSON.stringify(payload, null, 2))
   
   console.log('Version info generated:')
+  console.log(`  App: ${app}`)
+  console.log(`  Version: ${version}`)
   console.log(`  Commit: ${versionInfo.commitHashShort} (${versionInfo.commitHash})`)
   console.log(`  Date: ${versionInfo.commitDate}`)
   console.log(`  Output: ${outputPath}`)

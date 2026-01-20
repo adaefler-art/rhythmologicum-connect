@@ -1,6 +1,11 @@
 {
   "app": "rhythm-patient-ui",
-  "version": "0.0.0",
-  "commit": "unknown",
-  "builtAt": "unknown"
+  "version": "v0.6",
+  "commitSha": "unknown",
+  "generatedAt": "unknown",
+  "baseUrl": "",
+  "commitHash": "unknown",
+  "commitHashShort": "unknown",
+  "commitDate": "unknown",
+  "buildDate": "unknown"
 }

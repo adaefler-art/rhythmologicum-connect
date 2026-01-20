@@ -67,7 +67,7 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('patient')
       const navItems = getNavItemsForRole(user, '/admin/content')
       
-      expect(navItems.some(item => item.href === '/admin/design-system')).toBe(false)
+      expect(navItems.some(item => item.href === '/admin/dev/endpoints')).toBe(false)
     })
   })
 
@@ -103,8 +103,8 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('clinician')
       const navItems = getNavItemsForRole(user, '/clinician')
       
-      // Clinicians should not see Design System
-      expect(navItems.some(item => item.href === '/admin/design-system')).toBe(false)
+      // Clinicians should not see admin dev tools
+      expect(navItems.some(item => item.href === '/admin/dev/endpoints')).toBe(false)
     })
   })
 
@@ -113,16 +113,15 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('admin')
       const navItems = getNavItemsForRole(user, '/admin/content')
       
-      expect(navItems).toHaveLength(8)
+      expect(navItems).toHaveLength(7)
       expect(navItems[0].href).toBe('/clinician')
       expect(navItems[1].href).toBe('/clinician/triage')
       expect(navItems[2].href).toBe('/clinician/pre-screening')
       expect(navItems[3].href).toBe('/clinician/shipments')
       expect(navItems[4].href).toBe('/clinician/funnels')
       expect(navItems[5].href).toBe('/admin/content')
-      expect(navItems[6].href).toBe('/admin/navigation')
-      expect(navItems[7].href).toBe('/admin/design-system')
-      expect(navItems[7].label).toBe('Design System')
+      expect(navItems[6].href).toBe('/admin/dev/endpoints')
+      expect(navItems[6].label).toBe('Endpoints')
     })
 
     it('should not return patient items for admin user', () => {
@@ -162,8 +161,8 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('nurse')
       const navItems = getNavItemsForRole(user, '/clinician')
       
-      // Nurses should not see Design System
-      expect(navItems.some(item => item.href === '/admin/design-system')).toBe(false)
+      // Nurses should not see admin dev tools
+      expect(navItems.some(item => item.href === '/admin/dev/endpoints')).toBe(false)
       // Nurses should not see Content management
       expect(navItems.some(item => item.href === '/admin/content')).toBe(false)
     })
@@ -226,8 +225,8 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
 
     it('getAdminNavItems should return admin items', () => {
       const items = getAdminNavItems('/admin/content')
-      expect(items).toHaveLength(8)
-      expect(items[7].href).toBe('/admin/design-system')
+      expect(items).toHaveLength(7)
+      expect(items[6].href).toBe('/admin/dev/endpoints')
     })
 
     it('getNurseNavItems should return nurse items', () => {

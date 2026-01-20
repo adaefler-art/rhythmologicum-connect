@@ -27,11 +27,30 @@ type EndpointCatalog = {
   }>
 }
 
+type VersionInfo = {
+  app?: string
+  version?: string
+  commitSha?: string
+  commitHashShort?: string
+  generatedAt?: string
+  baseUrl?: string
+}
+
 async function loadCatalog(): Promise<EndpointCatalog | null> {
   try {
     const catalogPath = path.join(process.cwd(), 'docs', 'api', 'endpoint-catalog.json')
     const raw = await fs.readFile(catalogPath, 'utf8')
     return JSON.parse(raw) as EndpointCatalog
+  } catch {
+    return null
+  }
+}
+
+async function loadVersionInfo(): Promise<VersionInfo | null> {
+  try {
+    const versionPath = path.join(process.cwd(), 'public', 'version.json')
+    const raw = await fs.readFile(versionPath, 'utf8')
+    return JSON.parse(raw) as VersionInfo
   } catch {
     return null
   }
@@ -84,6 +103,7 @@ export default async function DevEndpointsPage() {
   }
 
   const catalog = await loadCatalog()
+  const versionInfo = await loadVersionInfo()
   if (!catalog) {
     return (
       <div className="space-y-2">
@@ -99,5 +119,51 @@ export default async function DevEndpointsPage() {
     )
   }
 
-  return <EndpointCatalogClient catalog={catalog} />
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-slate-100">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">Endpoint Catalog</h1>
+            <p className="text-sm text-slate-400">
+              Letzte Version: {versionInfo?.version ?? 'v0.6'}
+            </p>
+          </div>
+          <div className="text-sm text-slate-300 space-y-1">
+            <p>
+              Commit:{' '}
+              <span className="font-mono">
+                {versionInfo?.commitHashShort ?? versionInfo?.commitSha ?? 'unknown'}
+              </span>
+            </p>
+            <p>
+              Generated:{' '}
+              <span className="font-mono">
+                {versionInfo?.generatedAt ?? 'unknown'}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm">
+          <a
+            href="/version.json"
+            className="inline-flex items-center rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
+          >
+            /version.json
+          </a>
+          <a
+            href="/api/admin/dev/endpoint-catalog"
+            className="inline-flex items-center rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
+          >
+            /api/admin/dev/endpoint-catalog
+          </a>
+          {versionInfo?.baseUrl ? (
+            <span className="text-xs text-slate-400">Base: {versionInfo.baseUrl}</span>
+          ) : null}
+        </div>
+      </div>
+
+      <EndpointCatalogClient catalog={catalog} />
+    </div>
+  )
 }

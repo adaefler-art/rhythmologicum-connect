@@ -46,6 +46,7 @@ next-env.d.ts
 
 # generated files
 /public/version.json
+/apps/*/public/version.json
 .env.local
 
 # usage telemetry data (runtime-generated)

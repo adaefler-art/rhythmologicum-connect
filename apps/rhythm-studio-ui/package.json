@@ -5,6 +5,7 @@
   "description": "Studio UI (admin + clinician)",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node ../../scripts/generate-version.js --out-dir public --app rhythm-studio-ui --version v0.6",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
