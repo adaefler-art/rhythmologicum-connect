@@ -1,21 +1,27 @@
-import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { getStudioEnv } from '@/lib/env'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
-export default async function AdminIndexRedirect() {
-  getStudioEnv()
+export default function AdminIndexRedirect() {
+  const router = useRouter()
 
-  try {
-    const supabase = await createServerSupabaseClient()
-    const { data } = await supabase.auth.getUser()
-    if (data?.user) {
-      redirect('/admin/content')
+  useEffect(() => {
+    const redirectIfReady = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (session) {
+        router.replace('/admin/content')
+      } else {
+        router.replace('/')
+      }
     }
-  } catch {
-    // Fall through to login UI on auth/config errors.
-  }
 
-  redirect('/')
+    redirectIfReady()
+  }, [router])
+
+  return null
 }
