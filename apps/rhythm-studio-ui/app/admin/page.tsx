@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import LoginPage from '@/app/page'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getStudioEnv } from '@/lib/env'
 
@@ -18,5 +17,5 @@ export default async function AdminIndexRedirect() {
     // Fall through to login UI on auth/config errors.
   }
 
-  return <LoginPage />
+  redirect('/')
 }

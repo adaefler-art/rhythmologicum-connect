@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import LoginPage from '@/app/page'
+import StudioLoginClient from '@/app/components/StudioLoginClient'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getStudioEnv } from '@/lib/env'
 
@@ -18,5 +18,5 @@ export default async function StudioRootPage() {
     // Fall through to login UI on auth/config errors.
   }
 
-  return <LoginPage />
+  return <StudioLoginClient />
 }
