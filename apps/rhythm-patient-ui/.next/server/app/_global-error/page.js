@@ -1,0 +1,10 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/node_modules_36b19960._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0c1ef9cf._.js")
+R.c("server/chunks/ssr/node_modules_next_dist_03ec2107._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__9e7cd18c._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__867903a0._.js")
+R.c("server/chunks/ssr/node_modules_next_dist_2e5d1b2c._.js")
+R.c("server/chunks/ssr/0da96_rhythm-patient-ui__next-internal_server_app__global-error_page_actions_d5f41c4e.js")
+R.m(37823)
+module.exports=R.m(37823).exports

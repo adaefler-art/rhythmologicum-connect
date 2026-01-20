@@ -1,0 +1,3 @@
+{
+  "/patient/funnel/[slug]/content/[pageSlug]/page": "app/patient/funnel/[slug]/content/[pageSlug]/page.js"
+}
