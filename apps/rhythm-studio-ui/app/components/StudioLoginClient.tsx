@@ -91,18 +91,18 @@ export default function StudioLoginClient() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-between gap-12 px-6 py-16">
-        <section className="max-w-xl space-y-4">
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-between gap-16 px-8 py-16">
+        <section className="max-w-2xl space-y-5">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
             Rhythmologicum Connect
           </p>
-          <h1 className="text-4xl font-semibold">Studio Login</h1>
-          <p className="text-base text-slate-300">
+          <h1 className="text-5xl font-semibold">Studio Login</h1>
+          <p className="text-lg text-slate-300">
             Melden Sie sich an, um das Clinician/Admin Studio zu verwalten.
           </p>
         </section>
 
-        <section className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl">
+        <section className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl">
           <h2 className="text-lg font-semibold">Anmelden</h2>
           <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
 
@@ -114,7 +114,7 @@ export default function StudioLoginClient() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
                 placeholder="name@domain.de"
               />
             </label>
@@ -126,7 +126,7 @@ export default function StudioLoginClient() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
                 placeholder="••••••••"
               />
             </label>
