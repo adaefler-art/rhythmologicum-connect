@@ -8,11 +8,13 @@ import { useEffect, useState } from 'react'
 import { getUserRole, getRoleDisplayName, getNavItemsForRole } from '@/lib/utils/roleBasedRouting'
 import { PatientNavigation } from '@/app/components/PatientNavigation'
 import { ThemeToggle } from '@/lib/ui'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 import type { User } from '@supabase/supabase-js'
 import { MobileShellV2 } from './components'
 
 export default function PatientLayoutClient({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const isMobile = useIsMobile()
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
@@ -51,6 +53,11 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
   const navItems = getNavItemsForRole(user, pathname)
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
+  const isV2ShellRoute = pathname?.startsWith('/patient/dialog') ?? false
+
+  if (isMobile && isV2ShellRoute) {
+    return <div className="min-h-screen">{children}</div>
+  }
 
   return (
     <>
