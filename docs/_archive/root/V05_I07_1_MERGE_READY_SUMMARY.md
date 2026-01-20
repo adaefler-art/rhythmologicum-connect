@@ -94,7 +94,7 @@ npm run build
 ## Verification Tools Created
 
 ### PowerShell Verification Script
-**File:** `verify-v05-i07-1.ps1`
+**File:** `scripts/verify/verify-v05-i07-1.ps1`
 
 **Features:**
 - Automated route structure checks
@@ -107,7 +107,7 @@ npm run build
 
 **Usage:**
 ```powershell
-pwsh verify-v05-i07-1.ps1
+pwsh scripts/verify/verify-v05-i07-1.ps1
 # Part A (Route Conflict): ✓ PASS
 # Part B (Schema Evidence): ✓ PASS
 # Overall: ✓ MERGE READY

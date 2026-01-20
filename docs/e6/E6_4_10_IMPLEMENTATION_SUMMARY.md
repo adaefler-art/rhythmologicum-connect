@@ -112,7 +112,7 @@ Settings: { pilot_enabled: true, features: [...] }
 {
   "db:migrate": "supabase migration up",
   "db:seed": "supabase db reset",
-  "db:seed:verify": "pwsh -File verify-e6-4-10-seed.ps1"
+   "db:seed:verify": "pwsh -File scripts/verify/verify-e6-4-10-seed.ps1"
 }
 ```
 
@@ -130,7 +130,7 @@ npm run db:reset && npm run db:seed:verify
 
 ### 3. Verification Script
 
-**Location:** `verify-e6-4-10-seed.ps1`
+**Location:** `scripts/verify/verify-e6-4-10-seed.ps1`
 
 **Features:**
 - Automated testing of all seed data
@@ -298,7 +298,7 @@ This configuration ensures:
    - Idempotent inserts
    - Comprehensive comments
 
-2. **`verify-e6-4-10-seed.ps1`** (334 lines)
+2. **`scripts/verify/verify-e6-4-10-seed.ps1`** (334 lines)
    - Automated verification script
    - 16 test cases
    - Detailed output and troubleshooting
@@ -326,7 +326,7 @@ This configuration ensures:
 
 ### Automated Tests
 
-**Verification Script:** `verify-e6-4-10-seed.ps1`
+**Verification Script:** `scripts/verify/verify-e6-4-10-seed.ps1`
 
 **Test Categories:**
 1. Deterministic UUIDs (4 tests)

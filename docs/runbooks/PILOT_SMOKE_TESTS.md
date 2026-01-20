@@ -664,7 +664,7 @@ npm run dev
 1. Check server logs for detailed error messages
 2. Review browser DevTools Network tab for failed requests
 3. Verify database state (assessments, user_profiles tables)
-4. Check implementation docs: `E6_4_3_FUNNEL_ENDPOINTS.md`
+4. Check implementation docs: `../e6/E6_4_3_FUNNEL_ENDPOINTS.md`
 
 ---
 

@@ -54,7 +54,7 @@ Successfully added 3 additional funnels to the catalog with complete stub manife
 **Files:**
 
 - `V05_I02_3_VALIDATION_EVIDENCE.md` - Detailed validation evidence
-- `EXPECTED_UI_CATALOG.txt` - Expected UI structure
+- `docs/ui/EXPECTED_UI_CATALOG.txt` - Expected UI structure
 - `tools/mockCatalogVisualization.ts` - Mock data structure
 
 ---
@@ -276,7 +276,7 @@ Each funnel endpoint will return:
 3. `docs/canon/CONTRACTS.md` (modified - added section)
 4. `lib/contracts/__tests__/newFunnels.test.ts` (new)
 5. `V05_I02_3_VALIDATION_EVIDENCE.md` (new - evidence doc)
-6. `EXPECTED_UI_CATALOG.txt` (new - UI mockup)
+6. `docs/ui/EXPECTED_UI_CATALOG.txt` (new - UI mockup)
 7. `tools/mockCatalogVisualization.ts` (new - mock data)
 
 ---

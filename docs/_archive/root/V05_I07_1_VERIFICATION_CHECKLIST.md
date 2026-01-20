@@ -122,7 +122,7 @@ npm test
 ### ✅ Full Verification (PowerShell)
 **Command:**
 ```powershell
-pwsh verify-v05-i07-1.ps1
+pwsh scripts/verify/verify-v05-i07-1.ps1
 ```
 
 **Expected Output:**

@@ -42,7 +42,7 @@ Create a comprehensive operational runbook and automated smoke tests for the pil
 
 ### 2. Automated Smoke Test Script ✅
 
-**File:** `verify-pilot-smoke.ps1` (17KB)
+**File:** `scripts/verify/verify-pilot-smoke.ps1` (17KB)
 
 **Features:**
 - Runs all 5 smoke tests automatically
@@ -58,12 +58,12 @@ Create a comprehensive operational runbook and automated smoke tests for the pil
 **Usage:**
 ```powershell
 # Option 1: With parameters
-.\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
+.\scripts\verify\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
 
 # Option 2: With environment variables
 $env:PILOT_BASE_URL = "http://localhost:3000"
 $env:PILOT_AUTH_COOKIE = "sb-localhost-auth-token=..."
-.\verify-pilot-smoke.ps1
+.\scripts\verify\verify-pilot-smoke.ps1
 ```
 
 ### 3. Runbooks Directory Index ✅
@@ -210,7 +210,7 @@ npm run build
 npm run dev
 
 # 4. Run smoke tests
-.\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
+.\scripts\verify\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
 ```
 
 ### Expected Results
@@ -265,12 +265,12 @@ All acceptance criteria from issue #548 met:
 
 1. **Pre-deployment:**
    ```powershell
-   .\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "..."
+   .\scripts\verify\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "..."
    ```
 
 2. **Post-deployment:**
    ```powershell
-   .\verify-pilot-smoke.ps1 -BaseUrl "https://staging.example.com" -Cookie "..."
+   .\scripts\verify\verify-pilot-smoke.ps1 -BaseUrl "https://staging.example.com" -Cookie "..."
    ```
 
 3. **Troubleshooting:**
@@ -283,7 +283,7 @@ All acceptance criteria from issue #548 met:
    ```bash
    npm run dev
    # In another terminal:
-   pwsh -File verify-pilot-smoke.ps1
+   pwsh -File scripts/verify/verify-pilot-smoke.ps1
    ```
 
 2. **Manual verification:**
@@ -297,7 +297,7 @@ All acceptance criteria from issue #548 met:
 ```
 docs/runbooks/PILOT_SMOKE_TESTS.md | 688 ++++++++++++++++++++++++++++
 docs/runbooks/README.md            |  45 ++
-verify-pilot-smoke.ps1             | 429 ++++++++++++++++
+scripts/verify/verify-pilot-smoke.ps1 | 429 ++++++++++++++++
 3 files changed, 1162 insertions(+)
 ```
 
@@ -318,8 +318,8 @@ verify-pilot-smoke.ps1             | 429 ++++++++++++++++
 - `E6_4_5_IMPLEMENTATION_SUMMARY.md` - Workup implementation
 - `E6_4_6_IMPLEMENTATION_SUMMARY.md` - Escalation offer implementation
 - `docs/HEALTHCHECK_QUICKSTART.md` - Health endpoint reference
-- `verify-e6-4-2-onboarding.ps1` - Onboarding verification script
-- `verify-e6-4-5-workup.ps1` - Workup verification script
+- `scripts/verify/verify-e6-4-2-onboarding.ps1` - Onboarding verification script
+- `scripts/verify/verify-e6-4-5-workup.ps1` - Workup verification script
 
 ---
 

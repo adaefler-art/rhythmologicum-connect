@@ -83,7 +83,7 @@ After the pilot, evaluable artifacts are needed. This issue focuses on auditing 
 
 ### 5. Automated Verification Script ✅
 
-**File:** `verify-pilot-exports.ps1` (12KB)
+**File:** `scripts/verify/verify-pilot-exports.ps1` (12KB)
 
 **Features:**
 - Automated testing for both export endpoints
@@ -103,10 +103,10 @@ After the pilot, evaluable artifacts are needed. This issue focuses on auditing 
 $env:PILOT_AUTH_COOKIE = "sb-localhost-auth-token=YOUR_COOKIE"
 
 # Run all tests
-.\verify-pilot-exports.ps1
+.\scripts\verify\verify-pilot-exports.ps1
 
 # With custom parameters
-.\verify-pilot-exports.ps1 -BaseUrl "http://localhost:3000" -Cookie "COOKIE" -ReportId "uuid"
+.\scripts\verify\verify-pilot-exports.ps1 -BaseUrl "http://localhost:3000" -Cookie "COOKIE" -ReportId "uuid"
 ```
 
 **Test Coverage:**
@@ -251,7 +251,7 @@ curl -X GET "http://localhost:3000/api/reports/00000000-0000-0000-0000-000000000
 ```powershell
 # Run verification script
 $env:PILOT_AUTH_COOKIE = "sb-localhost-auth-token=YOUR_COOKIE"
-.\verify-pilot-exports.ps1
+.\scripts\verify\verify-pilot-exports.ps1
 
 # Expected output:
 # ✅ Tests Passed: 9+
@@ -338,7 +338,7 @@ foreach ($patient in $patients) {
 
 ### Scripts Added
 
-1. **`/verify-pilot-exports.ps1`** (12KB)
+1. **`scripts/verify/verify-pilot-exports.ps1`** (12KB)
    - Automated verification script
    - 4 test scenarios with assertions
    - Color-coded output with detailed reporting
@@ -387,7 +387,7 @@ Potential improvements for future iterations:
 
 ✅ **One example export per patient**
 - PowerShell script provided in EXPORTS.md (Example 3)
-- Also demonstrated in verify-pilot-exports.ps1
+- Also demonstrated in scripts/verify/verify-pilot-exports.ps1
 - Can generate multiple patient exports with authentication tokens
 
 ✅ **Document: docs/pilot/EXPORTS.md**

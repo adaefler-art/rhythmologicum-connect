@@ -80,7 +80,7 @@ Successfully implemented PHI-safe triage session persistence for pilot debugging
 
 ### Documentation
 - ✅ `E6_6_6_IMPLEMENTATION_SUMMARY.md` (comprehensive guide)
-- ✅ `verify-e6-6-6-triage-sessions.ps1` (verification script)
+- ✅ `scripts/verify/verify-e6-6-6-triage-sessions.ps1` (verification script)
 
 ## 🔒 Security & Privacy
 
@@ -118,7 +118,7 @@ npm test -- lib/triage
 psql -d postgres -f test/e6-6-6-triage-sessions-rls.sql
 
 # Full verification
-pwsh verify-e6-6-6-triage-sessions.ps1
+pwsh scripts/verify/verify-e6-6-6-triage-sessions.ps1
 ```
 
 ### Production Checks

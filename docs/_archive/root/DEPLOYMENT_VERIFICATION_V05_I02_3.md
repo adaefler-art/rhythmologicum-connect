@@ -238,7 +238,7 @@ supabase db reset
 For issues or questions:
 - Check `docs/V05_I02_3_IMPLEMENTATION_SUMMARY.md` for details
 - Review `V05_I02_3_VALIDATION_EVIDENCE.md` for expected behavior
-- See `EXPECTED_UI_CATALOG.txt` for UI mockup
+- See `../ui/EXPECTED_UI_CATALOG.txt` for UI mockup
 - Run tests: `npm test newFunnels.test.ts`
 
 ---

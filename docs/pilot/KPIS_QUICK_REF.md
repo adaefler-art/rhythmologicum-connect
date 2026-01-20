@@ -140,8 +140,8 @@ Get-PilotKPIs -BaseUrl "https://your-production-domain.com"
 ## Documentation
 
 - **Full Docs**: `docs/pilot/CRITICAL_ENDPOINTS.md`
-- **Implementation**: `E6_4_9_IMPLEMENTATION_SUMMARY.md`
-- **Verification**: Run `verify-e6-4-9-pilot-kpis.ps1`
+- **Implementation**: `../e6/E6_4_9_IMPLEMENTATION_SUMMARY.md`
+- **Verification**: Run `scripts/verify/verify-e6-4-9-pilot-kpis.ps1`
 
 ---
 

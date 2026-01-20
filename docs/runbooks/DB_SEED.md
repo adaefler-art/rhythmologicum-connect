@@ -168,7 +168,7 @@ Use the automated verification script:
 npm run db:seed:verify
 ```
 
-This script (located at `verify-e6-4-10-seed.ps1`) checks:
+This script (located at `scripts/verify/verify-e6-4-10-seed.ps1`) checks:
 - Deterministic UUIDs (AC1)
 - All required data exists (AC2)
 - Proper role assignments
@@ -210,7 +210,7 @@ npm run dev
 # Total: < 5 minutes
 ```
 
-**Note:** The E6.4.2 verification script (`verify-e6-4-2-onboarding.ps1`) is a separate tool for testing the onboarding flow and is not part of this seed implementation.
+**Note:** The E6.4.2 verification script (`scripts/verify/verify-e6-4-2-onboarding.ps1`) is a separate tool for testing the onboarding flow and is not part of this seed implementation.
 
 ---
 
@@ -390,8 +390,8 @@ To add additional pilot funnels:
 
 ## Related Documentation
 
-- [E6.4.2 Implementation Summary](../../E6_4_2_IMPLEMENTATION_SUMMARY.md) - Patient onboarding happy path
-- [E6.4.1 Implementation Summary](../../E6_4_1_IMPLEMENTATION_SUMMARY.md) - Pilot eligibility gates
+- [E6.4.2 Implementation Summary](../e6/E6_4_2_IMPLEMENTATION_SUMMARY.md) - Patient onboarding happy path
+- [E6.4.1 Implementation Summary](../e6/E6_4_1_IMPLEMENTATION_SUMMARY.md) - Pilot eligibility gates
 - [Pilot Smoke Tests](./PILOT_SMOKE_TESTS.md) - Post-deployment verification
 - [Migration Sync](../../scripts/verify-migration-sync.ps1) - Schema consistency checks
 

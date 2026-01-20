@@ -223,7 +223,7 @@
 | Merged At | 2026-01-15T21:35:55Z |
 | Categories | DB, Tooling |
 | Risk Flags | ⚠️ DB schema change (seed data) |
-| Files Changed | supabase/seed.sql, verify-e6-4-10-seed.ps1, docs/runbooks/DB_SEED.md, package.json |
+| Files Changed | supabase/seed.sql, scripts/verify/verify-e6-4-10-seed.ps1, docs/runbooks/DB_SEED.md, package.json |
 | Summary | Deterministic UUIDs for pilot org, 5 test users, 2 funnels, idempotent seed |
 
 ### PR #609 — E6.4.9: Add pilot KPIs endpoint and critical endpoint tracking
@@ -259,7 +259,7 @@
 | Merged At | 2026-01-15T09:02:40Z |
 | Categories | Docs, Tooling |
 | Risk Flags | None |
-| Files Changed | docs/runbooks/PILOT_SMOKE_TESTS.md, verify-pilot-smoke.ps1 |
+| Files Changed | docs/runbooks/PILOT_SMOKE_TESTS.md, scripts/verify/verify-pilot-smoke.ps1 |
 | Summary | 5 mandatory smoke tests with PowerShell automation |
 
 ### PR #605 — E6.4.6 — Red flag escalation stub
@@ -295,7 +295,7 @@
 | Merged At | 2026-01-15T04:57:06Z |
 | Categories | UI |
 | Risk Flags | None |
-| Files Changed | app/patient/funnel/[slug]/result/client.tsx, docs/dev/E6_4_3_*.md |
+| Files Changed | app/patient/funnel/[slug]/result/client.tsx, docs/e6/E6_4_3_*.md |
 | Summary | Dashboard navigation from result, explicit /patient/dashboard return |
 
 ### PR #601 — E6.4.2 — Persistent onboarding status with dashboard landing page

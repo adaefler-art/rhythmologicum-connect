@@ -164,7 +164,7 @@ psql -d postgres -f test/e6-6-6-triage-sessions-rls.sql
 Expected: "PASS: All E6.6.6 triage_sessions RLS checks passed"
 
 ### Manual Verification
-See `verify-e6-6-6-triage-sessions.ps1` for step-by-step manual verification guide.
+See `scripts/verify/verify-e6-6-6-triage-sessions.ps1` for step-by-step manual verification guide.
 
 ## Future Enhancements (Out of Scope for v0.6)
 
@@ -208,4 +208,4 @@ See `verify-e6-6-6-triage-sessions.ps1` for step-by-step manual verification gui
 - Migration: `supabase/migrations/20260116160600_e6_6_6_create_triage_sessions.sql`
 - Code: `lib/triage/sessionStorage.ts`
 - Tests: `lib/triage/__tests__/sessionStorage.test.ts`
-- Verification: `verify-e6-6-6-triage-sessions.ps1`
+- Verification: `scripts/verify/verify-e6-6-6-triage-sessions.ps1`

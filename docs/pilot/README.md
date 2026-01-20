@@ -31,7 +31,7 @@ Comprehensive documentation for exporting patient data and reports for pilot eva
 
 ### Verification Script
 
-Located at project root: `/verify-pilot-exports.ps1`
+Located at: `scripts/verify/verify-pilot-exports.ps1`
 
 **Usage:**
 ```powershell
@@ -39,10 +39,10 @@ Located at project root: `/verify-pilot-exports.ps1`
 $env:PILOT_AUTH_COOKIE = "sb-localhost-auth-token=YOUR_COOKIE_HERE"
 
 # Run verification
-.\verify-pilot-exports.ps1
+.\scripts\verify\verify-pilot-exports.ps1
 
 # With custom parameters
-.\verify-pilot-exports.ps1 -BaseUrl "http://localhost:3000" -Cookie "YOUR_COOKIE" -ReportId "uuid-of-report"
+.\scripts\verify\verify-pilot-exports.ps1 -BaseUrl "http://localhost:3000" -Cookie "YOUR_COOKIE" -ReportId "uuid-of-report"
 ```
 
 **Tests:**

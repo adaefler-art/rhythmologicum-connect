@@ -333,7 +333,7 @@ cat docs/api/endpoint-allowlist.json | grep -E "pilot|usage"
 - **Documentation:**
   - `/docs/USAGE_TELEMETRY.md` — Usage tracking implementation
   - `/docs/pilot/EXPORTS.md` — Pilot data export guide
-  - `/E6_4_8_TELEMETRY_IMPLEMENTATION_SUMMARY.md` — Telemetry implementation
+  - `../e6/E6_4_8_TELEMETRY_IMPLEMENTATION_SUMMARY.md` — Telemetry implementation
 
 ---
 

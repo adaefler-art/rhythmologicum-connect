@@ -327,7 +327,7 @@ Total unique files: 667
 - docs/Z4_EXECUTIVE_SUMMARY_V0.3.md
 - eslint.config.mjs
 - eslint-report.json
-- EXPECTED_UI_CATALOG.txt
+- docs/ui/EXPECTED_UI_CATALOG.txt
 - IMPLEMENTATION_V05_HYGIENE_A.md
 - IMPLEMENTATION_V05_HYGIENE_B.md
 - IMPLEMENTATION_V05_P0_DEPLOY_VERIFICATION.md
@@ -673,4 +673,4 @@ Total unique files: 667
 - V05_I10_4_IMPLEMENTATION_SUMMARY.md
 - V05_I10_4_VISUAL_STRUCTURE.md
 - VERIFICATION_EVIDENCE.md
-- verify-v05-i07-1.ps1
+- scripts/verify/verify-v05-i07-1.ps1

@@ -33,8 +33,8 @@ npm run db:reset
 
 **Quick Start:**
 ```powershell
-# See root directory for the automated script
-.\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
+# See scripts/verify for the automated script
+.\scripts\verify\verify-pilot-smoke.ps1 -BaseUrl "http://localhost:3000" -Cookie "sb-localhost-auth-token=..."
 ```
 
 ---

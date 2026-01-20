@@ -283,7 +283,7 @@ All components use TypeScript strict mode:
 - [Design Tokens Documentation](../lib/design-tokens.ts)
 - [UI Component Library](../lib/ui/README.md)
 - [Clinician Dashboard Guide](../docs/_archive_0_3/Z3_CLINICIAN_DASHBOARD_GUIDE.md)
-- [v0.4 Issues](../v0_4_issues.json)
+- [v0.4 Issues](../v04/v0_4_issues.json)
 
 ## Deployment Notes
 

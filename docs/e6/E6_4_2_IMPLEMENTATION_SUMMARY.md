@@ -165,7 +165,7 @@ All states are deterministic and free from race conditions:
 ### PowerShell Verification
 ```powershell
 # Run verification script
-.\verify-e6-4-2-onboarding.ps1 `
+.\scripts\verify\verify-e6-4-2-onboarding.ps1 `
   -BaseUrl "http://localhost:3000" `
   -Cookie "sb-access-token=<your-token>"
 ```

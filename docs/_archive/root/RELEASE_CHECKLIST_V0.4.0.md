@@ -15,7 +15,7 @@
   - All v0.4 features complete and merged
   
 - [x] **All v0.4 issues closed or moved to v0.5**
-  - Review `v0_4_issues.json` - all epics marked complete
+  - Review `../v04/v0_4_issues.json` - all epics marked complete
   
 - [x] **No open TODOs/FIXMEs in v0.4 scope**
   - Found TODOs: All related to future monitoring (Sentry integration)
