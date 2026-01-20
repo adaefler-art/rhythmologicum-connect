@@ -24,11 +24,19 @@ export default function StudioLoginClient() {
   useEffect(() => {
     const checkSession = async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
 
-      if (user) {
-        router.replace('/admin')
+      if (session) {
+        const response = await fetch('/api/auth/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'SIGNED_IN', session }),
+        })
+
+        if (response.ok) {
+          router.replace('/admin')
+        }
       }
     }
 
@@ -38,11 +46,7 @@ export default function StudioLoginClient() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') return
-      await fetch('/api/auth/callback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event, session }),
-      })
+      await syncServerSession(session ?? null)
     })
 
     return () => subscription.unsubscribe()
