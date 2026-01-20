@@ -177,6 +177,12 @@
       "namedRegex": "^/patient/history(?:/)?$"
     },
     {
+      "page": "/patient/insights-v2",
+      "regex": "^/patient/insights\\-v2(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/patient/insights\\-v2(?:/)?$"
+    },
+    {
       "page": "/patient/onboarding",
       "regex": "^/patient/onboarding(?:/)?$",
       "routeKeys": {},

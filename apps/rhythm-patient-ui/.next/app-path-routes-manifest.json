@@ -21,6 +21,7 @@
   "/patient/funnels/[slug]/page": "/patient/funnels/[slug]",
   "/patient/funnels/page": "/patient/funnels",
   "/patient/history/page": "/patient/history",
+  "/patient/insights-v2/page": "/patient/insights-v2",
   "/patient/onboarding/consent/page": "/patient/onboarding/consent",
   "/patient/onboarding/page": "/patient/onboarding",
   "/patient/onboarding/profile/page": "/patient/onboarding/profile",

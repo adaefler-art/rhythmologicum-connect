@@ -21,6 +21,7 @@
   "/patient/funnels/[slug]/page": "app/patient/funnels/[slug]/page.js",
   "/patient/funnels/page": "app/patient/funnels/page.js",
   "/patient/history/page": "app/patient/history/page.js",
+  "/patient/insights-v2/page": "app/patient/insights-v2/page.js",
   "/patient/onboarding/consent/page": "app/patient/onboarding/consent/page.js",
   "/patient/onboarding/page": "app/patient/onboarding/page.js",
   "/patient/onboarding/profile/page": "app/patient/onboarding/profile/page.js",
