@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
 import {
-  getNavItemsForRole,
   hasAnyRole,
   getUserRole,
   getRoleDisplayName,
+  fetchNavItemsForRole,
+  type RoleNavItem,
 } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
@@ -55,6 +56,16 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [navItems, setNavItems] = useState<RoleNavItem[]>([])
+
+  // Helper function to fetch and update navigation items
+  const updateNavItems = async (currentUser: User) => {
+    const role = getUserRole(currentUser)
+    if (role) {
+      const items = await fetchNavItemsForRole(role, pathname)
+      setNavItems(items)
+    }
+  }
 
   useEffect(() => {
     // Check authentication on mount
@@ -99,6 +110,9 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
 
       setUser(user)
       setLoading(false)
+
+      // Fetch navigation items from database (with fallback to hardcoded)
+      await updateNavItems(user)
     }
 
     checkAuth()
@@ -138,6 +152,9 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
           }
           setUser(session.user)
           setLoading(false)
+
+          // Fetch navigation items after auth change
+          await updateNavItems(session.user)
         }
       }
     })
@@ -146,6 +163,16 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       subscription.unsubscribe()
     }
   }, [router])
+
+  const resolvedNavItems = useMemo(() => {
+    return navItems.map((item) => ({
+      ...item,
+      active:
+        pathname === item.href ||
+        (item.href !== '/clinician' && pathname?.startsWith(item.href)) ||
+        false,
+    }))
+  }, [navItems, pathname])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -165,8 +192,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
     )
   }
 
-  // Get navigation items and role display name
-  const navItems = getNavItemsForRole(user, pathname)
+  // Get role display name
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 
@@ -175,7 +201,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       appTitle="Rhythmologicum Connect"
       userEmail={user?.email}
       onSignOut={handleSignOut}
-      navItems={navItems}
+      navItems={resolvedNavItems}
     >
       {/* Role indicator */}
       <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
