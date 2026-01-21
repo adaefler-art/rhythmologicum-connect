@@ -18,9 +18,9 @@ type EndpointCatalog = {
     usedByCount: number
     usedBy: Array<{
       file: string
-      line: number
       apiPath: string
       kind: string
+      line?: number
     }>
     isOrphan: boolean
     isAllowedOrphan: boolean

@@ -5,9 +5,9 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 
 type UsedByEntry = {
   file: string
-  line: number
   apiPath: string
   kind: string
+  line?: number
 }
 
 type EndpointRow = {
@@ -245,14 +245,16 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                             Static Usages ({e.usedBy.length}):
                           </div>
                           <div className="space-y-1">
-                            {e.usedBy.map((usage) => (
+                            {e.usedBy.map((usage, index) => (
                               <div
-                                key={`${usage.file}:${usage.line}:${usage.apiPath}:${usage.kind}`}
+                                key={`${usage.file}:${usage.apiPath}:${usage.kind}:${index}`}
                                 className="flex items-start gap-2 text-xs text-slate-300 bg-slate-900 rounded px-2 py-1.5 border border-slate-700"
                               >
                                 <span className="font-mono text-blue-400">{usage.file}</span>
                                 <span className="text-slate-400">:</span>
-                                <span className="text-slate-500">L{usage.line}</span>
+                                <span className="text-slate-500">
+                                  {typeof usage.line === 'number' ? `L${usage.line}` : 'L—'}
+                                </span>
                                 <span className="text-slate-400">•</span>
                                 <span className="font-mono text-slate-300">{usage.apiPath}</span>
                                 <span className="text-slate-400">•</span>
