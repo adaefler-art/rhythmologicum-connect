@@ -9,6 +9,8 @@ import {
   hasAnyRole,
   getUserRole,
   getRoleDisplayName,
+  fetchNavItemsForRole,
+  type RoleNavItem,
 } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
@@ -55,6 +57,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [navItems, setNavItems] = useState<RoleNavItem[]>([])
 
   useEffect(() => {
     // Check authentication on mount
@@ -99,6 +102,15 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
 
       setUser(user)
       setLoading(false)
+
+      // Fetch navigation items from database (with fallback to hardcoded)
+      if (user) {
+        const role = getUserRole(user)
+        if (role) {
+          const items = await fetchNavItemsForRole(role, pathname)
+          setNavItems(items)
+        }
+      }
     }
 
     checkAuth()
@@ -138,6 +150,13 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
           }
           setUser(session.user)
           setLoading(false)
+
+          // Fetch navigation items after auth change
+          const role = getUserRole(session.user)
+          if (role) {
+            const items = await fetchNavItemsForRole(role, pathname)
+            setNavItems(items)
+          }
         }
       }
     })
@@ -146,6 +165,20 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       subscription.unsubscribe()
     }
   }, [router])
+
+  // Refetch navigation items when pathname changes
+  useEffect(() => {
+    const fetchNav = async () => {
+      if (user) {
+        const role = getUserRole(user)
+        if (role) {
+          const items = await fetchNavItemsForRole(role, pathname)
+          setNavItems(items)
+        }
+      }
+    }
+    fetchNav()
+  }, [pathname, user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -165,8 +198,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
     )
   }
 
-  // Get navigation items and role display name
-  const navItems = getNavItemsForRole(user, pathname)
+  // Get role display name
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 
