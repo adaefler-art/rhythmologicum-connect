@@ -149,7 +149,8 @@ function extractApiCallsitesFromSource(sourceText) {
   // Heuristic, deterministic, line-oriented.
   // Finds string/template literals containing '/api/' and tries to classify by nearby call patterns.
   const results = []
-  const lines = sourceText.split(/\r?\n/)
+  const normalizedSource = sourceText.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = normalizedSource.split('\n')
 
   const singleQuoteRe = /'(?:[^'\\]|\\.)*'/g
   const doubleQuoteRe = /"(?:[^"\\]|\\.)*"/g
