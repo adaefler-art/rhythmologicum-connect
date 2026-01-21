@@ -21,7 +21,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/funnels/[id] | GET, PATCH | admin |  | 7 | app/api/admin/funnels/[id]/route.ts |
 | /api/admin/kpi-thresholds | GET, POST | admin |  | 0 | app/api/admin/kpi-thresholds/route.ts |
 | /api/admin/kpi-thresholds/[id] | DELETE, PUT | admin |  | 0 | app/api/admin/kpi-thresholds/[id]/route.ts |
-| /api/admin/navigation | GET | admin |  | 0 | app/api/admin/navigation/route.ts |
+| /api/admin/navigation | GET | admin |  | 1 | app/api/admin/navigation/route.ts |
 | /api/admin/navigation/[role] | PUT | admin |  | 0 | app/api/admin/navigation/[role]/route.ts |
 | /api/admin/notification-templates | GET, POST | admin |  | 0 | app/api/admin/notification-templates/route.ts |
 | /api/admin/notification-templates/[id] | DELETE, PUT | admin |  | 0 | app/api/admin/notification-templates/[id]/route.ts |

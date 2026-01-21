@@ -437,10 +437,17 @@
       "file": "app/api/admin/navigation/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/utils/roleBasedRouting.ts",
+          "line": 315,
+          "apiPath": "/api/admin/navigation",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/admin/navigation/[role]",
