@@ -79,7 +79,7 @@ export async function loadAssessmentRun(assessmentId: string): Promise<Assessmen
   // Load all answers for this assessment
   const { data: answers, error: answersError } = await supabase
     .from('assessment_answers')
-    .select('question_id, answer_value, answer_data')
+    .select('question_id, answer_value')
     .eq('assessment_id', assessmentId)
 
   if (answersError) {
@@ -89,12 +89,7 @@ export async function loadAssessmentRun(assessmentId: string): Promise<Assessmen
   // Map answers by question ID
   const answersByQuestionId: Record<string, Json> = {}
   answers?.forEach((answer) => {
-    // Prefer answer_data (JSONB) if available, fallback to answer_value (integer)
-    if (answer.answer_data !== null && answer.answer_data !== undefined) {
-      answersByQuestionId[answer.question_id] = answer.answer_data
-    } else {
-      answersByQuestionId[answer.question_id] = answer.answer_value
-    }
+    answersByQuestionId[answer.question_id] = answer.answer_value
   })
 
   // Determine step index

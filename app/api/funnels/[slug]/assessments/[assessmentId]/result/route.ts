@@ -143,7 +143,7 @@ export async function GET(
 
     const { data: answers, error: answersError } = await supabase
       .from('assessment_answers')
-      .select('question_id, answer_value, answer_data')
+      .select('question_id, answer_value')
       .eq('assessment_id', assessmentId)
 
     if (answersError) {
@@ -153,29 +153,10 @@ export async function GET(
       )
     }
 
-    const answersEcho = (answers || [])
-      .map((row) => {
-        const rawValue = row.answer_data ?? row.answer_value
-
-        if (typeof rawValue === 'string' || typeof rawValue === 'number' || typeof rawValue === 'boolean') {
-          return {
-            questionId: row.question_id,
-            value: rawValue,
-          }
-        }
-
-        if (rawValue !== null && rawValue !== undefined) {
-          return {
-            questionId: row.question_id,
-            value: JSON.stringify(rawValue),
-          }
-        }
-
-        return null
-      })
-      .filter(
-        (row): row is { questionId: string; value: string | number | boolean } => row !== null,
-      )
+    const answersEcho = (answers || []).map((row) => ({
+      questionId: row.question_id,
+      value: row.answer_value,
+    }))
 
     const ageAnswer = answersEcho.find((row) => row.questionId === 'q1-age')
     const cardiovascularAgeYears =
