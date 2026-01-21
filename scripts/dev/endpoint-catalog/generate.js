@@ -5,6 +5,7 @@
 const fs = require('fs')
 const fsp = require('fs/promises')
 const path = require('path')
+const childProcess = require('child_process')
 
 const {
   routeFilePathToApiPath,
@@ -17,6 +18,23 @@ const {
 } = require('./core')
 
 const { cmpStr, cmpTuple } = require('./sort-utils')
+
+function toGitPath(p) {
+  return String(p).replace(/\\/g, '/')
+}
+
+async function readSourceFile(repoRoot, absPath) {
+  const relPath = toGitPath(path.relative(repoRoot, absPath))
+  try {
+    const out = childProcess.execSync(`git show HEAD:${relPath}`, {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    return out.toString('utf8')
+  } catch {
+    return fsp.readFile(absPath, 'utf8')
+  }
+}
 
 function parseArgs(argv) {
   const args = {
@@ -147,7 +165,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   const endpoints = []
 
   for (const rf of routeFiles) {
-    const source = await fsp.readFile(rf, 'utf8')
+    const source = await readSourceFile(repoRoot, rf)
     const apiPath = routeFilePathToApiPath(repoRoot, rf)
     endpoints.push({
       path: apiPath,
@@ -174,7 +192,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
       .sort(cmpStr)
 
     for (const f of files) {
-      const source = await fsp.readFile(f, 'utf8')
+      const source = await readSourceFile(repoRoot, f)
       const found = extractApiCallsitesFromSource(source)
       if (!found.length) continue
 
