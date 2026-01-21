@@ -180,6 +180,7 @@ describe('I71.4: Assessment Save/Resume Integration', () => {
       expect(response.status).toBe(200)
       expect(responseData.success).toBe(true)
       expect(responseData.data.id).toBe('cached-answer-123')
+      expect(response.headers.get('X-Idempotency-Cached')).toBe('true')
     })
   })
 

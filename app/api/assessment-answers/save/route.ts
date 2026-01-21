@@ -160,11 +160,18 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
       if (existingMutation) {
-        // Already processed - return cached response
+        // Already processed - return cached response with header
         const cachedResponse = existingMutation.response_body
         if (cachedResponse?.success && cachedResponse?.data) {
           console.log('[assessment-answers/save] Returning cached response for clientMutationId:', clientMutationId)
-          return successResponse(cachedResponse.data, 200)
+          
+          return new Response(JSON.stringify(cachedResponse), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Idempotency-Cached': 'true',
+            },
+          })
         }
       }
     }
