@@ -6,11 +6,13 @@ export type SaveAnswerOptions = {
   assessmentId: string
   questionId: string
   answerValue: number
+  clientMutationId?: string
 }
 
 export type SaveAnswerResult = {
   success: boolean
   error?: string
+  cached?: boolean
 }
 
 export type UseAssessmentAnswerReturn = {
@@ -31,6 +33,7 @@ export type UseAssessmentAnswerReturn = {
  * - Clear save states (idle, saving, saved, error)
  * - Retry mechanism for failed saves
  * - User-friendly error messages
+ * - I71.4: Idempotent saves using clientMutationId (double-tap prevention)
  * 
  * @example
  * ```tsx
@@ -60,12 +63,18 @@ export function useAssessmentAnswer(): UseAssessmentAnswerReturn {
     lastSaveOptions.current = options
 
     try {
+      // I71.4: Generate clientMutationId if not provided
+      const mutationId = options.clientMutationId || generateMutationId()
+
       const response = await fetch('/api/assessment-answers/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(options),
+        body: JSON.stringify({
+          ...options,
+          clientMutationId: mutationId,
+        }),
       })
 
       const result = await response.json()
@@ -85,7 +94,10 @@ export function useAssessmentAnswer(): UseAssessmentAnswerReturn {
         setSaveState('idle')
       }, 1500)
 
-      return { success: true }
+      return { 
+        success: true,
+        cached: response.headers.get('X-Idempotency-Cached') === 'true'
+      }
     } catch (error) {
       console.error('Network error saving answer:', error)
       const errorMessage = 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung.'
@@ -127,4 +139,17 @@ export function useAssessmentAnswer(): UseAssessmentAnswerReturn {
     lastError,
     retry,
   }
+}
+
+/**
+ * I71.4: Generate a unique mutation ID for idempotency
+ * Uses browser crypto API if available, fallback to timestamp-based ID
+ */
+function generateMutationId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  
+  // Fallback for environments without crypto.randomUUID
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
