@@ -44,7 +44,7 @@ export default function EscalationPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="w-full p-6">
       {/* Back Navigation - E6.5.8: Navigate to dashboard instead of browser history */}
       <Button
         variant="ghost"

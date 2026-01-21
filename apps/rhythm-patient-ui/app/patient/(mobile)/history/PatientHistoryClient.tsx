@@ -221,7 +221,7 @@ export default function PatientHistoryClient() {
   // Render states
   if (state.status === 'loading' || state.status === 'idle') {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+      <div className="flex w-full flex-col gap-6 px-4 py-10">
         <section>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
             Ihr Verlauf
@@ -245,7 +245,7 @@ export default function PatientHistoryClient() {
 
   if (state.status === 'error') {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+      <div className="flex w-full flex-col gap-6 px-4 py-10">
         {/* E6.5.8: Back to Dashboard button in error state */}
         <button
           type="button"
@@ -304,7 +304,7 @@ export default function PatientHistoryClient() {
 
   if (measures.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+      <div className="flex w-full flex-col gap-6 px-4 py-10">
         {/* E6.5.8: Back to Dashboard button in empty state */}
         <button
           type="button"
@@ -338,7 +338,7 @@ export default function PatientHistoryClient() {
         </section>
 
         <section className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto max-w-md">
+          <div className="w-full">
             <p className="text-4xl mb-4" aria-label="Verlaufsdiagramm-Symbol">📊</p>
             <h2 className="text-lg font-semibold text-slate-900">
               Noch keine Messungen vorhanden
@@ -371,7 +371,7 @@ export default function PatientHistoryClient() {
     latestMeasurement?.report?.sleep_score ?? latestMeasurement?.sleep_score ?? null
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
+    <div className="flex w-full flex-col gap-6 px-4 py-10">
       {/* Header */}
       <section>
         <div className="flex flex-col gap-3">
