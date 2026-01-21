@@ -84,27 +84,25 @@ function parseArgs(argv) {
   return args
 }
 
-async function listFilesRec(rootDir) {
-  const out = []
-  async function walk(dir) {
-    const entries = await fsp.readdir(dir, { withFileTypes: true })
-    entries.sort((a, b) => cmpStr(a.name, b.name))
-    for (const e of entries) {
-      const full = path.join(dir, e.name)
-      if (e.isDirectory()) {
-        if (e.name === 'node_modules' || e.name === '.next' || e.name === '.git') continue
-        await walk(full)
-      } else {
-        out.push(full)
-      }
-    }
-  }
-  await walk(rootDir)
-  return out
+function splitNullSeparated(buffer) {
+  return buffer
+    .toString('utf8')
+    .split('\0')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
-async function findRouteFiles(appApiDir) {
-  const files = await listFilesRec(appApiDir)
+function listTrackedFiles(repoRoot, relRoots) {
+  const args = relRoots.map((r) => `"${r}"`).join(' ')
+  const out = childProcess.execSync(`git ls-files -z -- ${args}`, {
+    cwd: repoRoot,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  return splitNullSeparated(out).map((p) => path.join(repoRoot, p))
+}
+
+function findRouteFiles(repoRoot) {
+  const files = listTrackedFiles(repoRoot, ['app/api'])
   return files
     .filter((f) => f.endsWith(`${path.sep}route.ts`))
     .sort(cmpStr)
@@ -161,7 +159,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 
   const allowlist = await readAllowlist(allowlistPath)
 
-  const routeFiles = await findRouteFiles(appApiDir)
+  const routeFiles = findRouteFiles(repoRoot)
   const endpoints = []
 
   for (const rf of routeFiles) {
@@ -181,31 +179,27 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 
   // Scan callsites in app/** and lib/**
   const callsites = []
-  const scanRoots = [path.join(repoRoot, 'app'), path.join(repoRoot, 'lib')]
+  const scanRoots = ['app', 'lib']
   const allowedExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'])
 
-  for (const root of scanRoots) {
-    if (!fs.existsSync(root)) continue
-    const all = await listFilesRec(root)
-    const files = all
-      .filter((f) => allowedExt.has(path.extname(f)))
-      .sort(cmpStr)
+  const trackedFiles = listTrackedFiles(repoRoot, scanRoots)
+    .filter((f) => allowedExt.has(path.extname(f)))
+    .sort(cmpStr)
 
-    for (const f of files) {
-      const source = await readSourceFile(repoRoot, f)
-      const found = extractApiCallsitesFromSource(source)
-      if (!found.length) continue
+  for (const f of trackedFiles) {
+    const source = await readSourceFile(repoRoot, f)
+    const found = extractApiCallsitesFromSource(source)
+    if (!found.length) continue
 
-      for (const cs of found) {
-        callsites.push({
-          apiPath: cs.apiPath,
-          isTemplate: cs.isTemplate,
-          kind: cs.kind,
-          file: normalizeRepoRelative(path.relative(repoRoot, f)),
-          line: cs.line,
-          raw: cs.raw,
-        })
-      }
+    for (const cs of found) {
+      callsites.push({
+        apiPath: cs.apiPath,
+        isTemplate: cs.isTemplate,
+        kind: cs.kind,
+        file: normalizeRepoRelative(path.relative(repoRoot, f)),
+        line: cs.line,
+        raw: cs.raw,
+      })
     }
   }
 
