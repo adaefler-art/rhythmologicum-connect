@@ -11,7 +11,6 @@ import {
   LogOut,
   User
 } from 'lucide-react'
-import { ThemeToggle } from './ThemeToggle'
 import { layout } from '@/lib/design-tokens'
 
 export interface NavItem {
@@ -124,7 +123,7 @@ export function DesktopLayout({
           </button>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - Scrollable with flex-1 */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-2">
             {processedNavItems.map((item) => (
@@ -158,7 +157,7 @@ export function DesktopLayout({
           </ul>
         </nav>
 
-        {/* User Section */}
+        {/* User Section - Always visible at bottom */}
         {userEmail && (
           <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
             <div
@@ -178,11 +177,6 @@ export function DesktopLayout({
                 </div>
               )}
             </div>
-            {!sidebarCollapsed && (
-              <div className="flex items-center gap-2">
-                <ThemeToggle size="sm" showLabel />
-              </div>
-            )}
             {onSignOut && !sidebarCollapsed && (
               <button
                 onClick={onSignOut}
@@ -192,10 +186,15 @@ export function DesktopLayout({
                 <span>Abmelden</span>
               </button>
             )}
-            {sidebarCollapsed && (
-              <div className="flex justify-center">
-                <ThemeToggle size="sm" />
-              </div>
+            {onSignOut && sidebarCollapsed && (
+              <button
+                onClick={onSignOut}
+                className="w-full flex items-center justify-center p-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Abmelden"
+                title="Abmelden"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             )}
           </div>
         )}
