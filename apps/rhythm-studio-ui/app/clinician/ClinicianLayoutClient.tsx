@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
@@ -164,13 +164,15 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
     }
   }, [router])
 
-  // Update navigation items when pathname changes
-  // This ensures active states are updated when navigating
-  useEffect(() => {
-    if (user) {
-      updateNavItems(user)
-    }
-  }, [pathname, user])
+  const resolvedNavItems = useMemo(() => {
+    return navItems.map((item) => ({
+      ...item,
+      active:
+        pathname === item.href ||
+        (item.href !== '/clinician' && pathname?.startsWith(item.href)) ||
+        false,
+    }))
+  }, [navItems, pathname])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -199,7 +201,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       appTitle="Rhythmologicum Connect"
       userEmail={user?.email}
       onSignOut={handleSignOut}
-      navItems={navItems}
+      navItems={resolvedNavItems}
     >
       {/* Role indicator */}
       <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
