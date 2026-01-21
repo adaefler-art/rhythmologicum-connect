@@ -23,6 +23,8 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
+      - name: Verify UI v2 Architecture
+        run: npm run verify:ui-v2
       - name: Build Patient UI
         run: npm run build:patient
       - name: Test Core Contracts

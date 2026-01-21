@@ -10,7 +10,7 @@ import {
   NextStepCard,
   ContentTilesGrid,
   ProgressSummary,
-} from './components'
+} from '../components'
 import { useDashboardData } from '@/lib/hooks/useDashboardData'
 import { useAppFocus } from '@/lib/hooks/useAppFocus'
 
