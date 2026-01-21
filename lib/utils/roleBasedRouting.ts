@@ -308,12 +308,25 @@ export async function fetchNavItemsForRole(
   pathname: string,
 ): Promise<RoleNavItem[]> {
   try {
-    // Fetch navigation config from API
-    const response = await fetch('/api/admin/navigation')
+    // Fetch navigation config from API with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout
     
+    const response = await fetch('/api/admin/navigation', {
+      signal: controller.signal,
+    })
+    
+    clearTimeout(timeoutId)
+
     if (!response.ok) {
-      // Fallback to hardcoded navigation on error
-      console.warn('Navigation config API failed, using fallback')
+      // Log specific error for debugging
+      if (response.status === 503) {
+        console.warn('Navigation config schema not ready (503), using fallback')
+      } else if (response.status >= 500) {
+        console.warn(`Navigation config server error (${response.status}), using fallback`)
+      } else {
+        console.warn(`Navigation config failed (${response.status}), using fallback`)
+      }
       return getFallbackNavItems(role, pathname)
     }
 
@@ -357,7 +370,11 @@ export async function fetchNavItemsForRole(
     // Otherwise fallback to hardcoded
     return getFallbackNavItems(role, pathname)
   } catch (error) {
-    console.warn('Error fetching navigation config:', error)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('Navigation config request timed out, using fallback')
+    } else {
+      console.warn('Error fetching navigation config:', error)
+    }
     return getFallbackNavItems(role, pathname)
   }
 }
