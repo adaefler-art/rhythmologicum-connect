@@ -4,7 +4,7 @@ const { cmpStr } = require('./sort-utils')
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
 
 function normalizeLineEndings(text) {
-  return String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  return String(text).replace(/\r\n/g, '\n')
 }
 
 function normalizeSlashes(p) {
