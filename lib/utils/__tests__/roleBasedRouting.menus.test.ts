@@ -219,14 +219,16 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
 
     it('getClinicianNavItems should return clinician items', () => {
       const items = getClinicianNavItems('/clinician')
-      expect(items).toHaveLength(6)
+      expect(items).toHaveLength(7)
       expect(items[0].href).toBe('/clinician')
+      expect(items[6].href).toBe('/admin/navigation')
     })
 
     it('getAdminNavItems should return admin items', () => {
       const items = getAdminNavItems('/admin/content')
-      expect(items).toHaveLength(7)
-      expect(items[6].href).toBe('/admin/dev/endpoints')
+      expect(items).toHaveLength(8)
+      expect(items[6].href).toBe('/admin/navigation')
+      expect(items[7].href).toBe('/admin/dev/endpoints')
     })
 
     it('getNurseNavItems should return nurse items', () => {
