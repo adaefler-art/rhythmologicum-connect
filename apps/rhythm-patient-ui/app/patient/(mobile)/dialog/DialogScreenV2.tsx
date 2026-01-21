@@ -2,8 +2,8 @@ import Link from 'next/link'
 
 export function DialogScreenV2() {
   return (
-    <div className="px-4 pb-8 pt-5 sm:px-6">
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="w-full px-4 pb-8 pt-5 sm:px-6">
+      <div className="w-full flex flex-col gap-6">
         <header className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-sky-600 dark:text-sky-400">
             Dialog &amp; Beratung

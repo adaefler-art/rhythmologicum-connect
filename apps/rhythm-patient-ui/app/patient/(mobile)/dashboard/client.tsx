@@ -128,7 +128,7 @@ export default function DashboardClient() {
         className="flex-1 overflow-y-auto px-4 pt-4 sm:pt-6"
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="w-full max-w-4xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           {/* E6.5.9: Loading state - show spinner only on initial load */}
           {state === 'loading' && !dashboardData && (
             <div className="py-12">
