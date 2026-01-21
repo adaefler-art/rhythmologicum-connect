@@ -182,7 +182,7 @@ describe('E6.2.2: Standardized API Response Helpers', () => {
     it('should create assessment completed response', async () => {
       const response = assessmentCompletedResponse()
       
-      expect(response.status).toBe(400)
+      expect(response.status).toBe(409)
       const body = await getResponseBody(response)
       expect(body.error.code).toBe('ASSESSMENT_COMPLETED')
     })

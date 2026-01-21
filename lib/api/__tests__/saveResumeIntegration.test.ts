@@ -154,6 +154,32 @@ describe('I71.4: Assessment Save/Resume Integration', () => {
           }
         }
 
+        if (table === 'patient_profiles') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { id: mockPatientId, user_id: mockUserId },
+              error: null,
+            }),
+          }
+        }
+
+        if (table === 'assessments') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: {
+                id: mockAssessmentId,
+                patient_id: mockPatientId,
+                status: 'in_progress',
+              },
+              error: null,
+            }),
+          }
+        }
+
         return {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),
