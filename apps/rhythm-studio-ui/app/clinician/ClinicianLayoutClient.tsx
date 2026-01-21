@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
 import {
-  getNavItemsForRole,
   hasAnyRole,
   getUserRole,
   getRoleDisplayName,
@@ -59,6 +58,15 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
   const [loading, setLoading] = useState(true)
   const [navItems, setNavItems] = useState<RoleNavItem[]>([])
 
+  // Helper function to fetch and update navigation items
+  const updateNavItems = async (currentUser: User) => {
+    const role = getUserRole(currentUser)
+    if (role) {
+      const items = await fetchNavItemsForRole(role, pathname)
+      setNavItems(items)
+    }
+  }
+
   useEffect(() => {
     // Check authentication on mount
     const checkAuth = async () => {
@@ -104,13 +112,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       setLoading(false)
 
       // Fetch navigation items from database (with fallback to hardcoded)
-      if (user) {
-        const role = getUserRole(user)
-        if (role) {
-          const items = await fetchNavItemsForRole(role, pathname)
-          setNavItems(items)
-        }
-      }
+      await updateNavItems(user)
     }
 
     checkAuth()
@@ -152,11 +154,7 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
           setLoading(false)
 
           // Fetch navigation items after auth change
-          const role = getUserRole(session.user)
-          if (role) {
-            const items = await fetchNavItemsForRole(role, pathname)
-            setNavItems(items)
-          }
+          await updateNavItems(session.user)
         }
       }
     })
@@ -166,18 +164,12 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
     }
   }, [router])
 
-  // Refetch navigation items when pathname changes
+  // Update navigation items when pathname changes
+  // This ensures active states are updated when navigating
   useEffect(() => {
-    const fetchNav = async () => {
-      if (user) {
-        const role = getUserRole(user)
-        if (role) {
-          const items = await fetchNavItemsForRole(role, pathname)
-          setNavItems(items)
-        }
-      }
+    if (user) {
+      updateNavItems(user)
     }
-    fetchNav()
   }, [pathname, user])
 
   const handleSignOut = async () => {
