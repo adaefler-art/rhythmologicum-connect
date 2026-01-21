@@ -51,32 +51,32 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* AC3: Back navigation to dashboard */}
         <button
           onClick={handleBackToDashboard}
-          className="mb-6 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+          className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Zurück zum Dashboard</span>
         </button>
 
         {/* Content page header */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">
             {contentPage.title}
           </h1>
 
           {contentPage.excerpt && (
-            <p className="text-lg text-slate-600 dark:text-slate-400 mb-6">
+            <p className="text-lg text-slate-600 mb-6">
               {contentPage.excerpt}
             </p>
           )}
 
           {/* Safe markdown rendering - XSS protected */}
           {/* Uses react-markdown with skipHtml: true to prevent XSS */}
-          <div className="prose prose-slate dark:prose-invert max-w-none">
+          <div className="prose prose-slate max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               skipHtml={true}

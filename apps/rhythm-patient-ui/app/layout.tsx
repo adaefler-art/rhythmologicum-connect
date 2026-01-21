@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 import { DesignTokensProvider } from '@/lib/contexts/DesignTokensContext'
+import { LightOnlyThemeProvider } from './LightOnlyThemeProvider'
 
 export const metadata: Metadata = {
   title: 'Rhythmologicum Connect',
@@ -20,24 +20,21 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" suppressHydrationWarning className="light">
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 try {
-                  const stored = localStorage.getItem('theme');
-                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  const theme = stored || (prefersDark ? 'dark' : 'light');
+                  // Mobile v2 is light-only for stability/testability
+                  // Clear any persisted theme values
+                  localStorage.removeItem('theme');
+                  localStorage.removeItem('theme-accent');
                   
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.classList.remove('light');
-                  } else {
-                    document.documentElement.classList.add('light');
-                    document.documentElement.classList.remove('dark');
-                  }
+                  // Force light mode
+                  document.documentElement.classList.add('light');
+                  document.documentElement.classList.remove('dark');
                 } catch (e) {}
               })();
             `,
@@ -46,7 +43,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <DesignTokensProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <LightOnlyThemeProvider>{children}</LightOnlyThemeProvider>
         </DesignTokensProvider>
       </body>
     </html>

@@ -73,9 +73,9 @@ const getQuickFillButtonStyles = (color: 'green' | 'amber' | 'red'): string => {
   const baseStyles = 'px-3 py-2 text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   
   const colorStyles = {
-    green: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50',
-    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50',
-    red: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50',
+    green: 'bg-green-100 text-green-800 hover:bg-green-200',
+    amber: 'bg-amber-100 text-amber-800 hover:bg-amber-200',
+    red: 'bg-red-100 text-red-800 hover:bg-red-200',
   }
   
   return `${baseStyles} ${colorStyles[color]}`
@@ -223,10 +223,10 @@ export function AMYComposer() {
             </span>
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">
               AMY - Ihr persönlicher Assistent
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600">
               Beschreiben Sie Ihr Anliegen in 1–2 Sätzen
             </p>
           </div>
@@ -241,20 +241,20 @@ export function AMYComposer() {
 
         {/* E6.6.9: Dev Harness - Quick-fill test inputs (AC2: dev-only) */}
         {isDevHarnessEnabled() && (
-          <div className="border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-lg p-4 bg-purple-50 dark:bg-purple-950/20">
+          <div className="border-2 border-dashed border-purple-300 rounded-lg p-4 bg-purple-50">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg" role="img" aria-label="Developer">
                   👨‍💻
                 </span>
-                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-300">
+                <h4 className="text-sm font-semibold text-purple-900">
                   Dev Harness - Test Inputs
                 </h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDevHarness(!showDevHarness)}
-                className="text-xs px-2 py-1 rounded bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-300 hover:bg-purple-300 dark:hover:bg-purple-700 transition-colors"
+                className="text-xs px-2 py-1 rounded bg-purple-200 text-purple-900 hover:bg-purple-300 transition-colors"
               >
                 {showDevHarness ? 'Hide' : 'Show'}
               </button>
@@ -262,7 +262,7 @@ export function AMYComposer() {
             
             {showDevHarness && (
               <div className="space-y-2">
-                <p className="text-xs text-purple-700 dark:text-purple-400 mb-2">
+                <p className="text-xs text-purple-700 mb-2">
                   Deterministic test inputs for all router paths (INFO/ASSESSMENT/ESCALATE)
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -278,7 +278,7 @@ export function AMYComposer() {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                <p className="text-xs text-purple-600 mt-2">
                   ⚠️ Dev-only feature. Hidden in production.
                 </p>
               </div>
@@ -297,7 +297,7 @@ export function AMYComposer() {
                   type="button"
                   onClick={() => handleChipClick(chip)}
                   disabled={state === 'loading'}
-                  className="px-3 py-1.5 text-sm rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {chip}
                 </button>
@@ -327,16 +327,16 @@ export function AMYComposer() {
                 <span
                   className={`${
                     isOverLimit
-                      ? 'text-red-600 dark:text-red-400 font-medium'
+                      ? 'text-red-600 font-medium'
                       : isNearLimit
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-slate-500 dark:text-slate-400'
+                        ? 'text-amber-600'
+                        : 'text-slate-500'
                   }`}
                 >
                   {charCount} / {MAX_LENGTH} Zeichen
                 </span>
                 {concern.trim().length < 10 && concern.trim().length > 0 && (
-                  <span className="text-slate-500 dark:text-slate-400 text-xs">
+                  <span className="text-slate-500 text-xs">
                     Mindestens 10 Zeichen erforderlich
                   </span>
                 )}
@@ -371,10 +371,10 @@ export function AMYComposer() {
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                   result.tier === 'ESCALATE'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                    ? 'bg-red-100 text-red-800'
                     : result.tier === 'ASSESSMENT'
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                      : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-green-100 text-green-800'
                 }`}
               >
                 {result.tier === 'ESCALATE'
@@ -386,8 +386,8 @@ export function AMYComposer() {
             </div>
 
             {/* Rationale - E6.6.5: Show rationale from v1 result */}
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="prose prose-sm max-w-none">
+              <p className="text-slate-700 leading-relaxed">
                 {result.rationale}
               </p>
             </div>

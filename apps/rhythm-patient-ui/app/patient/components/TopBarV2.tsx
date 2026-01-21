@@ -67,7 +67,7 @@ export function TopBarV2({
 
   return (
     <header
-      className="md:hidden fixed inset-x-0 top-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 transition-colors duration-150"
+      className="md:hidden fixed inset-x-0 top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 transition-colors duration-150"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
@@ -78,7 +78,7 @@ export function TopBarV2({
           {variant === 'tab' && (
             <button
               onClick={onBurgerClick}
-              className="p-2 -ml-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Menu"
             >
               <svg
@@ -100,7 +100,7 @@ export function TopBarV2({
           {(variant === 'flow' || variant === 'result') && (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Zurück"
             >
               <svg
@@ -120,7 +120,7 @@ export function TopBarV2({
           )}
 
           {/* Title */}
-          <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+          <h1 className="text-base font-semibold text-slate-900 truncate">
             {title}
           </h1>
         </div>
@@ -129,7 +129,7 @@ export function TopBarV2({
         <div className="flex items-center gap-2">
           {variant === 'tab' && showBell && (
             <button
-              className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors relative"
+              className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"
               aria-label="Benachrichtigungen"
             >
               <svg
@@ -151,7 +151,7 @@ export function TopBarV2({
           )}
 
           {variant === 'tab' && showAvatar && (
-            <div className="w-8 h-8 rounded-full bg-sky-100 dark:bg-sky-900 flex items-center justify-center text-sky-700 dark:text-sky-300 text-sm font-semibold">
+            <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-700 text-sm font-semibold">
               P
             </div>
           )}
@@ -159,7 +159,7 @@ export function TopBarV2({
           {variant === 'flow' && (
             <button
               onClick={handleClose}
-              className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Schließen"
             >
               <svg
@@ -181,7 +181,7 @@ export function TopBarV2({
           {variant === 'result' && onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Mehr"
             >
               <svg

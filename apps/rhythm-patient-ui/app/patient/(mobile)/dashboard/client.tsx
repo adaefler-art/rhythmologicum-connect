@@ -116,7 +116,7 @@ export default function DashboardClient() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 transition-colors duration-150">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
       <MobileHeader
         variant="with-title"
         title="Dashboard"

@@ -103,7 +103,7 @@ export default function FunnelCatalogClient() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 transition-colors duration-150">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
       <MobileHeader
         variant="with-title"
         title="Funnel Katalog"
@@ -119,7 +119,7 @@ export default function FunnelCatalogClient() {
           <div className="flex-1 min-w-0 space-y-6">
             <div className="space-y-2">
               <h1
-                className="font-bold leading-tight text-slate-900 dark:text-slate-100"
+                className="font-bold leading-tight text-slate-900"
                 style={{
                   fontSize: typography.fontSize['2xl'],
                   lineHeight: typography.lineHeight.tight,
@@ -127,7 +127,7 @@ export default function FunnelCatalogClient() {
               >
                 Verfügbare Assessments
               </h1>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-600">
                 Wählen Sie ein Assessment aus, um zu starten
               </p>
             </div>
@@ -151,11 +151,11 @@ export default function FunnelCatalogClient() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">{getPillarIcon(pillarData.pillar.key)}</span>
                         <div className="flex-1 text-left">
-                          <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                          <h2 className="font-semibold text-slate-900">
                             {pillarData.pillar.title}
                           </h2>
                           {pillarData.pillar.description && (
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                            <p className="text-sm text-slate-600">
                               {pillarData.pillar.description}
                             </p>
                           )}
@@ -206,7 +206,7 @@ export default function FunnelCatalogClient() {
                     {/* Empty state for pillar */}
                     {expandedPillars.has(pillarData.pillar.id) &&
                       pillarData.funnels.length === 0 && (
-                        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                        <div className="text-center py-8 text-slate-500">
                           Keine Assessments in dieser Kategorie verfügbar
                         </div>
                       )}
@@ -216,7 +216,7 @@ export default function FunnelCatalogClient() {
                 {/* Uncategorized funnels */}
                 {catalog.uncategorized_funnels.length > 0 && (
                   <div className="space-y-3">
-                    <h2 className="font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 className="font-semibold text-slate-900">
                       Weitere Assessments
                     </h2>
                     <div className="grid gap-4 md:grid-cols-2">
@@ -246,7 +246,7 @@ export default function FunnelCatalogClient() {
                 {/* Empty state - no funnels at all */}
                 {catalog.pillars.length === 0 && catalog.uncategorized_funnels.length === 0 && (
                   <div className="text-center py-12">
-                    <p className="text-slate-500 dark:text-slate-400">
+                    <p className="text-slate-500">
                       Derzeit sind keine Assessments verfügbar
                     </p>
                   </div>

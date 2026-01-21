@@ -26,20 +26,20 @@ export function WorkupStatusCard({ status, missingDataFields = [] }: WorkupStatu
         title: 'Weitere Angaben erforderlich',
         description:
           'Um Ihre Betreuung optimal zu gestalten, benötigen wir noch einige zusätzliche Informationen.',
-        bgColor: 'from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20',
-        borderColor: 'border-amber-200 dark:border-amber-800',
+        bgColor: 'from-amber-50 to-orange-50',
+        borderColor: 'border-amber-200',
         statusLabel: 'Daten ergänzen',
-        statusColor: 'text-amber-700 dark:text-amber-400',
+        statusColor: 'text-amber-700',
       }
     : {
         icon: '✅',
         title: 'Assessment vollständig',
         description:
           'Ihre Angaben sind vollständig und werden für die weitere Betreuung verwendet.',
-        bgColor: 'from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20',
-        borderColor: 'border-emerald-200 dark:border-emerald-800',
+        bgColor: 'from-emerald-50 to-green-50',
+        borderColor: 'border-emerald-200',
         statusLabel: 'Bereit zur Auswertung',
-        statusColor: 'text-emerald-700 dark:text-emerald-400',
+        statusColor: 'text-emerald-700',
       }
 
   return (
@@ -56,18 +56,18 @@ export function WorkupStatusCard({ status, missingDataFields = [] }: WorkupStatu
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3
-              className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100"
+              className="text-lg sm:text-xl font-bold text-slate-900"
               style={{ lineHeight: typography.lineHeight.tight }}
             >
               {statusConfig.title}
             </h3>
             <span
-              className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${statusConfig.statusColor} bg-white dark:bg-slate-800`}
+              className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full ${statusConfig.statusColor} bg-white`}
             >
               {statusConfig.statusLabel}
             </span>
           </div>
-          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
+          <p className="text-sm sm:text-base text-slate-700">
             {statusConfig.description}
           </p>
         </div>
@@ -75,17 +75,17 @@ export function WorkupStatusCard({ status, missingDataFields = [] }: WorkupStatu
 
       {/* Missing Data List */}
       {isNeedsMoreData && missingDataFields.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-amber-200 dark:border-amber-800">
-          <h4 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+        <div className="mt-4 pt-4 border-t border-amber-200">
+          <h4 className="text-sm sm:text-base font-semibold text-slate-900 mb-2">
             Fehlende Informationen:
           </h4>
           <ul className="space-y-1">
             {missingDataFields.map((field, index) => (
               <li
                 key={index}
-                className="text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                className="text-sm text-slate-700 flex items-center gap-2"
               >
-                <span className="text-amber-600 dark:text-amber-400">•</span>
+                <span className="text-amber-600">•</span>
                 <span>{formatFieldName(field)}</span>
               </li>
             ))}
