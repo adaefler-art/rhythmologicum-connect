@@ -12,7 +12,8 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import type { Json, SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Json } from '@/lib/types/supabase'
 
 /**
  * Assessment run state for resume functionality
