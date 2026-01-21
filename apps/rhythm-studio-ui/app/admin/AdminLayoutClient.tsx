@@ -5,10 +5,12 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { DesktopLayout } from '@/lib/ui'
 import {
-  getNavItemsForRole,
   hasAnyRole,
   getUserRole,
   getRoleDisplayName,
+  fetchNavItemsForRole,
+  type RoleNavItem,
+  type UserRole,
 } from '@/lib/utils/roleBasedRouting'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
@@ -55,6 +57,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [navItems, setNavItems] = useState<RoleNavItem[]>([])
 
   useEffect(() => {
     // Check authentication on mount
@@ -94,6 +97,14 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
       }
 
       setUser(user)
+      
+      // Fetch navigation items from DB
+      const role = getUserRole(user)
+      if (role) {
+        const items = await fetchNavItemsForRole(role, pathname)
+        setNavItems(items)
+      }
+      
       setLoading(false)
     }
 
@@ -129,6 +140,14 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
             }
           }
           setUser(session.user)
+          
+          // Refresh navigation items
+          const role = getUserRole(session.user)
+          if (role) {
+            const items = await fetchNavItemsForRole(role, pathname)
+            setNavItems(items)
+          }
+          
           setLoading(false)
         }
       }
@@ -137,7 +156,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
     return () => {
       subscription.unsubscribe()
     }
-  }, [router])
+  }, [router, pathname])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -157,8 +176,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
     )
   }
 
-  // Get navigation items and role display name
-  const navItems = getNavItemsForRole(user, pathname)
+  // Get role display name
   const role = getUserRole(user)
   const roleDisplay = getRoleDisplayName(role)
 

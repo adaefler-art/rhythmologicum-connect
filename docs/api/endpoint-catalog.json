@@ -56,13 +56,11 @@
       "usedBy": [
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 133,
           "apiPath": "/api/admin/content-pages/${pageId}/sections",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 283,
           "apiPath": "/api/admin/content-pages/${pageId}/sections",
           "kind": "fetch"
         }
@@ -83,37 +81,31 @@
       "usedBy": [
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 314,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${sectionId}",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 346,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 351,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${prevSection.id}",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 386,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 391,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${nextSection.id}",
           "kind": "fetch"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 418,
           "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
           "kind": "fetch"
         }
@@ -212,31 +204,26 @@
       "usedBy": [
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
-          "line": 108,
           "apiPath": "/api/admin/funnel-versions/not-a-uuid",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
-          "line": 137,
           "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
-          "line": 175,
           "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
-          "line": 213,
           "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
-          "line": 327,
           "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
           "kind": "request"
         }
@@ -270,73 +257,61 @@
       "usedBy": [
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 161,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 210,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 257,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 283,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 321,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 356,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 387,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 424,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 465,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 509,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/__tests__/route.test.ts",
-          "line": 610,
           "apiPath": "/api/admin/funnels",
           "kind": "request"
         },
         {
           "file": "app/components/ContentPageEditor.tsx",
-          "line": 82,
           "apiPath": "/api/admin/funnels",
           "kind": "fetch"
         }
@@ -357,43 +332,36 @@
       "usedBy": [
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 180,
           "apiPath": "/api/admin/funnels/stress-assessment",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 234,
           "apiPath": "/api/admin/funnels/nonexistent",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 283,
           "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 379,
           "apiPath": "/api/admin/funnels/test-funnel",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 423,
           "apiPath": "/api/admin/funnels/test",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 464,
           "apiPath": "/api/admin/funnels/test",
           "kind": "request"
         },
         {
           "file": "app/api/admin/funnels/[id]/__tests__/route.test.ts",
-          "line": 530,
           "apiPath": "/api/admin/funnels/test-funnel",
           "kind": "request"
         }
@@ -437,10 +405,16 @@
       "file": "app/api/admin/navigation/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/utils/roleBasedRouting.ts",
+          "apiPath": "/api/admin/navigation",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/admin/navigation/[role]",
@@ -614,7 +588,6 @@
       "usedBy": [
         {
           "file": "lib/hooks/useAssessmentAnswer.ts",
-          "line": 69,
           "apiPath": "/api/assessment-answers/save",
           "kind": "fetch"
         }
@@ -634,7 +607,6 @@
       "usedBy": [
         {
           "file": "lib/hooks/useStepValidation.ts",
-          "line": 52,
           "apiPath": "/api/assessment-validation/validate-step",
           "kind": "fetch"
         }
@@ -680,7 +652,6 @@
       "usedBy": [
         {
           "file": "lib/hooks/useAssessmentNavigation.ts",
-          "line": 195,
           "apiPath": "/api/assessments/${assessmentId}/resume",
           "kind": "fetch"
         }
@@ -700,7 +671,6 @@
       "usedBy": [
         {
           "file": "lib/api/assessmentPersistence.ts",
-          "line": 365,
           "apiPath": "/api/assessments/${assessmentId}/state",
           "kind": "fetch"
         }
@@ -733,13 +703,11 @@
       "usedBy": [
         {
           "file": "app/page.tsx",
-          "line": 15,
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         },
         {
           "file": "app/page.tsx",
-          "line": 157,
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
@@ -759,7 +727,6 @@
       "usedBy": [
         {
           "file": "app/page.tsx",
-          "line": 35,
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         }
@@ -819,7 +786,6 @@
       "usedBy": [
         {
           "file": "app/content/[slug]/client.tsx",
-          "line": 30,
           "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
           "kind": "fetch"
         }
@@ -917,61 +883,51 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 163,
           "apiPath": "/api/funnels/cardiovascular-age/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 126,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 149,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 192,
           "apiPath": "/api/funnels/cardiovascular-age/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 232,
           "apiPath": "/api/funnels/cardiovascular-age/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 258,
           "apiPath": "/api/funnels/nonexistent-funnel/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 283,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 307,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 331,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/createAssessment.test.ts",
-          "line": 351,
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         }
@@ -991,43 +947,36 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 159,
           "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 191,
           "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 232,
           "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 265,
           "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 290,
           "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 336,
           "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/getAssessment.test.ts",
-          "line": 372,
           "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
           "kind": "request"
         }
@@ -1047,37 +996,31 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 225,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 264,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 156,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 226,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 475,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 92,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
           "kind": "request"
         }
@@ -1097,13 +1040,11 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 361,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 413,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
           "kind": "request"
         }
@@ -1123,19 +1064,16 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 467,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 532,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
-          "line": 577,
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
           "kind": "request"
         }
@@ -1155,19 +1093,16 @@
       "usedBy": [
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 272,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 333,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/__tests__/hardening.test.ts",
-          "line": 401,
           "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
           "kind": "request"
         }
@@ -1213,19 +1148,16 @@
       "usedBy": [
         {
           "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
-          "line": 157,
           "apiPath": "/api/funnels/cardiovascular-age/definition",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/[slug]/definition/__tests__/route.test.ts",
-          "line": 189,
           "apiPath": "/api/funnels/nope/definition",
           "kind": "request"
         },
         {
           "file": "lib/funnelHelpers.ts",
-          "line": 167,
           "apiPath": "/api/funnels/${slug}/definition",
           "kind": "fetch"
         }
@@ -1258,103 +1190,86 @@
       "usedBy": [
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 163,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 191,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 227,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 261,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 336,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 373,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 415,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 433,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 472,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 512,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 574,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 633,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 638,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 726,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 757,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 794,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/__tests__/route.test.ts",
-          "line": 800,
           "apiPath": "/api/funnels/catalog",
           "kind": "request"
         }
@@ -1374,37 +1289,31 @@
       "usedBy": [
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 106,
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 127,
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 153,
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 182,
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 211,
           "apiPath": "/api/funnels/catalog/nonexistent",
           "kind": "request"
         },
         {
           "file": "app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
-          "line": 256,
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         }
@@ -1515,7 +1424,6 @@
       "usedBy": [
         {
           "file": "app/page.tsx",
-          "line": 70,
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         }
@@ -1842,31 +1750,26 @@
       "usedBy": [
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
-          "line": 131,
           "apiPath": "/api/tasks",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
-          "line": 164,
           "apiPath": "/api/tasks",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
-          "line": 197,
           "apiPath": "/api/tasks",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
-          "line": 239,
           "apiPath": "/api/tasks",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/__tests__/route.test.ts",
-          "line": 299,
           "apiPath": "/api/tasks",
           "kind": "request"
         }
@@ -1886,37 +1789,31 @@
       "usedBy": [
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 126,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 155,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 196,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 261,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 336,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         },
         {
           "file": "app/api/tasks/[id]/__tests__/route.test.ts",
-          "line": 367,
           "apiPath": "/api/tasks/t1",
           "kind": "request"
         }

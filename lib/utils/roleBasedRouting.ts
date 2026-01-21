@@ -100,6 +100,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
     },
+    {
+      href: '/admin/navigation',
+      label: 'Navigation',
+      active: pathname?.startsWith('/admin/navigation') ?? false,
+    },
   ]
 }
 
@@ -139,6 +144,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/admin/content',
       label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
+    },
+    {
+      href: '/admin/navigation',
+      label: 'Navigation',
+      active: pathname?.startsWith('/admin/navigation') ?? false,
     },
     {
       href: '/admin/dev/endpoints',
@@ -280,3 +290,110 @@ export function canAccessRoute(user: User | null, route: string): boolean {
   
   return false
 }
+
+/**
+ * Fetch navigation items from database for a specific role
+ * 
+ * Falls back to hardcoded navigation if:
+ * - Database is not ready (schema not deployed)
+ * - API call fails
+ * - No configuration exists for the role
+ * 
+ * @param role - User role
+ * @param pathname - Current pathname for active state
+ * @returns Navigation items with active state
+ */
+export async function fetchNavItemsForRole(
+  role: UserRole,
+  pathname: string,
+): Promise<RoleNavItem[]> {
+  try {
+    // Fetch navigation config from API with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout
+    
+    const response = await fetch('/api/admin/navigation', {
+      signal: controller.signal,
+    })
+    
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      // Log specific error for debugging
+      if (response.status === 503) {
+        console.warn('Navigation config schema not ready (503), using fallback')
+      } else if (response.status >= 500) {
+        console.warn(`Navigation config server error (${response.status}), using fallback`)
+      } else {
+        console.warn(`Navigation config failed (${response.status}), using fallback`)
+      }
+      return getFallbackNavItems(role, pathname)
+    }
+
+    const data = await response.json()
+    
+    if (!data.success || !data.data) {
+      return getFallbackNavItems(role, pathname)
+    }
+
+    const { items, configs } = data.data
+
+    // Filter and sort items for this role
+    const roleConfigs = configs
+      .filter((c: { role: string; is_enabled: boolean }) => c.role === role && c.is_enabled)
+      .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
+
+    // Build navigation items from configs
+    const navItems: RoleNavItem[] = roleConfigs.map((config: {
+      navigation_item_id: string
+      custom_label: string | null
+      order_index: number
+    }) => {
+      const item = items.find((i: { id: string }) => i.id === config.navigation_item_id)
+      if (!item) return null
+
+      return {
+        href: item.route,
+        label: config.custom_label || item.default_label,
+        active:
+          pathname === item.route ||
+          (item.route !== '/clinician' && pathname?.startsWith(item.route)) ||
+          false,
+      }
+    }).filter(Boolean) as RoleNavItem[]
+
+    // If we got items from DB, return them
+    if (navItems.length > 0) {
+      return navItems
+    }
+
+    // Otherwise fallback to hardcoded
+    return getFallbackNavItems(role, pathname)
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('Navigation config request timed out, using fallback')
+    } else {
+      console.warn('Error fetching navigation config:', error)
+    }
+    return getFallbackNavItems(role, pathname)
+  }
+}
+
+/**
+ * Get fallback navigation items when DB config is unavailable
+ */
+function getFallbackNavItems(role: UserRole, pathname: string): RoleNavItem[] {
+  switch (role) {
+    case 'admin':
+      return getAdminNavItems(pathname)
+    case 'clinician':
+      return getClinicianNavItems(pathname)
+    case 'nurse':
+      return getNurseNavItems(pathname)
+    case 'patient':
+      return getPatientNavItems(pathname)
+    default:
+      return []
+  }
+}
+
