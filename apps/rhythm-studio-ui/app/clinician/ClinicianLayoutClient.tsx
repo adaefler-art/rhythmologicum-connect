@@ -107,7 +107,12 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      await notifyAuthCallback(event, session ?? null)
+      // Don't sync SIGNED_OUT events - they're handled by the signout endpoint
+      // This prevents auto-relogin after explicit logout
+      if (event !== 'SIGNED_OUT') {
+        await notifyAuthCallback(event, session ?? null)
+      }
+      
       if (event === 'SIGNED_OUT') {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
