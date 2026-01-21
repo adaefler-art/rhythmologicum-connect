@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       assessment_answers: {
         Row: {
+          answer_data: Json | null
           answer_value: number
           assessment_id: string
           created_at: string
@@ -43,6 +44,7 @@ export type Database = {
           question_id: string
         }
         Insert: {
+          answer_data?: Json | null
           answer_value: number
           assessment_id: string
           created_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           question_id: string
         }
         Update: {
+          answer_data?: Json | null
           answer_value?: number
           assessment_id?: string
           created_at?: string
