@@ -739,7 +739,7 @@
         },
         {
           "file": "app/page.tsx",
-          "line": 151,
+          "line": 157,
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
