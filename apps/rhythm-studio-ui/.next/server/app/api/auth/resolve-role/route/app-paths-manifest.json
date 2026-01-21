@@ -1,0 +1,3 @@
+{
+  "/api/auth/resolve-role/route": "app/api/auth/resolve-role/route.js"
+}

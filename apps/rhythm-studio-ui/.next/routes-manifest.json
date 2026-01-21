@@ -1,0 +1,253 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/admin/content/[id]",
+      "regex": "^/admin/content/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/content/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/clinician/funnels/[identifier]",
+      "regex": "^/clinician/funnels/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPidentifier": "nxtPidentifier"
+      },
+      "namedRegex": "^/clinician/funnels/(?<nxtPidentifier>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/clinician/funnels/[identifier]/editor",
+      "regex": "^/clinician/funnels/([^/]+?)/editor(?:/)?$",
+      "routeKeys": {
+        "nxtPidentifier": "nxtPidentifier"
+      },
+      "namedRegex": "^/clinician/funnels/(?<nxtPidentifier>[^/]+?)/editor(?:/)?$"
+    },
+    {
+      "page": "/clinician/patient/[id]",
+      "regex": "^/clinician/patient/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/clinician/patient/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/clinician/report/[id]",
+      "regex": "^/clinician/report/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/clinician/report/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/content",
+      "regex": "^/admin/content(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/content(?:/)?$"
+    },
+    {
+      "page": "/admin/content/new",
+      "regex": "^/admin/content/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/content/new(?:/)?$"
+    },
+    {
+      "page": "/admin/design-system",
+      "regex": "^/admin/design\\-system(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/design\\-system(?:/)?$"
+    },
+    {
+      "page": "/admin/design-tokens",
+      "regex": "^/admin/design\\-tokens(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/design\\-tokens(?:/)?$"
+    },
+    {
+      "page": "/admin/dev/endpoints",
+      "regex": "^/admin/dev/endpoints(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dev/endpoints(?:/)?$"
+    },
+    {
+      "page": "/admin/dev/theme-test",
+      "regex": "^/admin/dev/theme\\-test(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dev/theme\\-test(?:/)?$"
+    },
+    {
+      "page": "/admin/navigation",
+      "regex": "^/admin/navigation(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/navigation(?:/)?$"
+    },
+    {
+      "page": "/admin/operational-settings",
+      "regex": "^/admin/operational\\-settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/operational\\-settings(?:/)?$"
+    },
+    {
+      "page": "/api/auth/callback",
+      "regex": "^/api/auth/callback(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/callback(?:/)?$"
+    },
+    {
+      "page": "/api/auth/debug",
+      "regex": "^/api/auth/debug(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/debug(?:/)?$"
+    },
+    {
+      "page": "/api/auth/debug-cookie",
+      "regex": "^/api/auth/debug\\-cookie(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/debug\\-cookie(?:/)?$"
+    },
+    {
+      "page": "/api/auth/resolve-role",
+      "regex": "^/api/auth/resolve\\-role(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/resolve\\-role(?:/)?$"
+    },
+    {
+      "page": "/api/auth/signout",
+      "regex": "^/api/auth/signout(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/signout(?:/)?$"
+    },
+    {
+      "page": "/clinician",
+      "regex": "^/clinician(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician(?:/)?$"
+    },
+    {
+      "page": "/clinician/delivery",
+      "regex": "^/clinician/delivery(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/delivery(?:/)?$"
+    },
+    {
+      "page": "/clinician/funnels",
+      "regex": "^/clinician/funnels(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/funnels(?:/)?$"
+    },
+    {
+      "page": "/clinician/pre-screening",
+      "regex": "^/clinician/pre\\-screening(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/pre\\-screening(?:/)?$"
+    },
+    {
+      "page": "/clinician/review-queue",
+      "regex": "^/clinician/review\\-queue(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/review\\-queue(?:/)?$"
+    },
+    {
+      "page": "/clinician/shipments",
+      "regex": "^/clinician/shipments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/shipments(?:/)?$"
+    },
+    {
+      "page": "/clinician/support-cases",
+      "regex": "^/clinician/support\\-cases(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/support\\-cases(?:/)?$"
+    },
+    {
+      "page": "/clinician/tasks",
+      "regex": "^/clinician/tasks(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/tasks(?:/)?$"
+    },
+    {
+      "page": "/clinician/triage",
+      "regex": "^/clinician/triage(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clinician/triage(?:/)?$"
+    },
+    {
+      "page": "/datenschutz",
+      "regex": "^/datenschutz(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/datenschutz(?:/)?$"
+    },
+    {
+      "page": "/impressum",
+      "regex": "^/impressum(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/impressum(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
