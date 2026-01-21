@@ -12,7 +12,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Json, SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Assessment run state for resume functionality
@@ -22,7 +22,7 @@ export type AssessmentRun = {
   status: 'in_progress' | 'completed'
   currentStepId: string | null
   stepIndex: number
-  answersByQuestionId: Record<string, number | string | boolean>
+  answersByQuestionId: Record<string, Json>
 }
 
 /**
@@ -86,7 +86,7 @@ export async function loadAssessmentRun(assessmentId: string): Promise<Assessmen
   }
 
   // Map answers by question ID
-  const answersByQuestionId: Record<string, number | string | boolean> = {}
+  const answersByQuestionId: Record<string, Json> = {}
   answers?.forEach((answer) => {
     // Prefer answer_data (JSONB) if available, fallback to answer_value (integer)
     if (answer.answer_data !== null && answer.answer_data !== undefined) {
