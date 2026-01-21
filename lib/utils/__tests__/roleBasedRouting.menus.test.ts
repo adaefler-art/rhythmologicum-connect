@@ -76,7 +76,7 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       const user = createMockUser('clinician')
       const navItems = getNavItemsForRole(user, '/clinician')
       
-      expect(navItems).toHaveLength(6)
+      expect(navItems).toHaveLength(7)
       expect(navItems[0].href).toBe('/clinician')
       expect(navItems[0].label).toBe('Übersicht')
       expect(navItems[1].href).toBe('/clinician/triage')
@@ -89,6 +89,8 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       expect(navItems[4].label).toBe('Fragebögen')
       expect(navItems[5].href).toBe('/admin/content')
       expect(navItems[5].label).toBe('Inhalte')
+      expect(navItems[6].href).toBe('/admin/navigation')
+      expect(navItems[6].label).toBe('Navigation')
     })
 
     it('should not return patient items for clinician user', () => {
@@ -219,14 +221,16 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
 
     it('getClinicianNavItems should return clinician items', () => {
       const items = getClinicianNavItems('/clinician')
-      expect(items).toHaveLength(6)
+      expect(items).toHaveLength(7)
       expect(items[0].href).toBe('/clinician')
+      expect(items[6].href).toBe('/admin/navigation')
     })
 
     it('getAdminNavItems should return admin items', () => {
       const items = getAdminNavItems('/admin/content')
-      expect(items).toHaveLength(7)
-      expect(items[6].href).toBe('/admin/dev/endpoints')
+      expect(items).toHaveLength(8)
+      expect(items[6].href).toBe('/admin/navigation')
+      expect(items[7].href).toBe('/admin/dev/endpoints')
     })
 
     it('getNurseNavItems should return nurse items', () => {

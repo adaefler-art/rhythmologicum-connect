@@ -100,6 +100,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
     },
+    {
+      href: '/admin/navigation',
+      label: 'Navigation',
+      active: pathname?.startsWith('/admin/navigation') ?? false,
+    },
   ]
 }
 
@@ -139,6 +144,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/admin/content',
       label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
+    },
+    {
+      href: '/admin/navigation',
+      label: 'Navigation',
+      active: pathname?.startsWith('/admin/navigation') ?? false,
     },
     {
       href: '/admin/dev/endpoints',
