@@ -78,7 +78,7 @@ export default function FunnelSelectorClient() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 transition-colors duration-150">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
       <MobileHeader
         variant="with-title"
         title="Assessment auswählen"
@@ -94,7 +94,7 @@ export default function FunnelSelectorClient() {
           <div className="flex-1 min-w-0 space-y-6">
             <div className="space-y-2">
               <h1
-                className="font-bold leading-tight text-slate-900 dark:text-slate-100"
+                className="font-bold leading-tight text-slate-900"
                 style={{
                   fontSize: typography.fontSize['2xl'],
                   lineHeight: typography.lineHeight.tight,
@@ -103,7 +103,7 @@ export default function FunnelSelectorClient() {
                 Wählen Sie Ihr Assessment
               </h1>
               <p
-                className="text-slate-700 dark:text-slate-300"
+                className="text-slate-700"
                 style={{
                   fontSize: typography.fontSize.base,
                   lineHeight: typography.lineHeight.relaxed,
@@ -118,7 +118,7 @@ export default function FunnelSelectorClient() {
               <div className="text-center py-12">
                 <div className="inline-block">
                   <svg
-                    className="animate-spin h-10 w-10 text-sky-600 dark:text-sky-400"
+                    className="animate-spin h-10 w-10 text-sky-600"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -138,7 +138,7 @@ export default function FunnelSelectorClient() {
                     />
                   </svg>
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 mt-4" style={{ 
+                <p className="text-slate-600 mt-4" style={{ 
                   fontSize: typography.fontSize.sm,
                 }}>
                   Lade Assessments...
@@ -148,14 +148,14 @@ export default function FunnelSelectorClient() {
 
             {error && !loading && (
               <div
-                className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 text-center"
+                className="bg-red-50 border-2 border-red-200 text-center"
                 style={{
                   padding: spacing.lg,
                   borderRadius: radii.lg,
                 }}
               >
-                <p className="text-red-800 dark:text-red-300 font-semibold mb-2">Fehler</p>
-                <p className="text-red-700 dark:text-red-400" style={{ fontSize: typography.fontSize.sm }}>
+                <p className="text-red-800 font-semibold mb-2">Fehler</p>
+                <p className="text-red-700" style={{ fontSize: typography.fontSize.sm }}>
                   {error}
                 </p>
               </div>

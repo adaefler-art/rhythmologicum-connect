@@ -20,7 +20,7 @@ export interface NextStepCardProps {
  * - Always visible when nextStep is available (AC3)
  * - Visual prominence with icon
  * - Responsive design
- * - Dark mode support
+ * - Light mode only (Mobile v2)
  * - CTA button for action
  * 
  * @example
@@ -51,19 +51,19 @@ export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
   const icon = iconMap[nextStep.type]
 
   return (
-    <Card padding="lg" radius="lg" className="border-2 border-sky-200 dark:border-sky-800">
+    <Card padding="lg" radius="lg" className="border-2 border-sky-200">
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
             <span className="text-2xl" role="img" aria-label="Next step">
               {icon}
             </span>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-semibold text-slate-900">
               Nächster Schritt
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">{nextStep.label}</p>
+            <p className="text-sm text-slate-600">{nextStep.label}</p>
           </div>
         </div>
 

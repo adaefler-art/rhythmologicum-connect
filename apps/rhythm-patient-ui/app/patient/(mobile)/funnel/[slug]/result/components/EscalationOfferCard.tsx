@@ -37,35 +37,35 @@ export function EscalationOfferCard({ reasons, correlationId, onCtaClick }: Esca
       radius="xl"
       shadow="lg"
       border
-      className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-300 dark:border-red-800"
+      className="bg-gradient-to-br from-red-50 to-orange-50 border-red-300"
     >
       {/* Alert Header */}
       <div className="flex items-start gap-3 mb-4">
-        <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
-          <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+        <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+          <AlertTriangle className="w-6 h-6 text-red-600" />
         </div>
         <div className="flex-1">
           <h3
-            className="text-xl font-bold text-red-900 dark:text-red-100 mb-2"
+            className="text-xl font-bold text-red-900 mb-2"
             style={{ lineHeight: typography.lineHeight.tight }}
           >
             Wichtiger Hinweis zu Ihrem Ergebnis
           </h3>
-          <p className="text-sm text-red-800 dark:text-red-200">
+          <p className="text-sm text-red-800">
             {ESCALATION_DISCLAIMER.intro}
           </p>
         </div>
       </div>
 
       {/* Disclaimer - E6.6.8: Stronger language */}
-      <div className="mb-6 p-4 bg-white dark:bg-slate-800 rounded-lg border border-red-200 dark:border-red-800">
-        <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">
+      <div className="mb-6 p-4 bg-white rounded-lg border border-red-200">
+        <p className="text-sm text-slate-700 mb-2">
           <strong>{ESCALATION_DISCLAIMER.title}:</strong>
         </p>
-        <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
+        <ul className="space-y-1 text-sm text-slate-700">
           {reasons.map((reason, index) => (
             <li key={index} className="flex items-start gap-2">
-              <span className="text-red-600 dark:text-red-400 flex-shrink-0">•</span>
+              <span className="text-red-600 flex-shrink-0">•</span>
               <span>{reason}</span>
             </li>
           ))}
@@ -73,13 +73,13 @@ export function EscalationOfferCard({ reasons, correlationId, onCtaClick }: Esca
       </div>
 
       {/* Emergency Notice - E6.6.8: Use EmergencyContactInfo component with stronger warning */}
-      <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 rounded-lg">
+      <div className="mb-6 p-4 bg-red-100 rounded-lg">
         <EmergencyContactInfo
           variant="compact"
           title={RED_FLAG_EMERGENCY_WARNING.title}
           showAll={false}
         />
-        <p className="text-sm text-red-800 dark:text-red-200 mt-2 ml-6">
+        <p className="text-sm text-red-800 mt-2 ml-6">
           {RED_FLAG_EMERGENCY_WARNING.urgentAction}
         </p>
       </div>
@@ -112,7 +112,7 @@ export function EscalationOfferCard({ reasons, correlationId, onCtaClick }: Esca
       </div>
 
       {/* Footer Note */}
-      <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 text-center">
+      <p className="mt-4 text-xs text-slate-500 text-center">
         Correlation ID: {correlationId.substring(0, 16)}...
       </p>
     </Card>

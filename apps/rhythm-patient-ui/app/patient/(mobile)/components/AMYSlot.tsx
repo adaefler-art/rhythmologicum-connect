@@ -12,7 +12,7 @@ import { Card } from '@/lib/ui'
  * Features:
  * - Visual placeholder for AMY assistant
  * - Responsive design
- * - Dark mode support
+ * - Light mode only (Mobile v2)
  * - Ready for E6.6 integration
  * 
  * @example
@@ -28,10 +28,10 @@ export function AMYSlot() {
           </span>
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
             AMY - Ihr persönlicher Assistent
           </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-slate-600">
             AMY wird bald verfügbar sein, um Ihnen personalisierte Einblicke und Empfehlungen zu
             bieten.
           </p>

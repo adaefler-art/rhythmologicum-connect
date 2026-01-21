@@ -16,7 +16,7 @@ export interface DashboardHeaderProps {
  * Features:
  * - Optional personalized greeting
  * - Responsive typography
- * - Dark mode support
+ * - Light mode only (Mobile v2)
  * 
  * @example
  * <DashboardHeader greeting="Max" />
@@ -28,7 +28,7 @@ export function DashboardHeader({ greeting }: DashboardHeaderProps) {
   return (
     <div className="space-y-2">
       <h1
-        className="font-bold leading-tight text-slate-900 dark:text-slate-100"
+        className="font-bold leading-tight text-slate-900"
         style={{
           fontSize: typography.fontSize['2xl'],
           lineHeight: typography.lineHeight.tight,
@@ -36,7 +36,7 @@ export function DashboardHeader({ greeting }: DashboardHeaderProps) {
       >
         {greeting ? `Willkommen zurück, ${greeting}` : 'Willkommen zurück'}
       </h1>
-      <p className="text-slate-600 dark:text-slate-400">
+      <p className="text-slate-600">
         Ihr persönliches Gesundheits-Dashboard
       </p>
     </div>

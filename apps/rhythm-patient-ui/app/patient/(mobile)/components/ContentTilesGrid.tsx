@@ -20,7 +20,7 @@ export interface ContentTilesGridProps {
  * - Responsive grid layout
  * - Empty state handling
  * - Interactive tiles with hover effects
- * - Dark mode support
+ * - Light mode only (Mobile v2)
  * - Sorted by priority
  * 
  * @example
@@ -47,10 +47,10 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
     return (
       <div className="text-center py-8">
         <div className="text-4xl mb-3">📚</div>
-        <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+        <h3 className="text-lg font-medium text-slate-900 mb-2">
           Noch keine Inhalte verfügbar
         </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-slate-600">
           Neue Inhalte werden bald hinzugefügt.
         </p>
       </div>
@@ -59,7 +59,7 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
 
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <h3 className="text-lg font-semibold text-slate-900">
         Empfohlene Inhalte
       </h3>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,19 +81,19 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
                   {iconMap[tile.type]}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-1 truncate">
+                  <h4 className="font-medium text-slate-900 mb-1 truncate">
                     {tile.title}
                   </h4>
                   {tile.description && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                    <p className="text-sm text-slate-600 line-clamp-2">
                       {tile.description}
                     </p>
                   )}
                 </div>
               </div>
               {tile.actionLabel && tile.actionTarget && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <span className="text-sm text-sky-600 dark:text-sky-400 font-medium">
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-sm text-sky-600 font-medium">
                     {tile.actionLabel} →
                   </span>
                 </div>

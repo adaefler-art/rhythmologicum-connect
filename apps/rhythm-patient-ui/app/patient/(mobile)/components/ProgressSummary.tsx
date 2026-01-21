@@ -23,7 +23,7 @@ export interface ProgressSummaryProps {
  * - Workup status summary
  * - Empty state handling
  * - Responsive design
- * - Dark mode support
+ * - Light mode only (Mobile v2)
  * - Interactive funnel cards
  * 
  * @example
@@ -59,16 +59,16 @@ export function ProgressSummary({
   }
 
   const workupStateColors = {
-    no_data: 'text-slate-600 dark:text-slate-400',
-    needs_more_data: 'text-amber-600 dark:text-amber-400',
-    ready_for_review: 'text-green-600 dark:text-green-400',
+    no_data: 'text-slate-600',
+    needs_more_data: 'text-amber-600',
+    ready_for_review: 'text-green-600',
   }
 
   return (
     <div className="space-y-6">
       {/* Funnel Progress Section */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="text-lg font-semibold text-slate-900">
           Ihre Assessments
         </h3>
 
@@ -76,10 +76,10 @@ export function ProgressSummary({
           <Card padding="lg" radius="lg">
             <div className="text-center py-6">
               <div className="text-4xl mb-3">📋</div>
-              <h4 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-2">
+              <h4 className="text-base font-medium text-slate-900 mb-2">
                 Noch keine Assessments
               </h4>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-slate-600">
                 Starten Sie Ihr erstes Assessment, um Ihren Fortschritt zu verfolgen.
               </p>
             </div>
@@ -101,11 +101,11 @@ export function ProgressSummary({
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-1">
+                      <h4 className="font-medium text-slate-900 mb-1">
                         {funnel.title}
                       </h4>
                       {funnel.description && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        <p className="text-sm text-slate-600 line-clamp-2">
                           {funnel.description}
                         </p>
                       )}
@@ -117,7 +117,7 @@ export function ProgressSummary({
 
                   {funnel.progress && (
                     <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                      <div className="flex justify-between text-xs text-slate-600">
                         <span>Fortschritt</span>
                         <span>
                           {funnel.progress.current} / {funnel.progress.total}
@@ -132,7 +132,7 @@ export function ProgressSummary({
                   )}
 
                   {funnel.completedAt && (
-                    <p className="text-xs text-slate-500 dark:text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Abgeschlossen am {new Date(funnel.completedAt).toLocaleDateString('de-DE')}
                     </p>
                   )}
@@ -145,13 +145,13 @@ export function ProgressSummary({
 
       {/* Workup Status Section */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="text-lg font-semibold text-slate-900">
           Workup-Status
         </h3>
         <Card padding="md" radius="lg">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-slate-700">
                 Status:
               </span>
               <span className={`text-sm font-semibold ${workupStateColors[workupSummary.state]}`}>
@@ -159,26 +159,26 @@ export function ProgressSummary({
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-slate-200">
               <div className="text-center">
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="text-2xl font-bold text-slate-900">
                   {workupSummary.counts.total}
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">Gesamt</div>
+                <div className="text-xs text-slate-600 mt-1">Gesamt</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                <div className="text-2xl font-bold text-amber-600">
                   {workupSummary.counts.needsMoreData}
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                <div className="text-xs text-slate-600 mt-1">
                   Weitere Daten
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-2xl font-bold text-green-600">
                   {workupSummary.counts.readyForReview}
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                <div className="text-xs text-slate-600 mt-1">
                   Bereit
                 </div>
               </div>
