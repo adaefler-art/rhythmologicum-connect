@@ -58,7 +58,8 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
     } catch {
       // Ignore network errors; client session is already cleared
     }
-    window.location.assign('/patient')
+    // Redirect to root login page, not /patient
+    window.location.assign('/')
   }
 
   // Get navigation items from shared configuration

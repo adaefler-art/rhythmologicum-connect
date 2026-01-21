@@ -148,6 +148,12 @@ export default function LoginPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Don't sync SIGNED_OUT events - they're handled by the signout endpoint
+      // This prevents auto-relogin after explicit logout
+      if (event === 'SIGNED_OUT') {
+        return
+      }
+      
       await fetch('/api/auth/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -103,7 +103,12 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      await notifyAuthCallback(event, session ?? null)
+      // Don't sync SIGNED_OUT events - they're handled by the signout endpoint
+      // This prevents auto-relogin after explicit logout
+      if (event !== 'SIGNED_OUT') {
+        await notifyAuthCallback(event, session ?? null)
+      }
+      
       if (event === 'SIGNED_OUT') {
         router.push('/')
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -136,7 +141,11 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    await fetch('/api/auth/signout', { method: 'POST' })
+    try {
+      await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' })
+    } catch {
+      // Ignore network errors; client session is already cleared
+    }
     window.location.assign('/')
   }
 

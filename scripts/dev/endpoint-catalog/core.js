@@ -3,6 +3,10 @@ const { cmpStr } = require('./sort-utils')
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
 
+function normalizeLineEndings(text) {
+  return String(text).replace(/\r\n/g, '\n')
+}
+
 function normalizeSlashes(p) {
   return p.replace(/\\/g, '/')
 }
@@ -25,19 +29,21 @@ function routeFilePathToApiPath(repoRoot, routeFileAbsPath) {
 }
 
 function extractRouteMethods(sourceText) {
+  const normalizedSource = normalizeLineEndings(sourceText)
   const methods = new Set()
   const re = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\b/g
   let m
-  while ((m = re.exec(sourceText))) {
+  while ((m = re.exec(normalizedSource))) {
     methods.add(String(m[1]).toUpperCase())
   }
   return Array.from(methods).sort(cmpStr)
 }
 
 function extractEndpointIntent(sourceText) {
+  const normalizedSource = normalizeLineEndings(sourceText)
   // Deterministic marker: // @endpoint-intent manual:webhook
   const re = /@endpoint-intent\s+([^\s]+)/
-  const m = sourceText.match(re)
+  const m = normalizedSource.match(re)
   return m ? String(m[1]).trim() : null
 }
 
@@ -149,7 +155,8 @@ function extractApiCallsitesFromSource(sourceText) {
   // Heuristic, deterministic, line-oriented.
   // Finds string/template literals containing '/api/' and tries to classify by nearby call patterns.
   const results = []
-  const lines = sourceText.split(/\r?\n/)
+  const normalizedSource = normalizeLineEndings(sourceText)
+  const lines = normalizedSource.split('\n')
 
   const singleQuoteRe = /'(?:[^'\\]|\\.)*'/g
   const doubleQuoteRe = /"(?:[^"\\]|\\.)*"/g
