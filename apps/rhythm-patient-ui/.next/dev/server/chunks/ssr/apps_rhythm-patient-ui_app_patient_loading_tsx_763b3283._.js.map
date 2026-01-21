@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///home/runner/work/rhythmologicum-connect/rhythmologicum-connect/apps/rhythm-patient-ui/app/patient/loading.tsx"],"sourcesContent":["import LoadingSpinner from '@/lib/ui/LoadingSpinner'\n\n/**\n * Loading state for patient routes\n * \n * This component is displayed while patient pages are loading.\n * Part of V0.4-E6 Technical Cleanup & Stability Layer.\n */\nexport default function PatientLoading() {\n  return (\n    <div className=\"w-full min-h-screen flex items-center justify-center bg-white\">\n      <LoadingSpinner size=\"lg\" text=\"Laden...\" centered />\n    </div>\n  )\n}\n"],"names":[],"mappings":";;;;;AAAA;;;AAQe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC,uIAAc;YAAC,MAAK;YAAK,MAAK;YAAW,QAAQ;;;;;;;;;;;AAGxD"}}]
-}
