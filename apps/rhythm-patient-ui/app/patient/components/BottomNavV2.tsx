@@ -61,7 +61,7 @@ export function BottomNavV2() {
 
   return (
     <nav
-      className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 dark:bg-slate-800/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 transition-colors duration-150"
+      className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 transition-colors duration-150"
       style={{
         boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.05)',
         paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))',
@@ -76,8 +76,8 @@ export function BottomNavV2() {
               href={item.href}
               className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg transition-all duration-200 ${
                 active
-                  ? 'text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                  ? 'text-sky-600 bg-sky-50'
+                  : 'text-slate-600 hover:bg-slate-100'
               }`}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}

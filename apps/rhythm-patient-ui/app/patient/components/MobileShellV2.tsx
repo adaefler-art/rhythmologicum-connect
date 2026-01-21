@@ -81,7 +81,7 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   const title = getPageTitle(pathname)
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col transition-colors duration-150">
+    <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150">
       {/* TopBar - Always visible on mobile */}
       <TopBarV2 variant={variant} title={title} />
 
