@@ -203,7 +203,7 @@ export default function ResultsV2Client({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           <div className="flex items-center justify-between mb-6">
             <div className="h-8 bg-[#f3f4f6] rounded animate-pulse w-64" />
             <Chip variant="neutral" size="sm">
@@ -226,7 +226,7 @@ export default function ResultsV2Client({
   if (error) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
           <ErrorState
             title="Failed to load results"
             message="We couldn't load your assessment results. Please try again."
@@ -244,7 +244,7 @@ export default function ResultsV2Client({
   if (isEmpty) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-[#1f2937]">Results & Next Steps</h1>
             <Chip variant="neutral" size="sm">
@@ -270,7 +270,7 @@ export default function ResultsV2Client({
 
   return (
     <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#1f2937]">Results & Next Steps</h1>

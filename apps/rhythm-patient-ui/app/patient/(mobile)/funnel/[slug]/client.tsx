@@ -733,7 +733,7 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
   if (error === 'not_available') {
     return (
       <main className="flex items-center justify-center bg-slate-50 py-20 px-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="mb-4 text-6xl">🚧</div>
           <h1 className="text-2xl font-bold text-slate-900 mb-4">In Kürze verfügbar</h1>
           <p className="text-slate-600 mb-6">

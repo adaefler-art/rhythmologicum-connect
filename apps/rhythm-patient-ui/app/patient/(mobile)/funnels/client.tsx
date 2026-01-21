@@ -115,7 +115,7 @@ export default function FunnelCatalogClient() {
         className="flex-1 overflow-y-auto px-4 pt-4 sm:pt-6"
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 lg:flex-row">
+        <div className="w-full flex flex-col gap-6 lg:flex-row">
           <div className="flex-1 min-w-0 space-y-6">
             <div className="space-y-2">
               <h1

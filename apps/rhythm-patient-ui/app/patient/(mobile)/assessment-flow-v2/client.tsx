@@ -293,7 +293,7 @@ export default function AssessmentFlowV2Client({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           <div className="flex items-center justify-between mb-6">
             <div className="h-6 bg-[#f3f4f6] rounded animate-pulse w-32" />
             <Chip variant="neutral" size="sm">
@@ -315,7 +315,7 @@ export default function AssessmentFlowV2Client({
   if (error) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
           <ErrorState
             title="Failed to load assessment"
             message="We couldn't load the assessment questions. Please try again."
@@ -332,7 +332,7 @@ export default function AssessmentFlowV2Client({
 
   return (
     <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* Header - Step Progress */}
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-[#1f2937]">

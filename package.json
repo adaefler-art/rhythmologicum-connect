@@ -23,6 +23,7 @@
     "lint:migrations": "bash scripts/check-migrations.sh",
     "lint:schema": "pwsh -File scripts/db/lint-migrations.ps1",
     "tokens:export": "node scripts/design/export-tokens.js",
+    "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
     "db:reset": "supabase db reset",
     "db:migrate": "supabase migration up",

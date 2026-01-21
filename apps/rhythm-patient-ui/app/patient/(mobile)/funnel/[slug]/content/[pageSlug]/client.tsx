@@ -91,7 +91,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
   if (manifestError) {
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-        <div className="rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+        <div className="rounded-2xl shadow-xl p-8 text-center"
           style={{ backgroundColor: 'var(--background)' }}
         >
           <div className="text-6xl mb-4">⚠️</div>
@@ -212,7 +212,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
   if (error || !contentPage) {
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center p-4">
-        <div className="rounded-2xl shadow-xl p-8 max-w-md w-full text-center"
+        <div className="rounded-2xl shadow-xl p-8 text-center"
           style={{ backgroundColor: 'var(--background)' }}
         >
           <div className="text-6xl mb-4">⚠️</div>
@@ -323,7 +323,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="w-full px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
@@ -353,7 +353,7 @@ export default function ContentPageClient({ funnelSlug, pageSlug, contentManifes
       </header>
 
       {/* Content */}
-      <main className={`${layoutClass} mx-auto px-4 pt-8 sm:py-12`} style={{
+      <main className={`${layoutClass} px-4 pt-8 sm:py-12`} style={{
         paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
       }}>
         <article className="bg-white rounded-2xl shadow-xl overflow-hidden">

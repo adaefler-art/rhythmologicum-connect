@@ -119,7 +119,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (manifestError) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <Card padding="lg" radius="xl" className="w-full max-w-md" border={true}>
+        <Card padding="lg" radius="xl" className="w-full" border={true}>
           <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold mb-2 text-red-700">
             Konfigurationsfehler
@@ -294,7 +294,7 @@ export default function IntroPageClient({ funnelSlug, manifestData, manifestErro
   if (error || !introPage) {
     return (
       <main className="flex items-center justify-center bg-muted py-20 px-4">
-        <Card padding="lg" radius="xl" className="w-full max-w-md">
+        <Card padding="lg" radius="xl" className="w-full">
           <p className="mb-4 text-neutral-700">
             {error || 'Intro-Seite konnte nicht geladen werden.'}
           </p>
