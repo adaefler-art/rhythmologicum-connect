@@ -614,7 +614,7 @@
       "usedBy": [
         {
           "file": "lib/hooks/useAssessmentAnswer.ts",
-          "line": 63,
+          "line": 69,
           "apiPath": "/api/assessment-answers/save",
           "kind": "fetch"
         }
@@ -682,6 +682,26 @@
           "file": "lib/hooks/useAssessmentNavigation.ts",
           "line": 195,
           "apiPath": "/api/assessments/${assessmentId}/resume",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/assessments/[id]/state",
+      "methods": [
+        "GET"
+      ],
+      "file": "app/api/assessments/[id]/state/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/api/assessmentPersistence.ts",
+          "line": 365,
+          "apiPath": "/api/assessments/${assessmentId}/state",
           "kind": "fetch"
         }
       ],

@@ -96,6 +96,30 @@ export default function FunnelClient({ slug }: FunnelClientProps) {
     const retryDelay = 1000
 
     try {
+      // I71.4: Use persistence adapter API to load assessment state
+      const response = await fetch(`/api/assessments/${assessmentId}/state`, {
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        const { data } = await response.json()
+        
+        if (data && data.answersByQuestionId) {
+          const answersMap = data.answersByQuestionId
+          setAnswers(answersMap)
+          
+          // Log successful resume if we have answers
+          if (Object.keys(answersMap).length > 0) {
+            console.info(`✅ Resumed assessment with ${Object.keys(answersMap).length} existing answers`)
+            // Client-side event logging for assessment resume
+            logAssessmentResumed(assessmentId, slug, Object.keys(answersMap).length)
+          }
+          return
+        }
+      }
+      
+      // Fallback to direct Supabase query if API fails
+      console.warn('Assessment state API failed, falling back to direct Supabase query')
       const { data: answersData, error: answersError } = await supabase
         .from('assessment_answers')
         .select('question_id, answer_value')

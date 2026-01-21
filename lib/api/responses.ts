@@ -229,7 +229,7 @@ export function assessmentCompletedResponse(
   message = 'Dieses Assessment wurde bereits abgeschlossen und kann nicht mehr bearbeitet werden.',
   requestId?: string,
 ): NextResponse<ErrorResponse> {
-  return errorResponse(ErrorCode.ASSESSMENT_COMPLETED, message, 400, undefined, requestId)
+  return errorResponse(ErrorCode.ASSESSMENT_COMPLETED, message, 409, undefined, requestId)
 }
 
 export function internalErrorResponse(

@@ -27,11 +27,14 @@ import {
  * Saves or updates a single answer for a question in an assessment.
  * Uses UPSERT logic to prevent duplicate answers for the same question.
  * 
+ * I71.4: Now supports clientMutationId for idempotency (double-tap prevention)
+ * 
  * Request Body:
  * {
  *   assessmentId: string (UUID of the assessment),
  *   questionId: string (question.key from questions table, e.g., "stress_frequency"),
- *   answerValue: number (integer value of the answer)
+ *   answerValue: number (integer value of the answer),
+ *   clientMutationId?: string (optional UUID for idempotency)
  * }
  * 
  * Note: questionId should be the question.key (semantic identifier), not question.id (UUID)
@@ -49,6 +52,7 @@ type RequestBody = {
   assessmentId: string
   questionId: string
   answerValue: number
+  clientMutationId?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json()
     assessmentId = body.assessmentId
     questionId = body.questionId
-    const { answerValue } = body
+    const { answerValue, clientMutationId } = body
 
     // Validate required fields
     if (!assessmentId || !questionId || answerValue === undefined || answerValue === null) {
@@ -146,6 +150,32 @@ export async function POST(request: NextRequest) {
       return assessmentCompletedResponse()
     }
 
+    // I71.4: Check for duplicate mutation (idempotency via clientMutationId)
+    if (clientMutationId) {
+      const { data: existingMutation } = await (supabase as any)
+        .from('idempotency_keys')
+        .select('response_body')
+        .eq('idempotency_key', clientMutationId)
+        .eq('endpoint_path', '/api/assessment-answers/save')
+        .maybeSingle()
+
+      if (existingMutation) {
+        // Already processed - return cached response with header
+        const cachedResponse = existingMutation.response_body
+        if (cachedResponse?.success && cachedResponse?.data) {
+          console.log('[assessment-answers/save] Returning cached response for clientMutationId:', clientMutationId)
+          
+          return new Response(JSON.stringify(cachedResponse), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Idempotency-Cached': 'true',
+            },
+          })
+        }
+      }
+    }
+
     // Perform upsert operation
     // Using ON CONFLICT clause to update if the answer already exists
     const { data, error: upsertError } = await supabase
@@ -175,6 +205,39 @@ export async function POST(request: NextRequest) {
         upsertError,
       )
       return internalErrorResponse('Fehler beim Speichern der Antwort. Bitte versuchen Sie es erneut.')
+    }
+
+    // I71.4: Store idempotency key for future duplicate requests
+    if (clientMutationId) {
+      const responseBody = {
+        success: true,
+        data: {
+          id: data.id,
+          assessment_id: data.assessment_id,
+          question_id: data.question_id,
+          answer_value: data.answer_value,
+        },
+      }
+
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+      await (supabase as any)
+        .from('idempotency_keys')
+        .insert({
+          idempotency_key: clientMutationId,
+          user_id: user.id,
+          endpoint_path: '/api/assessment-answers/save',
+          http_method: 'POST',
+          response_status: 200,
+          response_body: responseBody,
+          expires_at: expiresAt,
+        })
+        .select()
+        .single()
+        // Ignore errors from idempotency key storage (best effort)
+        .catch((err: Error) => {
+          console.warn('[assessment-answers/save] Failed to store idempotency key:', err.message)
+        })
     }
 
     // Success response with standardized format
