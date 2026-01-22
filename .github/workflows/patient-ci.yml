@@ -23,6 +23,8 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
+      - name: Verify E71 Guardrails
+        run: npm run verify:e71
       - name: Verify UI v2 Architecture
         run: npm run verify:ui-v2
       - name: Build Patient UI

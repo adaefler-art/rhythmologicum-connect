@@ -150,6 +150,31 @@ Added to `.github/workflows/patient-ci.yml`:
   run: npm run verify:ui-v2
 ```
 
+### 4. E71 P2 Guardrails (Anti-Drift)
+
+**Verification Script:** `scripts/verify-e71.mjs`
+
+**Purpose:** Catch UI v2 regressions and version identity drift before they reach CI/build.
+
+**Checks:**
+1. **Mobile imports:** Disallow `MobileHeader` and `@/lib/ui` imports inside `(mobile)`
+2. **Canonical flow route:** Requires `/patient/assess/[id]/flow` to exist
+3. **Non-redirect assess page:** `/patient/assess` must not be redirect-only
+4. **No legacy v2 duplicates:** Ensures legacy v2 route folders do not exist under `(legacy)`
+5. **Version identity:** Ensures patient/studio prebuild uses `--app` correctly and `public/version.json` is not `engine`
+
+**Run locally:**
+```bash
+npm run verify:e71
+```
+
+**CI Integration:**
+Added to `.github/workflows/patient-ci.yml` (before UI v2 verification):
+```yaml
+- name: Verify E71 Guardrails
+  run: npm run verify:e71
+```
+
 ## Verification Guide
 
 ### Automated Verification
