@@ -29,6 +29,7 @@ const MOBILE_ROUTE_GROUP = join(PATIENT_UI_ROOT, '(mobile)')
 const ALLOWLISTED_ROUTES = [
   'onboarding',
   'documents',
+  '(legacy)',
   'components',
   'PatientLayoutClient.tsx',
   'PatientDesignTokensProvider.tsx',
