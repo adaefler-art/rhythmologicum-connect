@@ -244,4 +244,3 @@ describe('Manifest Data Structure for Patient Flow', () => {
     expect(validated.pages).toHaveLength(1)
   })
 })
-

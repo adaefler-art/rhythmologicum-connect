@@ -443,4 +443,3 @@ function extractBulletPoints(markdown: string): string[] {
   return bulletPoints
 }
 
-

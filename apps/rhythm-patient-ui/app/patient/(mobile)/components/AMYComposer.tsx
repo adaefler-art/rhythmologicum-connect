@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, Textarea, Button, Alert } from '@/lib/ui'
+import { Card, Button } from '@/lib/ui/mobile-v2'
 import { getNavigationTarget, isRoutableAction } from '@/lib/triage/router'
 import { storeTriageResult } from '@/lib/triage/storage'
 import type { TriageResultV1 } from '@/lib/api/contracts/triage'
@@ -35,7 +35,8 @@ import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/saf
 const MAX_LENGTH = 800 // AC1: Client-side validation
 const RECOMMENDED_LENGTH = 500 // Soft recommendation
 
-type TriageState = 'idle' | 'loading' | 'success' | 'error'
+// Keep in sync with all UI state literals used in this component
+type TriageState = 'idle' | 'loading' | 'error' | 'success'
 
 // Optional: Suggested chips for guided input
 const SUGGESTED_CONCERNS = [
@@ -125,7 +126,8 @@ export function AMYComposer() {
   const charCount = concern.length
   const isOverLimit = charCount > MAX_LENGTH
   const isNearLimit = charCount > RECOMMENDED_LENGTH && charCount <= MAX_LENGTH
-  const canSubmit = concern.trim().length >= 10 && !isOverLimit && state !== 'loading'
+  const isLoading = state === 'loading'
+  const canSubmit = concern.trim().length >= 10 && !isOverLimit && !isLoading
 
   // E6.6.9: Handler for dev quick-fill buttons
   const handleDevQuickFill = (text: string) => {
@@ -213,7 +215,7 @@ export function AMYComposer() {
   }
 
   return (
-    <Card padding="lg" radius="lg">
+    <Card padding="lg" className="rounded-lg">
       <div className="space-y-4">
         {/* Header with AMY branding */}
         <div className="flex items-start gap-4">
@@ -233,11 +235,11 @@ export function AMYComposer() {
         </div>
 
         {/* AC3: Non-emergency disclaimer - E6.6.8: Use centralized disclaimer */}
-        <Alert variant="info">
-          <p className="text-sm">
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-sm text-sky-900">
             <strong>{NON_EMERGENCY_DISCLAIMER.title}:</strong> {NON_EMERGENCY_DISCLAIMER.text}
           </p>
-        </Alert>
+        </div>
 
         {/* E6.6.9: Dev Harness - Quick-fill test inputs (AC2: dev-only) */}
         {isDevHarnessEnabled() && (
@@ -271,7 +273,7 @@ export function AMYComposer() {
                       key={fill.label}
                       type="button"
                       onClick={() => handleDevQuickFill(fill.text)}
-                      disabled={state === 'loading'}
+                      disabled={isLoading}
                       className={getQuickFillButtonStyles(fill.color)}
                     >
                       {fill.label}
@@ -296,7 +298,7 @@ export function AMYComposer() {
                   key={chip}
                   type="button"
                   onClick={() => handleChipClick(chip)}
-                  disabled={state === 'loading'}
+                  disabled={isLoading}
                   className="px-3 py-1.5 text-sm rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {chip}
@@ -306,23 +308,27 @@ export function AMYComposer() {
 
             {/* Textarea with character counter */}
             <div className="space-y-2">
-              <Textarea
+              <textarea
                 value={concern}
                 onChange={(e) => setConcern(e.target.value)}
                 placeholder="z.B. Ich habe in letzter Zeit Schlafprobleme und fühle mich gestresst..."
                 rows={4}
-                disabled={state === 'loading'}
-                error={isOverLimit}
-                errorMessage={
-                  isOverLimit ? `Maximal ${MAX_LENGTH} Zeichen erlaubt` : undefined
-                }
-                helperText={
-                  !isOverLimit && isNearLimit
-                    ? `Empfohlen: bis zu ${RECOMMENDED_LENGTH} Zeichen`
-                    : undefined
-                }
-                maxLength={MAX_LENGTH + 50} // Allow typing a bit over to show error
+                disabled={isLoading}
+                maxLength={MAX_LENGTH + 50}
+                className={`w-full rounded-xl border px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                  isOverLimit ? 'border-red-500' : 'border-slate-200'
+                } ${isLoading ? 'opacity-60' : ''}`}
               />
+              {isOverLimit && (
+                <p className="text-xs text-red-600 font-medium">
+                  Maximal {MAX_LENGTH} Zeichen erlaubt
+                </p>
+              )}
+              {!isOverLimit && isNearLimit && (
+                <p className="text-xs text-amber-600">
+                  Empfohlen: bis zu {RECOMMENDED_LENGTH} Zeichen
+                </p>
+              )}
               <div className="flex justify-between items-center text-sm">
                 <span
                   className={`${
@@ -345,9 +351,9 @@ export function AMYComposer() {
 
             {/* Error display */}
             {error && (
-              <Alert variant="error">
-                <p className="text-sm">{error}</p>
-              </Alert>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <p className="text-sm text-rose-800">{error}</p>
+              </div>
             )}
 
             {/* Submit button */}
@@ -355,10 +361,9 @@ export function AMYComposer() {
               variant="primary"
               fullWidth
               onClick={handleSubmit}
-              disabled={!canSubmit}
-              loading={state === 'loading'}
+              disabled={!canSubmit || isLoading}
             >
-              {state === 'loading' ? 'Wird analysiert...' : 'Anliegen einreichen'}
+              {isLoading ? 'Wird analysiert...' : 'Anliegen einreichen'}
             </Button>
           </>
         )}
@@ -410,12 +415,12 @@ export function AMYComposer() {
 
             {/* Escalation warning for urgent cases - E6.6.8: Use centralized guidance */}
             {result.tier === 'ESCALATE' && (
-              <Alert variant="error">
-                <p className="text-sm font-medium">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3">
+                <p className="text-sm font-medium text-rose-800">
                   <strong>{STANDARD_EMERGENCY_GUIDANCE.title}:</strong>{' '}
                   {STANDARD_EMERGENCY_GUIDANCE.text}
                 </p>
-              </Alert>
+              </div>
             )}
           </div>
         )}

@@ -264,7 +264,7 @@ describe('V05-I06.5 — Content Page Route Integration', () => {
 
       render(
         <ContentPageClient
-          funnelSlug="test-funnel"
+          funnelSlug="invalid-funnel"
           pageSlug="test-page"
           contentManifest={contentManifest}
           manifestError={null}

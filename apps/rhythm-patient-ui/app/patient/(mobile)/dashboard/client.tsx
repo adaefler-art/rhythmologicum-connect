@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import MobileHeader from '@/app/components/MobileHeader'
-import { LoadingSpinner, ErrorState } from '@/lib/ui'
+import { LoadingSkeleton, ErrorState } from '@/lib/ui/mobile-v2'
 import {
   DashboardHeader,
   AMYComposer,
@@ -117,13 +116,6 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
-      <MobileHeader
-        variant="with-title"
-        title="Dashboard"
-        subtitle="Rhythmologicum Connect"
-        showBack={false}
-      />
-
       <main
         className="flex-1 overflow-y-auto px-4 pt-4 sm:pt-6"
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -132,7 +124,7 @@ export default function DashboardClient() {
           {/* E6.5.9: Loading state - show spinner only on initial load */}
           {state === 'loading' && !dashboardData && (
             <div className="py-12">
-              <LoadingSpinner size="lg" text="Dashboard wird geladen..." centered />
+              <LoadingSkeleton variant="card" count={3} />
             </div>
           )}
 
@@ -152,7 +144,6 @@ export default function DashboardClient() {
               title="Fehler beim Laden"
               message={error}
               onRetry={retry}
-              centered={!dashboardData}
             />
           )}
 

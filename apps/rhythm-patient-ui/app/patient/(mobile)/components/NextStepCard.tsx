@@ -1,6 +1,6 @@
 'use client'
 
-import { Card } from '@/lib/ui'
+import { Card, Button } from '@/lib/ui/mobile-v2'
 import type { NextStep } from '@/lib/api/contracts/patient/dashboard'
 
 export interface NextStepCardProps {
@@ -51,7 +51,7 @@ export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
   const icon = iconMap[nextStep.type]
 
   return (
-    <Card padding="lg" radius="lg" className="border-2 border-sky-200">
+    <Card padding="lg" className="border-2 border-sky-200 rounded-lg">
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
@@ -68,12 +68,14 @@ export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
         </div>
 
         {nextStep.target && (
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={onAction}
-            className="w-full px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition-colors duration-200"
           >
             {nextStep.label}
-          </button>
+          </Button>
         )}
       </div>
     </Card>

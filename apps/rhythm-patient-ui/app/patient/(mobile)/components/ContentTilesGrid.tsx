@@ -1,6 +1,6 @@
 'use client'
 
-import { Card } from '@/lib/ui'
+import { Card } from '@/lib/ui/mobile-v2'
 import type { ContentTile } from '@/lib/api/contracts/patient/dashboard'
 
 export interface ContentTilesGridProps {
@@ -67,8 +67,8 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
           <Card
             key={tile.id}
             padding="md"
-            radius="lg"
-            interactive={!!tile.actionTarget}
+            className="rounded-lg"
+            hover={!!tile.actionTarget}
             onClick={() => {
               if (tile.actionTarget && onTileClick) {
                 onTileClick(tile)

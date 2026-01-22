@@ -1,6 +1,6 @@
 'use client'
 
-import { typography } from '@/lib/design-tokens'
+import { mobileTypography } from '@/lib/ui/mobile-v2'
 
 export interface DashboardHeaderProps {
   /** Optional greeting name */
@@ -30,8 +30,8 @@ export function DashboardHeader({ greeting }: DashboardHeaderProps) {
       <h1
         className="font-bold leading-tight text-slate-900"
         style={{
-          fontSize: typography.fontSize['2xl'],
-          lineHeight: typography.lineHeight.tight,
+          fontSize: mobileTypography.fontSize['2xl'],
+          lineHeight: mobileTypography.lineHeight.tight,
         }}
       >
         {greeting ? `Willkommen zurück, ${greeting}` : 'Willkommen zurück'}

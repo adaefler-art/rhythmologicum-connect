@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, Badge, Progress } from '@/lib/ui'
+import { Card, Badge, ProgressBar } from '@/lib/ui/mobile-v2'
 import type { FunnelSummary, WorkupSummary } from '@/lib/api/contracts/patient/dashboard'
 
 export interface ProgressSummaryProps {
@@ -40,7 +40,7 @@ export function ProgressSummary({
 }: ProgressSummaryProps) {
   // Status badge mapping
   const statusVariants = {
-    not_started: 'default' as const,
+    not_started: 'neutral' as const,
     in_progress: 'warning' as const,
     completed: 'success' as const,
   }
@@ -73,7 +73,7 @@ export function ProgressSummary({
         </h3>
 
         {funnelSummaries.length === 0 ? (
-          <Card padding="lg" radius="lg">
+          <Card padding="lg" className="rounded-lg">
             <div className="text-center py-6">
               <div className="text-4xl mb-3">📋</div>
               <h4 className="text-base font-medium text-slate-900 mb-2">
@@ -90,8 +90,8 @@ export function ProgressSummary({
               <Card
                 key={funnel.slug}
                 padding="md"
-                radius="lg"
-                interactive={funnel.status === 'in_progress'}
+                className="rounded-lg"
+                hover={funnel.status === 'in_progress'}
                 onClick={() => {
                   if (funnel.status === 'in_progress' && onFunnelClick) {
                     onFunnelClick(funnel)
@@ -123,10 +123,11 @@ export function ProgressSummary({
                           {funnel.progress.current} / {funnel.progress.total}
                         </span>
                       </div>
-                      <Progress
+                      <ProgressBar
                         value={(funnel.progress.current / funnel.progress.total) * 100}
-                        showPercentage={false}
-                        showStepText={false}
+                        color="primary"
+                        showLabel={false}
+                        size="sm"
                       />
                     </div>
                   )}
@@ -148,7 +149,7 @@ export function ProgressSummary({
         <h3 className="text-lg font-semibold text-slate-900">
           Workup-Status
         </h3>
-        <Card padding="md" radius="lg">
+        <Card padding="md" className="rounded-lg">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-slate-700">
