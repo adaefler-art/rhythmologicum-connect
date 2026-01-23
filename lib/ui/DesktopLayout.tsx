@@ -1,15 +1,14 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Workflow, 
-  FileText, 
-  ChevronLeft,
+import {
+  LayoutDashboard,
+  Workflow,
+  FileText,
   LogOut,
-  User
+  User,
 } from 'lucide-react'
 import { layout } from '@/lib/design-tokens'
 
@@ -37,7 +36,7 @@ export interface DesktopLayoutProps {
  * DesktopLayout Component
  * 
  * Modern desktop layout for clinician dashboard with:
- * - Collapsible sidebar navigation
+ * - Fixed sidebar navigation
  * - Topbar with title and user menu
  * - Responsive design (1024px+)
  * - Active state indication
@@ -59,7 +58,6 @@ export function DesktopLayout({
   navItems = [],
   children,
 }: DesktopLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const pathname = usePathname()
 
   // Icon mapping for common routes
@@ -95,32 +93,17 @@ export function DesktopLayout({
       <aside
         className={`
           fixed left-0 top-0 bottom-0 z-40 h-dvh bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
-          hidden lg:flex flex-col shrink-0
-          transition-all duration-300 ease-in-out
-          ${sidebarCollapsed ? 'w-16' : 'w-64'}
+          hidden lg:flex flex-col shrink-0 w-64
         `}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
-          {!sidebarCollapsed && (
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                {appTitle}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Clinician</p>
-            </div>
-          )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <ChevronLeft 
-              className={`w-5 h-5 text-slate-600 dark:text-slate-300 transition-transform duration-300 ${
-                sidebarCollapsed ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+              {appTitle}
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Clinician</p>
+          </div>
         </div>
 
         {/* Navigation - Scrollable with flex-1 */}
@@ -138,17 +121,13 @@ export function DesktopLayout({
                         ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 font-medium'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
                     }
-                    ${sidebarCollapsed ? 'justify-center' : ''}
                   `}
-                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <span className={item.active ? 'text-sky-600' : 'text-slate-500'}>
                     {item.icon}
                   </span>
-                  {!sidebarCollapsed && (
-                    <span className="flex-1 text-sm">{item.label}</span>
-                  )}
-                  {!sidebarCollapsed && item.active && (
+                  <span className="flex-1 text-sm">{item.label}</span>
+                  {item.active && (
                     <div className="w-1.5 h-1.5 rounded-full bg-sky-600 dark:bg-sky-400" />
                   )}
                 </Link>
@@ -160,40 +139,24 @@ export function DesktopLayout({
         {/* User Section - Always visible at bottom */}
         {userEmail && (
           <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
-            <div
-              className={`flex items-center gap-3 ${
-                sidebarCollapsed ? 'justify-center' : ''
-              }`}
-            >
+            <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
-              {!sidebarCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                    {userEmail.split('@')[0]}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
-                </div>
-              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                  {userEmail.split('@')[0]}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{userEmail}</p>
+              </div>
             </div>
-            {onSignOut && !sidebarCollapsed && (
+            {onSignOut && (
               <button
                 onClick={onSignOut}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Abmelden</span>
-              </button>
-            )}
-            {onSignOut && sidebarCollapsed && (
-              <button
-                onClick={onSignOut}
-                className="w-full flex items-center justify-center p-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                aria-label="Abmelden"
-                title="Abmelden"
-              >
-                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -207,7 +170,7 @@ export function DesktopLayout({
         className={`
           flex-1 min-w-0
           transition-all duration-300 ease-in-out
-          ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}
+          lg:ml-64
           min-h-dvh
         `}
       >
