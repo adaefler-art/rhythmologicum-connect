@@ -52,6 +52,50 @@ npm run dev
 # Expected: No startup errors in console
 ```
 
+### Local smoke start (no .env.local)
+
+**PowerShell:**
+```powershell
+.\scripts\dev-start.ps1
+```
+
+This prompts for required env vars in the current session only and runs `npm run start` without writing secrets to disk.
+
+#### Port 3000 handling
+
+If port 3000 is already in use, the script prints the owning PID/process and prompts to kill it. If you answer **N**, the script exits cleanly without attempting to start the app.
+
+#### /api/funnels/catalog expectations
+
+- **Unauthenticated:** expect **401** (PASS, not a failure)
+- **Authenticated:** expect **200**
+
+To test authenticated behavior, set a cookie before running the smoke script:
+
+```powershell
+$env:RHYTHM_PATIENT_COOKIE="rhythm_refresh=PASTE; other=..."
+.\scripts\smoke-local.ps1
+```
+
+#### Commands
+
+```powershell
+.\scripts\dev-start.ps1
+.\scripts\smoke-local.ps1
+```
+
+#### Content page smoke check
+
+```powershell
+$base = "http://localhost:3000"
+Invoke-WebRequest -UseBasicParsing "$base/content/ueber-das-assessment" | Select-Object -ExpandProperty StatusCode
+Invoke-WebRequest -UseBasicParsing "$base/content/does-not-exist" | Select-Object -ExpandProperty StatusCode
+```
+
+Expected:
+- Published slug returns **200**
+- Missing slug returns **404**
+
 **Verification:**
 - ✅ Console shows "Ready in Xms"
 - ✅ No red errors in terminal
