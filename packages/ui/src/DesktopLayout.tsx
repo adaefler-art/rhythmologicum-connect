@@ -193,6 +193,7 @@ export function DesktopLayout({
         className={`
           min-w-0
           min-h-screen
+          flex flex-col
         `}
       >
         {/* Topbar */}
@@ -217,21 +218,10 @@ export function DesktopLayout({
         {/* Page Content */}
         <main
           data-testid="desktoplayout-main"
-          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 md:p-8'} w-full`}
+          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 md:p-8'} w-full flex-1 min-h-0`}
         >
           <div
-            className={
-              variant === 'compact'
-                ? 'w-full'
-                : contentMaxWidth === null
-                  ? 'w-full'
-                  : 'w-full mx-auto'
-            }
-            style={
-              variant === 'compact' || contentMaxWidth === null
-                ? undefined
-                : { maxWidth: contentMaxWidth }
-            }
+            className="w-full max-w-none"
           >
             <div data-testid="desktoplayout-children">{children}</div>
           </div>
