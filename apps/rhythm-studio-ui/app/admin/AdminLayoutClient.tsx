@@ -170,9 +170,11 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-600">Authentifizierung wird überprüft…</p>
-      </div>
+      <DesktopLayout appTitle="Rhythmologicum Connect" navItems={navItems}>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <p className="text-slate-600">Authentifizierung wird überprüft…</p>
+        </div>
+      </DesktopLayout>
     )
   }
 

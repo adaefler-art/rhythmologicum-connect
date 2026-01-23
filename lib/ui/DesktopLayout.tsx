@@ -88,12 +88,14 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-dvh bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
       {/* Desktop Sidebar */}
       <aside
         className={`
-          hidden lg:flex flex-col shrink-0 w-64
-          lg:sticky lg:top-0 h-dvh
+          hidden lg:flex flex-col shrink-0
+          w-[280px]
+          lg:sticky lg:top-0 h-screen
+          overflow-y-auto
           z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
         `}
       >
@@ -170,7 +172,7 @@ export function DesktopLayout({
       <div
         className={`
           min-w-0
-          min-h-dvh
+          min-h-screen
         `}
       >
         {/* Topbar */}
