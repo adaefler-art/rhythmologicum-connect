@@ -38,7 +38,11 @@ import { useAppFocus } from '@/lib/hooks/useAppFocus'
  * - Refresh after follow-up answered (via ?refresh=followup)
  * - Stale-while-revalidate pattern (shows old data while fetching new)
  */
-export default function DashboardClient() {
+export default function DashboardClient({
+  contentTilesSlot,
+}: {
+  contentTilesSlot?: React.ReactNode
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -115,7 +119,7 @@ export default function DashboardClient() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
       <main
         className="flex-1 overflow-y-auto px-4 pt-4 sm:pt-6"
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
@@ -167,10 +171,12 @@ export default function DashboardClient() {
 
               {/* Content Tiles Grid - E6.6.5: Add id for scroll-to navigation */}
               <div id="content-tiles">
-                <ContentTilesGrid
-                  tiles={dashboardData.contentTiles}
-                  onTileClick={handleTileClick}
-                />
+                {contentTilesSlot ?? (
+                  <ContentTilesGrid
+                    tiles={dashboardData.contentTiles}
+                    onTileClick={handleTileClick}
+                  />
+                )}
               </div>
 
               {/* Progress Summary */}

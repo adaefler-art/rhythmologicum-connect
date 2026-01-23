@@ -94,7 +94,7 @@ async function fetchContentTilesFromDb(
       title: row.title ?? 'Inhalt',
       description: row.excerpt ?? '',
       actionLabel: null,
-      actionTarget: `/content/${row.slug}`,
+      actionTarget: `/patient/content/${row.slug}`,
       priority: row.priority ?? 0,
     }))
 }

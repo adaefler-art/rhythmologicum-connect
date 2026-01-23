@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Card } from '@/lib/ui/mobile-v2'
 import type { ContentTile } from '@/lib/api/contracts/patient/dashboard'
 
@@ -32,6 +33,8 @@ export interface ContentTilesGridProps {
  * />
  */
 export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) {
+  const router = useRouter()
+
   // Sort tiles by priority (higher priority first)
   const sortedTiles = [...tiles].sort((a, b) => b.priority - a.priority)
 
@@ -70,9 +73,12 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
             className="rounded-lg"
             hover={!!tile.actionTarget}
             onClick={() => {
-              if (tile.actionTarget && onTileClick) {
+              if (!tile.actionTarget) return
+              if (onTileClick) {
                 onTileClick(tile)
+                return
               }
+              router.push(tile.actionTarget)
             }}
           >
             <div className="space-y-3">

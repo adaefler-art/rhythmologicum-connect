@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { markDashboardVisited } from '@/lib/utils/dashboardFirstPolicy'
 import DashboardClient from './client'
+import ContentTilesGridServer from '../components/ContentTilesGrid.server'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,5 +83,5 @@ export default async function PatientDashboardPage() {
   // STEP 4: Render client component
   // V061-I04: Client component handles its own errors via useDashboardData hook
   console.log('[PATIENT_DASHBOARD] STEP=render success=true')
-  return <DashboardClient />
+  return <DashboardClient contentTilesSlot={<ContentTilesGridServer />} />
 }
