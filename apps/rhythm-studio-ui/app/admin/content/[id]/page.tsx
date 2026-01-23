@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies, headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
@@ -13,70 +14,37 @@ type PageProps = {
 }
 
 async function loadContentPage(key: string) {
-  const adminClient = createAdminSupabaseClient()
+  const headerList = headers()
+  const host = headerList.get('host')
+  const protocol = host?.includes('localhost') ? 'http' : 'https'
 
-  const baseSelect = `
-    id,
-    slug,
-    title,
-    excerpt,
-    body_markdown,
-    status,
-    layout,
-    category,
-    priority,
-    funnel_id,
-    flow_step,
-    order_index,
-    updated_at,
-    created_at,
-    deleted_at
-  `
-
-  const isUuid = UUID_REGEX.test(key)
-  const baseQuery = adminClient
-    .from('content_pages')
-    .select(baseSelect)
-    .eq(isUuid ? 'id' : 'slug', key)
-
-  let contentPage: ContentPageEditorData | null = null
-  let pageError: { code?: string; message?: string } | null = null
-
-  ;({ data: contentPage, error: pageError } = await baseQuery.is('deleted_at', null).maybeSingle())
-
-  if (pageError?.code === '42703') {
-    const fallbackSelect = `
-      id,
-      slug,
-      title,
-      excerpt,
-      body_markdown,
-      status,
-      layout,
-      category,
-      priority,
-      funnel_id,
-      flow_step,
-      order_index,
-      updated_at,
-      created_at
-    `
-    const fallbackQuery = adminClient
-      .from('content_pages')
-      .select(fallbackSelect)
-      .eq(isUuid ? 'id' : 'slug', key)
-    ;({ data: contentPage, error: pageError } = await fallbackQuery.maybeSingle())
+  if (!host) {
+    throw new Error('Fehler beim Laden der Content-Page')
   }
 
-  if (pageError) {
-    throw new Error(pageError.message || 'Fehler beim Laden der Content-Page')
-  }
+  const cookieStore = cookies()
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join('; ')
 
-  if (!contentPage) {
+  const url = new URL(`/api/admin/content-pages/${key}`, `${protocol}://${host}`)
+
+  const response = await fetch(url.toString(), {
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    cache: 'no-store',
+  })
+
+  if (response.status === 404) {
     return null
   }
 
-  return contentPage
+  if (!response.ok) {
+    throw new Error('Fehler beim Laden der Content-Page')
+  }
+
+  const data = (await response.json()) as { contentPage?: ContentPageEditorData | null }
+  return data.contentPage ?? null
 }
 
 export default async function EditContentPage({ params }: PageProps) {
