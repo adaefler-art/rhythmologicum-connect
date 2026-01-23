@@ -434,7 +434,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 w-full">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
