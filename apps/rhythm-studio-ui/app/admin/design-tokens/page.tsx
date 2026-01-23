@@ -93,7 +93,7 @@ export default function DesignTokensPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="p-6">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -101,22 +101,18 @@ export default function DesignTokensPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <ErrorState
-          title="Fehler beim Laden"
-          message={error}
-          onRetry={loadTokens}
-        />
+      <div className="p-6">
+        <ErrorState title="Fehler beim Laden" message={error} onRetry={loadTokens} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
+    <div className="p-6">
+      <div className="w-full">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-[center] gap-3 mb-2">
             <Palette className="h-8 w-8 text-sky-600" />
             <h1 className="text-3xl font-bold text-slate-900">Design Tokens</h1>
           </div>
@@ -188,7 +184,7 @@ export default function DesignTokensPage() {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       {token.is_active ? (
                         <Eye className="h-4 w-4 text-green-600" />
                       ) : (

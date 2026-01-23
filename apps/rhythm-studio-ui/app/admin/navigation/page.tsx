@@ -222,7 +222,7 @@ export default function NavigationConfigPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-start justify-start py-12">
         <LoadingSpinner size="lg" text="Lade Navigation-Konfiguration…" centered />
       </div>
     )
@@ -237,7 +237,7 @@ export default function NavigationConfigPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-[center] justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             Navigation verwalten
@@ -246,7 +246,7 @@ export default function NavigationConfigPage() {
             Konfigurieren Sie die Navigation für verschiedene Benutzerrollen
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-[center] gap-2">
           {hasChanges && (
             <>
               <Button variant="secondary" onClick={resetChanges} disabled={saving}>
@@ -312,7 +312,7 @@ export default function NavigationConfigPage() {
             return (
               <div
                 key={rc.item.id}
-                className={`p-4 flex items-center gap-4 ${
+                className={`p-4 flex items-[center] gap-4 ${
                   !isEnabled ? 'opacity-50' : ''
                 }`}
               >
@@ -341,7 +341,7 @@ export default function NavigationConfigPage() {
 
                 {/* Item Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-[center] gap-2">
                     <p className="font-medium text-slate-900 dark:text-slate-100">
                       {rc.config?.custom_label || rc.item.default_label}
                     </p>
@@ -411,13 +411,13 @@ export default function NavigationConfigPage() {
                 <button
                   key={item.id}
                   onClick={() => toggleItemEnabled(item.id)}
-                  className="w-full p-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                  className="w-full p-4 flex items-[center] gap-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
                 >
                   <div className="flex-shrink-0 text-slate-500 dark:text-slate-400">
                     {icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <p className="font-medium text-slate-900 dark:text-slate-100">
                         {item.default_label}
                       </p>

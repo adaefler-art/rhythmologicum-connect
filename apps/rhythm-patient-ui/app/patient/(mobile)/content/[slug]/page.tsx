@@ -4,7 +4,7 @@ import type { ContentPage } from '@/lib/types/content'
 import ContentPageClient from './client'
 
 type PageProps = {
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
  * - AC3: Back navigation to dashboard
  */
 export default async function ContentPage({ params }: PageProps) {
-  const { slug } = await params
+  const { slug } = params
 
   // Create Supabase server client
   let supabase

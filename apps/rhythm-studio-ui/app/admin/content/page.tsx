@@ -287,7 +287,7 @@ export default function AdminContentDashboard() {
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-[center] sm:justify-between gap-4 mb-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
               Content Dashboard
@@ -416,7 +416,7 @@ export default function AdminContentDashboard() {
 
       {filteredPages.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <div className="mx-auto max-w-md">
+          <div className="max-w-md">
             <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
               📄
             </p>
@@ -441,7 +441,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('title')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Titel</span>
                       <SortIcon field="title" />
                     </div>
@@ -450,7 +450,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('slug')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Slug</span>
                       <SortIcon field="slug" />
                     </div>
@@ -459,7 +459,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('funnel')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Funnel</span>
                       <SortIcon field="funnel" />
                     </div>
@@ -468,7 +468,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('layout')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Kategorie</span>
                       <SortIcon field="layout" />
                     </div>
@@ -477,7 +477,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('status')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Status</span>
                       <SortIcon field="status" />
                     </div>
@@ -486,7 +486,7 @@ export default function AdminContentDashboard() {
                     className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
                     onClick={() => handleSort('updated_at')}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-[center] gap-2">
                       <span>Aktualisiert</span>
                       <SortIcon field="updated_at" />
                     </div>
@@ -534,7 +534,7 @@ export default function AdminContentDashboard() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-[center] justify-[center] gap-2">
               <Button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}

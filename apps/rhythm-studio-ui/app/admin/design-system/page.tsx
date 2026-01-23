@@ -98,7 +98,7 @@ export default function DesignSystemPage() {
               {/* Button Sizes */}
               <div>
                 <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">Sizes</h3>
-                <div className="flex items-center flex-wrap gap-3">
+                <div className="flex items-[center] flex-wrap gap-3">
                   <Button variant="primary" size="sm">
                     Small
                   </Button>
@@ -532,7 +532,7 @@ export default function DesignSystemPage() {
                 { name: '2xl', value: '3rem (48px)' },
                 { name: '3xl', value: '4rem (64px)' },
               ].map((space) => (
-                <div key={space.name} className="flex items-center gap-4">
+                <div key={space.name} className="flex items-[center] gap-4">
                   <div
                     className="bg-sky-600 h-8"
                     style={{ width: `var(--spacing-${space.name})` }}

@@ -94,7 +94,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
   }
 
   return (
-    <div className="space-y-4 min-h-screen bg-slate-900 text-slate-100 p-6">
+    <div className="space-y-4 bg-slate-900 text-slate-100 p-6">
       <div>
         <h1 className="text-xl font-semibold text-white">Endpoint Catalog</h1>
         <p className="text-sm text-slate-400">Version: {catalog.version}</p>
@@ -131,7 +131,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
           </select>
         </label>
 
-        <label className="text-sm flex items-center gap-2">
+        <label className="text-sm flex items-[center] gap-2">
           <input
             type="checkbox"
             checked={showUnused}
@@ -140,7 +140,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
           <span className="text-slate-300">Unused only</span>
         </label>
 
-        <label className="text-sm flex items-center gap-2">
+        <label className="text-sm flex items-[center] gap-2">
           <input
             type="checkbox"
             checked={showManual}
@@ -149,7 +149,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
           <span className="text-slate-300">Manual only</span>
         </label>
 
-        <label className="text-sm flex items-center gap-2">
+        <label className="text-sm flex items-[center] gap-2">
           <input
             type="checkbox"
             checked={showOrphan}
@@ -158,7 +158,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
           <span className="text-slate-300">Orphan only</span>
         </label>
 
-        <label className="text-sm flex items-center gap-2">
+        <label className="text-sm flex items-[center] gap-2">
           <input
             type="checkbox"
             checked={showUnknown}
@@ -220,7 +220,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                     <td className="px-3 py-2 text-slate-300">{e.methods.join(', ') || '—'}</td>
                     <td className="px-3 py-2">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${roleBadgeClass}`}
+                        className={`inline-flex items-[center] px-2 py-0.5 rounded text-xs font-medium ${roleBadgeClass}`}
                       >
                         {e.accessRole}
                       </span>
@@ -228,7 +228,7 @@ export default function EndpointCatalogClient({ catalog }: { catalog: EndpointCa
                     <td className="px-3 py-2 text-slate-300">
                       {e.intent ? e.intent : e.isAllowedOrphan ? 'allowlisted' : '—'}
                       {e.isOrphan && !e.isAllowedOrphan && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                        <span className="ml-2 inline-flex items-[center] px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                           orphan
                         </span>
                       )}

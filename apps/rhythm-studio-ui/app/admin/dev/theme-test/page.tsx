@@ -21,8 +21,8 @@ export default function ThemeTestPage() {
   const { theme, toggleTheme, accent, setAccent } = useTheme()
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 transition-colors">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="p-6 transition-colors">
+      <div className="w-full space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
@@ -35,7 +35,7 @@ export default function ThemeTestPage() {
 
         {/* Mode Toggle Card */}
         <Card>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-[center] justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
                 Theme Mode
@@ -107,9 +107,9 @@ export default function ThemeTestPage() {
                   borderColor: accent === color.value ? color.color : undefined,
                 }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-[center] gap-3">
                   <div
-                    className="w-12 h-12 rounded-lg shadow-md flex items-center justify-center"
+                    className="w-12 h-12 rounded-lg shadow-md flex items-[center] justify-[center]"
                     style={{ backgroundColor: color.color }}
                   >
                     <Palette className="w-6 h-6 text-white" />

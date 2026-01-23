@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { ErrorState } from '@/lib/ui'
 import { useEffect } from 'react'
 import { logError } from '@/lib/logging/logger'
@@ -30,6 +31,14 @@ export default function AdminError({
           message="Beim Laden der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
           onRetry={reset}
         />
+        <div className="mt-4">
+          <Link
+            href="/admin"
+            className="inline-flex gap-2 text-sm font-medium text-sky-600 hover:text-sky-700 transition"
+          >
+            Zurück zur Übersicht
+          </Link>
+        </div>
       </div>
     </div>
   )

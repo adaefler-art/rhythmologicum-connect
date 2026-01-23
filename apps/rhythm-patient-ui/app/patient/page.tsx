@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import LoginPage from '@/app/page'
+import LoginPage from '@/app/components/LoginPage'
 import { getOnboardingStatus } from '@/lib/actions/onboarding'
 import { getPatientEnv } from '@/lib/env'
 

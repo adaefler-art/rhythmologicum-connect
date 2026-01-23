@@ -52,6 +52,11 @@ const VERSION_TARGETS = [
   },
 ]
 
+const SHARED_UI_IMPORT_TARGETS = [
+  join(ROOT, 'apps', 'rhythm-studio-ui'),
+  join(ROOT, 'apps', 'rhythm-patient-ui'),
+]
+
 const MOBILE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.jsx'])
 
 const failures = []
@@ -201,12 +206,47 @@ function checkVersionIdentity() {
   }
 }
 
+function checkSharedUiImports() {
+  const violations = []
+
+  for (const targetDir of SHARED_UI_IMPORT_TARGETS) {
+    if (!existsSync(targetDir)) {
+      continue
+    }
+
+    const files = walkFiles(targetDir)
+
+    for (const file of files) {
+      const rel = relative(ROOT, file)
+      const content = readFileSync(file, 'utf8')
+      const lines = content.split(/\r?\n/)
+
+      lines.forEach((line, index) => {
+        const lineNumber = index + 1
+        if (line.includes('DesktopLayout') && (line.includes("'@/lib/ui'") || line.includes('"@/lib/ui"'))) {
+          violations.push(`${rel}:${lineNumber} → ${line.trim()}`)
+        }
+      })
+    }
+  }
+
+  if (violations.length > 0) {
+    recordFailure(
+      [
+        'E71: DesktopLayout must be imported from @rhythm/ui in studio/patient apps.',
+        ...violations.map((hit) => `  - ${hit}`),
+      ].join('\n'),
+    )
+  }
+}
+
 function run() {
   checkMobileSurface()
   checkCanonicalRoute()
   checkAssessPage()
   checkLegacyDirs()
   checkVersionIdentity()
+  checkSharedUiImports()
 
   if (failures.length > 0) {
     console.error('❌ E71 verification failed:\n')

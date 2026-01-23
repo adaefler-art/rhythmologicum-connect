@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "rhythm-core": "file:../../packages/rhythm-core",
+    "@rhythm/ui": "file:../../packages/ui",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "lucide-react": "^0.556.0",

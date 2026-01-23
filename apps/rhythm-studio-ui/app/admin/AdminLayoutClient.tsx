@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { DesktopLayout } from '@/lib/ui'
+import { DesktopLayout } from '@rhythm/ui'
 import {
   hasAnyRole,
   getUserRole,

@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   getStudioEnv()
   return (
     <OrgDesignTokensServerProvider>
-      <div className="min-h-screen">
+      <div className="min-h-full">
         <AdminLayoutClient>{children}</AdminLayoutClient>
       </div>
     </OrgDesignTokensServerProvider>

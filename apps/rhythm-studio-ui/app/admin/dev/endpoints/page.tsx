@@ -62,8 +62,8 @@ async function loadVersionInfo(): Promise<VersionInfo | null> {
  */
 function FeatureDisabledUI() {
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="p-8">
+      <div className="w-full max-w-2xl">
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
           <h1 className="text-xl font-semibold text-amber-900">
             🔒 Endpoint Catalog Disabled
@@ -122,7 +122,7 @@ export default async function DevEndpointsPage() {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-slate-100">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-[center] sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold">Endpoint Catalog</h1>
             <p className="text-sm text-slate-400">
@@ -147,13 +147,13 @@ export default async function DevEndpointsPage() {
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <a
             href="/version.json"
-            className="inline-flex items-center rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
+            className="inline-flex items-[center] rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
           >
             /version.json
           </a>
           <a
             href="/api/admin/dev/endpoint-catalog"
-            className="inline-flex items-center rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
+            className="inline-flex items-[center] rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
           >
             /api/admin/dev/endpoint-catalog
           </a>

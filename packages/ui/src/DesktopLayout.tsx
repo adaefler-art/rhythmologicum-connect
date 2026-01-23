@@ -10,7 +10,8 @@ import {
   LogOut,
   User,
 } from 'lucide-react'
-import { layout } from '@/lib/design-tokens'
+
+const DEFAULT_CONTENT_MAX_WIDTH = '1600px'
 
 export interface NavItem {
   href: string
@@ -67,7 +68,7 @@ export function DesktopLayout({
   navItems = [],
   variant = 'default',
   showTopbarTitle = true,
-  contentMaxWidth = layout.contentMaxWidth,
+  contentMaxWidth = DEFAULT_CONTENT_MAX_WIDTH,
   children,
 }: DesktopLayoutProps) {
   const pathname = usePathname()
@@ -103,6 +104,7 @@ export function DesktopLayout({
     <div
       className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 md:grid md:grid-cols-[280px_minmax(0,1fr)]"
       data-testid="desktoplayout-root"
+      data-layout-build="DL_MARKER_v1"
     >
       {/* Desktop Sidebar */}
       <aside

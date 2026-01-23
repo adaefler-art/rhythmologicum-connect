@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
     externalDir: true,
   },
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  transpilePackages: ['rhythm-core'],
+  transpilePackages: ['rhythm-core', '@rhythm/ui'],
   async rewrites() {
     if (!engineBaseUrl) {
       return []

@@ -268,7 +268,7 @@ export default function OperationalSettingsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
+        <div className="flex justify-start py-12">
           <LoadingSpinner />
         </div>
       ) : error ? (
@@ -321,7 +321,7 @@ function TemplatesTab({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-[center] gap-2 mb-2">
                       <h3 className="font-medium">{template.name}</h3>
                       <Badge variant={template.is_active ? 'success' : 'secondary'}>
                         {template.is_active ? 'Aktiv' : 'Inaktiv'}
@@ -342,7 +342,7 @@ function TemplatesTab({
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-[center] gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -384,7 +384,7 @@ function RulesTab({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-[center] gap-2 mb-2">
                       <h3 className="font-medium">{rule.rule_name}</h3>
                       <Badge variant={rule.is_active ? 'success' : 'secondary'}>
                         {rule.is_active ? 'Aktiv' : 'Inaktiv'}
@@ -411,7 +411,7 @@ function RulesTab({
                       {rule.schedule_cron && <span>Cron: {rule.schedule_cron}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-[center] gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -453,7 +453,7 @@ function ThresholdsTab({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-[center] gap-2 mb-2">
                       <h3 className="font-medium">{threshold.name}</h3>
                       <Badge variant={threshold.is_active ? 'success' : 'secondary'}>
                         {threshold.is_active ? 'Aktiv' : 'Inaktiv'}
@@ -490,7 +490,7 @@ function ThresholdsTab({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-[center] gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -519,8 +519,8 @@ function AuditTab({ auditLogs, total }: { auditLogs: AuditLog[]; total: number }
           <div className="space-y-2">
             {auditLogs.map((log) => (
               <div key={log.id} className="border rounded-lg p-3 text-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-[center] justify-between mb-2">
+                  <div className="flex items-[center] gap-2">
                     <Badge
                       variant={
                         log.operation === 'INSERT'
