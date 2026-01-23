@@ -22,12 +22,18 @@ export interface NavItem {
 export interface DesktopLayoutProps {
   /** Application title */
   appTitle?: string
+  /** Optional subtitle under the app title */
+  appSubtitle?: string
   /** User email or identifier */
   userEmail?: string
   /** Sign out handler */
   onSignOut?: () => void
   /** Navigation items */
   navItems?: NavItem[]
+  /** Toggle topbar title rendering */
+  showTopbarTitle?: boolean
+  /** Optional max width for content container (null = full width) */
+  contentMaxWidth?: number | string | null
   /** Main content */
   children: ReactNode
 }
@@ -53,9 +59,12 @@ export interface DesktopLayoutProps {
  */
 export function DesktopLayout({
   appTitle = 'Rhythmologicum Connect',
+  appSubtitle = '',
   userEmail,
   onSignOut,
   navItems = [],
+  showTopbarTitle = true,
+  contentMaxWidth = layout.contentMaxWidth,
   children,
 }: DesktopLayoutProps) {
   const pathname = usePathname()
@@ -88,13 +97,13 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
       {/* Desktop Sidebar */}
       <aside
         className={`
-          hidden lg:flex flex-col shrink-0
+          hidden md:flex flex-col shrink-0
           w-[280px]
-          lg:sticky lg:top-0 h-screen
+          md:sticky md:top-0 h-screen
           overflow-y-auto
           z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
         `}
@@ -105,7 +114,9 @@ export function DesktopLayout({
             <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
               {appTitle}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Clinician</p>
+            {appSubtitle ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{appSubtitle}</p>
+            ) : null}
           </div>
         </div>
 
@@ -179,15 +190,22 @@ export function DesktopLayout({
         <header className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150">
           <div className="flex items-center justify-between w-full">
             {/* Page title will be rendered by individual pages */}
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
-            </h2>
+            {showTopbarTitle ? (
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
+              </h2>
+            ) : (
+              <div className="h-6" />
+            )}
           </div>
         </header>
 
         {/* Page Content */}
         <main className="p-4 lg:p-8 w-full">
-          <div className="w-full mx-auto" style={{ maxWidth: layout.contentMaxWidth }}>
+          <div
+            className={contentMaxWidth === null ? 'w-full' : 'w-full mx-auto'}
+            style={contentMaxWidth === null ? undefined : { maxWidth: contentMaxWidth }}
+          >
             {children}
           </div>
         </main>
