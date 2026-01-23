@@ -1,15 +1,11 @@
+
+// --- NEW MINIMAL ROBUST DESKTOPLAYOUT ---
 'use client'
 
 import { type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Workflow,
-  FileText,
-  LogOut,
-  User,
-} from 'lucide-react'
+import { LayoutDashboard, Workflow, FileText, LogOut, User } from 'lucide-react'
 
 const DEFAULT_CONTENT_MAX_WIDTH = '1600px'
 
@@ -21,53 +17,21 @@ export interface NavItem {
 }
 
 export interface DesktopLayoutProps {
-  /** Application title */
   appTitle?: string
-  /** Optional subtitle under the app title */
   appSubtitle?: string
-  /** User email or identifier */
   userEmail?: string
-  /** Sign out handler */
   onSignOut?: () => void
-  /** Navigation items */
   navItems?: NavItem[]
-  /** Layout density variant */
-  variant?: 'default' | 'compact'
-  /** Toggle topbar title rendering */
-  showTopbarTitle?: boolean
-  /** Optional max width for content container (null = full width) */
   contentMaxWidth?: number | string | null
-  /** Main content */
   children: ReactNode
 }
 
-/**
- * DesktopLayout Component
- * 
- * Modern desktop layout for clinician dashboard with:
- * - Fixed sidebar navigation
- * - Topbar with title and user menu
- * - Responsive design (1024px+)
- * - Active state indication
- * 
- * @example
- * <DesktopLayout
- *   appTitle="Rhythmologicum Connect"
- *   userEmail="doctor@example.com"
- *   onSignOut={handleSignOut}
- *   navItems={navItems}
- * >
- *   <PageContent />
- * </DesktopLayout>
- */
 export function DesktopLayout({
   appTitle = 'Rhythmologicum Connect',
   appSubtitle = '',
   userEmail,
   onSignOut,
   navItems = [],
-  variant = 'default',
-  showTopbarTitle = true,
   contentMaxWidth = DEFAULT_CONTENT_MAX_WIDTH,
   children,
 }: DesktopLayoutProps) {
@@ -88,17 +52,13 @@ export function DesktopLayout({
   }
 
   // Determine active state if not explicitly set
-  const getNavItems = () => {
-    return navItems.map(item => ({
-      ...item,
-      active: item.active !== undefined 
-        ? item.active 
-        : pathname === item.href || (item.href !== '/clinician' && pathname?.startsWith(item.href)),
-      icon: item.icon || getDefaultIcon(item.href)
-    }))
-  }
-
-  const processedNavItems = getNavItems()
+  const processedNavItems = navItems.map(item => ({
+    ...item,
+    active: item.active !== undefined
+      ? item.active
+      : pathname === item.href || (item.href !== '/clinician' && pathname?.startsWith(item.href)),
+    icon: item.icon || getDefaultIcon(item.href)
+  }))
 
   return (
     <div
@@ -106,13 +66,13 @@ export function DesktopLayout({
       data-testid="desktoplayout-root"
       data-layout-build="DL_MARKER_v1"
     >
-      {/* Desktop Sidebar */}
+      {/* Sidebar */}
       <aside
         data-testid="desktoplayout-sidebar"
-        className="hidden md:flex flex-col shrink-0 w-[280px] md:sticky md:top-0 md:h-screen overflow-y-auto z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700"
+        className="hidden md:flex flex-col w-[280px] md:sticky md:top-0 md:h-screen overflow-y-auto z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700"
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
               {appTitle}
@@ -122,8 +82,7 @@ export function DesktopLayout({
             ) : null}
           </div>
         </div>
-
-        {/* Navigation - Scrollable with flex-1 */}
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-2">
             {processedNavItems.map((item) => (
@@ -152,8 +111,7 @@ export function DesktopLayout({
             ))}
           </ul>
         </nav>
-
-        {/* User Section - Always visible at bottom */}
+        {/* User Section */}
         {userEmail && (
           <div className="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
             <div className="flex items-center gap-3">
@@ -179,50 +137,35 @@ export function DesktopLayout({
           </div>
         )}
       </aside>
-
-      {/* Mobile Menu (hidden for now) */}
-
-      {/* Main Content Area */}
-      <div
-        className={`
-          min-w-0
-          min-h-screen
-          flex flex-col
-        `}
-      >
+      {/* Content Column */}
+      <div className="min-w-0 flex flex-col">
         {/* Topbar */}
         <header
           data-testid="desktoplayout-topbar"
-          className={`sticky top-0 z-30 ${
-            variant === 'compact' ? 'h-12' : 'h-16'
-          } bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 md:px-8 transition-colors duration-150`}
+          className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 md:px-8"
         >
-          <div className="flex items-center justify-between w-full">
-            {/* Page title will be rendered by individual pages */}
-            {showTopbarTitle && variant !== 'compact' ? (
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
-              </h2>
-            ) : (
-              <div className="h-6" />
-            )}
-          </div>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
+            {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
+          </h2>
         </header>
-
-        {/* Page Content */}
+        {/* Main Content */}
         <main
           data-testid="desktoplayout-main"
-          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 md:p-8'} w-full flex-1 min-h-0`}
+          className="flex-1 min-w-0 p-4 md:p-6"
         >
           <div
-            className="w-full max-w-none"
+            data-testid="desktoplayout-children"
+            className="w-full"
+            style={
+              contentMaxWidth === null
+                ? undefined
+                : { maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto' }
+            }
           >
-            <div data-testid="desktoplayout-children">{children}</div>
+            {children}
           </div>
         </main>
       </div>
     </div>
   )
 }
-
-export default DesktopLayout
