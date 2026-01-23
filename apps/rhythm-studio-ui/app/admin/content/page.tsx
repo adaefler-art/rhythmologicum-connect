@@ -175,7 +175,7 @@ export default function AdminContentDashboard() {
   }
 
   const handlePageClick = (page: ContentPage) => {
-    const key = page.slug || page.id
+    const key = page.slug ?? page.id
     router.push(`/admin/content/${key}`)
   }
 

@@ -88,12 +88,13 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 flex transition-colors duration-150">
+    <div className="min-h-dvh bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       {/* Desktop Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 bottom-0 z-40 h-dvh bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
           hidden lg:flex flex-col shrink-0 w-64
+          lg:sticky lg:top-0 h-dvh
+          z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
         `}
       >
         {/* Sidebar Header */}
@@ -168,9 +169,7 @@ export function DesktopLayout({
       {/* Main Content Area */}
       <div
         className={`
-          flex-1 min-w-0
-          transition-all duration-300 ease-in-out
-          lg:ml-64
+          min-w-0
           min-h-dvh
         `}
       >

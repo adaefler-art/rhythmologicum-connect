@@ -9,11 +9,11 @@ import { requireAdminOrClinicianRole } from '@/lib/api/authHelpers'
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
+    const { id: key } = await params
 
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        id,
+        key,
       )
 
     // Check authentication and authorization
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const contentPageQuery = adminClient
       .from('content_pages')
       .select(baseSelect)
-      .eq(isUuid ? 'id' : 'slug', id)
+      .eq(isUuid ? 'id' : 'slug', key)
     let contentPage: any
     let pageError: any
 
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ;({ data: contentPage, error: pageError } = await adminClient
         .from('content_pages')
         .select(fallbackSelect)
-        .eq(isUuid ? 'id' : 'slug', id)
+        .eq(isUuid ? 'id' : 'slug', key)
         .maybeSingle())
     }
 
@@ -97,7 +97,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (!contentPage) {
-      return NextResponse.json({ error: 'Content page not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'NotFound', message: 'Content page not found' },
+        { status: 404 },
+      )
     }
 
     // Fetch sections separately; empty array is a valid state.
