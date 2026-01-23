@@ -56,7 +56,14 @@ const eslintConfig = defineConfig([
   },
   // File-specific overrides for allowed process.env usage
   {
-    files: ["lib/env.ts", "next.config.ts", "scripts/**/*", "tools/**/*"],
+    files: [
+      "lib/env.ts",
+      "next.config.ts",
+      "apps/**/next.config.ts",
+      "apps/**/next.config.mjs",
+      "scripts/**/*",
+      "tools/**/*",
+    ],
     rules: {
       "no-restricted-syntax": "off",
     },
@@ -92,7 +99,7 @@ const eslintConfig = defineConfig([
   },
   // Override for API routes - allow admin client with documentation requirement
   {
-    files: ["app/api/**/*.ts"],
+    files: ["app/api/**/*.ts", "apps/**/app/api/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
