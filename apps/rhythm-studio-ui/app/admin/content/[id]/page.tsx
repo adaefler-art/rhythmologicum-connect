@@ -14,7 +14,7 @@ type PageProps = {
 }
 
 async function loadContentPage(key: string) {
-  const headerList = headers()
+  const headerList = await headers()
   const host = headerList.get('host')
   const protocol = host?.includes('localhost') ? 'http' : 'https'
 
@@ -22,7 +22,7 @@ async function loadContentPage(key: string) {
     throw new Error('Fehler beim Laden der Content-Page')
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookieHeader = cookieStore
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
