@@ -112,7 +112,7 @@ export function DesktopLayout({
         className={`
           hidden md:flex flex-col shrink-0
           w-[280px]
-          md:sticky md:top-0 h-screen
+          md:sticky md:top-0 md:h-screen
           overflow-y-auto
           z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
         `}
@@ -200,7 +200,7 @@ export function DesktopLayout({
           data-testid="desktoplayout-topbar"
           className={`sticky top-0 z-30 ${
             variant === 'compact' ? 'h-12' : 'h-16'
-          } bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150`}
+          } bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 md:px-8 transition-colors duration-150`}
         >
           <div className="flex items-center justify-between w-full">
             {/* Page title will be rendered by individual pages */}
@@ -217,7 +217,7 @@ export function DesktopLayout({
         {/* Page Content */}
         <main
           data-testid="desktoplayout-main"
-          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 lg:p-8'} w-full`}
+          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 md:p-8'} w-full`}
         >
           <div
             className={
