@@ -100,9 +100,13 @@ export function DesktopLayout({
   const processedNavItems = getNavItems()
 
   return (
-    <div className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+    <div
+      className="min-h-screen bg-[#f7f9fa] dark:bg-slate-900 transition-colors duration-150 md:grid md:grid-cols-[280px_minmax(0,1fr)]"
+      data-testid="desktoplayout-root"
+    >
       {/* Desktop Sidebar */}
       <aside
+        data-testid="desktoplayout-sidebar"
         className={`
           hidden md:flex flex-col shrink-0
           w-[280px]
@@ -191,6 +195,7 @@ export function DesktopLayout({
       >
         {/* Topbar */}
         <header
+          data-testid="desktoplayout-topbar"
           className={`sticky top-0 z-30 ${
             variant === 'compact' ? 'h-12' : 'h-16'
           } bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150`}
@@ -208,7 +213,10 @@ export function DesktopLayout({
         </header>
 
         {/* Page Content */}
-        <main className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 lg:p-8'} w-full`}>
+        <main
+          data-testid="desktoplayout-main"
+          className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 lg:p-8'} w-full`}
+        >
           <div
             className={
               variant === 'compact'
@@ -223,7 +231,7 @@ export function DesktopLayout({
                 : { maxWidth: contentMaxWidth }
             }
           >
-            {children}
+            <div data-testid="desktoplayout-children">{children}</div>
           </div>
         </main>
       </div>
