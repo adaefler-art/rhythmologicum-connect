@@ -175,6 +175,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
           appTitle="Rhythmologicum Connect"
           navItems={navItems}
           contentMaxWidth={null}
+          variant="compact"
         >
           <div className="min-h-[60vh] flex items-start justify-start">
             <p className="text-slate-600">Authentifizierung wird überprüft…</p>
@@ -197,6 +198,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
         onSignOut={handleSignOut}
         navItems={navItems}
         contentMaxWidth={null}
+        variant="compact"
       >
         {children}
       </DesktopLayout>

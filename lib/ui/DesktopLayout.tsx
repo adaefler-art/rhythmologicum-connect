@@ -30,6 +30,8 @@ export interface DesktopLayoutProps {
   onSignOut?: () => void
   /** Navigation items */
   navItems?: NavItem[]
+  /** Layout density variant */
+  variant?: 'default' | 'compact'
   /** Toggle topbar title rendering */
   showTopbarTitle?: boolean
   /** Optional max width for content container (null = full width) */
@@ -63,6 +65,7 @@ export function DesktopLayout({
   userEmail,
   onSignOut,
   navItems = [],
+  variant = 'default',
   showTopbarTitle = true,
   contentMaxWidth = layout.contentMaxWidth,
   children,
@@ -187,10 +190,14 @@ export function DesktopLayout({
         `}
       >
         {/* Topbar */}
-        <header className="sticky top-0 z-30 h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150">
+        <header
+          className={`sticky top-0 z-30 ${
+            variant === 'compact' ? 'h-12' : 'h-16'
+          } bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 lg:px-8 transition-colors duration-150`}
+        >
           <div className="flex items-center justify-between w-full">
             {/* Page title will be rendered by individual pages */}
-            {showTopbarTitle ? (
+            {showTopbarTitle && variant !== 'compact' ? (
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {processedNavItems.find(item => item.active)?.label || 'Dashboard'}
               </h2>
@@ -201,10 +208,20 @@ export function DesktopLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-8 w-full">
+        <main className={`${variant === 'compact' ? 'p-4 md:p-6' : 'p-4 lg:p-8'} w-full`}>
           <div
-            className={contentMaxWidth === null ? 'w-full' : 'w-full mx-auto'}
-            style={contentMaxWidth === null ? undefined : { maxWidth: contentMaxWidth }}
+            className={
+              variant === 'compact'
+                ? 'w-full'
+                : contentMaxWidth === null
+                  ? 'w-full'
+                  : 'w-full mx-auto'
+            }
+            style={
+              variant === 'compact' || contentMaxWidth === null
+                ? undefined
+                : { maxWidth: contentMaxWidth }
+            }
           >
             {children}
           </div>
