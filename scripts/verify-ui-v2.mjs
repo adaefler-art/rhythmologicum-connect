@@ -13,7 +13,7 @@
  * 1 - Violations found
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs'
 import { join, relative } from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -24,6 +24,7 @@ const __dirname = dirname(__filename)
 // Configuration
 const PATIENT_UI_ROOT = join(__dirname, '../apps/rhythm-patient-ui/app/patient')
 const MOBILE_ROUTE_GROUP = join(PATIENT_UI_ROOT, '(mobile)')
+const CONTENT_ROUTE_ROOT = join(__dirname, '../apps/rhythm-patient-ui/app/content')
 
 // Allowlisted routes (can exist outside (mobile) route group)
 const ALLOWLISTED_ROUTES = [
@@ -55,11 +56,22 @@ const FORBIDDEN_IMPORTS = [
   /import.*from.*['"].*\/components\/Container['"]/,
 ]
 
+const FORBIDDEN_CONTENT_IMPORTS = [
+  /import.*from.*['"]@\/lib\/ui(?!\/mobile-v2)['"]/, 
+  /MobileHeader/, 
+  ...FORBIDDEN_IMPORTS,
+]
+
 // Allowlisted files in (mobile) that can have width constraints (for special cases)
 const MOBILE_WIDTH_ALLOWLIST = [
   '__tests__',
   '.test.',
   'dev/ui-v2', // Dev inspection page
+]
+
+const CONTENT_WIDTH_ALLOWLIST = [
+  '__tests__',
+  '.test.',
 ]
 
 let violations = []
@@ -180,6 +192,83 @@ function checkForbiddenImports() {
 }
 
 /**
+ * Check 4: Content routes use Mobile v2 layout and no legacy patterns
+ */
+function checkContentRoutes() {
+  console.log('🔍 Check 4: Content routes use v2 layout and no legacy patterns...')
+
+  if (!existsSync(CONTENT_ROUTE_ROOT)) {
+    return
+  }
+
+  const layoutPath = join(CONTENT_ROUTE_ROOT, 'layout.tsx')
+  try {
+    const layoutContent = readFileSync(layoutPath, 'utf-8')
+    if (!layoutContent.includes('MobileShellV2')) {
+      violations.push({
+        type: 'CONTENT_LAYOUT_MISSING_SHELL',
+        file: relative(PATIENT_UI_ROOT, layoutPath),
+        message: 'Content layout must wrap with MobileShellV2',
+      })
+    }
+    if (!layoutContent.includes('PatientDesignTokensProvider')) {
+      violations.push({
+        type: 'CONTENT_LAYOUT_MISSING_TOKENS',
+        file: relative(PATIENT_UI_ROOT, layoutPath),
+        message: 'Content layout must apply patient design tokens',
+      })
+    }
+  } catch (error) {
+    violations.push({
+      type: 'CONTENT_LAYOUT_MISSING',
+      file: relative(PATIENT_UI_ROOT, layoutPath),
+      message: 'Content layout.tsx is required for v2 wrapper',
+    })
+  }
+
+  for (const filePath of walkDir(CONTENT_ROUTE_ROOT)) {
+    const relPath = relative(CONTENT_ROUTE_ROOT, filePath)
+    if (CONTENT_WIDTH_ALLOWLIST.some(pattern => relPath.includes(pattern))) {
+      continue
+    }
+
+    if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) {
+      continue
+    }
+
+    const content = readFileSync(filePath, 'utf-8')
+
+    for (const pattern of FORBIDDEN_WIDTH_PATTERNS) {
+      if (pattern.test(content)) {
+        const lines = content.split('\n')
+        const matchingLines = lines
+          .map((line, idx) => ({ line, idx: idx + 1 }))
+          .filter(({ line }) => pattern.test(line))
+
+        for (const { line, idx } of matchingLines) {
+          violations.push({
+            type: 'CONTENT_FORBIDDEN_WIDTH_PATTERN',
+            file: relative(PATIENT_UI_ROOT, filePath),
+            line: idx,
+            message: `Forbidden width pattern found: ${line.trim()}`,
+          })
+        }
+      }
+    }
+
+    for (const pattern of FORBIDDEN_CONTENT_IMPORTS) {
+      if (pattern.test(content)) {
+        violations.push({
+          type: 'CONTENT_FORBIDDEN_IMPORT',
+          file: relative(PATIENT_UI_ROOT, filePath),
+          message: 'Forbidden legacy import detected in /content',
+        })
+      }
+    }
+  }
+}
+
+/**
  * Main execution
  */
 function main() {
@@ -189,6 +278,7 @@ function main() {
     checkPagesOutsideMobile()
     checkForbiddenWidthPatterns()
     checkForbiddenImports()
+    checkContentRoutes()
     
     if (violations.length === 0) {
       console.log('\n✅ All checks passed! Mobile UI v2 constraints are satisfied.')

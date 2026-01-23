@@ -88,13 +88,27 @@ $env:RHYTHM_PATIENT_COOKIE="rhythm_refresh=PASTE; other=..."
 
 ```powershell
 $base = "http://localhost:3000"
-Invoke-WebRequest -UseBasicParsing "$base/content/ueber-das-assessment" | Select-Object -ExpandProperty StatusCode
+Invoke-WebRequest -UseBasicParsing "$base/content/was-ist-stress" | Select-Object -ExpandProperty StatusCode
 Invoke-WebRequest -UseBasicParsing "$base/content/does-not-exist" | Select-Object -ExpandProperty StatusCode
 ```
 
 Expected:
 - Published slug returns **200**
 - Missing slug returns **404**
+
+#### Funnel resolver smoke check
+
+```powershell
+$base = "http://localhost:3000"
+Invoke-WebRequest -UseBasicParsing "$base/api/content/resolve?funnel=stress-assessment&slug=was-ist-stress" |
+	Select-Object -ExpandProperty StatusCode
+Invoke-WebRequest -UseBasicParsing "$base/api/content/resolve?slug=was-ist-stress" -SkipHttpErrorCheck |
+	Select-Object -ExpandProperty StatusCode
+```
+
+Expected:
+- With funnel param: **200** (content resolved or missing_content)
+- Without funnel param: **422**
 
 **Verification:**
 - ✅ Console shows "Ready in Xms"

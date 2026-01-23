@@ -11,7 +11,6 @@ import {
 } from '@/lib/api/contracts/patient/dashboard'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { resolveNextStep, type NextStepResolverInput } from '@/lib/nextStep/resolver'
-import { fetchContentTilesForDashboard } from '@/lib/services/contentTiles'
 
 /**
  * E6.5.3: Patient Dashboard API - Enhanced with RLS and Bounded IO
@@ -42,6 +41,63 @@ export const revalidate = 0
 const MAX_FUNNEL_SUMMARIES = 5
  
 const MAX_CONTENT_TILES = 10
+
+type ContentTileRow = {
+  id: string
+  slug: string | null
+  title: string | null
+  excerpt: string | null
+  category: string | null
+  priority: number | null
+  created_at: string
+}
+
+function mapCategoryToTileType(category: string | null): ContentTile['type'] {
+  switch (category) {
+    case 'action':
+      return 'action'
+    case 'promotion':
+      return 'promotion'
+    case 'info':
+    default:
+      return 'info'
+  }
+}
+
+async function fetchContentTilesFromDb(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  maxTiles: number,
+): Promise<ContentTile[]> {
+  const { data, error } = await supabase
+    .from('content_pages')
+    .select('id, slug, title, excerpt, category, priority, created_at')
+    .eq('status', 'published')
+    .is('deleted_at', null)
+    .is('funnel_id', null)
+    .order('priority', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(maxTiles)
+
+  if (error) {
+    console.error('[DASHBOARD_API] STEP=fetchContentTiles success=false', {
+      errorCode: error.code,
+      errorMessage: error.message,
+    })
+    return []
+  }
+
+  return (data as ContentTileRow[])
+    .filter((row) => !!row.slug)
+    .map((row) => ({
+      id: row.id,
+      type: mapCategoryToTileType(row.category),
+      title: row.title ?? 'Inhalt',
+      description: row.excerpt ?? '',
+      actionLabel: null,
+      actionTarget: `/content/${row.slug}`,
+      priority: row.priority ?? 0,
+    }))
+}
 
 export async function GET() {
   // V061-I04: Generate correlation ID early for consistent logging
@@ -150,11 +206,11 @@ export async function GET() {
       // Continue with null profile - will use empty state
     }
     
-    // E6.5.6: Fetch content tiles with deterministic ordering
-    // V061-I04: Fetch tiles BEFORE patient profile check since they're static/non-patient-specific
+    // E6.5.6: Fetch content tiles from published content pages
+    // V061-I04: Fetch tiles BEFORE patient profile check since they're non-patient-specific
     let contentTiles: ContentTile[] = []
     try {
-      contentTiles = fetchContentTilesForDashboard(MAX_CONTENT_TILES)
+      contentTiles = await fetchContentTilesFromDb(supabase, MAX_CONTENT_TILES)
       console.log('[DASHBOARD_API] STEP=fetchContentTiles success=true', {
         correlationId,
         tileCount: contentTiles.length,

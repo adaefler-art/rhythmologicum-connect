@@ -76,17 +76,10 @@ export default async function ContentPage({ params }: PageProps) {
     notFound()
   }
 
-  const layoutClass =
-    contentPage.layout === 'wide'
-      ? 'max-w-5xl'
-      : contentPage.layout === 'hero'
-        ? 'max-w-7xl'
-        : 'max-w-3xl'
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-neutral-50">
-      <main className={`${layoutClass} mx-auto px-4 py-8 sm:py-12`}>
-        <article className="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <main className="w-full px-4 py-6 sm:py-10">
+        <article className="w-full bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 sm:px-8 py-8 sm:py-12">
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
               {contentPage.title}
