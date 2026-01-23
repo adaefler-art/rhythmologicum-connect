@@ -68,7 +68,7 @@ export function DesktopLayout({
     >
       {/* Sidebar */}
       <aside
-        data-testid="desktoplayout-sidebar"
+        data-testid="desktoplayout-sidebar_SB"
         className="hidden md:flex flex-col w-[280px] md:sticky md:top-0 md:h-screen overflow-y-auto z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700"
       >
         {/* Sidebar Header */}
