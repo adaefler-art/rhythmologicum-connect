@@ -7,7 +7,9 @@ export default {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     // Monorepo shared UI package (DesktopLayout, etc.)
-    path.join(__dirname, '../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}'),
+    path
+      .join(__dirname, '../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}')
+      .replace(/\\/g, '/'),
   ],
   theme: {
     extend: {},

@@ -58,6 +58,18 @@ const SHARED_UI_IMPORT_TARGETS = [
 ]
 
 const MOBILE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.jsx'])
+const CSS_EXPECTED_PATTERNS = [
+  /w-\\\[280px\\\]/,
+  /grid-cols-\\\[280px_minmax\\\(0\\,1fr\\\)\\\]/,
+]
+const CSS_SCAN_DIRS = [
+  join(ROOT, '.next', 'static', 'css'),
+  join(ROOT, '.next', 'static', 'chunks'),
+  join(ROOT, 'apps', 'rhythm-studio-ui', '.next', 'static', 'css'),
+  join(ROOT, 'apps', 'rhythm-studio-ui', '.next', 'static', 'chunks'),
+  join(ROOT, 'apps', 'rhythm-patient-ui', '.next', 'static', 'css'),
+  join(ROOT, 'apps', 'rhythm-patient-ui', '.next', 'static', 'chunks'),
+]
 
 const failures = []
 
@@ -83,6 +95,65 @@ function walkFiles(dir) {
   }
 
   return files
+}
+
+function walkCssFiles(dir) {
+  if (!existsSync(dir)) {
+    return []
+  }
+
+  const entries = readdirSync(dir, { withFileTypes: true })
+  const files = []
+
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...walkCssFiles(fullPath))
+      continue
+    }
+
+    if (entry.name.endsWith('.css')) {
+      files.push(fullPath)
+    }
+  }
+
+  return files
+}
+
+function checkSharedUiCssUtilities() {
+  const cssFiles = CSS_SCAN_DIRS.flatMap((dir) => walkCssFiles(dir))
+
+  if (cssFiles.length === 0) {
+    recordFailure(
+      `E71: No CSS files found in ${CSS_SCAN_DIRS.map((dir) => relative(ROOT, dir)).join(', ')}.`,
+    )
+    return
+  }
+
+  const missingPatterns = new Set(CSS_EXPECTED_PATTERNS)
+
+  for (const file of cssFiles) {
+    const content = readFileSync(file, 'utf8')
+    for (const pattern of CSS_EXPECTED_PATTERNS) {
+      if (missingPatterns.has(pattern) && pattern.test(content)) {
+        missingPatterns.delete(pattern)
+      }
+    }
+
+    if (missingPatterns.size === 0) {
+      break
+    }
+  }
+
+  if (missingPatterns.size > 0) {
+    recordFailure(
+      [
+        'E71: Shared UI Tailwind utilities missing from built CSS.',
+        `Searched: ${CSS_SCAN_DIRS.map((dir) => relative(ROOT, dir)).join(', ')}`,
+        ...Array.from(missingPatterns).map((pattern) => `  - Missing ${pattern}`),
+      ].join('\n'),
+    )
+  }
 }
 
 function checkMobileSurface() {
@@ -247,6 +318,7 @@ function run() {
   checkLegacyDirs()
   checkVersionIdentity()
   checkSharedUiImports()
+  checkSharedUiCssUtilities()
 
   if (failures.length > 0) {
     console.error('❌ E71 verification failed:\n')

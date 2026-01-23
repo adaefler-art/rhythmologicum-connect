@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Tailwind v4 monorepo sources */
+@source "../../../packages/ui/src/**/*.ts";
+@source "../../../packages/ui/src/**/*.tsx";
+@source "../../../packages/ui/src/**/*.js";
+@source "../../../packages/ui/src/**/*.jsx";
+@source "./**/*.ts";
+@source "./**/*.tsx";
+@source "./**/*.js";
+@source "./**/*.jsx";
+
 /**
  * Design System CSS Variables
  * 
