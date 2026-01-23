@@ -109,13 +109,7 @@ export function DesktopLayout({
       {/* Desktop Sidebar */}
       <aside
         data-testid="desktoplayout-sidebar"
-        className={`
-          hidden md:flex flex-col shrink-0
-          w-[280px]
-          md:sticky md:top-0 md:h-screen
-          overflow-y-auto
-          z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700
-        `}
+        className="hidden md:flex flex-col shrink-0 w-[280px] md:sticky md:top-0 md:h-screen overflow-y-auto z-40 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700"
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-700">
