@@ -79,8 +79,8 @@ export default async function EditContentPage({ params }: PageProps) {
 
   if (loadError) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md text-center">
+      <div className="p-6">
+        <div className="max-w-md">
           <p className="text-red-500 mb-4">{loadError}</p>
           <Link
             href="/admin/content"
@@ -89,7 +89,7 @@ export default async function EditContentPage({ params }: PageProps) {
             Zurück zur Übersicht
           </Link>
         </div>
-      </main>
+      </div>
     )
   }
 
@@ -102,6 +102,8 @@ export default async function EditContentPage({ params }: PageProps) {
   }
 
   return (
-    <ContentPageEditor mode="edit" pageId={contentPage.id} initialData={contentPage} />
+    <div className="p-6">
+      <ContentPageEditor mode="edit" pageId={contentPage.id} initialData={contentPage} />
+    </div>
   )
 }

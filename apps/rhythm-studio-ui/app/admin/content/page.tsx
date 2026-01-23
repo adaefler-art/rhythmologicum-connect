@@ -265,27 +265,27 @@ export default function AdminContentDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <div className="p-6">
         <p className="text-slate-600">Content-Pages werden geladen…</p>
-      </main>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md text-center">
+      <div className="p-6">
+        <div className="max-w-md">
           <p className="text-red-500 mb-4">{error}</p>
           <Button variant="primary" onClick={() => window.location.reload()}>
             Neu laden
           </Button>
         </div>
-      </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6">
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
@@ -558,6 +558,6 @@ export default function AdminContentDashboard() {
           )}
         </>
       )}
-    </main>
+    </div>
   )
 }

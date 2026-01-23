@@ -23,13 +23,14 @@ export default function AdminError({
   }, [error])
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <ErrorState
-        title="Ein Fehler ist aufgetreten"
-        message="Beim Laden der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
-        onRetry={reset}
-        centered
-      />
+    <div className="p-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-6">
+        <ErrorState
+          title="Ein Fehler ist aufgetreten"
+          message="Beim Laden der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+          onRetry={reset}
+        />
+      </div>
     </div>
   )
 }

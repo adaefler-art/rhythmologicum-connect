@@ -8,8 +8,10 @@ import LoadingSpinner from '@/lib/ui/LoadingSpinner'
  */
 export default function AdminLoading() {
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50">
-      <LoadingSpinner size="lg" text="Laden..." centered />
+    <div className="p-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-6">
+        <LoadingSpinner size="lg" text="Laden..." />
+      </div>
     </div>
   )
 }

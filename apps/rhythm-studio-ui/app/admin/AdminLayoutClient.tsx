@@ -170,11 +170,13 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
 
   if (loading) {
     return (
-      <DesktopLayout appTitle="Rhythmologicum Connect" navItems={navItems}>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <p className="text-slate-600">Authentifizierung wird überprüft…</p>
-        </div>
-      </DesktopLayout>
+      <div data-admin-shell="1">
+        <DesktopLayout appTitle="Rhythmologicum Connect" navItems={navItems}>
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <p className="text-slate-600">Authentifizierung wird überprüft…</p>
+          </div>
+        </DesktopLayout>
+      </div>
     )
   }
 
@@ -183,17 +185,19 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
   const roleDisplay = getRoleDisplayName(role)
 
   return (
-    <DesktopLayout
-      appTitle="Rhythmologicum Connect"
-      userEmail={user?.email}
-      onSignOut={handleSignOut}
-      navItems={navItems}
-    >
-      {/* Role indicator */}
-      <div className="mb-4 text-xs text-slate-500">
-        Angemeldet als: <span className="font-medium text-slate-700">{roleDisplay}</span>
-      </div>
-      {children}
-    </DesktopLayout>
+    <div data-admin-shell="1">
+      <DesktopLayout
+        appTitle="Rhythmologicum Connect"
+        userEmail={user?.email}
+        onSignOut={handleSignOut}
+        navItems={navItems}
+      >
+        {/* Role indicator */}
+        <div className="mb-4 text-xs text-slate-500">
+          Angemeldet als: <span className="font-medium text-slate-700">{roleDisplay}</span>
+        </div>
+        {children}
+      </DesktopLayout>
+    </div>
   )
 }
