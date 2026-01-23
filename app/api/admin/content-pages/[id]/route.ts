@@ -11,6 +11,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
 
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+
     // Check authentication and authorization
     const supabase = await createServerSupabaseClient()
 
@@ -52,7 +57,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       deleted_at
     `
 
-    const contentPageQuery = adminClient.from('content_pages').select(baseSelect).eq('id', id)
+    const contentPageQuery = adminClient
+      .from('content_pages')
+      .select(baseSelect)
+      .eq(isUuid ? 'id' : 'slug', id)
     let contentPage: any
     let pageError: any
 
@@ -79,7 +87,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ;({ data: contentPage, error: pageError } = await adminClient
         .from('content_pages')
         .select(fallbackSelect)
-        .eq('id', id)
+        .eq(isUuid ? 'id' : 'slug', id)
         .maybeSingle())
     }
 
@@ -96,7 +104,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: sections, error: sectionsError } = await adminClient
       .from('content_page_sections')
       .select('id, title, body_markdown, order_index, created_at, updated_at')
-      .eq('content_page_id', id)
+      .eq('content_page_id', contentPage.id)
       .order('order_index', { ascending: true })
       .order('id', { ascending: true })
 

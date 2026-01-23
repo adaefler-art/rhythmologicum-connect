@@ -174,9 +174,9 @@ export default function AdminContentDashboard() {
     }
   }
 
-  const handlePageClick = (pageId: string) => {
-    // Placeholder for editor navigation
-    router.push(`/admin/content/${pageId}`)
+  const handlePageClick = (page: ContentPage) => {
+    const key = page.slug || page.id
+    router.push(`/admin/content/${key}`)
   }
 
   const handleNewPage = () => {
@@ -500,7 +500,7 @@ export default function AdminContentDashboard() {
                     className={`hover:bg-slate-50 transition cursor-pointer touch-manipulation ${
                       index !== paginatedPages.length - 1 ? 'border-b border-slate-100' : ''
                     }`}
-                    onClick={() => handlePageClick(page.id)}
+                    onClick={() => handlePageClick(page)}
                   >
                     <td className="px-4 py-4">
                       <span className="font-medium text-slate-900">{page.title}</span>

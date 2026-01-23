@@ -1,68 +1,139 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { notFound, redirect } from 'next/navigation'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import ContentPageEditor, { ContentPageEditorData } from '@/app/components/ContentPageEditor'
 
 export const dynamic = 'force-dynamic'
 
-export default function EditContentPage() {
-  const params = useParams()
-  const router = useRouter()
-  const pageId = params?.id as string
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [pageData, setPageData] = useState<Partial<ContentPageEditorData> | null>(null)
+type PageProps = {
+  params: Promise<{ id: string }>
+}
 
-  useEffect(() => {
-    const loadPage = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/admin/content-pages/${pageId}`)
+async function loadContentPage(key: string) {
+  const adminClient = createAdminSupabaseClient()
 
-        if (!response.ok) {
-          throw new Error('Fehler beim Laden der Content-Page')
-        }
+  const baseSelect = `
+    id,
+    slug,
+    title,
+    excerpt,
+    body_markdown,
+    status,
+    layout,
+    category,
+    priority,
+    funnel_id,
+    flow_step,
+    order_index,
+    updated_at,
+    created_at,
+    deleted_at
+  `
 
-        const data = await response.json()
-        setPageData(data.contentPage)
-      } catch (e) {
-        console.error(e)
-        setError(e instanceof Error ? e.message : 'Fehler beim Laden')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const isUuid = UUID_REGEX.test(key)
+  const baseQuery = adminClient
+    .from('content_pages')
+    .select(baseSelect)
+    .eq(isUuid ? 'id' : 'slug', key)
 
-    if (pageId) {
-      loadPage()
-    }
-  }, [pageId])
+  let contentPage: ContentPageEditorData | null = null
+  let pageError: { code?: string; message?: string } | null = null
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-600">Content-Page wird geladen...</p>
-      </main>
-    )
+  ;({ data: contentPage, error: pageError } = await baseQuery.is('deleted_at', null).maybeSingle())
+
+  if (pageError?.code === '42703') {
+    const fallbackSelect = `
+      id,
+      slug,
+      title,
+      excerpt,
+      body_markdown,
+      status,
+      layout,
+      category,
+      priority,
+      funnel_id,
+      flow_step,
+      order_index,
+      updated_at,
+      created_at
+    `
+    const fallbackQuery = adminClient
+      .from('content_pages')
+      .select(fallbackSelect)
+      .eq(isUuid ? 'id' : 'slug', key)
+    ;({ data: contentPage, error: pageError } = await fallbackQuery.maybeSingle())
   }
 
-  if (error || !pageData) {
+  if (pageError) {
+    throw new Error(pageError.message || 'Fehler beim Laden der Content-Page')
+  }
+
+  if (!contentPage) {
+    return null
+  }
+
+  return contentPage
+}
+
+export default async function EditContentPage({ params }: PageProps) {
+  const { id } = await params
+
+  if (!id) {
+    notFound()
+  }
+
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/')
+  }
+
+  const role = user.app_metadata?.role || user.user_metadata?.role
+  if (role !== 'clinician' && role !== 'admin') {
+    redirect('/')
+  }
+
+  let contentPage: ContentPageEditorData | null = null
+  let loadError: string | null = null
+
+  try {
+    contentPage = await loadContentPage(id)
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : 'Fehler beim Laden'
+  }
+
+  if (loadError) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
-          <p className="text-red-500 mb-4">{error || 'Content-Page nicht gefunden'}</p>
-          <button
-            onClick={() => router.push('/admin/content')}
-            className="px-6 py-3 min-h-[44px] rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation"
+          <p className="text-red-500 mb-4">{loadError}</p>
+          <Link
+            href="/admin/content"
+            className="inline-flex px-6 py-3 min-h-11 rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation"
           >
             Zurück zur Übersicht
-          </button>
+          </Link>
         </div>
       </main>
     )
   }
 
-  return <ContentPageEditor mode="edit" pageId={pageId} initialData={pageData} />
+  if (!contentPage) {
+    notFound()
+  }
+
+  if (UUID_REGEX.test(id) && contentPage.slug && contentPage.slug !== id) {
+    redirect(`/admin/content/${contentPage.slug}`)
+  }
+
+  return (
+    <ContentPageEditor mode="edit" pageId={contentPage.id} initialData={contentPage} />
+  )
 }
