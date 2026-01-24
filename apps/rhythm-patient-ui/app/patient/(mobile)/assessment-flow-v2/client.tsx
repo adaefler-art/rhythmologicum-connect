@@ -11,7 +11,7 @@ import {
   ErrorState,
   Chip,
 } from '@/lib/ui/mobile-v2'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 
 // ==========================================
 // TYPES
