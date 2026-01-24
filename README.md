@@ -34,6 +34,12 @@ npm test
 npm run build
 ```
 
+Guardrails (critical API + Vercel root + Jest):
+
+```bash
+npm run verify
+```
+
 ```bash
 npm run -s api:catalog
 pwsh -File scripts/ci/verify-endpoint-catalog.ps1
