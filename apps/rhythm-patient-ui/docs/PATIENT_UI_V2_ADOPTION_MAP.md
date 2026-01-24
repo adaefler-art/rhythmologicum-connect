@@ -2,9 +2,9 @@
 
 ## Summary
 - **Total Routes**: 18
-- **Fully v2 Compliant**: 5 (27%)
-- **Partially Compliant**: 8 (44%)
-- **Non-Compliant**: 5 (29%)
+- **Fully v2 Compliant**: 6 (33%)
+- **Partially Compliant**: 7 (39%)
+- **Non-Compliant**: 5 (28%)
 
 ---
 
@@ -99,13 +99,13 @@
 ### /patient/(mobile)/assessment-flow-v2
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/page.tsx`
 - **Route Group**: ✅ (mobile)
-- **Status**: ✅ Compliant
+- **Status**: ✅ Compliant (v2 icons migrated)
 - **UI Kit Usage**: Yes
 - **Violations**: None
 - **Components Used**: 
   - `Card`, `Button`, `ProgressBar`, `LoadingSkeleton`, `EmptyState`, `ErrorState`, `Chip` (v2)
-  - Lucide icons: `ChevronDown`, `ChevronUp`
-- **Action Items**: No changes needed
+  - Icons from v2 icon system: `ChevronDown`, `ChevronUp`
+- **Action Items**: ✅ Completed - Icons migrated to v2 system
 
 ### /patient/(mobile)/assess/[id]/flow
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/assess/[id]/flow/page.tsx`
@@ -119,17 +119,16 @@
 ### /patient/(mobile)/assessments-v2
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/assessments-v2/page.tsx`
 - **Route Group**: ✅ (mobile)
-- **Status**: ⚠️ Partial
+- **Status**: ✅ Compliant (v2 icons migrated)
 - **UI Kit Usage**: Yes (client-side)
-- **Violations**:
-  - ✗ Uses Lucide icons: `ClipboardCheck`, `Clock`, `TrendingUp`
-  - ✗ Fixture data embedded in client (demo-only)
+- **Violations**: None
 - **Components Used**: 
   - `Card`, `Chip`, `Button`, `ProgressBar`, `LoadingSkeleton`, `EmptyState`, `ErrorState` (v2)
-- **Action Items**:
-  - Replace Lucide icons with v2 IconSet equivalents
-  - Move demo data to separate fixtures file
-  - Integrate real assessment data fetching
+  - Icons from v2 icon system: `ClipboardCheck`, `Clock`, `TrendingUp`
+- **Action Items**: 
+  - ✅ Icons migrated to v2 system
+  - [ ] Move demo data to separate fixtures file
+  - [ ] Integrate real assessment data fetching
 
 ### /patient/(mobile)/insights-v2
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/insights-v2/page.tsx`
@@ -178,34 +177,29 @@
 ### /patient/(mobile)/dialog
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/dialog/page.tsx`
 - **Route Group**: ✅ (mobile)
-- **Status**: ⚠️ Partial
-- **UI Kit Usage**: Partial
-- **Violations**:
-  - ✗ Uses custom className styling (not v2 Card/Button)
-  - ✗ Uses `rounded-2xl border-slate-200 bg-white p-5 shadow-sm` (custom, not v2)
-- **Components Used**: Custom HTML in `DialogScreenV2`
-- **Action Items**:
-  - Convert custom divs to v2 `Card` component
-  - Use v2 `Button` for CTAs
-  - Refactor styling to use v2 props
+- **Status**: ✅ Compliant (migrated to v2)
+- **UI Kit Usage**: Yes
+- **Violations**: None
+- **Components Used**: 
+  - `Card`, `Button`, `Badge` (v2)
+- **Action Items**: ✅ Completed - Custom CSS converted to v2 primitives
 
 ### /patient/(mobile)/content/[slug]
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/content/[slug]/page.tsx`
 - **Route Group**: ✅ (mobile)
-- **Status**: ⚠️ Partial
+- **Status**: ⚠️ Partial (icons migrated, prose still present)
 - **UI Kit Usage**: Partial
 - **Violations**:
   - ✗ Uses `prose prose-slate max-w-none` (forbidden)
-  - ✗ Uses Lucide icon: `ArrowLeft`
   - ✗ Custom markdown rendering
 - **Components Used**: 
   - `ReactMarkdown` with `remark-gfm`
-  - Custom styling
+  - Icons from v2 system: `ArrowLeft`
 - **Action Items**:
-  - Move markdown rendering to v2-compliant wrapper
-  - Replace `prose` classes with v2 typography tokens
-  - Replace Lucide `ArrowLeft` with v2 icon
-  - Use v2 `Button` for back navigation
+  - ✅ Icons migrated to v2 system
+  - [ ] Move markdown rendering to v2-compliant wrapper
+  - [ ] Replace `prose` classes with v2 typography tokens
+  - [ ] Use v2 `Button` for back navigation
 
 ### /patient/(mobile)/profile
 - **Location**: `apps/rhythm-patient-ui/app/patient/(mobile)/profile/page.tsx`
@@ -247,22 +241,22 @@
 
 ## Compliance Summary by Category
 
-### ✅ Fully Compliant (5 routes)
+### ✅ Fully Compliant (6 routes)
 1. `/patient/onboarding` - Server redirect
 2. `/patient/(mobile)/dashboard` - Full v2 implementation
 3. `/patient/(mobile)/assess` - Full v2 implementation
-4. `/patient/(mobile)/assessment-flow-v2` - Full v2 implementation
+4. `/patient/(mobile)/assessment-flow-v2` - Full v2 implementation (v2 icons)
 5. `/patient/(mobile)/profile` - Full v2 implementation
+6. `/patient/(mobile)/dialog` - Full v2 implementation (migrated)
 
-### ⚠️ Partially Compliant (8 routes)
+### ⚠️ Partially Compliant (7 routes)
 1. `/patient/onboarding/consent` - Needs prose/width fixes + v2 form primitives
 2. `/patient/onboarding/profile` - Needs v2 form primitives
-3. `/patient/(mobile)/assessments-v2` - Needs Lucide → v2 icon migration
+3. `/patient/(mobile)/assessments-v2` - Needs fixture refactor (icons done)
 4. `/patient/(mobile)/insights-v2` - Needs Lucide → v2 icon migration + fixture refactor
 5. `/patient/(mobile)/results-v2` - Needs Lucide → v2 icon migration + fixture refactor
-6. `/patient/(mobile)/dialog` - Needs custom CSS → v2 primitives conversion
-7. `/patient/(mobile)/content/[slug]` - Needs prose removal + Lucide → v2 migration
-8. `/patient/(mobile)/dev/components` - Dev-only, needs icon migration
+6. `/patient/(mobile)/content/[slug]` - Needs prose removal (icons done)
+7. `/patient/(mobile)/dev/components` - Dev-only, needs icon migration
 
 ### ❌ Non-Compliant (5 routes)
 1. `/patient` - Uses legacy `@/app/components/LoginPage`
