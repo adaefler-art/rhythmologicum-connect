@@ -101,7 +101,7 @@ export function resolveNextStep(input: NextStepResolverInput): NextStepResolutio
       return {
         nextStep: {
           type: 'funnel',
-          target: `/patient/funnel/${input.inProgressFunnelSlug}`,
+          target: `/patient/assess/${input.inProgressFunnelSlug}/flow`,
           label: 'Fragebogen fortsetzen',
         },
         rulesVersion: NEXT_STEP_RULES_VERSION,
@@ -115,7 +115,7 @@ export function resolveNextStep(input: NextStepResolverInput): NextStepResolutio
     return {
       nextStep: {
         type: 'funnel',
-        target: `/patient/funnel/${DEFAULT_PATIENT_FUNNEL}`,
+        target: `/patient/assess/${DEFAULT_PATIENT_FUNNEL}/flow`,
         label: 'Stress-Assessment starten',
       },
       rulesVersion: NEXT_STEP_RULES_VERSION,
@@ -142,7 +142,7 @@ export function resolveNextStep(input: NextStepResolverInput): NextStepResolutio
   return {
     nextStep: {
       type: 'content',
-      target: '/patient/funnels',
+      target: '/patient/assess',
       label: 'Inhalte ansehen',
     },
     rulesVersion: NEXT_STEP_RULES_VERSION,

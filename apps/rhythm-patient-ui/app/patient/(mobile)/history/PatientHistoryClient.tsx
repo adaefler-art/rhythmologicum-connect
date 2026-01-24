@@ -447,7 +447,7 @@ export default function PatientHistoryClient() {
           {/* New Check CTA */}
           <button
             type="button"
-            onClick={() => router.push('/patient/assessment')}
+            onClick={() => router.push('/patient/assess')}
             className="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-lg text-white text-sm font-semibold shadow-sm hover:opacity-90 transition-opacity"
             style={{
               backgroundColor: 'var(--color-primary-600)',

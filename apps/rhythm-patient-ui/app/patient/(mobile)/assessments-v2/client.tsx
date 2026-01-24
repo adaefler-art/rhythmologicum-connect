@@ -43,7 +43,7 @@ const __DEV_FIXTURE__ASSESSMENTS: Assessment[] = [
     description: 'Evaluate your current stress levels and identify key stressors',
     status: 'not-started',
     duration: '10-15 min',
-    route: '/patient/funnel/stress',
+    route: '/patient/assess/stress/flow',
   },
   {
     id: 'sleep-quality',

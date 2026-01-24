@@ -297,7 +297,7 @@ export default function PersonalInsightsV2Client({ initialLoading, hasError }: P
                   title="No stress data"
                   message="Complete stress assessments to track your stress levels"
                   ctaText="Take assessment"
-                  onCtaClick={() => router.push('/patient/assessment-flow-v2')}
+                  onCtaClick={() => router.push('/patient/assess')}
                   className="border border-[#e5e7eb]"
                 />
               </Card>
@@ -373,7 +373,7 @@ export default function PersonalInsightsV2Client({ initialLoading, hasError }: P
               title="No recent activity"
               message="Your recent health activities will appear here"
               ctaText="Start an assessment"
-              onCtaClick={() => router.push('/patient/assessment-flow-v2')}
+              onCtaClick={() => router.push('/patient/assess')}
             />
           )}
         </section>

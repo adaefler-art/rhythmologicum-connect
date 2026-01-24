@@ -257,7 +257,7 @@ export default function ResultsV2Client({
             title="No results available"
             message="You haven't completed any assessments yet. Start an assessment to see your results here."
             ctaText="Start Assessment"
-            onCtaClick={() => router.push('/patient/assessments-v2')}
+            onCtaClick={() => router.push('/patient/assess')}
           />
         </div>
       </div>

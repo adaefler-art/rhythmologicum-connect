@@ -11,8 +11,7 @@ type SearchParams = { [key: string]: string | string[] | undefined }
 /**
  * V2 Assessment Landing Page
  * 
- * This route redirects to the funnel catalog (/patient/funnels) for now.
- * In the future, this could be a dedicated assessment landing page.
+ * This route renders the funnel catalog for available assessments.
  * 
  * Route: /patient/assess
  */

@@ -108,7 +108,7 @@ export default function DashboardClient({
   }
 
   const handleFunnelClick = (funnel: any) => {
-    router.push(`/patient/funnel/${funnel.slug}`)
+    router.push(`/patient/assess/${funnel.slug}/flow`)
   }
 
   const handleTileClick = (tile: any) => {
