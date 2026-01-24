@@ -33,7 +33,7 @@ function getChangedFiles() {
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((file) => !file.includes(`${path.sep}.next${path.sep}`) && !file.includes('/.next/'))
+    .filter((file) => !/[\\/]\.next[\\/]/.test(file))
     .filter((file) => fs.existsSync(file))
 }
 
@@ -107,12 +107,15 @@ let ignoredErrors = 0
 
 for (const fileReport of report) {
   const filePath = fileReport.filePath
+  if (/[\\/]\.next[\\/]/.test(filePath)) {
+    continue
+  }
   const cwd = process.cwd().replace(/\\/g, '/') + '/'
   const rel = filePath.replace(/\\/g, '/').startsWith(cwd)
     ? filePath.replace(/\\/g, '/').slice(cwd.length)
     : filePath
 
-  if (rel.includes('/.next/')) {
+  if (/[\\/]\.next[\\/]/.test(rel)) {
     continue
   }
 

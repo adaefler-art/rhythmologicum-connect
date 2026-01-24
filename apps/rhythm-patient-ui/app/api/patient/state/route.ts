@@ -7,6 +7,7 @@ import {
   createEmptyPatientState,
   type PatientStateV01,
 } from '@/lib/api/contracts/patient/state'
+import type { ActivityItem, KeyMetric, SummaryCard } from 'rhythm-core/contracts/patient/state'
 
 /**
  * I2.1: Patient State API - GET Endpoint
@@ -99,8 +100,8 @@ export async function GET() {
         completedAt: stateRow.assessment_completed_at,
       },
       results: {
-        summaryCards: (stateRow.results_summary_cards as any) || [],
-        recommendedActions: (stateRow.results_recommended_actions as any) || [],
+        summaryCards: (stateRow.results_summary_cards as SummaryCard[] | null) ?? [],
+        recommendedActions: (stateRow.results_recommended_actions as string[] | null) ?? [],
         lastGeneratedAt: stateRow.results_last_generated_at,
       },
       dialog: {
@@ -109,7 +110,7 @@ export async function GET() {
         lastMessageAt: stateRow.dialog_last_message_at,
       },
       activity: {
-        recentActivity: (stateRow.activity_recent as any) || [],
+        recentActivity: (stateRow.activity_recent as ActivityItem[] | null) ?? [],
       },
       metrics: {
         healthScore: {
@@ -120,7 +121,7 @@ export async function GET() {
             ? Number(stateRow.metrics_health_score_delta) 
             : null,
         },
-        keyMetrics: (stateRow.metrics_key_metrics as any) || [],
+        keyMetrics: (stateRow.metrics_key_metrics as KeyMetric[] | null) ?? [],
       },
     }
 
@@ -191,7 +192,7 @@ export async function POST(request: Request) {
     type DbUpdate = {
       user_id: string
       patient_state_version: string
-      [key: string]: any
+      [key: string]: unknown
     }
     
     const updateData: DbUpdate = {
@@ -292,8 +293,8 @@ export async function POST(request: Request) {
         completedAt: stateRow.assessment_completed_at,
       },
       results: {
-        summaryCards: (stateRow.results_summary_cards as any) || [],
-        recommendedActions: (stateRow.results_recommended_actions as any) || [],
+        summaryCards: (stateRow.results_summary_cards as SummaryCard[] | null) ?? [],
+        recommendedActions: (stateRow.results_recommended_actions as string[] | null) ?? [],
         lastGeneratedAt: stateRow.results_last_generated_at,
       },
       dialog: {
@@ -302,7 +303,7 @@ export async function POST(request: Request) {
         lastMessageAt: stateRow.dialog_last_message_at,
       },
       activity: {
-        recentActivity: (stateRow.activity_recent as any) || [],
+        recentActivity: (stateRow.activity_recent as ActivityItem[] | null) ?? [],
       },
       metrics: {
         healthScore: {
@@ -313,7 +314,7 @@ export async function POST(request: Request) {
             ? Number(stateRow.metrics_health_score_delta) 
             : null,
         },
-        keyMetrics: (stateRow.metrics_key_metrics as any) || [],
+        keyMetrics: (stateRow.metrics_key_metrics as KeyMetric[] | null) ?? [],
       },
     }
 
