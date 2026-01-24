@@ -33,6 +33,7 @@ function getChangedFiles() {
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
+    .filter((file) => !file.includes(`${path.sep}.next${path.sep}`) && !file.includes('/.next/'))
     .filter((file) => fs.existsSync(file))
 }
 
