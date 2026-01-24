@@ -112,6 +112,10 @@ for (const fileReport of report) {
     ? filePath.replace(/\\/g, '/').slice(cwd.length)
     : filePath
 
+  if (rel.includes('/.next/')) {
+    continue
+  }
+
   const key = ranges[rel] ? rel : filePath
 
   for (const msg of fileReport.messages || []) {
