@@ -111,7 +111,15 @@ function listAllTrackedFiles(repoRoot) {
 
 function findRouteFiles(repoRoot) {
   const files = listAllTrackedFiles(repoRoot)
-  return files
+  const filteredFiles = files
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) {
+        return false
+      }
+      return /\/app\/api\//.test(`/${rel}`) && /\/route\.(ts|js|tsx|jsx)$/.test(rel)
+    })
+  return filteredFiles.sort(cmpStr)
     .filter((f) => {
       const rel = toGitPath(path.relative(repoRoot, f))
       return /\/app\/api\//.test(`/${rel}`) && /\/route\.(ts|js|tsx|jsx)$/.test(rel)
