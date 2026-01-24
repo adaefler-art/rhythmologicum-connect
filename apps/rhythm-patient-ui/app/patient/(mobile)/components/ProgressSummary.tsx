@@ -1,6 +1,7 @@
 'use client'
 
-import { Card, Badge, ProgressBar } from '@/lib/ui/mobile-v2'
+import { useRouter } from 'next/navigation'
+import { Card, Badge, ProgressBar, Button } from '@/lib/ui/mobile-v2'
 import type { FunnelSummary, WorkupSummary } from '@/lib/api/contracts/patient/dashboard'
 
 export interface ProgressSummaryProps {
@@ -38,6 +39,7 @@ export function ProgressSummary({
   workupSummary,
   onFunnelClick,
 }: ProgressSummaryProps) {
+  const router = useRouter()
   // Status badge mapping
   const statusVariants = {
     not_started: 'neutral' as const,
@@ -82,6 +84,15 @@ export function ProgressSummary({
               <p className="text-sm text-slate-600">
                 Starten Sie Ihr erstes Assessment, um Ihren Fortschritt zu verfolgen.
               </p>
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => router.push('/patient/assess')}
+                >
+                  Assessment starten
+                </Button>
+              </div>
             </div>
           </Card>
         ) : (
