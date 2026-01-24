@@ -17,6 +17,7 @@ import AssessmentsScreen from './screens/AssessmentsScreen'
 import AssessmentQuestionScreen from './screens/AssessmentQuestionScreen'
 import ResultsScreen from './screens/ResultsScreen'
 import PersonalInsightsScreen from './screens/PersonalInsightsScreen'
+import { DeviceFrame } from './DeviceFrame'
 
 export default function ScreenGallery() {
   const [activeScreen, setActiveScreen] = useState<
@@ -56,16 +57,14 @@ export default function ScreenGallery() {
         ))}
       </div>
 
-      {/* Screen Display Area */}
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="w-full bg-[#f7f9fc]">
-          {activeScreen === 'dashboard' && <DashboardScreen />}
-          {activeScreen === 'assessments' && <AssessmentsScreen />}
-          {activeScreen === 'question' && <AssessmentQuestionScreen />}
-          {activeScreen === 'results' && <ResultsScreen />}
-          {activeScreen === 'insights' && <PersonalInsightsScreen />}
-        </div>
-      </div>
+      {/* Screen Display Area - DeviceFrame ensures phone-width rendering */}
+      <DeviceFrame>
+        {activeScreen === 'dashboard' && <DashboardScreen />}
+        {activeScreen === 'assessments' && <AssessmentsScreen />}
+        {activeScreen === 'question' && <AssessmentQuestionScreen />}
+        {activeScreen === 'results' && <ResultsScreen />}
+        {activeScreen === 'insights' && <PersonalInsightsScreen />}
+      </DeviceFrame>
     </div>
   )
 }

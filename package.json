@@ -28,6 +28,7 @@
     "verify": "node scripts/ci/verify-critical-api-handlers.js",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
+    "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
     "db:typegen": "supabase gen types typescript --local > lib/types/supabase.ts",
     "db:reset": "supabase db reset",
     "db:migrate": "supabase migration up",
