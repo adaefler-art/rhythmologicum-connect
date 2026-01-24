@@ -200,6 +200,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     .filter((f) => {
       const rel = toGitPath(path.relative(repoRoot, f))
       if (!allowedExt.has(path.extname(f))) return false
+      if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) return false
       return /(^|\/)(app|lib)\//.test(rel)
     })
     .sort(cmpStr)
