@@ -6,7 +6,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { GET as reviewDetails } from '@/app/api/review/[id]/details/route'
+import { GET as reviewDetails } from '@/apps/rhythm-legacy/app/api/review/[id]/details/route'
 
 // Mock Supabase
 jest.mock('@/lib/db/supabase.server', () => ({

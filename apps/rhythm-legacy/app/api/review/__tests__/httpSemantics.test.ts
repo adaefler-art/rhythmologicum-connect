@@ -5,9 +5,9 @@
  */
 
 import { NextRequest } from 'next/server'
-import { GET as queueGet } from '@/app/api/review/queue/route'
-import { GET as reviewGet } from '@/app/api/review/[id]/route'
-import { POST as reviewDecide } from '@/app/api/review/[id]/decide/route'
+import { GET as queueGet } from '@/apps/rhythm-legacy/app/api/review/queue/route'
+import { GET as reviewGet } from '@/apps/rhythm-legacy/app/api/review/[id]/route'
+import { POST as reviewDecide } from '@/apps/rhythm-legacy/app/api/review/[id]/decide/route'
 
 // Mock Supabase
 jest.mock('@/lib/db/supabase.server', () => ({

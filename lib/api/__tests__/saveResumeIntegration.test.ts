@@ -10,8 +10,8 @@
  */
 
 import { NextRequest } from 'next/server'
-import { POST as saveAnswerHandler } from '@/app/api/assessment-answers/save/route'
-import { GET as getStateHandler } from '@/app/api/assessments/[id]/state/route'
+import { POST as saveAnswerHandler } from '@/apps/rhythm-legacy/app/api/assessment-answers/save/route'
+import { GET as getStateHandler } from '@/apps/rhythm-legacy/app/api/assessments/[id]/state/route'
 
 // Mock dependencies
 jest.mock('@/lib/db/supabase.server', () => ({
