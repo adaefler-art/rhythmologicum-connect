@@ -98,7 +98,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
 
     it('should not trigger if workupState is not needs_more_data', () => {
@@ -113,7 +113,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
 
     it('should prioritize workup over in-progress funnel', () => {
@@ -145,7 +145,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
       const result = resolveNextStep(input)
 
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
       expect(result.nextStep.label).toBe('Fragebogen fortsetzen')
     })
 
@@ -160,7 +160,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       const result = resolveNextStep(input)
 
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
 
     it('should fall through to next rule for non-reachable in-progress funnel', () => {
@@ -177,7 +177,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Falls through to Rule 6 (fallback - view content)
       expect(result.nextStep.type).toBe('content')
-      expect(result.nextStep.target).toBe('/patient/funnels')
+      expect(result.nextStep.target).toBe('/patient/assess')
     })
 
     it('should not trigger if hasInProgressFunnel is false', () => {
@@ -193,7 +193,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
 
     it('should not trigger if inProgressFunnelSlug is null', () => {
@@ -209,7 +209,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
   })
 
@@ -225,7 +225,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
       const result = resolveNextStep(input)
 
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
       expect(result.nextStep.label).toBe('Stress-Assessment starten')
     })
 
@@ -253,7 +253,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 6 (view_content fallback)
       expect(result.nextStep.type).toBe('content')
-      expect(result.nextStep.target).toBe('/patient/funnels')
+      expect(result.nextStep.target).toBe('/patient/assess')
     })
   })
 
@@ -303,7 +303,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 6 (view_content fallback)
       expect(result.nextStep.type).toBe('content')
-      expect(result.nextStep.target).toBe('/patient/funnels')
+      expect(result.nextStep.target).toBe('/patient/assess')
     })
   })
 
@@ -320,7 +320,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
       const result = resolveNextStep(input)
 
       expect(result.nextStep.type).toBe('content')
-      expect(result.nextStep.target).toBe('/patient/funnels')
+      expect(result.nextStep.target).toBe('/patient/assess')
       expect(result.nextStep.label).toBe('Inhalte ansehen')
     })
 
@@ -474,7 +474,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should trigger rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/funnel/stress-assessment')
+      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
     })
 
     it('should handle multiple competing priorities correctly', () => {
