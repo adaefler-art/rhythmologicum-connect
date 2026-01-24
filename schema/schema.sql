@@ -2587,6 +2587,37 @@ CREATE TABLE IF NOT EXISTS "public"."patient_profiles" (
 ALTER TABLE "public"."patient_profiles" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."patient_state" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "patient_state_version" "text" DEFAULT '0.1'::"text" NOT NULL,
+    "assessment_last_assessment_id" "uuid",
+    "assessment_status" "text" DEFAULT 'not_started'::"text" NOT NULL,
+    "assessment_progress" numeric(3,2) DEFAULT 0 NOT NULL,
+    "assessment_completed_at" timestamp with time zone,
+    "results_summary_cards" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "results_recommended_actions" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "results_last_generated_at" timestamp with time zone,
+    "dialog_last_context" "text",
+    "dialog_message_count" integer DEFAULT 0 NOT NULL,
+    "dialog_last_message_at" timestamp with time zone,
+    "activity_recent" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "metrics_health_score_current" numeric(5,2),
+    "metrics_health_score_delta" numeric(5,2),
+    "metrics_key_metrics" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "patient_state_user_id_unique" UNIQUE ("user_id"),
+    CONSTRAINT "patient_state_assessment_progress_check" CHECK ((("assessment_progress" >= (0)::numeric) AND ("assessment_progress" <= (1)::numeric)))
+);
+
+
+COMMENT ON TABLE "public"."patient_state" IS 'I2.1: Canonical Patient State v0.1 - Minimal, versioned patient state for Dialog/Insights/Dashboard';
+
+
+ALTER TABLE "public"."patient_state" OWNER TO "postgres";
+
+
 COMMENT ON TABLE "public"."patient_profiles" IS 'Patient profile data with RLS: patients see own data, clinicians see all';
 
 
@@ -3833,6 +3864,11 @@ ALTER TABLE ONLY "public"."patient_profiles"
 
 
 
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."pillars"
     ADD CONSTRAINT "pillars_key_key" UNIQUE ("key");
 
@@ -4866,6 +4902,14 @@ CREATE INDEX "tasks_org_status_created_idx" ON "public"."tasks" USING "btree" ("
 
 
 CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_patient_state_user_id" ON "public"."patient_state" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_patient_state_updated_at" ON "public"."patient_state" USING "btree" ("updated_at");
 
 
 
@@ -7066,4 +7110,53 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+
+
+
+-- I2.1: Patient State Function and Trigger
+CREATE OR REPLACE FUNCTION "public"."update_patient_state_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."update_patient_state_updated_at"() OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."update_patient_state_updated_at"() IS 'I2.1: Automatically update updated_at timestamp for patient_state table';
+
+
+-- I2.1: Patient State RLS Policies
+ALTER TABLE "public"."patient_state" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "patient_state_select_policy" ON "public"."patient_state"
+    FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "patient_state_insert_policy" ON "public"."patient_state"
+    FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "patient_state_update_policy" ON "public"."patient_state"
+    FOR UPDATE
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "patient_state_delete_policy" ON "public"."patient_state"
+    FOR DELETE
+    USING (auth.uid() = user_id);
+
+COMMENT ON POLICY "patient_state_select_policy" ON "public"."patient_state" IS 'I2.1: Users can only read their own state';
+COMMENT ON POLICY "patient_state_insert_policy" ON "public"."patient_state" IS 'I2.1: Users can only insert their own state';
+COMMENT ON POLICY "patient_state_update_policy" ON "public"."patient_state" IS 'I2.1: Users can only update their own state';
+COMMENT ON POLICY "patient_state_delete_policy" ON "public"."patient_state" IS 'I2.1: Users can only delete their own state';
+
+
+-- I2.1: Patient State Trigger
+CREATE OR REPLACE TRIGGER "trigger_update_patient_state_updated_at"
+    BEFORE UPDATE ON "public"."patient_state"
+    FOR EACH ROW
+    EXECUTE FUNCTION "public"."update_patient_state_updated_at"();
 
