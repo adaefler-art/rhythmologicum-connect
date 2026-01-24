@@ -53,7 +53,7 @@ export default function DashboardScreen() {
         {/* Welcome Section */}
         <div>
           <h2 className="text-2xl font-bold text-[#1f2937]">Welcome back! 👋</h2>
-          <p className="text-[#6b7280] mt-1">Here's your health overview today</p>
+          <p className="text-[#6b7280] mt-1">Here&apos;s your health overview today</p>
         </div>
 
         {/* AMY Assistant */}

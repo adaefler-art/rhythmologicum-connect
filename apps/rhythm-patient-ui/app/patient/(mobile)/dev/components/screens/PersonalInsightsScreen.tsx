@@ -90,7 +90,7 @@ export default function PersonalInsightsScreen() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-[#1f2937]">
-              This Week's Progress
+              This Week&apos;s Progress
             </h3>
             <Badge variant="success">+8% vs last week</Badge>
           </div>

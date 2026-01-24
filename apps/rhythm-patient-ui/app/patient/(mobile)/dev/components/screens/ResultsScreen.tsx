@@ -75,7 +75,7 @@ export default function ResultsScreen() {
               Great Job!
             </h2>
             <p className="text-[#6b7280]">
-              You've completed your Stress & Resilience Assessment
+              You&apos;ve completed your Stress & Resilience Assessment
             </p>
           </div>
         </Card>
