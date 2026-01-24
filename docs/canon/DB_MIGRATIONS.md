@@ -76,6 +76,7 @@ When introducing a new canonical table or enum:
 - `design_tokens` (V05-I09.2)
 - `notification_templates`, `reassessment_rules`, `kpi_thresholds`, `operational_settings_audit` (V05-I09.4)
 - `idempotency_keys` (E6.2.4)
+- `patient_state` (I2.1)
 
 **Example manifest entry:**
 ```json

@@ -1,4 +1,5 @@
 {
+  "_comment_orphan_patient_state": "Temporary allowlist for /api/patient/state (added in I2.1). Wiring tracked in I72.2.",
   "allowedOrphans": [
     "/api/account/deletion-request",
     "/api/admin/content-pages",
@@ -54,6 +55,7 @@
     "/api/patient-profiles",
     "/api/pre-screening-calls",
     "/api/patient/dashboard",
+    "/api/patient/state",
     "/api/patient/triage",
     "/api/processing/content",
     "/api/processing/delivery",

@@ -31,9 +31,9 @@ $migrationsDir = Join-Path $PSScriptRoot "..\..\supabase\migrations"
 # Regex patterns for extracting database objects
 # NOTE: Case-insensitive flag (?i) handles both 'create table' and 'CREATE TABLE'
 # Tested with actual migrations which use lowercase 'create table' syntax
-$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
-$enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(public\.)?(?<enum>[a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s+ENUM'
-$alterTablePattern = '(?im)^\s*ALTER\s+TABLE\s+(public\.)?(?<table>[a-zA-Z_][a-zA-Z0-9_]*)'
+$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<table>"?[a-zA-Z_][a-zA-Z0-9_]*"?)'
+$enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<enum>"?[a-zA-Z_][a-zA-Z0-9_]*"?)\s+AS\s+ENUM'
+$alterTablePattern = '(?im)^\s*ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<table>"?[a-zA-Z_][a-zA-Z0-9_]*"?)'
 
 Write-Host "🔍 Migration Linter - DB Schema Manifest Validator" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
@@ -209,7 +209,7 @@ foreach ($file in $migrationFiles) {
     # Extract CREATE TABLE statements with line numbers
     $tableMatches = [regex]::Matches($content, $tablePattern)
     foreach ($match in $tableMatches) {
-        $tableName = $match.Groups['table'].Value
+        $tableName = $match.Groups['table'].Value.Trim('"')
         
         # Calculate line number from match position
         $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
@@ -243,7 +243,7 @@ foreach ($file in $migrationFiles) {
     # Extract CREATE TYPE (enum) statements with line numbers
     $enumMatches = [regex]::Matches($content, $enumPattern)
     foreach ($match in $enumMatches) {
-        $enumName = $match.Groups['enum'].Value
+        $enumName = $match.Groups['enum'].Value.Trim('"')
         
         # Calculate line number from match position
         $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
@@ -266,7 +266,7 @@ foreach ($file in $migrationFiles) {
     # Extract ALTER TABLE statements with line numbers
     $alterTableMatches = [regex]::Matches($content, $alterTablePattern)
     foreach ($match in $alterTableMatches) {
-        $tableName = $match.Groups['table'].Value
+        $tableName = $match.Groups['table'].Value.Trim('"')
         
         # Calculate line number from match position
         $lineNum = ($content.Substring(0, $match.Index) -split "`n").Count
