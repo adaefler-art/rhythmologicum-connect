@@ -52,6 +52,18 @@ type ContentTileRow = {
   created_at: string
 }
 
+const DEFAULT_CONTENT_TILES: ContentTile[] = [
+  {
+    id: 'default-content-tile',
+    type: 'info',
+    title: 'Willkommen',
+    description: 'Starten Sie mit Ihrem ersten Assessment oder entdecken Sie Inhalte.',
+    actionLabel: null,
+    actionTarget: '/patient/assess',
+    priority: 0,
+  },
+]
+
 function mapCategoryToTileType(category: string | null): ContentTile['type'] {
   switch (category) {
     case 'action':
@@ -83,10 +95,10 @@ async function fetchContentTilesFromDb(
       errorCode: error.code,
       errorMessage: error.message,
     })
-    return []
+    return DEFAULT_CONTENT_TILES
   }
 
-  return (data as ContentTileRow[])
+  const tiles = (data as ContentTileRow[])
     .filter((row) => !!row.slug)
     .map((row) => ({
       id: row.id,
@@ -97,6 +109,8 @@ async function fetchContentTilesFromDb(
       actionTarget: `/patient/content/${row.slug}`,
       priority: row.priority ?? 0,
     }))
+
+  return tiles.length > 0 ? tiles : DEFAULT_CONTENT_TILES
 }
 
 export async function GET() {
