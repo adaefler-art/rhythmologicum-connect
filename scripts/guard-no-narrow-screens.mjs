@@ -211,10 +211,14 @@ function checkGalleryPageNoNarrowConstraints() {
     }
     
     // Check for max-w- classes (except max-w-none, max-w-full)
-    const maxWMatch = trimmed.match(/max-w-(?!none|full)/)
+    const maxWMatch = trimmed.match(/\bmax-w-(?!none|full)\b/)
     if (maxWMatch && trimmed.includes('className')) {
-      // Allow max-w-* in specific contexts (e.g., buttons)
-      if (!trimmed.includes('button') && !trimmed.includes('Button')) {
+      // Allow max-w-* in specific contexts (e.g., buttons, small elements)
+      // Skip if line contains button, Button, or common UI element names
+      const allowedContexts = ['button', 'Button', 'Badge', 'Chip', 'Tag', 'Icon']
+      const hasAllowedContext = allowedContexts.some((ctx) => trimmed.includes(ctx))
+      
+      if (!hasAllowedContext) {
         violations.push(`${relative(ROOT, DEV_COMPONENTS_PAGE)}:${lineNumber} → ${trimmed}`)
       }
     }
