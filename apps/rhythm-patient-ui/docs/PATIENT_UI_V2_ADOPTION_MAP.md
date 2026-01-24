@@ -268,25 +268,28 @@
 
 ## Key Findings
 
-### Forbidden Patterns Found
-- **`prose` classes**: 3 routes (consent, content/[slug], AMYComposer)
-- **`max-w-*` constraints**: 4 routes (onboarding/consent, documents/confirm, dev components)
+### Forbidden Patterns Found (Updated Status)
+- **`prose` classes**: 2 routes remaining (consent, content/[slug])
+- **`max-w-*` constraints**: 3 routes remaining (onboarding/consent, documents/confirm) - dev routes allowlisted
 - **`container` class**: 1 route (documents/confirm)
-- **Lucide icons**: 7 routes (need v2 equivalents)
+- **Lucide icons**: ✅ FIXED - All direct lucide-react imports migrated to v2 icon system
 
-### Import Violations
-- **`@/app/components/*`**: 2 routes (patient index, PatientLayoutClient)
-- **`lucide-react`**: 10+ client components
-- **Custom CSS classes**: Multiple routes using tailwind directly instead of v2 props
+### Import Violations (Updated Status)
+- **`@/app/components/*`**: 2 routes (patient index, PatientLayoutClient) - out of scope for mobile routes
+- **`lucide-react`**: ✅ FIXED - Now using @/lib/ui/mobile-v2/icons
+- **Custom CSS classes**: ✅ IMPROVED - Dialog page migrated, remaining in dev/non-mobile routes
 
-### Migration Priorities
+### Migration Priorities (Updated)
 1. **High Priority**: 
-   - Replace all Lucide icons with v2 equivalents (7 routes)
-   - Remove `prose` and `container` classes (4 routes)
-   - Convert form components to v2 (onboarding routes)
+   - ✅ COMPLETED: Replace all Lucide icons with v2 equivalents (3 mobile routes migrated)
+   - ✅ COMPLETED: Ad-hoc primitives detection and allowlisting
+   - [ ] Remove `prose` classes (2 routes: consent, content/[slug])
+   - [ ] Convert form components to v2 (onboarding routes)
 
 2. **Medium Priority**:
-   - Migrate legacy `@/app` imports to v2
+   - [ ] Migrate legacy `@/app` imports to v2 (patient index - non-mobile)
+   - [ ] Remove container/max-w constraints (2 non-mobile routes)
+   - [ ] Complete history route audit and migration
    - Refactor custom CSS to v2 component props
    - Move fixture data out of client components
 
