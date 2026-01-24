@@ -163,11 +163,6 @@ function mdEscape(s) {
 }
 
 async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown, failOnOrphan, failOnUnknownAccess }) {
-  const appApiDir = path.join(repoRoot, 'app', 'api')
-  if (!fs.existsSync(appApiDir)) {
-    throw new Error(`app/api not found at ${appApiDir}`)
-  }
-
   const allowlist = await readAllowlist(allowlistPath)
 
   const routeFiles = findRouteFiles(repoRoot)
