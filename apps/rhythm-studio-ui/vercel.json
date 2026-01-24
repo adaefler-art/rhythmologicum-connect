@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "npm --prefix ../.. run build:patient",
+  "outputDirectory": "../rhythm-patient-ui/.next",
+  "devCommand": "npm --prefix ../.. run dev:patient"
+}
