@@ -23,7 +23,10 @@ function stripQueryAndHash(p) {
 function routeFilePathToApiPath(repoRoot, routeFileAbsPath) {
   const rel = normalizeSlashes(path.relative(repoRoot, routeFileAbsPath))
   // app/api/foo/[id]/route.ts -> /api/foo/[id]
-  const withoutPrefix = rel.replace(/^app\/api\//, '')
+  // apps/*/app/api/foo/[id]/route.ts -> /api/foo/[id]
+  const marker = 'app/api/'
+  const markerIndex = rel.indexOf(marker)
+  const withoutPrefix = markerIndex >= 0 ? rel.slice(markerIndex + marker.length) : rel
   const withoutSuffix = withoutPrefix.replace(/\/route\.(ts|js|tsx|jsx)$/, '')
   return `/api/${withoutSuffix}`
 }

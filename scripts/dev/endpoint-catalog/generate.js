@@ -101,10 +101,21 @@ function listTrackedFiles(repoRoot, relRoots) {
   return splitNullSeparated(out).map((p) => path.join(repoRoot, p))
 }
 
+function listAllTrackedFiles(repoRoot) {
+  const out = childProcess.execSync('git ls-files -z --', {
+    cwd: repoRoot,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  return splitNullSeparated(out).map((p) => path.join(repoRoot, p))
+}
+
 function findRouteFiles(repoRoot) {
-  const files = listTrackedFiles(repoRoot, ['app/api'])
+  const files = listAllTrackedFiles(repoRoot)
   return files
-    .filter((f) => f.endsWith(`${path.sep}route.ts`))
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      return /\/app\/api\//.test(`/${rel}`) && /\/route\.(ts|js|tsx|jsx)$/.test(rel)
+    })
     .sort(cmpStr)
 }
 
@@ -182,8 +193,12 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   const scanRoots = ['app', 'lib']
   const allowedExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'])
 
-  const trackedFiles = listTrackedFiles(repoRoot, scanRoots)
-    .filter((f) => allowedExt.has(path.extname(f)))
+  const trackedFiles = listAllTrackedFiles(repoRoot)
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      if (!allowedExt.has(path.extname(f))) return false
+      return /(^|\/)(app|lib)\//.test(rel)
+    })
     .sort(cmpStr)
 
   for (const f of trackedFiles) {
