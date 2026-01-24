@@ -98,7 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!contentPage) {
       return NextResponse.json(
-        { error: 'NotFound', message: 'Content page not found' },
+        { error: 'Content page not found', message: 'Content page not found' },
         { status: 404 },
       )
     }
