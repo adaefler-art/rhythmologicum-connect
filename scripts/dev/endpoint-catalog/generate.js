@@ -189,11 +189,10 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
     })
   }
 
-  const routePatterns = endpoints.map((e) => e.path).sort(cmpStr)
+  const routePatterns = Array.from(new Set(endpoints.map((e) => e.path))).sort(cmpStr)
 
-  // Scan callsites in app/** and lib/**
+  // Scan callsites in app/** and lib/** (including apps/*/app and apps/*/lib)
   const callsites = []
-  const scanRoots = ['app', 'lib']
   const allowedExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'])
 
   const trackedFiles = listAllTrackedFiles(repoRoot)
@@ -201,7 +200,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
       const rel = toGitPath(path.relative(repoRoot, f))
       if (!allowedExt.has(path.extname(f))) return false
       if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) return false
-      return /(^|\/)(app|lib)\//.test(rel)
+      return /(^|\/)(app|lib)\//.test(rel) || /^apps\/[^/]+\/(app|lib)\//.test(rel)
     })
     .sort(cmpStr)
 
@@ -225,7 +224,13 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   callsites.sort((a, b) => cmpTuple([a.file, a.line, a.apiPath], [b.file, b.line, b.apiPath]))
 
   const unknownCallsites = []
-  const endpointByPath = new Map(endpoints.map((e) => [e.path, e]))
+  const endpointByPath = new Map()
+  for (const endpoint of endpoints) {
+    if (!endpointByPath.has(endpoint.path)) {
+      endpointByPath.set(endpoint.path, [])
+    }
+    endpointByPath.get(endpoint.path).push(endpoint)
+  }
 
   for (const cs of callsites) {
     const matched = matchCallsiteToAnyRoute(cs.apiPath, routePatterns)
@@ -233,9 +238,11 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
       unknownCallsites.push(cs)
       continue
     }
-    const ep = endpointByPath.get(matched)
-    if (ep) {
-      ep.usedBy.push({ file: cs.file, line: cs.line, apiPath: cs.apiPath, kind: cs.kind })
+    const eps = endpointByPath.get(matched)
+    if (eps) {
+      for (const ep of eps) {
+        ep.usedBy.push({ file: cs.file, line: cs.line, apiPath: cs.apiPath, kind: cs.kind })
+      }
     }
   }
 
