@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "npm run build:patient",
+  "outputDirectory": "apps/rhythm-patient-ui/.next",
   "framework": "nextjs",
   "regions": ["fra1"],
   "headers": [
