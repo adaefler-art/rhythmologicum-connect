@@ -66,12 +66,44 @@ const FORBIDDEN_CONTENT_IMPORTS = [
 const MOBILE_WIDTH_ALLOWLIST = [
   '__tests__',
   '.test.',
-  'dev/ui-v2', // Dev inspection page
+  'dev/', // All dev routes (dev inspection pages, component galleries)
 ]
 
 const CONTENT_WIDTH_ALLOWLIST = [
   '__tests__',
   '.test.',
+]
+
+// Forbidden placeholder icons in (mobile) pages (should use v2 icon system)
+const PLACEHOLDER_ICON_PATTERNS = [
+  /import\s+.*\s+from\s+['"]lucide-react['"]/,
+  /import\s+.*\s+from\s+['"]@heroicons\/react['"]/,
+]
+
+// Allowlist for files that can use Lucide (dev/test only)
+const ICON_ALLOWLIST = [
+  '__tests__',
+  '.test.',
+  'dev/', // Dev routes can show icon references
+]
+
+// Ad-hoc primitive patterns (custom rounded/shadow/bg outside UI Kit)
+// These are heuristics - they detect suspicious patterns that should use UI Kit instead
+const AD_HOC_PRIMITIVE_PATTERNS = [
+  // Custom rounded classes (should use Card/Button from UI Kit)
+  /className="[^"]*\brounded-(2xl|3xl|full)[^"]*"(?!.*Card|.*Button)/,
+  /className='[^']*\brounded-(2xl|3xl|full)[^']*'(?!.*Card|.*Button)/,
+  // Custom shadow classes (should use Card from UI Kit)
+  /className="[^"]*\bshadow-(lg|xl|2xl)[^"]*"/,
+  /className='[^']*\bshadow-(lg|xl|2xl)[^']*'/,
+]
+
+// Allowlist for files that can have ad-hoc styling
+const AD_HOC_ALLOWLIST = [
+  '__tests__',
+  '.test.',
+  'dev/', // Dev routes
+  'components/', // Shared components (may have custom styling)
 ]
 
 let violations = []
@@ -269,6 +301,87 @@ function checkContentRoutes() {
 }
 
 /**
+ * Check 5: Placeholder icons in (mobile) pages (should use v2 icon system)
+ */
+function checkPlaceholderIcons() {
+  console.log('🔍 Check 5: Placeholder icons in (mobile) pages...')
+  
+  for (const filePath of walkDir(MOBILE_ROUTE_GROUP)) {
+    // Skip allowlisted files
+    const relPath = relative(MOBILE_ROUTE_GROUP, filePath)
+    if (ICON_ALLOWLIST.some(pattern => relPath.includes(pattern))) {
+      continue
+    }
+    
+    // Only check .tsx and .ts files
+    if (!filePath.endsWith('.tsx') && !filePath.endsWith('.ts')) {
+      continue
+    }
+    
+    const content = readFileSync(filePath, 'utf-8')
+    
+    for (const pattern of PLACEHOLDER_ICON_PATTERNS) {
+      if (pattern.test(content)) {
+        const lines = content.split('\n')
+        const matchingLines = lines
+          .map((line, idx) => ({ line, idx: idx + 1 }))
+          .filter(({ line }) => pattern.test(line))
+        
+        for (const { line, idx } of matchingLines) {
+          violations.push({
+            type: 'PLACEHOLDER_ICON',
+            file: relative(PATIENT_UI_ROOT, filePath),
+            line: idx,
+            message: `Placeholder icon import found (use v2 icon system): ${line.trim()}`,
+          })
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Check 6: Ad-hoc primitives in (mobile) pages (should use UI Kit)
+ * This is a heuristic check - may have false positives but catches common patterns
+ */
+function checkAdHocPrimitives() {
+  console.log('🔍 Check 6: Ad-hoc UI primitives in (mobile) pages...')
+  
+  for (const filePath of walkDir(MOBILE_ROUTE_GROUP)) {
+    // Skip allowlisted files
+    const relPath = relative(MOBILE_ROUTE_GROUP, filePath)
+    if (AD_HOC_ALLOWLIST.some(pattern => relPath.includes(pattern))) {
+      continue
+    }
+    
+    // Only check .tsx files (page files)
+    if (!filePath.endsWith('page.tsx') && !filePath.endsWith('client.tsx')) {
+      continue
+    }
+    
+    const content = readFileSync(filePath, 'utf-8')
+    
+    for (const pattern of AD_HOC_PRIMITIVE_PATTERNS) {
+      if (pattern.test(content)) {
+        const lines = content.split('\n')
+        const matchingLines = lines
+          .map((line, idx) => ({ line, idx: idx + 1 }))
+          .filter(({ line }) => pattern.test(line))
+        
+        for (const { line, idx } of matchingLines) {
+          violations.push({
+            type: 'AD_HOC_PRIMITIVE',
+            file: relative(PATIENT_UI_ROOT, filePath),
+            line: idx,
+            message: `Ad-hoc UI primitive detected (use UI Kit instead): ${line.trim()}`,
+          })
+        }
+      }
+    }
+  }
+}
+
+/**
  * Main execution
  */
 function main() {
@@ -279,6 +392,8 @@ function main() {
     checkForbiddenWidthPatterns()
     checkForbiddenImports()
     checkContentRoutes()
+    checkPlaceholderIcons()
+    checkAdHocPrimitives()
     
     if (violations.length === 0) {
       console.log('\n✅ All checks passed! Mobile UI v2 constraints are satisfied.')
