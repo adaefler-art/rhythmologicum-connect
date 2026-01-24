@@ -52,6 +52,18 @@ type ContentTileRow = {
   created_at: string
 }
 
+const DEFAULT_CONTENT_TILES: ContentTile[] = [
+  {
+    id: 'default-content-tile',
+    type: 'info',
+    title: 'Willkommen',
+    description: 'Starten Sie mit Ihrem ersten Assessment oder entdecken Sie Inhalte.',
+    actionLabel: null,
+    actionTarget: '/patient/assess',
+    priority: 0,
+  },
+]
+
 function mapCategoryToTileType(category: string | null): ContentTile['type'] {
   switch (category) {
     case 'action':
@@ -68,35 +80,45 @@ async function fetchContentTilesFromDb(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   maxTiles: number,
 ): Promise<ContentTile[]> {
-  const { data, error } = await supabase
-    .from('content_pages')
-    .select('id, slug, title, excerpt, category, priority, created_at')
-    .eq('status', 'published')
-    .is('deleted_at', null)
-    .is('funnel_id', null)
-    .order('priority', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(maxTiles)
+  try {
+    const { data, error } = await supabase
+      .from('content_pages')
+      .select('id, slug, title, excerpt, category, priority, created_at')
+      .eq('status', 'published')
+      .is('deleted_at', null)
+      .is('funnel_id', null)
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(maxTiles)
 
-  if (error) {
-    console.error('[DASHBOARD_API] STEP=fetchContentTiles success=false', {
-      errorCode: error.code,
-      errorMessage: error.message,
+    if (error) {
+      console.error('[DASHBOARD_API] STEP=fetchContentTiles success=false', {
+        errorCode: error.code,
+        errorMessage: error.message,
+      })
+      return DEFAULT_CONTENT_TILES
+    }
+
+    const tiles = (data as ContentTileRow[])
+      .filter((row) => !!row.slug)
+      .map((row) => ({
+        id: row.id,
+        type: mapCategoryToTileType(row.category),
+        title: row.title ?? 'Inhalt',
+        description: row.excerpt ?? '',
+        actionLabel: null,
+        actionTarget: `/patient/content/${row.slug}`,
+        priority: row.priority ?? 0,
+      }))
+
+    return tiles.length > 0 ? tiles : DEFAULT_CONTENT_TILES
+  } catch (error) {
+    console.error('[DASHBOARD_API] STEP=fetchContentTiles exception', {
+      errorType: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message : String(error),
     })
-    return []
+    return DEFAULT_CONTENT_TILES
   }
-
-  return (data as ContentTileRow[])
-    .filter((row) => !!row.slug)
-    .map((row) => ({
-      id: row.id,
-      type: mapCategoryToTileType(row.category),
-      title: row.title ?? 'Inhalt',
-      description: row.excerpt ?? '',
-      actionLabel: null,
-      actionTarget: `/patient/content/${row.slug}`,
-      priority: row.priority ?? 0,
-    }))
 }
 
 export async function GET() {

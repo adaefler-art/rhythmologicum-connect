@@ -134,13 +134,13 @@ export default function DesignTokenHubClient({ tokenGroups, assets, lucideIcons 
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+      <div className="flex w-full flex-col gap-8">
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold text-slate-900">Design Token Hub</h1>
           <p className="text-sm text-slate-600">
             Übersicht der Design Tokens, Assets und verwendeten Icons. Nur per Direktlink erreichbar.
           </p>
-          <div className="max-w-md">
+          <div className="w-full">
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}

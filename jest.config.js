@@ -4,6 +4,7 @@ module.exports = {
   roots: ['<rootDir>'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx', '**/?(*.)+(spec|test).ts', '**/?(*.)+(spec|test).tsx'],
   moduleNameMapper: {
+    '^@/app/api/(.*)$': '<rootDir>/apps/rhythm-legacy/app/api/$1',
     '^@/(.*)$': '<rootDir>/$1',
     '^rhythm-core$': '<rootDir>/packages/rhythm-core/src/index.ts',
     '^rhythm-core/(.*)$': '<rootDir>/packages/rhythm-core/src/$1',

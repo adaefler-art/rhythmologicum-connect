@@ -101,10 +101,29 @@ function listTrackedFiles(repoRoot, relRoots) {
   return splitNullSeparated(out).map((p) => path.join(repoRoot, p))
 }
 
+function listAllTrackedFiles(repoRoot) {
+  const out = childProcess.execSync('git ls-files -z --', {
+    cwd: repoRoot,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  return splitNullSeparated(out).map((p) => path.join(repoRoot, p))
+}
+
 function findRouteFiles(repoRoot) {
-  const files = listTrackedFiles(repoRoot, ['app/api'])
-  return files
-    .filter((f) => f.endsWith(`${path.sep}route.ts`))
+  const files = listAllTrackedFiles(repoRoot)
+  const filteredFiles = files
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) {
+        return false
+      }
+      return /\/app\/api\//.test(`/${rel}`) && /\/route\.(ts|js|tsx|jsx)$/.test(rel)
+    })
+  return filteredFiles.sort(cmpStr)
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      return /\/app\/api\//.test(`/${rel}`) && /\/route\.(ts|js|tsx|jsx)$/.test(rel)
+    })
     .sort(cmpStr)
 }
 
@@ -152,11 +171,6 @@ function mdEscape(s) {
 }
 
 async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown, failOnOrphan, failOnUnknownAccess }) {
-  const appApiDir = path.join(repoRoot, 'app', 'api')
-  if (!fs.existsSync(appApiDir)) {
-    throw new Error(`app/api not found at ${appApiDir}`)
-  }
-
   const allowlist = await readAllowlist(allowlistPath)
 
   const routeFiles = findRouteFiles(repoRoot)
@@ -182,8 +196,13 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   const scanRoots = ['app', 'lib']
   const allowedExt = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts'])
 
-  const trackedFiles = listTrackedFiles(repoRoot, scanRoots)
-    .filter((f) => allowedExt.has(path.extname(f)))
+  const trackedFiles = listAllTrackedFiles(repoRoot)
+    .filter((f) => {
+      const rel = toGitPath(path.relative(repoRoot, f))
+      if (!allowedExt.has(path.extname(f))) return false
+      if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) return false
+      return /(^|\/)(app|lib)\//.test(rel)
+    })
     .sort(cmpStr)
 
   for (const f of trackedFiles) {

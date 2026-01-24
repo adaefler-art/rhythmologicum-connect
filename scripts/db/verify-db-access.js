@@ -52,6 +52,25 @@ const ALLOWED_ADMIN_USAGE = [
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
+  // Monorepo legacy app routes
+  'apps/rhythm-legacy/app/api/admin/',
+  'apps/rhythm-legacy/app/api/funnels/catalog/',
+  'apps/rhythm-legacy/app/api/funnels/[slug]/content-pages/route.ts',  // Specific file only - content metadata
+  'apps/rhythm-legacy/app/api/content-pages/',
+  'apps/rhythm-legacy/app/api/amy/stress-report/',
+  'apps/rhythm-legacy/app/api/patient-measures/',
+  // Notifications: server-side, PHI-free delivery notifications (MVP). Uses admin client for
+  // background/system workflows where end-user cookies may not be present.
+  'apps/rhythm-legacy/app/api/notifications/',
+  // Review queue: cross-user clinician/admin workflows (RLS-bypass after RBAC gate)
+  'apps/rhythm-legacy/app/api/review/',
+  // Processing: creating jobs requires service role because INSERT/UPDATE are restricted
+  // to service_role (RLS guardrail) and the API must be able to enqueue work after
+  // auth/RBAC checks.
+  'apps/rhythm-legacy/app/api/processing/',
+  // Documents: server-side upload/processing pipelines may need service role to update status
+  // without depending on end-user cookies or RLS in background jobs.
+  'apps/rhythm-legacy/app/api/documents/',
   // Lib modules that need it
   'lib/audit/log.ts',
   'lib/utils/contentResolver.ts',
