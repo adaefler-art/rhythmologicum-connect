@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the versioned contract schemas for patient-facing assessment endpoints, implemented as part of E6.2.3.
+This document describes the versioned contract schemas for patient-facing assessment endpoints, implemented as part of E6.2.3, and extended with Patient State API in I2.1.
 
 ## Purpose
 
@@ -17,15 +17,42 @@ The contract schemas provide:
 
 Contract schemas are located in:
 - `lib/api/contracts/patient/assessments.ts` - Assessment endpoint contracts
+- `lib/api/contracts/patient/dashboard.ts` - Dashboard endpoint contracts (E6.5.2)
+- `lib/api/contracts/patient/state.ts` - Patient State endpoint contracts (I2.1)
 - `lib/api/contracts/patient/index.ts` - Central export point
 
-## Schema Version
+## Schema Versions
 
-Current schema version: **`v1`**
+- **Assessments**: `v1`
+- **Dashboard**: `v1`
+- **Patient State**: `v1`
 
-The `PATIENT_ASSESSMENT_SCHEMA_VERSION` constant should be incremented when making breaking changes to request/response structure.
+The schema version constants should be incremented when making breaking changes to request/response structure.
 
 ## Covered Endpoints
+
+### Patient State API (I2.1)
+
+#### 1. Get Patient State
+**GET** `/api/patient/state`
+
+- **Request**: No body required
+- **Response**: Patient state with all sections (assessment, results, dialog, activity, metrics)
+- **Schema**: `PatientStateResponseSchema`
+- **Empty State**: Returns default/empty state if none exists (lazy initialization)
+
+#### 2. Update Patient State
+**POST** `/api/patient/state`
+
+- **Request**: Partial state update (only include fields to update)
+- **Request Validation**: `PatientStateUpdateRequestSchema`
+- **Response**: Updated patient state
+- **Schema**: `PatientStateUpdateResponseSchema`
+- **Behavior**: Upsert (creates if doesn't exist, updates if exists)
+
+**Documentation**: See [I2_1_PATIENT_STATE_API.md](./I2_1_PATIENT_STATE_API.md) for detailed usage.
+
+### Assessment API (E6.2.3)
 
 ### 1. Start Assessment
 **POST** `/api/funnels/{slug}/assessments`

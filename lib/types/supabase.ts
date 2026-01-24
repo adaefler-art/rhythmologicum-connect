@@ -1599,6 +1599,72 @@ export type Database = {
           },
         ]
       }
+      patient_state: {
+        Row: {
+          activity_recent: Json
+          assessment_completed_at: string | null
+          assessment_last_assessment_id: string | null
+          assessment_progress: number
+          assessment_status: string
+          created_at: string
+          dialog_last_context: string | null
+          dialog_last_message_at: string | null
+          dialog_message_count: number
+          id: string
+          metrics_health_score_current: number | null
+          metrics_health_score_delta: number | null
+          metrics_key_metrics: Json
+          patient_state_version: string
+          results_last_generated_at: string | null
+          results_recommended_actions: Json
+          results_summary_cards: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_recent?: Json
+          assessment_completed_at?: string | null
+          assessment_last_assessment_id?: string | null
+          assessment_progress?: number
+          assessment_status?: string
+          created_at?: string
+          dialog_last_context?: string | null
+          dialog_last_message_at?: string | null
+          dialog_message_count?: number
+          id?: string
+          metrics_health_score_current?: number | null
+          metrics_health_score_delta?: number | null
+          metrics_key_metrics?: Json
+          patient_state_version?: string
+          results_last_generated_at?: string | null
+          results_recommended_actions?: Json
+          results_summary_cards?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_recent?: Json
+          assessment_completed_at?: string | null
+          assessment_last_assessment_id?: string | null
+          assessment_progress?: number
+          assessment_status?: string
+          created_at?: string
+          dialog_last_context?: string | null
+          dialog_last_message_at?: string | null
+          dialog_message_count?: number
+          id?: string
+          metrics_health_score_current?: number | null
+          metrics_health_score_delta?: number | null
+          metrics_key_metrics?: Json
+          patient_state_version?: string
+          results_last_generated_at?: string | null
+          results_recommended_actions?: Json
+          results_summary_cards?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pillars: {
         Row: {
           created_at: string

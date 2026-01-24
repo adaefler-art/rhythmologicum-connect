@@ -91,25 +91,25 @@ export async function GET() {
 
     // Map database row to PatientStateV01
     const patientState: PatientStateV01 = {
-      patient_state_version: stateRow.patient_state_version,
+      patient_state_version: stateRow.patient_state_version as '0.1',
       assessment: {
         lastAssessmentId: stateRow.assessment_last_assessment_id,
-        status: stateRow.assessment_status,
+        status: stateRow.assessment_status as 'not_started' | 'in_progress' | 'completed',
         progress: Number(stateRow.assessment_progress),
         completedAt: stateRow.assessment_completed_at,
       },
       results: {
-        summaryCards: stateRow.results_summary_cards || [],
-        recommendedActions: stateRow.results_recommended_actions || [],
+        summaryCards: (stateRow.results_summary_cards as any) || [],
+        recommendedActions: (stateRow.results_recommended_actions as any) || [],
         lastGeneratedAt: stateRow.results_last_generated_at,
       },
       dialog: {
-        lastContext: stateRow.dialog_last_context,
+        lastContext: stateRow.dialog_last_context as 'dashboard' | 'results' | 'assessment' | 'other' | null,
         messageCount: stateRow.dialog_message_count,
         lastMessageAt: stateRow.dialog_last_message_at,
       },
       activity: {
-        recentActivity: stateRow.activity_recent || [],
+        recentActivity: (stateRow.activity_recent as any) || [],
       },
       metrics: {
         healthScore: {
@@ -120,7 +120,7 @@ export async function GET() {
             ? Number(stateRow.metrics_health_score_delta) 
             : null,
         },
-        keyMetrics: stateRow.metrics_key_metrics || [],
+        keyMetrics: (stateRow.metrics_key_metrics as any) || [],
       },
     }
 
@@ -188,7 +188,13 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     // Build update object from partial request
-    const updateData: Record<string, unknown> = {
+    type DbUpdate = {
+      user_id: string
+      patient_state_version: string
+      [key: string]: any
+    }
+    
+    const updateData: DbUpdate = {
       user_id: user.id,
       patient_state_version: '0.1',
     }
@@ -278,25 +284,25 @@ export async function POST(request: Request) {
 
     // AC4: Map and return updated state
     const patientState: PatientStateV01 = {
-      patient_state_version: stateRow.patient_state_version,
+      patient_state_version: stateRow.patient_state_version as '0.1',
       assessment: {
         lastAssessmentId: stateRow.assessment_last_assessment_id,
-        status: stateRow.assessment_status,
+        status: stateRow.assessment_status as 'not_started' | 'in_progress' | 'completed',
         progress: Number(stateRow.assessment_progress),
         completedAt: stateRow.assessment_completed_at,
       },
       results: {
-        summaryCards: stateRow.results_summary_cards || [],
-        recommendedActions: stateRow.results_recommended_actions || [],
+        summaryCards: (stateRow.results_summary_cards as any) || [],
+        recommendedActions: (stateRow.results_recommended_actions as any) || [],
         lastGeneratedAt: stateRow.results_last_generated_at,
       },
       dialog: {
-        lastContext: stateRow.dialog_last_context,
+        lastContext: stateRow.dialog_last_context as 'dashboard' | 'results' | 'assessment' | 'other' | null,
         messageCount: stateRow.dialog_message_count,
         lastMessageAt: stateRow.dialog_last_message_at,
       },
       activity: {
-        recentActivity: stateRow.activity_recent || [],
+        recentActivity: (stateRow.activity_recent as any) || [],
       },
       metrics: {
         healthScore: {
@@ -307,7 +313,7 @@ export async function POST(request: Request) {
             ? Number(stateRow.metrics_health_score_delta) 
             : null,
         },
-        keyMetrics: stateRow.metrics_key_metrics || [],
+        keyMetrics: (stateRow.metrics_key_metrics as any) || [],
       },
     }
 

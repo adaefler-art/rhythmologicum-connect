@@ -1,0 +1,3 @@
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,5020,e=>{"use strict";var t=e.i(71645),a=e.i(18566);e.i(17152);var u=e.i(66763);function i(){let e=(0,a.useRouter)();return(0,t.useEffect)(()=>{(async()=>{let{data:{session:t}}=await u.supabase.auth.getSession();t?e.replace("/admin/content"):e.replace("/")})()},[e]),null}e.s(["default",()=>i])}]);
+
+//# sourceMappingURL=405d9f656f015729.js.map
