@@ -58,7 +58,7 @@ export default function ScreenGallery() {
 
       {/* Screen Display Area */}
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div className="max-w-md mx-auto bg-[#f7f9fc]">
+        <div className="w-full bg-[#f7f9fc]">
           {activeScreen === 'dashboard' && <DashboardScreen />}
           {activeScreen === 'assessments' && <AssessmentsScreen />}
           {activeScreen === 'question' && <AssessmentQuestionScreen />}
