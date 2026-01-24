@@ -11,7 +11,7 @@ import {
   EmptyState,
   ErrorState,
 } from '@/lib/ui/mobile-v2'
-import { ClipboardCheck, Clock, TrendingUp } from 'lucide-react'
+import { ClipboardCheck, Clock, TrendingUp } from '@/lib/ui/mobile-v2/icons'
 
 // ==========================================
 // TYPES

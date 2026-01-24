@@ -15,7 +15,7 @@ import type { ContentPage } from '@/lib/types/content'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { type Components } from 'react-markdown'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from '@/lib/ui/mobile-v2/icons'
 
 type ContentPageClientProps = {
   contentPage: ContentPage

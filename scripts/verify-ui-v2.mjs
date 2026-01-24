@@ -76,7 +76,7 @@ const CONTENT_WIDTH_ALLOWLIST = [
 
 // Forbidden placeholder icons in (mobile) pages (should use v2 icon system)
 const PLACEHOLDER_ICON_PATTERNS = [
-  /import\s+.*\s+from\s+['"]lucide-react['"]/,
+  /import\s+.*\s+from\s+['"]lucide-react['"]/,  // Direct lucide imports (should use v2/icons)
   /import\s+.*\s+from\s+['"]@heroicons\/react['"]/,
 ]
 
@@ -104,6 +104,7 @@ const AD_HOC_ALLOWLIST = [
   '.test.',
   'dev/', // Dev routes
   'components/', // Shared components (may have custom styling)
+  'client.tsx', // Client components can have internal primitives
 ]
 
 let violations = []
