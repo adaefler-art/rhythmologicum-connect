@@ -425,31 +425,41 @@ Each rule entry includes:
 - Generated from: Supabase local instance schema
 
 **Enforced By**:
-- Script: `npm run db:typegen` (generates types via `npx supabase@2.63.1 gen types typescript --local`)
-- Workflow: `.github/workflows/db-determinism.yml` (step: "Check types are up to date")
-- Command: `git diff --exit-code lib/types/supabase.ts`
-- **Supabase CLI Version**: `2.63.1` (pinned in `package.json` and workflow for deterministic output)
+- **Deterministic Script**: `scripts/db/typegen.ps1` (hard gate with full diagnostics)
+- **npm scripts**:
+  - `npm run db:typegen` → generates types (calls `typegen.ps1 -Generate`)
+  - `npm run db:typegen:verify` → verifies committed types match (calls `typegen.ps1 -Verify`)
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Verify TypeScript types are deterministic")
+- **Supabase CLI Version**: `2.63.1` (pinned in script for deterministic output)
 
 **Pass Condition**:
-- Generated types match committed `lib/types/supabase.ts` exactly
-- `git diff` exit code 0 (no changes)
+- Generated types match committed `lib/types/supabase.ts` exactly (byte-for-byte via SHA256)
+- `typegen.ps1 -Verify` exit code 0
 
 **Exceptions**:
 - None (types must always be in sync)
 
 **Evidence Output**:
-- Console: "✅ Types are up to date"
-- Or: "❌ Generated types differ from committed version! [diff]"
-- Instructions: "Run: npm run db:typegen and commit the updated file"
+- Console: "✅ Types match! Files are identical."
+- Or: "❌ Types differ! Generated output does not match committed version."
+- Full diagnostics on failure:
+  - Pinned CLI version (supabase@2.63.1)
+  - Exact command used
+  - File hashes (committed vs generated)
+  - Diff preview (first 50 lines)
+- Temp artifacts: `artifacts/typegen/supabase.generated.ts` (for debugging)
 
 **Known Gaps**:
 - Does not validate that types are actually used correctly in code
 - Does not detect type-unsafe casts or `any` usage
 
 **Determinism Notes**:
-- Supabase CLI version pinned at `2.63.1` to ensure identical output across environments
-- Version specified explicitly in `db:typegen` script via `npx supabase@2.63.1`
-- Workflow uses matching version via `supabase/setup-cli@v1` with `version: 2.63.1`
+- **Hard Gate**: Exactly ONE way to generate types (enforced via `scripts/db/typegen.ps1`)
+- Supabase CLI version pinned at `2.63.1` (no global installs, no version drift)
+- Mode: `--local` (hardcoded in script)
+- Command: `npx supabase@2.63.1 gen types typescript --local`
+- Fail-closed design: any error (DB connection, CLI failure, etc.) → exit 1
+- Both CI and local use identical script (no git diff comparison, SHA256 hash comparison instead)
 
 **Owner**: E71 / Database Team
 
