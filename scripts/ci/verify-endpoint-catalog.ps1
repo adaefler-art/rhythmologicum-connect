@@ -81,9 +81,71 @@ Write-Host "================================`n" -ForegroundColor Cyan
 # Run endpoint catalog generator
 # ========================================
 Write-Host "Running endpoint catalog generator..." -ForegroundColor Cyan
-& node $generator --repo-root $RepoRoot --out-dir $OutDir --allowlist $Allowlist
-if ($LASTEXITCODE -ne 0) {
-  throw "Endpoint catalog generator failed with exit code $LASTEXITCODE"
+$generatorOutput = & node $generator --repo-root $RepoRoot --out-dir $OutDir --allowlist $Allowlist 2>&1
+$generatorExitCode = $LASTEXITCODE
+if ($generatorOutput) {
+  $generatorOutput | ForEach-Object { Write-Host $_ }
+}
+if ($generatorExitCode -ne 0) {
+  $orphanCount = $null
+  if ($generatorOutput) {
+    foreach ($line in $generatorOutput) {
+      if ($line -match 'Orphan endpoints:\s*(\d+)') {
+        $orphanCount = [int]$Matches[1]
+      }
+    }
+  }
+
+  $catalogPath = Join-Path $OutDir 'endpoint-catalog.json'
+  Write-Host "`n--- Orphan endpoints from endpoint-catalog.json ---" -ForegroundColor Yellow
+  try {
+    $catalog = Get-Content $catalogPath -Raw | ConvertFrom-Json
+    $endpoints = @($catalog.endpoints)
+    $orphans = @()
+
+    foreach ($endpoint in $endpoints) {
+      $allowlisted = $false
+      if ($null -ne $endpoint.allowlisted) {
+        $allowlisted = [bool]$endpoint.allowlisted
+      } elseif ($null -ne $endpoint.isAllowedOrphan) {
+        $allowlisted = [bool]$endpoint.isAllowedOrphan
+      }
+
+      $callsites = $null
+      if ($null -ne $endpoint.callsites) {
+        $callsites = $endpoint.callsites
+      } elseif ($null -ne $endpoint.usedBy) {
+        $callsites = $endpoint.usedBy
+      }
+
+      $callsitesList = @($callsites)
+      $hasCallsites = $callsitesList.Count -gt 0
+
+      if (-not $allowlisted -and -not $hasCallsites) {
+        $orphans += $endpoint
+      }
+    }
+
+    if ($orphans.Count -eq 0) {
+      Write-Host "  (none)" -ForegroundColor DarkGray
+    } else {
+      $orphans | ForEach-Object {
+        $method = if ($_.methods -and $_.methods.Count -gt 0) { ($_.methods -join ', ') } else { '(none)' }
+        $path = $_.path
+        $provenance = if ($_.file) { $_.file } elseif ($_.source) { $_.source } else { '' }
+        [PSCustomObject]@{ method = $method; path = $path; provenance = $provenance }
+      } | Format-Table -AutoSize
+    }
+
+    if ($orphanCount -gt 0 -and $orphans.Count -eq 0) {
+      Write-Host "INCONSISTENT_ORPHAN_REPORTING: orphanCount=$orphanCount but endpoint-catalog.json has 0 orphans" -ForegroundColor Yellow
+    }
+  } catch {
+    Write-Host "Failed to parse endpoint-catalog.json for orphan diagnostics: $catalogPath" -ForegroundColor Yellow
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor DarkGray
+  }
+
+  throw "Endpoint catalog generator failed with exit code $generatorExitCode"
 }
 
 # ========================================
