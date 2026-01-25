@@ -152,6 +152,16 @@ jobs:
           pwsh -File scripts/db/typegen.ps1 -Verify
           echo "✅ Types are deterministic and up to date"
       
+      - name: Upload TypeGen artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typegen-artifacts
+          path: |
+            artifacts/typegen/supabase.generated.ts
+            artifacts/typegen/stderr.log
+          retention-days: 30
+      
       # Success summary
       - name: Success summary
         if: success()
