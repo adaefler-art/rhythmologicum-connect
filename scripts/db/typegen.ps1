@@ -118,10 +118,20 @@ if ($Generate) {
         
         $exitCode = $process.ExitCode
         
-        # Save stderr for diagnostics
+        # Save stderr for diagnostics (always, even on success)
+        $stderrBytes = 0
         if ($stderr) {
             $stderr | Out-File -FilePath $stderrFile -Encoding utf8
+            $stderrBytes = (Get-Item $stderrFile).Length
         }
+        
+        # Evidence output - always print for transparency
+        Write-Host ""
+        Write-Host "━━━ Evidence (Generate Mode) ━━━" -ForegroundColor Cyan
+        Write-Host "ExitCode:      $exitCode"
+        Write-Host "StderrBytes:   $stderrBytes"
+        Write-Host "StderrLog:     $stderrFile"
+        Write-Host ""
         
         if ($exitCode -ne 0) {
             Write-Failure "Supabase typegen failed with exit code $exitCode"
@@ -149,14 +159,18 @@ if ($Generate) {
         # Write stdout to target file
         $stdout | Out-File -FilePath $targetFile -Encoding utf8 -NoNewline
         
-        Write-Success "Types generated successfully"
-        Write-Info "File: $targetFile"
-        
         # Show file hash and size for verification
         $hash = (Get-FileHash -Path $targetFile -Algorithm SHA256).Hash
         $fileInfo = Get-Item $targetFile
-        Write-Info "SHA256: $hash"
-        Write-Info "Size: $($fileInfo.Length) bytes"
+        $stdoutBytes = $fileInfo.Length
+        
+        Write-Host "StdoutBytes:   $stdoutBytes" -ForegroundColor Cyan
+        Write-Host "GeneratedFile: $targetFile" -ForegroundColor Cyan
+        Write-Host "SHA256:        $hash" -ForegroundColor Cyan
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+        Write-Host ""
+        
+        Write-Success "Types generated successfully"
         
     } catch {
         Write-Failure "Generation failed: $_"
@@ -205,10 +219,20 @@ if ($Generate) {
         
         $exitCode = $process.ExitCode
         
-        # Save stderr for diagnostics
+        # Save stderr for diagnostics (always, even on success)
+        $stderrBytes = 0
         if ($stderr) {
             $stderr | Out-File -FilePath $stderrFile -Encoding utf8
+            $stderrBytes = (Get-Item $stderrFile).Length
         }
+        
+        # Evidence output - always print for transparency
+        Write-Host ""
+        Write-Host "━━━ Evidence (Verify Mode) ━━━" -ForegroundColor Cyan
+        Write-Host "ExitCode:      $exitCode"
+        Write-Host "StderrBytes:   $stderrBytes"
+        Write-Host "StderrLog:     $stderrFile"
+        Write-Host ""
         
         if ($exitCode -ne 0) {
             Write-Failure "Supabase typegen failed with exit code $exitCode"
@@ -238,7 +262,14 @@ if ($Generate) {
         
         # Show file size for verification
         $fileInfo = Get-Item $tempFile
-        Write-Success "Generated temp file successfully ($($fileInfo.Length) bytes)"
+        $stdoutBytes = $fileInfo.Length
+        
+        Write-Host "StdoutBytes:   $stdoutBytes" -ForegroundColor Cyan
+        Write-Host "GeneratedFile: $tempFile" -ForegroundColor Cyan
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+        Write-Host ""
+        
+        Write-Success "Generated temp file successfully"
         
     } catch {
         Write-Failure "Generation failed: $_"

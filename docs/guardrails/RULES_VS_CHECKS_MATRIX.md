@@ -440,14 +440,29 @@ Each rule entry includes:
 - None (types must always be in sync)
 
 **Evidence Output**:
-- Console: "✅ Types match! Files are identical."
-- Or: "❌ Types differ! Generated output does not match committed version."
-- Full diagnostics on failure:
+- **CI Logs** (always printed):
+  - `ExitCode`: Supabase CLI exit code (0 = success, != 0 = failure)
+  - `StdoutBytes`: Size of generated types file in bytes
+  - `StderrBytes`: Size of stderr output in bytes (0 if no warnings/errors)
+  - `GeneratedFile`: Path to generated/temp file
+  - `StderrLog`: Path to stderr.log file (`artifacts/typegen/stderr.log`)
+  - `SHA256` hashes: Committed vs Generated (in -Verify mode only)
+- **Artifacts** (on -Verify mode):
+  - `artifacts/typegen/supabase.generated.ts` (temp generated file for byte-level comparison)
+  - `artifacts/typegen/stderr.log` (Supabase CLI stderr output, written always even on success)
+- **Console Messages**:
+  - Success: "✅ Types match! Files are identical."
+  - Failure: "❌ Types differ! Generated output does not match committed version."
+- **Full diagnostics on failure**:
   - Pinned CLI version (supabase@2.63.1)
   - Exact command used
-  - File hashes (committed vs generated)
-  - Diff preview (first 50 lines)
-- Temp artifacts: `artifacts/typegen/supabase.generated.ts` (for debugging)
+  - File hashes (committed vs generated, both SHA256)
+  - Diff preview (first 50 lines of difference)
+- **Fail-Closed Conditions**:
+  - Supabase CLI exit code != 0
+  - Generated output is empty or whitespace-only
+  - SHA256 hash mismatch between committed and generated files (in -Verify mode)
+  - File I/O errors (cannot read committed file, cannot write temp file)
 
 **Known Gaps**:
 - Does not validate that types are actually used correctly in code
