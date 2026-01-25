@@ -63,7 +63,7 @@ Invoke-Step -Label 'Migration lint' -Fix "Run 'pwsh -File scripts/db/lint-migrat
   pwsh -File scripts/db/lint-migrations.ps1
 }
 
-Invoke-Step -Label 'Typegen verify' -Fix "Run 'pwsh -File scripts/db/typegen.ps1 -Generate' and commit lib/types/supabase.ts." -Action {
+Invoke-Step -Label 'Typegen verify' -Fix "Run 'npx supabase@2.63.1 start' (or 'supabase start') then rerun 'npm run preflight'." -Action {
   pwsh -File scripts/db/typegen.ps1 -Verify
 }
 
