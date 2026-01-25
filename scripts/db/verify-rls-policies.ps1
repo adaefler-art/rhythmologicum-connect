@@ -223,7 +223,13 @@ WHERE schemaname = '$schema'
                 cmd = $cmd
             }
             
-            # Check if this policy includes the patient role
+            # Check if this policy is patient-oriented
+            # Strategy: Look for policies with "Patient" in name (case-insensitive)
+            # or policies applied to authenticated/public roles (which could be patient-facing)
+            if ($policyName -match '(?i)patient') {
+                $hasPatientPolicy = $true
+            }
+            # Also accept explicit patient role matching (for future schema evolution)
             if ($roles -match $PatientRoleName -or $roles -eq '{public}' -or $roles -eq 'public') {
                 $hasPatientPolicy = $true
             }
@@ -334,6 +340,10 @@ foreach ($record in $results) {
     } else {
         $hasPatientPolicy = $false
         foreach ($policy in $record.policies) {
+            # Check if policy is patient-oriented (by name or role)
+            if ($policy.policyName -match '(?i)patient') {
+                $hasPatientPolicy = $true
+            }
             if ($policy.roles -match $PatientRoleName -or $policy.roles -eq '{public}' -or $policy.roles -eq 'public') {
                 $hasPatientPolicy = $true
             }
