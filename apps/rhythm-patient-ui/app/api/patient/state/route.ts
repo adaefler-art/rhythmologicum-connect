@@ -13,6 +13,7 @@ import {
   safeValidatePatientState,
   type PatientStateV01,
   type UpdatePatientStateRequest,
+  UpdatePatientStateRequestSchema,
   PATIENT_STATE_VERSION,
 } from '@/lib/api/contracts/patient/state'
 import { randomUUID } from 'crypto'
@@ -193,7 +194,27 @@ export async function POST(request: Request) {
     // Parse request body
     let updateRequest: UpdatePatientStateRequest
     try {
-      updateRequest = await request.json()
+      const body = await request.json()
+      const parseResult = UpdatePatientStateRequestSchema.safeParse(body)
+      
+      if (!parseResult.success) {
+        console.error('[PATIENT_STATE_API] STEP=parseRequest success=false', {
+          correlationId,
+          errors: parseResult.error.issues,
+        })
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid request body',
+            },
+          },
+          { status: 400 },
+        )
+      }
+      
+      updateRequest = parseResult.data
     } catch {
       return NextResponse.json(
         {

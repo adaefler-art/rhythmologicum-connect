@@ -42,7 +42,7 @@ export type ResultsSummaryCard = z.infer<typeof ResultsSummaryCardSchema>
  * Summary of assessment results and recommendations
  */
 export const ResultsStateSchema = z.object({
-  summaryCards: z.array(ResultsSummaryCardSchema).max(5), // Max 3-5 cards as per spec
+  summaryCards: z.array(ResultsSummaryCardSchema).max(5), // Maximum 5 cards for bounded UI
   recommendedActions: z.array(z.string()), // Array of action IDs
   lastGeneratedAt: z.string().datetime().nullable(),
 })
