@@ -1,4 +1,12 @@
 {
+  "_comment": "Allowlist for R-API-002: Endpoint Catalog Verification",
+  "_format": "This file contains exceptions for endpoints that don't fit the standard catalog verification rules",
+  "_usage": "allowedOrphans: endpoints that exist but aren't in the catalog (e.g., legacy, admin, webhook endpoints)",
+  "_removal_guidance": "Remove an entry when the endpoint is removed from code or properly integrated into the catalog",
+  "_example_entry": {
+    "allowedOrphans": "/api/example/legacy - For endpoints that bypass catalog checks",
+    "allowedIntents": "manual:webhook - For endpoints triggered by external systems"
+  },
   "allowedOrphans": [
     "/api/account/deletion-request",
     "/api/admin/content-pages",

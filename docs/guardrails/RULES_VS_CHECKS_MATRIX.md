@@ -94,8 +94,21 @@ Each rule entry includes:
 - No changes detected in docs/api after regeneration
 
 **Exceptions**:
-- Allowlist: `docs/api/endpoint-allowlist.json` (undocumented routes)
-- Format: JSON array of route paths (e.g., `["/api/legacy/v1/deprecated"]`)
+- Allowlist: `docs/api/endpoint-allowlist.json`
+- Format: JSON object with metadata and structured entries:
+  ```json
+  {
+    "_comment": "Allowlist for R-API-002: Endpoint Catalog Verification",
+    "_format": "Exceptions for endpoints that don't fit standard catalog verification",
+    "_removal_guidance": "Remove entry when endpoint is removed or integrated",
+    "allowedOrphans": ["/api/example/legacy"],
+    "allowedIntents": ["manual:webhook", "manual:external"]
+  }
+  ```
+- Self-documenting: File includes `_comment`, `_format`, `_usage`, `_removal_guidance`, and `_example_entry` fields
+- Entry types:
+  - `allowedOrphans`: Endpoints that exist but bypass catalog checks (legacy, admin, webhooks)
+  - `allowedIntents`: Intent types for non-catalog endpoints (e.g., "manual:webhook")
 
 **Evidence Output**:
 - Console: "✅ Endpoint catalog verified successfully"
@@ -103,8 +116,8 @@ Each rule entry includes:
 - File: `docs/api/ENDPOINT_CATALOG.md` (must match committed version)
 
 **Known Gaps**:
-- Allowlist format not documented in allowlist file itself
-- No validation of allowlist entries (may contain non-existent routes)
+- No automated validation of allowlist entries (warn-only approach)
+- Allowlist may contain stale entries for removed endpoints (manual review required)
 
 **Owner**: E72 / API Team
 
@@ -594,6 +607,47 @@ Each rule entry includes:
 
 ---
 
+### R-DB-011: Migration Linter Test Suite Must Pass
+
+**Rule Text**: The migration linter's test suite must pass before checking real migrations. Linter self-tests validate that canonical/non-canonical object detection works correctly.
+
+**Scope**:
+- Test script: `scripts/db/test-linter.ps1`
+- Test fixtures: `scripts/db/fixtures/allowed.sql` (canonical objects) and `forbidden.sql` (non-canonical objects)
+- Linter under test: `scripts/db/lint-migrations.ps1`
+
+**Enforced By**:
+- Script: `scripts/db/test-linter.ps1`
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Test migration linter", runs before actual migration linting)
+
+**Pass Condition**:
+- **Test 1 (Allowed Fixture)**: Linter accepts `allowed.sql` (exit code 0)
+- **Test 2 (Forbidden Fixture)**: Linter rejects `forbidden.sql` (exit code 1) and output contains:
+  - Filename reference (`forbidden.sql`)
+  - Non-canonical object name (`fantasy_table`)
+  - Line number reference (pattern: `:\d+`)
+- All tests passed (no failures)
+- Exit code 0
+
+**Exceptions**:
+- None (linter tests must always pass before checking real migrations)
+
+**Evidence Output**:
+- Console: "🎉 All tests passed!"
+- Console: "✅ PASS: Linter accepted canonical objects (exit code 0)"
+- Console: "✅ PASS: Linter rejected non-canonical objects (exit code 1)"
+- Or: "❌ FAIL: [specific test failure with details]"
+- Summary: "Passed: N / Failed: M"
+
+**Known Gaps**:
+- Only two fixtures (allowed and forbidden) - could expand test coverage
+- Does not test all linter edge cases (comments, multi-line statements, etc.)
+- Fixtures are manually maintained (no automated generation)
+
+**Owner**: E72 / Database Team
+
+---
+
 ## UI Rules
 
 ### R-UI-001: Patient Pages Must Be Inside (mobile) Route Group
@@ -606,7 +660,9 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 1: checkPagesOutsideMobile)
-- Workflow: Manual run (not in CI yet per E71 scope)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
+- Workflow: Not yet integrated (E71 scope was script creation only)
 
 **Pass Condition**:
 - No directories under `app/patient/` except:
@@ -624,7 +680,8 @@ Each rule entry includes:
 
 **Known Gaps**:
 - Allowlist is hardcoded in script (not in separate allowlist file)
-- Not yet integrated into CI workflow (manual run only)
+- **Not yet integrated into CI workflow (manual run only)** - CI gate planned for future epic
+- Developer must remember to run script before committing UI changes
 
 **Owner**: E71 / UI Team
 
@@ -640,6 +697,8 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 2: checkForbiddenWidthPatterns)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
 - Regex patterns: `FORBIDDEN_WIDTH_PATTERNS` array
 
 **Pass Condition**:
@@ -671,6 +730,8 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 3: checkForbiddenImports)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
 - Regex patterns: `FORBIDDEN_IMPORTS` array
 
 **Pass Condition**:
@@ -701,6 +762,8 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 4: checkContentRoutes)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
 
 **Pass Condition**:
 - `app/content/layout.tsx` includes `MobileShellV2` import/usage
@@ -734,6 +797,8 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 5: checkPlaceholderIcons)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
 - Regex patterns: `PLACEHOLDER_ICON_PATTERNS` array
 
 **Pass Condition**:
@@ -766,6 +831,8 @@ Each rule entry includes:
 
 **Enforced By**:
 - Script: `scripts/verify-ui-v2.mjs` (Check 6: checkAdHocPrimitives)
+- **Manual run only (not in CI yet)** - Integration planned for future epic
+- Command: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
 - Regex patterns: `AD_HOC_PRIMITIVE_PATTERNS` array
 
 **Pass Condition**:
