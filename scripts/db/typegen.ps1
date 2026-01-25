@@ -90,27 +90,73 @@ if ($Generate) {
     Write-Info "Command: $command > $targetFile"
     
     try {
-        # Execute generation
-        $output = & npx "supabase@$PINNED_SUPABASE_VERSION" gen types typescript --local 2>&1
+        # Capture stderr separately for diagnostics
+        $stderrFile = Join-Path $repoRoot "artifacts/typegen/stderr.log"
+        $stderrDir = Split-Path $stderrFile -Parent
+        if (-not (Test-Path $stderrDir)) {
+            New-Item -ItemType Directory -Path $stderrDir -Force | Out-Null
+        }
         
-        if ($LASTEXITCODE -ne 0) {
-            Write-Failure "Supabase typegen failed with exit code $LASTEXITCODE"
-            Write-Host $output
+        # Execute generation with direct file redirection (not PowerShell capture)
+        # This ensures FULL stdout is written to the file
+        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processInfo.FileName = "npx"
+        $processInfo.Arguments = "supabase@$PINNED_SUPABASE_VERSION gen types typescript --local"
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.UseShellExecute = $false
+        $processInfo.CreateNoWindow = $true
+        
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $processInfo
+        $process.Start() | Out-Null
+        
+        # Read stdout and stderr
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        
+        $exitCode = $process.ExitCode
+        
+        # Save stderr for diagnostics
+        if ($stderr) {
+            $stderr | Out-File -FilePath $stderrFile -Encoding utf8
+        }
+        
+        if ($exitCode -ne 0) {
+            Write-Failure "Supabase typegen failed with exit code $exitCode"
+            if ($stderr) {
+                Write-Host "STDERR:" -ForegroundColor Yellow
+                Write-Host $stderr
+            }
+            if ($stdout) {
+                Write-Host "STDOUT:" -ForegroundColor Yellow
+                Write-Host $stdout
+            }
             exit 1
         }
         
-        # Write output to file
-        $output | Out-File -FilePath $targetFile -Encoding utf8 -NoNewline
+        # Verify we got output
+        if ([string]::IsNullOrWhiteSpace($stdout)) {
+            Write-Failure "Supabase typegen produced no output"
+            if ($stderr) {
+                Write-Host "STDERR:" -ForegroundColor Yellow
+                Write-Host $stderr
+            }
+            exit 1
+        }
         
-        # Add trailing newline (Supabase CLI 2.63.1 convention)
-        Add-Content -Path $targetFile -Value "" -NoNewline
+        # Write stdout to target file
+        $stdout | Out-File -FilePath $targetFile -Encoding utf8 -NoNewline
         
         Write-Success "Types generated successfully"
         Write-Info "File: $targetFile"
         
-        # Show file hash for verification
+        # Show file hash and size for verification
         $hash = (Get-FileHash -Path $targetFile -Algorithm SHA256).Hash
+        $fileInfo = Get-Item $targetFile
         Write-Info "SHA256: $hash"
+        Write-Info "Size: $($fileInfo.Length) bytes"
         
     } catch {
         Write-Failure "Generation failed: $_"
@@ -135,22 +181,64 @@ if ($Generate) {
     Write-Info "Command: $command"
     
     try {
-        # Execute generation
-        $output = & npx "supabase@$PINNED_SUPABASE_VERSION" gen types typescript --local 2>&1
+        # Capture stderr separately for diagnostics
+        $stderrFile = Join-Path $tempDir "stderr.log"
         
-        if ($LASTEXITCODE -ne 0) {
-            Write-Failure "Supabase typegen failed with exit code $LASTEXITCODE"
-            Write-Host $output
+        # Execute generation with direct file redirection (not PowerShell capture)
+        # This ensures FULL stdout is written to the file
+        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processInfo.FileName = "npx"
+        $processInfo.Arguments = "supabase@$PINNED_SUPABASE_VERSION gen types typescript --local"
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.UseShellExecute = $false
+        $processInfo.CreateNoWindow = $true
+        
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $processInfo
+        $process.Start() | Out-Null
+        
+        # Read stdout and stderr
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        
+        $exitCode = $process.ExitCode
+        
+        # Save stderr for diagnostics
+        if ($stderr) {
+            $stderr | Out-File -FilePath $stderrFile -Encoding utf8
+        }
+        
+        if ($exitCode -ne 0) {
+            Write-Failure "Supabase typegen failed with exit code $exitCode"
+            if ($stderr) {
+                Write-Host "STDERR:" -ForegroundColor Yellow
+                Write-Host $stderr
+            }
+            if ($stdout) {
+                Write-Host "STDOUT:" -ForegroundColor Yellow
+                Write-Host $stdout
+            }
             exit 1
         }
         
-        # Write output to temp file
-        $output | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
+        # Verify we got output
+        if ([string]::IsNullOrWhiteSpace($stdout)) {
+            Write-Failure "Supabase typegen produced no output"
+            if ($stderr) {
+                Write-Host "STDERR:" -ForegroundColor Yellow
+                Write-Host $stderr
+            }
+            exit 1
+        }
         
-        # Add trailing newline (Supabase CLI 2.63.1 convention)
-        Add-Content -Path $tempFile -Value "" -NoNewline
+        # Write stdout to temp file
+        $stdout | Out-File -FilePath $tempFile -Encoding utf8 -NoNewline
         
-        Write-Success "Generated temp file successfully"
+        # Show file size for verification
+        $fileInfo = Get-Item $tempFile
+        Write-Success "Generated temp file successfully ($($fileInfo.Length) bytes)"
         
     } catch {
         Write-Failure "Generation failed: $_"
