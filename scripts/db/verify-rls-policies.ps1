@@ -228,8 +228,10 @@ WHERE n.nspname = '$schema'
     $rlsResult = Invoke-DbQuery -Sql $rlsQuerySql
     $rlsEnabled = $false
     
-    if ($rlsResult -and $rlsResult[0]) {
-        $rlsValue = $rlsResult[0].Trim()
+    # Normalize output to array to handle single-line results (scalar-safe)
+    $rlsLines = @($rlsResult | Where-Object { $_ })
+    if ($rlsLines.Count -gt 0) {
+        $rlsValue = $rlsLines[0].ToString().Trim()
         $rlsEnabled = ($rlsValue -eq 't' -or $rlsValue -eq 'true')
     }
     
