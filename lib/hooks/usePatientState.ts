@@ -136,7 +136,7 @@ export function usePatientState(autoFetch: boolean = true): UsePatientStateResul
 
         setState('error')
         setError(
-          err instanceof Error ? err.message : 'Patient state konnte nicht geladen werden.',
+          err instanceof Error ? err.message : 'Failed to load patient state.',
         )
       } finally {
         fetchInProgressRef.current = false
@@ -219,7 +219,7 @@ export function usePatientState(autoFetch: boolean = true): UsePatientStateResul
         console.error('[usePatientState] Error updating state:', err)
         setUpdateState('error')
         setUpdateError(
-          err instanceof Error ? err.message : 'Patient state konnte nicht aktualisiert werden.',
+          err instanceof Error ? err.message : 'Failed to update patient state.',
         )
         return false
       }

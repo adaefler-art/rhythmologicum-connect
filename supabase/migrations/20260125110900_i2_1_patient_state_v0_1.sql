@@ -119,6 +119,10 @@ CREATE POLICY "patient_state_update_own"
     );
 
 -- Policy: Clinicians can SELECT all patient states
+-- Note: This policy performs a subquery check on user_profiles.metadata->>'role'.
+-- For optimal performance with large datasets, ensure indexes exist on:
+--   - user_profiles(user_id)
+--   - user_profiles((metadata->>'role'))
 CREATE POLICY "patient_state_select_clinician" 
     ON public.patient_state
     FOR SELECT

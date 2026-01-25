@@ -20,6 +20,44 @@ import {
 } from '@/lib/types/patient-state'
 
 /**
+ * Helper: Deep merge patient state update with current state
+ * Safely merges partial updates into existing state with proper type handling
+ */
+function mergePatientStateUpdate(
+  currentState: {
+    assessment: unknown
+    results: unknown
+    dialog: unknown
+    activity: unknown
+    metrics: unknown
+  },
+  updatePayload: PatientStateUpdate
+) {
+  return {
+    assessment: {
+      ...(currentState.assessment as object),
+      ...updatePayload.assessment,
+    } as never,
+    results: {
+      ...(currentState.results as object),
+      ...updatePayload.results,
+    } as never,
+    dialog: {
+      ...(currentState.dialog as object),
+      ...updatePayload.dialog,
+    } as never,
+    activity: {
+      ...(currentState.activity as object),
+      ...updatePayload.activity,
+    } as never,
+    metrics: {
+      ...(currentState.metrics as object),
+      ...updatePayload.metrics,
+    } as never,
+  }
+}
+
+/**
  * GET /api/patient/state
  * 
  * Fetches the current patient state. If no state exists, creates and returns
@@ -255,29 +293,8 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Deep merge update payload with current state
-    const mergedState = {
-      assessment: {
-        ...(currentState.assessment as object),
-        ...updatePayload.assessment,
-      } as never,
-      results: {
-        ...(currentState.results as object),
-        ...updatePayload.results,
-      } as never,
-      dialog: {
-        ...(currentState.dialog as object),
-        ...updatePayload.dialog,
-      } as never,
-      activity: {
-        ...(currentState.activity as object),
-        ...updatePayload.activity,
-      } as never,
-      metrics: {
-        ...(currentState.metrics as object),
-        ...updatePayload.metrics,
-      } as never,
-    }
+    // Deep merge update payload with current state using utility function
+    const mergedState = mergePatientStateUpdate(currentState, updatePayload)
 
     // Update state (RLS automatically filters by user)
     const { data: updatedState, error: updateError } = await supabase
