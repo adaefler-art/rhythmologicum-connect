@@ -69,7 +69,7 @@ export const ActivityItemSchema = z.object({
   type: z.enum(['assessment_completed', 'result_generated', 'dialog_session', 'measure_recorded', 'other']),
   label: z.string(),
   timestamp: z.string().datetime(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type ActivityItem = z.infer<typeof ActivityItemSchema>

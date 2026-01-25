@@ -16,6 +16,7 @@ import {
   PATIENT_STATE_VERSION,
 } from '@/lib/api/contracts/patient/state'
 import { randomUUID } from 'crypto'
+import type { Json } from '@/lib/types/supabase'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -275,7 +276,7 @@ export async function POST(request: Request) {
       const { error: insertError } = await supabase.from('patient_state').insert({
         user_id: user.id,
         patient_state_version: PATIENT_STATE_VERSION,
-        state_data: updatedState as unknown as Record<string, unknown>,
+        state_data: updatedState as unknown as Json,
       })
 
       if (insertError) {
@@ -305,7 +306,7 @@ export async function POST(request: Request) {
       const { error: updateError } = await supabase
         .from('patient_state')
         .update({
-          state_data: updatedState as unknown as Record<string, unknown>,
+          state_data: updatedState as unknown as Json,
         })
         .eq('user_id', user.id)
 
