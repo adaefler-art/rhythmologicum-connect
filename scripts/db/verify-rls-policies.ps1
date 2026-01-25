@@ -34,6 +34,18 @@ function ConvertTo-SafeSqlIdentifier {
     return $Identifier
 }
 
+# Get repository root path (safe for CI and local execution)
+function Get-RepositoryRoot {
+    # Prefer $PSScriptRoot (always populated when script is run from file)
+    # Fallback to current location if $PSScriptRoot is empty (shouldn't happen, but defensive)
+    $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+    
+    # Script is in scripts/db, so repo root is two levels up
+    $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..") -ErrorAction Stop
+    
+    return $repoRoot.Path
+}
+
 # Check if a policy is patient-oriented
 function Test-IsPatientPolicy {
     param(
@@ -130,7 +142,7 @@ function Invoke-DbQuery {
 function Get-AllowlistEntries {
     param([string]$Path)
     
-    $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.ScriptName))
+    $repoRoot = Get-RepositoryRoot
     $fullPath = Join-Path $repoRoot $Path
     
     if (-not (Test-Path $fullPath)) {
@@ -316,7 +328,7 @@ WHERE schemaname = '$schema'
 Write-Info "Generating output artifacts..."
 
 # Ensure output directory exists
-$repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.ScriptName))
+$repoRoot = Get-RepositoryRoot
 $fullOutputDir = Join-Path $repoRoot $OutputDir
 if (-not (Test-Path $fullOutputDir)) {
     New-Item -ItemType Directory -Path $fullOutputDir -Force | Out-Null
