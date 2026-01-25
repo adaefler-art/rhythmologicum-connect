@@ -12,18 +12,21 @@ This report identifies gaps, mismatches, and inconsistencies between written gua
 
 **Findings Summary**:
 - **Rules without checks**: 0 critical rules (was 2, R-CI-002 ✅ RESOLVED, R-API-003 ✅ PARTIALLY RESOLVED)
-- **Checks without documented rules**: 2 checks
-- **Scope mismatches**: 4 instances
-- **Format mismatches**: 3 allowlist format issues
+- **Checks without documented rules**: 1 check (was 2, R-DB-011 ✅ RESOLVED)
+- **Scope mismatches**: 3 instances (was 4, UI v2 status ✅ CLARIFIED)
+- **Format mismatches**: 2 allowlist format issues (was 3, endpoint-allowlist ✅ RESOLVED)
 - **False positive risks**: 5 heuristic-based checks
 
 **Recent Resolutions**:
+- ✅ **R-DB-011 Migration Linter Test** (E72.ALIGN.P2.GOV.001): Formalized existing check as explicit rule
+- ✅ **Endpoint Allowlist Format** (E72.ALIGN.P2.GOV.001): Added self-documenting structure to endpoint-allowlist.json
+- ✅ **UI v2 Enforcement Status** (E72.ALIGN.P2.GOV.001): Explicitly documented manual-only status in matrix and README
 - ✅ **R-DB-009 RLS Verification** (E72.ALIGN.P0.DBSEC.001): Automated check implemented, integrated into CI
 - ✅ **R-DB-007 TypeGen Determinism** (E72.ALIGN.P0.DBSEC.001): Strengthened evidence specification with hard gate implementation
 - ✅ **R-CI-002 BASE_SHA Standardization** (E72.ALIGN.P1.DETCON.001): Shared script created, deterministic resolution implemented
 - ✅ **R-API-003 Response Contract** (E72.ALIGN.P1.DETCON.001): Canonical type introduced, partial enforcement (rule-ID corrected from R-DB-010)
 
-**Recommended Actions**: 5 remaining alignment PRs/issues (see Section 6)
+**Recommended Actions**: 2 remaining alignment PRs/issues (was 5)
 
 ---
 
@@ -193,7 +196,7 @@ These rules are documented but NOT automatically enforced. They rely on manual c
 
 These checks are implemented but not documented as explicit rules in the matrix. They enforce constraints that should be formalized.
 
-### 2.1 Test Linter for DB Migrations
+### 2.1 Test Linter for DB Migrations ✅ RESOLVED
 
 **Check Location**:
 - Script: `scripts/db/test-linter.ps1`
@@ -204,20 +207,23 @@ These checks are implemented but not documented as explicit rules in the matrix.
 - Validates that linter correctly detects non-canonical objects
 - Exits 0 if linter behaves correctly
 
-**Missing Rule**:
-- No explicit rule like "R-DB-011: Migration linter must pass self-tests"
-- Implied by DB determinism flow but not documented
+**Resolution** (E72.ALIGN.P2.GOV.001):
+- ✅ **Rule formalized**: Added R-DB-011 to matrix
+- ✅ **Documentation complete**: Rule statement, enforcement mapping, pass conditions documented
+- ✅ **README updated**: Quick reference table includes R-DB-011
 
-**Recommended Alignment**:
-- **Add rule to matrix** (preferred)
-- Create: R-DB-011: "Migration linter test suite must pass before checking actual migrations"
-- Documents that linter itself is tested for correctness
+**Rule Details**:
+- Rule ID: R-DB-011
+- Statement: "Migration linter test suite must pass before checking actual migrations"
 - Pass condition: Test fixtures produce expected violations/passes
+- Evidence: Console output showing test results, exit code 0
 
 **Why This Is Not Weakening**:
-- Formalizes existing check
+- Formalizes existing check (no behavior change)
 - Makes testing requirement explicit
-- No behavior change
+- Improves auditability of linter correctness
+
+**Status**: **RESOLVED** - See `RULES_VS_CHECKS_MATRIX.md` R-DB-011 for complete details
 
 ---
 
@@ -278,7 +284,7 @@ These rules and checks have documented scopes that don't match their actual enfo
 
 ---
 
-### 3.2 R-UI-001 through R-UI-006: Not in CI Yet
+### 3.2 R-UI-001 through R-UI-006: Not in CI Yet ✅ CLARIFIED
 
 **Rule Statement Enforcement**:
 > "Enforced By: scripts/verify-ui-v2.mjs"
@@ -288,55 +294,78 @@ These rules and checks have documented scopes that don't match their actual enfo
 - **NOT integrated into CI workflows** (manual run only per E71 scope)
 - No `.github/workflows/ui-v2-gate.yml` exists
 
-**Impact**:
-- **MEDIUM** - Rules can be violated without CI catching them
-- Relies on developers running script manually
-- E71 scope was to create script, E72+ may integrate to CI
+**Resolution** (E72.ALIGN.P2.GOV.001):
+- ✅ **Matrix updated**: All UI rules now explicitly state "manual run only; not in CI yet"
+- ✅ **README updated**: Added developer instructions with PowerShell command
+- ✅ **Status clarified**: Documentation clearly states CI integration planned for future epic
+- ✅ **Developer guidance**: Instructions added for running `node scripts/verify-ui-v2.mjs`
 
-**Recommended Alignment**:
-- **Update rule enforcement field** (short-term)
-- Change "Enforced By" to: "Script: scripts/verify-ui-v2.mjs (manual run only, not yet in CI)"
-- Add note: "Integration into CI planned for future epic"
-- Or: **Add UI v2 workflow** (if E72 scope permits)
+**Updated Enforcement Field** (in matrix):
+- Before: "Enforced By: scripts/verify-ui-v2.mjs"
+- After: "Script: scripts/verify-ui-v2.mjs (**manual run only; not in CI yet**) - Integration planned for future epic"
+- Command documented: `node scripts/verify-ui-v2.mjs` or `pwsh -c "node scripts/verify-ui-v2.mjs"`
+
+**Impact**:
+- **MEDIUM** - Rules can be violated without CI catching them (unchanged)
+- Relies on developers running script manually (unchanged)
+- **Improved**: Documentation now explicitly states this limitation
+- **Improved**: Developers have clear instructions on how to run checks locally
 
 **Why This Is Not Weakening**:
-- Clarifies enforcement status
+- Clarifies enforcement status (transparency improvement)
 - Prevents false sense of security
 - Acknowledges implementation phase
+- No change to actual enforcement (still manual)
+
+**Status**: **CLARIFIED** - See `RULES_VS_CHECKS_MATRIX.md` R-UI-001 through R-UI-006 for complete details
 
 ---
 
-### 3.3 R-API-002: Allowlist Format Undocumented
+### 3.3 R-API-002: Allowlist Format Undocumented ✅ RESOLVED
 
 **Rule Statement**:
 > "Allowlist: `docs/api/endpoint-allowlist.json` (undocumented routes)"
 
-**Actual Allowlist File**:
-- File may or may not exist
-- **No documentation of format** in the file itself
-- Matrix says "Format: JSON array of route paths" but file doesn't include this
+**Previous State**:
+- File existed but had no documentation of format
+- **No self-documenting structure** in the file itself
+- Matrix said "Format: JSON array" but file didn't include this guidance
+
+**Resolution** (E72.ALIGN.P2.GOV.001):
+- ✅ **Allowlist updated**: Added self-documenting structure to `docs/api/endpoint-allowlist.json`
+- ✅ **Metadata fields added**: `_comment`, `_format`, `_usage`, `_removal_guidance`, `_example_entry`
+- ✅ **Matrix updated**: Documented explicit format with example in R-API-002
+- ✅ **Known gaps updated**: Changed to "No automated validation" (warn-only approach documented)
+
+**New Allowlist Format**:
+```json
+{
+  "_comment": "Allowlist for R-API-002: Endpoint Catalog Verification",
+  "_format": "Exceptions for endpoints that don't fit standard catalog verification",
+  "_usage": "allowedOrphans: endpoints that exist but aren't in catalog",
+  "_removal_guidance": "Remove entry when endpoint is removed or integrated",
+  "_example_entry": {
+    "allowedOrphans": "/api/example/legacy",
+    "allowedIntents": "manual:webhook"
+  },
+  "allowedOrphans": [...],
+  "allowedIntents": [...]
+}
+```
 
 **Impact**:
-- **LOW** - Developers don't know how to add exceptions
-- May add wrong format entries
-- No self-documenting allowlist
-
-**Recommended Alignment**:
-- **Add format documentation to allowlist file** (preferred)
-- Include comment/description in JSON:
-  ```json
-  {
-    "_comment": "Allowlist for endpoints that don't fit standard catalog. Format: array of route paths like '/api/legacy/v1/deprecated'. Remove entry when endpoint is removed or standardized.",
-    "entries": [
-      "/api/example/legacy"
-    ]
-  }
-  ```
+- **LOW** - Format is now self-documenting
+- Developers know how to add exceptions correctly
+- Reduces chance of format errors
+- No validation change (warn-only approach retained)
 
 **Why This Is Not Weakening**:
 - Makes allowlist self-documenting
-- Reduces chance of format errors
-- No behavior change
+- Improves developer experience
+- No behavior change in enforcement
+- Clarifies that validation is warn-only (no false confidence)
+
+**Status**: **RESOLVED** - See `RULES_VS_CHECKS_MATRIX.md` R-API-002 for complete details
 
 ---
 
@@ -656,43 +685,48 @@ Based on the findings above, here are recommended follow-up issues/PRs to synchr
 - Add ESLint rule for automated enforcement
 - Migrate legacy endpoints during natural updates
 
-### Issue 3: Document and Validate Allowlist Formats (LOW PRIORITY)
+### ~~Issue 3: Document and Validate Allowlist Formats (LOW PRIORITY)~~ ✅ PARTIALLY COMPLETED
 
 **Scope**: Address findings 3.3, 3.4, 4.2 (allowlist clarity)
 
-**Tasks**:
-- Add format comments to all JSON allowlist files
-- Consider moving hardcoded allowlists to JSON (if needed)
-- Add validation of allowlist entries (e.g., endpoint catalog)
-- Document allowlist review process in matrix
+**Status**: **PARTIALLY COMPLETED** (E72.ALIGN.P2.GOV.001)
 
-**Rule Changes**: Update exception fields with clearer format descriptions
+**Completed Tasks**:
+- ✅ Added self-documenting structure to `docs/api/endpoint-allowlist.json`
+- ✅ Documented format in RULES_VS_CHECKS_MATRIX.md for R-API-002
+- ✅ Verified `docs/canon/rls-allowlist.json` already follows best practices
+- ⚠️  Hardcoded allowlists in `verify-ui-v2.mjs` kept as-is (acceptable for small lists)
+- ⚠️  No automated validation added (warn-only approach documented)
 
-**Check Changes**: Add allowlist validation (optional)
+**Actual Effort**: ~1 hour (documentation updates)
 
-**Estimated Effort**: 2-3 hours (documentation + optional validation)
+**Outcome**: Endpoint allowlist is now self-documenting with metadata fields. RLS allowlist already had good structure.
 
-**Why Not Weakening**: Improves clarity and maintainability, no enforcement change
+**Remaining Work** (Future Enhancements):
+- Consider adding allowlist validation script (warn-only mode)
+- Review DB access allowlist (finding 3.4) if needed
+- Monitor UI v2 allowlists for growth (may externalize if they expand)
 
 ---
 
-### Issue 4: Clarify UI v2 Check Status (LOW PRIORITY)
+### ~~Issue 4: Clarify UI v2 Check Status (LOW PRIORITY)~~ ✅ COMPLETED
 
 **Scope**: Address finding 3.2 (UI checks not in CI)
 
-**Tasks**:
-- Update matrix entries for R-UI-001 through R-UI-006
-- Change "Enforced By" to clarify "manual run only, not in CI"
-- Add note about planned CI integration timeline
-- OR: Add `ui-v2-gate.yml` workflow (if E72 scope permits)
+**Status**: **COMPLETED** (E72.ALIGN.P2.GOV.001)
 
-**Rule Changes**: Update enforcement field to match reality
+**Completed Tasks**:
+- ✅ Updated matrix entries for R-UI-001 through R-UI-006
+- ✅ Changed "Enforced By" to explicitly state "manual run only; not in CI yet"
+- ✅ Added developer instructions to README.md with PowerShell command
+- ✅ Documented CI integration planned for future epic
+- ✅ Updated README quick reference table with "manual run only" emphasis
 
-**Check Changes**: None (or add workflow)
+**Actual Effort**: ~30 minutes (documentation updates)
 
-**Estimated Effort**: 1 hour (documentation) or 3-4 hours (add workflow)
+**Outcome**: Documentation now accurately represents enforcement status. Developers have clear guidance on running UI v2 checks locally.
 
-**Why Not Weakening**: Clarifies current state, prevents false sense of security
+**Why Not Weakening**: Clarifies current state, prevents false sense of security, improves transparency
 
 ---
 
@@ -716,42 +750,56 @@ Based on the findings above, here are recommended follow-up issues/PRs to synchr
 
 ---
 
-### Issue 6: Document Migration Linter Test Suite as Rule (LOW PRIORITY)
+### ~~Issue 6: Document Migration Linter Test Suite as Rule (LOW PRIORITY)~~ ✅ COMPLETED
 
 **Scope**: Address finding 2.1 (linter self-test)
 
-**Tasks**:
-- Add R-DB-011 to matrix: "Migration linter test suite must pass"
-- Document pass condition, fixtures, expected behavior
-- No code changes needed (check already exists)
+**Status**: **COMPLETED** (E72.ALIGN.P2.GOV.001)
 
-**Rule Changes**: Add new rule entry
+**Completed Tasks**:
+- ✅ Added R-DB-011 to RULES_VS_CHECKS_MATRIX.md
+- ✅ Documented pass conditions and test fixtures
+- ✅ Mapped to workflow step in db-determinism.yml
+- ✅ Updated README.md quick reference table
+- ✅ Updated RULES_VS_CHECKS_DIFF.md to mark finding as resolved
 
-**Check Changes**: None (formalize existing check)
+**Actual Effort**: ~20 minutes (documentation only)
 
-**Estimated Effort**: 30 minutes (documentation only)
+**Outcome**: Existing linter self-test now formalized as explicit rule R-DB-011. No code changes required.
 
-**Why Not Weakening**: Formalizes existing requirement, no behavior change
+**Why Not Weakening**: Formalizes existing requirement, improves auditability, no behavior change
 
 ---
 
 ## Summary
 
-**Total Identified Issues**: 16 findings across 5 categories
+**Total Identified Issues**: 16 findings across 5 categories (now 13 active findings after resolutions)
 
-**Recommended Follow-up Actions**: 5 remaining issues (was 6, Issue 1 ✅ completed)
+**Recommended Follow-up Actions**: ~~5~~ **2 remaining issues** (was 6, Issues 1 ✅, 2 ✅, 3 ✅ partial, 4 ✅, 6 ✅ completed)
 
 **P0 (High Priority)**: ~~1 issue~~ ✅ **ALL COMPLETED** (RLS verification)  
 **P1 (Medium Priority)**: ~~2 issues~~ ✅ **ALL COMPLETED** (BASE_SHA standardization ✅, API response types ✅ partial)  
-**P2 (Low Priority)**: 3 issues (allowlist docs, UI check status, linter test doc)
+**P2 (Low Priority)**: ~~3 issues~~ **2 remaining** (allowlist docs ✅ partial, UI check status ✅, linter test doc ✅)
 
-**Estimated Remaining Effort**: ~5-7 hours (was 13-19 hours)
+**Estimated Remaining Effort**: ~~5-7 hours~~ **~2-4 hours** (optional allowlist validation + DB access allowlist review)
 
 **Key Principle**: All recommendations strengthen enforcement or improve clarity. None weaken existing guardrails.
 
 ---
 
 ## Changelog
+
+- **2026-01-25**: E72.ALIGN.P2.GOV.001 - Governance Clarity Pack
+  - ✅ Added self-documenting structure to `docs/api/endpoint-allowlist.json`
+  - ✅ Updated R-API-002 matrix entry with explicit allowlist format documentation
+  - ✅ Formalized R-DB-011 rule: Migration linter test suite must pass
+  - ✅ Updated all UI rules (R-UI-001 through R-UI-006) to clarify manual-only enforcement
+  - ✅ Added developer instructions to README for running UI v2 checks
+  - ✅ Updated quick reference tables in README with R-DB-011 and UI status clarifications
+  - ✅ Updated RULES_VS_CHECKS_DIFF.md: Marked findings 2.1, 3.2, 3.3 as resolved/clarified
+  - Issue 3 (Allowlist docs) marked as **PARTIALLY COMPLETED**
+  - Issue 4 (UI check status) marked as **COMPLETED**
+  - Issue 6 (Linter test doc) marked as **COMPLETED**
 
 - **2026-01-25**: E72.ALIGN.P1.DETCON.001 - BASE_SHA standardization + API response contract
   - ✅ Created shared BASE_SHA script: `scripts/ci/get-base-sha.ps1`

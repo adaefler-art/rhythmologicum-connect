@@ -95,7 +95,7 @@ R-{DOMAIN}-{NUMBER}
 | R-API-004 | No generic app/api Jest alias | verify-critical-api-handlers.js |
 | R-API-005 | No forbidden test imports | verify-critical-api-handlers.js |
 
-### Database Rules (R-DB-001 to R-DB-010)
+### Database Rules (R-DB-001 to R-DB-011)
 
 | Rule ID | Summary | Enforced By |
 |---------|---------|-------------|
@@ -109,17 +109,18 @@ R-{DOMAIN}-{NUMBER}
 | R-DB-008 | Seed invariants must pass | verify-seed-invariants.ps1 |
 | R-DB-009 | RLS policies on user data | verify-rls-policies.ps1 (db-determinism.yml) |
 | R-DB-010 | API response format standard | **Manual review** (no check) |
+| R-DB-011 | Migration linter tests must pass | test-linter.ps1 (db-determinism.yml) |
 
 ### UI Rules (R-UI-001 to R-UI-006)
 
 | Rule ID | Summary | Enforced By |
 |---------|---------|-------------|
-| R-UI-001 | Pages inside (mobile) route group | verify-ui-v2.mjs (manual run) |
-| R-UI-002 | No width constraints in mobile | verify-ui-v2.mjs (manual run) |
-| R-UI-003 | No legacy layout imports | verify-ui-v2.mjs (manual run) |
-| R-UI-004 | Content routes use v2 layout | verify-ui-v2.mjs (manual run) |
-| R-UI-005 | No placeholder icons | verify-ui-v2.mjs (manual run) |
-| R-UI-006 | Minimal ad-hoc primitives | verify-ui-v2.mjs (manual run) |
+| R-UI-001 | Pages inside (mobile) route group | verify-ui-v2.mjs (**manual run only**) |
+| R-UI-002 | No width constraints in mobile | verify-ui-v2.mjs (**manual run only**) |
+| R-UI-003 | No legacy layout imports | verify-ui-v2.mjs (**manual run only**) |
+| R-UI-004 | Content routes use v2 layout | verify-ui-v2.mjs (**manual run only**) |
+| R-UI-005 | No placeholder icons | verify-ui-v2.mjs (**manual run only**) |
+| R-UI-006 | Minimal ad-hoc primitives | verify-ui-v2.mjs (**manual run only**) |
 
 ### CI Rules (R-CI-001 to R-CI-004)
 
@@ -151,6 +152,32 @@ R-{DOMAIN}-{NUMBER}
 3. Add your entry following the documented format
 4. Document justification (comment in allowlist or code)
 5. Get approval if required (e.g., admin client usage)
+
+**When working on UI v2 changes (Patient UI)**:
+
+UI v2 guardrails (R-UI-001 through R-UI-006) are **NOT in CI yet**. You must run the verification script manually:
+
+```powershell
+# PowerShell
+node scripts/verify-ui-v2.mjs
+
+# Or using pwsh command prefix
+pwsh -c "node scripts/verify-ui-v2.mjs"
+```
+
+Run this before committing any changes to:
+- `apps/rhythm-patient-ui/app/patient/`
+- `apps/rhythm-patient-ui/app/content/`
+
+The script checks for:
+- Pages outside (mobile) route group
+- Forbidden width constraints
+- Legacy layout/container imports
+- Missing MobileShellV2 wrapper
+- Placeholder icon imports
+- Ad-hoc UI primitives
+
+**Status**: Manual run only. CI integration planned for future epic.
 
 ### For Reviewers
 
