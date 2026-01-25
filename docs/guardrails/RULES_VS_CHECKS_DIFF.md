@@ -1,0 +1,655 @@
+# Rules vs Checks Diff Report
+
+**Status**: Active Analysis (v0.7 Epic E72.F1)  
+**Purpose**: Identify mismatches between documented rules and enforced checks  
+**Last Updated**: 2026-01-25
+
+---
+
+## Executive Summary
+
+This report identifies gaps, mismatches, and inconsistencies between written guardrail rules and their enforcement mechanisms. All findings are prioritized by impact on CI stability and determinism.
+
+**Findings Summary**:
+- **Rules without checks**: 3 critical rules
+- **Checks without documented rules**: 2 checks
+- **Scope mismatches**: 4 instances
+- **Format mismatches**: 3 allowlist format issues
+- **False positive risks**: 5 heuristic-based checks
+
+**Recommended Actions**: 6 alignment PRs/issues (see Section 6)
+
+---
+
+## 1. Rules Without Checks (Manual Review Only)
+
+These rules are documented but NOT automatically enforced. They rely on manual code review, increasing risk of violations.
+
+### 1.1 R-DB-009: RLS Policies Required on User Data
+
+**Current Rule Statement**:
+> All tables containing user data must have Row Level Security (RLS) enabled with appropriate policies for patient/clinician roles.
+
+**Current Check Behavior**:
+- **NONE** - Manual review only
+- Documented in `docs/canon/CONTRACTS.md`
+- Policies described but not validated
+
+**Impact**:
+- **HIGH** - Security vulnerability risk
+- Manual reviews can miss RLS gaps
+- No evidence trail of compliance
+
+**Recommended Alignment**:
+- **Add automated check** (preferred)
+- Create script: `scripts/db/verify-rls-policies.ps1`
+- Check: Tables with `patient_id` or `user_id` columns have RLS enabled
+- Check: Policies exist for patient role queries
+- Integrate into `.github/workflows/db-determinism.yml`
+
+**Why This Is Not Weakening**:
+- Adds enforcement where none exists
+- Fails CI if RLS missing (catches errors earlier)
+- Manual review still recommended for policy correctness
+
+---
+
+### 1.2 R-DB-010: API Response Format Standard
+
+**Current Rule Statement**:
+> All API endpoints must return standard format: `{ success: boolean, data?: T, error?: { code: string, message: string } }`.
+
+**Current Check Behavior**:
+- **NONE** - Manual code review only
+- Documented in `docs/canon/CONTRACTS.md`
+
+**Impact**:
+- **MEDIUM** - Inconsistent error handling
+- Frontend relies on standard format for error display
+- No automated enforcement leads to drift
+
+**Recommended Alignment**:
+- **Add TypeScript type enforcement** (preferred)
+- Create shared response type: `ApiResponse<T>`
+- Add ESLint rule requiring typed responses on API routes
+- Or: Add runtime check in API route middleware
+
+**Why This Is Not Weakening**:
+- Type system enforces at compile time
+- Catches format violations before merge
+- Improves type safety for API consumers
+
+---
+
+### 1.3 R-CI-002: Checkout Refs Must Be Deterministic
+
+**Current Rule Statement**:
+> CI workflows must use `fetch-depth: 0` to ensure full git history is available for diff-based checks.
+
+**Current Check Behavior**:
+- **NONE** - Manual workflow file review
+- Documented in `docs/canon/CI_DEPLOY_MODEL.md`
+
+**Impact**:
+- **MEDIUM** - Non-deterministic diffs if shallow clone
+- Fallback logic exists but varies by workflow
+
+**Recommended Alignment**:
+- **Standardize fallback logic** (preferred)
+- Create shared script: `scripts/ci/get-base-sha.sh`
+- All workflows use same BASE_SHA determination logic
+- Or: Add workflow linter that checks fetch-depth
+
+**Why This Is Not Weakening**:
+- Standardization reduces CI flakiness
+- Shared script is easier to audit than inline bash
+- No change to fail-closed behavior
+
+---
+
+## 2. Checks Without Documented Rules
+
+These checks are implemented but not documented as explicit rules in the matrix. They enforce constraints that should be formalized.
+
+### 2.1 Test Linter for DB Migrations
+
+**Check Location**:
+- Script: `scripts/db/test-linter.ps1`
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Test migration linter")
+
+**Current Check Behavior**:
+- Runs migration linter against test fixtures (`scripts/db/fixtures/forbidden.sql`, `allowed.sql`)
+- Validates that linter correctly detects non-canonical objects
+- Exits 0 if linter behaves correctly
+
+**Missing Rule**:
+- No explicit rule like "R-DB-011: Migration linter must pass self-tests"
+- Implied by DB determinism flow but not documented
+
+**Recommended Alignment**:
+- **Add rule to matrix** (preferred)
+- Create: R-DB-011: "Migration linter test suite must pass before checking actual migrations"
+- Documents that linter itself is tested for correctness
+- Pass condition: Test fixtures produce expected violations/passes
+
+**Why This Is Not Weakening**:
+- Formalizes existing check
+- Makes testing requirement explicit
+- No behavior change
+
+---
+
+### 2.2 Supabase Local Instance Lifecycle
+
+**Check Location**:
+- Workflow: `.github/workflows/db-determinism.yml` (steps: "Start Supabase", "Stop Supabase")
+
+**Current Check Behavior**:
+- Starts local Supabase before migration checks
+- Always stops Supabase in cleanup (even on failure)
+- Uses `supabase start`, `supabase status`, `supabase stop --no-backup`
+
+**Missing Rule**:
+- No explicit rule about Supabase lifecycle management
+- Implied by DB determinism workflow but not documented as requirement
+
+**Recommended Alignment**:
+- **Document as operational requirement** (not a guardrail rule)
+- Add to `docs/DB_DETERMINISM_CI_FLOW.md` "Prerequisites" section
+- Not necessarily a "MUST" rule (it's implementation detail)
+
+**Why This Is Not Weakening**:
+- Clarifies workflow dependencies
+- Not a constraint on user code (internal CI detail)
+
+---
+
+## 3. Scope Mismatches
+
+These rules and checks have documented scopes that don't match their actual enforcement patterns.
+
+### 3.1 R-DB-001: ESLint Enforcement is Partial
+
+**Rule Statement Scope**:
+> "All `*.ts` and `*.tsx` files"
+
+**Actual Check Scope**:
+- **Only changed files** in PR (interim policy)
+- Pre-existing violations in unchanged files are ignored
+- Documented in `lint-gate.yml`: "Interim lint gate: Fail only on ESLint errors occurring on PR-changed lines"
+
+**Impact**:
+- **LOW** - Known technical debt
+- Prevents new violations while allowing gradual cleanup
+- Documented as interim policy
+
+**Recommended Alignment**:
+- **Update rule text to match reality** (preferred)
+- Change scope to: "All changed `*.ts` and `*.tsx` files (interim policy: unchanged files with pre-existing violations are not blocked)"
+- Add note: "Long-term goal: Enforce on all files after cleanup"
+- Reference: `docs/LINT_POLICY.md` (if it exists)
+
+**Why This Is Not Weakening**:
+- Aligns rule with actual behavior (transparency)
+- Still prevents new violations
+- Acknowledges technical debt without hiding it
+
+---
+
+### 3.2 R-UI-001 through R-UI-006: Not in CI Yet
+
+**Rule Statement Enforcement**:
+> "Enforced By: scripts/verify-ui-v2.mjs"
+
+**Actual Check Scope**:
+- Script exists and works
+- **NOT integrated into CI workflows** (manual run only per E71 scope)
+- No `.github/workflows/ui-v2-gate.yml` exists
+
+**Impact**:
+- **MEDIUM** - Rules can be violated without CI catching them
+- Relies on developers running script manually
+- E71 scope was to create script, E72+ may integrate to CI
+
+**Recommended Alignment**:
+- **Update rule enforcement field** (short-term)
+- Change "Enforced By" to: "Script: scripts/verify-ui-v2.mjs (manual run only, not yet in CI)"
+- Add note: "Integration into CI planned for future epic"
+- Or: **Add UI v2 workflow** (if E72 scope permits)
+
+**Why This Is Not Weakening**:
+- Clarifies enforcement status
+- Prevents false sense of security
+- Acknowledges implementation phase
+
+---
+
+### 3.3 R-API-002: Allowlist Format Undocumented
+
+**Rule Statement**:
+> "Allowlist: `docs/api/endpoint-allowlist.json` (undocumented routes)"
+
+**Actual Allowlist File**:
+- File may or may not exist
+- **No documentation of format** in the file itself
+- Matrix says "Format: JSON array of route paths" but file doesn't include this
+
+**Impact**:
+- **LOW** - Developers don't know how to add exceptions
+- May add wrong format entries
+- No self-documenting allowlist
+
+**Recommended Alignment**:
+- **Add format documentation to allowlist file** (preferred)
+- Include comment/description in JSON:
+  ```json
+  {
+    "_comment": "Allowlist for endpoints that don't fit standard catalog. Format: array of route paths like '/api/legacy/v1/deprecated'. Remove entry when endpoint is removed or standardized.",
+    "entries": [
+      "/api/example/legacy"
+    ]
+  }
+  ```
+
+**Why This Is Not Weakening**:
+- Makes allowlist self-documenting
+- Reduces chance of format errors
+- No behavior change
+
+---
+
+### 3.4 R-DB-002: "Documented Lib Modules" Allowlist is Vague
+
+**Rule Statement**:
+> "Allowed: `app/api/**/*.ts`, documented lib modules (audit, content resolver)"
+
+**Actual Allowlist**:
+- ESLint config has path-based exception
+- "Documented lib modules" is mentioned in `DB_ACCESS_GUARDRAILS.md` section "Approved Exceptions"
+- **Not machine-readable** - ESLint can't enforce "documented"
+
+**Impact**:
+- **MEDIUM** - Ambiguous scope
+- Developers don't know if their lib module qualifies
+- ESLint exceptions may diverge from documentation
+
+**Recommended Alignment**:
+- **Consolidate allowlist** (preferred)
+- Create: `docs/canon/admin-client-allowlist.json`
+- List specific paths: `["lib/audit/log.ts", "lib/utils/contentResolver.ts"]`
+- Update ESLint config to read from this file
+- Or: Add explicit path patterns to ESLint config
+
+**Why This Is Not Weakening**:
+- Makes exceptions explicit and auditable
+- Ensures ESLint and docs stay in sync
+- Easier to review/remove exceptions over time
+
+---
+
+## 4. Format Mismatches
+
+Allowlists exist but their entry format is inconsistent or unclear.
+
+### 4.1 R-API-005: TEST_IMPORT_ALLOWLIST is Empty
+
+**Rule Statement**:
+> "Allowlist: `TEST_IMPORT_ALLOWLIST` array in script. Format: Relative path from repo root"
+
+**Actual Allowlist**:
+```javascript
+const TEST_IMPORT_ALLOWLIST = []
+```
+
+**Impact**:
+- **NONE** - Currently no exceptions needed
+- Format example is documented but unused
+
+**Recommended Alignment**:
+- **No change needed** (but monitor)
+- If exceptions are added later, validate format with example
+- Consider moving to separate JSON file if list grows
+
+**Why This Is Not Weakening**:
+- N/A (no mismatch currently)
+
+---
+
+### 4.2 R-UI-001 through R-UI-006: Hardcoded Allowlists
+
+**Rule Statement**:
+> "Allowlist: `ALLOWLISTED_ROUTES` / `MOBILE_WIDTH_ALLOWLIST` / etc. in script"
+
+**Actual Allowlist**:
+- Hardcoded arrays in `scripts/verify-ui-v2.mjs`
+- Not in separate files
+- Not self-documenting
+
+**Impact**:
+- **LOW** - Allowlists are small and stable
+- Harder to modify without editing script
+- Not as auditable as external files
+
+**Recommended Alignment**:
+- **Keep hardcoded** (acceptable for small lists)
+- Or: **Move to JSON file** if lists grow
+- Current lists:
+  - `ALLOWLISTED_ROUTES`: ~8 items
+  - `MOBILE_WIDTH_ALLOWLIST`: 3 patterns
+  - `ICON_ALLOWLIST`: 3 patterns
+  - `AD_HOC_ALLOWLIST`: 4 patterns
+
+**Why This Is Not Weakening**:
+- No functional change
+- External files improve maintainability (not enforcement)
+
+---
+
+### 4.3 R-DB-004: Deprecated Objects Allowlist is Implicit
+
+**Rule Statement**:
+> "Deprecated objects allowed but warned if in NEW migrations only"
+
+**Actual Behavior**:
+- Deprecated list in `DB_SCHEMA_MANIFEST.json` under `deprecated.tables`
+- Linter warns for deprecated usage in new migrations
+- **No explicit allowlist file** - deprecation is in manifest itself
+
+**Impact**:
+- **NONE** - Current approach is reasonable
+- Manifest is source of truth for canonical + deprecated
+
+**Recommended Alignment**:
+- **No change needed**
+- Clarify in matrix that "allowlist" is the `deprecated` section of manifest
+- Not a mismatch (just different pattern than other allowlists)
+
+**Why This Is Not Weakening**:
+- N/A (no actual mismatch)
+
+---
+
+## 5. False Positive Risks
+
+These checks use heuristics or regex patterns that may produce false positives or miss violations.
+
+### 5.1 R-DB-005: Idempotency Linter is Regex-Based
+
+**Check Implementation**:
+```bash
+grep -Pqi '^(?!\s*--)\s*create\s+table(?!\s+if\s+not\s+exists)\b' "$file"
+```
+
+**Known Limitations**:
+- Simple regex (may miss complex SQL)
+- Does not parse SQL syntax
+- May trigger on commented examples or string literals
+- Does not validate DO $$ block guards (relies on heuristics)
+
+**Impact**:
+- **LOW** - Rare false positives
+- May miss creative SQL patterns
+- Generally effective for standard migrations
+
+**Recommended Alignment**:
+- **Document limitations in matrix** (done)
+- Add examples of patterns that may be missed
+- Consider SQL parser for future improvement (but not required for E72)
+
+**Why This Is Not Weakening**:
+- Acknowledges limitations
+- Still catches most common violations
+- Manual review backstops false negatives
+
+---
+
+### 5.2 R-UI-002: Width Pattern Regex May Miss Dynamic Classes
+
+**Check Implementation**:
+```javascript
+/className="[^"]*\bmax-w-(?!none\b)[^"]*"/
+```
+
+**Known Limitations**:
+- Only catches static className strings
+- Misses:
+  - `className={dynamicClass}` where variable contains `max-w-*`
+  - Template literals: `` className={`max-w-${size}`} ``
+  - Class utility functions: `cn('max-w-md', ...)`
+
+**Impact**:
+- **MEDIUM** - Could miss violations in dynamic code
+- Most violations are static so generally effective
+
+**Recommended Alignment**:
+- **Document limitation in matrix** (done)
+- Consider AST-based check for future (but complex)
+- Rely on manual review for dynamic class usage
+
+**Why This Is Not Weakening**:
+- Acknowledges regex limitations
+- Still catches most violations
+- False negatives are rare in practice
+
+---
+
+### 5.3 R-UI-006: Ad-Hoc Primitive Detection is Heuristic
+
+**Check Implementation**:
+```javascript
+/className="[^"]*\brounded-(2xl|3xl|full)[^"]*"(?!.*Card|.*Button)/
+```
+
+**Known Limitations**:
+- Negative lookahead for "Card|Button" is imperfect
+- May flag valid custom components
+- May miss Card usage if import is renamed
+
+**Impact**:
+- **MEDIUM** - False positive risk
+- Developers may need to allowlist valid custom styling
+
+**Recommended Alignment**:
+- **Expand allowlist as needed** (expected)
+- Document that this is a "code smell" detector, not hard blocker
+- Consider renaming check to "warn" instead of "error"
+
+**Why This Is Not Weakening**:
+- Clarifies intent (guidance vs enforcement)
+- Reduces friction while still surfacing issues
+
+---
+
+### 5.4 R-API-002: Endpoint Catalog Allowlist Not Validated
+
+**Check Implementation**:
+- Generator reads `endpoint-allowlist.json`
+- Assumes entries are valid route paths
+- **Does not validate** that allowlisted routes actually exist
+
+**Known Limitations**:
+- Allowlist can contain stale/removed routes
+- No cleanup prompt when route is deleted
+
+**Impact**:
+- **LOW** - Stale allowlist entries don't break anything
+- Reduces trust in allowlist as "current exceptions"
+
+**Recommended Alignment**:
+- **Add allowlist validation** (future enhancement)
+- Generator could warn about allowlist entries that don't exist in codebase
+- Or: Add comment/date to allowlist entries for review cycle
+
+**Why This Is Not Weakening**:
+- Improves allowlist hygiene
+- Prevents allowlist bloat
+
+---
+
+### 5.5 R-DB-009: No RLS Check Means No False Positives
+
+**Current State**:
+- Rule exists but no automated check
+- Therefore: No false positives (also no true positives)
+
+**Recommendation**:
+- When check is added (per section 1.1), document expected false positive risks:
+  - May flag public metadata tables (no RLS needed)
+  - May flag system tables (RLS handled differently)
+- Include allowlist for known exceptions
+
+**Why This Is Not Weakening**:
+- Acknowledges that future check will need tuning
+- Plans for allowlist up front
+
+---
+
+## 6. Recommended Alignment Actions
+
+Based on the findings above, here are recommended follow-up issues/PRs to synchronize rules and checks:
+
+### Issue 1: Add Automated RLS Policy Verification (HIGH PRIORITY)
+
+**Scope**: Address finding 1.1 (R-DB-009)
+
+**Tasks**:
+- Create `scripts/db/verify-rls-policies.ps1`
+- Check: Tables with `patient_id`/`user_id` have RLS enabled
+- Check: Policies exist for patient role
+- Add to `db-determinism.yml` workflow
+- Create allowlist for public metadata tables
+
+**Rule Changes**: None (rule already correct)
+
+**Check Changes**: Add new check
+
+**Estimated Effort**: 4-6 hours (script + workflow integration + testing)
+
+**Why Not Weakening**: Adds enforcement where none exists, catches security gaps earlier
+
+---
+
+### Issue 2: Standardize BASE_SHA Determination Logic (MEDIUM PRIORITY)
+
+**Scope**: Address findings 1.3, 3.1 (CI determinism)
+
+**Tasks**:
+- Create `scripts/ci/get-base-sha.sh` with standard fallback logic
+- Update all workflows to use shared script
+- Document expected behavior in `CI_DEPLOY_MODEL.md`
+- Test with shallow clones, missing refs, etc.
+
+**Rule Changes**: Update R-CI-002 scope to reference shared script
+
+**Check Changes**: Consolidate inline bash into reusable script
+
+**Estimated Effort**: 3-4 hours (script + workflow updates + testing)
+
+**Why Not Weakening**: Reduces flakiness, no change to fail-closed behavior
+
+---
+
+### Issue 3: Document and Validate Allowlist Formats (LOW PRIORITY)
+
+**Scope**: Address findings 3.3, 3.4, 4.2 (allowlist clarity)
+
+**Tasks**:
+- Add format comments to all JSON allowlist files
+- Consider moving hardcoded allowlists to JSON (if needed)
+- Add validation of allowlist entries (e.g., endpoint catalog)
+- Document allowlist review process in matrix
+
+**Rule Changes**: Update exception fields with clearer format descriptions
+
+**Check Changes**: Add allowlist validation (optional)
+
+**Estimated Effort**: 2-3 hours (documentation + optional validation)
+
+**Why Not Weakening**: Improves clarity and maintainability, no enforcement change
+
+---
+
+### Issue 4: Clarify UI v2 Check Status (LOW PRIORITY)
+
+**Scope**: Address finding 3.2 (UI checks not in CI)
+
+**Tasks**:
+- Update matrix entries for R-UI-001 through R-UI-006
+- Change "Enforced By" to clarify "manual run only, not in CI"
+- Add note about planned CI integration timeline
+- OR: Add `ui-v2-gate.yml` workflow (if E72 scope permits)
+
+**Rule Changes**: Update enforcement field to match reality
+
+**Check Changes**: None (or add workflow)
+
+**Estimated Effort**: 1 hour (documentation) or 3-4 hours (add workflow)
+
+**Why Not Weakening**: Clarifies current state, prevents false sense of security
+
+---
+
+### Issue 5: Add TypeScript Type Enforcement for API Responses (MEDIUM PRIORITY)
+
+**Scope**: Address finding 1.2 (R-DB-010)
+
+**Tasks**:
+- Create shared `ApiResponse<T>` type in `lib/types/api.ts`
+- Add ESLint rule requiring typed responses on API route handlers
+- Refactor existing handlers to use type (gradual migration)
+- Document pattern in `CONTRACTS.md`
+
+**Rule Changes**: Update R-DB-010 enforcement to "TypeScript types + ESLint"
+
+**Check Changes**: Add new ESLint rule
+
+**Estimated Effort**: 6-8 hours (type definition + ESLint rule + migration examples)
+
+**Why Not Weakening**: Adds type safety, catches format violations at compile time
+
+---
+
+### Issue 6: Document Migration Linter Test Suite as Rule (LOW PRIORITY)
+
+**Scope**: Address finding 2.1 (linter self-test)
+
+**Tasks**:
+- Add R-DB-011 to matrix: "Migration linter test suite must pass"
+- Document pass condition, fixtures, expected behavior
+- No code changes needed (check already exists)
+
+**Rule Changes**: Add new rule entry
+
+**Check Changes**: None (formalize existing check)
+
+**Estimated Effort**: 30 minutes (documentation only)
+
+**Why Not Weakening**: Formalizes existing requirement, no behavior change
+
+---
+
+## Summary
+
+**Total Identified Issues**: 16 findings across 5 categories
+
+**Recommended Follow-up Actions**: 6 targeted issues (listed above)
+
+**P0 (High Priority)**: 1 issue (RLS verification)  
+**P1 (Medium Priority)**: 2 issues (BASE_SHA standardization, API response types)  
+**P2 (Low Priority)**: 3 issues (allowlist docs, UI check status, linter test doc)
+
+**Estimated Total Effort**: 17-25 hours
+
+**Key Principle**: All recommendations strengthen enforcement or improve clarity. None weaken existing guardrails.
+
+---
+
+## Changelog
+
+- **2026-01-25**: Initial diff report created for E72.F1
+  - Identified 3 rules without checks
+  - Identified 2 checks without rules
+  - Identified 4 scope mismatches
+  - Identified 3 format mismatches
+  - Identified 5 false positive risks
+  - Proposed 6 follow-up issues
