@@ -63,7 +63,13 @@ function Write-Warning { param($Message) Write-Host "⚠️  $Message" -Foregrou
 function Resolve-NpxPath {
     try {
         $npxCommand = Get-Command npx -ErrorAction Stop
-        return $npxCommand.Source
+        if (-not $IsWindows) {
+            return $npxCommand.Source
+        }
+
+        if ($npxCommand.Source -notmatch '\.ps1$') {
+            return $npxCommand.Source
+        }
     } catch {
         if (-not $IsWindows) {
             throw

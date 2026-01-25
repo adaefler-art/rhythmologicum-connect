@@ -36,7 +36,6 @@ export type Database = {
     Tables: {
       assessment_answers: {
         Row: {
-          answer_data: Json | null
           answer_value: number
           assessment_id: string
           created_at: string
@@ -44,7 +43,6 @@ export type Database = {
           question_id: string
         }
         Insert: {
-          answer_data?: Json | null
           answer_value: number
           assessment_id: string
           created_at?: string
@@ -52,7 +50,6 @@ export type Database = {
           question_id: string
         }
         Update: {
-          answer_data?: Json | null
           answer_value?: number
           assessment_id?: string
           created_at?: string
@@ -1587,41 +1584,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "patient_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      patient_state: {
-        Row: {
-          created_at: string
-          id: string
-          patient_state_version: string
-          state_data: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          patient_state_version?: string
-          state_data?: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          patient_state_version?: string
-          state_data?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_state_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "pending_account_deletions"
