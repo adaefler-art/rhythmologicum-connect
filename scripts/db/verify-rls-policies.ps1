@@ -20,6 +20,46 @@ function Write-Info { param([string]$Message) Write-Host "ℹ️  $Message" -For
 function Write-Warning { param([string]$Message) Write-Host "⚠️  $Message" -ForegroundColor Yellow }
 function Write-Failure { param([string]$Message) Write-Host "❌ $Message" -ForegroundColor Red }
 
+# Sanitize SQL identifier to prevent SQL injection
+function ConvertTo-SafeSqlIdentifier {
+    param([Parameter(Mandatory = $true)][string]$Identifier)
+    
+    # Only allow alphanumeric, underscore, and hyphen
+    # Reject anything else to prevent SQL injection
+    if ($Identifier -notmatch '^[a-zA-Z0-9_-]+$') {
+        Write-Failure "Invalid SQL identifier: $Identifier (contains unsafe characters)"
+        exit 1
+    }
+    
+    return $Identifier
+}
+
+# Check if a policy is patient-oriented
+function Test-IsPatientPolicy {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$Policy,
+        [Parameter(Mandatory = $true)][string]$PatientRoleName
+    )
+    
+    # Check if policy name contains "patient" (case-insensitive)
+    if ($Policy.policyName -match '(?i)patient') {
+        return $true
+    }
+    
+    # Check if policy is applied to patient role or public roles
+    $roles = $Policy.roles
+    if ($roles -match $PatientRoleName) {
+        return $true
+    }
+    
+    # Handle PostgreSQL array format for roles: {public} or public
+    if ($roles -eq '{public}' -or $roles -eq 'public' -or $roles -match '\{[^}]*public[^}]*\}') {
+        return $true
+    }
+    
+    return $false
+}
+
 Write-Info "RLS Policy Verification (R-DB-009)"
 Write-Host "====================================`n" -ForegroundColor Cyan
 
@@ -167,15 +207,15 @@ $results = @()
 $violations = @()
 
 foreach ($tableInfo in $userDataTables) {
-    $schema = $tableInfo.schema
-    $table = $tableInfo.table
+    $schema = ConvertTo-SafeSqlIdentifier -Identifier $tableInfo.schema
+    $table = ConvertTo-SafeSqlIdentifier -Identifier $tableInfo.table
     $fullTableName = "$schema.$table"
     
     # Check if allowlisted and get reason
     $allowlistEntry = $allowlist | Where-Object { $_.table -eq $fullTableName }
     $isAllowlisted = $null -ne $allowlistEntry
     
-    # Query RLS enabled status
+    # Query RLS enabled status (using safe identifiers)
     $rlsQuerySql = @"
 SELECT 
     c.relrowsecurity AS rls_enabled
@@ -193,7 +233,7 @@ WHERE n.nspname = '$schema'
         $rlsEnabled = ($rlsValue -eq 't' -or $rlsValue -eq 'true')
     }
     
-    # Query policies
+    # Query policies (using safe identifiers)
     $policiesQuerySql = @"
 SELECT 
     policyname,
@@ -217,20 +257,16 @@ WHERE schemaname = '$schema'
             $roles = $policyParts[1].Trim()
             $cmd = $policyParts[2].Trim()
             
-            $policies += @{
+            $policyRecord = @{
                 policyName = $policyName
                 roles = $roles
                 cmd = $cmd
             }
             
-            # Check if this policy is patient-oriented
-            # Strategy: Look for policies with "Patient" in name (case-insensitive)
-            # or policies applied to authenticated/public roles (which could be patient-facing)
-            if ($policyName -match '(?i)patient') {
-                $hasPatientPolicy = $true
-            }
-            # Also accept explicit patient role matching (for future schema evolution)
-            if ($roles -match $PatientRoleName -or $roles -eq '{public}' -or $roles -eq 'public') {
+            $policies += $policyRecord
+            
+            # Check if this policy is patient-oriented (using helper function)
+            if (Test-IsPatientPolicy -Policy $policyRecord -PatientRoleName $PatientRoleName) {
                 $hasPatientPolicy = $true
             }
         }
@@ -338,14 +374,12 @@ foreach ($record in $results) {
             $txtContent += "`n  Reason: $($record.allowlistReason)"
         }
     } else {
+        # Check if any policy is patient-oriented (using helper function)
         $hasPatientPolicy = $false
         foreach ($policy in $record.policies) {
-            # Check if policy is patient-oriented (by name or role)
-            if ($policy.policyName -match '(?i)patient') {
+            if (Test-IsPatientPolicy -Policy $policy -PatientRoleName $PatientRoleName) {
                 $hasPatientPolicy = $true
-            }
-            if ($policy.roles -match $PatientRoleName -or $policy.roles -eq '{public}' -or $policy.roles -eq 'public') {
-                $hasPatientPolicy = $true
+                break
             }
         }
         
