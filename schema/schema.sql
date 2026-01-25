@@ -5504,6 +5504,14 @@ CREATE POLICY "Patients can view own documents" ON "public"."documents" FOR SELE
 
 
 
+CREATE POLICY "Patients can view own flow events" ON "public"."pilot_flow_events" FOR SELECT TO "authenticated" USING ((("patient_id" IS NOT NULL) AND ("patient_id" = "public"."get_my_patient_profile_id"())));
+
+
+
+COMMENT ON POLICY "Patients can view own flow events" ON "public"."pilot_flow_events" IS 'E72.R-DB-009: Patients can view pilot flow events related to their own care';
+
+
+
 CREATE POLICY "Patients can view own funnels" ON "public"."patient_funnels" FOR SELECT USING (("patient_id" = "public"."get_my_patient_profile_id"()));
 
 
@@ -5532,6 +5540,22 @@ CREATE POLICY "Patients can view own reports" ON "public"."reports" FOR SELECT U
 CREATE POLICY "Patients can view own results" ON "public"."calculated_results" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."assessments"
   WHERE (("assessments"."id" = "calculated_results"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
+
+
+
+CREATE POLICY "Patients can view own screening calls" ON "public"."pre_screening_calls" FOR SELECT TO "authenticated" USING (("patient_id" = "public"."get_my_patient_profile_id"()));
+
+
+
+COMMENT ON POLICY "Patients can view own screening calls" ON "public"."pre_screening_calls" IS 'E72.R-DB-009: Patients can view their own pre-screening call records';
+
+
+
+CREATE POLICY "Patients can view own tasks" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((("patient_id" IS NOT NULL) AND ("patient_id" = "public"."get_my_patient_profile_id"())));
+
+
+
+COMMENT ON POLICY "Patients can view own tasks" ON "public"."tasks" IS 'E72.R-DB-009: Patients can view tasks assigned to them (explicit policy for RLS verification compliance)';
 
 
 
