@@ -420,30 +420,67 @@ Each rule entry includes:
 
 **Rule Text**: Generated TypeScript types (`lib/types/supabase.ts`) must exactly match the database schema. Run `npm run db:typegen` after schema changes.
 
+**History/Migration Note**: 
+- Previously enforced via simple git diff check in CI
+- Strengthened (E72.ALIGN.P0.DBSEC.001): Implemented deterministic hard gate with SHA256 verification, pinned CLI version, and comprehensive evidence outputs
+- Semantics unchanged (types must match schema); enforcement mechanism strengthened (no weakening)
+- See `RULES_VS_CHECKS_DIFF.md` section 1.1.1 for complete migration details
+
 **Scope**:
 - `lib/types/supabase.ts`
 - Generated from: Supabase local instance schema
 
 **Enforced By**:
-- Script: `npm run db:typegen` (generates types)
-- Workflow: `.github/workflows/db-determinism.yml` (step: "Check types are up to date")
-- Command: `git diff --exit-code lib/types/supabase.ts`
+- **Deterministic Script**: `scripts/db/typegen.ps1` (hard gate with full diagnostics)
+- **npm scripts**:
+  - `npm run db:typegen` → generates types (calls `typegen.ps1 -Generate`)
+  - `npm run db:typegen:verify` → verifies committed types match (calls `typegen.ps1 -Verify`)
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Verify TypeScript types are deterministic")
+- **Supabase CLI Version**: `2.63.1` (pinned in script for deterministic output)
 
 **Pass Condition**:
-- Generated types match committed `lib/types/supabase.ts` exactly
-- `git diff` exit code 0 (no changes)
+- Generated types match committed `lib/types/supabase.ts` exactly (byte-for-byte via SHA256)
+- `typegen.ps1 -Verify` exit code 0
 
 **Exceptions**:
 - None (types must always be in sync)
 
 **Evidence Output**:
-- Console: "✅ Types are up to date"
-- Or: "❌ Generated types differ from committed version! [diff]"
-- Instructions: "Run: npm run db:typegen and commit the updated file"
+- **CI Logs** (always printed):
+  - `ExitCode`: Supabase CLI exit code (0 = success, != 0 = failure)
+  - `StdoutBytes`: Size of generated types file in bytes
+  - `StderrBytes`: Size of stderr output in bytes (0 if no warnings/errors)
+  - `GeneratedFile`: Path to generated/temp file
+  - `StderrLog`: Path to stderr.log file (`artifacts/typegen/stderr.log`)
+  - `SHA256` hashes: Committed vs Generated (in -Verify mode only)
+- **Artifacts** (on -Verify mode):
+  - `artifacts/typegen/supabase.generated.ts` (temp generated file for byte-level comparison)
+  - `artifacts/typegen/stderr.log` (Supabase CLI stderr output, written always even on success)
+- **Console Messages**:
+  - Success: "✅ Types match! Files are identical."
+  - Failure: "❌ Types differ! Generated output does not match committed version."
+- **Full diagnostics on failure**:
+  - Pinned CLI version (supabase@2.63.1)
+  - Exact command used
+  - File hashes (committed vs generated, both SHA256)
+  - Diff preview (first 50 lines of difference)
+- **Fail-Closed Conditions**:
+  - Supabase CLI exit code != 0
+  - Generated output is empty or whitespace-only
+  - SHA256 hash mismatch between committed and generated files (in -Verify mode)
+  - File I/O errors (cannot read committed file, cannot write temp file)
 
 **Known Gaps**:
 - Does not validate that types are actually used correctly in code
 - Does not detect type-unsafe casts or `any` usage
+
+**Determinism Notes**:
+- **Hard Gate**: Exactly ONE way to generate types (enforced via `scripts/db/typegen.ps1`)
+- Supabase CLI version pinned at `2.63.1` (no global installs, no version drift)
+- Mode: `--local` (hardcoded in script)
+- Command: `npx supabase@2.63.1 gen types typescript --local`
+- Fail-closed design: any error (DB connection, CLI failure, etc.) → exit 1
+- Both CI and local use identical script (no git diff comparison, SHA256 hash comparison instead)
 
 **Owner**: E71 / Database Team
 
@@ -485,28 +522,37 @@ Each rule entry includes:
 **Rule Text**: All tables containing user data must have Row Level Security (RLS) enabled with appropriate policies for patient/clinician roles.
 
 **Scope**:
-- All tables in `public` schema with user/patient data columns
+- All tables in `public` schema with `patient_id` or `user_id` columns (heuristic-based detection)
+- Excludes system schemas: `pg_catalog`, `information_schema`, `auth`, `storage`, `extensions`, `graphql`, `vault`, `realtime`
 
 **Enforced By**:
-- Manual review (no automated check currently)
-- Documentation: `docs/canon/CONTRACTS.md`
+- Script: `scripts/db/verify-rls-policies.ps1`
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Verify RLS policies on user data tables")
+- Integration: E72.ALIGN.P0.DBSEC.001
 
 **Pass Condition**:
-- Manual verification that RLS is enabled
-- Policies exist for patient role (`patient_id = public.get_my_patient_profile_id()`)
+- All user data tables (detected via `patient_id`/`user_id` columns) have:
+  - RLS enabled (`pg_class.relrowsecurity = true`)
+  - At least one policy exists for patient role (checked via `pg_policies`)
+- Allowlisted tables are excluded from checks
+- Exit code 0
 
 **Exceptions**:
-- Public metadata tables (content_pages, design_tokens, etc.)
+- Allowlist: `docs/canon/rls-allowlist.json`
+- Format: JSON with `entries` array containing `{table: "schema.table", reason: "explanation"}`
+- Public metadata tables (content_pages, design_tokens, funnels_catalog, etc.)
 
 **Evidence Output**:
-- Manual review notes
-- RLS status visible in Supabase Studio
+- Artifact: `artifacts/rls-verify/rls-summary.json` (machine-readable)
+- Artifact: `artifacts/rls-verify/rls-summary.txt` (human-readable)
+- GitHub Actions artifact upload (retention: 30 days)
 
 **Known Gaps**:
-- **NO AUTOMATED CHECK** - This is a manual review rule
-- Should be added to db-determinism workflow as a check
+- Heuristic-based detection may miss tables without `patient_id`/`user_id` columns
+- Does not validate policy correctness (only checks for existence)
+- Patient role check is configurable via `$PatientRoleName` parameter (default: "patient")
 
-**Owner**: E71 / Database Team / Security
+**Owner**: E72 / Database Team / Security
 
 ---
 

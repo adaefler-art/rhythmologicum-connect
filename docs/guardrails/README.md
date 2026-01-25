@@ -107,7 +107,7 @@ R-{DOMAIN}-{NUMBER}
 | R-DB-006 | No schema drift | supabase db diff --local |
 | R-DB-007 | TypeScript types match schema | db:typegen + git diff |
 | R-DB-008 | Seed invariants must pass | verify-seed-invariants.ps1 |
-| R-DB-009 | RLS policies on user data | **Manual review** (no check) |
+| R-DB-009 | RLS policies on user data | verify-rls-policies.ps1 (db-determinism.yml) |
 | R-DB-010 | API response format standard | **Manual review** (no check) |
 
 ### UI Rules (R-UI-001 to R-UI-006)

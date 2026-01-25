@@ -11,13 +11,17 @@
 This report identifies gaps, mismatches, and inconsistencies between written guardrail rules and their enforcement mechanisms. All findings are prioritized by impact on CI stability and determinism.
 
 **Findings Summary**:
-- **Rules without checks**: 3 critical rules
+- **Rules without checks**: 2 critical rules (was 3, R-DB-009 ✅ RESOLVED)
 - **Checks without documented rules**: 2 checks
 - **Scope mismatches**: 4 instances
 - **Format mismatches**: 3 allowlist format issues
 - **False positive risks**: 5 heuristic-based checks
 
-**Recommended Actions**: 6 alignment PRs/issues (see Section 6)
+**Recent Resolutions**:
+- ✅ **R-DB-009 RLS Verification** (E72.ALIGN.P0.DBSEC.001): Automated check implemented, integrated into CI
+- ✅ **R-DB-007 TypeGen Determinism** (E72.ALIGN.P0.DBSEC.001): Strengthened evidence specification with hard gate implementation
+
+**Recommended Actions**: 5 remaining alignment PRs/issues (see Section 6)
 
 ---
 
@@ -25,32 +29,67 @@ This report identifies gaps, mismatches, and inconsistencies between written gua
 
 These rules are documented but NOT automatically enforced. They rely on manual code review, increasing risk of violations.
 
-### 1.1 R-DB-009: RLS Policies Required on User Data
+### 1.1 R-DB-009: RLS Policies Required on User Data ✅ RESOLVED
 
-**Current Rule Statement**:
+**Original Rule Statement**:
 > All tables containing user data must have Row Level Security (RLS) enabled with appropriate policies for patient/clinician roles.
 
-**Current Check Behavior**:
+**Previous Status**:
 - **NONE** - Manual review only
 - Documented in `docs/canon/CONTRACTS.md`
 - Policies described but not validated
 
-**Impact**:
-- **HIGH** - Security vulnerability risk
-- Manual reviews can miss RLS gaps
-- No evidence trail of compliance
+**Resolution** (E72.ALIGN.P0.DBSEC.001):
+- ✅ **Automated check implemented**
+- Script created: `scripts/db/verify-rls-policies.ps1`
+- Integrated into: `.github/workflows/db-determinism.yml`
+- Allowlist created: `docs/canon/rls-allowlist.json`
+- Evidence artifacts: `artifacts/rls-verify/rls-summary.{json,txt}`
 
-**Recommended Alignment**:
-- **Add automated check** (preferred)
-- Create script: `scripts/db/verify-rls-policies.ps1`
-- Check: Tables with `patient_id` or `user_id` columns have RLS enabled
-- Check: Policies exist for patient role queries
-- Integrate into `.github/workflows/db-determinism.yml`
+**Enforcement Details**:
+- Checks: Tables with `patient_id` or `user_id` columns have RLS enabled
+- Checks: Policies exist for patient role queries
+- Fails CI if RLS missing or no patient policy found
+- Configurable patient role name (default: "patient")
+- Self-documenting allowlist with required reasons
 
-**Why This Is Not Weakening**:
-- Adds enforcement where none exists
-- Fails CI if RLS missing (catches errors earlier)
-- Manual review still recommended for policy correctness
+**Status**: **ENFORCED** - See `RULES_VS_CHECKS_MATRIX.md` for complete details
+
+---
+
+### 1.1.1 R-DB-007: TypeScript Types Must Match Schema ✅ STRENGTHENED
+
+**Original Rule Statement**:
+> Generated TypeScript types (`lib/types/supabase.ts`) must exactly match the database schema. Run `npm run db:typegen` after schema changes.
+
+**Previous Status**:
+- **WEAK ENFORCEMENT** - Git diff check in CI workflow
+- Simple `git diff --exit-code lib/types/supabase.ts` after running typegen
+- Prone to generator drift (different CLI versions, environment differences)
+- No structured diagnostics on failure
+
+**Strengthening** (E72.ALIGN.P0.DBSEC.001):
+- ✅ **Deterministic hard gate implemented**
+- Script created: `scripts/db/typegen.ps1` (evidence-first design)
+- Pinned CLI: `supabase@2.63.1` (exact version, no drift)
+- SHA256 hash comparison (byte-for-byte verification)
+- Process-based execution (robust stdout/stderr capture)
+- Comprehensive evidence outputs (always printed)
+
+**Enforcement Details**:
+- Mode: `--local` (hardcoded for determinism)
+- Two modes: `-Generate` (local dev) and `-Verify` (CI check)
+- Evidence artifacts: `artifacts/typegen/supabase.generated.ts`, `artifacts/typegen/stderr.log`
+- Fail-closed conditions: CLI errors, empty output, hash mismatch
+- npm scripts: `db:typegen` (generate), `db:typegen:verify` (verify)
+
+**Migration Note**:
+- **Semantics unchanged**: Rule still requires types to match schema
+- **Enforcement strengthened**: Added comprehensive diagnostics, pinned CLI version, SHA256 verification
+- **No weakening**: Fail-closed design, stricter than previous git diff approach
+- **Rationale**: Eliminates recurring CI failures from generator drift
+
+**Status**: **ENFORCED (STRENGTHENED)** - See `RULES_VS_CHECKS_MATRIX.md` for complete details
 
 ---
 
@@ -508,24 +547,23 @@ grep -Pqi '^(?!\s*--)\s*create\s+table(?!\s+if\s+not\s+exists)\b' "$file"
 
 Based on the findings above, here are recommended follow-up issues/PRs to synchronize rules and checks:
 
-### Issue 1: Add Automated RLS Policy Verification (HIGH PRIORITY)
+### ~~Issue 1: Add Automated RLS Policy Verification (HIGH PRIORITY)~~ ✅ COMPLETED
 
 **Scope**: Address finding 1.1 (R-DB-009)
 
-**Tasks**:
-- Create `scripts/db/verify-rls-policies.ps1`
-- Check: Tables with `patient_id`/`user_id` have RLS enabled
-- Check: Policies exist for patient role
-- Add to `db-determinism.yml` workflow
-- Create allowlist for public metadata tables
+**Status**: **COMPLETED** (E72.ALIGN.P0.DBSEC.001)
 
-**Rule Changes**: None (rule already correct)
+**Completed Tasks**:
+- ✅ Created `scripts/db/verify-rls-policies.ps1`
+- ✅ Check: Tables with `patient_id`/`user_id` have RLS enabled
+- ✅ Check: Policies exist for patient role
+- ✅ Added to `db-determinism.yml` workflow
+- ✅ Created allowlist: `docs/canon/rls-allowlist.json`
+- ✅ Updated documentation (RULES_VS_CHECKS_MATRIX.md, RULES_VS_CHECKS_DIFF.md)
 
-**Check Changes**: Add new check
+**Actual Effort**: ~4 hours (script + workflow integration + documentation)
 
-**Estimated Effort**: 4-6 hours (script + workflow integration + testing)
-
-**Why Not Weakening**: Adds enforcement where none exists, catches security gaps earlier
+**Outcome**: Automated enforcement now active in CI, fail-closed on violations
 
 ---
 
@@ -632,13 +670,13 @@ Based on the findings above, here are recommended follow-up issues/PRs to synchr
 
 **Total Identified Issues**: 16 findings across 5 categories
 
-**Recommended Follow-up Actions**: 6 targeted issues (listed above)
+**Recommended Follow-up Actions**: 5 remaining issues (was 6, Issue 1 ✅ completed)
 
-**P0 (High Priority)**: 1 issue (RLS verification)  
+**P0 (High Priority)**: ~~1 issue~~ ✅ **COMPLETED** (RLS verification)  
 **P1 (Medium Priority)**: 2 issues (BASE_SHA standardization, API response types)  
 **P2 (Low Priority)**: 3 issues (allowlist docs, UI check status, linter test doc)
 
-**Estimated Total Effort**: 17-25 hours
+**Estimated Remaining Effort**: ~13-19 hours (was 17-25 hours)
 
 **Key Principle**: All recommendations strengthen enforcement or improve clarity. None weaken existing guardrails.
 
@@ -646,6 +684,13 @@ Based on the findings above, here are recommended follow-up issues/PRs to synchr
 
 ## Changelog
 
+- **2026-01-25**: R-DB-009 RLS verification implemented (E72.ALIGN.P0.DBSEC.001)
+  - ✅ Created automated check: `scripts/db/verify-rls-policies.ps1`
+  - ✅ Integrated into CI: `.github/workflows/db-determinism.yml`
+  - ✅ Created allowlist: `docs/canon/rls-allowlist.json`
+  - ✅ Updated matrix and diff documentation
+  - Issue 1 marked as **COMPLETED**
+  
 - **2026-01-25**: Initial diff report created for E72.F1
   - Identified 3 rules without checks
   - Identified 2 checks without rules

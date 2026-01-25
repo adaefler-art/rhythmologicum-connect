@@ -112,6 +112,20 @@ jobs:
           pwsh -File scripts/db/verify-seed-invariants.ps1
           echo "✅ Seed invariants satisfied"
       
+      - name: Verify RLS policies on user data tables
+        run: |
+          echo "🔒 Verifying RLS policies (R-DB-009)..."
+          pwsh -File scripts/db/verify-rls-policies.ps1
+          echo "✅ RLS policies verified"
+      
+      - name: Upload RLS verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rls-verification
+          path: artifacts/rls-verify/
+          retention-days: 30
+      
       # Check 3: Verify no schema drift
       - name: Check for schema drift
         run: |
@@ -131,30 +145,22 @@ jobs:
           echo ""
           exit 1
       
-      # Check 4: Generate types and verify they match committed version
-      - name: Generate TypeScript types
+      # Check 4: Verify types match (deterministic hard gate)
+      - name: Verify TypeScript types are deterministic
         run: |
-          echo "🔧 Generating TypeScript types from database schema..."
-          npm run db:typegen
-          echo "✅ Types generated"
+          echo "🔍 Verifying types match committed version (deterministic hard gate)..."
+          pwsh -File scripts/db/typegen.ps1 -Verify
+          echo "✅ Types are deterministic and up to date"
       
-      - name: Check types are up to date
-        run: |
-          echo "🔍 Checking if types match committed version..."
-          if ! git diff --exit-code lib/types/supabase.ts; then
-            echo ""
-            echo "❌ Generated types differ from committed version!"
-            echo "The database schema changed but types weren't regenerated."
-            echo ""
-            echo "To fix this:"
-            echo "  1. Run: npm run db:typegen"
-            echo "  2. Commit the updated lib/types/supabase.ts file"
-            echo ""
-            echo "Diff:"
-            git diff lib/types/supabase.ts
-            exit 1
-          fi
-          echo "✅ Types are up to date"
+      - name: Upload TypeGen artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typegen-artifacts
+          path: |
+            artifacts/typegen/supabase.generated.ts
+            artifacts/typegen/stderr.log
+          retention-days: 30
       
       # Success summary
       - name: Success summary
@@ -166,8 +172,10 @@ jobs:
           echo "   ✅ All schema objects are canonical"
           echo "   ✅ No existing migrations were edited"
           echo "   ✅ Migrations apply cleanly"
+          echo "   ✅ Seed invariants satisfied"
+          echo "   ✅ RLS policies verified (R-DB-009)"
           echo "   ✅ No schema drift detected"
-          echo "   ✅ TypeScript types are up to date"
+          echo "   ✅ TypeScript types are deterministic"
           echo ""
           echo "Your database changes follow migration-first discipline."
       

@@ -1,0 +1,57 @@
+{
+  "_comment": "RLS Allowlist for R-DB-009 Verification",
+  "_format": "Array of 'schema.table' strings that are exempt from RLS requirements",
+  "_usage": "Tables listed here will not fail RLS verification even if they contain patient_id/user_id columns",
+  "_reason_required": "Each entry should have a documented reason in the 'entries' array",
+  "_review_cycle": "Quarterly review recommended to remove stale exceptions",
+  "entries": [
+    {
+      "table": "public.content_pages",
+      "reason": "Public metadata - no user-specific data, read-only content catalog"
+    },
+    {
+      "table": "public.content_page_sections",
+      "reason": "Public metadata - content structure, no user-specific data"
+    },
+    {
+      "table": "public.design_tokens",
+      "reason": "Public metadata - design system configuration, no user data"
+    },
+    {
+      "table": "public.navigation_items",
+      "reason": "Public metadata - navigation structure, no user-specific data"
+    },
+    {
+      "table": "public.navigation_item_configs",
+      "reason": "Public metadata - navigation configuration, no user data"
+    },
+    {
+      "table": "public.funnels_catalog",
+      "reason": "Public metadata - funnel definitions, no user-specific data"
+    },
+    {
+      "table": "public.funnel_versions",
+      "reason": "Public metadata - versioned funnel configurations, no user data"
+    },
+    {
+      "table": "public.funnels",
+      "reason": "Public metadata - funnel structure, no user-specific data"
+    },
+    {
+      "table": "public.funnel_steps",
+      "reason": "Public metadata - funnel step definitions, no user data"
+    },
+    {
+      "table": "public.funnel_step_questions",
+      "reason": "Public metadata - question definitions, no user data"
+    },
+    {
+      "table": "public.questions",
+      "reason": "Public metadata - question bank, no user-specific data"
+    },
+    {
+      "table": "public.pillars",
+      "reason": "Public metadata - resilience pillars, no user data"
+    }
+  ]
+}
