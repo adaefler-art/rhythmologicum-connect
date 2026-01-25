@@ -1316,6 +1316,19 @@ $$;
 ALTER FUNCTION "public"."update_notifications_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_patient_state_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_patient_state_updated_at"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_operational_settings_timestamp"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2595,6 +2608,45 @@ COMMENT ON COLUMN "public"."patient_profiles"."onboarding_status" IS 'E6.4.2: Tr
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."patient_state" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "patient_state_version" "text" DEFAULT '0.1'::"text" NOT NULL,
+    "assessment" "jsonb" DEFAULT '{"lastAssessmentId": null, "status": "not_started", "progress": 0, "completedAt": null}'::"jsonb" NOT NULL,
+    "results" "jsonb" DEFAULT '{"summaryCards": [], "recommendedActions": [], "lastGeneratedAt": null}'::"jsonb" NOT NULL,
+    "dialog" "jsonb" DEFAULT '{"lastContext": "dashboard", "messageCount": 0, "lastMessageAt": null}'::"jsonb" NOT NULL,
+    "activity" "jsonb" DEFAULT '{"recentActivity": []}'::"jsonb" NOT NULL,
+    "metrics" "jsonb" DEFAULT '{"healthScore": {"current": null, "delta": null}, "keyMetrics": {"HR": [], "BP": [], "Sleep": [], "Weight": []}}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."patient_state" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."patient_state" IS 'I2.1: Canonical patient state v0.1 - persistent state for Dialog/Insights/Dashboard';
+
+
+COMMENT ON COLUMN "public"."patient_state"."patient_state_version" IS 'Schema version for state evolution tracking (current: 0.1)';
+
+
+COMMENT ON COLUMN "public"."patient_state"."assessment" IS 'Assessment progress: lastAssessmentId, status, progress (0-1), completedAt';
+
+
+COMMENT ON COLUMN "public"."patient_state"."results" IS 'Results summary: summaryCards (3-5), recommendedActions (ids), lastGeneratedAt';
+
+
+COMMENT ON COLUMN "public"."patient_state"."dialog" IS 'Dialog context: lastContext (dashboard/results), messageCount, lastMessageAt';
+
+
+COMMENT ON COLUMN "public"."patient_state"."activity" IS 'Recent activity: array of {type, label, timestamp}';
+
+
+COMMENT ON COLUMN "public"."patient_state"."metrics" IS 'Health metrics: healthScore (current+delta), keyMetrics (HR/BP/Sleep/Weight series)';
+
+
+
 CREATE OR REPLACE VIEW "public"."pending_account_deletions" AS
  SELECT "id" AS "user_id",
     "email",
@@ -3833,6 +3885,16 @@ ALTER TABLE ONLY "public"."patient_profiles"
 
 
 
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_patient_id_unique" UNIQUE ("patient_id");
+
+
+
 ALTER TABLE ONLY "public"."pillars"
     ADD CONSTRAINT "pillars_key_key" UNIQUE ("key");
 
@@ -4482,6 +4544,14 @@ CREATE INDEX "idx_patient_measures_patient_id" ON "public"."patient_measures" US
 
 
 CREATE INDEX "idx_patient_measures_report_id" ON "public"."patient_measures" USING "btree" ("report_id");
+
+
+
+CREATE INDEX "idx_patient_state_patient_id" ON "public"."patient_state" USING "btree" ("patient_id");
+
+
+
+CREATE INDEX "idx_patient_state_version" ON "public"."patient_state" USING "btree" ("patient_state_version");
 
 
 
@@ -5173,6 +5243,11 @@ ALTER TABLE ONLY "public"."patient_profiles"
 
 
 
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."pre_screening_calls"
     ADD CONSTRAINT "pre_screening_calls_clinician_id_fkey" FOREIGN KEY ("clinician_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -5473,6 +5548,30 @@ CREATE POLICY "Patients can update own funnels" ON "public"."patient_funnels" FO
 
 
 CREATE POLICY "Patients can update own profile" ON "public"."patient_profiles" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "patient_state_select_own" ON "public"."patient_state" FOR SELECT TO "authenticated" USING (("patient_id" IN ( SELECT "patient_profiles"."id"
+   FROM "public"."patient_profiles"
+  WHERE ("patient_profiles"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "patient_state_insert_own" ON "public"."patient_state" FOR INSERT TO "authenticated" WITH CHECK (("patient_id" IN ( SELECT "patient_profiles"."id"
+   FROM "public"."patient_profiles"
+  WHERE ("patient_profiles"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "patient_state_update_own" ON "public"."patient_state" FOR UPDATE TO "authenticated" USING (("patient_id" IN ( SELECT "patient_profiles"."id"
+   FROM "public"."patient_profiles"
+  WHERE ("patient_profiles"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "patient_state_select_clinician" ON "public"."patient_state" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."user_profiles" "up"
+  WHERE (("up"."user_id" = "auth"."uid"()) AND (("up"."metadata" ->> 'role'::"text") = ANY (ARRAY['clinician'::"text", 'admin'::"text"]))))));
 
 
 
@@ -5949,6 +6048,9 @@ ALTER TABLE "public"."patient_measures" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."patient_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."patient_state" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."pillars" ENABLE ROW LEVEL SECURITY;
