@@ -2722,6 +2722,31 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/state",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/state/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/PatientLayoutClient.tsx",
+          "apiPath": "/api/patient/state",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/PatientLayoutClient.tsx",
+          "apiPath": "/api/patient/state",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/triage",
       "methods": [
         "POST"
