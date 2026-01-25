@@ -16,6 +16,7 @@
 - [ ] **Memory Entry**: Falls neue Patterns/Konventionen eingeführt wurden, Memory-Eintrag angelegt via `store_memory` Tool
 
 ## Testing Evidence
+- [ ] **Preflight**: npm run preflight ausgeführt (Output angehängt)
 - [ ] **Evidence**: Tests ausgeführt (lokal oder CI-Link)
 - [ ] **Evidence**: Manuelle Tests durchgeführt (Beschreibung oder Screenshots)
 - [ ] **Evidence**: Keine Regressionen in bestehender Funktionalität
