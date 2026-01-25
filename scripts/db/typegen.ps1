@@ -59,6 +59,15 @@ function Write-Success { param($Message) Write-Host "✅ $Message" -ForegroundCo
 function Write-Failure { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
 function Write-Warning { param($Message) Write-Host "⚠️  $Message" -ForegroundColor Yellow }
 
+# Resolve npx.cmd explicitly for Windows ProcessStartInfo
+function Resolve-NpxPath {
+    $npxCommand = Get-Command npx.cmd -ErrorAction Stop
+    return $npxCommand.Source
+}
+
+$npxPath = Resolve-NpxPath
+Write-Info "Using npx: $npxPath"
+
 # Validate mode
 if (-not $Generate -and -not $Verify) {
     Write-Failure "Must specify either -Generate or -Verify mode"
@@ -73,6 +82,46 @@ Write-Info "Deterministic Supabase TypeGen (Hard Gate)"
 Write-Info "Pinned CLI: supabase@$PINNED_SUPABASE_VERSION"
 Write-Info "Mode: --local"
 Write-Host ""
+
+# Execute typegen with deterministic ProcessStartInfo
+function Invoke-SupabaseTypegen {
+    param(
+        [string]$NpxPath,
+        [string]$PinnedVersion,
+        [string]$StderrFile
+    )
+
+    $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $processInfo.FileName = $NpxPath
+    $processInfo.Arguments = "supabase@$PinnedVersion gen types typescript --local"
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+    $processInfo.UseShellExecute = $false
+    $processInfo.CreateNoWindow = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $processInfo
+    $process.Start() | Out-Null
+
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+
+    $exitCode = $process.ExitCode
+
+    $stderrBytes = 0
+    if ($stderr) {
+        $stderr | Out-File -FilePath $StderrFile -Encoding utf8
+        $stderrBytes = (Get-Item $StderrFile).Length
+    }
+
+    return @{
+        Stdout = $stdout
+        Stderr = $stderr
+        ExitCode = $exitCode
+        StderrBytes = $stderrBytes
+    }
+}
 
 # Determine output file
 if ($Generate) {
@@ -99,31 +148,11 @@ if ($Generate) {
         
         # Execute generation with direct file redirection (not PowerShell capture)
         # This ensures FULL stdout is written to the file
-        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $processInfo.FileName = "npx"
-        $processInfo.Arguments = "supabase@$PINNED_SUPABASE_VERSION gen types typescript --local"
-        $processInfo.RedirectStandardOutput = $true
-        $processInfo.RedirectStandardError = $true
-        $processInfo.UseShellExecute = $false
-        $processInfo.CreateNoWindow = $true
-        
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $processInfo
-        $process.Start() | Out-Null
-        
-        # Read stdout and stderr
-        $stdout = $process.StandardOutput.ReadToEnd()
-        $stderr = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        
-        $exitCode = $process.ExitCode
-        
-        # Save stderr for diagnostics (always, even on success)
-        $stderrBytes = 0
-        if ($stderr) {
-            $stderr | Out-File -FilePath $stderrFile -Encoding utf8
-            $stderrBytes = (Get-Item $stderrFile).Length
-        }
+        $result = Invoke-SupabaseTypegen -NpxPath $npxPath -PinnedVersion $PINNED_SUPABASE_VERSION -StderrFile $stderrFile
+        $stdout = $result.Stdout
+        $stderr = $result.Stderr
+        $exitCode = $result.ExitCode
+        $stderrBytes = $result.StderrBytes
         
         # Evidence output - always print for transparency
         Write-Host ""
@@ -200,31 +229,11 @@ if ($Generate) {
         
         # Execute generation with direct file redirection (not PowerShell capture)
         # This ensures FULL stdout is written to the file
-        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $processInfo.FileName = "npx"
-        $processInfo.Arguments = "supabase@$PINNED_SUPABASE_VERSION gen types typescript --local"
-        $processInfo.RedirectStandardOutput = $true
-        $processInfo.RedirectStandardError = $true
-        $processInfo.UseShellExecute = $false
-        $processInfo.CreateNoWindow = $true
-        
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $processInfo
-        $process.Start() | Out-Null
-        
-        # Read stdout and stderr
-        $stdout = $process.StandardOutput.ReadToEnd()
-        $stderr = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        
-        $exitCode = $process.ExitCode
-        
-        # Save stderr for diagnostics (always, even on success)
-        $stderrBytes = 0
-        if ($stderr) {
-            $stderr | Out-File -FilePath $stderrFile -Encoding utf8
-            $stderrBytes = (Get-Item $stderrFile).Length
-        }
+        $result = Invoke-SupabaseTypegen -NpxPath $npxPath -PinnedVersion $PINNED_SUPABASE_VERSION -StderrFile $stderrFile
+        $stdout = $result.Stdout
+        $stderr = $result.Stderr
+        $exitCode = $result.ExitCode
+        $stderrBytes = $result.StderrBytes
         
         # Evidence output - always print for transparency
         Write-Host ""
