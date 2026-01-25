@@ -301,22 +301,14 @@ if ($Generate) {
     function Get-NormalizedSha256 {
         param([string]$Path)
 
-        $bytes = [System.IO.File]::ReadAllBytes($Path)
-        if ($bytes.Length -eq 0) {
-            return (Get-FileHash -Path $Path -Algorithm SHA256).Hash
-        }
+        $text = Get-Content -Path $Path -Raw
+        $normalizedText = $text -replace "\r\n", "\n" -replace "\r", "\n"
+        $normalizedText = $normalizedText.TrimEnd("`n") + "`n"
 
-        if ($bytes[$bytes.Length - 1] -ne 0x0A) {
-            $normalized = New-Object byte[] ($bytes.Length + 1)
-            [System.Buffer]::BlockCopy($bytes, 0, $normalized, 0, $bytes.Length)
-            $normalized[$normalized.Length - 1] = 0x0A
-        } else {
-            $normalized = $bytes
-        }
-
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedText)
         $sha256 = [System.Security.Cryptography.SHA256]::Create()
         try {
-            $hashBytes = $sha256.ComputeHash($normalized)
+            $hashBytes = $sha256.ComputeHash($bytes)
         } finally {
             $sha256.Dispose()
         }
