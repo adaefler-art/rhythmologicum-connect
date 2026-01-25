@@ -59,9 +59,14 @@ function Write-Success { param($Message) Write-Host "✅ $Message" -ForegroundCo
 function Write-Failure { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
 function Write-Warning { param($Message) Write-Host "⚠️  $Message" -ForegroundColor Yellow }
 
-# Resolve npx.cmd explicitly for Windows ProcessStartInfo
+# Resolve npx executable for current platform
 function Resolve-NpxPath {
-    $npxCommand = Get-Command npx.cmd -ErrorAction Stop
+    if ($IsWindows) {
+        $npxCommand = Get-Command npx.cmd -ErrorAction Stop
+        return $npxCommand.Source
+    }
+
+    $npxCommand = Get-Command npx -ErrorAction Stop
     return $npxCommand.Source
 }
 
