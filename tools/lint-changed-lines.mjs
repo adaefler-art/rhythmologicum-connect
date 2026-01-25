@@ -27,13 +27,19 @@ try {
   process.exit(2)
 }
 
+const GENERATED_PATH_RE = /[\\/](?:\.next|dist|build|\.turbo|out)[\\/]/
+
+function isGeneratedPath(file) {
+  return GENERATED_PATH_RE.test(file)
+}
+
 function getChangedFiles() {
   const raw = sh('git', ['diff', '--name-only', baseSha, headSha, '--', '*.ts', '*.tsx'])
   return raw
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((file) => !/[\\/]\.next[\\/]/.test(file))
+    .filter((file) => !isGeneratedPath(file))
     .filter((file) => fs.existsSync(file))
 }
 
@@ -107,7 +113,7 @@ let ignoredErrors = 0
 
 for (const fileReport of report) {
   const filePath = fileReport.filePath
-  if (/[\\/]\.next[\\/]/.test(filePath)) {
+  if (isGeneratedPath(filePath)) {
     continue
   }
   const cwd = process.cwd().replace(/\\/g, '/') + '/'
@@ -115,7 +121,7 @@ for (const fileReport of report) {
     ? filePath.replace(/\\/g, '/').slice(cwd.length)
     : filePath
 
-  if (/[\\/]\.next[\\/]/.test(rel)) {
+  if (isGeneratedPath(rel)) {
     continue
   }
 
