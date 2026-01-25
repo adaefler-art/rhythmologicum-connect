@@ -31,7 +31,9 @@ $migrationsDir = Join-Path $PSScriptRoot "..\..\supabase\migrations"
 # Regex patterns for extracting database objects
 # NOTE: Case-insensitive flag (?i) handles both 'create table' and 'CREATE TABLE'
 # Tested with actual migrations which use lowercase 'create table' syntax
-$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<table>"?[a-zA-Z_][a-zA-Z0-9_]*"?)'
+# Example (should capture patient_state, not IF):
+#   CREATE TABLE IF NOT EXISTS public.patient_state (...)
+$tablePattern = '(?im)^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<table>(?!IF\b)"?[a-zA-Z_][a-zA-Z0-9_]*"?)'
 $enumPattern = '(?im)^\s*CREATE\s+TYPE\s+(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<enum>"?[a-zA-Z_][a-zA-Z0-9_]*"?)\s+AS\s+ENUM'
 $alterTablePattern = '(?im)^\s*ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:(?:"?[a-zA-Z_][a-zA-Z0-9_]*"?)\.)?(?<table>"?[a-zA-Z_][a-zA-Z0-9_]*"?)'
 
