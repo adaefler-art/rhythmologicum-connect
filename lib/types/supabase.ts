@@ -1,3 +1,6 @@
+Need to install the following packages:
+supabase@2.63.1
+Ok to proceed? (y) 
 export type Json =
   | string
   | number
@@ -36,7 +39,6 @@ export type Database = {
     Tables: {
       assessment_answers: {
         Row: {
-          answer_data: Json | null
           answer_value: number
           assessment_id: string
           created_at: string
@@ -44,7 +46,6 @@ export type Database = {
           question_id: string
         }
         Insert: {
-          answer_data?: Json | null
           answer_value: number
           assessment_id: string
           created_at?: string
@@ -52,7 +53,6 @@ export type Database = {
           question_id: string
         }
         Update: {
-          answer_data?: Json | null
           answer_value?: number
           assessment_id?: string
           created_at?: string
@@ -1591,53 +1591,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "pending_account_deletions"
             referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      patient_state: {
-        Row: {
-          activity: Json
-          assessment: Json
-          created_at: string
-          dialog: Json
-          id: string
-          metrics: Json
-          patient_id: string
-          patient_state_version: string
-          results: Json
-          updated_at: string
-        }
-        Insert: {
-          activity?: Json
-          assessment?: Json
-          created_at?: string
-          dialog?: Json
-          id?: string
-          metrics?: Json
-          patient_id: string
-          patient_state_version?: string
-          results?: Json
-          updated_at?: string
-        }
-        Update: {
-          activity?: Json
-          assessment?: Json
-          created_at?: string
-          dialog?: Json
-          id?: string
-          metrics?: Json
-          patient_id?: string
-          patient_state_version?: string
-          results?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_state_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: true
-            referencedRelation: "patient_profiles"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -3208,3 +3161,4 @@ export const Constants = {
     },
   },
 } as const
+
