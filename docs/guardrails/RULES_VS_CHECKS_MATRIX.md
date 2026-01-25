@@ -425,9 +425,10 @@ Each rule entry includes:
 - Generated from: Supabase local instance schema
 
 **Enforced By**:
-- Script: `npm run db:typegen` (generates types)
+- Script: `npm run db:typegen` (generates types via `npx supabase@2.63.1 gen types typescript --local`)
 - Workflow: `.github/workflows/db-determinism.yml` (step: "Check types are up to date")
 - Command: `git diff --exit-code lib/types/supabase.ts`
+- **Supabase CLI Version**: `2.63.1` (pinned in `package.json` and workflow for deterministic output)
 
 **Pass Condition**:
 - Generated types match committed `lib/types/supabase.ts` exactly
@@ -444,6 +445,11 @@ Each rule entry includes:
 **Known Gaps**:
 - Does not validate that types are actually used correctly in code
 - Does not detect type-unsafe casts or `any` usage
+
+**Determinism Notes**:
+- Supabase CLI version pinned at `2.63.1` to ensure identical output across environments
+- Version specified explicitly in `db:typegen` script via `npx supabase@2.63.1`
+- Workflow uses matching version via `supabase/setup-cli@v1` with `version: 2.63.1`
 
 **Owner**: E71 / Database Team
 
