@@ -50,6 +50,10 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
     }
   }, [])
 
+  useEffect(() => {
+    fetch('/api/patient/state', { method: 'GET', credentials: 'include' }).catch(() => {})
+  }, [])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     try {

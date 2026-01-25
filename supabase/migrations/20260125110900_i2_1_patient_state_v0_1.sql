@@ -83,6 +83,7 @@ CREATE INDEX IF NOT EXISTS idx_patient_state_version
 ALTER TABLE public.patient_state ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Patients can SELECT their own state
+DROP POLICY IF EXISTS "patient_state_select_own" ON public.patient_state;
 CREATE POLICY "patient_state_select_own" 
     ON public.patient_state
     FOR SELECT
@@ -95,6 +96,7 @@ CREATE POLICY "patient_state_select_own"
     );
 
 -- Policy: Patients can INSERT their own state (first-time initialization)
+DROP POLICY IF EXISTS "patient_state_insert_own" ON public.patient_state;
 CREATE POLICY "patient_state_insert_own" 
     ON public.patient_state
     FOR INSERT
@@ -107,6 +109,7 @@ CREATE POLICY "patient_state_insert_own"
     );
 
 -- Policy: Patients can UPDATE their own state
+DROP POLICY IF EXISTS "patient_state_update_own" ON public.patient_state;
 CREATE POLICY "patient_state_update_own" 
     ON public.patient_state
     FOR UPDATE
@@ -123,6 +126,7 @@ CREATE POLICY "patient_state_update_own"
 -- For optimal performance with large datasets, ensure indexes exist on:
 --   - user_profiles(user_id)
 --   - user_profiles((metadata->>'role'))
+DROP POLICY IF EXISTS "patient_state_select_clinician" ON public.patient_state;
 CREATE POLICY "patient_state_select_clinician" 
     ON public.patient_state
     FOR SELECT
