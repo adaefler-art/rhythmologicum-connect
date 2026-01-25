@@ -86,7 +86,12 @@ export async function GET(request: NextRequest) {
         .from('patient_state')
         .insert({
           patient_id: profile.id,
-          ...defaultState,
+          patient_state_version: defaultState.patient_state_version,
+          assessment: defaultState.assessment as never,
+          results: defaultState.results as never,
+          dialog: defaultState.dialog as never,
+          activity: defaultState.activity as never,
+          metrics: defaultState.metrics as never,
         })
         .select()
         .single()
@@ -108,7 +113,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: true,
-          data: newState as PatientStateV01,
+          data: newState as unknown as PatientStateV01,
           meta: {
             version: PATIENT_STATE_VERSION,
             created: true,
@@ -135,7 +140,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: state as PatientStateV01,
+        data: state as unknown as PatientStateV01,
         meta: {
           version: PATIENT_STATE_VERSION,
           created: false,
@@ -253,25 +258,25 @@ export async function PATCH(request: NextRequest) {
     // Deep merge update payload with current state
     const mergedState = {
       assessment: {
-        ...currentState.assessment,
+        ...(currentState.assessment as object),
         ...updatePayload.assessment,
-      },
+      } as never,
       results: {
-        ...currentState.results,
+        ...(currentState.results as object),
         ...updatePayload.results,
-      },
+      } as never,
       dialog: {
-        ...currentState.dialog,
+        ...(currentState.dialog as object),
         ...updatePayload.dialog,
-      },
+      } as never,
       activity: {
-        ...currentState.activity,
+        ...(currentState.activity as object),
         ...updatePayload.activity,
-      },
+      } as never,
       metrics: {
-        ...currentState.metrics,
+        ...(currentState.metrics as object),
         ...updatePayload.metrics,
-      },
+      } as never,
     }
 
     // Update state (RLS automatically filters by user)
@@ -299,7 +304,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        data: updatedState as PatientStateV01,
+        data: updatedState as unknown as PatientStateV01,
         meta: {
           version: PATIENT_STATE_VERSION,
           updated: true,

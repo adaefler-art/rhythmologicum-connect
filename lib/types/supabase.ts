@@ -1599,6 +1599,53 @@ export type Database = {
           },
         ]
       }
+      patient_state: {
+        Row: {
+          activity: Json
+          assessment: Json
+          created_at: string
+          dialog: Json
+          id: string
+          metrics: Json
+          patient_id: string
+          patient_state_version: string
+          results: Json
+          updated_at: string
+        }
+        Insert: {
+          activity?: Json
+          assessment?: Json
+          created_at?: string
+          dialog?: Json
+          id?: string
+          metrics?: Json
+          patient_id: string
+          patient_state_version?: string
+          results?: Json
+          updated_at?: string
+        }
+        Update: {
+          activity?: Json
+          assessment?: Json
+          created_at?: string
+          dialog?: Json
+          id?: string
+          metrics?: Json
+          patient_id?: string
+          patient_state_version?: string
+          results?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_state_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pillars: {
         Row: {
           created_at: string
