@@ -284,8 +284,33 @@ if ($Generate) {
         exit 1
     }
     
-    $committedHash = (Get-FileHash -Path $committedTypesFile -Algorithm SHA256).Hash
-    $generatedHash = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash
+    function Get-NormalizedSha256 {
+        param([string]$Path)
+
+        $bytes = [System.IO.File]::ReadAllBytes($Path)
+        if ($bytes.Length -eq 0) {
+            return (Get-FileHash -Path $Path -Algorithm SHA256).Hash
+        }
+
+        if ($bytes[$bytes.Length - 1] -ne 0x0A) {
+            $normalized = New-Object byte[] ($bytes.Length + 1)
+            [System.Buffer]::BlockCopy($bytes, 0, $normalized, 0, $bytes.Length)
+            $normalized[$normalized.Length - 1] = 0x0A
+        } else {
+            $normalized = $bytes
+        }
+
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hashBytes = $sha256.ComputeHash($normalized)
+        } finally {
+            $sha256.Dispose()
+        }
+        return ([System.BitConverter]::ToString($hashBytes)).Replace('-', '')
+    }
+
+    $committedHash = Get-NormalizedSha256 -Path $committedTypesFile
+    $generatedHash = Get-NormalizedSha256 -Path $tempFile
     
     Write-Host ""
     Write-Info "Committed:  $committedHash"
