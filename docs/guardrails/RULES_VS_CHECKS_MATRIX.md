@@ -485,28 +485,37 @@ Each rule entry includes:
 **Rule Text**: All tables containing user data must have Row Level Security (RLS) enabled with appropriate policies for patient/clinician roles.
 
 **Scope**:
-- All tables in `public` schema with user/patient data columns
+- All tables in `public` schema with `patient_id` or `user_id` columns (heuristic-based detection)
+- Excludes system schemas: `pg_catalog`, `information_schema`, `auth`, `storage`, `extensions`, `graphql`, `vault`, `realtime`
 
 **Enforced By**:
-- Manual review (no automated check currently)
-- Documentation: `docs/canon/CONTRACTS.md`
+- Script: `scripts/db/verify-rls-policies.ps1`
+- Workflow: `.github/workflows/db-determinism.yml` (step: "Verify RLS policies on user data tables")
+- Integration: E72.ALIGN.P0.DBSEC.001
 
 **Pass Condition**:
-- Manual verification that RLS is enabled
-- Policies exist for patient role (`patient_id = public.get_my_patient_profile_id()`)
+- All user data tables (detected via `patient_id`/`user_id` columns) have:
+  - RLS enabled (`pg_class.relrowsecurity = true`)
+  - At least one policy exists for patient role (checked via `pg_policies`)
+- Allowlisted tables are excluded from checks
+- Exit code 0
 
 **Exceptions**:
-- Public metadata tables (content_pages, design_tokens, etc.)
+- Allowlist: `docs/canon/rls-allowlist.json`
+- Format: JSON with `entries` array containing `{table: "schema.table", reason: "explanation"}`
+- Public metadata tables (content_pages, design_tokens, funnels_catalog, etc.)
 
 **Evidence Output**:
-- Manual review notes
-- RLS status visible in Supabase Studio
+- Artifact: `artifacts/rls-verify/rls-summary.json` (machine-readable)
+- Artifact: `artifacts/rls-verify/rls-summary.txt` (human-readable)
+- GitHub Actions artifact upload (retention: 30 days)
 
 **Known Gaps**:
-- **NO AUTOMATED CHECK** - This is a manual review rule
-- Should be added to db-determinism workflow as a check
+- Heuristic-based detection may miss tables without `patient_id`/`user_id` columns
+- Does not validate policy correctness (only checks for existence)
+- Patient role check is configurable via `$PatientRoleName` parameter (default: "patient")
 
-**Owner**: E71 / Database Team / Security
+**Owner**: E72 / Database Team / Security
 
 ---
 
