@@ -151,12 +151,20 @@ jobs:
           echo "🔍 Verifying types match committed version (deterministic hard gate)..."
           pwsh -File scripts/db/typegen.ps1 -Verify
           echo "✅ Types are deterministic and up to date"
+
+      - name: TypeGen fix instructions
+        if: always()
+        run: |
+          echo ""
+          echo "FIX: Download artifact 'supabase-typegen-output' from this run,"
+          echo "copy artifacts/typegen/supabase.generated.ts to lib/types/supabase.ts,"
+          echo "commit, push. Do not hand-edit."
       
       - name: Upload TypeGen artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: typegen-artifacts
+          name: supabase-typegen-output
           path: |
             artifacts/typegen/supabase.generated.ts
             artifacts/typegen/stderr.log
