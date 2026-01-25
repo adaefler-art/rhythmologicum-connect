@@ -107,16 +107,8 @@ function Get-AllowlistEntries {
             exit 1
         }
         
-        # Extract table names into a simple array
-        $tables = @()
-        foreach ($entry in $json.entries) {
-            if ($entry.table) {
-                $tables += $entry.table
-            }
-        }
-        
-        Write-Info "Loaded $($tables.Count) allowlisted tables from $Path"
-        return $tables
+        Write-Info "Loaded $($json.entries.Count) allowlisted tables from $Path"
+        return $json.entries
     } catch {
         Write-Failure "Failed to parse allowlist JSON: $_"
         exit 1
@@ -179,8 +171,9 @@ foreach ($tableInfo in $userDataTables) {
     $table = $tableInfo.table
     $fullTableName = "$schema.$table"
     
-    # Check if allowlisted
-    $isAllowlisted = $allowlist -contains $fullTableName
+    # Check if allowlisted and get reason
+    $allowlistEntry = $allowlist | Where-Object { $_.table -eq $fullTableName }
+    $isAllowlisted = $null -ne $allowlistEntry
     
     # Query RLS enabled status
     $rlsQuerySql = @"
@@ -250,14 +243,8 @@ WHERE schemaname = '$schema'
         allowlisted = $isAllowlisted
     }
     
-    if ($isAllowlisted) {
-        # Find the allowlist reason
-        $allowlistEntry = ($null -ne (Get-Content -Raw -Path (Join-Path (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.ScriptName))) $AllowlistPath) | ConvertFrom-Json).entries | Where-Object { $_.table -eq $fullTableName })
-        if ($allowlistEntry) {
-            $record.allowlistReason = $allowlistEntry[0].reason
-        } else {
-            $record.allowlistReason = "Listed in allowlist"
-        }
+    if ($isAllowlisted -and $allowlistEntry) {
+        $record.allowlistReason = $allowlistEntry.reason
     }
     
     $results += $record
@@ -271,10 +258,10 @@ WHERE schemaname = '$schema'
             $violations += "Table $fullTableName has no patient-role policy"
             Write-Warning "Table $fullTableName has RLS enabled but no patient-role policy found"
         } else {
-            Write-Success "Table $fullTableName: RLS enabled with patient policy"
+            Write-Success "Table ${fullTableName}: RLS enabled with patient policy"
         }
     } else {
-        Write-Info "Table $fullTableName: allowlisted (skipped)"
+        Write-Info "Table ${fullTableName}: allowlisted (skipped)"
     }
 }
 
