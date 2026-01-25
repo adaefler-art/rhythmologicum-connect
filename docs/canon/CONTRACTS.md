@@ -8,18 +8,21 @@
 
 ## API Response Format
 
-All API endpoints MUST return responses in this standard format:
+**Rule**: R-API-003 (E72.ALIGN.P1.DETCON.001 - formerly R-DB-010)  
+**Enforcement**: TypeScript types in `lib/types/api.ts` (changed files mode)
+
+All API endpoints MUST return responses conforming to the canonical `ApiResponse<T>` type.
+
+### Canonical Type Definition
 
 ```typescript
-type ApiResponse<T> = {
-  success: boolean
-  data?: T
-  error?: {
-    code: string
-    message: string
-  }
-}
+// Source: lib/types/api.ts
+export type ApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: { code: string; message: string } }
 ```
+
+This is a discriminated union type that ensures type-safe response handling.
 
 ### Success Response
 
@@ -29,6 +32,16 @@ type ApiResponse<T> = {
   "data": {
     // Response payload
   }
+}
+```
+
+**TypeScript Example**:
+```typescript
+import { ok } from '@/lib/types/api'
+
+export async function GET() {
+  const users = await fetchUsers()
+  return NextResponse.json(ok(users))
 }
 ```
 
@@ -43,6 +56,45 @@ type ApiResponse<T> = {
   }
 }
 ```
+
+**TypeScript Example**:
+```typescript
+import { fail } from '@/lib/types/api'
+
+export async function POST(request: Request) {
+  const body = await request.json()
+  
+  if (!body.email) {
+    return NextResponse.json(
+      fail('VALIDATION_ERROR', 'Email is required'),
+      { status: 400 }
+    )
+  }
+  
+  // ... rest of handler
+}
+```
+
+### Helper Functions
+
+The canonical API type includes helper constructors:
+
+- **`ok<T>(data: T)`**: Create a success response
+- **`fail(code: string, message: string)`**: Create an error response
+- **`isSuccess(response)`**: Type guard for success responses
+- **`isError(response)`**: Type guard for error responses
+
+### Migration Guidance
+
+**For new/changed API routes**:
+1. Import from `@/lib/types/api`
+2. Use `ok()` and `fail()` helpers for responses
+3. Return `NextResponse.json(result)` where `result` is an `ApiResponse<T>`
+
+**For existing routes**:
+- No immediate migration required (changed-files enforcement only)
+- Gradual migration recommended when routes are updated
+- Existing `lib/api/responses.ts` helpers remain valid and compatible
 
 ### Standard Error Codes
 
