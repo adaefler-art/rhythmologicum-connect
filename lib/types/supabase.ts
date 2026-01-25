@@ -1,3 +1,4 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -1594,6 +1595,41 @@ export type Database = {
           },
         ]
       }
+      patient_state: {
+        Row: {
+          created_at: string
+          id: string
+          patient_state_version: string
+          state_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_state_version?: string
+          state_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_state_version?: string
+          state_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       pillars: {
         Row: {
           created_at: string
@@ -3162,3 +3198,5 @@ export const Constants = {
   },
 } as const
 
+A new version of Supabase CLI is available: v2.72.7 (currently installed v2.63.1)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
