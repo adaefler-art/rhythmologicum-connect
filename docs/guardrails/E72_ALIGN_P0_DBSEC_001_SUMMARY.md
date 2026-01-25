@@ -10,6 +10,8 @@
 
 Successfully implemented automated enforcement of the R-DB-009 guardrail ("RLS required on user data tables") with full CI integration, evidence artifacts, and comprehensive documentation.
 
+**Note**: This complements the existing `scripts/rls/verify-rls.ps1` (V0.5 specific verification). The new script is guardrail-focused and integrated into CI for continuous enforcement.
+
 ## Changes Summary
 
 ### Files Added (4)
