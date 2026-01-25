@@ -48,6 +48,46 @@ jobs:
       # Interim lint gate: Fail only on ESLint errors occurring on PR-changed lines.
       # Rationale: the repo currently contains pre-existing ESLint violations; this prevents PRs from being blocked
       # by unrelated lint debt while still enforcing rules on newly changed code.
+      - name: Determine BASE_SHA (R-CI-002)
+        id: base-sha
+        shell: pwsh
+        run: |
+          # E72.ALIGN.P1.DETCON.001: Use shared BASE_SHA resolution script
+          $output = & pwsh -File scripts/ci/get-base-sha.ps1 `
+            -EventName "${{ github.event_name }}" `
+            -PullRequestBaseSha "${{ github.event.pull_request.base.sha }}" `
+            -EventBefore "${{ github.event.before }}" `
+            -HeadSha "${{ github.sha }}"
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Failed to determine BASE_SHA (fail-closed)."
+            exit 1
+          }
+          
+          # Parse BASE_SHA and HEAD_SHA from output
+          $baseSha = ""
+          $headSha = ""
+          
+          foreach ($line in $output -split "`n") {
+            if ($line -match '^BASE_SHA=(.+)$') {
+              $baseSha = $Matches[1]
+            }
+            if ($line -match '^HEAD_SHA=(.+)$') {
+              $headSha = $Matches[1]
+            }
+          }
+          
+          if ([string]::IsNullOrWhiteSpace($baseSha) -or [string]::IsNullOrWhiteSpace($headSha)) {
+            Write-Host "❌ Failed to parse BASE_SHA or HEAD_SHA from script output."
+            exit 1
+          }
+          
+          # Export to GitHub environment
+          echo "BASE_SHA=$baseSha" >> $env:GITHUB_ENV
+          echo "HEAD_SHA=$headSha" >> $env:GITHUB_ENV
+          
+          Write-Host "✓ BASE_SHA and HEAD_SHA set for DB access verification"
+
       - name: Determine changed TS/TSX files (base SHA -> head SHA)
         id: changed_ts
         shell: bash
@@ -55,14 +95,7 @@ jobs:
           set -euo pipefail
           set -x
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          else
-            BASE_SHA="${{ github.event.before }}"
-            HEAD_SHA="${{ github.sha }}"
-          fi
-
+          # BASE_SHA and HEAD_SHA are set by previous step
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA: $HEAD_SHA"
 

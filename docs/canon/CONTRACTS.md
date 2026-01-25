@@ -8,18 +8,35 @@
 
 ## API Response Format
 
-All API endpoints MUST return responses in this standard format:
+**Rule**: R-API-003 (E72.ALIGN.P1.DETCON.001 - formerly R-DB-010)  
+**Enforcement**: TypeScript types in `lib/types/api.ts` (changed files mode)
+
+All API endpoints MUST return responses conforming to the canonical response contract.
+
+### Type Options
+
+The codebase provides two compatible approaches:
+
+1. **Existing helpers** (`lib/api/responses.ts`): Full-featured with requestId, schemaVersion, etc.
+2. **Strict helpers** (`lib/types/api.ts`): Stricter type checking via discriminated unions
+
+Both are valid and compatible. Choose based on your needs:
+- Use existing helpers for established patterns with requestId tracking
+- Use strict helpers for new code requiring stronger type safety
+
+### Strict Type Definition (New)
 
 ```typescript
-type ApiResponse<T> = {
-  success: boolean
-  data?: T
-  error?: {
-    code: string
-    message: string
-  }
-}
+// Source: lib/types/api.ts
+export type StrictApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: { code: ErrorCode; message: string } }
 ```
+
+This discriminated union ensures:
+- Exactly one of `data` or `error` is present (not both)
+- Stronger type inference in conditional branches
+- Compatible with existing `ApiResponse<T>` from `lib/api/responseTypes.ts`
 
 ### Success Response
 
@@ -29,6 +46,26 @@ type ApiResponse<T> = {
   "data": {
     // Response payload
   }
+}
+```
+
+**TypeScript Example (Strict)**:
+```typescript
+import { ok, ErrorCode } from '@/lib/types/api'
+
+export async function GET() {
+  const users = await fetchUsers()
+  return NextResponse.json(ok(users))
+}
+```
+
+**TypeScript Example (Existing)**:
+```typescript
+import { successResponse } from '@/lib/api/responses'
+
+export async function GET(request: Request) {
+  const users = await fetchUsers()
+  return successResponse(users)
 }
 ```
 
@@ -43,6 +80,65 @@ type ApiResponse<T> = {
   }
 }
 ```
+
+**TypeScript Example (Strict)**:
+```typescript
+import { fail, ErrorCode } from '@/lib/types/api'
+
+export async function POST(request: Request) {
+  const body = await request.json()
+  
+  if (!body.email) {
+    return NextResponse.json(
+      fail(ErrorCode.VALIDATION_FAILED, 'Email is required'),
+      { status: 400 }
+    )
+  }
+  
+  // ... rest of handler
+}
+```
+
+**TypeScript Example (Existing)**:
+```typescript
+import { validationErrorResponse } from '@/lib/api/responses'
+
+export async function POST(request: Request) {
+  const body = await request.json()
+  
+  if (!body.email) {
+    return validationErrorResponse('Email is required')
+  }
+  
+  // ... rest of handler
+}
+```
+
+### Helper Functions
+
+**Strict helpers** (`lib/types/api.ts`):
+- **`ok<T>(data: T)`**: Create a success response
+- **`fail(code: ErrorCode, message: string)`**: Create an error response
+- **`isSuccess(response)`**: Type guard for success responses
+- **`isError(response)`**: Type guard for error responses
+
+**Existing helpers** (`lib/api/responses.ts`):
+- **`successResponse<T>(data: T, status?, requestId?)`**: Success with optional requestId
+- **`errorResponse(code, message, status, details?, requestId?)`**: Error with details
+- **Shorthand helpers**: `unauthorizedResponse()`, `forbiddenResponse()`, etc.
+
+### Migration Guidance
+
+**For new/changed API routes**:
+1. Choose strict or existing helpers based on needs
+2. Import from `@/lib/types/api` (strict) or `@/lib/api/responses` (existing)
+3. Use `ErrorCode` enum from `@/lib/api/responseTypes` for type-safe error codes
+4. Return `NextResponse.json(result)` where `result` conforms to the contract
+
+**For existing routes**:
+- No immediate migration required (changed-files enforcement only)
+- Both helper sets are compatible and can coexist
+- Gradual migration recommended when routes are updated
 
 ### Standard Error Codes
 

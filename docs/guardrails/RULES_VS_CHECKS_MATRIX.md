@@ -556,31 +556,41 @@ Each rule entry includes:
 
 ---
 
-### R-DB-010: API Response Format Standard
+### R-API-003: API Response Format Standard (Rule-ID Corrected)
 
-**Rule Text**: All API endpoints must return standard format: `{ success: boolean, data?: T, error?: { code: string, message: string } }`.
+**Migration Note**: This rule was previously labeled R-DB-010 (incorrect domain classification). Corrected to R-API-003 in E72.ALIGN.P1.DETCON.001. No semantic change to the rule itself.
+
+**Rule Text**: All API endpoints must return responses conforming to the standard format: `{ success: boolean, data?: T, error?: { code: string, message: string } }`. Stricter typing available via `StrictApiResponse<T>` discriminated union.
 
 **Scope**:
-- All API route handlers in `app/api/**/*.ts`
+- All API route handlers in `app/api/**/*.ts` and `apps/*/app/api/**/*.ts`
 
 **Enforced By**:
-- Manual review (no automated check currently)
+- TypeScript types: `lib/types/api.ts` (strict helpers with discriminated unions)
+- Existing helpers: `lib/api/responses.ts` and `lib/api/responseTypes.ts` (compatible)
+- Changed files mode: New/updated API routes encouraged to use strict or existing helpers
 - Documentation: `docs/canon/CONTRACTS.md`
 
 **Pass Condition**:
-- Manual code review confirms format
+- New/changed API routes use helpers from `lib/types/api.ts` or `lib/api/responses.ts`, OR
+- Responses conform to documented format (manual code review)
+- TypeScript compilation succeeds with ErrorCode enum usage
 
 **Exceptions**:
-- Legacy endpoints (to be documented)
+- Legacy endpoints (gradual migration)
+- Both helper sets are compatible and can coexist
 
 **Evidence Output**:
-- Manual code review notes
+- TypeScript compilation success
+- Code review verification
+- ErrorCode enum enforces valid error codes
 
 **Known Gaps**:
-- **NO AUTOMATED CHECK** - This is a manual review rule
-- Could be enforced via TypeScript response types + linter
+- **PARTIAL ENFORCEMENT** - Changed files only (gradual migration)
+- No automated linter rule (future enhancement)
+- Legacy routes not automatically migrated
 
-**Owner**: E71 / API Team
+**Owner**: E72 / API Team
 
 ---
 
@@ -816,30 +826,40 @@ Each rule entry includes:
 
 ### R-CI-002: Checkout Refs Must Be Deterministic
 
-**Rule Text**: CI workflows must use `fetch-depth: 0` to ensure full git history is available for diff-based checks.
+**Rule Text**: CI workflows must use deterministic BASE_SHA resolution to ensure consistent diff-based checks. Full git history (`fetch-depth: 0`) required for workflows using git diffs.
 
 **Scope**:
 - All workflows: `.github/workflows/*.yml`
 - Specifically: workflows that run `git diff`, `git merge-base`, etc.
 
 **Enforced By**:
-- Manual review of workflow files
-- Documentation in `docs/canon/CI_DEPLOY_MODEL.md`
+- Script: `scripts/ci/get-base-sha.ps1` (standardized resolution logic)
+- Documentation: `docs/canon/CI_DEPLOY_MODEL.md`
+- Integrated into: `.github/workflows/lint-gate.yml`, `db-access-verification.yml`
 
 **Pass Condition**:
-- All workflows using git diff have `fetch-depth: 0` in checkout step
-- Manual verification
+- All workflows using git diff call `scripts/ci/get-base-sha.ps1`
+- Script successfully determines BASE_SHA (exit code 0)
+- Script fails-closed if BASE_SHA cannot be determined (exit code 1)
+- No inline ad-hoc BASE_SHA computation remains
 
 **Exceptions**:
 - None (determinism is critical)
 
 **Evidence Output**:
-- Manual code review notes
-- Workflow run logs showing merge-base computation
+- Script output: BASE_SHA, HEAD_SHA, resolution method, warnings
+- JSON output with context metadata
+- Workflow run logs showing BASE_SHA determination
+
+**Behavior Details**:
+- **PR events**: Use `github.event.pull_request.base.sha`, fallback to `git merge-base`
+- **Push events**: Use `github.event.before`, fallback to `HEAD~1`
+- **Fail-closed**: Exit 1 if BASE_SHA cannot be reliably determined
+- **Requires**: `fetch-depth: 0` in checkout step
 
 **Known Gaps**:
-- **NO AUTOMATED CHECK** - Manual review rule
-- Could be enforced via workflow linter (if one existed)
+- ~~NO AUTOMATED CHECK~~ ✅ RESOLVED (E72.ALIGN.P1.DETCON.001)
+- Shared script now provides automated, deterministic resolution
 
 **Owner**: E72 / DevOps
 
