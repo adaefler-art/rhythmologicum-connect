@@ -96,7 +96,13 @@ jobs:
           mapfile -t CHANGED < <(printf '%s' "${{ steps.changed_ts.outputs.files }}")
           FILTERED=()
           for file in "${CHANGED[@]}"; do
-            [ -n "$file" ] && FILTERED+=("$file")
+            [ -n "$file" ] || continue
+            case "$file" in
+              */.next/*|*/dist/*|*/build/*|*/.turbo/*|*/out/*)
+                continue
+                ;;
+            esac
+            FILTERED+=("$file")
           done
           CHANGED=("${FILTERED[@]}")
 
