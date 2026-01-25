@@ -12,6 +12,7 @@
     "dev:studio": "npm run --workspace apps/rhythm-studio-ui dev",
     "dev:patient": "npm run --workspace apps/rhythm-patient-ui dev",
     "prebuild": "node scripts/generate-version-all.mjs",
+    "preflight": "pwsh -File scripts/ci/preflight.ps1",
     "build": "npm run build:studio && npm run build:patient",
     "build:engine": "npm run --workspace apps/rhythm-engine build",
     "build:studio": "npm run --workspace apps/rhythm-studio-ui build",

@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for migration checks
+          ref: ${{ github.head_ref }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -146,17 +147,74 @@ jobs:
           exit 1
       
       # Check 4: Verify types match (deterministic hard gate)
-      - name: Verify TypeScript types are deterministic
+      - name: Verify TypeScript types are deterministic (auto-fix)
+        shell: pwsh
         run: |
-          echo "🔍 Verifying types match committed version (deterministic hard gate)..."
+          $ErrorActionPreference = 'Stop'
+          Write-Host "🔍 Verifying types match committed version (deterministic hard gate)..."
           pwsh -File scripts/db/typegen.ps1 -Verify
-          echo "✅ Types are deterministic and up to date"
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Types are deterministic and up to date"
+            exit 0
+          }
+
+          Write-Host "⚠️ Typegen verify failed. Attempting auto-fix..." -ForegroundColor Yellow
+
+          $prBranch = $env:GITHUB_HEAD_REF
+          if ([string]::IsNullOrWhiteSpace($prBranch)) {
+            Write-Host "❌ Auto-fix disabled on non-PR runs" -ForegroundColor Red
+            exit 1
+          }
+
+          if ($prBranch -in @('main', 'master')) {
+            Write-Host "❌ Auto-fix disabled on default branch" -ForegroundColor Red
+            exit 1
+          }
+
+          $lastMessage = git log -1 --pretty=%s
+          if ($lastMessage -match 'auto-update supabase types') {
+            Write-Host "❌ Auto-fix already attempted (anti-loop guard)." -ForegroundColor Red
+            exit 1
+          }
+
+          pwsh -File scripts/db/typegen.ps1 -Generate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Typegen generate failed" -ForegroundColor Red
+            exit 1
+          }
+
+          $changed = git diff --name-only
+          if ($changed -contains 'lib/types/supabase.ts') {
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add lib/types/supabase.ts
+            git commit -m "chore(db): auto-update supabase types"
+            git push origin "HEAD:$prBranch"
+          } else {
+            Write-Host "ℹ️ No type changes to commit"
+          }
+
+          Write-Host "🔁 Re-running typegen verify after auto-fix..."
+          pwsh -File scripts/db/typegen.ps1 -Verify
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Typegen verify still failing after auto-fix" -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "✅ Types are deterministic and up to date"
+
+      - name: TypeGen fix instructions
+        if: always()
+        run: |
+          echo ""
+          echo "FIX: Download artifact 'supabase-typegen-output' from this run,"
+          echo "copy artifacts/typegen/supabase.generated.ts to lib/types/supabase.ts,"
+          echo "commit, push. Do not hand-edit."
       
       - name: Upload TypeGen artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: typegen-artifacts
+          name: supabase-typegen-output
           path: |
             artifacts/typegen/supabase.generated.ts
             artifacts/typegen/stderr.log

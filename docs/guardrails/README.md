@@ -135,6 +135,13 @@ R-{DOMAIN}-{NUMBER}
 
 ## How to Use These Guardrails
 
+### Fast Path (Before PR)
+
+1) Run: npm run preflight
+2) New endpoint? Use: pwsh -File scripts/api/new-endpoint.ps1 -Path /api/your/route
+3) New migration with policies? Use: pwsh -File scripts/db/new-migration.ps1 -Name add_your_table -Table your_table
+
+
 ### For Developers
 
 **When you hit a CI failure**:

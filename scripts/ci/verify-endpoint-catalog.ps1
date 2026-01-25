@@ -81,9 +81,45 @@ Write-Host "================================`n" -ForegroundColor Cyan
 # Run endpoint catalog generator
 # ========================================
 Write-Host "Running endpoint catalog generator..." -ForegroundColor Cyan
-& node $generator --repo-root $RepoRoot --out-dir $OutDir --allowlist $Allowlist
-if ($LASTEXITCODE -ne 0) {
-  throw "Endpoint catalog generator failed with exit code $LASTEXITCODE"
+$generatorOutput = & node $generator --repo-root $RepoRoot --out-dir $OutDir --allowlist $Allowlist 2>&1
+$generatorExitCode = $LASTEXITCODE
+if ($generatorOutput) {
+  $generatorOutput | ForEach-Object { Write-Host $_ }
+}
+if ($generatorExitCode -ne 0) {
+  $catalogPath = Join-Path $OutDir 'endpoint-catalog.json'
+  Write-Host "`n--- Orphan endpoints ---" -ForegroundColor Yellow
+  try {
+    $catalog = Get-Content $catalogPath -Raw | ConvertFrom-Json
+    $orphans = @()
+    foreach ($endpoint in @($catalog.endpoints)) {
+      $allowlisted = $false
+      if ($null -ne $endpoint.allowlisted) { $allowlisted = [bool]$endpoint.allowlisted }
+      elseif ($null -ne $endpoint.isAllowedOrphan) { $allowlisted = [bool]$endpoint.isAllowedOrphan }
+
+      $callsites = if ($null -ne $endpoint.callsites) { $endpoint.callsites } elseif ($null -ne $endpoint.usedBy) { $endpoint.usedBy } else { @() }
+      if (-not $allowlisted -and @($callsites).Count -eq 0) {
+        $orphans += $endpoint
+      }
+    }
+
+    if ($orphans.Count -eq 0) {
+      Write-Host "  (none)" -ForegroundColor DarkGray
+    } else {
+      $orphans | ForEach-Object {
+        $method = if ($_.methods -and $_.methods.Count -gt 0) { ($_.methods -join ', ') } else { '(none)' }
+        $path = $_.path
+        $provenance = if ($_.file) { $_.file } elseif ($_.source) { $_.source } else { '' }
+        [PSCustomObject]@{ method = $method; path = $path; provenance = $provenance }
+      } | Format-Table -AutoSize
+    }
+  } catch {
+    Write-Host "Failed to parse endpoint-catalog.json for orphan diagnostics." -ForegroundColor Yellow
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor DarkGray
+  }
+
+  Write-Host "FIX: Add a literal callsite fetch('/api/...') OR add to docs/api/endpoint-allowlist.json with justification." -ForegroundColor Yellow
+  throw "Endpoint catalog generator failed with exit code $generatorExitCode"
 }
 
 # ========================================
