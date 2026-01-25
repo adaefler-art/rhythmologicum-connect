@@ -61,12 +61,16 @@ function Write-Warning { param($Message) Write-Host "⚠️  $Message" -Foregrou
 
 # Resolve npx executable for current platform
 function Resolve-NpxPath {
-    if ($IsWindows) {
-        $npxCommand = Get-Command npx.cmd -ErrorAction Stop
+    try {
+        $npxCommand = Get-Command npx -ErrorAction Stop
         return $npxCommand.Source
+    } catch {
+        if (-not $IsWindows) {
+            throw
+        }
     }
 
-    $npxCommand = Get-Command npx -ErrorAction Stop
+    $npxCommand = Get-Command npx.cmd -ErrorAction Stop
     return $npxCommand.Source
 }
 
