@@ -19,6 +19,7 @@ This report identifies gaps, mismatches, and inconsistencies between written gua
 
 **Recent Resolutions**:
 - ✅ **R-DB-009 RLS Verification** (E72.ALIGN.P0.DBSEC.001): Automated check implemented, integrated into CI
+- ✅ **R-DB-007 TypeGen Determinism** (E72.ALIGN.P0.DBSEC.001): Strengthened evidence specification with hard gate implementation
 
 **Recommended Actions**: 5 remaining alignment PRs/issues (see Section 6)
 
@@ -53,6 +54,42 @@ These rules are documented but NOT automatically enforced. They rely on manual c
 - Self-documenting allowlist with required reasons
 
 **Status**: **ENFORCED** - See `RULES_VS_CHECKS_MATRIX.md` for complete details
+
+---
+
+### 1.1.1 R-DB-007: TypeScript Types Must Match Schema ✅ STRENGTHENED
+
+**Original Rule Statement**:
+> Generated TypeScript types (`lib/types/supabase.ts`) must exactly match the database schema. Run `npm run db:typegen` after schema changes.
+
+**Previous Status**:
+- **WEAK ENFORCEMENT** - Git diff check in CI workflow
+- Simple `git diff --exit-code lib/types/supabase.ts` after running typegen
+- Prone to generator drift (different CLI versions, environment differences)
+- No structured diagnostics on failure
+
+**Strengthening** (E72.ALIGN.P0.DBSEC.001):
+- ✅ **Deterministic hard gate implemented**
+- Script created: `scripts/db/typegen.ps1` (evidence-first design)
+- Pinned CLI: `supabase@2.63.1` (exact version, no drift)
+- SHA256 hash comparison (byte-for-byte verification)
+- Process-based execution (robust stdout/stderr capture)
+- Comprehensive evidence outputs (always printed)
+
+**Enforcement Details**:
+- Mode: `--local` (hardcoded for determinism)
+- Two modes: `-Generate` (local dev) and `-Verify` (CI check)
+- Evidence artifacts: `artifacts/typegen/supabase.generated.ts`, `artifacts/typegen/stderr.log`
+- Fail-closed conditions: CLI errors, empty output, hash mismatch
+- npm scripts: `db:typegen` (generate), `db:typegen:verify` (verify)
+
+**Migration Note**:
+- **Semantics unchanged**: Rule still requires types to match schema
+- **Enforcement strengthened**: Added comprehensive diagnostics, pinned CLI version, SHA256 verification
+- **No weakening**: Fail-closed design, stricter than previous git diff approach
+- **Rationale**: Eliminates recurring CI failures from generator drift
+
+**Status**: **ENFORCED (STRENGTHENED)** - See `RULES_VS_CHECKS_MATRIX.md` for complete details
 
 ---
 

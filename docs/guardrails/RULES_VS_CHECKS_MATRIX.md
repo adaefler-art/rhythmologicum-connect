@@ -420,6 +420,12 @@ Each rule entry includes:
 
 **Rule Text**: Generated TypeScript types (`lib/types/supabase.ts`) must exactly match the database schema. Run `npm run db:typegen` after schema changes.
 
+**History/Migration Note**: 
+- Previously enforced via simple git diff check in CI
+- Strengthened (E72.ALIGN.P0.DBSEC.001): Implemented deterministic hard gate with SHA256 verification, pinned CLI version, and comprehensive evidence outputs
+- Semantics unchanged (types must match schema); enforcement mechanism strengthened (no weakening)
+- See `RULES_VS_CHECKS_DIFF.md` section 1.1.1 for complete migration details
+
 **Scope**:
 - `lib/types/supabase.ts`
 - Generated from: Supabase local instance schema
