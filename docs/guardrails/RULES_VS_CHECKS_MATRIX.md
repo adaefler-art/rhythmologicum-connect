@@ -560,29 +560,30 @@ Each rule entry includes:
 
 **Migration Note**: This rule was previously labeled R-DB-010 (incorrect domain classification). Corrected to R-API-003 in E72.ALIGN.P1.DETCON.001. No semantic change to the rule itself.
 
-**Rule Text**: All API endpoints must return standard format: `{ success: boolean, data?: T, error?: { code: string, message: string } }` OR use the canonical `ApiResponse<T>` discriminated union type.
+**Rule Text**: All API endpoints must return responses conforming to the standard format: `{ success: boolean, data?: T, error?: { code: string, message: string } }`. Stricter typing available via `StrictApiResponse<T>` discriminated union.
 
 **Scope**:
 - All API route handlers in `app/api/**/*.ts` and `apps/*/app/api/**/*.ts`
 
 **Enforced By**:
-- TypeScript types: `lib/types/api.ts` (canonical `ApiResponse<T>` type)
-- Helper functions: `ok<T>()`, `fail()` constructors
-- Changed files mode: New/updated API routes encouraged to use canonical type
+- TypeScript types: `lib/types/api.ts` (strict helpers with discriminated unions)
+- Existing helpers: `lib/api/responses.ts` and `lib/api/responseTypes.ts` (compatible)
+- Changed files mode: New/updated API routes encouraged to use strict or existing helpers
 - Documentation: `docs/canon/CONTRACTS.md`
 
 **Pass Condition**:
-- New/changed API routes use `ApiResponse<T>` from `lib/types/api.ts`, OR
+- New/changed API routes use helpers from `lib/types/api.ts` or `lib/api/responses.ts`, OR
 - Responses conform to documented format (manual code review)
-- TypeScript compilation succeeds
+- TypeScript compilation succeeds with ErrorCode enum usage
 
 **Exceptions**:
 - Legacy endpoints (gradual migration)
-- Existing `lib/api/responses.ts` helpers remain valid (compatible with contract)
+- Both helper sets are compatible and can coexist
 
 **Evidence Output**:
 - TypeScript compilation success
 - Code review verification
+- ErrorCode enum enforces valid error codes
 
 **Known Gaps**:
 - **PARTIAL ENFORCEMENT** - Changed files only (gradual migration)

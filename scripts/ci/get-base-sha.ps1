@@ -205,7 +205,7 @@ if (![string]::IsNullOrWhiteSpace($baseSha) -and (Test-GitObject $baseSha)) {
         context = $context
     } | ConvertTo-Json -Depth 5 -Compress
     
-    Write-Host "::set-output name=json::$output"
+    # GitHub Actions output (not deprecated method)
     Write-Host "BASE_SHA=$baseSha"
     Write-Host "HEAD_SHA=$HeadSha"
     

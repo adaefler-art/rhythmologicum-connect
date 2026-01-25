@@ -1,12 +1,12 @@
 /**
- * E72.ALIGN.P1.DETCON.001: Example API route demonstrating ApiResponse<T> usage
+ * E72.ALIGN.P1.DETCON.001: Example API route demonstrating StrictApiResponse<T> usage
  * 
- * This is a reference implementation showing how to use the canonical API response type.
+ * This is a reference implementation showing how to use the strict API response type.
  * New/changed API routes should follow this pattern.
  */
 
 import { NextResponse } from 'next/server'
-import { ok, fail } from '@/lib/types/api'
+import { ok, fail, ErrorCode } from '@/lib/types/api'
 
 // Example: GET /api/example/users
 export async function GET() {
@@ -21,9 +21,9 @@ export async function GET() {
     return NextResponse.json(ok(users))
     // Returns: { success: true, data: [...] }
   } catch (error) {
-    // Use fail() helper for error response
+    // Use fail() helper with ErrorCode enum for error response
     return NextResponse.json(
-      fail('INTERNAL_ERROR', 'Failed to fetch users'),
+      fail(ErrorCode.INTERNAL_ERROR, 'Failed to fetch users'),
       { status: 500 }
     )
     // Returns: { success: false, error: { code: 'INTERNAL_ERROR', message: '...' } }
@@ -35,10 +35,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     
-    // Validation example
+    // Validation example with ErrorCode enum
     if (!body.email) {
       return NextResponse.json(
-        fail('VALIDATION_ERROR', 'Email is required'),
+        fail(ErrorCode.VALIDATION_FAILED, 'Email is required'),
         { status: 400 }
       )
     }
@@ -53,8 +53,9 @@ export async function POST(request: Request) {
     return NextResponse.json(ok(newUser), { status: 201 })
   } catch (error) {
     return NextResponse.json(
-      fail('INTERNAL_ERROR', 'Failed to create user'),
+      fail(ErrorCode.INTERNAL_ERROR, 'Failed to create user'),
       { status: 500 }
     )
   }
 }
+

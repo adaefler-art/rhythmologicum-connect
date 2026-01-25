@@ -1,39 +1,49 @@
 /**
  * E72.ALIGN.P1.DETCON.001: Canonical API Response Contract
  * 
- * This file defines the canonical API response type that all endpoints must use.
- * It provides type-safe helpers for constructing responses and enforces a consistent
- * contract across the entire API surface.
+ * This file provides stricter, type-safe helpers for constructing API responses.
+ * It complements the existing `lib/api/responseTypes.ts` and `lib/api/responses.ts`
+ * with discriminated union types for improved type safety.
  * 
  * Contract Rule: R-API-003 (formerly misclassified as R-DB-010)
- * All API endpoints MUST return responses conforming to ApiResponse<T>
+ * All API endpoints SHOULD use these helpers or the existing response utilities.
+ * 
+ * Note: This is compatible with existing ApiResponse type in lib/api/responseTypes.ts
+ * but provides stricter type checking through discriminated unions.
  */
 
+import { ErrorCode } from '@/lib/api/responseTypes'
+
 /**
- * Canonical API response type
+ * Stricter API response type using discriminated unions
  * 
  * Success case: { success: true, data: T }
- * Error case: { success: false, error: { code: string, message: string } }
+ * Error case: { success: false, error: { code: ErrorCode, message: string } }
  * 
- * This is a discriminated union type that provides type-safe response handling.
+ * This is a stricter subset of the existing ApiResponse type that:
+ * - Makes the discriminator (success) non-nullable
+ * - Ensures data XOR error (not both)
+ * - Provides better type inference in conditional branches
+ * 
+ * Compatible with existing lib/api/responseTypes.ts ApiResponse<T>
  */
-export type ApiResponse<T> =
+export type StrictApiResponse<T> =
   | { success: true; data: T }
-  | { success: false; error: { code: string; message: string } }
+  | { success: false; error: { code: ErrorCode; message: string } }
 
 /**
  * Helper function to create a success response
  * 
  * @param data - The data payload to return
- * @returns A success ApiResponse
+ * @returns A success response conforming to StrictApiResponse
  * 
  * @example
  * ```typescript
- * return ok({ userId: '123', name: 'John' })
+ * return NextResponse.json(ok({ userId: '123', name: 'John' }))
  * // Returns: { success: true, data: { userId: '123', name: 'John' } }
  * ```
  */
-export function ok<T>(data: T): ApiResponse<T> {
+export function ok<T>(data: T): StrictApiResponse<T> {
   return {
     success: true,
     data,
@@ -43,17 +53,22 @@ export function ok<T>(data: T): ApiResponse<T> {
 /**
  * Helper function to create an error response
  * 
- * @param code - Machine-readable error code (e.g., 'VALIDATION_ERROR')
+ * @param code - Machine-readable error code from ErrorCode enum
  * @param message - Human-readable error message
- * @returns An error ApiResponse
+ * @returns An error response conforming to StrictApiResponse
  * 
  * @example
  * ```typescript
- * return fail('VALIDATION_ERROR', 'Email is required')
- * // Returns: { success: false, error: { code: 'VALIDATION_ERROR', message: 'Email is required' } }
+ * import { ErrorCode } from '@/lib/api/responseTypes'
+ * 
+ * return NextResponse.json(
+ *   fail(ErrorCode.VALIDATION_FAILED, 'Email is required'),
+ *   { status: 400 }
+ * )
+ * // Returns: { success: false, error: { code: 'VALIDATION_FAILED', message: '...' } }
  * ```
  */
-export function fail(code: string, message: string): ApiResponse<never> {
+export function fail(code: ErrorCode, message: string): StrictApiResponse<never> {
   return {
     success: false,
     error: { code, message },
@@ -69,7 +84,7 @@ export function fail(code: string, message: string): ApiResponse<never> {
  * @example
  * ```typescript
  * const response = await fetch('/api/users')
- * const data = await response.json() as ApiResponse<User>
+ * const data = await response.json() as StrictApiResponse<User>
  * 
  * if (isSuccess(data)) {
  *   // TypeScript knows data.data is available
@@ -80,7 +95,7 @@ export function fail(code: string, message: string): ApiResponse<never> {
  * }
  * ```
  */
-export function isSuccess<T>(response: ApiResponse<T>): response is { success: true; data: T } {
+export function isSuccess<T>(response: StrictApiResponse<T>): response is { success: true; data: T } {
   return response.success === true
 }
 
@@ -91,7 +106,10 @@ export function isSuccess<T>(response: ApiResponse<T>): response is { success: t
  * @returns True if the response is an error
  */
 export function isError<T>(
-  response: ApiResponse<T>,
-): response is { success: false; error: { code: string; message: string } } {
+  response: StrictApiResponse<T>,
+): response is { success: false; error: { code: ErrorCode; message: string } } {
   return response.success === false
 }
+
+// Re-export ErrorCode for convenience
+export { ErrorCode } from '@/lib/api/responseTypes'
