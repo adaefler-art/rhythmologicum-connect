@@ -197,15 +197,9 @@ if (![string]::IsNullOrWhiteSpace($baseSha) -and (Test-GitObject $baseSha)) {
     Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
     Write-Host "" -ForegroundColor Green
     
-    # Output structured JSON for CI consumption
-    $output = @{
-        success = $true
-        base_sha = $baseSha
-        head_sha = $HeadSha
-        context = $context
-    } | ConvertTo-Json -Depth 5 -Compress
-    
-    # GitHub Actions output (not deprecated method)
+    # Output for CI consumption
+    # Using simple key=value format (GitHub Actions environment variables)
+    # Note: Avoiding deprecated ::set-output command
     Write-Host "BASE_SHA=$baseSha"
     Write-Host "HEAD_SHA=$HeadSha"
     
