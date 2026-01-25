@@ -32,18 +32,21 @@ CREATE INDEX IF NOT EXISTS patient_state_user_id_idx ON patient_state USING btre
 ALTER TABLE patient_state ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Patients can view their own state
+DROP POLICY IF EXISTS "Patients can view own state" ON patient_state;
 CREATE POLICY "Patients can view own state" 
 ON patient_state 
 FOR SELECT 
 USING (user_id = auth.uid());
 
 -- RLS Policy: Patients can insert their own state
+DROP POLICY IF EXISTS "Patients can insert own state" ON patient_state;
 CREATE POLICY "Patients can insert own state" 
 ON patient_state 
 FOR INSERT 
 WITH CHECK (user_id = auth.uid());
 
 -- RLS Policy: Patients can update their own state
+DROP POLICY IF EXISTS "Patients can update own state" ON patient_state;
 CREATE POLICY "Patients can update own state" 
 ON patient_state 
 FOR UPDATE 
@@ -51,6 +54,7 @@ USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid());
 
 -- RLS Policy: Clinicians can view all patient states
+DROP POLICY IF EXISTS "Clinicians can view all patient states" ON patient_state;
 CREATE POLICY "Clinicians can view all patient states" 
 ON patient_state 
 FOR SELECT 
