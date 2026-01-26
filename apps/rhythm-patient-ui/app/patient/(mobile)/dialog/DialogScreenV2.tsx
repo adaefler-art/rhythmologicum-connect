@@ -25,6 +25,11 @@ interface StubbedMessage {
   timestamp: string
 }
 
+// Helper to check if context is valid
+function isValidContext(context: string | null, assessmentId: string | null): boolean {
+  return context === 'dashboard' || (context === 'results' && !!assessmentId)
+}
+
 function getStubbedConversation(context: string | null, assessmentId: string | null): StubbedMessage[] {
   const now = new Date()
   const timestamp = (minutesAgo: number) => {
@@ -75,7 +80,7 @@ export function DialogScreenV2() {
   const assessmentId = searchParams.get('assessmentId')
   
   const messages = getStubbedConversation(context, assessmentId)
-  const hasContext = context === 'dashboard' || (context === 'results' && assessmentId)
+  const hasContext = isValidContext(context, assessmentId)
 
   return (
     <div className="w-full px-4 pb-8 pt-5 sm:px-6">
