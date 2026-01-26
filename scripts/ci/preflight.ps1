@@ -35,6 +35,28 @@ Write-Host "Pwsh:    $pwshVersion"
 Write-Host "Node:    $nodeVersion"
 Write-Host "npm:     $npmVersion"
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..') | Select-Object -First 1).Path
+
+Write-Host "==> Preflight guardrails" -ForegroundColor Cyan
+Push-Location $repoRoot
+try {
+  $trackedNext = git ls-files "**/.next/**" 2>$null
+  if ($trackedNext) {
+    Write-Host "❌ Tracked .next artifacts detected. Remove them from git index." -ForegroundColor Red
+    $trackedNext | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    throw "Tracked .next artifacts present"
+  }
+
+  $trackedVersion = git ls-files "public/version.json" "apps/*/public/version.json" 2>$null
+  if ($trackedVersion) {
+    Write-Host "❌ Tracked version.json artifacts detected. Remove them from git index." -ForegroundColor Red
+    $trackedVersion | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    throw "Tracked version.json artifacts present"
+  }
+} finally {
+  Pop-Location
+}
+
 function Invoke-NonFatalCommand {
   param(
     [string]$Label,

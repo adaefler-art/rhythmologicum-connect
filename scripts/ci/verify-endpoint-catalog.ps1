@@ -34,6 +34,13 @@ try {
     $trackedNext | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
     throw "Tracked .next artifacts present"
   }
+
+  $trackedVersion = git ls-files "public/version.json" "apps/*/public/version.json" 2>$null
+  if ($trackedVersion) {
+    Write-Host "❌ Tracked version.json artifacts detected. Remove them from git index." -ForegroundColor Red
+    $trackedVersion | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    throw "Tracked version.json artifacts present"
+  }
 } finally {
   Pop-Location
 }

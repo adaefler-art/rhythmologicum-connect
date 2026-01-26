@@ -31,6 +31,7 @@ function isGeneratedOrBuildOutput(file) {
   const normalized = file.replace(/\\/g, '/')
   const excludedDirs = [
     '/.next/',
+    '/.next/types/',
     '/node_modules/',
     '/dist/',
     '/build/',

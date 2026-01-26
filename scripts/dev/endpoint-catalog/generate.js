@@ -25,6 +25,7 @@ function toGitPath(p) {
 
 const EXCLUDED_SCAN_DIRS = [
   '/.next/',
+  '/.next/types/',
   '/node_modules/',
   '/dist/',
   '/build/',

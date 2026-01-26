@@ -2350,7 +2350,9 @@
     },
     {
       "path": "/api/funnels/catalog",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/funnels/catalog/route.ts",
       "intent": null,
       "accessRole": "patient",
