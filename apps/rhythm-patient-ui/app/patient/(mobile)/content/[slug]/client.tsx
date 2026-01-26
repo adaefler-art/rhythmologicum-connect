@@ -1,9 +1,9 @@
 /**
- * E6.5.7: Content Page Client Component
+ * E6.5.7: Content Page Client Component (I2.5 Navigation Consistency)
  * 
  * Renders content page with:
  * - Safe markdown rendering (XSS-protected)
- * - Back navigation to dashboard
+ * - Back navigation to dashboard (canonical route)
  * - No PHI/user-specific data
  */
 
@@ -16,6 +16,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { type Components } from 'react-markdown'
 import { ArrowLeft } from '@/lib/ui/mobile-v2/icons'
+import { CANONICAL_ROUTES } from '../../../utils/navigation'
 
 type ContentPageClientProps = {
   contentPage: ContentPage
@@ -47,7 +48,8 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
   const router = useRouter()
 
   const handleBackToDashboard = () => {
-    router.push('/patient/dashboard')
+    // I2.5: Use canonical route for deterministic navigation
+    router.push(CANONICAL_ROUTES.DASHBOARD)
   }
 
   return (
