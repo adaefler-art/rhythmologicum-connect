@@ -15,6 +15,10 @@ export const metadata = {
   description: 'View your health metrics, trends, and achievements',
 }
 
+// Force dynamic rendering - don't prerender this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function PersonalInsightsV2Page() {
   // Auth check
   const user = await getCurrentUser()

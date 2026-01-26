@@ -252,7 +252,7 @@ export default function PersonalInsightsV2Client({ initialPatientState, hasError
             <HealthScore
               score={patientState.metrics.healthScore.current}
               maxScore={100}
-              trend={patientState.metrics.healthScore.delta > 0 ? 'up' : patientState.metrics.healthScore.delta < 0 ? 'down' : 'stable'}
+              trend={patientState.metrics.healthScore.delta > 0 ? 'up' : patientState.metrics.healthScore.delta < 0 ? 'down' : 'neutral'}
               label="Overall Health Score"
             />
           </section>
