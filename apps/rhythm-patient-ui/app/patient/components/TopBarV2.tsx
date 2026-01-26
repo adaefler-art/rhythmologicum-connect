@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 export type TopBarVariant = 'tab' | 'flow' | 'result'
 
@@ -16,21 +17,30 @@ interface TopBarV2Props {
 }
 
 /**
- * TopBarV2 Component
+ * TopBarV2 Component (I2.5 Navigation Consistency)
  * 
  * Mobile-first top navigation bar with 3 variants:
  * 
  * **Variant A (Tab Screens)**: Burger + Title + Bell (+ Avatar optional)
  * - Used on: Dashboard, Assess, Dialog, Profile
  * - Shows: Menu burger, screen title, notification bell
+ * - Back: Not applicable (tabs use bottom nav)
  * 
  * **Variant B (Assessment Flow)**: Back + Title + Close
  * - Used on: Active funnel/assessment flows
  * - Shows: Back button, progress/title, close button
+ * - Back: Handled by onBackClick (previous question) or fallback to Assess
+ * - Close: Deterministic exit to /patient/assess (canonical)
  * 
  * **Variant C (Results)**: Back + Title + optional overflow menu
  * - Used on: Assessment result pages
  * - Shows: Back button, result title, optional menu
+ * - Back: Deterministic to /patient/dashboard (canonical)
+ * 
+ * Navigation Semantics (I2.5):
+ * - All navigation targets are deterministic and canonical
+ * - NO browser history fallbacks (no router.back())
+ * - Custom handlers take precedence over defaults
  * 
  * Features:
  * - Safe area padding for notched devices
@@ -49,19 +59,31 @@ export function TopBarV2({
 }: TopBarV2Props) {
   const router = useRouter()
 
+  // I2.5: Deterministic back navigation - no browser history fallbacks
   const handleBack = () => {
     if (onBackClick) {
       onBackClick()
     } else {
-      router.back()
+      // Flow variant: back to assessments list (if not handled by component)
+      // Result variant: back to dashboard
+      const fallbackRoute = variant === 'flow' 
+        ? CANONICAL_ROUTES.ASSESS 
+        : CANONICAL_ROUTES.DASHBOARD
+      router.push(fallbackRoute)
     }
   }
 
+  // I2.5: Deterministic close navigation - always canonical routes
   const handleClose = () => {
     if (onCloseClick) {
       onCloseClick()
     } else {
-      router.push('/patient/dashboard')
+      // Flow variant: close to assessments list
+      // All other variants: close to dashboard
+      const closeRoute = variant === 'flow' 
+        ? CANONICAL_ROUTES.ASSESS 
+        : CANONICAL_ROUTES.DASHBOARD
+      router.push(closeRoute)
     }
   }
 

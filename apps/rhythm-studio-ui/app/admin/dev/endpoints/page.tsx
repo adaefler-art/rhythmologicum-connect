@@ -38,7 +38,14 @@ type VersionInfo = {
 
 async function loadCatalog(): Promise<EndpointCatalog | null> {
   try {
-    const catalogPath = path.join(process.cwd(), 'docs', 'api', 'endpoint-catalog.json')
+    const catalogPath = path.join(
+      process.cwd(),
+      'apps',
+      'rhythm-studio-ui',
+      'public',
+      'dev',
+      'endpoint-catalog.json',
+    )
     const raw = await fs.readFile(catalogPath, 'utf8')
     return JSON.parse(raw) as EndpointCatalog
   } catch {
@@ -152,10 +159,10 @@ export default async function DevEndpointsPage() {
             /version.json
           </a>
           <a
-            href="/api/admin/dev/endpoint-catalog"
+            href="/dev/endpoint-catalog.json"
             className="inline-flex items-[center] rounded-md border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-800"
           >
-            /api/admin/dev/endpoint-catalog
+            /dev/endpoint-catalog.json
           </a>
           {versionInfo?.baseUrl ? (
             <span className="text-xs text-slate-400">Base: {versionInfo.baseUrl}</span>

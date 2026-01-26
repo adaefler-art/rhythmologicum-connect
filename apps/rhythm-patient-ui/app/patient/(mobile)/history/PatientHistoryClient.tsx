@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
+import { CANONICAL_ROUTES } from '../utils/navigation'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -246,10 +247,10 @@ export default function PatientHistoryClient() {
   if (state.status === 'error') {
     return (
       <div className="flex w-full flex-col gap-6 px-4 py-10">
-        {/* E6.5.8: Back to Dashboard button in error state */}
+        {/* E6.5.8: Back to Dashboard button in error state (I2.5: canonical route) */}
         <button
           type="button"
-          onClick={() => router.push('/patient/dashboard')}
+          onClick={() => router.push(CANONICAL_ROUTES.DASHBOARD)}
           className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
           aria-label="Zurück zum Dashboard"
         >
@@ -288,7 +289,7 @@ export default function PatientHistoryClient() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/patient/dashboard')}
+              onClick={() => router.push(CANONICAL_ROUTES.DASHBOARD)}
               className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Zum Dashboard
@@ -305,10 +306,10 @@ export default function PatientHistoryClient() {
   if (measures.length === 0) {
     return (
       <div className="flex w-full flex-col gap-6 px-4 py-10">
-        {/* E6.5.8: Back to Dashboard button in empty state */}
+        {/* E6.5.8: Back to Dashboard button in empty state (I2.5: canonical route) */}
         <button
           type="button"
-          onClick={() => router.push('/patient/dashboard')}
+          onClick={() => router.push(CANONICAL_ROUTES.DASHBOARD)}
           className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
           aria-label="Zurück zum Dashboard"
         >
@@ -350,7 +351,7 @@ export default function PatientHistoryClient() {
             </p>
             <button
               type="button"
-              onClick={() => router.push('/patient/dashboard')}
+              onClick={() => router.push(CANONICAL_ROUTES.DASHBOARD)}
               className="mt-6 inline-flex items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-opacity"
               style={{
                 backgroundColor: 'var(--color-primary-600)',
@@ -375,10 +376,10 @@ export default function PatientHistoryClient() {
       {/* Header */}
       <section>
         <div className="flex flex-col gap-3">
-          {/* E6.5.8: Back to Dashboard button */}
+          {/* E6.5.8: Back to Dashboard button (I2.5: canonical route) */}
           <button
             type="button"
-            onClick={() => router.push('/patient/dashboard')}
+            onClick={() => router.push(CANONICAL_ROUTES.DASHBOARD)}
             className="self-start inline-flex items-center gap-2 text-sm font-medium text-sky-700 hover:text-sky-900 hover:underline transition-colors"
             aria-label="Zurück zum Dashboard"
           >

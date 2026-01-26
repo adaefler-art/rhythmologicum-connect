@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 interface BottomNavItem {
   href: string
@@ -10,13 +11,17 @@ interface BottomNavItem {
 }
 
 /**
- * BottomNavV2 Component
+ * BottomNavV2 Component (I2.5 Navigation Consistency)
  * 
  * Mobile-first bottom navigation with 4 tabs:
  * - Home (Dashboard)
  * - Assess (Assessments)
  * - Dialog (Communication)
  * - Profile (User Profile)
+ * 
+ * Navigation (I2.5):
+ * - Uses canonical routes from navigation utilities
+ * - Ensures consistent navigation targets across the app
  * 
  * Features:
  * - Active state based on current route
@@ -29,22 +34,22 @@ export function BottomNavV2() {
 
   const navItems: BottomNavItem[] = [
     {
-      href: '/patient/dashboard',
+      href: CANONICAL_ROUTES.DASHBOARD,
       label: 'Home',
       icon: '🏠',
     },
     {
-      href: '/patient/assess',
+      href: CANONICAL_ROUTES.ASSESS,
       label: 'Assess',
       icon: '📝',
     },
     {
-      href: '/patient/dialog',
+      href: CANONICAL_ROUTES.DIALOG,
       label: 'Dialog',
       icon: '💬',
     },
     {
-      href: '/patient/profile',
+      href: CANONICAL_ROUTES.PROFILE,
       label: 'Profile',
       icon: '👤',
     },
@@ -52,8 +57,8 @@ export function BottomNavV2() {
 
   const isActive = (href: string) => {
     // Exact match for dashboard
-    if (href === '/patient/dashboard') {
-      return pathname === '/patient/dashboard' || pathname === '/patient'
+    if (href === CANONICAL_ROUTES.DASHBOARD) {
+      return pathname === CANONICAL_ROUTES.DASHBOARD || pathname === '/patient'
     }
     // Prefix match for others (e.g., /patient/assess includes /patient/assess/...)
     return pathname?.startsWith(href) ?? false

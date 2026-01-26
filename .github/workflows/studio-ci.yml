@@ -23,6 +23,8 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
+      - name: Verify endpoint catalog
+        run: pwsh -File scripts/ci/verify-endpoint-catalog.ps1
       - name: Build Studio UI
         run: npm run build:studio
       - name: Test Core Contracts

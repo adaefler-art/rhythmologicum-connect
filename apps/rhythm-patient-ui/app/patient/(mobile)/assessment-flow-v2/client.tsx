@@ -12,6 +12,7 @@ import {
   Chip,
 } from '@/lib/ui/mobile-v2'
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
+import { getAssessmentFlowExitRoute } from '../utils/navigation'
 
 // ==========================================
 // TYPES
@@ -256,10 +257,12 @@ export default function AssessmentFlowV2Client({
     ? Math.round((currentStep / totalSteps) * 100)
     : 0
   const selectedAnswer = answers[currentQuestion?.id]
-  const exitRoute = mode === 'demo' ? '/patient/assessments-v2' : '/patient/assess'
+  
+  // I2.5: Use canonical navigation utility for deterministic exit
+  const exitRoute = getAssessmentFlowExitRoute(mode)
 
   // ==========================================
-  // EVENT HANDLERS
+  // EVENT HANDLERS (I2.5 Navigation Consistency)
   // ==========================================
 
   const handleSelectOption = (optionId: string) => {
@@ -274,7 +277,7 @@ export default function AssessmentFlowV2Client({
     if (currentStep < totalSteps) {
       setCurrentStep((prev) => prev + 1)
     } else {
-      // Assessment complete
+      // Assessment complete - deterministic exit via canonical route
       router.push(exitRoute)
     }
   }
@@ -283,6 +286,7 @@ export default function AssessmentFlowV2Client({
     if (currentStep < totalSteps) {
       setCurrentStep((prev) => prev + 1)
     } else {
+      // Last question skipped - deterministic exit via canonical route
       router.push(exitRoute)
     }
   }
