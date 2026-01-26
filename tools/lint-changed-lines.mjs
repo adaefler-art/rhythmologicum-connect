@@ -34,7 +34,9 @@ function isGeneratedOrBuildOutput(file) {
     '/node_modules/',
     '/dist/',
     '/build/',
+    '/.turbo/',
     '/out/',
+    '/.vercel/',
     '/coverage/',
     '/artifacts/',
   ]
@@ -43,6 +45,20 @@ function isGeneratedOrBuildOutput(file) {
   if (/\.generated\.[^/]+$/i.test(normalized)) return true
 
   return false
+}
+
+function listTrackedNextArtifacts() {
+  try {
+    const raw = execFileSync('git', ['ls-files', '-z', '--', '**/.next/**'], {
+      encoding: 'utf8',
+    })
+    return raw
+      .split('\0')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  } catch {
+    return []
+  }
 }
 
 function getChangedFiles() {
@@ -57,10 +73,26 @@ function getChangedFiles() {
 
 const changedFiles = getChangedFiles()
 
+const trackedNextArtifacts = listTrackedNextArtifacts()
+if (trackedNextArtifacts.length > 0) {
+  console.error('Tracked .next artifacts detected. Remove them from git index before proceeding.')
+  for (const file of trackedNextArtifacts.slice(0, 20)) {
+    console.error(`- ${file}`)
+  }
+  if (trackedNextArtifacts.length > 20) {
+    console.error(`...and ${trackedNextArtifacts.length - 20} more`)
+  }
+  process.exit(1)
+}
+
 const artifactsDir = path.join(process.cwd(), '.lint-artifacts')
 fs.mkdirSync(artifactsDir, { recursive: true })
 const eslintReportPath = path.join(artifactsDir, 'eslint-report.json')
 const changedRangesPath = path.join(artifactsDir, 'changed_line_ranges.json')
+
+console.log(
+  'Filtered generated paths: .next, node_modules, dist, build, .turbo, out, .vercel, coverage, artifacts.',
+)
 
 if (changedFiles.length === 0) {
   console.log('No TS/TSX source changes detected after filtering generated outputs.')

@@ -23,6 +23,23 @@ function toGitPath(p) {
   return String(p).replace(/\\/g, '/')
 }
 
+const EXCLUDED_SCAN_DIRS = [
+  '/.next/',
+  '/node_modules/',
+  '/dist/',
+  '/build/',
+  '/.turbo/',
+  '/out/',
+  '/.vercel/',
+  '/coverage/',
+  '/artifacts/',
+]
+
+function isExcludedPath(relPath) {
+  const normalized = toGitPath(relPath)
+  return EXCLUDED_SCAN_DIRS.some((dir) => normalized.includes(dir))
+}
+
 async function readSourceFile(repoRoot, absPath) {
   const relPath = toGitPath(path.relative(repoRoot, absPath))
   try {
@@ -114,6 +131,7 @@ function findRouteFiles(repoRoot) {
   const filteredFiles = files
     .filter((f) => {
       const rel = toGitPath(path.relative(repoRoot, f))
+      if (isExcludedPath(rel)) return false
       if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) {
         return false
       }
@@ -198,6 +216,7 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   const trackedFiles = listAllTrackedFiles(repoRoot)
     .filter((f) => {
       const rel = toGitPath(path.relative(repoRoot, f))
+      if (isExcludedPath(rel)) return false
       if (!allowedExt.has(path.extname(f))) return false
       if (rel.includes('scripts/dev/endpoint-catalog/__tests__/fixtures/')) return false
       return /(^|\/)(app|lib)\//.test(rel) || /^apps\/[^/]+\/(app|lib)\//.test(rel)
@@ -283,8 +302,19 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 
   await fsp.mkdir(outDir, { recursive: true })
 
+  const jsonContent = `${JSON.stringify(catalogJson, null, 2)}\n`
   const jsonPath = path.join(outDir, 'endpoint-catalog.json')
-  await fsp.writeFile(jsonPath, `${JSON.stringify(catalogJson, null, 2)}\n`, 'utf8')
+  await fsp.writeFile(jsonPath, jsonContent, 'utf8')
+
+  const devTargets = [
+    path.join(repoRoot, 'apps', 'rhythm-studio-ui', 'public', 'dev', 'endpoint-catalog.json'),
+    path.join(repoRoot, 'apps', 'rhythm-patient-ui', 'public', 'dev', 'endpoint-catalog.json'),
+  ]
+
+  for (const target of devTargets) {
+    await fsp.mkdir(path.dirname(target), { recursive: true })
+    await fsp.writeFile(target, jsonContent, 'utf8')
+  }
 
   // ENDPOINT_CATALOG.md
   const mdLines = []
@@ -392,6 +422,10 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
 async function main() {
   const args = parseArgs(process.argv)
 
+  console.log(
+    'Excluding generated directories from scan: .next, node_modules, dist, build, .turbo, out, .vercel, coverage, artifacts.',
+  )
+
   // Log allowlist status
   if (args.allowlistPath) {
     console.log(`Allowlist: enabled (${args.allowlistPath})`)
@@ -403,6 +437,18 @@ async function main() {
 
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'ENDPOINT_CATALOG.md'))}`)
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'endpoint-catalog.json'))}`)
+  console.log(
+    `Wrote: ${path.relative(
+      args.repoRoot,
+      path.join('apps', 'rhythm-studio-ui', 'public', 'dev', 'endpoint-catalog.json'),
+    )}`,
+  )
+  console.log(
+    `Wrote: ${path.relative(
+      args.repoRoot,
+      path.join('apps', 'rhythm-patient-ui', 'public', 'dev', 'endpoint-catalog.json'),
+    )}`,
+  )
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'ORPHAN_ENDPOINTS.md'))}`)
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'UNKNOWN_CALLSITES.md'))}`)
   console.log(`Wrote: ${path.relative(args.repoRoot, path.join(args.outDir, 'UNKNOWN_ACCESS_ENDPOINTS.md'))}`)

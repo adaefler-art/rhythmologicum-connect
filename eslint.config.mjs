@@ -170,9 +170,15 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
+    "**/.next/**",
+    "**/.turbo/**",
+    "**/.vercel/**",
+    "**/out/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/artifacts/**",
+    "**/node_modules/**",
     "next-env.d.ts",
 
     // Project docs contain design/reference code that is not shipped.

@@ -24,6 +24,21 @@ if (-not (Test-Path $generator)) {
 }
 
 # ========================================
+# Fail fast if tracked .next artifacts exist
+# ========================================
+Push-Location $RepoRoot
+try {
+  $trackedNext = git ls-files "**/.next/**" 2>$null
+  if ($trackedNext) {
+    Write-Host "❌ Tracked .next artifacts detected. Remove them from git index." -ForegroundColor Red
+    $trackedNext | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    throw "Tracked .next artifacts present"
+  }
+} finally {
+  Pop-Location
+}
+
+# ========================================
 # Display diagnostic information
 # ========================================
 Write-Host "`n=== Environment Diagnostics ===" -ForegroundColor Cyan
