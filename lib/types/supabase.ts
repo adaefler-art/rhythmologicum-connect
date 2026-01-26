@@ -1594,6 +1594,41 @@ export type Database = {
           },
         ]
       }
+      patient_state: {
+        Row: {
+          created_at: string
+          id: string
+          patient_state_version: string
+          state_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_state_version?: string
+          state_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_state_version?: string
+          state_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       pillars: {
         Row: {
           created_at: string

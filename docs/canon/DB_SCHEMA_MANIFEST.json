@@ -34,6 +34,7 @@
     "patient_funnels",
     "patient_measures",
     "patient_profiles",
+    "patient_state",
     "pillars",
     "pilot_flow_events",
     "priority_rankings",
@@ -158,6 +159,14 @@
       "user_id",
       "date_of_birth",
       "gender",
+      "created_at",
+      "updated_at"
+    ],
+    "patient_state": [
+      "id",
+      "user_id",
+      "patient_state_version",
+      "state_data",
       "created_at",
       "updated_at"
     ],
