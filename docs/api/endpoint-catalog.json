@@ -2749,8 +2749,13 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/state/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/insights-v2/client.tsx",
+          "apiPath": "/api/patient/state",
+          "kind": "fetch"
+        },
         {
           "file": "apps/rhythm-patient-ui/app/patient/PatientLayoutClient.tsx",
           "apiPath": "/api/patient/state",

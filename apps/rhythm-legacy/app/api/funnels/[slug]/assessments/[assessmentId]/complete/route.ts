@@ -28,6 +28,11 @@ import { createEvidencePack } from '@/lib/workup/helpers'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelCompleted } from '@/lib/telemetry/events'
 import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
+import {
+  safeValidatePatientState,
+  createEmptyPatientState,
+  type PatientStateV01,
+} from '@/lib/api/contracts/patient/state'
 
 /**
  * B5/B8: Complete an assessment
@@ -272,6 +277,18 @@ async function handleCompleteAssessment(
       console.error('[complete] Failed to track KPI event', err)
     })
 
+    // I2.4: Update patient state with assessment completion
+    await updatePatientStateOnAssessmentComplete(
+      supabase,
+      user.id,
+      assessmentId,
+      slug,
+      completedAt,
+    ).catch((err) => {
+      // Don't fail the completion if state update fails
+      console.error('[complete] Failed to update patient state', err)
+    })
+
     // E6.4.5: Trigger workup check after completion
     // This is async and non-blocking - workup runs in background
     performWorkupCheckAsync(assessmentId, slug, correlationId).catch((err) => {
@@ -409,5 +426,107 @@ async function validateV05AllRequiredQuestions(
   return {
     isValid: missingQuestions.length === 0,
     missingQuestions,
+  }
+}
+
+/**
+ * I2.4: Update patient state on assessment completion
+ * 
+ * Adds activity entry and updates assessment status in PatientState
+ */
+async function updatePatientStateOnAssessmentComplete(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  userId: string,
+  assessmentId: string,
+  funnelSlug: string,
+  completedAt: string,
+): Promise<void> {
+  try {
+    // Fetch existing patient state
+    const { data, error: fetchError } = await supabase
+      .from('patient_state')
+      .select('state_data')
+      .eq('user_id', userId)
+      .single()
+
+    let stateData: PatientStateV01
+    let isNewState = false
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        // No state exists, create empty state
+        isNewState = true
+        stateData = createEmptyPatientState()
+      } else {
+        throw fetchError
+      }
+    } else {
+      // Validate existing state
+      const validatedState = safeValidatePatientState(data.state_data)
+      stateData = validatedState || createEmptyPatientState()
+    }
+
+    // Add new activity entry
+    const newActivity = {
+      type: 'assessment_completed' as const,
+      label: `Completed ${funnelSlug} Assessment`,
+      timestamp: completedAt,
+      metadata: {
+        assessmentId,
+        funnelSlug,
+      },
+    }
+
+    // Keep only last 10 activities
+    const recentActivity = [newActivity, ...(stateData.activity?.recentActivity || [])].slice(0, 10)
+
+    // Update assessment state
+    stateData.assessment = {
+      lastAssessmentId: assessmentId,
+      status: 'completed',
+      progress: 1.0,
+      completedAt,
+    }
+
+    // Update activity
+    stateData.activity = {
+      recentActivity,
+    }
+
+    // Update timestamp
+    stateData.updatedAt = new Date().toISOString()
+
+    // Save state
+    if (isNewState) {
+      const { error: insertError } = await supabase
+        .from('patient_state')
+        .insert({
+          user_id: userId,
+          patient_state_version: '0.1',
+          state_data: stateData as any, // DB expects JSONB
+        })
+
+      if (insertError) {
+        throw insertError
+      }
+    } else {
+      const { error: updateError } = await supabase
+        .from('patient_state')
+        .update({ state_data: stateData as any }) // DB expects JSONB
+        .eq('user_id', userId)
+
+      if (updateError) {
+        throw updateError
+      }
+    }
+
+    console.log('[complete] Patient state updated successfully', {
+      userId,
+      assessmentId,
+      activityCount: recentActivity.length,
+    })
+  } catch (error) {
+    console.error('[complete] Failed to update patient state:', error)
+    throw error
   }
 }
