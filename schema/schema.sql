@@ -1329,6 +1329,19 @@ $$;
 ALTER FUNCTION "public"."update_operational_settings_timestamp"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_patient_state_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_patient_state_updated_at"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_pre_screening_calls_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2595,6 +2608,31 @@ COMMENT ON COLUMN "public"."patient_profiles"."onboarding_status" IS 'E6.4.2: Tr
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."patient_state" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "patient_state_version" "text" DEFAULT '0.1'::"text" NOT NULL,
+    "state_data" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."patient_state" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."patient_state" IS 'I2.1: Canonical patient state with versioning. Stores assessment progress, results summary, dialog context, activity, and metrics. RLS: patients see own state only.';
+
+
+
+COMMENT ON COLUMN "public"."patient_state"."patient_state_version" IS 'Version of patient state schema (e.g., "0.1")';
+
+
+
+COMMENT ON COLUMN "public"."patient_state"."state_data" IS 'JSONB containing assessment, results, dialog, activity, and metrics data';
+
+
+
 CREATE OR REPLACE VIEW "public"."pending_account_deletions" AS
  SELECT "id" AS "user_id",
     "email",
@@ -3833,6 +3871,16 @@ ALTER TABLE ONLY "public"."patient_profiles"
 
 
 
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_user_id_unique" UNIQUE ("user_id");
+
+
+
 ALTER TABLE ONLY "public"."pillars"
     ADD CONSTRAINT "pillars_key_key" UNIQUE ("key");
 
@@ -4853,6 +4901,10 @@ COMMENT ON INDEX "public"."medical_validation_results_job_version_hash_unique" I
 
 
 
+CREATE INDEX "patient_state_user_id_idx" ON "public"."patient_state" USING "btree" ("user_id");
+
+
+
 CREATE INDEX "tasks_assigned_to_user_id_idx" ON "public"."tasks" USING "btree" ("assigned_to_user_id") WHERE ("assigned_to_user_id" IS NOT NULL);
 
 
@@ -4934,6 +4986,10 @@ CREATE OR REPLACE TRIGGER "update_kpi_thresholds_timestamp" BEFORE UPDATE ON "pu
 
 
 CREATE OR REPLACE TRIGGER "update_notification_templates_timestamp" BEFORE UPDATE ON "public"."notification_templates" FOR EACH ROW EXECUTE FUNCTION "public"."update_operational_settings_timestamp"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_patient_state_updated_at_trigger" BEFORE UPDATE ON "public"."patient_state" FOR EACH ROW EXECUTE FUNCTION "public"."update_patient_state_updated_at"();
 
 
 
@@ -5170,6 +5226,11 @@ ALTER TABLE ONLY "public"."patient_funnels"
 
 ALTER TABLE ONLY "public"."patient_profiles"
     ADD CONSTRAINT "patient_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."patient_state"
+    ADD CONSTRAINT "patient_state_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -5428,6 +5489,10 @@ CREATE POLICY "Clinicians can view all measures" ON "public"."patient_measures" 
 
 
 
+CREATE POLICY "Clinicians can view all patient states" ON "public"."patient_state" FOR SELECT USING ("public"."is_clinician"());
+
+
+
 CREATE POLICY "Clinicians can view all profiles" ON "public"."patient_profiles" FOR SELECT USING ("public"."is_clinician"());
 
 
@@ -5458,6 +5523,10 @@ CREATE POLICY "Patients can insert own profile" ON "public"."patient_profiles" F
 
 
 
+CREATE POLICY "Patients can insert own state" ON "public"."patient_state" FOR INSERT WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
 CREATE POLICY "Patients can update own assessment answers" ON "public"."assessment_answers" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."assessments"
   WHERE (("assessments"."id" = "assessment_answers"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
@@ -5473,6 +5542,10 @@ CREATE POLICY "Patients can update own funnels" ON "public"."patient_funnels" FO
 
 
 CREATE POLICY "Patients can update own profile" ON "public"."patient_profiles" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Patients can update own state" ON "public"."patient_state" FOR UPDATE USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
@@ -5548,6 +5621,10 @@ CREATE POLICY "Patients can view own screening calls" ON "public"."pre_screening
 
 
 COMMENT ON POLICY "Patients can view own screening calls" ON "public"."pre_screening_calls" IS 'E72.R-DB-009: Patients can view their own pre-screening call records';
+
+
+
+CREATE POLICY "Patients can view own state" ON "public"."patient_state" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
 
@@ -5949,6 +6026,9 @@ ALTER TABLE "public"."patient_measures" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."patient_profiles" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."patient_state" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."pillars" ENABLE ROW LEVEL SECURITY;
@@ -6655,6 +6735,12 @@ GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "ser
 
 
 
+GRANT ALL ON FUNCTION "public"."update_patient_state_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_patient_state_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_patient_state_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_pre_screening_calls_updated_at"() TO "service_role";
@@ -6895,6 +6981,12 @@ GRANT ALL ON TABLE "public"."patient_measures" TO "service_role";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."patient_profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."patient_state" TO "anon";
+GRANT ALL ON TABLE "public"."patient_state" TO "authenticated";
+GRANT ALL ON TABLE "public"."patient_state" TO "service_role";
 
 
 
