@@ -10,7 +10,7 @@
  * - Recent assessments
  */
 
-import { Heart, Activity, Moon, Zap } from 'lucide-react'
+import { Heart, Activity, Moon, Zap } from '@/lib/ui/mobile-v2/icons'
 import {
   Header,
   AIAssistant,

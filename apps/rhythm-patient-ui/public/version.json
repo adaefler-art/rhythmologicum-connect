@@ -1,11 +1,11 @@
 {
   "app": "rhythm-patient-ui",
   "version": "v0.6",
-  "commitSha": "19a16623080621ed00ad74db04e628ba160e1b21",
-  "generatedAt": "2026-01-25T22:13:03.671Z",
+  "commitSha": "5ca25e6d2aa1a6f15dbd6fc9a5ee33f23c7ee5a1",
+  "generatedAt": "2026-01-26T06:01:25.450Z",
   "baseUrl": "",
-  "commitHash": "19a16623080621ed00ad74db04e628ba160e1b21",
-  "commitHashShort": "19a1662",
-  "commitDate": "2026-01-25T22:10:56Z",
-  "buildDate": "2026-01-25T22:13:03.671Z"
+  "commitHash": "5ca25e6d2aa1a6f15dbd6fc9a5ee33f23c7ee5a1",
+  "commitHashShort": "5ca25e6",
+  "commitDate": "2026-01-26T05:57:24Z",
+  "buildDate": "2026-01-26T06:01:25.449Z"
 }

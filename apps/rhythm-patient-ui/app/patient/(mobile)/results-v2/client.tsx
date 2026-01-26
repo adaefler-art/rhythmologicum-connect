@@ -179,7 +179,10 @@ export default function ResultsV2Client({
         // Coming soon
         break
       case 'continue-amy':
-        router.push('/patient/dialog')
+        // I2.2: Navigate with context and assessmentId
+        // For MVP, use a demo assessment ID (in future, get from actual assessment data)
+        const demoAssessmentId = 'demo-assessment-123'
+        router.push(`/patient/dialog?context=results&assessmentId=${demoAssessmentId}`)
         break
       default:
         break

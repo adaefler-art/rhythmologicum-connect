@@ -23,8 +23,11 @@ import { FullBleed } from './FullBleed'
  */
 export function DeviceFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto w-[390px] max-w-full">
-      <div className="w-full max-w-none overflow-hidden rounded-2xl border border-slate-300 shadow-2xl bg-white">
+    <div className="flex justify-center">
+      <div
+        className="w-full max-w-none overflow-hidden rounded-2xl border border-slate-300 shadow-2xl bg-white"
+        style={{ width: 390, maxWidth: '100%' }}
+      >
         <FullBleed>
           {children}
         </FullBleed>

@@ -6,7 +6,7 @@
  * Showcases all vendor components with their variants and states
  */
 
-import { Heart, Activity, Zap } from 'lucide-react'
+import { Heart, Activity, Zap } from '@/lib/ui/mobile-v2/icons'
 import {
   Button,
   Card,

@@ -1,8 +1,8 @@
 'use client'
 
 import { type CSSProperties, useMemo, useState } from 'react'
-import type { LucideIcon } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
+import type { LucideIcon } from '@/lib/ui/mobile-v2/icons'
+import * as V2Icons from '@/lib/ui/mobile-v2/icons'
 
 export type TokenEntry = {
   name: string
@@ -204,7 +204,7 @@ export default function DesignTokenHubClient({ tokenGroups, assets, lucideIcons 
           <h2 className="text-lg font-semibold text-slate-900">Lucide Icons (Patient UI)</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {filteredIcons.map((iconName) => {
-              const IconComponent = (LucideIcons as Record<string, unknown>)[iconName]
+              const IconComponent = (V2Icons as Record<string, unknown>)[iconName]
               const Icon =
                 typeof IconComponent === 'function'
                   ? (IconComponent as LucideIcon)
