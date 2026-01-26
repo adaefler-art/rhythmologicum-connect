@@ -16,7 +16,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { type Components } from 'react-markdown'
 import { ArrowLeft } from '@/lib/ui/mobile-v2/icons'
-import { CANONICAL_ROUTES } from '../../../utils/navigation'
+import { CANONICAL_ROUTES } from '../../utils/navigation'
 
 type ContentPageClientProps = {
   contentPage: ContentPage

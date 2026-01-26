@@ -12,7 +12,7 @@ import {
   Chip,
 } from '@/lib/ui/mobile-v2'
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
-import { getAssessmentFlowExitRoute } from '../../utils/navigation'
+import { getAssessmentFlowExitRoute } from '../utils/navigation'
 
 // ==========================================
 // TYPES

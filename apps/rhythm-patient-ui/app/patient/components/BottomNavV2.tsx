@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CANONICAL_ROUTES } from '../utils/navigation'
+import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 interface BottomNavItem {
   href: string

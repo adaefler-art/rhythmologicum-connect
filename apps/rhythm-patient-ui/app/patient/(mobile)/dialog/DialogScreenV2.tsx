@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
 import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
-import { CANONICAL_ROUTES } from '../../utils/navigation'
+import { CANONICAL_ROUTES } from '../utils/navigation'
 
 /**
  * I2.2 — AMY Dialog MVP (I2.5 Navigation Consistency)

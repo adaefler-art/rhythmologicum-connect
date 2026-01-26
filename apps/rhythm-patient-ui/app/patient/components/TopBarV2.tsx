@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { CANONICAL_ROUTES } from '../utils/navigation'
+import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 export type TopBarVariant = 'tab' | 'flow' | 'result'
 

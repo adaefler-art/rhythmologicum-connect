@@ -21,7 +21,7 @@ import {
   Clock,
 } from 'lucide-react'
 import type { Action } from '@/lib/ui/mobile-v2/types'
-import { getDialogUrl } from '../../utils/navigation'
+import { getDialogUrl } from '../utils/navigation'
 
 // ==========================================
 // TYPES

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
-import { CANONICAL_ROUTES } from '../../utils/navigation'
+import { CANONICAL_ROUTES } from '../utils/navigation'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
