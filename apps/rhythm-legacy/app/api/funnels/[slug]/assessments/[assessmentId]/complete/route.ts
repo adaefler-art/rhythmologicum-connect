@@ -272,6 +272,18 @@ async function handleCompleteAssessment(
       console.error('[complete] Failed to track KPI event', err)
     })
 
+    // I2.4: Update patient state with assessment completion
+    await updatePatientStateOnAssessmentComplete(
+      supabase,
+      user.id,
+      assessmentId,
+      slug,
+      completedAt,
+    ).catch((err) => {
+      // Don't fail the completion if state update fails
+      console.error('[complete] Failed to update patient state', err)
+    })
+
     // E6.4.5: Trigger workup check after completion
     // This is async and non-blocking - workup runs in background
     performWorkupCheckAsync(assessmentId, slug, correlationId).catch((err) => {
@@ -409,5 +421,135 @@ async function validateV05AllRequiredQuestions(
   return {
     isValid: missingQuestions.length === 0,
     missingQuestions,
+  }
+}
+
+/**
+ * I2.4: Update patient state on assessment completion
+ * 
+ * Adds activity entry and updates assessment status in PatientState
+ */
+async function updatePatientStateOnAssessmentComplete(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  userId: string,
+  assessmentId: string,
+  funnelSlug: string,
+  completedAt: string,
+): Promise<void> {
+  try {
+    // Fetch existing patient state
+    const { data, error: fetchError } = await supabase
+      .from('patient_state')
+      .select('state_data')
+      .eq('user_id', userId)
+      .single()
+
+    let stateData: any = null
+    let isNewState = false
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        // No state exists, create empty state
+        isNewState = true
+        stateData = {
+          patient_state_version: '0.1',
+          assessment: {
+            lastAssessmentId: null,
+            status: 'not_started',
+            progress: 0,
+            completedAt: null,
+          },
+          results: {
+            summaryCards: [],
+            recommendedActions: [],
+            lastGeneratedAt: null,
+          },
+          dialog: {
+            lastContext: 'none',
+            messageCount: 0,
+            lastMessageAt: null,
+          },
+          activity: {
+            recentActivity: [],
+          },
+          metrics: {
+            healthScore: {
+              current: 0,
+              delta: 0,
+              updatedAt: null,
+            },
+            keyMetrics: [],
+          },
+          updatedAt: new Date().toISOString(),
+        }
+      } else {
+        throw fetchError
+      }
+    } else {
+      stateData = data.state_data
+    }
+
+    // Add new activity entry
+    const newActivity = {
+      type: 'assessment_completed',
+      label: `Completed ${funnelSlug} Assessment`,
+      timestamp: completedAt,
+      metadata: {
+        assessmentId,
+        funnelSlug,
+      },
+    }
+
+    // Keep only last 10 activities
+    const recentActivity = [newActivity, ...(stateData.activity?.recentActivity || [])].slice(0, 10)
+
+    // Update assessment state
+    stateData.assessment = {
+      lastAssessmentId: assessmentId,
+      status: 'completed',
+      progress: 1.0,
+      completedAt,
+    }
+
+    // Update activity
+    stateData.activity = {
+      recentActivity,
+    }
+
+    // Update timestamp
+    stateData.updatedAt = new Date().toISOString()
+
+    // Save state
+    if (isNewState) {
+      const { error: insertError } = await supabase
+        .from('patient_state')
+        .insert({
+          user_id: userId,
+          patient_state_version: '0.1',
+          state_data: stateData,
+        })
+
+      if (insertError) {
+        throw insertError
+      }
+    } else {
+      const { error: updateError } = await supabase
+        .from('patient_state')
+        .update({ state_data: stateData })
+        .eq('user_id', userId)
+
+      if (updateError) {
+        throw updateError
+      }
+    }
+
+    console.log('[complete] Patient state updated successfully', {
+      userId,
+      assessmentId,
+      activityCount: recentActivity.length,
+    })
+  } catch (error) {
+    console.error('[complete] Failed to update patient state:', error)
+    throw error
   }
 }
