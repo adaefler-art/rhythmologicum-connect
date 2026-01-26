@@ -2722,6 +2722,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/reports/latest",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/reports/latest/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/results-v2/client.tsx",
+          "apiPath": "/api/patient/reports/latest",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/state",
       "methods": [
         "GET",
@@ -3503,14 +3522,5 @@
       "isAllowedOrphan": true
     }
   ],
-  "unknownCallsites": [
-    {
-      "apiPath": "/api/patient/reports/latest",
-      "isTemplate": false,
-      "kind": "fetch",
-      "file": "apps/rhythm-patient-ui/app/patient/(mobile)/results-v2/client.tsx",
-      "line": 178,
-      "raw": "'/api/patient/reports/latest'"
-    }
-  ]
+  "unknownCallsites": []
 }
