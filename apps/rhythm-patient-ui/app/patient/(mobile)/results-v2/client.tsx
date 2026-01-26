@@ -82,13 +82,13 @@ const __DEV_FIXTURE__CURRENT_SITUATION: CurrentSituation = {
 const __DEV_FIXTURE__ACTIONS: Action[] = [
   {
     id: 'download-pdf',
-    title: 'Download PDF Report',
+    title: 'Download Full Report',
     description: 'Get a detailed summary of your assessment results',
     icon: 'download',
     iconColor: 'text-[#4a90e2]',
     iconBgColor: 'bg-[#4a90e2]/10',
     type: 'primary',
-    buttonText: 'Download Now',
+    buttonText: 'View Report (stub)',
   },
   {
     id: 'video-consultation',
@@ -98,7 +98,9 @@ const __DEV_FIXTURE__ACTIONS: Action[] = [
     iconColor: 'text-[#5cb85c]',
     iconBgColor: 'bg-[#5cb85c]/10',
     type: 'success',
-    buttonText: 'Coming soon',
+    buttonText: 'Coming Soon',
+    disabled: true,
+    disabledReason: 'Video consultations coming soon',
   },
   {
     id: 'book-visit',
@@ -108,7 +110,9 @@ const __DEV_FIXTURE__ACTIONS: Action[] = [
     iconColor: 'text-[#f5a623]',
     iconBgColor: 'bg-[#f5a623]/10',
     type: 'warning',
-    buttonText: 'Coming soon',
+    buttonText: 'Coming Soon',
+    disabled: true,
+    disabledReason: 'Pilot not yet enabled',
   },
   {
     id: 'continue-amy',
@@ -166,17 +170,32 @@ export default function ResultsV2Client({
   // EVENT HANDLERS
   // ==========================================
 
-  const handleActionClick = (actionId: string) => {
+  const handleActionClick = async (actionId: string) => {
     switch (actionId) {
       case 'download-pdf':
-        // TODO: Implement PDF download
-        console.log('Download PDF report')
+        try {
+          console.log('[RESULTS_V2] Fetching report stub...')
+          const response = await fetch('/api/patient/reports/latest')
+          const data = await response.json()
+          
+          if (data.success) {
+            // For stub: show alert with stub data
+            alert(`Report Stub (JSON)\n\n${data.data.message}\n\nOverall Score: ${data.data.summary.overallScore}\nStress Level: ${data.data.summary.stressLevel}`)
+            console.log('[RESULTS_V2] Report stub retrieved:', data)
+          } else {
+            console.error('[RESULTS_V2] Failed to fetch report:', data.error)
+            alert('Failed to fetch report: ' + data.error.message)
+          }
+        } catch (err) {
+          console.error('[RESULTS_V2] Error fetching report:', err)
+          alert('Error fetching report. Please try again.')
+        }
         break
       case 'video-consultation':
-        // Coming soon
+        // Disabled - no action
         break
       case 'book-visit':
-        // Coming soon
+        // Disabled - no action
         break
       case 'continue-amy':
         // I2.2: Navigate with context and assessmentId

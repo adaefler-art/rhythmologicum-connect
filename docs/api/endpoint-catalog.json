@@ -3503,5 +3503,14 @@
       "isAllowedOrphan": true
     }
   ],
-  "unknownCallsites": []
+  "unknownCallsites": [
+    {
+      "apiPath": "/api/patient/reports/latest",
+      "isTemplate": false,
+      "kind": "fetch",
+      "file": "apps/rhythm-patient-ui/app/patient/(mobile)/results-v2/client.tsx",
+      "line": 178,
+      "raw": "'/api/patient/reports/latest'"
+    }
+  ]
 }
