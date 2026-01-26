@@ -27,30 +27,50 @@ try {
   process.exit(2)
 }
 
+function isGeneratedOrBuildOutput(file) {
+  const normalized = file.replace(/\\/g, '/')
+  const excludedDirs = [
+    '/.next/',
+    '/node_modules/',
+    '/dist/',
+    '/build/',
+    '/out/',
+    '/coverage/',
+    '/artifacts/',
+  ]
+
+  if (excludedDirs.some((dir) => normalized.includes(dir))) return true
+  if (/\.generated\.[^/]+$/i.test(normalized)) return true
+
+  return false
+}
+
 function getChangedFiles() {
   const raw = sh('git', ['diff', '--name-only', baseSha, headSha, '--', '*.ts', '*.tsx'])
   return raw
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((file) => !file.includes(`${path.sep}.next${path.sep}`) && !file.includes('/.next/'))
+    .filter((file) => !isGeneratedOrBuildOutput(file))
     .filter((file) => fs.existsSync(file))
 }
 
 const changedFiles = getChangedFiles()
 
+const artifactsDir = path.join(process.cwd(), '.lint-artifacts')
+fs.mkdirSync(artifactsDir, { recursive: true })
+const eslintReportPath = path.join(artifactsDir, 'eslint-report.json')
+const changedRangesPath = path.join(artifactsDir, 'changed_line_ranges.json')
+
 if (changedFiles.length === 0) {
-  console.log('No TS/TSX changes detected. Skipping changed-lines lint.')
+  console.log('No TS/TSX source changes detected after filtering generated outputs.')
+  fs.writeFileSync(eslintReportPath, '[]\n')
+  fs.writeFileSync(changedRangesPath, '{}\n')
   process.exit(0)
 }
 
 console.log(`Linting ${changedFiles.length} changed files (report only):`) 
 for (const file of changedFiles) console.log(`- ${file}`)
-
-const artifactsDir = path.join(process.cwd(), '.lint-artifacts')
-fs.mkdirSync(artifactsDir, { recursive: true })
-const eslintReportPath = path.join(artifactsDir, 'eslint-report.json')
-const changedRangesPath = path.join(artifactsDir, 'changed_line_ranges.json')
 
 // Run eslint in JSON mode, but never fail this step directly.
 try {
