@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
-import { Bot, MessageCircle, Sparkles } from 'lucide-react'
+import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
 
 /**
  * I2.2 — AMY Dialog MVP

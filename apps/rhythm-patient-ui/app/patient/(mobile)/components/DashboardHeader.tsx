@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { mobileTypography, Button } from '@/lib/ui/mobile-v2'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle } from '@/lib/ui/mobile-v2/icons'
 
 export interface DashboardHeaderProps {
   /** Optional greeting name */

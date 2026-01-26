@@ -49,6 +49,7 @@ export {
   
   // UI Elements
   Bot,
+  MessageCircle,
   Sparkles,
   Shield,
   TrendingUp,
