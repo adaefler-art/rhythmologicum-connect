@@ -4,13 +4,18 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
 import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
+import { CANONICAL_ROUTES } from '../../utils/navigation'
 
 /**
- * I2.2 — AMY Dialog MVP
+ * I2.2 — AMY Dialog MVP (I2.5 Navigation Consistency)
  * 
  * Entry Points:
  * - Dashboard Hero → /patient/dialog?context=dashboard
  * - Results CTA → /patient/dialog?context=results&assessmentId=<id>
+ * 
+ * Navigation (I2.5):
+ * - Back: Always to dashboard (canonical, last non-dialog screen fallback)
+ * - Close: Always to dashboard
  * 
  * Features:
  * - Context-aware stubbed conversation responses
@@ -179,19 +184,19 @@ export function DialogScreenV2() {
           </div>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - I2.5: Use canonical routes */}
         <Card padding="md" shadow="sm">
           <h2 className="text-base font-semibold text-slate-900 mb-3">
             Schnelle Hilfe
           </h2>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/patient/dashboard" className="flex-1">
+            <Link href={CANONICAL_ROUTES.DASHBOARD} className="flex-1">
               <Button variant="secondary" size="md" fullWidth>
                 Zurück zum Dashboard
               </Button>
             </Link>
             {context === 'results' && (
-              <Link href="/patient/results-v2" className="flex-1">
+              <Link href={CANONICAL_ROUTES.RESULTS} className="flex-1">
                 <Button variant="secondary" size="md" fullWidth>
                   Zu den Ergebnissen
                 </Button>

@@ -1,0 +1,3 @@
+{
+  "/api/admin/funnel-versions/[id]/route": "app/api/admin/funnel-versions/[id]/route.js"
+}
