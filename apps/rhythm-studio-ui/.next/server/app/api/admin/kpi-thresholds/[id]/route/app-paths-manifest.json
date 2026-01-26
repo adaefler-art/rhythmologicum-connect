@@ -1,0 +1,3 @@
+{
+  "/api/admin/kpi-thresholds/[id]/route": "app/api/admin/kpi-thresholds/[id]/route.js"
+}

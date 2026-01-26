@@ -10,6 +10,20 @@ import { z } from 'zod'
 export const PATIENT_STATE_VERSION = '0.1' as const
 
 /**
+ * Assessment Summary (I72.6)
+ * Detailed metadata about the last assessment for AMY orchestrator handoff
+ */
+export const AssessmentSummarySchema = z.object({
+  status: z.enum(['not_started', 'in_progress', 'completed']),
+  funnelSlug: z.string().nullable(),
+  updatedAt: z.string().datetime().nullable(),
+  answersCount: z.number().int().nonnegative().default(0),
+  reportId: z.string().uuid().nullable(),
+})
+
+export type AssessmentSummary = z.infer<typeof AssessmentSummarySchema>
+
+/**
  * Assessment State
  * Tracks current assessment progress
  */
@@ -18,6 +32,7 @@ export const AssessmentStateSchema = z.object({
   status: z.enum(['not_started', 'in_progress', 'completed']),
   progress: z.number().min(0).max(1), // 0 to 1 (0% to 100%)
   completedAt: z.string().datetime().nullable(),
+  lastAssessment: AssessmentSummarySchema.nullable(), // I72.6: Assessment Handoff Contract
 })
 
 export type AssessmentState = z.infer<typeof AssessmentStateSchema>
@@ -177,6 +192,7 @@ export function createEmptyPatientState(): PatientStateV01 {
       status: 'not_started',
       progress: 0,
       completedAt: null,
+      lastAssessment: null, // I72.6: No assessment data initially
     },
     results: {
       summaryCards: [],
@@ -243,5 +259,25 @@ export function mergePatientState(
       ? { ...currentState.metrics, ...update.metrics }
       : currentState.metrics,
     updatedAt: new Date().toISOString(),
+  }
+}
+
+/**
+ * I72.6: Build AssessmentSummary from database assessment record
+ * Helper for AMY Orchestrator handoff
+ */
+export function buildAssessmentSummary(assessment: {
+  status: string
+  funnel_slug?: string | null
+  updated_at?: string | null
+  answers_count?: number | null
+  report_id?: string | null
+}): AssessmentSummary {
+  return {
+    status: (assessment.status as AssessmentSummary['status']) || 'not_started',
+    funnelSlug: assessment.funnel_slug || null,
+    updatedAt: assessment.updated_at || null,
+    answersCount: assessment.answers_count || 0,
+    reportId: assessment.report_id || null,
   }
 }
