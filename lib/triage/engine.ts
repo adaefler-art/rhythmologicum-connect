@@ -33,6 +33,11 @@ export type TriageEngineInput = {
   inputText: string
   /** Optional correlation ID for tracking */
   correlationId?: string
+  /** I72.6: Assessment summary for handoff routing */
+  assessmentSummary?: {
+    status: string
+    funnelSlug: string | null
+  } | null
 }
 
 /**
@@ -157,24 +162,51 @@ export function classifyTier(normalizedInput: string): TriageTier {
 }
 
 /**
- * Determine next action based on tier
+ * Determine next action based on tier and assessment state (I72.6)
  * Mapping:
  * - INFO → SHOW_CONTENT
- * - ASSESSMENT → START_FUNNEL_A
+ * - ASSESSMENT → START_FUNNEL_A (or continue if in-progress)
  * - ESCALATE → SHOW_ESCALATION
+ *
+ * I72.6 Enhancement:
+ * - If assessment is in_progress → suggest continue
+ * - If assessment is completed → can trigger insights/content
+ * - If no assessment → suggest start assessment
  */
-export function determineNextAction(tier: TriageTier): TriageNextAction {
-  switch (tier) {
-    case TRIAGE_TIER.INFO:
-      return TRIAGE_NEXT_ACTION.SHOW_CONTENT
-    case TRIAGE_TIER.ASSESSMENT:
-      return TRIAGE_NEXT_ACTION.START_FUNNEL_A
-    case TRIAGE_TIER.ESCALATE:
-      return TRIAGE_NEXT_ACTION.SHOW_ESCALATION
-    default:
-      // Should never happen, but TypeScript doesn't know that
-      return TRIAGE_NEXT_ACTION.START_FUNNEL_A
+export function determineNextAction(
+  tier: TriageTier,
+  assessmentSummary?: { status: string; funnelSlug: string | null } | null,
+): TriageNextAction {
+  // Red flags always escalate regardless of assessment state
+  if (tier === TRIAGE_TIER.ESCALATE) {
+    return TRIAGE_NEXT_ACTION.SHOW_ESCALATION
   }
+
+  // I72.6: Check assessment state for routing
+  if (assessmentSummary) {
+    const status = assessmentSummary.status
+
+    // If in progress, suggest continue (still routes to assessment start)
+    if (status === 'in_progress') {
+      // Note: We still return START_FUNNEL_A as the action
+      // The frontend will detect in-progress state and show "Continue" instead of "Start"
+      return TRIAGE_NEXT_ACTION.START_FUNNEL_A
+    }
+
+    // If completed, can show insights or content
+    if (status === 'completed') {
+      // For now, show content - in future this could trigger insights
+      return TRIAGE_NEXT_ACTION.SHOW_CONTENT
+    }
+  }
+
+  // Default routing based on tier (only INFO or ASSESSMENT at this point)
+  if (tier === TRIAGE_TIER.INFO) {
+    return TRIAGE_NEXT_ACTION.SHOW_CONTENT
+  }
+  
+  // ASSESSMENT tier or default
+  return TRIAGE_NEXT_ACTION.START_FUNNEL_A
 }
 
 /**
@@ -208,7 +240,7 @@ export function generateRationale(
  * 1. Normalize input
  * 2. Detect red flags → if found, ESCALATE (dominates all other rules)
  * 3. Otherwise, classify to INFO vs ASSESSMENT
- * 4. Determine next action based on tier
+ * 4. Determine next action based on tier and assessment state (I72.6)
  * 5. Generate routing rationale
  *
  * @param input - Triage engine input
@@ -231,8 +263,8 @@ export function runTriageEngine(input: TriageEngineInput): TriageResultV1 {
     tier = classifyTier(normalizedInput)
   }
 
-  // Step 4: Determine next action
-  const nextAction = determineNextAction(tier)
+  // Step 4: Determine next action (I72.6: considers assessment state)
+  const nextAction = determineNextAction(tier, input.assessmentSummary)
 
   // Step 5: Generate rationale
   const rationale = generateRationale(tier, redFlags)

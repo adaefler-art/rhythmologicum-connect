@@ -61,3 +61,4 @@ artifacts/
 # smoke test evidence packs (timestamped)
 .audit/v061/[0-9]*
 .audit/v06/[0-9]*
+apps/*/.next/

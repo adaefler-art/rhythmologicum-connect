@@ -388,6 +388,35 @@ export async function POST(req: Request) {
       inputLength: validatedRequest.inputText.length,
     })
 
+    // I72.6: Fetch patient state to get lastAssessment for AMY handoff
+    let lastAssessmentSummary: { status: string; funnelSlug: string | null } | null = null
+    try {
+      const { data: stateData, error: stateError } = await supabase
+        .from('patient_state')
+        .select('state_data')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!stateError && stateData?.state_data) {
+        const state = stateData.state_data as any
+        if (state.assessment?.lastAssessment) {
+          lastAssessmentSummary = {
+            status: state.assessment.lastAssessment.status || 'not_started',
+            funnelSlug: state.assessment.lastAssessment.funnelSlug || null,
+          }
+          console.log('[amy/triage] Retrieved lastAssessment from patient state', {
+            status: lastAssessmentSummary.status,
+            funnelSlug: lastAssessmentSummary.funnelSlug,
+          })
+        }
+      }
+    } catch (stateError) {
+      console.warn('[amy/triage] Failed to fetch patient state (non-blocking)', {
+        error: String(stateError),
+      })
+      // Continue without assessment summary - will use default triage
+    }
+
     // Emit TRIAGE_SUBMITTED event (best-effort)
     // Note: We use a synthetic assessment ID for non-funnel triage
     const syntheticAssessmentId = `triage-${Date.now()}-${user.id.slice(0, 8)}`
@@ -400,9 +429,11 @@ export async function POST(req: Request) {
     })
 
     // E6.6.3: Use deterministic rule-based engine (replaces AI triage)
+    // I72.6: Pass assessment summary for routing decision
     const triageResultV1 = runTriageEngine({
       inputText: validatedRequest.inputText,
       correlationId,
+      assessmentSummary: lastAssessmentSummary,
     })
 
     console.log('[amy/triage] Deterministic triage completed', {

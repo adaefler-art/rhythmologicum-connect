@@ -10,6 +10,20 @@ import { z } from 'zod'
 export const PATIENT_STATE_VERSION = '0.1' as const
 
 /**
+ * Assessment Summary (I72.6)
+ * Detailed metadata about the last assessment for AMY orchestrator handoff
+ */
+export const AssessmentSummarySchema = z.object({
+  status: z.enum(['not_started', 'in_progress', 'completed']),
+  funnelSlug: z.string().nullable(),
+  updatedAt: z.string().datetime().nullable(),
+  answersCount: z.number().int().nonnegative().default(0),
+  reportId: z.string().uuid().nullable(),
+})
+
+export type AssessmentSummary = z.infer<typeof AssessmentSummarySchema>
+
+/**
  * Assessment State
  * Tracks current assessment progress
  */
@@ -18,6 +32,7 @@ export const AssessmentStateSchema = z.object({
   status: z.enum(['not_started', 'in_progress', 'completed']),
   progress: z.number().min(0).max(1), // 0 to 1 (0% to 100%)
   completedAt: z.string().datetime().nullable(),
+  lastAssessment: AssessmentSummarySchema.nullable(), // I72.6: Assessment Handoff Contract
 })
 
 export type AssessmentState = z.infer<typeof AssessmentStateSchema>
@@ -177,6 +192,7 @@ export function createEmptyPatientState(): PatientStateV01 {
       status: 'not_started',
       progress: 0,
       completedAt: null,
+      lastAssessment: null, // I72.6: No assessment data initially
     },
     results: {
       summaryCards: [],
@@ -243,5 +259,48 @@ export function mergePatientState(
       ? { ...currentState.metrics, ...update.metrics }
       : currentState.metrics,
     updatedAt: new Date().toISOString(),
+  }
+}
+
+/**
+ * I72.6: Build AssessmentSummary from database assessment record
+ * Helper for AMY Orchestrator handoff
+ * 
+ * @param assessment - Assessment record from database with optional fields
+ * @param assessment.status - Assessment status (must be 'not_started', 'in_progress', or 'completed')
+ * @param assessment.funnel_slug - Optional funnel slug identifier
+ * @param assessment.updated_at - Optional last update timestamp
+ * @param assessment.answers_count - Optional count of answers provided
+ * @param assessment.report_id - Optional associated report UUID
+ * @returns AssessmentSummary object with validated and normalized data
+ * 
+ * @example
+ * const summary = buildAssessmentSummary({
+ *   status: 'in_progress',
+ *   funnel_slug: 'stress-assessment',
+ *   updated_at: '2026-01-26T10:00:00Z',
+ *   answers_count: 5,
+ *   report_id: null
+ * })
+ */
+export function buildAssessmentSummary(assessment: {
+  status: string
+  funnel_slug?: string | null
+  updated_at?: string | null
+  answers_count?: number | null
+  report_id?: string | null
+}): AssessmentSummary {
+  // Validate status before casting - fallback to not_started if invalid
+  const validStatuses = ['not_started', 'in_progress', 'completed']
+  const status = validStatuses.includes(assessment.status)
+    ? (assessment.status as AssessmentSummary['status'])
+    : 'not_started'
+  
+  return {
+    status,
+    funnelSlug: assessment.funnel_slug || null,
+    updatedAt: assessment.updated_at || null,
+    answersCount: assessment.answers_count || 0,
+    reportId: assessment.report_id || null,
   }
 }
