@@ -190,13 +190,11 @@ export function determineNextAction(
     if (status === 'in_progress') {
       // Note: We still return START_FUNNEL_A as the action
       // The frontend will detect in-progress state and show "Continue" instead of "Start"
-      console.log('[TRIAGE_ENGINE] Assessment in progress, suggesting continue')
       return TRIAGE_NEXT_ACTION.START_FUNNEL_A
     }
 
     // If completed, can show insights or content
     if (status === 'completed') {
-      console.log('[TRIAGE_ENGINE] Assessment completed, can show insights')
       // For now, show content - in future this could trigger insights
       return TRIAGE_NEXT_ACTION.SHOW_CONTENT
     }

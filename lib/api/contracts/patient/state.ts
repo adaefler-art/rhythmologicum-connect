@@ -265,6 +265,23 @@ export function mergePatientState(
 /**
  * I72.6: Build AssessmentSummary from database assessment record
  * Helper for AMY Orchestrator handoff
+ * 
+ * @param assessment - Assessment record from database with optional fields
+ * @param assessment.status - Assessment status (must be 'not_started', 'in_progress', or 'completed')
+ * @param assessment.funnel_slug - Optional funnel slug identifier
+ * @param assessment.updated_at - Optional last update timestamp
+ * @param assessment.answers_count - Optional count of answers provided
+ * @param assessment.report_id - Optional associated report UUID
+ * @returns AssessmentSummary object with validated and normalized data
+ * 
+ * @example
+ * const summary = buildAssessmentSummary({
+ *   status: 'in_progress',
+ *   funnel_slug: 'stress-assessment',
+ *   updated_at: '2026-01-26T10:00:00Z',
+ *   answers_count: 5,
+ *   report_id: null
+ * })
  */
 export function buildAssessmentSummary(assessment: {
   status: string
@@ -273,8 +290,14 @@ export function buildAssessmentSummary(assessment: {
   answers_count?: number | null
   report_id?: string | null
 }): AssessmentSummary {
+  // Validate status before casting - fallback to not_started if invalid
+  const validStatuses = ['not_started', 'in_progress', 'completed']
+  const status = validStatuses.includes(assessment.status)
+    ? (assessment.status as AssessmentSummary['status'])
+    : 'not_started'
+  
   return {
-    status: (assessment.status as AssessmentSummary['status']) || 'not_started',
+    status,
     funnelSlug: assessment.funnel_slug || null,
     updatedAt: assessment.updated_at || null,
     answersCount: assessment.answers_count || 0,
