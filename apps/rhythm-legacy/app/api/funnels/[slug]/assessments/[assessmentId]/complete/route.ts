@@ -28,6 +28,11 @@ import { createEvidencePack } from '@/lib/workup/helpers'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelCompleted } from '@/lib/telemetry/events'
 import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
+import {
+  safeValidatePatientState,
+  createEmptyPatientState,
+  type PatientStateV01,
+} from '@/lib/api/contracts/patient/state'
 
 /**
  * B5/B8: Complete an assessment
@@ -444,54 +449,26 @@ async function updatePatientStateOnAssessmentComplete(
       .eq('user_id', userId)
       .single()
 
-    let stateData: any = null
+    let stateData: PatientStateV01
     let isNewState = false
 
     if (fetchError) {
       if (fetchError.code === 'PGRST116') {
         // No state exists, create empty state
         isNewState = true
-        stateData = {
-          patient_state_version: '0.1',
-          assessment: {
-            lastAssessmentId: null,
-            status: 'not_started',
-            progress: 0,
-            completedAt: null,
-          },
-          results: {
-            summaryCards: [],
-            recommendedActions: [],
-            lastGeneratedAt: null,
-          },
-          dialog: {
-            lastContext: 'none',
-            messageCount: 0,
-            lastMessageAt: null,
-          },
-          activity: {
-            recentActivity: [],
-          },
-          metrics: {
-            healthScore: {
-              current: 0,
-              delta: 0,
-              updatedAt: null,
-            },
-            keyMetrics: [],
-          },
-          updatedAt: new Date().toISOString(),
-        }
+        stateData = createEmptyPatientState()
       } else {
         throw fetchError
       }
     } else {
-      stateData = data.state_data
+      // Validate existing state
+      const validatedState = safeValidatePatientState(data.state_data)
+      stateData = validatedState || createEmptyPatientState()
     }
 
     // Add new activity entry
     const newActivity = {
-      type: 'assessment_completed',
+      type: 'assessment_completed' as const,
       label: `Completed ${funnelSlug} Assessment`,
       timestamp: completedAt,
       metadata: {
@@ -526,7 +503,7 @@ async function updatePatientStateOnAssessmentComplete(
         .insert({
           user_id: userId,
           patient_state_version: '0.1',
-          state_data: stateData,
+          state_data: stateData as any, // DB expects JSONB
         })
 
       if (insertError) {
@@ -535,7 +512,7 @@ async function updatePatientStateOnAssessmentComplete(
     } else {
       const { error: updateError } = await supabase
         .from('patient_state')
-        .update({ state_data: stateData })
+        .update({ state_data: stateData as any }) // DB expects JSONB
         .eq('user_id', userId)
 
       if (updateError) {

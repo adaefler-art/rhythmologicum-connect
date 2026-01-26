@@ -109,7 +109,7 @@ function mapActivityItemToUI(item: ActivityItem, index: number): RecentActivity 
     id: `${item.type}-${index}`,
     type: getDisplayType(item.type),
     title: item.label,
-    subtitle: item.metadata?.subtitle as string || '',
+    subtitle: (item.metadata?.subtitle as string | undefined) || '',
     timestamp: formatTimestamp(item.timestamp),
     icon: getIcon(item.type),
   }
@@ -160,6 +160,14 @@ function getMetricChartTitle(metricType: MetricSeries['metricType'], unit: strin
     default:
       return 'Health Metric'
   }
+}
+
+/**
+ * Gets color for metric chart based on index
+ */
+function getChartColor(index: number): 'purple' | 'blue' | 'green' {
+  const colors: Array<'purple' | 'blue' | 'green'> = ['purple', 'blue', 'green']
+  return colors[index % colors.length]
 }
 
 // ==========================================
@@ -287,7 +295,7 @@ export default function PersonalInsightsV2Client({ initialPatientState, hasError
                     key={index}
                     title={getMetricChartTitle(metric.metricType, metric.unit)}
                     data={weeklyData}
-                    color={index % 3 === 0 ? 'purple' : index % 3 === 1 ? 'blue' : 'green'}
+                    color={getChartColor(index)}
                   />
                 )
               })}
