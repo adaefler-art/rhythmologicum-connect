@@ -21,6 +21,7 @@ import {
   Clock,
 } from 'lucide-react'
 import type { Action } from '@/lib/ui/mobile-v2/types'
+import { getDialogUrl } from '../../utils/navigation'
 
 // ==========================================
 // TYPES
@@ -198,10 +199,14 @@ export default function ResultsV2Client({
         // Disabled - no action
         break
       case 'continue-amy':
-        // I2.2: Navigate with context and assessmentId
+        // I2.2 + I2.5: Navigate with context and assessmentId using canonical dialog URL
         // For MVP, use a demo assessment ID (in future, get from actual assessment data)
         const demoAssessmentId = 'demo-assessment-123'
-        router.push(`/patient/dialog?context=results&assessmentId=${demoAssessmentId}`)
+        const dialogUrl = getDialogUrl({
+          source: 'results',
+          assessmentId: demoAssessmentId,
+        })
+        router.push(dialogUrl)
         break
       default:
         break
