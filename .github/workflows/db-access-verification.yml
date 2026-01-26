@@ -133,6 +133,37 @@ jobs:
           done
           CHANGED=("${FILTERED[@]}")
 
+          # Filter out generated/build output paths (must not be lint-gated)
+          FILTERED=()
+          for file in "${CHANGED[@]}"; do
+            [ -z "$file" ] && continue
+
+            # Exclude generated / build outputs
+            if [[ "$file" =~ (^|/)\.next/ ]]; then
+              continue
+            fi
+            if [[ "$file" =~ (^|/)node_modules/ ]]; then
+              continue
+            fi
+            if [[ "$file" =~ (^|/)(dist|build|out|coverage|artifacts)/ ]]; then
+              continue
+            fi
+
+            FILTERED+=("$file")
+          done
+          CHANGED=("${FILTERED[@]}")
+
+          # If nothing remains, produce deterministic empty artifacts and succeed
+          if [ "${#CHANGED[@]}" -eq 0 ]; then
+            echo "No lint-eligible changed files after filtering generated output."
+            printf '[]\n' > eslint-report.json
+            printf '{}\n' > changed_line_ranges.json
+            exit 0
+          fi
+
+          # Keep the range-map inputs aligned with the filtered list
+          printf "%s\n" "${CHANGED[@]}" > changed_ts_files_existing.txt
+
           echo "Linting ${#CHANGED[@]} changed files (reporting only)"
           npm run lint -- -f json -o eslint-report.json "${CHANGED[@]}" || true
 
