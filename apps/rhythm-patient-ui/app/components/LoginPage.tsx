@@ -251,18 +251,19 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-lg">
+        <div className="mx-auto w-full max-w-[420px] rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-lg lg:mx-0">
           <h2 className="text-2xl font-semibold text-white">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
 
-          <form className="mt-6 space-y-4" onSubmit={handleAuth}>
+          <form className="mt-6 w-full space-y-4" onSubmit={handleAuth}>
             <Input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="E-Mail"
               inputSize="lg"
+              className="min-w-0"
             />
             <Input
               type="password"
@@ -270,6 +271,7 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Passwort"
               inputSize="lg"
+              className="min-w-0"
             />
 
             {error && <p className="text-sm text-red-400">{error}</p>}
