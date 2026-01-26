@@ -51,6 +51,8 @@ export interface Action {
   type: 'primary' | 'secondary' | 'success' | 'warning'
   buttonText?: string
   buttonColor?: string
+  disabled?: boolean
+  disabledReason?: string
 }
 
 export interface WeeklyData {

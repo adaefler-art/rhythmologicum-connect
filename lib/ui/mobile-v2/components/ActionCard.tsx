@@ -33,21 +33,26 @@ export function ActionCard({ action, onAction }: ActionCardProps) {
   }
   
   return (
-    <Card padding="md" shadow="sm" hover>
+    <Card padding="md" shadow="sm" hover={!action.disabled}>
       <div className="flex items-start gap-3 mb-3">
-        <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${action.iconBgColor}`}>
+        <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${action.iconBgColor} ${action.disabled ? 'opacity-50' : ''}`}>
           <span className={action.iconColor}>
             {getIcon()}
           </span>
         </div>
         
         <div className="flex-1">
-          <h4 className="text-base font-semibold text-[#1f2937] mb-1">
+          <h4 className={`text-base font-semibold mb-1 ${action.disabled ? 'text-[#9ca3af]' : 'text-[#1f2937]'}`}>
             {action.title}
           </h4>
-          <p className="text-sm text-[#6b7280]">
+          <p className={`text-sm ${action.disabled ? 'text-[#d1d5db]' : 'text-[#6b7280]'}`}>
             {action.description}
           </p>
+          {action.disabled && action.disabledReason && (
+            <p className="text-xs text-[#f59e0b] mt-1 font-medium">
+              {action.disabledReason}
+            </p>
+          )}
         </div>
       </div>
       
@@ -57,6 +62,7 @@ export function ActionCard({ action, onAction }: ActionCardProps) {
           size="sm"
           fullWidth
           onClick={onAction}
+          disabled={action.disabled}
           icon={<ArrowRight className="w-4 h-4" />}
           iconPosition="right"
         >
