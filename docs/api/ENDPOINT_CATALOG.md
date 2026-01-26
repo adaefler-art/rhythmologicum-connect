@@ -95,7 +95,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/funnels/[slug]/definition | GET | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/definition/route.ts |
 | /api/funnels/active | GET | patient |  | 0 | apps/rhythm-legacy/app/api/funnels/active/route.ts |
 | /api/funnels/catalog | GET | patient |  | 18 | apps/rhythm-legacy/app/api/funnels/catalog/route.ts |
-| /api/funnels/catalog | (none) | patient |  | 18 | apps/rhythm-patient-ui/app/api/funnels/catalog/route.ts |
+| /api/funnels/catalog | GET | patient |  | 18 | apps/rhythm-patient-ui/app/api/funnels/catalog/route.ts |
 | /api/funnels/catalog/[slug] | GET | patient |  | 6 | apps/rhythm-legacy/app/api/funnels/catalog/[slug]/route.ts |
 | /api/health/env | GET | public |  | 0 | apps/rhythm-legacy/app/api/health/env/route.ts |
 | /api/notifications | GET | patient |  | 0 | apps/rhythm-legacy/app/api/notifications/route.ts |
