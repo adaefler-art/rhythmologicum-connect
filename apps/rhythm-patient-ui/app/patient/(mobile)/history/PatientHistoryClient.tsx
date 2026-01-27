@@ -30,10 +30,23 @@ type Measure = {
   report: Report | null
 }
 
+// Funnel-based Assessment type
+type FunnelAssessment = {
+  id: string
+  funnelId: string
+  funnelSlug: string | null
+  funnelName: string
+  status: 'in_progress' | 'completed' | string
+  startedAt: string
+  completedAt: string | null
+  summaryTitle: string | null
+  riskBand: string | null
+}
+
 type FetchState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; measures: Measure[] }
+  | { status: 'success'; measures: Measure[]; funnelAssessments: FunnelAssessment[] }
   | { status: 'error'; message: string }
 
 export default function PatientHistoryClient() {
@@ -55,40 +68,47 @@ export default function PatientHistoryClient() {
         return
       }
 
-      // 2. Get patient profile
+      // 2. Get patient profile (for legacy measures)
       const { data: profileData, error: profileError } = await supabase
         .from('patient_profiles')
         .select('id')
         .eq('user_id', user.id)
         .single()
 
-      if (profileError || !profileData) {
-        console.error('Fehler beim Laden des Patientenprofils:', profileError)
-        setState({
-          status: 'error',
-          message:
-            'Ihr Profil konnte nicht geladen werden. Bitte versuchen Sie es später erneut.',
-        })
-        return
-      }
-
-      // 3. Fetch patient history
+      // 3. Fetch data in parallel: legacy measures + funnel assessments
       try {
         setState({ status: 'loading' })
 
-        const res = await fetch(
-          `/api/patient-measures/history?patientId=${profileData.id}`
-        )
+        // Fetch funnel-based assessments (new runtime)
+        const funnelAssessmentsPromise = fetch('/api/patient/assessments')
+          .then(async (res) => {
+            if (!res.ok) return { assessments: [] }
+            const json = await res.json()
+            return { assessments: json.data?.assessments || [] }
+          })
+          .catch(() => ({ assessments: [] }))
 
-        if (!res.ok) {
-          throw new Error('Fehler beim Laden der Verlaufsdaten.')
-        }
+        // Fetch legacy measures (if profile exists)
+        const legacyMeasuresPromise =
+          profileData && !profileError
+            ? fetch(`/api/patient-measures/history?patientId=${profileData.id}`)
+                .then(async (res) => {
+                  if (!res.ok) return { measures: [] }
+                  const json = await res.json()
+                  return { measures: json.measures || [] }
+                })
+                .catch(() => ({ measures: [] }))
+            : Promise.resolve({ measures: [] })
 
-        const json = await res.json()
+        const [funnelResult, legacyResult] = await Promise.all([
+          funnelAssessmentsPromise,
+          legacyMeasuresPromise,
+        ])
 
         setState({
           status: 'success',
-          measures: json.measures || [],
+          measures: legacyResult.measures,
+          funnelAssessments: funnelResult.assessments,
         })
       } catch (err) {
         console.error('Fehler beim Laden der Verlaufsdaten:', err)
@@ -301,9 +321,12 @@ export default function PatientHistoryClient() {
   }
 
   // status === 'success'
-  const { measures } = state
+  const { measures, funnelAssessments } = state
 
-  if (measures.length === 0) {
+  // Check if there's any data at all
+  const hasData = measures.length > 0 || funnelAssessments.length > 0
+
+  if (!hasData) {
     return (
       <div className="flex w-full flex-col gap-6 px-4 py-10">
         {/* E6.5.8: Back to Dashboard button in empty state (I2.5: canonical route) */}
@@ -460,6 +483,78 @@ export default function PatientHistoryClient() {
           </button>
         </div>
       </section>
+
+      {/* Funnel-based Assessments Section */}
+      {funnelAssessments.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-base font-semibold text-slate-800">
+            Ihre Assessments
+          </h2>
+          <div className="space-y-3">
+            {funnelAssessments.map((assessment) => (
+              <article
+                key={assessment.id}
+                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {assessment.funnelName}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {formatDateTime(assessment.startedAt)}
+                    </p>
+                    {assessment.summaryTitle && (
+                      <p className="mt-1 text-sm text-slate-700">{assessment.summaryTitle}</p>
+                    )}
+                    {assessment.riskBand && (
+                      <span className="inline-block mt-1 text-xs font-medium text-slate-600">
+                        Risiko: {assessment.riskBand}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                        assessment.status === 'completed'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : 'bg-amber-100 text-amber-800 border border-amber-200'
+                      }`}
+                    >
+                      {assessment.status === 'completed' ? 'Abgeschlossen' : 'In Bearbeitung'}
+                    </span>
+                    {assessment.status === 'completed' && assessment.funnelSlug ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/patient/results-v2?assessmentId=${assessment.id}&funnel=${assessment.funnelSlug}`
+                          )
+                        }
+                        className="text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline"
+                      >
+                        Details anzeigen
+                      </button>
+                    ) : assessment.status === 'in_progress' && assessment.funnelSlug ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/patient/assess/${assessment.funnelSlug}/flow?assessmentId=${assessment.id}`
+                          )
+                        }
+                        className="text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline"
+                      >
+                        Fortsetzen
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Summary Cards */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">

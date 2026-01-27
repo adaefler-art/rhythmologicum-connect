@@ -3,7 +3,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, Button, LoadingSkeleton, ErrorState } from '@/lib/ui/mobile-v2'
+import { Card, Button, ErrorState } from '@/lib/ui/mobile-v2'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
 
 interface ResultsV2ClientProps {
@@ -18,16 +18,63 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
     isLoading,
     error,
     errorObj,
+    isPolling,
+    pollTimedOut,
     refetch,
-  } = useAssessmentResult({ slug, assessmentId })
+  } = useAssessmentResult({
+    slug,
+    assessmentId,
+    pollOnConflict: true, // Enable polling for in_progress assessments
+    pollInterval: 2000,
+    pollTimeout: 30000,
+  })
 
-  if (isLoading) {
+  // Polling or loading - show preparing UI
+  if (isLoading || isPolling) {
     return (
-      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex items-center justify-center">
-        <LoadingSkeleton variant="card" count={1} />
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+        <Card padding="lg" shadow="md" className="mb-6 text-center">
+          <div className="space-y-4">
+            <div className="animate-pulse flex justify-center">
+              <div className="size-16 bg-[#4a90e2] rounded-full flex items-center justify-center mb-4">
+                <svg className="size-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-[#1f2937]">
+              {isPolling ? 'Ergebnis wird vorbereitet…' : 'Lade Ergebnis…'}
+            </h2>
+            <p className="text-[#6b7280]">Bitte warten Sie einen Moment.</p>
+          </div>
+        </Card>
       </div>
     )
   }
+
+  // Polling timed out
+  if (pollTimedOut) {
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+        <Card padding="lg" shadow="md" className="mb-6">
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-[#1f2937]">Ergebnis wird noch verarbeitet</h2>
+            <p className="text-[#6b7280]">Die Auswertung dauert länger als erwartet. Sie können es erneut versuchen oder später zurückkehren.</p>
+            <div className="flex flex-col gap-3 mt-4">
+              <Button variant="primary" size="lg" onClick={refetch}>
+                Ergebnis aktualisieren
+              </Button>
+              <Button size="lg" onClick={() => router.push('/patient/assess')}>
+                Zur Übersicht
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   // Special handling for STATE_CONFLICT (assessment in_progress)
   if (
     errorObj?.code === 'STATE_CONFLICT' &&

@@ -310,14 +310,22 @@ export default function AssessmentFlowV2Client({
   const exitRoute = getAssessmentFlowExitRoute(mode)
 
 
-  // Runtime result loader
+  // Runtime result loader with polling for STATE_CONFLICT
   const {
     data: runtimeResult,
     isLoading: isResultLoading,
     error: resultError,
     errorObj,
+    isPolling,
+    pollTimedOut,
     refetch: refetchResult,
-  } = useAssessmentResult({ slug, assessmentId })
+  } = useAssessmentResult({
+    slug,
+    assessmentId,
+    pollOnConflict: showResult, // Enable polling only when showing result
+    pollInterval: 2000,
+    pollTimeout: 30000,
+  })
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
@@ -502,14 +510,51 @@ export default function AssessmentFlowV2Client({
 
 
   if (showResult && assessmentId) {
-    if (isResultLoading) {
+    // Polling in progress - show "preparing result" UI
+    if (isPolling || isResultLoading) {
       return (
-        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex items-center justify-center">
-          <LoadingSkeleton variant="card" count={1} />
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+          <Card padding="lg" shadow="md" className="mb-6 text-center">
+            <div className="space-y-4">
+              <div className="animate-pulse flex justify-center">
+                <div className="size-16 bg-[#4a90e2] rounded-full flex items-center justify-center mb-4">
+                  <svg className="size-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                </div>
+              </div>
+              <h2 className="text-xl font-bold text-[#1f2937]">Auswertung wird vorbereitet…</h2>
+              <p className="text-[#6b7280]">Bitte warten Sie einen Moment, während wir Ihre Ergebnisse berechnen.</p>
+            </div>
+          </Card>
         </div>
       )
     }
-    // Special handling for STATE_CONFLICT (assessment in_progress)
+
+    // Polling timed out - show retry option
+    if (pollTimedOut) {
+      return (
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+          <Card padding="lg" shadow="md" className="mb-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-[#1f2937]">Ergebnis wird noch verarbeitet</h2>
+              <p className="text-[#6b7280]">Die Auswertung dauert länger als erwartet. Sie können es erneut versuchen oder später zurückkehren.</p>
+              <div className="flex flex-col gap-3 mt-4">
+                <Button variant="primary" size="lg" onClick={refetchResult}>
+                  Ergebnis aktualisieren
+                </Button>
+                <Button size="lg" onClick={() => router.push('/patient/assess')}>
+                  Zur Übersicht
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
+
+    // Special handling for STATE_CONFLICT (assessment in_progress) - without polling active
     if (
       errorObj?.code === 'STATE_CONFLICT' &&
       errorObj.details &&

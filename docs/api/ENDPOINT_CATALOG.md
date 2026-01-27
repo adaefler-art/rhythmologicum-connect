@@ -91,24 +91,24 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/documents/[id]/status | PATCH | system |  | 0 | apps/rhythm-legacy/app/api/documents/[id]/status/route.ts |
 | /api/documents/upload | POST | system |  | 0 | apps/rhythm-legacy/app/api/documents/upload/route.ts |
 | /api/escalation/log-click | POST | patient |  | 0 | apps/rhythm-legacy/app/api/escalation/log-click/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 10 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 10 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 11 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 11 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 6 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 6 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 2 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 2 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 3 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 3 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 3 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 4 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 4 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 4 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 4 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/workup | POST | patient |  | 0 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/workup | POST | patient |  | 0 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts |
 | /api/funnels/[slug]/content-pages | GET | patient |  | 0 | apps/rhythm-legacy/app/api/funnels/[slug]/content-pages/route.ts |
 | /api/funnels/[slug]/content-pages | GET | patient |  | 0 | apps/rhythm-patient-ui/app/api/funnels/[slug]/content-pages/route.ts |
-| /api/funnels/[slug]/definition | GET | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/definition/route.ts |
-| /api/funnels/[slug]/definition | GET | patient |  | 3 | apps/rhythm-patient-ui/app/api/funnels/[slug]/definition/route.ts |
+| /api/funnels/[slug]/definition | GET | patient |  | 4 | apps/rhythm-legacy/app/api/funnels/[slug]/definition/route.ts |
+| /api/funnels/[slug]/definition | GET | patient |  | 4 | apps/rhythm-patient-ui/app/api/funnels/[slug]/definition/route.ts |
 | /api/funnels/active | GET | patient |  | 0 | apps/rhythm-legacy/app/api/funnels/active/route.ts |
 | /api/funnels/active | GET | patient |  | 0 | apps/rhythm-patient-ui/app/api/funnels/active/route.ts |
 | /api/funnels/catalog | GET | patient |  | 18 | apps/rhythm-legacy/app/api/funnels/catalog/route.ts |
@@ -128,7 +128,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient/dashboard | (none) | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/dashboard/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 2 | apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts |
 | /api/patient/onboarding-status | (none) | patient |  | 2 | apps/rhythm-patient-ui/app/api/patient/onboarding-status/route.ts |
-| /api/patient/reports/latest | GET | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient/reports/latest/route.ts |
+| /api/patient/reports/latest | GET | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/reports/latest/route.ts |
 | /api/patient/state | GET, POST | patient |  | 3 | apps/rhythm-patient-ui/app/api/patient/state/route.ts |
 | /api/patient/triage | POST | patient |  | 0 | apps/rhythm-legacy/app/api/patient/triage/route.ts |
 | /api/pre-screening-calls | GET, POST | clinician |  | 1 | apps/rhythm-legacy/app/api/pre-screening-calls/route.ts |
