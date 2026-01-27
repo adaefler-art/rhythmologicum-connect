@@ -33,6 +33,7 @@ import {
   createEmptyPatientState,
   type PatientStateV01,
 } from '@/lib/api/contracts/patient/state'
+import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
 
 /**
  * B5/B8: Complete an assessment
@@ -170,10 +171,31 @@ async function handleCompleteAssessment(
 
     // Check if already completed
     if (assessment.status === 'completed') {
+      // E73.2: For already completed assessments, try to fetch existing processing job
+      let processingJob: { jobId: string; status: string } | undefined
+      try {
+        const jobResult = await createProcessingJobIdempotent({
+          assessmentId,
+          correlationId,
+          userId: user.id,
+          userRole: 'patient',
+        })
+
+        if (jobResult.success && jobResult.jobId) {
+          processingJob = {
+            jobId: jobResult.jobId,
+            status: jobResult.status || 'queued',
+          }
+        }
+      } catch (err) {
+        console.error('[complete] Error fetching processing job for already-completed assessment', err)
+      }
+
       const responseData: CompleteAssessmentResponseData = {
         assessmentId: assessment.id,
         status: 'completed',
         message: 'Assessment wurde bereits abgeschlossen.',
+        processingJob,
       }
       return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
     }
@@ -296,10 +318,41 @@ async function handleCompleteAssessment(
       console.error('[complete] Failed to trigger workup check', err)
     })
 
+    // E73.2: Create processing job idempotently
+    let processingJob: { jobId: string; status: string } | undefined
+    try {
+      const jobResult = await createProcessingJobIdempotent({
+        assessmentId,
+        correlationId,
+        userId: user.id,
+        userRole: 'patient',
+      })
+
+      if (jobResult.success && jobResult.jobId) {
+        processingJob = {
+          jobId: jobResult.jobId,
+          status: jobResult.status || 'queued',
+        }
+        console.log('[complete] Processing job created', {
+          jobId: jobResult.jobId,
+          assessmentId,
+          isNewJob: jobResult.isNewJob,
+        })
+      } else {
+        console.warn('[complete] Failed to create processing job', {
+          assessmentId,
+          error: jobResult.error,
+        })
+      }
+    } catch (err) {
+      console.error('[complete] Error creating processing job', err)
+    }
+
     // Success response
     const responseData: CompleteAssessmentResponseData = {
       assessmentId: assessment.id,
       status: 'completed',
+      processingJob,
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)

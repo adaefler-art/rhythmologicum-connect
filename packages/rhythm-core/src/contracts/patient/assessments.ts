@@ -106,6 +106,13 @@ export const CompleteAssessmentResponseDataSchema = z.object({
   assessmentId: z.string().uuid(),
   status: z.literal(ASSESSMENT_STATUS.COMPLETED),
   message: z.string().optional(),
+  // E73.2: Processing job information (idempotent job creation)
+  processingJob: z
+    .object({
+      jobId: z.string().uuid(),
+      status: z.string(),
+    })
+    .optional(),
 })
 
 export type CompleteAssessmentResponseData = z.infer<typeof CompleteAssessmentResponseDataSchema>
