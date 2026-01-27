@@ -408,6 +408,10 @@ export default function AssessmentFlowV2Client({
 
       await completeAssessment(assessmentId)
       setShowResult(true)
+      // Trigger result fetch after state update - small delay to ensure React state is committed
+      setTimeout(() => {
+        refetchResult()
+      }, 100)
     } catch (err) {
       setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
     } finally {
