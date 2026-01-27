@@ -331,9 +331,9 @@ export default function AssessmentFlowV2Client({
     pollTimeout: 30000,
   })
 
-  useEffect(() => {
-    refetchResultRef.current = refetchResult
-  }, [refetchResult])
+  // Store refetch in ref for user-triggered actions (retry buttons)
+  // Note: We do NOT create an effect that depends on refetchResult to avoid dependency chain issues
+  refetchResultRef.current = refetchResult
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
@@ -549,16 +549,6 @@ export default function AssessmentFlowV2Client({
       isMounted = false
     }
   }, [mode, slug, assessmentIdFromQuery, assessmentId])
-
-  useEffect(() => {
-    if (!showResult || !assessmentId) return
-    const timeoutId = setTimeout(() => {
-      refetchResultRef.current?.()
-    }, 100)
-    return () => {
-      clearTimeout(timeoutId)
-    }
-  }, [showResult, assessmentId])
 
   // ==========================================
   // RESULT STATE
