@@ -24,6 +24,7 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
   } = useAssessmentResult({
     slug,
     assessmentId,
+    enabled: true,
     pollOnConflict: true, // Enable polling for in_progress assessments
     pollInterval: 2000,
     pollTimeout: 30000,
