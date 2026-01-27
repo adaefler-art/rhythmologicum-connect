@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -311,8 +312,7 @@ export default function AssessmentFlowV2Client({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [completionError, setCompletionError] = useState<string | null>(null)
-  const [resultPayload, setResultPayload] = useState<AssessmentResultPayload | null>(null)
-  const [completionAttempted, setCompletionAttempted] = useState(false)
+  const [showResult, setShowResult] = useState(false)
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -325,48 +325,23 @@ export default function AssessmentFlowV2Client({
   // I2.5: Use canonical navigation utility for deterministic exit
   const exitRoute = getAssessmentFlowExitRoute(mode)
 
+
+  // Runtime result loader
+  const {
+    data: runtimeResult,
+    isLoading: isResultLoading,
+    error: resultError,
+    refetch: refetchResult,
+  } = useAssessmentResult({ slug, assessmentId })
+
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
       `/api/funnels/${slug}/assessments/${id}/complete`,
       { method: 'POST' },
     )
-
     if (!completeResponse.ok) {
       throw new Error('Assessment konnte nicht abgeschlossen werden.')
     }
-
-    setCompletionAttempted(true)
-  }
-
-  const fetchResult = async (id: string) => {
-    const resultResponse = await fetch(
-      `/api/funnels/${slug}/assessments/${id}/result`,
-      { method: 'GET' },
-    )
-
-    if (!resultResponse.ok) {
-      throw new Error('Ergebnis konnte nicht geladen werden.')
-    }
-
-    const payload = (await resultResponse.json()) as AssessmentResultPayload
-    const success = payload?.success ?? true
-    const result = payload?.data?.result
-
-    if (!success || !result) {
-      throw new Error('Ergebnis konnte nicht geladen werden.')
-    }
-
-    setResultPayload(payload)
-  }
-
-  const finalizeAssessment = async (id: string) => {
-    setCompletionError(null)
-
-    if (!completionAttempted) {
-      await completeAssessment(id)
-    }
-
-    await fetchResult(id)
   }
 
   // ==========================================
@@ -438,7 +413,8 @@ export default function AssessmentFlowV2Client({
         return
       }
 
-      await finalizeAssessment(assessmentId)
+      await completeAssessment(assessmentId)
+      setShowResult(true)
     } catch (err) {
       setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
     } finally {
@@ -544,34 +520,45 @@ export default function AssessmentFlowV2Client({
   // RESULT STATE
   // ==========================================
 
-  if (resultPayload) {
-    const result = resultPayload.data?.result
-    const report = resultPayload.data?.report
-    const summaryBullets = Array.isArray(result?.summaryBullets) ? result?.summaryBullets : []
 
+  if (showResult && assessmentId) {
+    if (isResultLoading) {
+      return (
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex items-center justify-center">
+          <LoadingSkeleton variant="card" count={1} />
+        </div>
+      )
+    }
+    if (resultError || !runtimeResult || !runtimeResult.result) {
+      return (
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+          <ErrorState
+            title="Fehler beim Laden des Ergebnisses"
+            message={resultError || 'Das Ergebnis konnte nicht geladen werden.'}
+            onRetry={refetchResult}
+          />
+        </div>
+      )
+    }
+    const { result, report } = runtimeResult
+    const summaryBullets = Array.isArray(result.summaryBullets) ? result.summaryBullets : []
+    const derived = result.derived || {}
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
         <div className="w-full space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-semibold text-[#1f2937]">Ergebnis</h1>
-            {mode === 'demo' && (
-              <Chip variant="neutral" size="sm">
-                Demo data
-              </Chip>
-            )}
           </div>
-
           <Card padding="lg" shadow="md">
             <div className="space-y-4">
               <div>
                 <h2 className="text-2xl font-bold text-[#1f2937]">
-                  {result?.summaryTitle ?? 'Assessment abgeschlossen'}
+                  {result.summaryTitle ?? 'Assessment abgeschlossen'}
                 </h2>
-                {result?.kind && (
+                {result.kind && (
                   <p className="text-sm text-[#6b7280]">Typ: {result.kind}</p>
                 )}
               </div>
-
               {summaryBullets.length > 0 && (
                 <ul className="space-y-2 text-sm text-[#374151] list-disc pl-5">
                   {summaryBullets.map((bullet, idx) => (
@@ -579,16 +566,33 @@ export default function AssessmentFlowV2Client({
                   ))}
                 </ul>
               )}
-
-              {report?.status && (
-                <p className="text-xs text-[#6b7280]">Report-Status: {report.status}</p>
+              {'cardiovascularAgeYears' in derived && (
+                <div className="text-lg font-semibold text-[#2563eb]">
+                  Kardiovaskuläres Alter: {derived.cardiovascularAgeYears} Jahre
+                </div>
+              )}
+              {'riskBand' in derived && (
+                <div className="text-sm text-[#6b7280]">
+                  Risiko-Band: {derived.riskBand}
+                </div>
+              )}
+              {report && (
+                <p className="text-xs text-[#6b7280]">
+                  Report-Status: {report.status || 'not generated'}
+                </p>
               )}
             </div>
           </Card>
-
-          <div className="flex items-center justify-between gap-4">
-            <Button variant="ghost" size="lg" onClick={() => router.push(exitRoute)}>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <Button variant="ghost" size="lg" onClick={() => router.push('/patient/assess')}>
               Zur Übersicht
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => router.push(`/patient/results-v2?assessmentId=${assessmentId}&funnel=${slug}`)}
+            >
+              Details anzeigen
             </Button>
           </div>
         </div>
