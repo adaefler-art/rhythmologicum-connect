@@ -315,6 +315,7 @@ export default function AssessmentFlowV2Client({
     data: runtimeResult,
     isLoading: isResultLoading,
     error: resultError,
+    errorObj,
     refetch: refetchResult,
   } = useAssessmentResult({ slug, assessmentId })
 
@@ -508,12 +509,44 @@ export default function AssessmentFlowV2Client({
         </div>
       )
     }
+    // Special handling for STATE_CONFLICT (assessment in_progress)
+    if (
+      errorObj?.code === 'STATE_CONFLICT' &&
+      errorObj.details &&
+      typeof errorObj.details === 'object' &&
+      (errorObj.details as { status?: string }).status === 'in_progress' &&
+      (errorObj.details as { assessmentId?: string }).assessmentId
+    ) {
+      const details = errorObj.details as { assessmentId: string }
+      return (
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+          <Card padding="lg" shadow="md" className="mb-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-[#1f2937]">Assessment ist noch nicht abgeschlossen</h2>
+              <p className="text-[#6b7280]">Sie können das Assessment fortsetzen, um Ihr Ergebnis zu sehen.</p>
+              <div className="flex flex-col gap-3 mt-4">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => router.push(`/patient/assess/${slug}/flow?assessmentId=${details.assessmentId}`)}
+                >
+                  Assessment fortsetzen
+                </Button>
+                <Button size="lg" onClick={refetchResult}>
+                  Erneut versuchen
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
     if (resultError || !runtimeResult || !runtimeResult.result) {
       return (
         <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
           <ErrorState
             title="Fehler beim Laden des Ergebnisses"
-            message={resultError || 'Das Ergebnis konnte nicht geladen werden.'}
+            message={typeof resultError === 'string' ? resultError : 'Das Ergebnis konnte nicht geladen werden.'}
             onRetry={refetchResult}
           />
         </div>

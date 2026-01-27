@@ -39,6 +39,7 @@ export interface UseAssessmentResultReturn {
   data: RuntimeResultResponse['data'] | null
   isLoading: boolean
   error: string | null
+  errorObj?: { code?: string; message?: string; details?: Record<string, unknown> } | null
   refetch: () => void
 }
 
@@ -59,6 +60,7 @@ export function useAssessmentResult({ slug, assessmentId }: UseAssessmentResultO
   const [data, setData] = useState<RuntimeResultResponse['data'] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorObj, setErrorObj] = useState<{ code?: string; message?: string; details?: Record<string, unknown> } | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const lastSuccessData = useRef<RuntimeResultResponse['data'] | null>(null)
 
@@ -66,11 +68,13 @@ export function useAssessmentResult({ slug, assessmentId }: UseAssessmentResultO
     if (!slug || !assessmentId) {
       setData(null)
       setError(null)
+      setErrorObj(null)
       setIsLoading(false)
       return
     }
     setIsLoading(true)
     setError(null)
+    setErrorObj(null)
     if (abortRef.current) abortRef.current.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -84,11 +88,14 @@ export function useAssessmentResult({ slug, assessmentId }: UseAssessmentResultO
         let json: RuntimeResultResponse
         try {
           json = await res.json()
-        } catch (e) {
+        } catch {
           throw new Error('Invalid server response')
         }
         if (!res.ok || json.success !== true) {
-          throw new Error(json?.error?.message || 'Fehler beim Laden des Ergebnisses')
+          const errorObj = json?.error as { code?: string; message?: string; details?: Record<string, unknown> }
+          const err = new Error(json?.error?.message || 'Fehler beim Laden des Ergebnisses') as Error & { errorObj?: { code?: string; message?: string; details?: Record<string, unknown> } }
+          err.errorObj = errorObj
+          throw err
         }
         return json
       })
@@ -99,6 +106,7 @@ export function useAssessmentResult({ slug, assessmentId }: UseAssessmentResultO
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Unbekannter Fehler')
+        setErrorObj((err as { errorObj?: { code?: string; message?: string; details?: Record<string, unknown> } })?.errorObj || null)
         setIsLoading(false)
         // Keep last successful data to avoid flicker
         setData(lastSuccessData.current)
@@ -117,6 +125,7 @@ export function useAssessmentResult({ slug, assessmentId }: UseAssessmentResultO
     data,
     isLoading,
     error,
+    errorObj,
     refetch: fetchResult,
   }
 }
