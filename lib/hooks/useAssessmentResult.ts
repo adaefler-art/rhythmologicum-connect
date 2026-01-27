@@ -33,6 +33,8 @@ export interface RuntimeResultResponse {
 export interface UseAssessmentResultOptions {
   slug: string | null
   assessmentId: string | null
+  /** Enable fetching (default: true) */
+  enabled?: boolean
   /** Enable polling when result is not ready (STATE_CONFLICT with in_progress) */
   pollOnConflict?: boolean
   /** Polling interval in ms (default: 2000) */
@@ -72,6 +74,7 @@ export interface UseAssessmentResultReturn {
 export function useAssessmentResult({
   slug,
   assessmentId,
+  enabled = true,
   pollOnConflict = false,
   pollInterval = 2000,
   pollTimeout = 30000,
@@ -97,7 +100,7 @@ export function useAssessmentResult({
   }, [])
 
   const fetchResult = useCallback(() => {
-    if (!slug || !assessmentId) {
+    if (!enabled || !slug || !assessmentId) {
       setData(null)
       setError(null)
       setErrorObj(null)
@@ -182,7 +185,7 @@ export function useAssessmentResult({
           stopPolling()
         }
       })
-  }, [slug, assessmentId, pollOnConflict, pollInterval, pollTimeout, isPolling, stopPolling])
+  }, [enabled, slug, assessmentId, pollOnConflict, pollInterval, pollTimeout, isPolling, stopPolling])
 
   // Handle polling interval
   useEffect(() => {
@@ -200,13 +203,19 @@ export function useAssessmentResult({
   }, [isPolling, pollInterval, fetchResult])
 
   useEffect(() => {
+    if (!enabled) {
+      return () => {
+        if (abortRef.current) abortRef.current.abort()
+        stopPolling()
+      }
+    }
     // Avoid direct setState in effect body (react-hooks/set-state-in-effect)
     queueMicrotask(fetchResult)
     return () => {
       if (abortRef.current) abortRef.current.abort()
       stopPolling()
     }
-  }, [fetchResult, stopPolling])
+  }, [enabled, fetchResult, stopPolling])
 
   return {
     data,

@@ -325,6 +325,7 @@ export default function AssessmentFlowV2Client({
   } = useAssessmentResult({
     slug,
     assessmentId,
+    enabled: showResult,
     pollOnConflict: showResult, // Enable polling only when showing result
     pollInterval: 2000,
     pollTimeout: 30000,
