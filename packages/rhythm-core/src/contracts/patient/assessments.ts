@@ -110,7 +110,7 @@ export const CompleteAssessmentResponseDataSchema = z.object({
   processingJob: z
     .object({
       jobId: z.string().uuid(),
-      status: z.string(),
+      status: z.enum(['queued', 'in_progress', 'completed', 'failed']),
     })
     .optional(),
 })

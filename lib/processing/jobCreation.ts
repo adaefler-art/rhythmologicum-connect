@@ -43,8 +43,10 @@ export type CreateJobInput = {
  * Creates a processing job for a completed assessment (idempotent)
  *
  * This function:
+ * - First checks if a job already exists (select-then-insert pattern)
  * - Generates a correlation ID if not provided
- * - Uses INSERT ... ON CONFLICT to handle idempotency
+ * - Creates a new job if none exists
+ * - Handles race conditions via unique constraint violations (23505)
  * - Logs audit event for job creation
  * - Returns job_id and status in response
  *
@@ -78,6 +80,11 @@ export async function createProcessingJobIdempotent(
     const { assessmentId, userId, userRole } = input
 
     // Generate correlation ID if not provided
+    // Note: This uses a timestamp-based format (assessment-{id}-{timestamp})
+    // which differs from the UUID-based request correlation IDs.
+    // Both formats are acceptable as they serve different purposes:
+    // - Request correlation IDs: for tracing requests across services
+    // - Job correlation IDs: for preventing duplicate job creation
     const correlationId = input.correlationId || generateCorrelationId(assessmentId)
     const schemaVersion = 'v1'
 
@@ -194,9 +201,12 @@ export async function createProcessingJobIdempotent(
 
     // Log audit event for job creation
     // Fire-and-forget - don't block on audit logging
+    // Note: userRole may not match exact UserRole type, audit system is permissive
     logAuditEvent({
       actor_user_id: userId,
-      actor_role: userRole as any,
+      actor_role: (userRole === 'patient' || userRole === 'clinician' || userRole === 'admin' || userRole === 'nurse')
+        ? userRole as any
+        : undefined,
       source: 'api',
       entity_type: 'processing_job',
       entity_id: newJob.id,
