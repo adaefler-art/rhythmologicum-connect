@@ -39,8 +39,6 @@ type FunnelAssessment = {
   status: 'in_progress' | 'completed' | string
   startedAt: string
   completedAt: string | null
-  summaryTitle: string | null
-  riskBand: string | null
 }
 
 type FetchState =
@@ -504,14 +502,6 @@ export default function PatientHistoryClient() {
                     <p className="text-xs text-slate-500">
                       {formatDateTime(assessment.startedAt)}
                     </p>
-                    {assessment.summaryTitle && (
-                      <p className="mt-1 text-sm text-slate-700">{assessment.summaryTitle}</p>
-                    )}
-                    {assessment.riskBand && (
-                      <span className="inline-block mt-1 text-xs font-medium text-slate-600">
-                        Risiko: {assessment.riskBand}
-                      </span>
-                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <span

@@ -67,7 +67,6 @@ export async function GET(request: Request) {
         status,
         started_at,
         completed_at,
-        result,
         funnels!assessments_funnel_id_fkey (
           slug,
           title
@@ -108,11 +107,6 @@ export async function GET(request: Request) {
         status: a.status,
         startedAt: a.started_at,
         completedAt: a.completed_at,
-        // Extract summary from result if present
-        summaryTitle: (a.result as Record<string, unknown> | null)?.summaryTitle || null,
-        riskBand:
-          ((a.result as Record<string, unknown> | null)?.derived as Record<string, unknown> | null)
-            ?.riskBand || null,
       }
     })
 
