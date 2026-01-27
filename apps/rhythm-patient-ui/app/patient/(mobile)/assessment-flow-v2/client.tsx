@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -299,6 +299,7 @@ export default function AssessmentFlowV2Client({
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const refetchResultRef = useRef<(() => void) | null>(null)
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -328,6 +329,10 @@ export default function AssessmentFlowV2Client({
     pollInterval: 2000,
     pollTimeout: 30000,
   })
+
+  useEffect(() => {
+    refetchResultRef.current = refetchResult
+  }, [refetchResult])
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
@@ -418,10 +423,6 @@ export default function AssessmentFlowV2Client({
 
       await completeAssessment(assessmentId)
       setShowResult(true)
-      // Trigger result fetch after state update - small delay to ensure React state is committed
-      setTimeout(() => {
-        refetchResult()
-      }, 100)
     } catch (err) {
       setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
     } finally {
@@ -462,6 +463,7 @@ export default function AssessmentFlowV2Client({
   useEffect(() => {
     if (mode !== 'live') return
     if (!slug) return
+    if (assessmentId) return
 
     let isMounted = true
 
@@ -509,9 +511,6 @@ export default function AssessmentFlowV2Client({
 
           if (resumeData.status === 'completed') {
             setShowResult(true)
-            setTimeout(() => {
-              refetchResult()
-            }, 100)
           }
 
           return
@@ -548,7 +547,17 @@ export default function AssessmentFlowV2Client({
     return () => {
       isMounted = false
     }
-  }, [mode, slug, assessmentIdFromQuery, refetchResult])
+  }, [mode, slug, assessmentIdFromQuery, assessmentId])
+
+  useEffect(() => {
+    if (!showResult || !assessmentId) return
+    const timeoutId = setTimeout(() => {
+      refetchResultRef.current?.()
+    }, 100)
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [showResult, assessmentId])
 
   // ==========================================
   // RESULT STATE
