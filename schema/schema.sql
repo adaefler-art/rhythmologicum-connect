@@ -1054,7 +1054,7 @@ CREATE OR REPLACE FUNCTION "public"."is_clinician"() RETURNS boolean
 BEGIN
   RETURN (
     SELECT COALESCE(
-      (auth.jwt()->>'role' = 'clinician'),
+      (auth.jwt()->>'role' IN ('clinician', 'admin')),
       false
     )
   );
@@ -1065,7 +1065,7 @@ $$;
 ALTER FUNCTION "public"."is_clinician"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."is_clinician"() IS 'Returns true if the current authenticated user has the clinician role';
+COMMENT ON FUNCTION "public"."is_clinician"() IS 'Returns true if the current authenticated user has the clinician or admin role';
 
 
 
