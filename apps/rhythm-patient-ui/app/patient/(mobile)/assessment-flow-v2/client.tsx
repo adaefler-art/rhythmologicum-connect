@@ -495,7 +495,6 @@ export default function AssessmentFlowV2Client({
         if (!isMounted) return
         setAssessmentId(id)
         setCurrentStep(1)
-        setCompletionAttempted(false)
         setCompletionError(null)
         setResultPayload(null)
         setIsLoading(false)
