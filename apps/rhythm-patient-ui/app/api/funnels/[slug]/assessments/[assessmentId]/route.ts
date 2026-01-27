@@ -96,7 +96,6 @@ export async function GET(
       .from('assessments')
       .select('id, patient_id, funnel, funnel_id, status, started_at, completed_at, current_step_id')
       .eq('id', assessmentId)
-      .eq('funnel', slug)
       .maybeSingle()
 
     console.log('[getAssessment] Query result:', {

@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { FUNNEL_SLUG_ALIASES, getCanonicalFunnelSlug } from '@/lib/contracts/registry'
 import {
   unauthorizedResponse,
   forbiddenResponse,
@@ -15,16 +14,6 @@ import {
   type GetResultResponseData,
 } from '@/lib/api/contracts/patient'
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
-
-function getFunnelSlugCandidates(slug: string): string[] {
-  const normalized = slug.toLowerCase().trim()
-  const canonical = getCanonicalFunnelSlug(normalized)
-  const legacySlugsForCanonical = Object.entries(FUNNEL_SLUG_ALIASES)
-    .filter(([, canonicalSlug]) => canonicalSlug === canonical)
-    .map(([legacySlug]) => legacySlug)
-
-  return Array.from(new Set([normalized, canonical, ...legacySlugsForCanonical]))
-}
 
 export async function GET(
   request: NextRequest,
@@ -67,7 +56,6 @@ export async function GET(
       .from('assessments')
       .select('id, patient_id, funnel, completed_at, status, workup_status, missing_data_fields')
       .eq('id', assessmentId)
-      .in('funnel', getFunnelSlugCandidates(slug))
       .single()) as { data: AssessmentWithWorkup | null; error: unknown }
 
     if (assessmentError) {

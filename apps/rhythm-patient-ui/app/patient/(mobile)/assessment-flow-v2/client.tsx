@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Card,
   Button,
@@ -286,6 +286,8 @@ export default function AssessmentFlowV2Client({
   questions,
 }: AssessmentFlowV2ClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const assessmentIdFromQuery = searchParams.get('assessmentId')
   const [isLoading, setIsLoading] = useState(initialLoading)
   const [error, setError] = useState(hasError)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -332,8 +334,16 @@ export default function AssessmentFlowV2Client({
       `/api/funnels/${slug}/assessments/${id}/complete`,
       { method: 'POST' },
     )
-    if (!completeResponse.ok) {
-      throw new Error('Assessment konnte nicht abgeschlossen werden.')
+
+    let payload: { success?: boolean; data?: { status?: string }; error?: { message?: string } } | null = null
+    try {
+      payload = await completeResponse.json()
+    } catch {
+      payload = null
+    }
+
+    if (!completeResponse.ok || payload?.success !== true || payload?.data?.status !== 'completed') {
+      throw new Error(payload?.error?.message || 'Assessment konnte nicht abgeschlossen werden.')
     }
   }
 
@@ -475,6 +485,38 @@ export default function AssessmentFlowV2Client({
         if (!isMounted) return
         setLiveQuestions(mappedQuestions)
 
+        if (assessmentIdFromQuery) {
+          const resumeResponse = await fetch(`/api/funnels/${slug}/assessments/${assessmentIdFromQuery}`, {
+            method: 'GET',
+          })
+
+          if (!resumeResponse.ok) {
+            throw new Error('Assessment konnte nicht geladen werden.')
+          }
+
+          const resumePayload = await resumeResponse.json()
+          const resumeData = resumePayload?.data ?? resumePayload
+
+          if (!resumePayload?.success || !resumeData?.assessmentId) {
+            throw new Error('Assessment konnte nicht geladen werden.')
+          }
+
+          if (!isMounted) return
+          setAssessmentId(resumeData.assessmentId)
+          setCurrentStep((resumeData.currentStep?.stepIndex ?? 0) + 1)
+          setCompletionError(null)
+          setIsLoading(false)
+
+          if (resumeData.status === 'completed') {
+            setShowResult(true)
+            setTimeout(() => {
+              refetchResult()
+            }, 100)
+          }
+
+          return
+        }
+
         const startResponse = await fetch(`/api/funnels/${slug}/assessments`, {
           method: 'POST',
         })
@@ -506,7 +548,7 @@ export default function AssessmentFlowV2Client({
     return () => {
       isMounted = false
     }
-  }, [mode, slug])
+  }, [mode, slug, assessmentIdFromQuery, refetchResult])
 
   // ==========================================
   // RESULT STATE

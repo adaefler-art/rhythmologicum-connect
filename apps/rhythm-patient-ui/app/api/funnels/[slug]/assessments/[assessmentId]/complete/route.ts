@@ -105,7 +105,6 @@ async function handleCompleteAssessment(
       .from('assessments')
       .select('id, patient_id, funnel, funnel_id, status, started_at')
       .eq('id', assessmentId)
-      .eq('funnel', slug)
       .single()
 
     if (assessmentError || !assessment) {
@@ -174,15 +173,18 @@ async function handleCompleteAssessment(
     }
 
     const completedAt = new Date().toISOString()
-    const { error: updateError } = await supabase
+    const { data: updatedAssessment, error: updateError } = await supabase
       .from('assessments')
       .update({
         status: 'completed',
         completed_at: completedAt,
       })
       .eq('id', assessmentId)
+      .eq('patient_id', patientProfile.id)
+      .select('id, status, completed_at')
+      .single()
 
-    if (updateError) {
+    if (updateError || !updatedAssessment) {
       logDatabaseError(
         {
           userId: user.id,
@@ -190,6 +192,18 @@ async function handleCompleteAssessment(
           endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
         },
         updateError,
+      )
+      return internalErrorResponse('Fehler beim Abschließen des Assessments.', correlationId)
+    }
+
+    if (updatedAssessment.status !== 'completed' || !updatedAssessment.completed_at) {
+      logDatabaseError(
+        {
+          userId: user.id,
+          assessmentId,
+          endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+        },
+        new Error('Assessment status not updated to completed'),
       )
       return internalErrorResponse('Fehler beim Abschließen des Assessments.', correlationId)
     }
