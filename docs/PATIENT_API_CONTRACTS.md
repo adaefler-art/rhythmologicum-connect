@@ -53,8 +53,9 @@ The `PATIENT_ASSESSMENT_SCHEMA_VERSION` constant should be incremented when maki
 **POST** `/api/funnels/{slug}/assessments/{assessmentId}/complete`
 
 - **Request**: No body required
-- **Response**: Assessment ID and completion status
+- **Response**: Assessment ID, completion status, and optional processing job information
 - **Schema**: `CompleteAssessmentResponseSchema`
+- **E73.2**: Response includes optional `processingJob` field with `jobId` and `status` when a processing job is created
 
 ### 5. Get Result
 **GET** `/api/funnels/{slug}/assessments/{assessmentId}/result`
