@@ -299,7 +299,6 @@ export default function AssessmentFlowV2Client({
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
-  const refetchResultRef = useRef<(() => void) | null>(null)
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -330,10 +329,6 @@ export default function AssessmentFlowV2Client({
     pollInterval: 2000,
     pollTimeout: 30000,
   })
-
-  // Store refetch in ref for user-triggered actions (retry buttons)
-  // Note: We do NOT create an effect that depends on refetchResult to avoid dependency chain issues
-  refetchResultRef.current = refetchResult
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
