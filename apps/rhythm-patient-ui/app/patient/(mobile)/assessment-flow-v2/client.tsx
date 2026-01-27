@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -13,23 +13,31 @@ import {
 } from '@/lib/ui/mobile-v2'
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 import { getAssessmentFlowExitRoute } from '../utils/navigation'
+import type { FunnelDefinition, QuestionDefinition, QuestionOption } from '@/lib/types/funnel'
+import { isQuestionStep } from '@/lib/types/funnel'
 
 // ==========================================
 // TYPES
 // ==========================================
 
-interface QuestionOption {
+interface AssessmentOption {
   id: string
+  value: string | number | boolean
   label: string
   icon?: string
   description?: string
 }
 
-interface Question {
+interface AssessmentQuestion {
   id: string
+  key: string
   title: string
   subtitle?: string
-  options: QuestionOption[]
+  stepId: string
+  stepTitle: string
+  stepIndex: number
+  questionIndex: number
+  options: AssessmentOption[]
   whyWeAsk: string
 }
 
@@ -37,32 +45,41 @@ interface Question {
 // DEMO DATA - CLEARLY LABELED AS FIXTURE
 // ==========================================
 
-const __DEV_FIXTURE__QUESTIONS: Question[] = [
+const __DEV_FIXTURE__QUESTIONS: AssessmentQuestion[] = [
   {
     id: 'energy-level',
+    key: 'energy-level',
     title: 'How would you rate your energy level today?',
     subtitle: 'Select the option that best describes your current state',
+    stepId: 'demo-step-1',
+    stepTitle: 'Energy',
+    stepIndex: 0,
+    questionIndex: 0,
     options: [
       {
         id: 'excellent',
+        value: 'excellent',
         label: 'Excellent',
         icon: '💚',
         description: 'I feel energized and ready to take on the day',
       },
       {
         id: 'good',
+        value: 'good',
         label: 'Good',
         icon: '💙',
         description: 'I have good energy, maybe a little tired',
       },
       {
         id: 'fair',
+        value: 'fair',
         label: 'Fair',
         icon: '💛',
         description: 'My energy is okay, but I could use a boost',
       },
       {
         id: 'poor',
+        value: 'poor',
         label: 'Poor',
         icon: '❤️',
         description: 'I feel drained and low on energy',
@@ -73,26 +90,35 @@ const __DEV_FIXTURE__QUESTIONS: Question[] = [
   },
   {
     id: 'sleep-duration',
+    key: 'sleep-duration',
     title: 'How many hours did you sleep last night?',
     subtitle: 'Think about your actual sleep time, not time in bed',
+    stepId: 'demo-step-2',
+    stepTitle: 'Sleep',
+    stepIndex: 1,
+    questionIndex: 0,
     options: [
       {
         id: 'less-than-4',
+        value: 'less-than-4',
         label: 'Less than 4 hours',
         description: 'Very little sleep',
       },
       {
         id: '4-6',
+        value: '4-6',
         label: '4-6 hours',
         description: 'Below recommended amount',
       },
       {
         id: '6-8',
+        value: '6-8',
         label: '6-8 hours',
         description: 'Recommended sleep duration',
       },
       {
         id: 'more-than-8',
+        value: 'more-than-8',
         label: 'More than 8 hours',
         description: 'Extended sleep period',
       },
@@ -102,31 +128,41 @@ const __DEV_FIXTURE__QUESTIONS: Question[] = [
   },
   {
     id: 'stress-level',
+    key: 'stress-level',
     title: 'How stressed do you feel right now?',
     subtitle: 'Be honest - there are no wrong answers',
+    stepId: 'demo-step-3',
+    stepTitle: 'Stress',
+    stepIndex: 2,
+    questionIndex: 0,
     options: [
       {
         id: 'not-at-all',
+        value: 'not-at-all',
         label: 'Not at all',
         description: 'I feel calm and relaxed',
       },
       {
         id: 'slightly',
+        value: 'slightly',
         label: 'Slightly',
         description: 'A little stress, but manageable',
       },
       {
         id: 'moderately',
+        value: 'moderately',
         label: 'Moderately',
         description: 'Noticeable stress affecting my day',
       },
       {
         id: 'very-stressed',
+        value: 'very-stressed',
         label: 'Very stressed',
         description: 'High stress levels, hard to cope',
       },
       {
         id: 'extremely-stressed',
+        value: 'extremely-stressed',
         label: 'Extremely stressed',
         description: 'Overwhelming stress, need help',
       },
@@ -141,10 +177,11 @@ const __DEV_FIXTURE__QUESTIONS: Question[] = [
 // ==========================================
 
 interface AssessmentFlowV2ClientProps {
+  slug: string
   initialLoading?: boolean
   hasError?: boolean
   mode?: 'demo' | 'live'
-  questions?: Question[]
+  questions?: AssessmentQuestion[]
 }
 
 // ==========================================
@@ -152,7 +189,7 @@ interface AssessmentFlowV2ClientProps {
 // ==========================================
 
 interface RadioOptionProps {
-  option: QuestionOption
+  option: AssessmentOption
   selected: boolean
   onSelect: () => void
 }
@@ -239,6 +276,7 @@ function Accordion({ title, children }: AccordionProps) {
 // ==========================================
 
 export default function AssessmentFlowV2Client({
+  slug,
   initialLoading = false,
   hasError = false,
   mode = 'live',
@@ -247,16 +285,21 @@ export default function AssessmentFlowV2Client({
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(initialLoading)
   const [error, setError] = useState(hasError)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [currentStep, setCurrentStep] = useState(1)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({})
+  const [assessmentId, setAssessmentId] = useState<string | null>(null)
+  const [liveQuestions, setLiveQuestions] = useState<AssessmentQuestion[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationMessage, setValidationMessage] = useState<string | null>(null)
 
-  const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? []
+  const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
   const currentQuestion = resolvedQuestions[currentStep - 1]
   const progressPercentage = totalSteps > 0
     ? Math.round((currentStep / totalSteps) * 100)
     : 0
-  const selectedAnswer = answers[currentQuestion?.id]
+  const selectedAnswer = currentQuestion ? answers[currentQuestion.id] : undefined
   
   // I2.5: Use canonical navigation utility for deterministic exit
   const exitRoute = getAssessmentFlowExitRoute(mode)
@@ -265,20 +308,87 @@ export default function AssessmentFlowV2Client({
   // EVENT HANDLERS (I2.5 Navigation Consistency)
   // ==========================================
 
-  const handleSelectOption = (optionId: string) => {
+  const handleSelectOption = (option: AssessmentOption) => {
     if (!currentQuestion) return
     setAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: optionId,
+      [currentQuestion.id]: option.value,
     }))
   }
 
-  const handleContinue = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1)
-    } else {
-      // Assessment complete - deterministic exit via canonical route
+  const handleContinue = async () => {
+    if (!currentQuestion || !assessmentId) return
+    if (selectedAnswer === undefined || selectedAnswer === null) return
+
+    setIsSubmitting(true)
+    setValidationMessage(null)
+
+    try {
+      const questionId = resolveQuestionId(currentQuestion)
+      const saveResponse = await fetch(
+        `/api/funnels/${slug}/assessments/${assessmentId}/answers/save`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stepId: currentQuestion.stepId,
+            questionId,
+            answerValue: selectedAnswer,
+          }),
+        },
+      )
+
+      if (!saveResponse.ok) {
+        throw new Error('Antwort konnte nicht gespeichert werden.')
+      }
+
+      const isLastQuestionInStep = isFinalQuestionInStep(resolvedQuestions, currentStep - 1)
+      if (isLastQuestionInStep) {
+        const validateResponse = await fetch(
+          `/api/funnels/${slug}/assessments/${assessmentId}/steps/${currentQuestion.stepId}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
+
+        if (!validateResponse.ok) {
+          throw new Error('Schritt konnte nicht validiert werden.')
+        }
+
+        const validationPayload = await validateResponse.json()
+        const isValid =
+          validationPayload?.data?.isValid ??
+          validationPayload?.isValid ??
+          validationPayload?.success
+
+        if (!isValid) {
+          setValidationMessage('Bitte beantworten Sie alle Pflichtfragen.')
+          return
+        }
+      }
+
+      if (currentStep < totalSteps) {
+        setCurrentStep((prev) => prev + 1)
+        return
+      }
+
+      await fetch(
+        `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
+        { method: 'POST' },
+      )
+
+      await fetch(
+        `/api/funnels/${slug}/assessments/${assessmentId}/result`,
+        { method: 'GET' },
+      )
+
       router.push(exitRoute)
+    } catch (err) {
+      setError(true)
+      setErrorMessage(err instanceof Error ? err.message : 'Unbekannter Fehler')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -293,12 +403,68 @@ export default function AssessmentFlowV2Client({
 
   const handleRetry = () => {
     setError(false)
+    setErrorMessage(null)
     setIsLoading(true)
-
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    setAssessmentId(null)
   }
+
+  useEffect(() => {
+    if (mode !== 'live') return
+    if (!slug) return
+
+    let isMounted = true
+
+    const load = async () => {
+      setIsLoading(true)
+      setError(false)
+      setErrorMessage(null)
+
+      try {
+        const definitionResponse = await fetch(`/api/funnels/${slug}/definition`, {
+          method: 'GET',
+        })
+
+        if (!definitionResponse.ok) {
+          throw new Error('Assessment konnte nicht geladen werden.')
+        }
+
+        const definition = (await definitionResponse.json()) as FunnelDefinition
+        const mappedQuestions = buildQuestionsFromDefinition(definition)
+
+        if (!isMounted) return
+        setLiveQuestions(mappedQuestions)
+
+        const startResponse = await fetch(`/api/funnels/${slug}/assessments`, {
+          method: 'POST',
+        })
+
+        if (!startResponse.ok) {
+          throw new Error('Assessment konnte nicht gestartet werden.')
+        }
+
+        const startPayload = await startResponse.json()
+        const id = startPayload?.data?.assessmentId ?? startPayload?.assessmentId
+        if (!id) {
+          throw new Error('Assessment konnte nicht gestartet werden.')
+        }
+
+        if (!isMounted) return
+        setAssessmentId(id)
+        setCurrentStep(1)
+        setIsLoading(false)
+      } catch (err) {
+        if (!isMounted) return
+        setError(true)
+        setErrorMessage(err instanceof Error ? err.message : 'Unbekannter Fehler')
+        setIsLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      isMounted = false
+    }
+  }, [mode, slug])
 
   // ==========================================
   // LOADING STATE
@@ -334,7 +500,7 @@ export default function AssessmentFlowV2Client({
         <div className="w-full">
           <ErrorState
             title="Failed to load assessment"
-            message="We couldn't load the assessment questions. Please try again."
+            message={errorMessage ?? "We couldn't load the assessment questions. Please try again."}
             onRetry={handleRetry}
           />
         </div>
@@ -401,8 +567,8 @@ export default function AssessmentFlowV2Client({
                 <RadioOption
                   key={option.id}
                   option={option}
-                  selected={selectedAnswer === option.id}
-                  onSelect={() => handleSelectOption(option.id)}
+                  selected={selectedAnswer === option.value}
+                  onSelect={() => handleSelectOption(option)}
                 />
               ))}
             </div>
@@ -411,6 +577,12 @@ export default function AssessmentFlowV2Client({
 
         {/* Why We Ask This - Accordion */}
         <Accordion title="Why we ask this question">{currentQuestion.whyWeAsk}</Accordion>
+
+        {validationMessage && (
+          <div className="text-sm text-[#b91c1c] bg-[#fee2e2] border border-[#fecaca] rounded-lg px-3 py-2">
+            {validationMessage}
+          </div>
+        )}
 
         {/* Footer - Action Buttons */}
         <div className="flex items-center justify-between gap-4 pt-4">
@@ -422,7 +594,7 @@ export default function AssessmentFlowV2Client({
             variant="primary"
             size="lg"
             onClick={handleContinue}
-            disabled={!selectedAnswer}
+            disabled={!selectedAnswer || isSubmitting}
           >
             {currentStep < totalSteps ? 'Continue' : 'Complete'}
           </Button>
@@ -430,4 +602,74 @@ export default function AssessmentFlowV2Client({
       </div>
     </div>
   )
+}
+
+function resolveQuestionId(question: AssessmentQuestion): string {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (isUuid.test(question.stepId)) {
+    return question.key
+  }
+  return question.id
+}
+
+function isFinalQuestionInStep(questions: AssessmentQuestion[], currentIndex: number): boolean {
+  const current = questions[currentIndex]
+  if (!current) return false
+  const next = questions[currentIndex + 1]
+  if (!next) return true
+  return next.stepId !== current.stepId
+}
+
+function buildQuestionsFromDefinition(definition: FunnelDefinition): AssessmentQuestion[] {
+  const questions: AssessmentQuestion[] = []
+
+  definition.steps.forEach((step) => {
+    if (!isQuestionStep(step)) return
+    step.questions.forEach((question, idx) => {
+      questions.push({
+        id: question.id,
+        key: question.key,
+        title: question.label,
+        subtitle: question.helpText ?? undefined,
+        stepId: step.id,
+        stepTitle: step.title,
+        stepIndex: step.orderIndex,
+        questionIndex: idx,
+        options: mapQuestionOptions(question),
+        whyWeAsk: question.helpText ?? 'Diese Information hilft uns bei der Auswertung.',
+      })
+    })
+  })
+
+  return questions
+}
+
+function mapQuestionOptions(question: QuestionDefinition): AssessmentOption[] {
+  if (question.options && question.options.length > 0) {
+    return question.options.map((option) => ({
+      id: String(option.value),
+      value: option.value,
+      label: option.label,
+    }))
+  }
+
+  if (typeof question.minValue === 'number' && typeof question.maxValue === 'number') {
+    const range = question.maxValue - question.minValue
+    const steps = range >= 4 ? 5 : range + 1
+    const options: AssessmentOption[] = []
+    for (let i = 0; i < steps; i += 1) {
+      const value = question.minValue + Math.round((range / (steps - 1)) * i)
+      options.push({
+        id: String(value),
+        value,
+        label: String(value),
+      })
+    }
+    return options
+  }
+
+  return [
+    { id: 'yes', value: true, label: 'Ja' },
+    { id: 'no', value: false, label: 'Nein' },
+  ]
 }

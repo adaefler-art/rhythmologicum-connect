@@ -11,10 +11,11 @@ type PageProps = {
 }
 
 export default async function AssessmentFlowPage({ params }: PageProps) {
-  await params
+  const { id } = await params
 
   return (
     <AssessmentFlowV2Client
+      slug={id}
       initialLoading={false}
       hasError={false}
       mode="live"

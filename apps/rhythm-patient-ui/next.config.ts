@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
     }
     return [
       {
-        source: '/api/:path*',
+        source: '/api/:path((?!funnels).*)',
         destination: `${engineBaseUrl}/api/:path*`,
       },
     ]

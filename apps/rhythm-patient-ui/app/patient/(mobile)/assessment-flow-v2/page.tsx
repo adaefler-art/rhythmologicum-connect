@@ -22,6 +22,7 @@ export default async function AssessmentFlowV2Page() {
   
   return (
     <AssessmentFlowV2Client
+      slug="demo"
       initialLoading={initialLoading}
       hasError={hasError}
       mode="demo"
