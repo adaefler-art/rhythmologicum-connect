@@ -299,7 +299,6 @@ export default function AssessmentFlowV2Client({
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
-  const refetchResultRef = useRef<(() => void) | null>(null)
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -330,10 +329,6 @@ export default function AssessmentFlowV2Client({
     pollInterval: 2000,
     pollTimeout: 30000,
   })
-
-  useEffect(() => {
-    refetchResultRef.current = refetchResult
-  }, [refetchResult])
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
@@ -549,16 +544,6 @@ export default function AssessmentFlowV2Client({
       isMounted = false
     }
   }, [mode, slug, assessmentIdFromQuery, assessmentId])
-
-  useEffect(() => {
-    if (!showResult || !assessmentId) return
-    const timeoutId = setTimeout(() => {
-      refetchResultRef.current?.()
-    }, 100)
-    return () => {
-      clearTimeout(timeoutId)
-    }
-  }, [showResult, assessmentId])
 
   // ==========================================
   // RESULT STATE

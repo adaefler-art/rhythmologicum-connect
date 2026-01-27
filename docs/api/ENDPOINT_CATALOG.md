@@ -93,8 +93,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/escalation/log-click | POST | patient |  | 0 | apps/rhythm-legacy/app/api/escalation/log-click/route.ts |
 | /api/funnels/[slug]/assessments | POST | patient |  | 11 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts |
 | /api/funnels/[slug]/assessments | POST | patient |  | 11 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 8 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 8 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
@@ -124,6 +124,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient-measures/history | (none) | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient-measures/history/route.ts |
 | /api/patient-profiles | GET | patient |  | 2 | apps/rhythm-legacy/app/api/patient-profiles/route.ts |
 | /api/patient-profiles | (none) | patient |  | 2 | apps/rhythm-studio-ui/app/api/patient-profiles/route.ts |
+| /api/patient/assessments | GET | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient/assessments/route.ts |
 | /api/patient/dashboard | GET | patient |  | 0 | apps/rhythm-legacy/app/api/patient/dashboard/route.ts |
 | /api/patient/dashboard | (none) | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/dashboard/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 2 | apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts |

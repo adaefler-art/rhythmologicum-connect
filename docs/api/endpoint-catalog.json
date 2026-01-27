@@ -2198,7 +2198,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 8,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
@@ -2234,6 +2234,11 @@
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
           "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
           "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentIdFromQuery}",
+          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -2247,7 +2252,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 8,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
@@ -2283,6 +2288,11 @@
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
           "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
           "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentIdFromQuery}",
+          "kind": "fetch"
         }
       ],
       "isOrphan": false,
@@ -3173,6 +3183,25 @@
         {
           "file": "apps/rhythm-studio-ui/app/clinician/tasks/TaskCreateDialog.tsx",
           "apiPath": "/api/patient-profiles",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient/assessments",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/assessments/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/history/PatientHistoryClient.tsx",
+          "apiPath": "/api/patient/assessments",
           "kind": "fetch"
         }
       ],
