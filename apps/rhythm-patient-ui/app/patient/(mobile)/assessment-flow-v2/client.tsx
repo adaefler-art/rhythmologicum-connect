@@ -437,10 +437,7 @@ export default function AssessmentFlowV2Client({
     setCompletionError(null)
 
     try {
-      if (!completionAttempted) {
-        await completeAssessment(assessmentId)
-      }
-      await fetchResult(assessmentId)
+      await completeAssessment(assessmentId)
     } catch (err) {
       setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
     } finally {
