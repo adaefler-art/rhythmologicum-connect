@@ -69,12 +69,12 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
             )}
             {'cardiovascularAgeYears' in derived && (
               <div className="text-lg font-semibold text-[#2563eb]">
-                Kardiovaskuläres Alter: {derived.cardiovascularAgeYears} Jahre
+                Kardiovaskuläres Alter: {String(derived.cardiovascularAgeYears)} Jahre
               </div>
             )}
             {'riskBand' in derived && (
               <div className="text-sm text-[#6b7280]">
-                Risiko-Band: {derived.riskBand}
+                Risiko-Band: {String(derived.riskBand)}
               </div>
             )}
             {report && (
