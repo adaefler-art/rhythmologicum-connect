@@ -41,6 +41,24 @@ interface AssessmentQuestion {
   whyWeAsk: string
 }
 
+interface AssessmentResultPayload {
+  success?: boolean
+  data?: {
+    status?: string
+    result?: {
+      kind?: string
+      summaryTitle?: string
+      summaryBullets?: string[]
+      derived?: Record<string, unknown>
+      answersEcho?: Record<string, unknown>
+    }
+    report?: {
+      id?: string | null
+      status?: string | null
+    }
+  }
+}
+
 // ==========================================
 // DEMO DATA - CLEARLY LABELED AS FIXTURE
 // ==========================================
@@ -292,6 +310,9 @@ export default function AssessmentFlowV2Client({
   const [liveQuestions, setLiveQuestions] = useState<AssessmentQuestion[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
+  const [completionError, setCompletionError] = useState<string | null>(null)
+  const [resultPayload, setResultPayload] = useState<AssessmentResultPayload | null>(null)
+  const [completionAttempted, setCompletionAttempted] = useState(false)
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -303,6 +324,50 @@ export default function AssessmentFlowV2Client({
   
   // I2.5: Use canonical navigation utility for deterministic exit
   const exitRoute = getAssessmentFlowExitRoute(mode)
+
+  const completeAssessment = async (id: string) => {
+    const completeResponse = await fetch(
+      `/api/funnels/${slug}/assessments/${id}/complete`,
+      { method: 'POST' },
+    )
+
+    if (!completeResponse.ok) {
+      throw new Error('Assessment konnte nicht abgeschlossen werden.')
+    }
+
+    setCompletionAttempted(true)
+  }
+
+  const fetchResult = async (id: string) => {
+    const resultResponse = await fetch(
+      `/api/funnels/${slug}/assessments/${id}/result`,
+      { method: 'GET' },
+    )
+
+    if (!resultResponse.ok) {
+      throw new Error('Ergebnis konnte nicht geladen werden.')
+    }
+
+    const payload = (await resultResponse.json()) as AssessmentResultPayload
+    const success = payload?.success ?? true
+    const result = payload?.data?.result
+
+    if (!success || !result) {
+      throw new Error('Ergebnis konnte nicht geladen werden.')
+    }
+
+    setResultPayload(payload)
+  }
+
+  const finalizeAssessment = async (id: string) => {
+    setCompletionError(null)
+
+    if (!completionAttempted) {
+      await completeAssessment(id)
+    }
+
+    await fetchResult(id)
+  }
 
   // ==========================================
   // EVENT HANDLERS (I2.5 Navigation Consistency)
@@ -373,20 +438,9 @@ export default function AssessmentFlowV2Client({
         return
       }
 
-      await fetch(
-        `/api/funnels/${slug}/assessments/${assessmentId}/complete`,
-        { method: 'POST' },
-      )
-
-      await fetch(
-        `/api/funnels/${slug}/assessments/${assessmentId}/result`,
-        { method: 'GET' },
-      )
-
-      router.push(exitRoute)
+      await finalizeAssessment(assessmentId)
     } catch (err) {
-      setError(true)
-      setErrorMessage(err instanceof Error ? err.message : 'Unbekannter Fehler')
+      setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
     } finally {
       setIsSubmitting(false)
     }
@@ -398,6 +452,23 @@ export default function AssessmentFlowV2Client({
     } else {
       // Last question skipped - deterministic exit via canonical route
       router.push(exitRoute)
+    }
+  }
+
+  const handleResultRetry = async () => {
+    if (!assessmentId) return
+    setIsSubmitting(true)
+    setCompletionError(null)
+
+    try {
+      if (!completionAttempted) {
+        await completeAssessment(assessmentId)
+      }
+      await fetchResult(assessmentId)
+    } catch (err) {
+      setCompletionError(err instanceof Error ? err.message : 'Unbekannter Fehler')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -451,6 +522,9 @@ export default function AssessmentFlowV2Client({
         if (!isMounted) return
         setAssessmentId(id)
         setCurrentStep(1)
+        setCompletionAttempted(false)
+        setCompletionError(null)
+        setResultPayload(null)
         setIsLoading(false)
       } catch (err) {
         if (!isMounted) return
@@ -465,6 +539,62 @@ export default function AssessmentFlowV2Client({
       isMounted = false
     }
   }, [mode, slug])
+
+  // ==========================================
+  // RESULT STATE
+  // ==========================================
+
+  if (resultPayload) {
+    const result = resultPayload.data?.result
+    const report = resultPayload.data?.report
+    const summaryBullets = Array.isArray(result?.summaryBullets) ? result?.summaryBullets : []
+
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
+        <div className="w-full space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-semibold text-[#1f2937]">Ergebnis</h1>
+            {mode === 'demo' && (
+              <Chip variant="neutral" size="sm">
+                Demo data
+              </Chip>
+            )}
+          </div>
+
+          <Card padding="lg" shadow="md">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold text-[#1f2937]">
+                  {result?.summaryTitle ?? 'Assessment abgeschlossen'}
+                </h2>
+                {result?.kind && (
+                  <p className="text-sm text-[#6b7280]">Typ: {result.kind}</p>
+                )}
+              </div>
+
+              {summaryBullets.length > 0 && (
+                <ul className="space-y-2 text-sm text-[#374151] list-disc pl-5">
+                  {summaryBullets.map((bullet, idx) => (
+                    <li key={`${bullet}-${idx}`}>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+
+              {report?.status && (
+                <p className="text-xs text-[#6b7280]">Report-Status: {report.status}</p>
+              )}
+            </div>
+          </Card>
+
+          <div className="flex items-center justify-between gap-4">
+            <Button variant="ghost" size="lg" onClick={() => router.push(exitRoute)}>
+              Zur Übersicht
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ==========================================
   // LOADING STATE
@@ -584,6 +714,12 @@ export default function AssessmentFlowV2Client({
           </div>
         )}
 
+        {completionError && (
+          <div className="text-sm text-[#b91c1c] bg-[#fee2e2] border border-[#fecaca] rounded-lg px-3 py-2">
+            {completionError}
+          </div>
+        )}
+
         {/* Footer - Action Buttons */}
         <div className="flex items-center justify-between gap-4 pt-4">
           <Button variant="ghost" size="lg" onClick={handleSkip}>
@@ -599,10 +735,22 @@ export default function AssessmentFlowV2Client({
             {currentStep < totalSteps ? 'Continue' : 'Complete'}
           </Button>
         </div>
+
+        {completionError && currentStep >= totalSteps && (
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleResultRetry}
+            disabled={isSubmitting}
+          >
+            Ergebnis erneut laden
+          </Button>
+        )}
       </div>
     </div>
   )
 }
+
 
 function resolveQuestionId(question: AssessmentQuestion): string {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
