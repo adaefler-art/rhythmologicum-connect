@@ -14,7 +14,7 @@ import {
 } from '@/lib/ui/mobile-v2'
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 import { getAssessmentFlowExitRoute } from '../utils/navigation'
-import type { FunnelDefinition, QuestionDefinition, QuestionOption } from '@/lib/types/funnel'
+import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import { isQuestionStep } from '@/lib/types/funnel'
 
 // ==========================================
@@ -42,23 +42,7 @@ interface AssessmentQuestion {
   whyWeAsk: string
 }
 
-interface AssessmentResultPayload {
-  success?: boolean
-  data?: {
-    status?: string
-    result?: {
-      kind?: string
-      summaryTitle?: string
-      summaryBullets?: string[]
-      derived?: Record<string, unknown>
-      answersEcho?: Record<string, unknown>
-    }
-    report?: {
-      id?: string | null
-      status?: string | null
-    }
-  }
-}
+
 
 // ==========================================
 // DEMO DATA - CLEARLY LABELED AS FIXTURE
@@ -229,7 +213,7 @@ function RadioOption({ option, selected, onSelect }: RadioOptionProps) {
     >
       <div className="flex items-start gap-3">
         {/* Radio Circle */}
-        <div className="flex-shrink-0 mt-0.5">
+        <div className="shrink-0 mt-0.5">
           <div
             className={`
               w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
@@ -496,7 +480,6 @@ export default function AssessmentFlowV2Client({
         setAssessmentId(id)
         setCurrentStep(1)
         setCompletionError(null)
-        setResultPayload(null)
         setIsLoading(false)
       } catch (err) {
         if (!isMounted) return
@@ -564,12 +547,12 @@ export default function AssessmentFlowV2Client({
               )}
               {'cardiovascularAgeYears' in derived && (
                 <div className="text-lg font-semibold text-[#2563eb]">
-                  Kardiovaskuläres Alter: {derived.cardiovascularAgeYears} Jahre
+                  Kardiovaskuläres Alter: {String(derived.cardiovascularAgeYears)} Jahre
                 </div>
               )}
               {'riskBand' in derived && (
                 <div className="text-sm text-[#6b7280]">
-                  Risiko-Band: {derived.riskBand}
+                  Risiko-Band: {String(derived.riskBand)}
                 </div>
               )}
               {report && (
