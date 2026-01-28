@@ -49,6 +49,10 @@ const eslintConfig = defineConfig([
               importNames: ["createClient", "createServerClient"],
               message: "Direct Supabase client imports (including aliases) are forbidden. Use canonical factories from @/lib/db/supabase.* instead.",
             },
+            {
+              group: ["@/legacy/**", "**/legacy/**", "legacy/**"],
+              message: "R-LEGACY-001: Imports from legacy/** are forbidden. Legacy code is ghosted and must not be used in production. See legacy/README.md for migration guidance.",
+            },
           ],
         },
       ],
@@ -186,6 +190,9 @@ const eslintConfig = defineConfig([
 
     // Legacy/unused file (not part of Next runtime)
     "proxy.ts",
+
+    // E73.6: Legacy ghosted code (R-LEGACY-001, R-LEGACY-003)
+    "legacy/**",
   ]),
 ]);
 
