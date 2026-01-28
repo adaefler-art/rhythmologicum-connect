@@ -134,7 +134,9 @@ async function handleCompleteAssessment(
 
     if (assessment.status === 'completed') {
       // E73.2: For already completed assessments, try to fetch existing processing job
-      let processingJob: { jobId: string; status: string } | undefined
+      type ProcessingJobStatus = 'queued' | 'in_progress' | 'completed' | 'failed'
+      const validStatuses: ProcessingJobStatus[] = ['queued', 'in_progress', 'completed', 'failed']
+      let processingJob: { jobId: string; status: ProcessingJobStatus } | undefined
       try {
         const jobResult = await createProcessingJobIdempotent({
           assessmentId,
@@ -144,9 +146,12 @@ async function handleCompleteAssessment(
         })
 
         if (jobResult.success && jobResult.jobId) {
+          const normalizedStatus = validStatuses.includes(jobResult.status as ProcessingJobStatus)
+            ? (jobResult.status as ProcessingJobStatus)
+            : 'queued'
           processingJob = {
             jobId: jobResult.jobId,
-            status: jobResult.status || 'queued',
+            status: normalizedStatus,
           }
         }
       } catch (err) {
