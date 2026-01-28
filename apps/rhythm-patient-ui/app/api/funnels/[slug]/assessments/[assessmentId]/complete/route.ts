@@ -35,6 +35,19 @@ import {
 } from '@/lib/api/contracts/patient/state'
 import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
 
+type ProcessingStatus = 'in_progress' | 'completed' | 'failed' | 'queued'
+const normalizeProcessingStatus = (s: unknown): ProcessingStatus => {
+  switch (s) {
+    case 'in_progress':
+    case 'completed':
+    case 'failed':
+    case 'queued':
+      return s
+    default:
+      return 'queued'
+  }
+}
+
 /**
  * B5/B8: Complete an assessment
  *
@@ -134,9 +147,7 @@ async function handleCompleteAssessment(
 
     if (assessment.status === 'completed') {
       // E73.2: For already completed assessments, try to fetch existing processing job
-      type ProcessingJobStatus = 'queued' | 'in_progress' | 'completed' | 'failed'
-      const validStatuses: ProcessingJobStatus[] = ['queued', 'in_progress', 'completed', 'failed']
-      let processingJob: { jobId: string; status: ProcessingJobStatus } | undefined
+      let processingJob: { jobId: string; status: ProcessingStatus } | undefined
       try {
         const jobResult = await createProcessingJobIdempotent({
           assessmentId,
@@ -146,12 +157,9 @@ async function handleCompleteAssessment(
         })
 
         if (jobResult.success && jobResult.jobId) {
-          const normalizedStatus = validStatuses.includes(jobResult.status as ProcessingJobStatus)
-            ? (jobResult.status as ProcessingJobStatus)
-            : 'queued'
           processingJob = {
             jobId: jobResult.jobId,
-            status: normalizedStatus,
+            status: normalizeProcessingStatus(jobResult.status),
           }
         }
       } catch (err) {
@@ -290,7 +298,7 @@ async function handleCompleteAssessment(
     })
 
     // E73.2: Create processing job idempotently
-    let processingJob: { jobId: string; status: string } | undefined
+    let processingJob: { jobId: string; status: ProcessingStatus } | undefined
     try {
       const jobResult = await createProcessingJobIdempotent({
         assessmentId,
@@ -302,7 +310,7 @@ async function handleCompleteAssessment(
       if (jobResult.success && jobResult.jobId) {
         processingJob = {
           jobId: jobResult.jobId,
-          status: jobResult.status || 'queued',
+          status: normalizeProcessingStatus(jobResult.status),
         }
         console.log('[complete] Processing job created', {
           jobId: jobResult.jobId,
