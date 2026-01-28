@@ -12,7 +12,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/content-pages",
@@ -271,7 +271,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/dev/endpoint-catalog",
@@ -282,7 +282,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/diagnostics/pillars-sot",
@@ -295,7 +295,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-step-questions/[id]",
@@ -344,7 +344,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-steps/[id]",
@@ -1147,7 +1147,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/pilot/kpis",
@@ -1160,7 +1160,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/reassessment-rules",
@@ -1247,7 +1247,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-report",
@@ -1260,7 +1260,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-summary",
@@ -1273,7 +1273,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/triage",
@@ -1398,7 +1398,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/current-step",
@@ -1411,7 +1411,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/navigation",
@@ -1424,7 +1424,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/navigation",
@@ -1437,7 +1437,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/resume",
@@ -1526,7 +1526,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/in-progress",
@@ -1539,7 +1539,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/callback",
@@ -1712,7 +1712,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/debug-cookie",
@@ -1725,7 +1725,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/resolve-role",
@@ -1940,7 +1940,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/consent/status",
@@ -1953,7 +1953,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/content-pages/[slug]",
@@ -1985,7 +1985,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/content/resolve",
@@ -1998,7 +1998,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/extract",
@@ -2011,7 +2011,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/status",
@@ -2024,7 +2024,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/upload",
@@ -2037,7 +2037,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/escalation/log-click",
@@ -2050,7 +2050,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments",
@@ -2641,7 +2641,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
@@ -2654,7 +2654,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/content-pages",
@@ -2667,7 +2667,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/content-pages",
@@ -2680,7 +2680,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/definition",
@@ -2761,7 +2761,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/active",
@@ -2774,7 +2774,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/catalog",
@@ -3083,7 +3083,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications",
@@ -3096,7 +3096,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications/[id]",
@@ -3109,7 +3109,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient-measures/export",
@@ -3237,9 +3237,15 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/processing/dev-trigger/page.tsx",
+          "apiPath": "/api/patient/assessments",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
       "isAllowedOrphan": false
     },
     {
@@ -3301,7 +3307,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/dashboard",
@@ -3312,7 +3318,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/onboarding-status",
@@ -3371,7 +3377,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/state",
@@ -3414,7 +3420,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/pre-screening-calls",
@@ -3464,7 +3470,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/delivery",
@@ -3477,7 +3483,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]",
@@ -3490,7 +3496,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]/download",
@@ -3539,7 +3545,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/ranking",
@@ -3552,7 +3558,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/results",
@@ -3584,7 +3590,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/safety",
@@ -3597,7 +3603,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/start",
@@ -3610,7 +3616,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/validation",
@@ -3623,7 +3629,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/reports/[reportId]/pdf",
@@ -3636,7 +3642,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]",
@@ -3750,7 +3756,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/queue",
@@ -3761,7 +3767,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/shipments",
@@ -3859,7 +3865,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases",
@@ -4176,7 +4182,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     }
   ],
   "unknownCallsites": []
