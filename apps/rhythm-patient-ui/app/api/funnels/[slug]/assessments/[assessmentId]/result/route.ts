@@ -18,6 +18,7 @@ import {
 } from '@/lib/api/contracts/patient'
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 import { loadCalculatedResults } from '@/lib/results/persistence'
+import { env } from '@/lib/env'
 
 export async function GET(
   request: NextRequest,
@@ -93,14 +94,10 @@ export async function GET(
       )
       
       // E73.4: Check feature flag for new SSOT-first behavior
-      const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+      const useStateContract = env.E73_4_RESULT_SSOT === 'true'
       
       if (useStateContract) {
         // E73.4: Return 409 with in_progress state
-        const stateData: GetResultStateResponseData = {
-          state: RESULT_STATE.IN_PROGRESS,
-          assessmentId: assessment.id,
-        }
         return stateConflictResponse(
           'Assessment ist noch nicht abgeschlossen.',
           { state: 'in_progress', assessmentId: assessment.id },
@@ -115,7 +112,7 @@ export async function GET(
     }
 
     // E73.4: Check feature flag for new SSOT-first behavior
-    const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
     
     if (useStateContract) {
       // E73.4: SSOT-first approach - fetch from calculated_results

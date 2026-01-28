@@ -19,6 +19,7 @@ import {
 } from '@/lib/api/contracts/patient'
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 import { loadCalculatedResults } from '@/lib/results/persistence'
+import { env } from '@/lib/env'
 
 function getFunnelSlugCandidates(slug: string): string[] {
   const normalized = slug.toLowerCase().trim()
@@ -110,7 +111,7 @@ export async function GET(
       )
       
       // E73.4: Check feature flag for new SSOT-first behavior
-      const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+      const useStateContract = env.E73_4_RESULT_SSOT === 'true'
       
       if (useStateContract) {
         // E73.4: Return 409 with in_progress state
@@ -128,7 +129,7 @@ export async function GET(
     }
 
     // E73.4: Check feature flag for new SSOT-first behavior
-    const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
     
     if (useStateContract) {
       // E73.4: SSOT-first approach - fetch from calculated_results
