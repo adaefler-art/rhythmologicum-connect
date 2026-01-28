@@ -30,21 +30,27 @@ type Measure = {
   report: Report | null
 }
 
-// Funnel-based Assessment type
-type FunnelAssessment = {
+// Funnel-based Assessment type with calculated results (E73.5 SSOT)
+type FunnelAssessmentWithResult = {
   id: string
-  funnelId: string
   funnelSlug: string | null
   funnelName: string
-  status: 'in_progress' | 'completed' | string
+  status: 'completed'
   startedAt: string
-  completedAt: string | null
+  completedAt: string
+  result: {
+    id: string
+    scores: Record<string, any>
+    riskModels?: Record<string, any>
+    algorithmVersion: string
+    computedAt: string
+  }
 }
 
 type FetchState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; measures: Measure[]; funnelAssessments: FunnelAssessment[] }
+  | { status: 'success'; measures: Measure[]; funnelAssessments: FunnelAssessmentWithResult[] }
   | { status: 'error'; message: string }
 
 export default function PatientHistoryClient() {
@@ -73,12 +79,13 @@ export default function PatientHistoryClient() {
         .eq('user_id', user.id)
         .single()
 
-      // 3. Fetch data in parallel: legacy measures + funnel assessments
+      // 3. Fetch data: E73.5 SSOT for assessments with results
       try {
         setState({ status: 'loading' })
 
-        // Fetch funnel-based assessments (new runtime)
-        const funnelAssessmentsPromise = fetch('/api/patient/assessments')
+        // E73.5: Fetch assessments with calculated results (SSOT)
+        // IMPORTANT: Literal string callsite for endpoint wiring
+        const assessmentsPromise = fetch('/api/patient/assessments-with-results')
           .then(async (res) => {
             if (!res.ok) return { assessments: [] }
             const json = await res.json()
@@ -86,7 +93,7 @@ export default function PatientHistoryClient() {
           })
           .catch(() => ({ assessments: [] }))
 
-        // Fetch legacy measures (if profile exists)
+        // Fetch legacy measures (if profile exists) - for backward compatibility
         const legacyMeasuresPromise =
           profileData && !profileError
             ? fetch(`/api/patient-measures/history?patientId=${profileData.id}`)
@@ -98,15 +105,15 @@ export default function PatientHistoryClient() {
                 .catch(() => ({ measures: [] }))
             : Promise.resolve({ measures: [] })
 
-        const [funnelResult, legacyResult] = await Promise.all([
-          funnelAssessmentsPromise,
+        const [assessmentsResult, legacyResult] = await Promise.all([
+          assessmentsPromise,
           legacyMeasuresPromise,
         ])
 
         setState({
           status: 'success',
           measures: legacyResult.measures,
-          funnelAssessments: funnelResult.assessments,
+          funnelAssessments: assessmentsResult.assessments,
         })
       } catch (err) {
         console.error('Fehler beim Laden der Verlaufsdaten:', err)
@@ -482,66 +489,79 @@ export default function PatientHistoryClient() {
         </div>
       </section>
 
-      {/* Funnel-based Assessments Section */}
+      {/* Funnel-based Assessments Section - E73.5: Only completed with results */}
       {funnelAssessments.length > 0 && (
         <section>
           <h2 className="mb-4 text-base font-semibold text-slate-800">
             Ihre Assessments
           </h2>
           <div className="space-y-3">
-            {funnelAssessments.map((assessment) => (
-              <article
-                key={assessment.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      {assessment.funnelName}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {formatDateTime(assessment.startedAt)}
-                    </p>
+            {funnelAssessments.map((assessment) => {
+              // E73.5: Extract scores from calculated results
+              const stressScore = assessment.result?.scores?.stress_score
+              const sleepScore = assessment.result?.scores?.sleep_score
+              const riskLevel = assessment.result?.riskModels?.risk_level
+
+              return (
+                <article
+                  key={assessment.id}
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          {assessment.funnelName}
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          {formatDateTime(assessment.startedAt)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Abgeschlossen
+                        </span>
+                        {assessment.funnelSlug && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(
+                                `/patient/results-v2?assessmentId=${assessment.id}&funnel=${assessment.funnelSlug}`
+                              )
+                            }
+                            className="text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline"
+                          >
+                            Details anzeigen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* E73.5: Show calculated scores */}
+                    {(stressScore != null || sleepScore != null) && (
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                        {stressScore != null && (
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 p-2">
+                            <p className="text-xs font-medium text-slate-600">Stress</p>
+                            <p className="mt-1 text-lg font-semibold text-slate-900">
+                              {Math.round(stressScore)}
+                            </p>
+                          </div>
+                        )}
+                        {sleepScore != null && (
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 p-2">
+                            <p className="text-xs font-medium text-slate-600">Schlaf</p>
+                            <p className="mt-1 text-lg font-semibold text-slate-900">
+                              {Math.round(sleepScore)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-                        assessment.status === 'completed'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-amber-100 text-amber-800 border border-amber-200'
-                      }`}
-                    >
-                      {assessment.status === 'completed' ? 'Abgeschlossen' : 'In Bearbeitung'}
-                    </span>
-                    {assessment.status === 'completed' && assessment.funnelSlug ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(
-                            `/patient/results-v2?assessmentId=${assessment.id}&funnel=${assessment.funnelSlug}`
-                          )
-                        }
-                        className="text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline"
-                      >
-                        Details anzeigen
-                      </button>
-                    ) : assessment.status === 'in_progress' && assessment.funnelSlug ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(
-                            `/patient/assess/${assessment.funnelSlug}/flow?assessmentId=${assessment.id}`
-                          )
-                        }
-                        className="text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline"
-                      >
-                        Fortsetzen
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            })}
           </div>
         </section>
       )}
