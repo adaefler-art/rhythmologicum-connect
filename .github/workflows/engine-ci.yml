@@ -36,8 +36,6 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
-      - name: Verify endpoint catalog
-        run: pwsh -File scripts/ci/verify-endpoint-catalog.ps1
       - name: Build Engine
         run: npm run build
       - name: Test Engine

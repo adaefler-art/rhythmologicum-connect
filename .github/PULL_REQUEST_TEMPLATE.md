@@ -8,6 +8,8 @@
 - [ ] DB‑abhängige Tests erfolgreich lokal ausgeführt / CI besteht
 - [ ] Prisma/ORM Schema (z. B. schema.prisma) aktualisiert und ggf. `prisma migrate`/`prisma db push` überprüft
 - [ ] Breaking changes dokumentiert & Rollback‑Plan beschrieben (falls destruktive Änderungen)
+- [ ] Neue interne Endpoints im selben PR mindestens einmal verdrahtet (literal Callsite, ggf. hinter Feature‑Flag)
+- [ ] Externe Endpoints: in `docs/api/endpoint-allowlist.json` aufgenommen inkl. Begründung
 
 ## Contracts & Environment (E50 - No Fantasy Names)
 - [ ] **Evidence**: Neue Identifier nutzen `lib/contracts/registry.ts` (oder begründen, warum nicht)
