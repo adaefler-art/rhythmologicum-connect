@@ -2404,7 +2404,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 3,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2414,6 +2414,26 @@
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
           "kind": "request"
         },
         {
@@ -2433,7 +2453,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 3,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2443,6 +2463,26 @@
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
           "kind": "request"
         },
         {
