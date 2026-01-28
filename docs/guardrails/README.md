@@ -131,6 +131,14 @@ R-{DOMAIN}-{NUMBER}
 | R-CI-003 | Fail-closed for missing BASE_SHA | Inline bash in workflows |
 | R-CI-004 | DB determinism pipeline complete | db-determinism.yml |
 
+### Legacy Ghosting Rules (R-LEGACY-001 to R-LEGACY-003)
+
+| Rule ID | Summary | Enforced By |
+|---------|---------|-------------|
+| R-LEGACY-001 | No imports from legacy/** | ESLint + verify-legacy-ghosting.mjs |
+| R-LEGACY-002 | Legacy routes return 410 Gone | **Manual test** (no CI check yet) |
+| R-LEGACY-003 | TypeScript excludes legacy/** | tsconfig.json + verify-legacy-ghosting.mjs |
+
 ---
 
 ## How to Use These Guardrails
@@ -337,6 +345,13 @@ PRs welcome for:
 
 ## Changelog
 
+- **2026-01-28**: Added E73.6 legacy ghosting framework (3 new rules)
+  - R-LEGACY-001: No imports from legacy code (ESLint enforcement)
+  - R-LEGACY-002: Legacy API routes return 410 Gone (manual test)
+  - R-LEGACY-003: TypeScript excludes legacy code (tsconfig)
+  - Created legacy quarantine structure (legacy/code, legacy/routes, legacy/db)
+  - Created verification script: scripts/verify-legacy-ghosting.mjs
+  - Documented ~80+ ghosted endpoints in legacy/routes/README.md
 - **2026-01-25**: Initial guardrails documentation created for E72.F1
   - Created RULES_VS_CHECKS_MATRIX.md (30+ rules)
   - Created RULES_VS_CHECKS_DIFF.md (16 findings, 6 recommended issues)
