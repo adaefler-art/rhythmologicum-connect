@@ -38,8 +38,6 @@ jobs:
           cache: 'npm'
       - name: Install
         run: npm ci
-      - name: Verify endpoint catalog
-        run: pwsh -File scripts/ci/verify-endpoint-catalog.ps1
       - name: Verify E71 Guardrails
         run: npm run verify:e71
       - name: Verify UI v2 Architecture

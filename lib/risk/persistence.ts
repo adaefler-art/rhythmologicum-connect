@@ -10,6 +10,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { RiskBundleV1 } from '@/lib/contracts/riskBundle'
 
+const resolveMaybeSingle = async (query: any) => {
+  if (query && typeof query.maybeSingle === 'function') {
+    return query.maybeSingle()
+  }
+  return query.single()
+}
+
 // ============================================================
 // Persistence Operations
 // ============================================================
@@ -79,11 +86,12 @@ export async function loadRiskBundle(
   jobId: string,
 ): Promise<{ success: boolean; bundle?: RiskBundleV1; error?: string }> {
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('risk_bundles')
       .select('bundle_data')
       .eq('job_id', jobId)
-      .maybeSingle()
+
+    const { data, error } = await resolveMaybeSingle(query)
 
     if (error) {
       return { success: false, error: `Error loading bundle: ${error.message}` }

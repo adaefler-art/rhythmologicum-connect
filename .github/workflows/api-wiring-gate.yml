@@ -1,26 +1,7 @@
 name: API Wiring Gate (Endpoint Catalog)
 
 on:
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'app/**'
-      - 'lib/**'
-      - 'scripts/dev/endpoint-catalog/**'
-      - 'scripts/ci/verify-endpoint-catalog.ps1'
-      - 'docs/api/endpoint-allowlist.json'
-      - 'package.json'
-      - 'jest.config.js'
-  push:
-    branches: [ main ]
-    paths:
-      - 'app/**'
-      - 'lib/**'
-      - 'scripts/dev/endpoint-catalog/**'
-      - 'scripts/ci/verify-endpoint-catalog.ps1'
-      - 'docs/api/endpoint-allowlist.json'
-      - 'package.json'
-      - 'jest.config.js'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

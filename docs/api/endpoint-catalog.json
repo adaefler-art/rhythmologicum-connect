@@ -3513,6 +3513,25 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/processing/results",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-legacy/app/api/processing/results/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/processing/dev-trigger/page.tsx",
+          "apiPath": "/api/processing/results",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/processing/risk",
       "methods": [
         "POST"

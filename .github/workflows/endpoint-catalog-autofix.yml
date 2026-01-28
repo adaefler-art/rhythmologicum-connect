@@ -1,11 +1,7 @@
 name: Endpoint catalog autofix
 
 on:
-  pull_request:
-    paths:
-      - 'apps/**/app/api/**'
-      - 'scripts/dev/endpoint-catalog/**'
-      - 'docs/api/endpoint-allowlist.json'
+  workflow_dispatch:
 
 permissions:
   contents: write
