@@ -83,6 +83,9 @@ export async function GET(
       return forbiddenResponse('Sie haben keine Berechtigung, dieses Assessment anzusehen.')
     }
 
+    // E73.4: Check feature flag once for entire request
+    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
+
     if (assessment.status !== 'completed') {
       logIncompleteAssessmentAccess(
         {
@@ -92,9 +95,6 @@ export async function GET(
         },
         assessment.status,
       )
-      
-      // E73.4: Check feature flag for new SSOT-first behavior
-      const useStateContract = env.E73_4_RESULT_SSOT === 'true'
       
       if (useStateContract) {
         // E73.4: Return 409 with in_progress state
@@ -110,9 +110,6 @@ export async function GET(
         { assessmentId, status: assessment.status },
       )
     }
-
-    // E73.4: Check feature flag for new SSOT-first behavior
-    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
     
     if (useStateContract) {
       // E73.4: SSOT-first approach - fetch from calculated_results

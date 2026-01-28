@@ -194,12 +194,19 @@ CREATE TABLE calculated_results (
 
 ### Manual Testing
 
+Before testing, enable the feature flag in your environment:
+```bash
+# Add to .env.local
+E73_4_RESULT_SSOT=true
+```
+
+Then restart your development server and test:
+
 1. **In Progress State**
    ```bash
    # Start an assessment but don't complete it
    curl -X GET "http://localhost:3000/api/funnels/stress/assessments/{id}/result" \
-     -H "Cookie: ..." \
-     -H "E73_4_RESULT_SSOT: true"
+     -H "Cookie: ..."
    # Should return 409 with state: 'in_progress'
    ```
 
@@ -207,8 +214,7 @@ CREATE TABLE calculated_results (
    ```bash
    # Complete an assessment but don't trigger processing
    curl -X GET "http://localhost:3000/api/funnels/stress/assessments/{id}/result" \
-     -H "Cookie: ..." \
-     -H "E73_4_RESULT_SSOT: true"
+     -H "Cookie: ..."
    # Should return 409 with state: 'processing'
    ```
 
@@ -217,8 +223,7 @@ CREATE TABLE calculated_results (
    # Complete assessment and trigger processing
    # Wait for calculated_results to be created
    curl -X GET "http://localhost:3000/api/funnels/stress/assessments/{id}/result" \
-     -H "Cookie: ..." \
-     -H "E73_4_RESULT_SSOT: true"
+     -H "Cookie: ..."
    # Should return 200 with state: 'ready' and result data
    ```
 
