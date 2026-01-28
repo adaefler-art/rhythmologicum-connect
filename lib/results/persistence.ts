@@ -49,6 +49,27 @@ export interface CalculatedResultsRecord {
 // ============================================================
 
 /**
+ * Recursively sort object keys for deterministic JSON stringification
+ */
+function sortKeysDeep(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sortKeysDeep)
+  }
+  if (typeof obj === 'object') {
+    const sorted: Record<string, any> = {}
+    const keys = Object.keys(obj).sort()
+    for (const key of keys) {
+      sorted[key] = sortKeysDeep(obj[key])
+    }
+    return sorted
+  }
+  return obj
+}
+
+/**
  * Compute SHA256 hash of normalized inputs
  * 
  * This hash is used for detecting equivalent runs:
@@ -56,16 +77,15 @@ export interface CalculatedResultsRecord {
  * - Same algorithm_version
  * - Same input data (answers, documents, etc.)
  * 
+ * Uses deep key sorting to ensure deterministic hashing regardless of
+ * nested object key order.
+ * 
  * @param inputs - Input data to hash
- * @returns SHA256 hash (hex string)
+ * @returns SHA256 hash (hex string, lowercase)
  */
 export function computeInputsHash(inputs: Record<string, any>): string {
-  // Sort keys to ensure consistent hash
-  const sortedKeys = Object.keys(inputs).sort()
-  const normalized: Record<string, any> = {}
-  for (const key of sortedKeys) {
-    normalized[key] = inputs[key]
-  }
+  // Deep sort keys to ensure consistent hash
+  const normalized = sortKeysDeep(inputs)
   
   const canonicalJson = JSON.stringify(normalized)
   const hash = crypto.createHash('sha256').update(canonicalJson).digest('hex')
@@ -154,7 +174,7 @@ export async function saveCalculatedResults(
         {
           assessment_id: assessmentId,
           algorithm_version: algorithmVersion,
-          scores: scores,
+          scores,
           risk_models: riskModels || null,
           priority_ranking: priorityRanking || null,
           funnel_version_id: funnelVersionId || null,

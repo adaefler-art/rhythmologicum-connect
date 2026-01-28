@@ -14,7 +14,7 @@ describe('computeInputsHash', () => {
     const hash2 = computeInputsHash(inputs2)
 
     expect(hash1).toBe(hash2)
-    expect(hash1).toMatch(/^[a-f0-9]{64}$/) // SHA256 is 64 hex chars
+    expect(hash1).toMatch(/^[a-f0-9]{64}$/) // SHA256 is 64 lowercase hex chars
   })
 
   it('should compute same hash regardless of key order', () => {
@@ -37,9 +37,19 @@ describe('computeInputsHash', () => {
     expect(hash1).not.toBe(hash2)
   })
 
-  it('should handle nested objects', () => {
+  it('should handle nested objects with consistent hashing', () => {
     const inputs1 = { answers: { q1: 5, q2: 3 }, metadata: { version: '1.0' } }
     const inputs2 = { answers: { q1: 5, q2: 3 }, metadata: { version: '1.0' } }
+
+    const hash1 = computeInputsHash(inputs1)
+    const hash2 = computeInputsHash(inputs2)
+
+    expect(hash1).toBe(hash2)
+  })
+
+  it('should handle nested objects with different key order consistently', () => {
+    const inputs1 = { answers: { q1: 5, q2: 3 }, metadata: { version: '1.0', build: 'abc' } }
+    const inputs2 = { answers: { q2: 3, q1: 5 }, metadata: { build: 'abc', version: '1.0' } }
 
     const hash1 = computeInputsHash(inputs1)
     const hash2 = computeInputsHash(inputs2)

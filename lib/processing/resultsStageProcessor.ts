@@ -87,7 +87,12 @@ export async function processResultsStage(
       .eq('assessment_id', assessmentId)
 
     if (answersError) {
-      console.warn('[resultsStage] Failed to fetch answers for inputs_hash:', answersError.message)
+      // Cannot compute reliable inputs_hash without answers
+      return {
+        success: false,
+        error: `Failed to fetch answers: ${answersError.message}`,
+        errorCode: 'FETCH_ANSWERS_FAILED',
+      }
     }
 
     // Convert answers to map
@@ -104,6 +109,10 @@ export async function processResultsStage(
       .select('funnel_id')
       .eq('id', assessmentId)
       .single()
+
+    if (assessmentError) {
+      console.warn('[resultsStage] Failed to fetch assessment for funnel_version_id:', assessmentError.message)
+    }
 
     const funnelVersionId = assessment?.funnel_id
 
