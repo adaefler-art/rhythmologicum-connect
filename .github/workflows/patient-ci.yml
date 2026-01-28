@@ -16,9 +16,14 @@ on:
       - 'apps/rhythm-patient-ui/**'
       - 'packages/rhythm-core/**'
   push:
+    branches: [ main ]
     paths:
       - 'apps/rhythm-patient-ui/**'
       - 'packages/rhythm-core/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   patient:

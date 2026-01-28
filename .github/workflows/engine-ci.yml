@@ -10,6 +10,7 @@ on:
       - 'next.config.ts'
       - 'tsconfig.json'
   push:
+    branches: [ main ]
     paths:
       - 'apps/rhythm-engine/**'
       - 'packages/rhythm-core/**'
@@ -17,6 +18,10 @@ on:
       - 'lib/**'
       - 'next.config.ts'
       - 'tsconfig.json'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   engine:

@@ -1,0 +1,98 @@
+name: PR Preflight (Autofix Generated Artifacts)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'apps/**/app/api/**'
+      - 'scripts/dev/endpoint-catalog/**'
+      - 'docs/api/endpoint-allowlist.json'
+      - 'supabase/**'
+      - 'scripts/db/**'
+      - 'lib/types/supabase.ts'
+      - 'scripts/ci/preflight.ps1'
+      - '.github/workflows/pr-preflight-autofix.yml'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: pr-preflight-autofix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-preflight:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Regenerate endpoint catalog
+        run: node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json
+
+      - name: Commit endpoint catalog if changed
+        run: |
+          if git status --porcelain docs/api/ENDPOINT_CATALOG.md docs/api/endpoint-catalog.json | grep .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/api/ENDPOINT_CATALOG.md docs/api/endpoint-catalog.json
+            git commit -m "chore(docs): regenerate endpoint catalog"
+            git push origin "HEAD:${{ github.head_ref }}"
+          else
+            echo "No endpoint catalog changes."
+          fi
+
+      - name: Start Supabase (local)
+        run: npx supabase@2.63.1 start
+
+      - name: Regenerate Supabase types
+        run: pwsh -File scripts/db/typegen.ps1 -Generate
+
+      - name: Commit Supabase types if changed
+        run: |
+          if git status --porcelain lib/types/supabase.ts | grep .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add lib/types/supabase.ts
+            git commit -m "chore(types): regenerate supabase types"
+            git push origin "HEAD:${{ github.head_ref }}"
+          else
+            echo "No Supabase type changes."
+          fi
+
+      - name: Run preflight
+        run: pwsh -File scripts/ci/preflight.ps1
+
+  pr-preflight-fork:
+    if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Autofix skipped for fork PRs
+        run: echo "Autofix skipped for fork PRs"
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run preflight
+        run: pwsh -File scripts/ci/preflight.ps1
