@@ -35,6 +35,19 @@ import {
 } from '@/lib/api/contracts/patient/state'
 import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
 
+type ProcessingStatus = 'in_progress' | 'completed' | 'failed' | 'queued'
+const normalizeProcessingStatus = (s: unknown): ProcessingStatus => {
+  switch (s) {
+    case 'in_progress':
+    case 'completed':
+    case 'failed':
+    case 'queued':
+      return s
+    default:
+      return 'queued'
+  }
+}
+
 /**
  * B5/B8: Complete an assessment
  *
@@ -172,7 +185,7 @@ async function handleCompleteAssessment(
     // Check if already completed
     if (assessment.status === 'completed') {
       // E73.2: For already completed assessments, try to fetch existing processing job
-      let processingJob: { jobId: string; status: string } | undefined
+      let processingJob: { jobId: string; status: ProcessingStatus } | undefined
       try {
         const jobResult = await createProcessingJobIdempotent({
           assessmentId,
@@ -184,7 +197,22 @@ async function handleCompleteAssessment(
         if (jobResult.success && jobResult.jobId) {
           processingJob = {
             jobId: jobResult.jobId,
-            status: jobResult.status || 'queued',
+            status: normalizeProcessingStatus(jobResult.status),
+          }
+        } else {
+          const { data: existingJob } = await supabase
+            .from('processing_jobs')
+            .select('id, status')
+            .eq('assessment_id', assessmentId)
+            .eq('correlation_id', correlationId)
+            .eq('schema_version', 'v1')
+            .maybeSingle()
+
+          if (existingJob?.id) {
+            processingJob = {
+              jobId: existingJob.id,
+              status: normalizeProcessingStatus(existingJob.status),
+            }
           }
         }
       } catch (err) {
@@ -319,7 +347,7 @@ async function handleCompleteAssessment(
     })
 
     // E73.2: Create processing job idempotently
-    let processingJob: { jobId: string; status: string } | undefined
+    let processingJob: { jobId: string; status: ProcessingStatus } | undefined
     try {
       const jobResult = await createProcessingJobIdempotent({
         assessmentId,
@@ -331,7 +359,7 @@ async function handleCompleteAssessment(
       if (jobResult.success && jobResult.jobId) {
         processingJob = {
           jobId: jobResult.jobId,
-          status: jobResult.status || 'queued',
+          status: normalizeProcessingStatus(jobResult.status),
         }
         console.log('[complete] Processing job created', {
           jobId: jobResult.jobId,
@@ -339,6 +367,21 @@ async function handleCompleteAssessment(
           isNewJob: jobResult.isNewJob,
         })
       } else {
+        const { data: existingJob } = await supabase
+          .from('processing_jobs')
+          .select('id, status')
+          .eq('assessment_id', assessmentId)
+          .eq('correlation_id', correlationId)
+          .eq('schema_version', 'v1')
+          .maybeSingle()
+
+        if (existingJob?.id) {
+          processingJob = {
+            jobId: existingJob.id,
+            status: normalizeProcessingStatus(existingJob.status),
+          }
+        }
+
         console.warn('[complete] Failed to create processing job', {
           assessmentId,
           error: jobResult.error,
