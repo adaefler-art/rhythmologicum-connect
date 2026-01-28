@@ -141,6 +141,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/processing/jobs/[jobId]/download | (none) | system |  | 1 | apps/rhythm-studio-ui/app/api/processing/jobs/[jobId]/download/route.ts |
 | /api/processing/pdf | POST | system |  | 0 | apps/rhythm-legacy/app/api/processing/pdf/route.ts |
 | /api/processing/ranking | POST | system |  | 0 | apps/rhythm-legacy/app/api/processing/ranking/route.ts |
+| /api/processing/results | POST | system |  | 1 | apps/rhythm-legacy/app/api/processing/results/route.ts |
 | /api/processing/risk | POST | system |  | 0 | apps/rhythm-legacy/app/api/processing/risk/route.ts |
 | /api/processing/safety | POST | system |  | 0 | apps/rhythm-legacy/app/api/processing/safety/route.ts |
 | /api/processing/start | POST | system |  | 0 | apps/rhythm-legacy/app/api/processing/start/route.ts |

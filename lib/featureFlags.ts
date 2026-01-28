@@ -8,6 +8,7 @@
  * - NEXT_PUBLIC_FEATURE_AMY_ENABLED: Enable/disable AMY AI assistant (default: true)
  * - NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: Enable/disable clinician dashboard (default: true)
  * - NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: Enable/disable charts in clinician views (default: true)
+ * - NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: Enable/disable processing results endpoint (default: false)
  */
 
 import { env } from '@/lib/env'
@@ -16,6 +17,7 @@ export type FeatureFlags = {
   AMY_ENABLED: boolean
   CLINICIAN_DASHBOARD_ENABLED: boolean
   CHARTS_ENABLED: boolean
+  PROCESSING_RESULTS_ENABLED: boolean
 }
 
 /**
@@ -47,6 +49,10 @@ export const featureFlags: FeatureFlags = {
   CHARTS_ENABLED: parseEnvBoolean(
     env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
     true
+  ),
+  PROCESSING_RESULTS_ENABLED: parseEnvBoolean(
+    env.NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED,
+    false
   ),
 }
 
