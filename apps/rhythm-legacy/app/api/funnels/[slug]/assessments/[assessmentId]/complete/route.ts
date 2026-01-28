@@ -48,6 +48,39 @@ const normalizeProcessingStatus = (s: unknown): ProcessingStatus => {
   }
 }
 
+const getExistingProcessingJob = async (
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  assessmentId: string,
+  correlationId: string,
+): Promise<{ jobId: string; status: ProcessingStatus } | undefined> => {
+  const query = supabase
+    .from('processing_jobs')
+    .select('id, status')
+    .eq('assessment_id', assessmentId)
+    .eq('correlation_id', correlationId)
+    .eq('schema_version', 'v1')
+
+  const firstAttempt = await query.single()
+  if (firstAttempt?.data?.id) {
+    return {
+      jobId: firstAttempt.data.id,
+      status: normalizeProcessingStatus(firstAttempt.data.status),
+    }
+  }
+
+  if (firstAttempt?.error?.code === '23505') {
+    const retryAttempt = await query.single()
+    if (retryAttempt?.data?.id) {
+      return {
+        jobId: retryAttempt.data.id,
+        status: normalizeProcessingStatus(retryAttempt.data.status),
+      }
+    }
+  }
+
+  return undefined
+}
+
 /**
  * B5/B8: Complete an assessment
  *
@@ -200,20 +233,11 @@ async function handleCompleteAssessment(
             status: normalizeProcessingStatus(jobResult.status),
           }
         } else {
-          const { data: existingJob } = await supabase
-            .from('processing_jobs')
-            .select('id, status')
-            .eq('assessment_id', assessmentId)
-            .eq('correlation_id', correlationId)
-            .eq('schema_version', 'v1')
-            .maybeSingle()
-
-          if (existingJob?.id) {
-            processingJob = {
-              jobId: existingJob.id,
-              status: normalizeProcessingStatus(existingJob.status),
-            }
-          }
+          processingJob = await getExistingProcessingJob(
+            supabase,
+            assessmentId,
+            correlationId,
+          )
         }
       } catch (err) {
         console.error('[complete] Error fetching processing job for already-completed assessment', err)
@@ -367,20 +391,11 @@ async function handleCompleteAssessment(
           isNewJob: jobResult.isNewJob,
         })
       } else {
-        const { data: existingJob } = await supabase
-          .from('processing_jobs')
-          .select('id, status')
-          .eq('assessment_id', assessmentId)
-          .eq('correlation_id', correlationId)
-          .eq('schema_version', 'v1')
-          .maybeSingle()
-
-        if (existingJob?.id) {
-          processingJob = {
-            jobId: existingJob.id,
-            status: normalizeProcessingStatus(existingJob.status),
-          }
-        }
+        processingJob = await getExistingProcessingJob(
+          supabase,
+          assessmentId,
+          correlationId,
+        )
 
         console.warn('[complete] Failed to create processing job', {
           assessmentId,
