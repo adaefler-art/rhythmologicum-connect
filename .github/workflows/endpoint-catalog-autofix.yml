@@ -1,0 +1,47 @@
+name: Endpoint catalog autofix
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**/app/api/**'
+      - 'scripts/dev/endpoint-catalog/**'
+      - 'docs/api/endpoint-allowlist.json'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: endpoint-catalog-autofix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  autofix:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Generate endpoint catalog
+        run: node scripts/dev/endpoint-catalog/generate.js --repo-root . --out-dir docs/api --allowlist docs/api/endpoint-allowlist.json
+      - name: Commit changes if needed
+        run: |
+          if git status --porcelain docs/api/ENDPOINT_CATALOG.md docs/api/endpoint-catalog.json | grep .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/api/ENDPOINT_CATALOG.md docs/api/endpoint-catalog.json
+            git commit -m "chore(docs): regenerate endpoint catalog"
+            git push
+          else
+            echo "No endpoint catalog changes."
+          fi
