@@ -153,11 +153,14 @@ export function useAssessmentResult({
         setData(lastSuccessData.current)
 
         // Handle polling for STATE_CONFLICT with in_progress
+        // E73.4: Support both legacy (status field) and new SSOT (state field)
         if (
           pollOnConflict &&
           errObj?.code === 'STATE_CONFLICT' &&
           errObj.details &&
-          (errObj.details as { status?: string }).status === 'in_progress'
+          ((errObj.details as { status?: string }).status === 'in_progress' ||
+           (errObj.details as { state?: string }).state === 'in_progress' ||
+           (errObj.details as { state?: string }).state === 'processing')
         ) {
           // Start polling if not already
           if (!pollStartTimeRef.current) {

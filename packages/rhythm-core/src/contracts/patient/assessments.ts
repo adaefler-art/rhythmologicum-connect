@@ -179,6 +179,57 @@ export const GetResultResponseSchema = z.object({
 
 export type GetResultResponse = z.infer<typeof GetResultResponseSchema>
 
+/**
+ * E73.4: State-based result response for SSOT-first approach
+ * Used when feature flag E73_4_RESULT_SSOT is enabled
+ */
+export const RESULT_STATE = {
+  READY: 'ready',
+  PROCESSING: 'processing',
+  IN_PROGRESS: 'in_progress',
+} as const
+
+export type ResultState = typeof RESULT_STATE[keyof typeof RESULT_STATE]
+
+/**
+ * E73.4: State-based result response data
+ * Returns state + assessmentId always, result only when ready
+ */
+export const GetResultStateResponseDataSchema = z.discriminatedUnion('state', [
+  // Ready: has calculated_results
+  z.object({
+    state: z.literal(RESULT_STATE.READY),
+    assessmentId: z.string().uuid(),
+    result: z.object({
+      scores: z.record(z.string(), z.unknown()),
+      riskModels: z.record(z.string(), z.unknown()).optional(),
+      priorityRanking: z.record(z.string(), z.unknown()).optional(),
+      algorithmVersion: z.string(),
+      computedAt: z.string().datetime(),
+    }),
+  }),
+  // Processing: completed but no calculated_results yet
+  z.object({
+    state: z.literal(RESULT_STATE.PROCESSING),
+    assessmentId: z.string().uuid(),
+  }),
+  // In progress: assessment not completed
+  z.object({
+    state: z.literal(RESULT_STATE.IN_PROGRESS),
+    assessmentId: z.string().uuid(),
+  }),
+])
+
+export type GetResultStateResponseData = z.infer<typeof GetResultStateResponseDataSchema>
+
+export const GetResultStateResponseSchema = z.object({
+  success: z.literal(true),
+  data: GetResultStateResponseDataSchema,
+  schemaVersion: z.literal(PATIENT_ASSESSMENT_SCHEMA_VERSION),
+})
+
+export type GetResultStateResponse = z.infer<typeof GetResultStateResponseSchema>
+
 export const PatientAssessmentErrorSchema = z.object({
   success: z.literal(false),
   error: z.object({
