@@ -97,8 +97,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 8 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/answers/save | POST | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 3 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
-| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 3 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 7 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
+| /api/funnels/[slug]/assessments/[assessmentId]/complete | POST | patient |  | 7 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 4 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/result | GET | patient |  | 4 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId] | POST | patient |  | 4 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts |

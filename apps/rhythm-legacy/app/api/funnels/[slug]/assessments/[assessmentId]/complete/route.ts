@@ -33,6 +33,53 @@ import {
   createEmptyPatientState,
   type PatientStateV01,
 } from '@/lib/api/contracts/patient/state'
+import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
+
+type ProcessingStatus = 'in_progress' | 'completed' | 'failed' | 'queued'
+const normalizeProcessingStatus = (s: unknown): ProcessingStatus => {
+  switch (s) {
+    case 'in_progress':
+    case 'completed':
+    case 'failed':
+    case 'queued':
+      return s
+    default:
+      return 'queued'
+  }
+}
+
+const getExistingProcessingJob = async (
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  assessmentId: string,
+  correlationId: string,
+): Promise<{ jobId: string; status: ProcessingStatus } | undefined> => {
+  const query = supabase
+    .from('processing_jobs')
+    .select('id, status')
+    .eq('assessment_id', assessmentId)
+    .eq('correlation_id', correlationId)
+    .eq('schema_version', 'v1')
+
+  const firstAttempt = await query.single()
+  if (firstAttempt?.data?.id) {
+    return {
+      jobId: firstAttempt.data.id,
+      status: normalizeProcessingStatus(firstAttempt.data.status),
+    }
+  }
+
+  if (firstAttempt?.error?.code === '23505') {
+    const retryAttempt = await query.single()
+    if (retryAttempt?.data?.id) {
+      return {
+        jobId: retryAttempt.data.id,
+        status: normalizeProcessingStatus(retryAttempt.data.status),
+      }
+    }
+  }
+
+  return undefined
+}
 
 /**
  * B5/B8: Complete an assessment
@@ -170,10 +217,37 @@ async function handleCompleteAssessment(
 
     // Check if already completed
     if (assessment.status === 'completed') {
+      // E73.2: For already completed assessments, try to fetch existing processing job
+      let processingJob: { jobId: string; status: ProcessingStatus } | undefined
+      try {
+        const jobResult = await createProcessingJobIdempotent({
+          assessmentId,
+          correlationId,
+          userId: user.id,
+          userRole: 'patient',
+        })
+
+        if (jobResult.success && jobResult.jobId) {
+          processingJob = {
+            jobId: jobResult.jobId,
+            status: normalizeProcessingStatus(jobResult.status),
+          }
+        } else {
+          processingJob = await getExistingProcessingJob(
+            supabase,
+            assessmentId,
+            correlationId,
+          )
+        }
+      } catch (err) {
+        console.error('[complete] Error fetching processing job for already-completed assessment', err)
+      }
+
       const responseData: CompleteAssessmentResponseData = {
         assessmentId: assessment.id,
         status: 'completed',
         message: 'Assessment wurde bereits abgeschlossen.',
+        processingJob,
       }
       return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)
     }
@@ -296,10 +370,47 @@ async function handleCompleteAssessment(
       console.error('[complete] Failed to trigger workup check', err)
     })
 
+    // E73.2: Create processing job idempotently
+    let processingJob: { jobId: string; status: ProcessingStatus } | undefined
+    try {
+      const jobResult = await createProcessingJobIdempotent({
+        assessmentId,
+        correlationId,
+        userId: user.id,
+        userRole: 'patient',
+      })
+
+      if (jobResult.success && jobResult.jobId) {
+        processingJob = {
+          jobId: jobResult.jobId,
+          status: normalizeProcessingStatus(jobResult.status),
+        }
+        console.log('[complete] Processing job created', {
+          jobId: jobResult.jobId,
+          assessmentId,
+          isNewJob: jobResult.isNewJob,
+        })
+      } else {
+        processingJob = await getExistingProcessingJob(
+          supabase,
+          assessmentId,
+          correlationId,
+        )
+
+        console.warn('[complete] Failed to create processing job', {
+          assessmentId,
+          error: jobResult.error,
+        })
+      }
+    } catch (err) {
+      console.error('[complete] Error creating processing job', err)
+    }
+
     // Success response
     const responseData: CompleteAssessmentResponseData = {
       assessmentId: assessment.id,
       status: 'completed',
+      processingJob,
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)

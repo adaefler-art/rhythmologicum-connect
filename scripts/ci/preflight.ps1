@@ -86,11 +86,11 @@ function Ensure-SupabaseRunning {
   $statusPattern = 'not running'
   $timeoutSeconds = 420
 
-  Invoke-NonFatalCommand -Label 'supabase --version' -Action { supabase --version }
+  Invoke-NonFatalCommand -Label 'supabase --version' -Action { npx supabase@2.63.1 --version }
   Invoke-NonFatalCommand -Label 'docker version' -Action { docker version }
   Invoke-NonFatalCommand -Label 'docker info' -Action { docker info }
 
-  $statusResult = Invoke-NonFatalCommand -Label 'supabase status' -Action { supabase status }
+  $statusResult = Invoke-NonFatalCommand -Label 'supabase status' -Action { npx supabase@2.63.1 status }
   $needsStart = $statusResult.ExitCode -ne 0 -or ($statusResult.Output -match $statusPattern)
 
   if (-not $needsStart) {
@@ -99,7 +99,7 @@ function Ensure-SupabaseRunning {
 
   Write-Host 'Supabase not running -> starting...' -ForegroundColor Yellow
 
-  $startProcess = Start-Process -FilePath 'supabase' -ArgumentList 'start --debug --exclude imgproxy --exclude edge-runtime --exclude studio' -PassThru -NoNewWindow
+  $startProcess = Start-Process -FilePath 'npx' -ArgumentList @('supabase@2.63.1','start','--debug','--exclude','imgproxy','--exclude','edge-runtime','--exclude','studio') -PassThru -NoNewWindow
   $timedOut = $false
   try {
     Wait-Process -Id $startProcess.Id -Timeout $timeoutSeconds -ErrorAction Stop
@@ -116,7 +116,7 @@ function Ensure-SupabaseRunning {
 
     Write-Host "Supabase start timed out after ${timeoutSeconds}s" -ForegroundColor Red
     Invoke-NonFatalCommand -Label 'docker ps -a' -Action { docker ps -a }
-    Invoke-NonFatalCommand -Label 'supabase status' -Action { supabase status }
+    Invoke-NonFatalCommand -Label 'supabase status' -Action { npx supabase@2.63.1 status }
 
     $containers = @()
     try {
@@ -132,7 +132,7 @@ function Ensure-SupabaseRunning {
     throw "Supabase start timed out"
   }
 
-  $statusResult = Invoke-NonFatalCommand -Label 'supabase status' -Action { supabase status }
+  $statusResult = Invoke-NonFatalCommand -Label 'supabase status' -Action { npx supabase@2.63.1 status }
   if ($statusResult.ExitCode -ne 0 -or ($statusResult.Output -match $statusPattern)) {
     throw "Supabase start failed"
   }
