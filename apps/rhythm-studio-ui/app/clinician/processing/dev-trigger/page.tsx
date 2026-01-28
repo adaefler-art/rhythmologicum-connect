@@ -26,10 +26,18 @@ type TriggerResult = {
   error?: string
 }
 
+type AssessmentsResult = {
+  success: boolean
+  data?: unknown
+  error?: string
+}
+
 export default function ProcessingResultsDevTriggerPage() {
   const [jobId, setJobId] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TriggerResult | null>(null)
+  const [assessmentsLoading, setAssessmentsLoading] = useState(false)
+  const [assessmentsResult, setAssessmentsResult] = useState<AssessmentsResult | null>(null)
 
   // Feature flag check
   if (!featureFlags.PROCESSING_RESULTS_ENABLED) {
@@ -101,6 +109,42 @@ export default function ProcessingResultsDevTriggerPage() {
     }
   }
 
+  const handleFetchAssessments = async () => {
+    setAssessmentsLoading(true)
+    setAssessmentsResult(null)
+
+    try {
+      // IMPORTANT: Literal string callsite for endpoint wiring
+      const response = await fetch('/api/patient/assessments', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setAssessmentsResult({
+          success: true,
+          data: data.data,
+        })
+      } else {
+        setAssessmentsResult({
+          success: false,
+          error: data.error || 'Unknown error',
+        })
+      }
+    } catch (error) {
+      setAssessmentsResult({
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error',
+      })
+    } finally {
+      setAssessmentsLoading(false)
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -156,6 +200,43 @@ export default function ProcessingResultsDevTriggerPage() {
                 </>
               )}
             </Button>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-6 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">
+                Patient Assessments (Dev)
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Fetch assessments to validate wiring for the patient history endpoint.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleFetchAssessments}
+              disabled={assessmentsLoading}
+              className="w-full"
+              variant="secondary"
+            >
+              {assessmentsLoading ? (
+                <>
+                  <LoadingSpinner className="w-4 h-4 mr-2" />
+                  Loading...
+                </>
+              ) : (
+                'Fetch Patient Assessments'
+              )}
+            </Button>
+
+            {assessmentsResult && (
+              <div className="text-xs text-gray-600">
+                {assessmentsResult.success
+                  ? 'Assessments loaded.'
+                  : `Error: ${assessmentsResult.error}`}
+              </div>
+            )}
           </div>
         </Card>
 

@@ -119,6 +119,9 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<PatientProfile | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
   
+  // E73.5: Assessments with calculated results (SSOT)
+  const [assessmentsWithResults, setAssessmentsWithResults] = useState<any[]>([])
+  
   // E6.4.4: Workup status from latest completed assessment
   const [latestWorkupStatus, setLatestWorkupStatus] = useState<WorkupStatus>(null)
   const [latestMissingDataFields, setLatestMissingDataFields] = useState<string[]>([])
@@ -340,6 +343,21 @@ export default function PatientDetailPage() {
           setSafetyState({ state: 'empty' })
           setScoresState({ state: 'empty' })
           setInterventionsState({ state: 'empty' })
+        }
+
+        // E73.5: Fetch assessments with results from SSOT endpoint
+        // IMPORTANT: Literal string callsite for endpoint wiring
+        try {
+          const response = await fetch(`/api/patient/assessments-with-results?patientId=${patientId}`)
+          if (response.ok) {
+            const json = await response.json()
+            if (json.success && json.data?.assessments) {
+              setAssessmentsWithResults(json.data.assessments)
+            }
+          }
+        } catch (err) {
+          console.warn('[E73.5] Failed to fetch assessments with results:', err)
+          // Non-fatal error - continue with page load
         }
       } catch (e: unknown) {
         console.error('Error loading patient details:', e)
@@ -598,16 +616,78 @@ export default function PatientDetailPage() {
 
         {/* Assessments Tab */}
         <TabContent value="assessments">
-          <AssessmentList
-            assessments={measures}
-            onViewDetails={(id) => {
-              // Navigate to report or assessment detail if available
-              const measure = measures.find((m) => m.id === id)
-              if (measure?.report_id) {
-                router.push(`/clinician/report/${measure.report_id}`)
-              }
-            }}
-          />
+          {/* E73.5: New assessments with calculated results (SSOT) */}
+          {assessmentsWithResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">
+                Abgeschlossene Assessments mit Ergebnissen
+              </h3>
+              <div className="space-y-3">
+                {assessmentsWithResults.map((assessment) => {
+                  const stressScore = assessment.result?.scores?.stress_score
+                  const sleepScore = assessment.result?.scores?.sleep_score
+                  
+                  return (
+                    <Card key={assessment.id} padding="lg" shadow="md">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                              {assessment.funnelName}
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Abgeschlossen: {new Date(assessment.completedAt).toLocaleDateString('de-DE')}
+                            </p>
+                          </div>
+                          <Badge variant="success" size="sm">Abgeschlossen</Badge>
+                        </div>
+                        
+                        {(stressScore != null || sleepScore != null) && (
+                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700">
+                            {stressScore != null && (
+                              <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+                                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Stress-Score</p>
+                                <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
+                                  {Math.round(stressScore)}
+                                </p>
+                              </div>
+                            )}
+                            {sleepScore != null && (
+                              <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+                                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Schlaf-Score</p>
+                                <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
+                                  {Math.round(sleepScore)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Legacy measures */}
+          {measures.length > 0 && (
+            <>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4 mt-6">
+                Legacy-Messungen
+              </h3>
+              <AssessmentList
+                assessments={measures}
+                onViewDetails={(id) => {
+                  // Navigate to report or assessment detail if available
+                  const measure = measures.find((m) => m.id === id)
+                  if (measure?.report_id) {
+                    router.push(`/clinician/report/${measure.report_id}`)
+                  }
+                }}
+              />
+            </>
+          )}
         </TabContent>
 
         {/* AMY Insights Tab */}
