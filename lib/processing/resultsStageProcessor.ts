@@ -22,6 +22,13 @@ import { writeCalculatedResults, type WriteCalculatedResultsInput } from '@/lib/
 
 const DEFAULT_ALGORITHM_VERSION = 'v1.0.0'
 
+const resolveMaybeSingle = async (query: any) => {
+  if (query && typeof query.maybeSingle === 'function') {
+    return query.maybeSingle()
+  }
+  return query.single()
+}
+
 // ============================================================
 // Results Stage Processing Result
 // ============================================================
@@ -65,16 +72,28 @@ export async function processResultsStage(
 
     // Step 1: Load risk bundle (required)
     const riskResult = await loadRiskBundle(supabase, jobId)
-    
-    if (!riskResult.success || !riskResult.bundle) {
+
+    let riskBundle = riskResult.success ? riskResult.bundle : undefined
+    if (!riskBundle) {
+      const riskQuery = supabase
+        .from('risk_bundles')
+        .select('bundle_data')
+        .eq('job_id', jobId)
+
+      const fallbackResult = await resolveMaybeSingle(riskQuery)
+
+      if (fallbackResult?.data?.bundle_data) {
+        riskBundle = fallbackResult.data.bundle_data
+      }
+    }
+
+    if (!riskBundle) {
       return {
         success: false,
         error: riskResult.error || 'Risk bundle not found for job',
         errorCode: 'RISK_BUNDLE_NOT_FOUND',
       }
     }
-
-    const riskBundle = riskResult.bundle
 
     // Step 2: Load priority ranking (optional)
     const rankingResult = await loadPriorityRanking(supabase, jobId)
@@ -104,11 +123,14 @@ export async function processResultsStage(
     }
 
     // Step 4: Fetch funnel version ID if available
-    const { data: assessment, error: assessmentError } = await supabase
+    const assessmentQuery = supabase
       .from('assessments')
       .select('funnel_id')
       .eq('id', assessmentId)
-      .single()
+
+    const { data: assessment, error: assessmentError } = await resolveMaybeSingle(
+      assessmentQuery,
+    )
 
     if (assessmentError) {
       console.warn('[resultsStage] Failed to fetch assessment for funnel_version_id:', assessmentError.message)
