@@ -7,13 +7,17 @@ import {
   internalErrorResponse,
   versionedSuccessResponse,
   assessmentNotCompletedResponse,
+  stateConflictResponse,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError, logIncompleteAssessmentAccess } from '@/lib/logging/logger'
 import {
   PATIENT_ASSESSMENT_SCHEMA_VERSION,
   type GetResultResponseData,
+  type GetResultStateResponseData,
+  RESULT_STATE,
 } from '@/lib/api/contracts/patient'
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
+import { loadCalculatedResults } from '@/lib/results/persistence'
 
 export async function GET(
   request: NextRequest,
@@ -87,11 +91,70 @@ export async function GET(
         },
         assessment.status,
       )
+      
+      // E73.4: Check feature flag for new SSOT-first behavior
+      const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+      
+      if (useStateContract) {
+        // E73.4: Return 409 with in_progress state
+        const stateData: GetResultStateResponseData = {
+          state: RESULT_STATE.IN_PROGRESS,
+          assessmentId: assessment.id,
+        }
+        return stateConflictResponse(
+          'Assessment ist noch nicht abgeschlossen.',
+          { state: 'in_progress', assessmentId: assessment.id },
+        )
+      }
+      
+      // Legacy behavior
       return assessmentNotCompletedResponse(
         'Dieses Assessment wurde noch nicht abgeschlossen. Bitte schließen Sie das Assessment ab, um die Ergebnisse zu sehen.',
         { assessmentId, status: assessment.status },
       )
     }
+
+    // E73.4: Check feature flag for new SSOT-first behavior
+    const useStateContract = process.env.E73_4_RESULT_SSOT === 'true'
+    
+    if (useStateContract) {
+      // E73.4: SSOT-first approach - fetch from calculated_results
+      const { success: loadSuccess, result: calculatedResult, error: loadError } = await loadCalculatedResults(
+        supabase,
+        assessmentId,
+      )
+      
+      if (!loadSuccess || loadError) {
+        console.error('[result/route] Error loading calculated results:', loadError)
+        return internalErrorResponse('Fehler beim Laden der Ergebnisse.')
+      }
+      
+      if (!calculatedResult) {
+        // E73.4: Completed but no calculated_results → 409 processing
+        return stateConflictResponse(
+          'Die Ergebnisse werden aktuell berechnet. Bitte versuchen Sie es in Kürze erneut.',
+          { state: 'processing', assessmentId: assessment.id },
+        )
+      }
+      
+      // E73.4: Return SSOT result
+      const stateData: GetResultStateResponseData = {
+        state: RESULT_STATE.READY,
+        assessmentId: assessment.id,
+        result: {
+          scores: calculatedResult.scores,
+          riskModels: calculatedResult.riskModels,
+          priorityRanking: calculatedResult.priorityRanking,
+          algorithmVersion: calculatedResult.algorithmVersion,
+          computedAt: calculatedResult.computedAt,
+        },
+      }
+      
+      return versionedSuccessResponse(stateData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
+    }
+
+    // Legacy POC behavior below
+
 
     let funnelTitle: string | null = null
 
