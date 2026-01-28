@@ -30,6 +30,7 @@
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
+    "verify:legacy": "node scripts/verify-legacy-ghosting.mjs",
     "db:typegen": "pwsh -File scripts/db/typegen.ps1 -Generate",
     "db:typegen:verify": "pwsh -File scripts/db/typegen.ps1 -Verify",
     "db:reset": "supabase db reset",
