@@ -224,35 +224,43 @@ Each rule entry includes:
 **Rule Text**: All new/changed API endpoints MUST have at least one literal callsite (`fetch('/api/...')`) in the same PR. If feature is not live, gate callsite behind feature flag but keep literal string. External-only endpoints require allowlist entry with justification.
 
 **Scope**:
-- All API route files: `apps/*/app/api/**/*.ts`
+- All API route files: `apps/*/app/api/**/*.ts`, `app/api/**/*.ts`
 - Callsites: Anywhere with `fetch('/api/...` or `fetch(\`/api/...` literal strings
-- Feature flags: `lib/featureFlags.ts`
+- Feature flags: `lib/featureFlags.ts` (if applicable)
+- Allowlist: `docs/api/endpoint-allowlist.json`
 
 **Enforced By**:
+- Workflow: `.github/workflows/api-wiring-gate.yml` (runs on PR when API routes change) - E73.10
 - Script: `scripts/dev/endpoint-catalog/generate.js` (detects orphans)
 - Script: `scripts/ci/verify-endpoint-catalog.ps1` (validates catalog)
 - Manual PR review: Check for literal callsite existence
 
 **Pass Condition**:
-- Every endpoint in code has at least one literal fetch() callsite in same PR
+- Every endpoint in code has at least one literal fetch() callsite detected by catalog scanner
 - OR endpoint is listed in `docs/api/endpoint-allowlist.json` with justification
-- Orphan detection: `docs/api/ORPHAN_ENDPOINTS.md` is empty after catalog generation
+- Orphan detection: `docs/api/ORPHAN_ENDPOINTS.md` shows "(none)" after catalog generation
 - If feature-flagged: Literal string exists in code even when flag is disabled
+- Workflow exit code 0
 
 **Exceptions**:
 - Allowlist: `docs/api/endpoint-allowlist.json` → `allowedOrphans` array
-- External endpoints: Allowlist entry with justification comment
-- Format: `"/api/example/webhook - External trigger from Stripe webhooks"`
+- External endpoints: Allowlist entry (path only as JSON array element)
+- Format: JSON array of endpoint path strings (no inline comments in JSON)
+- Example: `"/api/webhooks/stripe"` (justification documented in endpoint source file)
+- Justification: Use `@endpoint-intent manual:webhook` marker in endpoint source file
 
 **Evidence Output**:
-- File: `docs/api/ORPHAN_ENDPOINTS.md` (must be empty or contain only allowlisted endpoints)
-- File: `docs/api/endpoint-allowlist.json` (contains justifications)
-- PR review: Reviewer confirms literal callsite exists for new endpoints
+- Console: "✅ API Wiring Gate passed!"
+- Console: "✅ Endpoint wiring gate passed" (from generate.js)
+- File: `docs/api/ORPHAN_ENDPOINTS.md` (shows "(none)" if all endpoints have callsites)
+- File: `docs/api/ENDPOINT_CATALOG.md` (generated catalog with callsite mappings)
+- File: `docs/api/endpoint-allowlist.json` (contains justifications for allowlisted endpoints)
+- Workflow artifact: api-wiring-gate logs
 
 **Known Gaps**:
-- No automated check for literal callsite existence (manual PR review required)
 - Feature flag gating not automatically verified (relies on code review)
-- Dynamic endpoint construction (`fetch('/api/' + path)`) not detected
+- Dynamic endpoint construction (`fetch('/api/' + path)`) not detected by literal scanner
+- Template literal interpolation may not match all route patterns
 
 **Owner**: E73 / Content System
 
@@ -904,28 +912,34 @@ Each rule entry includes:
 
 ### R-CI-001: ESLint Must Pass on Changed Lines
 
-**Rule Text**: ESLint must pass with zero errors on all lines changed in the PR (interim policy: pre-existing errors in unchanged lines are ignored).
+**Rule Text**: ESLint must pass with zero errors on all lines changed in the PR (interim policy: pre-existing errors in unchanged lines are ignored). Generated artifacts and build outputs are excluded from linting.
 
 **Scope**:
 - All `*.ts` and `*.tsx` files changed in PR
 - Determined by: `git diff $BASE_SHA $HEAD_SHA`
+- **Excluded**: `.next/**`, `node_modules/**`, `dist/**`, `build/**`, `.turbo/**`, `out/**`, `.vercel/**`, `coverage/**`, `artifacts/**`, `*.generated.*`
 
 **Enforced By**:
 - Workflow: `.github/workflows/lint-gate.yml`
 - Workflow: `.github/workflows/db-access-verification.yml` (similar pattern)
-- Script: `npm run lint:changed`
+- Script: `tools/lint-changed-lines.mjs` (via `npm run lint:changed`)
+- Filter: `isGeneratedOrBuildOutput()` function in lint-changed-lines.mjs
 
 **Pass Condition**:
-- ESLint exit code 0 for changed files
+- ESLint exit code 0 for changed files (after filtering generated artifacts)
 - No errors on changed lines (warnings allowed)
+- If no files remain after filtering: produces deterministic empty reports (`[]` for eslint-report.json, `{}` for changed_line_ranges.json)
 
 **Exceptions**:
 - Pre-existing errors in unchanged files are ignored (interim policy)
-- Documented in `docs/LINT_POLICY.md` (if exists)
+- Generated/build artifacts are automatically excluded (not linted)
+- Documented in `docs/LINT_POLICY.md`
 
 **Evidence Output**:
 - Console: "✅ ESLint gate passed!"
+- Console: "No TS/TSX source changes detected after filtering generated outputs." (when applicable)
 - Or: ESLint error output for specific files/lines
+- Artifacts: `.lint-artifacts/eslint-report.json`, `.lint-artifacts/changed_line_ranges.json`
 
 **Known Gaps**:
 - Interim policy allows pre-existing violations to persist

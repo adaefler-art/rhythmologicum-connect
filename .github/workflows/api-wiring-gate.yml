@@ -1,6 +1,16 @@
 name: API Wiring Gate (Endpoint Catalog)
 
 on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/*/app/api/**/*.ts'
+      - 'apps/*/app/api/**/*.tsx'
+      - 'app/api/**/*.ts'
+      - 'app/api/**/*.tsx'
+      - 'docs/api/endpoint-allowlist.json'
+      - 'scripts/dev/endpoint-catalog/**/*'
+      - 'scripts/ci/verify-endpoint-catalog.ps1'
   workflow_dispatch:
 
 concurrency:
@@ -35,5 +45,15 @@ jobs:
         run: |
           pwsh -File scripts/ci/verify-endpoint-catalog.ps1
 
-      - name: Run unit tests (matcher/parser)
-        run: npm test
+      - name: Run endpoint catalog unit tests
+        run: npm test -- scripts/dev/endpoint-catalog/__tests__
+      
+      - name: Success message
+        if: success()
+        run: |
+          echo "✅ API Wiring Gate passed!"
+          echo ""
+          echo "Summary:"
+          echo "  - All endpoints have callsites or are allowlisted"
+          echo "  - No orphan endpoints detected"
+          echo "  - See docs/api/ENDPOINT_CATALOG.md for full catalog"

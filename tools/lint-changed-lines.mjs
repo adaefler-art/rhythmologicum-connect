@@ -27,22 +27,45 @@ try {
   process.exit(2)
 }
 
+/**
+ * E73.10 / R-CI-001: Exclude generated artifacts and build outputs from lint gate.
+ * 
+ * This function filters out generated files to prevent CI failures on build artifacts.
+ * Patterns are similar to globalIgnores in eslint.config.mjs but adapted for path matching.
+ * 
+ * Note: This list intentionally excludes some patterns from eslint.config.mjs:
+ * - 'docs/**' (documentation changes should still be lintable)
+ * - 'proxy.ts' (legacy file, but not a generated artifact)
+ * - 'legacy/**' (handled separately by globalIgnores)
+ * - 'next-env.d.ts' (handled by .gitignore, rarely changes)
+ * 
+ * @param {string} file - File path to check (relative to repo root)
+ * @returns {boolean} - True if file should be excluded from linting
+ */
 function isGeneratedOrBuildOutput(file) {
   const normalized = file.replace(/\\/g, '/')
+  
+  // E73.10: Exclude generated artifacts and build outputs
   const excludedDirs = [
-    '/.next/',
-    '/.next/types/',
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/.turbo/',
-    '/out/',
-    '/.vercel/',
-    '/coverage/',
-    '/artifacts/',
+    '.next/',           // Next.js build output (including .next/types/*.d.ts)
+    'node_modules/',    // Package dependencies
+    'dist/',            // Production build output
+    'build/',           // Build artifacts
+    '.turbo/',          // Turborepo cache
+    'out/',             // Next.js static export
+    '.vercel/',         // Vercel deployment artifacts
+    'coverage/',        // Test coverage reports
+    'artifacts/',       // CI/test artifacts
   ]
 
-  if (excludedDirs.some((dir) => normalized.includes(dir))) return true
+  // Check if path starts with excluded directory or contains it as a path segment
+  for (const dir of excludedDirs) {
+    if (normalized.startsWith(dir) || normalized.includes('/' + dir)) {
+      return true
+    }
+  }
+  
+  // Also exclude files with .generated. in their name (e.g., schema.generated.ts)
   if (/\.generated\.[^/]+$/i.test(normalized)) return true
 
   return false
