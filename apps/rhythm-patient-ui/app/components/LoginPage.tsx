@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { ThemeToggle, Input } from '@/lib/ui'
+import { Button, Card, mobileTypography } from '@/lib/ui/mobile-v2'
+import { Input } from '@/src/vendor/rhythm_mobile_v2/components/ui/Input'
 import type { ResolvedUserRole } from '@/lib/utils/roleLanding'
 import { getPostLoginRedirect } from '@/lib/utils/authRedirect'
 
@@ -96,7 +97,6 @@ async function resolvePostLoginRedirect(role: ResolvedUserRole): Promise<string 
   return getPostLoginRedirect({ role })
 }
 
-
 type Mode = 'login' | 'signup'
 
 interface VersionInfo {
@@ -113,7 +113,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null) // neu: Erfolgsmeldungen
+  const [info, setInfo] = useState<string | null>(null)
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
 
   // Check if user is already authenticated and redirect to appropriate landing page
@@ -153,7 +153,7 @@ export default function LoginPage() {
       if (event === 'SIGNED_OUT') {
         return
       }
-      
+
       await fetch('/api/auth/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -215,7 +215,7 @@ export default function LoginPage() {
           setInfo('Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mails zur Bestätigung.')
         }
       }
-    } catch (err) {
+    } catch {
       setError('Ein unerwarteter Fehler ist aufgetreten.')
     } finally {
       setLoading(false)
@@ -223,70 +223,64 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-start justify-between gap-12 px-8 py-16 lg:flex-row lg:items-center">
-        <div className="max-w-xl">
-          <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-widest text-sky-400">
-            <span>Rhythmologicum</span>
-            <span className="opacity-50">|</span>
-            <span>Connect</span>
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-6 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <section className="w-full max-w-xl space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-500">
+            Rhythmologicum Connect
           </div>
-          <h1 className="mt-6 text-4xl font-semibold leading-tight text-white sm:text-5xl">
+          <h1
+            className="font-semibold text-slate-900"
+            style={{
+              fontSize: mobileTypography.fontSize['3xl'],
+              lineHeight: mobileTypography.lineHeight.tight,
+            }}
+          >
             Willkommen zurück
           </h1>
-          <p className="mt-4 text-base text-slate-300">
+          <p className="text-base text-slate-600">
             Melden Sie sich an, um Ihre Assessments zu starten und Ihre Ergebnisse einzusehen.
           </p>
 
-          <div className="mt-8 flex items-center gap-4">
-            <ThemeToggle />
-            <span className="text-sm text-slate-400">Dark Mode ist aktiv</span>
-          </div>
-
           {versionInfo && (
-            <div className="mt-8 text-xs text-slate-400">
+            <div className="pt-4 text-xs text-slate-400">
               <div>Commit: {versionInfo.commitHashShort}</div>
               <div>Build: {new Date(versionInfo.buildDate).toLocaleString('de-DE')}</div>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="mx-auto w-full max-w-[420px] rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-lg lg:mx-0">
-          <h2 className="text-2xl font-semibold text-white">
+        <Card className="w-full max-w-md lg:max-w-lg" padding="lg" shadow="md">
+          <h2 className="text-xl font-semibold text-slate-900">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
 
           <form className="mt-6 w-full space-y-4" onSubmit={handleAuth}>
             <Input
               type="email"
+              label="E-Mail"
+              placeholder="name@domain.de"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="E-Mail"
-              inputSize="lg"
-              className="min-w-0"
+              onChange={setEmail}
             />
+
             <Input
               type="password"
+              label="Passwort"
+              placeholder="••••••••"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Passwort"
-              inputSize="lg"
-              className="min-w-0"
+              onChange={setPassword}
             />
 
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            {info && <p className="text-sm text-emerald-400">{info}</p>}
+            {error && <p className="text-sm text-rose-600">{error}</p>}
+            {info && <p className="text-sm text-emerald-600">{info}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-60"
-            >
+            <Button type="submit" fullWidth disabled={loading} size="md">
               {loading ? 'Bitte warten…' : mode === 'login' ? 'Anmelden' : 'Registrieren'}
-            </button>
+            </Button>
           </form>
 
-          <div className="mt-6 text-sm text-slate-400">
+          <div className="mt-6 text-sm text-slate-500">
             {mode === 'login' ? 'Noch kein Konto?' : 'Schon registriert?'}{' '}
             <button
               type="button"
@@ -295,12 +289,12 @@ export default function LoginPage() {
                 setError(null)
                 setInfo(null)
               }}
-              className="font-semibold text-sky-400 hover:text-sky-300"
+              className="font-semibold text-sky-600 hover:text-sky-500"
             >
               {mode === 'login' ? 'Jetzt registrieren' : 'Zum Login wechseln'}
             </button>
           </div>
-        </div>
+        </Card>
       </div>
     </main>
   )

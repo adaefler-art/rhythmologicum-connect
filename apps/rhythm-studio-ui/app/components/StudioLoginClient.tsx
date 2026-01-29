@@ -91,7 +91,7 @@ export default function StudioLoginClient() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-start justify-between gap-12 px-8 py-16 lg:flex-row lg:items-center">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-start justify-between gap-12 px-6 py-12 sm:px-8 lg:flex-row lg:items-center">
         <section className="flex-1 min-w-0 max-w-2xl space-y-5">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
             Rhythmologicum Connect
@@ -102,7 +102,7 @@ export default function StudioLoginClient() {
           </p>
         </section>
 
-        <section className="w-full max-w-105 min-w-90 shrink-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl">
+        <section className="w-full max-w-md lg:max-w-lg shrink-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 shadow-2xl">
           <h2 className="text-lg font-semibold">Anmelden</h2>
           <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
 
