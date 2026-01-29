@@ -1437,6 +1437,32 @@ SET default_tablespace = '';
 SET default_table_access_method = "heap";
 
 
+CREATE TABLE IF NOT EXISTS "public"."amy_chat_messages" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "role" "text" NOT NULL,
+    "content" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    CONSTRAINT "amy_chat_messages_role_check" CHECK (("role" = ANY (ARRAY['user'::"text", 'assistant'::"text", 'system'::"text"])))
+);
+
+
+ALTER TABLE "public"."amy_chat_messages" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."amy_chat_messages" IS 'E73.8: AMY chat conversation history. Stores user and assistant messages for chat persistence. No control features - read-only chat.';
+
+
+
+COMMENT ON COLUMN "public"."amy_chat_messages"."role" IS 'Message role: user (patient message), assistant (AMY response), system (context)';
+
+
+
+COMMENT ON COLUMN "public"."amy_chat_messages"."metadata" IS 'Optional metadata: correlationId, model version, etc.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."assessment_answers" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "assessment_id" "uuid" NOT NULL,
@@ -3643,6 +3669,11 @@ COMMENT ON COLUMN "public"."user_profiles"."metadata" IS 'E6.4.1: Can include pi
 
 
 
+ALTER TABLE ONLY "public"."amy_chat_messages"
+    ADD CONSTRAINT "amy_chat_messages_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."assessment_answers"
     ADD CONSTRAINT "assessment_answers_assessment_question_unique" UNIQUE ("assessment_id", "question_id");
 
@@ -4058,6 +4089,10 @@ ALTER TABLE ONLY "public"."user_profiles"
 
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_user_id_key" UNIQUE ("user_id");
+
+
+
+CREATE INDEX "amy_chat_messages_user_id_created_at_idx" ON "public"."amy_chat_messages" USING "btree" ("user_id", "created_at" DESC);
 
 
 
@@ -5005,6 +5040,11 @@ CREATE OR REPLACE TRIGGER "update_safety_check_results_updated_at" BEFORE UPDATE
 
 
 
+ALTER TABLE ONLY "public"."amy_chat_messages"
+    ADD CONSTRAINT "amy_chat_messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."assessment_answers"
     ADD CONSTRAINT "assessment_answers_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
 
@@ -5792,6 +5832,17 @@ CREATE POLICY "allow_admin_clinician_update_sections" ON "public"."content_page_
 
 
 CREATE POLICY "allow_all_read_sections" ON "public"."content_page_sections" FOR SELECT USING (true);
+
+
+
+ALTER TABLE "public"."amy_chat_messages" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "amy_chat_messages_patient_insert" ON "public"."amy_chat_messages" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "amy_chat_messages_patient_select" ON "public"."amy_chat_messages" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -6795,6 +6846,12 @@ GRANT ALL ON FUNCTION "public"."update_support_cases_updated_at"() TO "service_r
 
 
 
+
+
+
+GRANT ALL ON TABLE "public"."amy_chat_messages" TO "anon";
+GRANT ALL ON TABLE "public"."amy_chat_messages" TO "authenticated";
+GRANT ALL ON TABLE "public"."amy_chat_messages" TO "service_role";
 
 
 
