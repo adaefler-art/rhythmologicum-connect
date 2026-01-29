@@ -19,6 +19,7 @@ import {
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 import { loadCalculatedResults } from '@/lib/results/persistence'
 import { env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 
 export async function GET(
   request: NextRequest,
@@ -84,7 +85,7 @@ export async function GET(
     }
 
     // E73.4: Check feature flag once for entire request
-    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
+    const useStateContract = flagEnabled(env.E73_4_RESULT_SSOT)
 
     if (assessment.status !== 'completed') {
       logIncompleteAssessmentAccess(

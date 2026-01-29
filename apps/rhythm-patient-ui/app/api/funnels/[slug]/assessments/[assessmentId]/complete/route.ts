@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { validateAllRequiredQuestions } from '@/lib/validation/requiredQuestions'
 import {
   versionedSuccessResponse,
+  versionedErrorResponse,
+  ErrorCode,
   missingFieldsResponse,
   unauthorizedResponse,
   notFoundResponse,
@@ -34,9 +36,11 @@ import {
   type PatientStateV01,
 } from '@/lib/api/contracts/patient/state'
 import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
+import { processResultsStage } from '@/lib/processing/resultsStageProcessor'
 
 type ProcessingStatus = 'in_progress' | 'completed' | 'failed' | 'queued'
-const normalizeProcessingStatus = (s: unknown): ProcessingStatus => {
+
+function asProcessingStatus(s: unknown): ProcessingStatus {
   switch (s) {
     case 'in_progress':
     case 'completed':
@@ -159,7 +163,7 @@ async function handleCompleteAssessment(
         if (jobResult.success && jobResult.jobId) {
           processingJob = {
             jobId: jobResult.jobId,
-            status: normalizeProcessingStatus(jobResult.status),
+            status: asProcessingStatus(jobResult.status),
           }
         }
       } catch (err) {
@@ -310,13 +314,39 @@ async function handleCompleteAssessment(
       if (jobResult.success && jobResult.jobId) {
         processingJob = {
           jobId: jobResult.jobId,
-          status: normalizeProcessingStatus(jobResult.status),
+          status: asProcessingStatus(jobResult.status),
         }
         console.log('[complete] Processing job created', {
           jobId: jobResult.jobId,
           assessmentId,
           isNewJob: jobResult.isNewJob,
         })
+
+        {
+          const jobId = jobResult.jobId
+          const assessmentId = assessment.id
+
+          const stage = await processResultsStage(supabase, jobId, assessmentId)
+
+          if (!stage.success) {
+            console.error('[E73] processResultsStage failed', {
+              correlationId,
+              jobId,
+              assessmentId,
+              reason: stage.reason,
+              error: stage.error,
+            })
+
+            return versionedErrorResponse(
+              ErrorCode.INTERNAL_ERROR,
+              'Processing results failed',
+              500,
+              PATIENT_ASSESSMENT_SCHEMA_VERSION,
+              { reason: stage.reason ?? 'unknown' },
+              correlationId,
+            )
+          }
+        }
       } else {
         console.warn('[complete] Failed to create processing job', {
           assessmentId,

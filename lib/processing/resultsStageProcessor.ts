@@ -39,6 +39,7 @@ export interface ResultsStageResult {
   isNew?: boolean
   error?: string
   errorCode?: string
+  reason?: string
 }
 
 // ============================================================
@@ -92,12 +93,14 @@ export async function processResultsStage(
         success: false,
         error: riskResult.error || 'Risk bundle not found for job',
         errorCode: 'RISK_BUNDLE_NOT_FOUND',
+        reason: 'RISK_BUNDLE_NOT_FOUND',
       }
     }
 
     // Step 2: Load priority ranking (optional)
     const rankingResult = await loadPriorityRanking(supabase, jobId)
     const ranking = rankingResult.success ? rankingResult.ranking : undefined
+    const rankingUrgencyLevel = (ranking as { urgencyLevel?: string })?.urgencyLevel
 
     // Step 3: Fetch assessment answers for inputs_hash
     const { data: answers, error: answersError } = await supabase
@@ -111,6 +114,7 @@ export async function processResultsStage(
         success: false,
         error: `Failed to fetch answers: ${answersError.message}`,
         errorCode: 'FETCH_ANSWERS_FAILED',
+        reason: 'FETCH_ANSWERS_FAILED',
       }
     }
 
@@ -138,23 +142,41 @@ export async function processResultsStage(
 
     const funnelVersionId = assessment?.funnel_id
 
+    const riskScoreValue =
+      typeof riskBundle.riskScore === 'number'
+        ? riskBundle.riskScore
+        : riskBundle.riskScore?.overall
+
+    const legacyRiskLevel = (riskBundle as { riskLevel?: string }).riskLevel
+    const legacyRiskFactors = (riskBundle as { riskFactors?: any[] }).riskFactors
+
+    const riskLevelValue =
+      typeof riskBundle.riskScore === 'object' && riskBundle.riskScore?.riskLevel
+        ? riskBundle.riskScore.riskLevel
+        : legacyRiskLevel
+
+    const riskFactorsValue =
+      typeof riskBundle.riskScore === 'object' && riskBundle.riskScore?.factors
+        ? riskBundle.riskScore.factors
+        : legacyRiskFactors
+
     // Step 5: Prepare write input
     const writeInput: WriteCalculatedResultsInput = {
       assessmentId,
       algorithmVersion: version,
       funnelVersionId,
       scores: {
-        riskScore: riskBundle.riskScore,
+        riskScore: riskScoreValue,
         // Add more scores from risk bundle as needed
       },
       riskModels: {
-        riskLevel: riskBundle.riskLevel,
-        riskFactors: riskBundle.riskFactors,
+        riskLevel: riskLevelValue,
+        riskFactors: riskFactorsValue,
       },
       priorityRanking: ranking
         ? {
             topInterventions: ranking.rankedInterventions,
-            urgencyLevel: ranking.urgencyLevel,
+            urgencyLevel: rankingUrgencyLevel,
           }
         : undefined,
       inputsData: {
@@ -173,6 +195,7 @@ export async function processResultsStage(
         success: false,
         error: writeResult.error,
         errorCode: writeResult.errorCode,
+        reason: writeResult.errorCode,
       }
     }
 
@@ -195,6 +218,7 @@ export async function processResultsStage(
       success: false,
       error: `Unexpected error in results stage: ${message}`,
       errorCode: 'UNEXPECTED_ERROR',
+      reason: 'UNEXPECTED_ERROR',
     }
   }
 }

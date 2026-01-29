@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 
 /**
  * E6.4.1: Pilot Eligibility Checking
@@ -34,7 +35,7 @@ function getPilotUserAllowlist(): string[] {
  * Check if pilot features are enabled globally
  */
 export function isPilotEnabled(): boolean {
-  return env.NEXT_PUBLIC_PILOT_ENABLED === 'true'
+  return flagEnabled(env.NEXT_PUBLIC_PILOT_ENABLED)
 }
 
 /**

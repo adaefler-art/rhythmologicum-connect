@@ -20,6 +20,7 @@ import {
 import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 import { loadCalculatedResults } from '@/lib/results/persistence'
 import { env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 
 function getFunnelSlugCandidates(slug: string): string[] {
   const normalized = slug.toLowerCase().trim()
@@ -98,7 +99,7 @@ export async function GET(
     }
 
     // E73.4: Check feature flag once for entire request
-    const useStateContract = env.E73_4_RESULT_SSOT === 'true'
+    const useStateContract = flagEnabled(env.E73_4_RESULT_SSOT)
 
     // V061-I02: Result endpoint only returns data for completed assessments
     // - incomplete → 409 (STATE_CONFLICT)

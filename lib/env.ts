@@ -20,6 +20,7 @@
  */
 
 import { z } from 'zod'
+import { flagEnabled } from '@/lib/env/flags'
 
 // ============================================================
 // Environment Schema Definition
@@ -411,7 +412,7 @@ export const env = new Proxy({} as BaseEnv, {
  * flags in those tests.
  */
 export function isDevEndpointCatalogEnabled(): boolean {
-  return process.env.DEV_ENDPOINT_CATALOG === '1'
+  return flagEnabled(process.env.DEV_ENDPOINT_CATALOG)
 }
 
 /**

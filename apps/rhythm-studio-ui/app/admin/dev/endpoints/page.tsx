@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 import { getCurrentUser, getUserRole } from '@/lib/db/supabase.server'
 import EndpointCatalogClient from './EndpointCatalogClient'
 import fs from 'fs/promises'
@@ -95,7 +96,7 @@ function FeatureDisabledUI() {
 
 export default async function DevEndpointsPage() {
   // Feature flag check - show disabled UI instead of 404
-  if (env.DEV_ENDPOINT_CATALOG !== '1') {
+  if (!flagEnabled(env.DEV_ENDPOINT_CATALOG)) {
     return <FeatureDisabledUI />
   }
 

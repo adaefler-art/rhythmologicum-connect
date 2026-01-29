@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { parseEnvBoolean } from '@/lib/featureFlags'
-import { getEngineEnv } from '@/lib/env'
+import { getEngineEnv, env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 
 // Check if clinician dashboard feature is enabled
 function isClinicianDashboardEnabled(): boolean {
-  return parseEnvBoolean(process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED, true)
+  const value = env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED
+  if (value === undefined || value.trim() === '') {
+    return true
+  }
+  return flagEnabled(value)
 }
 
 // Log unauthorized access attempts

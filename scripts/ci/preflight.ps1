@@ -166,6 +166,10 @@ Invoke-Step -Label 'Migration lint' -Fix "Run 'pwsh -File scripts/db/lint-migrat
   pwsh -File scripts/db/lint-migrations.ps1
 }
 
+Invoke-Step -Label 'Verify Flag Contract' -Fix "Run 'node scripts/ci/verify-flag-contract.js' and fix mixed flag interpretations or client reads of non-public flags." -Action {
+  node scripts/ci/verify-flag-contract.js
+}
+
 Invoke-Step -Label 'Supabase start' -Fix "Ensure Docker is running and run 'supabase start', then rerun 'npm run preflight'." -Action {
   Ensure-SupabaseRunning
 }

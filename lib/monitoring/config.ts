@@ -13,6 +13,7 @@
  */
 
 import { env } from '@/lib/env'
+import { flagEnabled } from '@/lib/env/flags'
 
 /**
  * Determines if usage telemetry is enabled based on environment and explicit overrides.
@@ -28,8 +29,7 @@ export function isUsageTelemetryEnabled(): boolean {
 
   // Explicit override takes precedence
   if (explicitSetting !== undefined && explicitSetting !== '') {
-    const normalized = explicitSetting.toLowerCase().trim()
-    return normalized === 'true' || normalized === '1' || normalized === 'yes'
+    return flagEnabled(explicitSetting)
   }
 
   // Default: ON in development, OFF in production/preview
