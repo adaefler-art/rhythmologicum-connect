@@ -52,8 +52,16 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
 
   useEffect(() => {
     const ensurePatientState = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        return
+      }
+
       try {
-        await fetch('/api/patient/state', {
+        const postResponse = await fetch('/api/patient/state', {
           method: 'POST',
           credentials: 'include',
           headers: {
@@ -61,15 +69,21 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
           },
           body: '{}',
         })
+        if (postResponse.status === 401) {
+          return
+        }
       } catch {
         // Ignore background preflight failures
       }
 
       try {
-        await fetch('/api/patient/state', {
+        const getResponse = await fetch('/api/patient/state', {
           method: 'GET',
           credentials: 'include',
         })
+        if (getResponse.status === 401) {
+          return
+        }
       } catch {
         // Ignore background prefetch failures
       }
