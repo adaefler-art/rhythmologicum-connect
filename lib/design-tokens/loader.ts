@@ -28,8 +28,9 @@ export async function loadDesignTokens(): Promise<DesignTokens> {
     const organizationId: string | null = null
     
     // Fetch merged tokens using get_design_tokens function
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tokensData, error: tokensError } = await supabase
-      .rpc('get_design_tokens', { org_id: organizationId })
+      .rpc('get_design_tokens', { org_id: organizationId as any })
     
     if (tokensError || !tokensData) {
       console.warn('[loadDesignTokens] Failed to fetch tokens, using static defaults', {
@@ -42,7 +43,7 @@ export async function loadDesignTokens(): Promise<DesignTokens> {
     // Dynamic tokens override static ones at the category level
     const mergedTokens = {
       ...designTokens,
-      ...tokensData,
+      ...(typeof tokensData === 'object' ? tokensData : {}),
     }
     
     console.log('[loadDesignTokens] Loaded design tokens', {

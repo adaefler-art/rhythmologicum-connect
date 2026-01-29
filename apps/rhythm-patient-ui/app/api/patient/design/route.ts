@@ -8,7 +8,6 @@
  * Tokens are merged server-side using get_design_tokens(org_id) function.
  */
 
-import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/api/authHelpers'
 import { versionedSuccessResponse, internalErrorResponse } from '@/lib/api/responses'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
@@ -18,7 +17,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 type DesignTokensResponse = {
-  tokens: Record<string, any>
+  tokens: Record<string, unknown>
   organizationId: string | null
   appliedAt: string
 }
@@ -43,7 +42,7 @@ type DesignTokensResponse = {
  *   schemaVersion: 1
  * }
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   const correlationId = randomUUID()
   
   try {
@@ -73,8 +72,9 @@ export async function GET(request: NextRequest) {
     
     // AC2: Fetch merged tokens using get_design_tokens function
     // This function merges global defaults with org-specific overrides
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: tokensData, error: tokensError } = await supabase
-      .rpc('get_design_tokens', { org_id: organizationId })
+      .rpc('get_design_tokens', { org_id: organizationId as any })
     
     if (tokensError) {
       console.error('[PATIENT_DESIGN_API][GET] Failed to fetch tokens', {
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
           organizationId: null,
           appliedAt: new Date().toISOString(),
         } as DesignTokensResponse,
-        1,
+        '1',
         200,
         correlationId,
       )
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         organizationId,
         appliedAt: new Date().toISOString(),
       } as DesignTokensResponse,
-      1,
+      '1',
       200,
       correlationId,
     )
