@@ -43,18 +43,33 @@ function isGeneratedOrBuildOutput(file) {
   // Must stay in sync with globalIgnores in eslint.config.mjs
   const excludedDirs = [
     '/.next/',           // Next.js build output (including .next/types/*.d.ts)
+    '.next/',            // Also match without leading slash for relative paths
     '/.next/types/',     // Next.js type definitions (redundant but explicit)
+    '.next/types/',      // Also match without leading slash
     '/node_modules/',    // Package dependencies
+    'node_modules/',     // Also match without leading slash
     '/dist/',            // Production build output
+    'dist/',             // Also match without leading slash
     '/build/',           // Build artifacts
+    'build/',            // Also match without leading slash
     '/.turbo/',          // Turborepo cache
+    '.turbo/',           // Also match without leading slash
     '/out/',             // Next.js static export
+    'out/',              // Also match without leading slash
     '/.vercel/',         // Vercel deployment artifacts
+    '.vercel/',          // Also match without leading slash
     '/coverage/',        // Test coverage reports
+    'coverage/',         // Also match without leading slash
     '/artifacts/',       // CI/test artifacts
+    'artifacts/',        // Also match without leading slash
   ]
 
-  if (excludedDirs.some((dir) => normalized.includes(dir))) return true
+  // Check if path starts with or contains any excluded directory
+  for (const dir of excludedDirs) {
+    if (normalized.startsWith(dir) || normalized.includes('/' + dir)) {
+      return true
+    }
+  }
   
   // Also exclude files with .generated. in their name (e.g., schema.generated.ts)
   if (/\.generated\.[^/]+$/i.test(normalized)) return true
