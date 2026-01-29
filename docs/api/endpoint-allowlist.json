@@ -43,6 +43,7 @@
     "/api/auth/signout",
     "/api/consent/record",
     "/api/consent/status",
+    "/api/content/[slug]",
     "/api/content/resolve",
     "/api/content-resolver",
     "/api/documents/[id]/extract",

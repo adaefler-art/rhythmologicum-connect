@@ -130,6 +130,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/content-pages/[slug] | GET | patient |  | 2 | legacy/code/app/api/content-pages/[slug]/route.ts |
 | /api/content-resolver | GET | patient |  | 0 | apps/rhythm-legacy/app/api/content-resolver/route.ts |
 | /api/content-resolver | GET | patient |  | 0 | legacy/code/app/api/content-resolver/route.ts |
+| /api/content/[slug] | GET | patient |  | 12 | apps/rhythm-patient-ui/app/api/content/[slug]/route.ts |
 | /api/content/resolve | GET | patient |  | 0 | apps/rhythm-legacy/app/api/content/resolve/route.ts |
 | /api/content/resolve | GET | patient |  | 0 | legacy/code/app/api/content/resolve/route.ts |
 | /api/documents/[id]/extract | POST | system |  | 0 | apps/rhythm-legacy/app/api/documents/[id]/extract/route.ts |

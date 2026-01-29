@@ -3424,6 +3424,80 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/content/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/content/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 12,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/nonexistent",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/draft-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/archived-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/deleted-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/lib/api/contentApi.ts",
+          "apiPath": "/api/content/${slug}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/lib/api/contentApi.ts",
+          "apiPath": "/api/content/${slug}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/content/resolve",
       "methods": [
         "GET"
