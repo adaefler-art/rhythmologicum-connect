@@ -62,6 +62,13 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
 
+  const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+    createAdminSupabaseClient: jest.Mock
+  }
+  createAdminSupabaseClient.mockImplementation(() => {
+    throw new Error('Admin client unavailable')
+  })
+
   const mod = await import('../route')
   return mod as { GET: (request: Request) => Promise<Response> }
 }
