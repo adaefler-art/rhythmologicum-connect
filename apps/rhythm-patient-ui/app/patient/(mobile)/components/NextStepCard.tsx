@@ -2,6 +2,7 @@
 
 import { Card, Button } from '@/lib/ui/mobile-v2'
 import type { NextStep } from '@/lib/api/contracts/patient/dashboard'
+import { useDesignTokens } from '@/lib/contexts/DesignTokensContext'
 
 export interface NextStepCardProps {
   /** Next step data from dashboard API */
@@ -15,6 +16,7 @@ export interface NextStepCardProps {
  * 
  * Displays the next action for the patient to take.
  * Part of E6.5.4 implementation.
+ * E73.9: Uses dynamic design tokens from Studio configuration
  * 
  * Features:
  * - Always visible when nextStep is available (AC3)
@@ -22,6 +24,7 @@ export interface NextStepCardProps {
  * - Responsive design
  * - Light mode only (Mobile v2)
  * - CTA button for action
+ * - E73.9: Dynamic theming via design tokens
  * 
  * @example
  * <NextStepCard
@@ -34,6 +37,9 @@ export interface NextStepCardProps {
  * />
  */
 export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
+  // E73.9: Get dynamic design tokens from context
+  const tokens = useDesignTokens()
+  
   // Don't render if type is 'none'
   if (nextStep.type === 'none') {
     return null
@@ -50,35 +56,47 @@ export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
 
   const icon = iconMap[nextStep.type]
 
-  return (
-    <Card padding="lg" className="border-2 border-sky-200 rounded-lg">
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl" role="img" aria-label="Next step">
-              {icon}
-            </span>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Nächster Schritt
-            </h2>
-            <p className="text-sm text-slate-600">{nextStep.label}</p>
-          </div>
-        </div>
+  // E73.9: Use primary color from design tokens (Studio-configurable)
+  const primaryColorLight = tokens.colors?.primary?.[100] || '#e0f2fe'
+  const primaryColorBorder = tokens.colors?.primary?.[200] || '#bae6fd'
 
-        {nextStep.target && (
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={onAction}
-          >
-            {nextStep.label}
-          </Button>
-        )}
-      </div>
-    </Card>
+  return (
+    <div 
+      className="border-2 rounded-lg"
+      style={{ borderColor: primaryColorBorder }}
+    >
+      <Card padding="lg" shadow="none">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: primaryColorLight }}
+            >
+              <span className="text-2xl" role="img" aria-label="Next step">
+                {icon}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-slate-900">
+                Nächster Schritt
+              </h2>
+              <p className="text-sm text-slate-600">{nextStep.label}</p>
+            </div>
+          </div>
+
+          {nextStep.target && (
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={onAction}
+            >
+              {nextStep.label}
+            </Button>
+          )}
+        </div>
+      </Card>
+    </div>
   )
 }
 

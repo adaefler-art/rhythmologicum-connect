@@ -6445,6 +6445,25 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/patient/design",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/design/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useDesignTokensLoader.ts",
+          "apiPath": "/api/patient/design",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"

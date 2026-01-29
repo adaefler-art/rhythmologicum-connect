@@ -64,6 +64,7 @@
     "/api/patient-profiles",
     "/api/pre-screening-calls",
     "/api/patient/dashboard",
+    "/api/patient/design",
     "/api/patient/triage",
     "/api/processing/content",
     "/api/processing/delivery",

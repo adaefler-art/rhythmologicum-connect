@@ -13,9 +13,11 @@ import {
 } from '../components'
 import { useDashboardData } from '@/lib/hooks/useDashboardData'
 import { useAppFocus } from '@/lib/hooks/useAppFocus'
+import { useDesignTokens } from '@/lib/contexts/DesignTokensContext'
 
 /**
  * Patient Dashboard Client Component (E6.5.4 + E6.5.9)
+ * E73.9: Enhanced with dynamic design tokens from Studio
  * 
  * Enhanced dashboard layout with sections:
  * - Header with greeting (AC: empty states)
@@ -33,6 +35,11 @@ import { useAppFocus } from '@/lib/hooks/useAppFocus'
  * - AC1: After completing funnel, dashboard reflects new status without hard reload
  * - AC2: Offline/failed fetch shows error state + retry (not blank)
  * 
+ * E73.9 Acceptance Criteria:
+ * - Studio edit → save tokens
+ * - Patient reload shows changes
+ * - Dashboard: at least 1 visible effect (primary color theming)
+ * 
  * Refresh Strategy:
  * - Auto-refresh on app focus (mobile-friendly)
  * - Refresh after funnel completion (via ?refresh=funnel)
@@ -46,6 +53,9 @@ export default function DashboardClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  
+  // E73.9: Get dynamic design tokens from context
+  const tokens = useDesignTokens()
   
   // E6.5.9: Use dashboard data hook with stale-while-revalidate
   const { data: dashboardData, state, error, isStale, refresh, retry } = useDashboardData()
@@ -134,10 +144,21 @@ export default function DashboardClient({
           )}
 
           {/* E6.5.9: Revalidating state - show subtle indicator while keeping content visible */}
+          {/* E73.9: Use primary color from design tokens */}
           {state === 'revalidating' && isStale && dashboardData && (
-            <div className="bg-sky-50 border border-sky-200 rounded-lg px-4 py-2 text-sm text-sky-700">
+            <div 
+              className="border rounded-lg px-4 py-2 text-sm"
+              style={{ 
+                backgroundColor: tokens.colors?.primary?.[50] || '#f0f9ff',
+                borderColor: tokens.colors?.primary?.[200] || '#bae6fd',
+                color: tokens.colors?.primary?.[700] || '#0369a1'
+              }}
+            >
               <div className="flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-sky-600 border-t-transparent rounded-full" />
+                <div 
+                  className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"
+                  style={{ borderColor: tokens.colors?.primary?.[600] || '#0284c7' }}
+                />
                 <span>Aktualisiere Dashboard...</span>
               </div>
             </div>

@@ -2275,6 +2275,31 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/amy/chat",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/amy/chat/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/amy/stress-report",
       "methods": [
         "POST"
@@ -6418,6 +6443,25 @@
       "usedBy": [],
       "isOrphan": true,
       "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/design",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/design/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useDesignTokensLoader.ts",
+          "apiPath": "/api/patient/design",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/patient/onboarding-status",
