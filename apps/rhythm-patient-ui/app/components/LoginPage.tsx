@@ -225,7 +225,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-6 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-        <section className="w-full max-w-xl space-y-4">
+        <section className="w-full max-w-xl min-w-0 space-y-4">
           <div className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-500">
             Rhythmologicum Connect
           </div>
@@ -250,7 +250,7 @@ export default function LoginPage() {
           )}
         </section>
 
-        <Card className="w-full max-w-md lg:max-w-lg" padding="lg" shadow="md">
+        <Card className="w-full max-w-md sm:max-w-lg mx-auto lg:mx-0 min-w-0" padding="lg" shadow="md">
           <h2 className="text-xl font-semibold text-slate-900">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
@@ -262,6 +262,7 @@ export default function LoginPage() {
               placeholder="name@domain.de"
               value={email}
               onChange={setEmail}
+              className="min-w-0"
             />
 
             <Input
@@ -270,6 +271,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={setPassword}
+              className="min-w-0"
             />
 
             {error && <p className="text-sm text-rose-600">{error}</p>}
