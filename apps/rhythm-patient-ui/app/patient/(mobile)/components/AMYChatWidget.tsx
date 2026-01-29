@@ -22,6 +22,7 @@ type ChatMessage = {
 }
 
 export default function AMYChatWidget() {
+  const isEnabled = featureFlags.AMY_CHAT_ENABLED
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -29,22 +30,25 @@ export default function AMYChatWidget() {
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Don't render if feature is disabled
-  if (!featureFlags.AMY_CHAT_ENABLED) {
-    return null
-  }
-
   // Load chat history on mount
   useEffect(() => {
+    if (!isEnabled) {
+      return
+    }
+
     if (isOpen && messages.length === 0) {
       loadHistory()
     }
-  }, [isOpen])
+  }, [isEnabled, isOpen, messages.length])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
+    if (!isEnabled) {
+      return
+    }
+
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [isEnabled, messages])
 
   const loadHistory = async () => {
     try {
@@ -113,6 +117,10 @@ export default function AMYChatWidget() {
       e.preventDefault()
       sendMessage()
     }
+  }
+
+  if (!isEnabled) {
+    return null
   }
 
   if (!isOpen) {
