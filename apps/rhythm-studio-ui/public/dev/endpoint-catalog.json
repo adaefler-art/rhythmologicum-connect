@@ -12,7 +12,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/account/deletion-request",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/account/deletion-request/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/content-pages",
@@ -38,6 +51,26 @@
       "path": "/api/admin/content-pages",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/content/page.tsx",
+          "apiPath": "/api/admin/content-pages",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/content-pages",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/content-pages/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 1,
@@ -90,6 +123,27 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/content-pages/[id]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/content-pages/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+          "apiPath": "/api/admin/content-pages/${key}",
+          "kind": "url"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/content-pages/[id]/sections",
       "methods": [
         "GET",
@@ -118,6 +172,31 @@
       "path": "/api/admin/content-pages/[id]/sections",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/[id]/sections/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/content-pages/[id]/sections",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/content-pages/[id]/sections/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 2,
@@ -224,6 +303,51 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 6,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${sectionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${prevSection.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${nextSection.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/content-pages/${pageId}/sections/${section.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/design-tokens",
       "methods": [
         "GET",
@@ -261,6 +385,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/design-tokens",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/design-tokens/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/design-tokens/page.tsx",
+          "apiPath": "/api/admin/design-tokens",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/dev/endpoint-catalog",
       "methods": [
         "GET"
@@ -271,7 +415,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/dev/endpoint-catalog",
@@ -282,7 +426,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/dev/endpoint-catalog",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/dev/endpoint-catalog/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/diagnostics/pillars-sot",
@@ -295,7 +452,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/diagnostics/pillars-sot",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/diagnostics/pillars-sot/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-step-questions/[id]",
@@ -334,6 +504,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/funnel-step-questions/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/funnel-step-questions/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-step-questions/${questionId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/funnel-steps",
       "methods": [
         "POST"
@@ -344,7 +533,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/funnel-steps",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/funnel-steps/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/funnel-steps/[id]",
@@ -403,6 +605,35 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/funnel-steps/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/funnel-steps/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-steps/${stepId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-steps/${stepId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-steps/${otherStep.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/funnel-versions/[id]",
       "methods": [
         "PATCH"
@@ -410,7 +641,7 @@
       "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 8,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
@@ -451,6 +682,31 @@
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
           "apiPath": "/api/admin/funnel-versions/${versionId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/not-a-uuid",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -462,7 +718,7 @@
       "file": "apps/rhythm-studio-ui/app/api/admin/funnel-versions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 8,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
@@ -503,6 +759,110 @@
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
           "apiPath": "/api/admin/funnel-versions/${versionId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/not-a-uuid",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-versions/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/funnel-versions/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 13,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/not-a-uuid",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-versions/${versionId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/not-a-uuid",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/550e8400-e29b-41d4-a716-446655440000",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnel-versions/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnel-versions/$%7BversionId%7D",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -556,6 +916,31 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/funnel-versions/[id]/manifest",
+      "methods": [
+        "GET",
+        "PUT"
+      ],
+      "file": "legacy/code/app/api/admin/funnel-versions/[id]/manifest/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
+          "apiPath": "/api/admin/funnel-versions/${funnelVersion.id}/manifest",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
+          "apiPath": "/api/admin/funnel-versions/${latestVersionId}/manifest",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/funnels",
       "methods": [
         "GET"
@@ -563,7 +948,7 @@
       "file": "apps/rhythm-legacy/app/api/admin/funnels/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 13,
+      "usedByCount": 24,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
@@ -629,6 +1014,61 @@
           "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
           "apiPath": "/api/admin/funnels",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -640,7 +1080,7 @@
       "file": "apps/rhythm-studio-ui/app/api/admin/funnels/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 13,
+      "usedByCount": 24,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
@@ -706,6 +1146,195 @@
           "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
           "apiPath": "/api/admin/funnels",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnels",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/funnels/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 24,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/page.tsx",
+          "apiPath": "/api/admin/funnels",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/ContentPageEditor.tsx",
+          "apiPath": "/api/admin/funnels",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -720,7 +1349,7 @@
       "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 11,
+      "usedByCount": 18,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
@@ -776,6 +1405,41 @@
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
           "apiPath": "/api/admin/funnels/${identifier}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/stress-assessment",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -787,7 +1451,7 @@
       "file": "apps/rhythm-studio-ui/app/api/admin/funnels/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
-      "usedByCount": 11,
+      "usedByCount": 18,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
@@ -843,6 +1507,146 @@
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
           "apiPath": "/api/admin/funnels/${identifier}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/stress-assessment",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnels/[id]",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/admin/funnels/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 18,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/stress-assessment",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
+          "apiPath": "/api/admin/funnels/${funnelSlug}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnels/${identifier}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/stress-assessment",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/$%7BuuidParam%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/admin/funnels/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/admin/funnels/test-funnel",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -886,6 +1690,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/kpi-thresholds",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/kpi-thresholds/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/kpi-thresholds",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/kpi-thresholds/[id]",
       "methods": [
         "DELETE",
@@ -909,6 +1733,26 @@
       "path": "/api/admin/kpi-thresholds/[id]",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/kpi-thresholds/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/kpi-thresholds/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/kpi-thresholds/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "legacy/code/app/api/admin/kpi-thresholds/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 1,
@@ -991,6 +1835,30 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/navigation",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/navigation/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/navigation/page.tsx",
+          "apiPath": "/api/admin/navigation",
+          "kind": "fetch"
+        },
+        {
+          "file": "lib/utils/roleBasedRouting.ts",
+          "apiPath": "/api/admin/navigation",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/navigation/[role]",
       "methods": [
         "PUT"
@@ -1013,6 +1881,25 @@
       "path": "/api/admin/navigation/[role]",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/navigation/[role]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/navigation/page.tsx",
+          "apiPath": "/api/admin/navigation/${selectedRole}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/navigation/[role]",
+      "methods": [
+        "PUT"
+      ],
+      "file": "legacy/code/app/api/admin/navigation/[role]/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 1,
@@ -1064,6 +1951,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/notification-templates",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/notification-templates/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/notification-templates",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/notification-templates/[id]",
       "methods": [
         "DELETE",
@@ -1087,6 +1994,26 @@
       "path": "/api/admin/notification-templates/[id]",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/notification-templates/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/notification-templates/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/notification-templates/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "legacy/code/app/api/admin/notification-templates/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 1,
@@ -1137,6 +2064,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/operational-settings-audit",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/operational-settings-audit/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/operational-settings-audit",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/pilot/flow-events",
       "methods": [
         "GET"
@@ -1147,7 +2093,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/pilot/flow-events",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/pilot/flow-events/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/pilot/kpis",
@@ -1160,7 +2119,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/pilot/kpis",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/pilot/kpis/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/admin/reassessment-rules",
@@ -1186,6 +2158,26 @@
       "path": "/api/admin/reassessment-rules",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/admin/reassessment-rules/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/reassessment-rules",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/reassessment-rules",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/admin/reassessment-rules/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 1,
@@ -1237,6 +2229,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/reassessment-rules/[id]",
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
+      "file": "legacy/code/app/api/admin/reassessment-rules/[id]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/operational-settings/page.tsx",
+          "apiPath": "/api/admin/reassessment-rules/${id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/admin/usage",
       "methods": [
         "GET"
@@ -1247,7 +2259,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/usage",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/admin/usage/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-report",
@@ -1260,7 +2285,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/amy/stress-report",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/amy/stress-report/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/stress-summary",
@@ -1273,7 +2311,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/amy/stress-summary",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/amy/stress-summary/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/amy/triage",
@@ -1298,6 +2349,25 @@
       "path": "/api/amy/triage",
       "methods": [],
       "file": "apps/rhythm-patient-ui/app/api/amy/triage/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYComposer.tsx",
+          "apiPath": "/api/amy/triage",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/amy/triage",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/amy/triage/route.ts",
       "intent": null,
       "accessRole": "system",
       "usedByCount": 1,
@@ -1350,6 +2420,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/assessment-answers/save",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/assessment-answers/save/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useAssessmentAnswer.ts",
+          "apiPath": "/api/assessment-answers/save",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/assessment-validation/validate-step",
       "methods": [
         "POST"
@@ -1388,6 +2477,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/assessment-validation/validate-step",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/assessment-validation/validate-step/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useStepValidation.ts",
+          "apiPath": "/api/assessment-validation/validate-step",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/assessments/[id]/current-step",
       "methods": [
         "GET"
@@ -1398,7 +2506,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/current-step",
@@ -1411,7 +2519,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessments/[id]/current-step",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/assessments/[id]/current-step/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/navigation",
@@ -1424,7 +2545,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/navigation",
@@ -1437,7 +2558,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessments/[id]/navigation",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/assessments/[id]/navigation/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/[id]/resume",
@@ -1464,6 +2598,25 @@
         "GET"
       ],
       "file": "apps/rhythm-patient-ui/app/api/assessments/[id]/resume/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/hooks/useAssessmentNavigation.ts",
+          "apiPath": "/api/assessments/${assessmentId}/resume",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/assessments/[id]/resume",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/assessments/[id]/resume/route.ts",
       "intent": null,
       "accessRole": "patient",
       "usedByCount": 1,
@@ -1516,6 +2669,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/assessments/[id]/state",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/assessments/[id]/state/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/api/assessmentPersistence.ts",
+          "apiPath": "/api/assessments/${assessmentId}/state",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/assessments/in-progress",
       "methods": [
         "GET"
@@ -1526,7 +2698,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/assessments/in-progress",
@@ -1539,7 +2711,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/assessments/in-progress",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/assessments/in-progress/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/callback",
@@ -1549,7 +2734,7 @@
       "file": "apps/rhythm-legacy/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 8,
+      "usedByCount": 10,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1588,6 +2773,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
@@ -1601,7 +2796,7 @@
       "file": "apps/rhythm-patient-ui/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 8,
+      "usedByCount": 10,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1640,6 +2835,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
@@ -1655,7 +2860,7 @@
       "file": "apps/rhythm-studio-ui/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 8,
+      "usedByCount": 10,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1694,6 +2899,80 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/auth/callback",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/auth/callback/route.ts",
+      "intent": null,
+      "accessRole": "public",
+      "usedByCount": 10,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/AdminLayoutClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         }
@@ -1712,7 +2991,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/debug-cookie",
@@ -1725,7 +3004,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/auth/resolve-role",
@@ -1735,7 +3014,7 @@
       "file": "apps/rhythm-legacy/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 4,
+      "usedByCount": 5,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1754,6 +3033,11 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         }
@@ -1767,7 +3051,7 @@
       "file": "apps/rhythm-patient-ui/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 4,
+      "usedByCount": 5,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1786,6 +3070,11 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         }
@@ -1801,7 +3090,7 @@
       "file": "apps/rhythm-studio-ui/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 4,
+      "usedByCount": 5,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -1820,6 +3109,50 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/auth/resolve-role",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/auth/resolve-role/route.ts",
+      "intent": null,
+      "accessRole": "public",
+      "usedByCount": 5,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/page.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/AdminLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         }
@@ -1930,6 +3263,41 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/auth/signout",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/auth/signout/route.ts",
+      "intent": null,
+      "accessRole": "public",
+      "usedByCount": 4,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/profile/ProfileClient.tsx",
+          "apiPath": "/api/auth/signout",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/PatientLayoutClient.tsx",
+          "apiPath": "/api/auth/signout",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/AdminLayoutClient.tsx",
+          "apiPath": "/api/auth/signout",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/signout",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/consent/record",
       "methods": [
         "POST"
@@ -1940,7 +3308,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/consent/record",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/consent/record/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/consent/status",
@@ -1953,7 +3334,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/consent/status",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/consent/status/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/content-pages/[slug]",
@@ -1963,10 +3357,39 @@
       "file": "apps/rhythm-legacy/app/api/content-pages/[slug]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 1,
+      "usedByCount": 2,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/content/[slug]/client.tsx",
+          "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/content/[slug]/client.tsx",
+          "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/content-pages/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/content-pages/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/content/[slug]/client.tsx",
+          "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/content/[slug]/client.tsx",
           "apiPath": "/api/content-pages/${encodeURIComponent(slug)}",
           "kind": "fetch"
         }
@@ -1985,6 +3408,88 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/content-resolver",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/content-resolver/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/content/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/content/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 11,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/nonexistent",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/draft-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/archived-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/deleted-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/lib/api/contentApi.ts",
+          "apiPath": "/api/content/${slug}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/lib/api/contentApi.ts",
+          "apiPath": "/api/content/${slug}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
       "isAllowedOrphan": false
     },
     {
@@ -1998,7 +3503,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/content/resolve",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/content/resolve/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/extract",
@@ -2011,7 +3529,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/documents/[id]/extract",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/documents/[id]/extract/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/[id]/status",
@@ -2024,7 +3555,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/documents/[id]/status",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/documents/[id]/status/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/documents/upload",
@@ -2037,7 +3581,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/documents/upload",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/documents/upload/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/escalation/log-click",
@@ -2050,7 +3607,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/escalation/log-click",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/escalation/log-click/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments",
@@ -2060,7 +3630,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 11,
+      "usedByCount": 21,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2116,6 +3686,56 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/nonexistent-funnel/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2129,7 +3749,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 11,
+      "usedByCount": 21,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2185,6 +3805,175 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/nonexistent-funnel/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 21,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/nonexistent-funnel/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/nonexistent-funnel/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2198,7 +3987,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 8,
+      "usedByCount": 15,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
@@ -2239,6 +4028,41 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentIdFromQuery}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2252,7 +4076,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 8,
+      "usedByCount": 15,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
@@ -2293,6 +4117,130 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentIdFromQuery}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 15,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentIdFromQuery}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/non-existent-id",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments/assessment-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/getAssessment.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/$%7BassessmentId%7D",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2306,7 +4254,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2342,6 +4290,36 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/answers/save",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2355,7 +4333,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2391,6 +4369,115 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/answers/save",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/answers/save/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 13,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/answers/save",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/answers/save",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2404,7 +4491,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2440,6 +4527,36 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${id}/complete",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2453,7 +4570,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2489,6 +4606,115 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${id}/complete",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 13,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${id}/complete",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/processing-job-creation.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/assessments/assessment-456/complete",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2502,7 +4728,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2516,6 +4742,21 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
           "kind": "request"
         },
@@ -2536,7 +4777,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -2550,6 +4791,70 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
+          "kind": "request"
+        },
+        {
+          "file": "lib/hooks/useAssessmentResult.ts",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/result",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 7,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
+          "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/$%7BassessmentId%7D/result",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
           "apiPath": "/api/funnels/$%7BfunnelSlug%7D/assessments/nonexistent-id/result",
           "kind": "request"
         },
@@ -2570,7 +4875,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
@@ -2591,6 +4896,21 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/steps/${currentQuestion.stepId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2604,7 +4924,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
@@ -2625,6 +4945,70 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/steps/${currentQuestion.stepId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 7,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/assessments/${assessmentId}/steps/${currentQuestion.stepId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-123",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/__tests__/hardening.test.ts",
+          "apiPath": "/api/funnels/stress/assessments/assessment-123/steps/step-invalid",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2641,7 +5025,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
@@ -2654,7 +5038,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/workup/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/content-pages",
@@ -2667,7 +5064,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/content-pages",
@@ -2680,7 +5077,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/funnels/[slug]/content-pages",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/content-pages/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/[slug]/definition",
@@ -2690,7 +5100,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/definition/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 6,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
@@ -2706,6 +5116,16 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/definition",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
         },
         {
           "file": "lib/funnelHelpers.ts",
@@ -2724,7 +5144,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/definition/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 4,
+      "usedByCount": 6,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
@@ -2740,6 +5160,60 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
           "apiPath": "/api/funnels/${slug}/definition",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
+        },
+        {
+          "file": "lib/funnelHelpers.ts",
+          "apiPath": "/api/funnels/${slug}/definition",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/[slug]/definition",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/[slug]/definition/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 6,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx",
+          "apiPath": "/api/funnels/${slug}/definition",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/cardiovascular-age/definition",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/[slug]/definition/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/nope/definition",
+          "kind": "request"
         },
         {
           "file": "lib/funnelHelpers.ts",
@@ -2761,7 +5235,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/active",
@@ -2774,7 +5248,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/funnels/active",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/active/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/funnels/catalog",
@@ -2784,7 +5271,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/catalog/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 18,
+      "usedByCount": 35,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
@@ -2875,6 +5362,91 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assess/client.tsx",
           "apiPath": "/api/funnels/catalog",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2888,7 +5460,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/catalog/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 18,
+      "usedByCount": 35,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
@@ -2979,6 +5551,280 @@
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assess/client.tsx",
           "apiPath": "/api/funnels/catalog",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/catalog",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/catalog/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 35,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/assess/client.tsx",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -2992,7 +5838,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 6,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
@@ -3021,6 +5867,36 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         }
@@ -3036,7 +5912,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/catalog/[slug]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 6,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
@@ -3065,6 +5941,110 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/funnels/catalog/[slug]",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/funnels/catalog/[slug]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 12,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/stress",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/funnels/catalog/nonexistent",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/funnels/catalog/[slug]/__tests__/route.test.ts",
           "apiPath": "/api/funnels/catalog/stress",
           "kind": "request"
         }
@@ -3083,7 +6063,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/health/env",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/health/env/route.ts",
+      "intent": null,
+      "accessRole": "public",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications",
@@ -3096,7 +6089,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/notifications",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/notifications/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/notifications/[id]",
@@ -3109,7 +6115,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/notifications/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/notifications/[id]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient-measures/export",
@@ -3148,6 +6167,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient-measures/export",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/patient-measures/export/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/history/PatientHistoryClient.tsx",
+          "apiPath": "/api/patient-measures/export",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient-measures/history",
       "methods": [
         "GET"
@@ -3170,6 +6208,25 @@
       "path": "/api/patient-measures/history",
       "methods": [],
       "file": "apps/rhythm-patient-ui/app/api/patient-measures/history/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/history/PatientHistoryClient.tsx",
+          "apiPath": "/api/patient-measures/history",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient-measures/history",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/patient-measures/history/route.ts",
       "intent": null,
       "accessRole": "patient",
       "usedByCount": 1,
@@ -3230,6 +6287,30 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient-profiles",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/patient-profiles/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/shipments/ShipmentCreateDialog.tsx",
+          "apiPath": "/api/patient-profiles",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/tasks/TaskCreateDialog.tsx",
+          "apiPath": "/api/patient-profiles",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/assessments",
       "methods": [
         "GET"
@@ -3237,9 +6318,15 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/processing/dev-trigger/page.tsx",
+          "apiPath": "/api/patient/assessments",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
       "isAllowedOrphan": false
     },
     {
@@ -3301,7 +6388,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/dashboard",
@@ -3312,7 +6399,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/dashboard",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/patient/dashboard/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/onboarding-status",
@@ -3322,7 +6422,7 @@
       "file": "apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3331,6 +6431,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         }
@@ -3344,7 +6449,7 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/onboarding-status/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3353,6 +6458,40 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient/onboarding-status",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/patient/onboarding-status/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/page.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/page.tsx",
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         }
@@ -3371,7 +6510,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/patient/state",
@@ -3414,7 +6553,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/triage",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/patient/triage/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/pre-screening-calls",
@@ -3454,6 +6606,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/pre-screening-calls",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/pre-screening-calls/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/pre-screening/page.tsx",
+          "apiPath": "/api/pre-screening-calls",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/processing/content",
       "methods": [
         "POST"
@@ -3464,7 +6636,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/content",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/content/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/delivery",
@@ -3477,7 +6662,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/delivery",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/delivery/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]",
@@ -3490,7 +6688,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/jobs/[jobId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/processing/jobs/[jobId]/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/jobs/[jobId]/download",
@@ -3529,6 +6740,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/processing/jobs/[jobId]/download",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/processing/jobs/[jobId]/download/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/delivery/page.tsx",
+          "apiPath": "/api/processing/jobs/${jobId}/download",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/processing/pdf",
       "methods": [
         "POST"
@@ -3539,7 +6769,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/pdf",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/pdf/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/ranking",
@@ -3552,7 +6795,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/ranking",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/ranking/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/results",
@@ -3560,6 +6816,25 @@
         "POST"
       ],
       "file": "apps/rhythm-legacy/app/api/processing/results/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/processing/dev-trigger/page.tsx",
+          "apiPath": "/api/processing/results",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/processing/results",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/results/route.ts",
       "intent": null,
       "accessRole": "system",
       "usedByCount": 1,
@@ -3584,7 +6859,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/risk",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/risk/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/safety",
@@ -3597,7 +6885,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/safety",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/safety/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/start",
@@ -3610,7 +6911,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/start",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/start/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/processing/validation",
@@ -3623,7 +6937,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/processing/validation",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/processing/validation/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/reports/[reportId]/pdf",
@@ -3636,7 +6963,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/reports/[reportId]/pdf",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/reports/[reportId]/pdf/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]",
@@ -3644,6 +6984,25 @@
         "GET"
       ],
       "file": "apps/rhythm-legacy/app/api/review/[id]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+          "apiPath": "/api/review/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/review/[id]",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/review/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 1,
@@ -3704,6 +7063,30 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/review/[id]/decide",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/review/[id]/decide/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "apiPath": "/api/review/${reviewId}/decide",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "apiPath": "/api/review/${reviewId}/decide",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/review/[id]/details",
       "methods": [
         "GET"
@@ -3740,6 +7123,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/review/[id]/details",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/review/[id]/details/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/QAReviewPanel.tsx",
+          "apiPath": "/api/review/${reviewId}/details",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/review/queue",
       "methods": [
         "GET"
@@ -3750,7 +7152,7 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/queue",
@@ -3761,7 +7163,20 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/review/queue",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/review/queue/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/shipments",
@@ -3792,6 +7207,31 @@
       "path": "/api/shipments",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/shipments/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/shipments/ShipmentCreateDialog.tsx",
+          "apiPath": "/api/shipments",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/shipments/page.tsx",
+          "apiPath": "/api/shipments",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/shipments",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/shipments/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 2,
@@ -3848,6 +7288,26 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/shipments/[id]",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/shipments/[id]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/shipments/ShipmentDetailDialog.tsx",
+          "apiPath": "/api/shipments/${shipment.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/shipments/[id]/events",
       "methods": [
         "GET",
@@ -3859,7 +7319,21 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/shipments/[id]/events",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/shipments/[id]/events/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases",
@@ -3885,6 +7359,26 @@
       "path": "/api/support-cases",
       "methods": [],
       "file": "apps/rhythm-studio-ui/app/api/support-cases/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/support-cases/page.tsx",
+          "apiPath": "/api/support-cases",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/support-cases",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/support-cases/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 1,
@@ -3937,6 +7431,27 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/support-cases/[id]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/support-cases/[id]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/support-cases/page.tsx",
+          "apiPath": "/api/support-cases/${caseId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/support-cases/[id]/escalate",
       "methods": [
         "POST"
@@ -3973,6 +7488,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/support-cases/[id]/escalate",
+      "methods": [
+        "POST"
+      ],
+      "file": "legacy/code/app/api/support-cases/[id]/escalate/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/support-cases/page.tsx",
+          "apiPath": "/api/support-cases/${caseId}/escalate",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/tasks",
       "methods": [
         "GET",
@@ -3981,7 +7515,7 @@
       "file": "apps/rhythm-legacy/app/api/tasks/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 7,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
@@ -4017,6 +7551,31 @@
           "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
           "apiPath": "/api/tasks",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -4028,7 +7587,7 @@
       "file": "apps/rhythm-studio-ui/app/api/tasks/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 7,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
@@ -4064,6 +7623,106 @@
           "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
           "apiPath": "/api/tasks",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/tasks",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "legacy/code/app/api/tasks/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 12,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/tasks/TaskCreateDialog.tsx",
+          "apiPath": "/api/tasks",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
+          "apiPath": "/api/tasks",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/__tests__/route.test.ts",
+          "apiPath": "/api/tasks",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -4077,7 +7736,7 @@
       "file": "apps/rhythm-legacy/app/api/tasks/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
@@ -4113,6 +7772,36 @@
           "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
           "apiPath": "/api/tasks/${taskId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -4124,7 +7813,7 @@
       "file": "apps/rhythm-studio-ui/app/api/tasks/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 7,
+      "usedByCount": 13,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
@@ -4160,6 +7849,115 @@
           "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
           "apiPath": "/api/tasks/${taskId}",
           "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/tasks/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "legacy/code/app/api/tasks/[id]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 13,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/tasks/page.tsx",
+          "apiPath": "/api/tasks/${taskId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
+        },
+        {
+          "file": "legacy/code/app/api/tasks/[id]/__tests__/route.test.ts",
+          "apiPath": "/api/tasks/t1",
+          "kind": "request"
         }
       ],
       "isOrphan": false,
@@ -4176,8 +7974,30 @@
       "usedByCount": 0,
       "usedBy": [],
       "isOrphan": true,
-      "isAllowedOrphan": false
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/test/correlation-id",
+      "methods": [
+        "GET"
+      ],
+      "file": "legacy/code/app/api/test/correlation-id/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     }
   ],
-  "unknownCallsites": []
+  "unknownCallsites": [
+    {
+      "apiPath": "/api/content/",
+      "isTemplate": false,
+      "kind": "url",
+      "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+      "line": 204,
+      "raw": "'http://localhost/api/content/'"
+    }
+  ]
 }
