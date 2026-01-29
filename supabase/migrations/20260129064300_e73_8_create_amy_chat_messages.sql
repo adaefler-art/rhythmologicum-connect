@@ -2,7 +2,7 @@
 -- Purpose: Store conversation history for AMY chat with persistence across reloads
 -- No control/navigation: This is read-only chat, no funnel/assessment mutations
 
-CREATE TABLE IF NOT EXISTS "public"."amy_chat_messages" (
+CREATE TABLE "public"."amy_chat_messages" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "role" "text" NOT NULL CHECK ("role" IN ('user', 'assistant', 'system')),
@@ -20,11 +20,11 @@ COMMENT ON COLUMN "public"."amy_chat_messages"."role" IS 'Message role: user (pa
 COMMENT ON COLUMN "public"."amy_chat_messages"."metadata" IS 'Optional metadata: correlationId, model version, etc.';
 
 -- Primary key
-ALTER TABLE ONLY "public"."amy_chat_messages"
+ALTER TABLE "public"."amy_chat_messages"
     ADD CONSTRAINT "amy_chat_messages_pkey" PRIMARY KEY ("id");
 
 -- Foreign key to auth.users
-ALTER TABLE ONLY "public"."amy_chat_messages"
+ALTER TABLE "public"."amy_chat_messages"
     ADD CONSTRAINT "amy_chat_messages_user_id_fkey" 
     FOREIGN KEY ("user_id") 
     REFERENCES "auth"."users"("id") 
