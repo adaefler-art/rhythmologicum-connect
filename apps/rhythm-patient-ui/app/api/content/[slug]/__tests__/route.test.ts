@@ -201,7 +201,7 @@ describe('E73.7: GET /api/content/{slug}', () => {
     })
 
     it('returns 400 for empty slug', async () => {
-      const request = new NextRequest(new URL('http://localhost/api/content/'))
+      const request = new NextRequest(new URL('http://localhost/api/content/test-slug'))
       const response = await GET(request, { params: Promise.resolve({ slug: '' }) })
 
       expect(response.status).toBe(400)
