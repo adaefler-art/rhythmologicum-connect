@@ -244,9 +244,10 @@ Each rule entry includes:
 
 **Exceptions**:
 - Allowlist: `docs/api/endpoint-allowlist.json` → `allowedOrphans` array
-- External endpoints: Allowlist entry with justification
-- Format: Array of endpoint paths with comments explaining exception
-- Example: `"/api/webhooks/stripe - External trigger from Stripe payment system"`
+- External endpoints: Allowlist entry (path only as JSON array element)
+- Format: JSON array of endpoint path strings (no inline comments in JSON)
+- Example: `"/api/webhooks/stripe"` (justification documented in endpoint source file)
+- Justification: Use `@endpoint-intent manual:webhook` marker in endpoint source file
 
 **Evidence Output**:
 - Console: "✅ API Wiring Gate passed!"

@@ -45,8 +45,8 @@ jobs:
         run: |
           pwsh -File scripts/ci/verify-endpoint-catalog.ps1
 
-      - name: Run unit tests (matcher/parser)
-        run: npm test
+      - name: Run endpoint catalog unit tests
+        run: npm test -- scripts/dev/endpoint-catalog/__tests__
       
       - name: Success message
         if: success()

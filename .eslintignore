@@ -13,4 +13,4 @@ lib/types/supabase.ts
 **/coverage/**
 **/artifacts/**
 **/node_modules/**
-*.generated.*
+**/*.generated.*

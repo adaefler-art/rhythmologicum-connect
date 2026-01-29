@@ -31,7 +31,13 @@ try {
  * E73.10 / R-CI-001: Exclude generated artifacts and build outputs from lint gate.
  * 
  * This function filters out generated files to prevent CI failures on build artifacts.
- * These patterns match the globalIgnores in eslint.config.mjs for consistency.
+ * Patterns are similar to globalIgnores in eslint.config.mjs but adapted for path matching.
+ * 
+ * Note: This list intentionally excludes some patterns from eslint.config.mjs:
+ * - 'docs/**' (documentation changes should still be lintable)
+ * - 'proxy.ts' (legacy file, but not a generated artifact)
+ * - 'legacy/**' (handled separately by globalIgnores)
+ * - 'next-env.d.ts' (handled by .gitignore, rarely changes)
  * 
  * @param {string} file - File path to check (relative to repo root)
  * @returns {boolean} - True if file should be excluded from linting
@@ -40,31 +46,19 @@ function isGeneratedOrBuildOutput(file) {
   const normalized = file.replace(/\\/g, '/')
   
   // E73.10: Exclude generated artifacts and build outputs
-  // Must stay in sync with globalIgnores in eslint.config.mjs
   const excludedDirs = [
-    '/.next/',           // Next.js build output (including .next/types/*.d.ts)
-    '.next/',            // Also match without leading slash for relative paths
-    '/.next/types/',     // Next.js type definitions (redundant but explicit)
-    '.next/types/',      // Also match without leading slash
-    '/node_modules/',    // Package dependencies
-    'node_modules/',     // Also match without leading slash
-    '/dist/',            // Production build output
-    'dist/',             // Also match without leading slash
-    '/build/',           // Build artifacts
-    'build/',            // Also match without leading slash
-    '/.turbo/',          // Turborepo cache
-    '.turbo/',           // Also match without leading slash
-    '/out/',             // Next.js static export
-    'out/',              // Also match without leading slash
-    '/.vercel/',         // Vercel deployment artifacts
-    '.vercel/',          // Also match without leading slash
-    '/coverage/',        // Test coverage reports
-    'coverage/',         // Also match without leading slash
-    '/artifacts/',       // CI/test artifacts
-    'artifacts/',        // Also match without leading slash
+    '.next/',           // Next.js build output (including .next/types/*.d.ts)
+    'node_modules/',    // Package dependencies
+    'dist/',            // Production build output
+    'build/',           // Build artifacts
+    '.turbo/',          // Turborepo cache
+    'out/',             // Next.js static export
+    '.vercel/',         // Vercel deployment artifacts
+    'coverage/',        // Test coverage reports
+    'artifacts/',       // CI/test artifacts
   ]
 
-  // Check if path starts with or contains any excluded directory
+  // Check if path starts with excluded directory or contains it as a path segment
   for (const dir of excludedDirs) {
     if (normalized.startsWith(dir) || normalized.includes('/' + dir)) {
       return true
