@@ -80,6 +80,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | legacy/code/app/api/admin/reassessment-rules/[id]/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | apps/rhythm-legacy/app/api/admin/usage/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | legacy/code/app/api/admin/usage/route.ts |
+| /api/amy/chat | GET, POST | system |  | 2 | apps/rhythm-patient-ui/app/api/amy/chat/route.ts |
 | /api/amy/stress-report | POST | system |  | 0 | apps/rhythm-legacy/app/api/amy/stress-report/route.ts |
 | /api/amy/stress-report | POST | system |  | 0 | legacy/code/app/api/amy/stress-report/route.ts |
 | /api/amy/stress-summary | POST | system |  | 0 | apps/rhythm-legacy/app/api/amy/stress-summary/route.ts |

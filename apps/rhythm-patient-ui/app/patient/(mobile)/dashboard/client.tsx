@@ -6,6 +6,7 @@ import { LoadingSkeleton, ErrorState } from '@/lib/ui/mobile-v2'
 import {
   DashboardHeader,
   AMYComposer,
+  AMYChatWidget,
   NextStepCard,
   ContentTilesGrid,
   ProgressSummary,
@@ -189,6 +190,9 @@ export default function DashboardClient({
           )}
         </div>
       </main>
+
+      {/* E73.8: AMY Chat Widget - Feature gated */}
+      <AMYChatWidget />
     </div>
   )
 }
