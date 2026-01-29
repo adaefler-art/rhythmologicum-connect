@@ -1,1 +1,16 @@
+# Generated Supabase types (external codegen)
 lib/types/supabase.ts
+
+# E73.10: Generated artifacts and build outputs
+# Note: These are also covered by globalIgnores in eslint.config.mjs
+# but listed here for explicitness and compatibility with older ESLint versions.
+**/.next/**
+**/.turbo/**
+**/.vercel/**
+**/out/**
+**/build/**
+**/dist/**
+**/coverage/**
+**/artifacts/**
+**/node_modules/**
+*.generated.*

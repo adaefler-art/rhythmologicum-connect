@@ -904,28 +904,34 @@ Each rule entry includes:
 
 ### R-CI-001: ESLint Must Pass on Changed Lines
 
-**Rule Text**: ESLint must pass with zero errors on all lines changed in the PR (interim policy: pre-existing errors in unchanged lines are ignored).
+**Rule Text**: ESLint must pass with zero errors on all lines changed in the PR (interim policy: pre-existing errors in unchanged lines are ignored). Generated artifacts and build outputs are excluded from linting.
 
 **Scope**:
 - All `*.ts` and `*.tsx` files changed in PR
 - Determined by: `git diff $BASE_SHA $HEAD_SHA`
+- **Excluded**: `.next/**`, `node_modules/**`, `dist/**`, `build/**`, `.turbo/**`, `out/**`, `.vercel/**`, `coverage/**`, `artifacts/**`, `*.generated.*`
 
 **Enforced By**:
 - Workflow: `.github/workflows/lint-gate.yml`
 - Workflow: `.github/workflows/db-access-verification.yml` (similar pattern)
-- Script: `npm run lint:changed`
+- Script: `tools/lint-changed-lines.mjs` (via `npm run lint:changed`)
+- Filter: `isGeneratedOrBuildOutput()` function in lint-changed-lines.mjs
 
 **Pass Condition**:
-- ESLint exit code 0 for changed files
+- ESLint exit code 0 for changed files (after filtering generated artifacts)
 - No errors on changed lines (warnings allowed)
+- If no files remain after filtering: produces deterministic empty reports (`[]` for eslint-report.json, `{}` for changed_line_ranges.json)
 
 **Exceptions**:
 - Pre-existing errors in unchanged files are ignored (interim policy)
-- Documented in `docs/LINT_POLICY.md` (if exists)
+- Generated/build artifacts are automatically excluded (not linted)
+- Documented in `docs/LINT_POLICY.md`
 
 **Evidence Output**:
 - Console: "✅ ESLint gate passed!"
+- Console: "No TS/TSX source changes detected after filtering generated outputs." (when applicable)
 - Or: ESLint error output for specific files/lines
+- Artifacts: `.lint-artifacts/eslint-report.json`, `.lint-artifacts/changed_line_ranges.json`
 
 **Known Gaps**:
 - Interim policy allows pre-existing violations to persist

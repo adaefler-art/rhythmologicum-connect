@@ -27,22 +27,36 @@ try {
   process.exit(2)
 }
 
+/**
+ * E73.10 / R-CI-001: Exclude generated artifacts and build outputs from lint gate.
+ * 
+ * This function filters out generated files to prevent CI failures on build artifacts.
+ * These patterns match the globalIgnores in eslint.config.mjs for consistency.
+ * 
+ * @param {string} file - File path to check (relative to repo root)
+ * @returns {boolean} - True if file should be excluded from linting
+ */
 function isGeneratedOrBuildOutput(file) {
   const normalized = file.replace(/\\/g, '/')
+  
+  // E73.10: Exclude generated artifacts and build outputs
+  // Must stay in sync with globalIgnores in eslint.config.mjs
   const excludedDirs = [
-    '/.next/',
-    '/.next/types/',
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/.turbo/',
-    '/out/',
-    '/.vercel/',
-    '/coverage/',
-    '/artifacts/',
+    '/.next/',           // Next.js build output (including .next/types/*.d.ts)
+    '/.next/types/',     // Next.js type definitions (redundant but explicit)
+    '/node_modules/',    // Package dependencies
+    '/dist/',            // Production build output
+    '/build/',           // Build artifacts
+    '/.turbo/',          // Turborepo cache
+    '/out/',             // Next.js static export
+    '/.vercel/',         // Vercel deployment artifacts
+    '/coverage/',        // Test coverage reports
+    '/artifacts/',       // CI/test artifacts
   ]
 
   if (excludedDirs.some((dir) => normalized.includes(dir))) return true
+  
+  // Also exclude files with .generated. in their name (e.g., schema.generated.ts)
   if (/\.generated\.[^/]+$/i.test(normalized)) return true
 
   return false
