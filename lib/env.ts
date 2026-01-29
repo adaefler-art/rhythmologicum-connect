@@ -66,6 +66,7 @@ const baseEnvSchema = z.object({
 
   // OPTIONAL: Feature Flags
   NEXT_PUBLIC_FEATURE_AMY_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: z.string().optional(),
