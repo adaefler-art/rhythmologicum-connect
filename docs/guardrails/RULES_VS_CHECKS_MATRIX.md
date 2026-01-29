@@ -219,6 +219,50 @@ Each rule entry includes:
 
 ---
 
+### R-API-006: Strategy A - Literal Callsites Required
+
+**Rule Text**: All new/changed API endpoints MUST have at least one literal callsite (`fetch('/api/...')`) in the same PR. If feature is not live, gate callsite behind feature flag but keep literal string. External-only endpoints require allowlist entry with justification.
+
+**Scope**:
+- All API route files: `apps/*/app/api/**/*.ts`
+- Callsites: Anywhere with `fetch('/api/...` or `fetch(\`/api/...` literal strings
+- Feature flags: `lib/featureFlags.ts`
+
+**Enforced By**:
+- Script: `scripts/dev/endpoint-catalog/generate.js` (detects orphans)
+- Script: `scripts/ci/verify-endpoint-catalog.ps1` (validates catalog)
+- Manual PR review: Check for literal callsite existence
+
+**Pass Condition**:
+- Every endpoint in code has at least one literal fetch() callsite in same PR
+- OR endpoint is listed in `docs/api/endpoint-allowlist.json` with justification
+- Orphan detection: `docs/api/ORPHAN_ENDPOINTS.md` is empty after catalog generation
+- If feature-flagged: Literal string exists in code even when flag is disabled
+
+**Exceptions**:
+- Allowlist: `docs/api/endpoint-allowlist.json` → `allowedOrphans` array
+- External endpoints: Allowlist entry with justification comment
+- Format: `"/api/example/webhook - External trigger from Stripe webhooks"`
+
+**Evidence Output**:
+- File: `docs/api/ORPHAN_ENDPOINTS.md` (must be empty or contain only allowlisted endpoints)
+- File: `docs/api/endpoint-allowlist.json` (contains justifications)
+- PR review: Reviewer confirms literal callsite exists for new endpoints
+
+**Known Gaps**:
+- No automated check for literal callsite existence (manual PR review required)
+- Feature flag gating not automatically verified (relies on code review)
+- Dynamic endpoint construction (`fetch('/api/' + path)`) not detected
+
+**Owner**: E73 / Content System
+
+**Example Compliance**:
+- ✅ E73.7: `/api/content/{slug}` endpoint has literal callsite in `lib/api/contentApi.ts:52`
+- ✅ Endpoint added to allowlist: `"/api/content/[slug]"` in `endpoint-allowlist.json`
+- ✅ Test file validates endpoint behavior: `__tests__/route.test.ts`
+
+---
+
 ## Database Rules
 
 ### R-DB-001: All Supabase Clients Use Canonical Factories
