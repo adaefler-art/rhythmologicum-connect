@@ -43,14 +43,13 @@ jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(),
 }))
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(),
+jest.mock('@/lib/db/supabase.admin', () => ({
+  createAdminSupabaseClient: jest.fn(),
 }))
 
 type EnvOverrides = Partial<{
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
-  SUPABASE_SERVICE_ROLE_KEY: string
 }>
 
 async function importRouteWithEnv(overrides: EnvOverrides) {
@@ -59,7 +58,6 @@ async function importRouteWithEnv(overrides: EnvOverrides) {
   const envMock = {
     NEXT_PUBLIC_SUPABASE_URL: overrides.NEXT_PUBLIC_SUPABASE_URL ?? 'https://example.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: overrides.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'anon',
-    SUPABASE_SERVICE_ROLE_KEY: overrides.SUPABASE_SERVICE_ROLE_KEY ?? '',
   }
 
   jest.doMock('@/lib/env', () => ({ env: envMock }))
@@ -73,9 +71,11 @@ function getMocks() {
   const { createServerClient } = jest.requireMock('@supabase/ssr') as {
     createServerClient: jest.Mock
   }
-  const { createClient } = jest.requireMock('@supabase/supabase-js') as { createClient: jest.Mock }
+  const { createAdminSupabaseClient } = jest.requireMock('@/lib/db/supabase.admin') as {
+    createAdminSupabaseClient: jest.Mock
+  }
 
-  return { cookies, createServerClient, createClient }
+  return { cookies, createServerClient, createAdminSupabaseClient }
 }
 
 function setupCookieStore() {
@@ -89,13 +89,16 @@ function setupCookieStore() {
 describe('GET /api/admin/funnels', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    const { createAdminSupabaseClient } = getMocks()
+    createAdminSupabaseClient.mockImplementation(() => {
+      throw new Error('Admin client unavailable')
+    })
   })
 
   it('happy path => 200 (canonical shape)', async () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -181,7 +184,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -228,7 +230,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -275,7 +276,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: '',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     const { createServerClient } = getMocks()
@@ -295,7 +295,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -330,7 +329,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -367,7 +365,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -402,7 +399,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -439,7 +435,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -480,7 +475,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: '',
     })
 
     setupCookieStore()
@@ -524,7 +518,6 @@ describe('GET /api/admin/funnels', () => {
     const { GET } = await importRouteWithEnv({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: 'service-role',
     })
 
     setupCookieStore()
@@ -603,14 +596,14 @@ describe('GET /api/admin/funnels', () => {
       }),
     }
 
-    const { createServerClient, createClient } = getMocks()
+    const { createServerClient, createAdminSupabaseClient } = getMocks()
     createServerClient.mockReturnValue(authClient)
-    createClient.mockReturnValue(adminClient)
+    createAdminSupabaseClient.mockReturnValue(adminClient)
 
     const res = await GET(new Request('http://localhost/api/admin/funnels', { headers: { 'x-request-id': 'rid-fallback' } }))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('x-request-id')).toBe('rid-fallback')
-    expect(createClient).toHaveBeenCalled()
+    expect(createAdminSupabaseClient).toHaveBeenCalled()
   })
 })

@@ -1,9 +1,9 @@
 # Rules vs Checks Matrix
 
-**Status**: Active (v0.7 Epic E71/E72)  
+**Status**: Active (v0.7 Epic E71/E72/E73)  
 **Purpose**: Canonical mapping of guardrail rules to enforcement checks  
 **Owner**: E72 Governance  
-**Last Updated**: 2026-01-25
+**Last Updated**: 2026-01-28
 
 ---
 
@@ -1000,6 +1000,126 @@ Each rule entry includes:
 
 ---
 
+## Legacy Code Ghosting Rules
+
+### R-LEGACY-001: No Imports from Legacy Code
+
+**Rule Text**: Production code MUST NOT import from `legacy/**` paths. Legacy code is quarantined and must not be used in any production application or library.
+
+**Scope**:
+- `apps/rhythm-studio-ui/**/*.ts`
+- `apps/rhythm-studio-ui/**/*.tsx`
+- `apps/rhythm-patient-ui/**/*.ts`
+- `apps/rhythm-patient-ui/**/*.tsx`
+- `lib/**/*.ts`
+- `lib/**/*.tsx`
+- `packages/**/*.ts`
+- `packages/**/*.tsx`
+
+**Enforced By**:
+- ESLint: `no-restricted-imports` pattern for `legacy/**`
+- Config file: `eslint.config.mjs`
+- Workflow: `.github/workflows/lint-gate.yml`
+- Verification script: `scripts/verify-legacy-ghosting.mjs`
+
+**Pass Condition**:
+- ESLint passes on all changed files
+- No imports matching patterns: `from ['"].*legacy`, `import.*legacy`
+- Verification script exits 0
+
+**Exceptions**:
+- None (no allowlist permitted)
+- Rationale: Legacy code is quarantined for security/quality reasons
+
+**Evidence Output**:
+- ESLint error: "R-LEGACY-001: Imports from legacy/** are forbidden. Legacy code is ghosted and must not be used in production. See legacy/README.md for migration guidance."
+- Verification script: "Found legacy imports in production code: [file paths]"
+
+**Known Gaps**:
+- Currently many production endpoints re-export from `apps/rhythm-legacy` (pre-ghosting state)
+- These need to be migrated or replaced with 410 stubs (tracked separately)
+
+**Owner**: E73.6 / Refactor Team
+
+---
+
+### R-LEGACY-002: Legacy API Routes Return 410 Gone
+
+**Rule Text**: All legacy API routes MUST return HTTP 410 Gone with standardized error response. Routes must NOT execute legacy business logic.
+
+**Scope**:
+- All routes documented in `legacy/routes/README.md` (~80+ endpoints)
+- Response format defined in `legacy/routes/410-stub-template.ts`
+
+**Enforced By**:
+- Manual verification: `scripts/verify-legacy-ghosting.mjs` (checks for re-exports)
+- Runtime test: curl/fetch to legacy endpoints (manual)
+
+**Pass Condition**:
+- Legacy endpoint returns HTTP 410
+- Response body matches format:
+  ```json
+  {
+    "error": "LEGACY_GHOSTED",
+    "route": "/api/[path]",
+    "message": "...",
+    "deprecatedAt": "YYYY-MM-DD",
+    "alternative": "/api/[new-path]",  // optional
+    "docsUrl": "https://..."           // optional
+  }
+  ```
+- Response headers include: `X-Legacy-Ghosted: true`
+
+**Exceptions**:
+- Routes actively migrated to production apps (temporarily continue to work)
+- These should be tracked and eventually replaced with proper implementations
+
+**Evidence Output**:
+- HTTP response: Status 410
+- Response body: JSON with error code LEGACY_GHOSTED
+- Verification script: "Legacy endpoint [route] returns 410" or "WARNING: [route] still active"
+
+**Known Gaps**:
+- NO AUTOMATED CHECK in CI (manual test only)
+- Recommended: Create integration test suite for ghosted endpoints
+- Many routes still re-export from `apps/rhythm-legacy` (migration in progress)
+
+**Owner**: E73.6 / Refactor Team
+
+---
+
+### R-LEGACY-003: TypeScript Excludes Legacy Code
+
+**Rule Text**: `tsconfig.json` MUST exclude `legacy/**` from compilation. Legacy code type errors must not break production builds.
+
+**Scope**:
+- Root `tsconfig.json` (monorepo config)
+
+**Enforced By**:
+- TypeScript compiler
+- Build process: `npm run build`
+- Verification script: `scripts/verify-legacy-ghosting.mjs`
+
+**Pass Condition**:
+- `tsconfig.json` includes `"legacy/**"` in `exclude` array
+- Production builds succeed without requiring legacy code to type-check
+- Verification script confirms exclude is present (exit 0)
+
+**Exceptions**:
+- None (exclusion is required)
+
+**Evidence Output**:
+- TypeScript compiler: No errors from `legacy/**` files during build
+- Verification script: "✅ TypeScript configuration excludes legacy directory"
+- Or: "❌ tsconfig.json does not exclude legacy/**"
+
+**Known Gaps**:
+- None (fully enforced)
+
+**Owner**: E73.6 / Refactor Team
+
+---
+
 ## How to Add a New Rule or Check
 
 ### Adding a New Rule
@@ -1083,6 +1203,9 @@ When creating a new allowlist file:
 # ESLint (changed files)
 npm run lint:changed
 
+# Legacy ghosting
+node scripts/verify-legacy-ghosting.mjs
+
 # DB checks
 pwsh scripts/db/lint-migrations.ps1
 bash scripts/lint-new-migrations-idempotency.sh origin/main
@@ -1123,6 +1246,11 @@ node scripts/verify-ui-v2.mjs
 
 ## Changelog
 
+- **2026-01-28**: Added E73.6 legacy ghosting rules
+  - R-LEGACY-001: No imports from legacy code (ESLint + verification)
+  - R-LEGACY-002: Legacy API routes return 410 Gone (manual test)
+  - R-LEGACY-003: TypeScript excludes legacy code (tsconfig)
+  - Added verification script: `scripts/verify-legacy-ghosting.mjs`
 - **2026-01-25**: Initial matrix created for E72.F1
   - Documented 30+ rules across API/DB/UI/CI domains
   - Mapped rules to enforcement mechanisms

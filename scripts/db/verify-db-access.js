@@ -52,6 +52,8 @@ const ALLOWED_ADMIN_USAGE = [
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
+  // Legacy monorepo path: allow admin client in legacy API routes only
+  'legacy/code/app/api/',
   // Monorepo legacy app routes
   'apps/rhythm-legacy/app/api/admin/',
   'apps/rhythm-legacy/app/api/funnels/catalog/',
