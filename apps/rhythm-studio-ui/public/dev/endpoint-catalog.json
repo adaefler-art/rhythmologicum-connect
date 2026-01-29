@@ -3431,7 +3431,7 @@
       "file": "apps/rhythm-patient-ui/app/api/content/[slug]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 11,
+      "usedByCount": 12,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
@@ -3461,6 +3461,11 @@
         {
           "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
           "apiPath": "/api/content/deleted-content",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
+          "apiPath": "/api/content/test-slug",
           "kind": "url"
         },
         {
@@ -7990,14 +7995,5 @@
       "isAllowedOrphan": true
     }
   ],
-  "unknownCallsites": [
-    {
-      "apiPath": "/api/content/",
-      "isTemplate": false,
-      "kind": "url",
-      "file": "apps/rhythm-patient-ui/app/api/content/[slug]/__tests__/route.test.ts",
-      "line": 204,
-      "raw": "'http://localhost/api/content/'"
-    }
-  ]
+  "unknownCallsites": []
 }
