@@ -12,6 +12,7 @@ export type { DashboardHeaderProps } from './DashboardHeader'
 
 export { AMYSlot } from './AMYSlot'
 export { AMYComposer } from './AMYComposer'
+export { default as AMYChatWidget } from './AMYChatWidget'
 
 export { NextStepCard } from './NextStepCard'
 export type { NextStepCardProps } from './NextStepCard'

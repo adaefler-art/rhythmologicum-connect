@@ -2275,6 +2275,31 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/amy/chat",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/amy/chat/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/amy/stress-report",
       "methods": [
         "POST"

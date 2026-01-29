@@ -6,6 +6,7 @@
  * 
  * Environment variables:
  * - NEXT_PUBLIC_FEATURE_AMY_ENABLED: Enable/disable AMY AI assistant (default: true)
+ * - NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: Enable/disable AMY chat widget (E73.8) (default: false)
  * - NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: Enable/disable clinician dashboard (default: true)
  * - NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: Enable/disable charts in clinician views (default: true)
  * - NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: Enable/disable processing results endpoint (default: false)
@@ -15,6 +16,7 @@ import { env } from '@/lib/env'
 
 export type FeatureFlags = {
   AMY_ENABLED: boolean
+  AMY_CHAT_ENABLED: boolean
   CLINICIAN_DASHBOARD_ENABLED: boolean
   CHARTS_ENABLED: boolean
   PROCESSING_RESULTS_ENABLED: boolean
@@ -41,6 +43,10 @@ export const featureFlags: FeatureFlags = {
   AMY_ENABLED: parseEnvBoolean(
     env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
     true
+  ),
+  AMY_CHAT_ENABLED: parseEnvBoolean(
+    env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED,
+    false
   ),
   CLINICIAN_DASHBOARD_ENABLED: parseEnvBoolean(
     env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,

@@ -67,6 +67,7 @@ When introducing a new canonical table or enum:
 5. Commit both migration and manifest together
 
 **Recent canonical additions:**
+- `amy_chat_messages` (E73.8)
 - `pre_screening_calls` (V05-I08.2)
 - `device_shipments`, `shipment_events` (V05-I08.3)
 - `shipment_status` (V05-I08.3)

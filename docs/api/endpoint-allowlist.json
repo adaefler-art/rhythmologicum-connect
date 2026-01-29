@@ -30,6 +30,7 @@
     "/api/admin/reassessment-rules/[id]",
     "/api/admin/usage",
     "/api/admin/dev/endpoint-catalog",
+    "/api/amy/chat",
     "/api/amy/stress-report",
     "/api/amy/stress-summary",
     "/api/amy/triage",

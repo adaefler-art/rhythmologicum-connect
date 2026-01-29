@@ -5,6 +5,7 @@
   "lastUpdated": "2026-01-13",
   "_comment_deprecation": "DEPRECATION MODEL: Deprecated objects remain in the 'tables' or 'enums' arrays (to allow existing migrations to pass validation) AND are listed in the 'deprecated' section (to warn on usage). This dual-listing is intentional and supports gradual migration away from legacy objects. See 'notes.deprecation_model' for details.",
   "tables": [
+    "amy_chat_messages",
     "assessment_answers",
     "assessment_events",
     "assessments",
@@ -89,6 +90,14 @@
     "enums": []
   },
   "columns": {
+    "amy_chat_messages": [
+      "id",
+      "user_id",
+      "role",
+      "content",
+      "created_at",
+      "metadata"
+    ],
     "funnels_catalog": [
       "id",
       "slug",
