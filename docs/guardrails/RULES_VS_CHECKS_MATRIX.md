@@ -224,35 +224,42 @@ Each rule entry includes:
 **Rule Text**: All new/changed API endpoints MUST have at least one literal callsite (`fetch('/api/...')`) in the same PR. If feature is not live, gate callsite behind feature flag but keep literal string. External-only endpoints require allowlist entry with justification.
 
 **Scope**:
-- All API route files: `apps/*/app/api/**/*.ts`
+- All API route files: `apps/*/app/api/**/*.ts`, `app/api/**/*.ts`
 - Callsites: Anywhere with `fetch('/api/...` or `fetch(\`/api/...` literal strings
-- Feature flags: `lib/featureFlags.ts`
+- Feature flags: `lib/featureFlags.ts` (if applicable)
+- Allowlist: `docs/api/endpoint-allowlist.json`
 
 **Enforced By**:
+- Workflow: `.github/workflows/api-wiring-gate.yml` (runs on PR when API routes change) - E73.10
 - Script: `scripts/dev/endpoint-catalog/generate.js` (detects orphans)
 - Script: `scripts/ci/verify-endpoint-catalog.ps1` (validates catalog)
 - Manual PR review: Check for literal callsite existence
 
 **Pass Condition**:
-- Every endpoint in code has at least one literal fetch() callsite in same PR
+- Every endpoint in code has at least one literal fetch() callsite detected by catalog scanner
 - OR endpoint is listed in `docs/api/endpoint-allowlist.json` with justification
-- Orphan detection: `docs/api/ORPHAN_ENDPOINTS.md` is empty after catalog generation
+- Orphan detection: `docs/api/ORPHAN_ENDPOINTS.md` shows "(none)" after catalog generation
 - If feature-flagged: Literal string exists in code even when flag is disabled
+- Workflow exit code 0
 
 **Exceptions**:
 - Allowlist: `docs/api/endpoint-allowlist.json` → `allowedOrphans` array
-- External endpoints: Allowlist entry with justification comment
-- Format: `"/api/example/webhook - External trigger from Stripe webhooks"`
+- External endpoints: Allowlist entry with justification
+- Format: Array of endpoint paths with comments explaining exception
+- Example: `"/api/webhooks/stripe - External trigger from Stripe payment system"`
 
 **Evidence Output**:
-- File: `docs/api/ORPHAN_ENDPOINTS.md` (must be empty or contain only allowlisted endpoints)
-- File: `docs/api/endpoint-allowlist.json` (contains justifications)
-- PR review: Reviewer confirms literal callsite exists for new endpoints
+- Console: "✅ API Wiring Gate passed!"
+- Console: "✅ Endpoint wiring gate passed" (from generate.js)
+- File: `docs/api/ORPHAN_ENDPOINTS.md` (shows "(none)" if all endpoints have callsites)
+- File: `docs/api/ENDPOINT_CATALOG.md` (generated catalog with callsite mappings)
+- File: `docs/api/endpoint-allowlist.json` (contains justifications for allowlisted endpoints)
+- Workflow artifact: api-wiring-gate logs
 
 **Known Gaps**:
-- No automated check for literal callsite existence (manual PR review required)
 - Feature flag gating not automatically verified (relies on code review)
-- Dynamic endpoint construction (`fetch('/api/' + path)`) not detected
+- Dynamic endpoint construction (`fetch('/api/' + path)`) not detected by literal scanner
+- Template literal interpolation may not match all route patterns
 
 **Owner**: E73 / Content System
 
