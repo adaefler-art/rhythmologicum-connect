@@ -223,9 +223,9 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-6 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-        <section className="w-full max-w-xl min-w-0 space-y-4">
+    <main className="min-h-screen w-full bg-slate-50 text-slate-900">
+      <div className="mx-auto flex min-h-screen w-full max-w-none flex-col gap-10 px-6 py-10 sm:px-8 lg:max-w-5xl lg:flex-row lg:items-center lg:justify-between">
+        <section className="w-full max-w-none min-w-0 space-y-4 lg:max-w-xl">
           <div className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-500">
             Rhythmologicum Connect
           </div>
@@ -250,12 +250,12 @@ export default function LoginPage() {
           )}
         </section>
 
-        <Card className="w-full max-w-md sm:max-w-lg mx-auto lg:mx-0 min-w-0" padding="lg" shadow="md">
+        <Card className="w-full max-w-none min-w-0 self-stretch sm:max-w-lg lg:mx-0 lg:max-w-md" padding="lg" shadow="md">
           <h2 className="text-xl font-semibold text-slate-900">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
 
-          <form className="mt-6 w-full space-y-4" onSubmit={handleAuth}>
+          <form className="mt-6 flex w-full flex-col space-y-4" onSubmit={handleAuth}>
             <Input
               type="email"
               label="E-Mail"
