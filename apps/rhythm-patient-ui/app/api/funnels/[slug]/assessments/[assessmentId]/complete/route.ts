@@ -37,6 +37,8 @@ import {
   type PatientStateV01,
 } from '@/lib/api/contracts/patient/state'
 import { createProcessingJobIdempotent } from '@/lib/processing/jobCreation'
+import { processRiskStage } from '@/lib/processing/riskStageProcessor'
+import { loadRiskBundle } from '@/lib/risk/persistence'
 import { processResultsStage } from '@/lib/processing/resultsStageProcessor'
 
 type ProcessingStatus = 'in_progress' | 'completed' | 'failed' | 'queued'
@@ -388,6 +390,48 @@ async function handleCompleteAssessment(
               500,
               PATIENT_ASSESSMENT_SCHEMA_VERSION,
               { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+              correlationId,
+            )
+          }
+
+          const riskStage = await processRiskStage(adminClient, jobId, assessmentId)
+          if (!riskStage.success) {
+            console.error('[E73] processRiskStage failed', {
+              correlationId,
+              jobId,
+              assessmentId,
+              stage: 'risk_stage',
+              errorCode: riskStage.errorCode ?? 'unknown',
+              error: riskStage.error,
+            })
+
+            return versionedErrorResponse(
+              ErrorCode.INTERNAL_ERROR,
+              'Processing risk stage failed',
+              500,
+              PATIENT_ASSESSMENT_SCHEMA_VERSION,
+              { reason: riskStage.errorCode ?? 'unknown' },
+              correlationId,
+            )
+          }
+
+          const riskBundleCheck = await loadRiskBundle(adminClient, jobId)
+          if (!riskBundleCheck.success || !riskBundleCheck.bundle) {
+            console.error('[E73] Risk bundle missing after risk stage', {
+              correlationId,
+              jobId,
+              assessmentId,
+              stage: 'risk_stage',
+              errorCode: 'RISK_BUNDLE_NOT_FOUND',
+              error: riskBundleCheck.error,
+            })
+
+            return versionedErrorResponse(
+              ErrorCode.INTERNAL_ERROR,
+              'Risk bundle missing after processing',
+              500,
+              PATIENT_ASSESSMENT_SCHEMA_VERSION,
+              { reason: 'RISK_BUNDLE_NOT_FOUND' },
               correlationId,
             )
           }

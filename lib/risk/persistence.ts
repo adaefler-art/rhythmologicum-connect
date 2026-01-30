@@ -48,7 +48,7 @@ export async function saveRiskBundle(
     }
 
     // Upsert: insert or update
-    const { error: upsertError } = await supabase
+    const { data: upserted, error: upsertError } = await supabase
       .from('risk_bundles')
       .upsert({
         job_id: jobId,
@@ -62,9 +62,15 @@ export async function saveRiskBundle(
         updated_at: new Date().toISOString(),
       })
       .eq('job_id', jobId)
+      .select('id')
+      .single()
 
     if (upsertError) {
       return { success: false, error: `Error saving bundle: ${upsertError.message}` }
+    }
+
+    if (!upserted?.id) {
+      return { success: false, error: 'Error saving bundle: missing id after upsert' }
     }
 
     return { success: true }

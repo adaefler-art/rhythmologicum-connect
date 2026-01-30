@@ -127,12 +127,24 @@ export async function processRiskStage(
     const saveResult = await saveRiskBundle(supabase, jobId, bundleResult.data)
 
     if (!saveResult.success) {
+      console.error('[riskStage] Failed to save risk bundle', {
+        jobId,
+        assessmentId,
+        stage: 'risk_stage',
+        errorCode: 'SAVE_BUNDLE_FAILED',
+        error: saveResult.error,
+      })
       return {
         success: false,
         error: saveResult.error,
         errorCode: 'SAVE_BUNDLE_FAILED',
       }
     }
+
+    console.log('[riskStage] Risk bundle saved', {
+      jobId,
+      assessmentId,
+    })
 
     return {
       success: true,
