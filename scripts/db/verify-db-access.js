@@ -49,6 +49,9 @@ const ALLOWED_ADMIN_USAGE = [
   // to service_role (RLS guardrail) and the API must be able to enqueue work after
   // auth/RBAC checks.
   'app/api/processing/',
+  // Results: SSOT read requires service role to bypass RLS for calculated_results.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts',
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',

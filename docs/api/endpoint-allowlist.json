@@ -87,6 +87,7 @@
     "/api/support-cases",
     "/api/support-cases/[id]",
     "/api/support-cases/[id]/escalate",
+    "/api/_debug/env",
     "/api/test/correlation-id",
     "/api/patient/reports/latest"
   ],

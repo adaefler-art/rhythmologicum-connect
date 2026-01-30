@@ -145,6 +145,14 @@ export function useAssessmentResult({
         }
         if (!res.ok || json.success !== true) {
           const errorObjParsed = json?.error as { code?: string; message?: string; details?: Record<string, unknown> }
+          const correlationId =
+            (json as { requestId?: string })?.requestId || res.headers.get('x-correlation-id') || undefined
+          if (correlationId) {
+            errorObjParsed.details = {
+              ...(errorObjParsed.details ?? {}),
+              correlationId,
+            }
+          }
           const err = new Error(json?.error?.message || 'Fehler beim Laden des Ergebnisses') as Error & { errorObj?: { code?: string; message?: string; details?: Record<string, unknown> } }
           err.errorObj = errorObjParsed
           throw err

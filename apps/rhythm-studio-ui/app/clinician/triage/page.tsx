@@ -30,6 +30,8 @@ type AssessmentTriage = {
   report_status: string | null
   report_id: string | null
   risk_level: string | null
+  risk_score: number | null
+  result_computed_at: string | null
   triage_status: TriageStatus
   flagged_reason: string | null
 }
@@ -81,6 +83,7 @@ export default function TriagePage() {
         
         let processingData = null
         let reportsData = null
+        let resultsData = null
 
         // Only query if there are assessments to avoid unnecessary queries
         if (assessmentIds.length > 0) {
@@ -100,6 +103,14 @@ export default function TriagePage() {
 
           if (reportsError) console.warn('Reports query failed:', reportsError)
           reportsData = rData
+
+          const { data: crData, error: resultsError } = await supabase
+            .from('calculated_results')
+            .select('assessment_id, scores, risk_models, computed_at')
+            .in('assessment_id', assessmentIds)
+
+          if (resultsError) console.warn('Calculated results query failed:', resultsError)
+          resultsData = crData
         }
 
         // Map processing and report data
@@ -109,11 +120,25 @@ export default function TriagePage() {
         const reportsMap = new Map(
           (reportsData ?? []).map((r: any) => [r.assessment_id, r])
         )
+        const resultsMap = new Map(
+          (resultsData ?? []).map((r: any) => [r.assessment_id, r])
+        )
 
         // Transform data to triage format
         const triageData: AssessmentTriage[] = (assessmentsData ?? []).map((a: any) => {
           const processing = processingMap.get(a.id)
           const report = reportsMap.get(a.id)
+          const calculated = resultsMap.get(a.id)
+          const riskLevel =
+            calculated?.risk_models?.riskLevel ||
+            calculated?.risk_models?.risk_level ||
+            report?.risk_level ||
+            null
+          const riskScore =
+            calculated?.scores?.riskScore ??
+            calculated?.scores?.stress_score ??
+            null
+          const resultComputedAt = calculated?.computed_at || null
           
           // Determine triage status
           let triageStatus: TriageStatus
@@ -127,13 +152,9 @@ export default function TriagePage() {
             if (processing.status === 'failed') {
               triageStatus = 'flagged'
               flaggedReason = 'Processing failed'
-            } else if (
-              processing.status === 'completed' &&
-              processing.delivery_status === 'DELIVERED'
-            ) {
+            } else if (calculated) {
               triageStatus = 'report_ready'
-              // Check for high risk flagging
-              if (report?.risk_level === 'high') {
+              if (riskLevel === 'high' || riskLevel === 'critical') {
                 triageStatus = 'flagged'
                 flaggedReason = 'High risk detected'
               }
@@ -144,11 +165,15 @@ export default function TriagePage() {
               triageStatus = 'processing'
             } else {
               // Processing job exists but status is unknown - assume report ready
-              triageStatus = 'report_ready'
+              triageStatus = calculated ? 'report_ready' : 'processing'
             }
           } else if (a.completed_at && !processing) {
             // Assessment completed but no processing job yet - awaiting processing
-            triageStatus = 'processing'
+            triageStatus = calculated ? 'report_ready' : 'processing'
+            if (calculated && (riskLevel === 'high' || riskLevel === 'critical')) {
+              triageStatus = 'flagged'
+              flaggedReason = 'High risk detected'
+            }
           } else {
             // Fallback for unexpected states - treat as incomplete
             triageStatus = 'incomplete'
@@ -171,7 +196,9 @@ export default function TriagePage() {
             processing_stage: processing?.stage || null,
             report_status: report?.status || null,
             report_id: report?.id || null,
-            risk_level: report?.risk_level || null,
+            risk_level: riskLevel,
+            risk_score: typeof riskScore === 'number' ? riskScore : null,
+            result_computed_at: resultComputedAt,
             triage_status: triageStatus,
             flagged_reason: flaggedReason,
           }
@@ -279,6 +306,19 @@ export default function TriagePage() {
           )
         },
         sortable: true,
+      },
+      {
+        header: 'Result',
+        accessor: (row) => (
+          <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-300">
+            <span>
+              {row.risk_level ? `Risk: ${row.risk_level}` : 'Risk: —'}
+            </span>
+            <span>
+              {typeof row.risk_score === 'number' ? `Score: ${Math.round(row.risk_score)}` : 'Score: —'}
+            </span>
+          </div>
+        ),
       },
       {
         header: 'Gestartet',

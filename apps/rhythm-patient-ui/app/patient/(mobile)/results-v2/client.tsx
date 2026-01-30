@@ -13,6 +13,23 @@ interface ResultsV2ClientProps {
 
 export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientProps) {
   const router = useRouter()
+  if (!slug || !assessmentId) {
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+        <Card padding="lg" shadow="md" className="mb-6">
+          <div className="space-y-4 text-center">
+            <h2 className="text-xl font-bold text-[#1f2937]">Fehlende Parameter</h2>
+            <p className="text-[#6b7280]">
+              assessmentId und/oder funnel (Slug) fehlen. Bitte rufen Sie die Seite über einen gültigen Link auf.
+            </p>
+            <Button variant="primary" size="lg" onClick={() => router.push('/patient/assess')}>
+              Zur Übersicht
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
   const {
     data: runtimeResult,
     isLoading,
@@ -25,7 +42,7 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
     slug,
     assessmentId,
     enabled: true,
-    pollOnConflict: true, // Enable polling for in_progress assessments
+    pollOnConflict: false,
     pollInterval: 2000,
     pollTimeout: 30000,
   })
@@ -108,6 +125,31 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
       </div>
     )
   }
+  if (
+    errorObj?.code === 'STATE_CONFLICT' &&
+    errorObj.details &&
+    typeof errorObj.details === 'object' &&
+    (errorObj.details as { state?: string }).state === 'processing'
+  ) {
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+        <Card padding="lg" shadow="md" className="mb-6">
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-[#1f2937]">Ergebnis wird vorbereitet</h2>
+            <p className="text-[#6b7280]">Die Auswertung läuft noch. Bitte versuchen Sie es gleich erneut.</p>
+            <div className="flex flex-col gap-3">
+              <Button variant="primary" size="lg" onClick={refetch}>
+                Ergebnis aktualisieren
+              </Button>
+              <Button size="lg" onClick={() => router.push('/patient/assess')}>
+                Zur Übersicht
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
   if (!error && runtimeResult?.state && runtimeResult.state !== 'ready') {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
@@ -125,11 +167,17 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
   }
 
   if (error || !runtimeResult || !runtimeResult.result) {
+    const correlationId =
+      (errorObj?.details as { correlationId?: string })?.correlationId
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
         <ErrorState
           title="Fehler beim Laden des Ergebnisses"
-          message={error || 'Das Ergebnis konnte nicht geladen werden.'}
+          message={
+            correlationId
+              ? `${error || 'Das Ergebnis konnte nicht geladen werden.'} (ID: ${correlationId})`
+              : error || 'Das Ergebnis konnte nicht geladen werden.'
+          }
           onRetry={refetch}
         />
       </div>
