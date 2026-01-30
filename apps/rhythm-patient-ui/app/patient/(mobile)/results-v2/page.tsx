@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import Link from 'next/link'
 
 import ResultsV2Client from './client'
 
@@ -33,12 +32,12 @@ export default function ResultsV2Page({ searchParams }: { searchParams: Record<s
         <div>
           <h1 className="text-2xl font-bold text-[#1f2937] mb-4">Fehlende Parameter</h1>
           <p className="text-[#6b7280] mb-6">assessmentId und/oder funnel (Slug) fehlen. Bitte rufen Sie die Seite über einen gültigen Link auf.</p>
-          <button
-            className="bg-[#4a90e2] text-white px-4 py-2 rounded"
-            onClick={() => window.location.href = '/patient/assess'}
+          <Link
+            className="bg-[#4a90e2] text-white px-4 py-2 rounded inline-flex items-center justify-center"
+            href="/patient/assess"
           >
             Zur Übersicht
-          </button>
+          </Link>
         </div>
       </div>
     )
