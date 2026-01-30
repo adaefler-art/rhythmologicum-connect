@@ -122,6 +122,25 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
   const { result, report, funnelTitle, completedAt } = runtimeResult
   const summaryBullets = Array.isArray(result.summaryBullets) ? result.summaryBullets : []
   const derived = result.derived || {}
+  const riskScore = result.scores?.riskScore
+  const riskLevel = result.riskModels?.riskLevel
+  const priorityRanking = result.priorityRanking
+
+  const formatRiskLevel = (value?: string | null) => {
+    if (!value) return null
+    switch (value) {
+      case 'low':
+        return 'niedrig'
+      case 'moderate':
+        return 'moderat'
+      case 'high':
+        return 'hoch'
+      case 'critical':
+        return 'kritisch'
+      default:
+        return value
+    }
+  }
   return (
     <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
       <div className="w-full space-y-6">
@@ -147,6 +166,29 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
                   <li key={`${bullet}-${idx}`}>{bullet}</li>
                 ))}
               </ul>
+            )}
+            {(riskScore !== undefined || riskLevel) && (
+              <div className="rounded-lg border border-[#e5e7eb] bg-white/70 p-4 text-sm text-[#111827]">
+                <div className="flex flex-col gap-2">
+                  {riskScore !== undefined && riskScore !== null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b7280]">Risiko-Score</span>
+                      <span className="font-semibold">{Number(riskScore).toFixed(0)}</span>
+                    </div>
+                  )}
+                  {riskLevel && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b7280]">Risiko-Level</span>
+                      <span className="font-semibold">{formatRiskLevel(riskLevel)}</span>
+                    </div>
+                  )}
+                  {priorityRanking && (
+                    <div className="text-xs text-[#6b7280]">
+                      Priorisierung verfügbar
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
             {'cardiovascularAgeYears' in derived && (
               <div className="text-lg font-semibold text-[#2563eb]">

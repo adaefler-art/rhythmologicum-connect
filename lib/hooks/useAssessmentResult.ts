@@ -7,6 +7,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export interface RuntimeResultResponse {
   success: boolean
   data?: {
+    state?: string
+    assessmentId?: string
     id: string
     funnel: string
     status: string
@@ -19,6 +21,18 @@ export interface RuntimeResultResponse {
       summaryBullets?: string[]
       derived?: Record<string, unknown>
       answersEcho?: Record<string, unknown>
+      scores?: {
+        riskScore?: number | null
+        [key: string]: unknown
+      }
+      riskModels?: {
+        riskLevel?: string | null
+        riskFactors?: unknown
+        [key: string]: unknown
+      }
+      priorityRanking?: Record<string, unknown>
+      algorithmVersion?: string
+      computedAt?: string
     }
     nextActions?: unknown
     report?: {
