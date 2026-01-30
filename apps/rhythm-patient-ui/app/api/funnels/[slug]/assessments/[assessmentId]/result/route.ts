@@ -28,9 +28,9 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
 ) {
+  const correlationId = getCorrelationId(request)
   try {
     const { slug, assessmentId } = await context.params
-    const correlationId = getCorrelationId(request)
 
     if (!slug || !assessmentId) {
       return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
@@ -73,7 +73,7 @@ export async function GET(
         { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
         assessmentError,
       )
-      return internalErrorResponse('Fehler beim Laden des Assessments.')
+        return internalErrorResponse('Fehler beim Laden des Assessments.', correlationId)
     }
 
     if (!assessment) {
@@ -121,10 +121,11 @@ export async function GET(
       
       if (useStateContract) {
         // E73.4: Return 409 with in_progress state
-        return stateConflictResponse(
-          'Assessment ist noch nicht abgeschlossen.',
-          { state: 'in_progress', assessmentId: assessment.id },
-        )
+          return stateConflictResponse(
+            'Assessment ist noch nicht abgeschlossen.',
+            { state: 'in_progress', assessmentId: assessment.id },
+            correlationId,
+          )
       }
       
       // Legacy behavior
@@ -143,15 +144,16 @@ export async function GET(
       
       if (!loadSuccess || loadError) {
         console.error('[result/route] Error loading calculated results:', loadError)
-        return internalErrorResponse('Fehler beim Laden der Ergebnisse.')
+          return internalErrorResponse('Fehler beim Laden der Ergebnisse.', correlationId)
       }
       
       if (!calculatedResult) {
         // E73.4: Completed but no calculated_results → 409 processing
-        return stateConflictResponse(
-          'Die Ergebnisse werden aktuell berechnet. Bitte versuchen Sie es in Kürze erneut.',
-          { state: 'processing', assessmentId: assessment.id },
-        )
+          return stateConflictResponse(
+            'Die Ergebnisse werden aktuell berechnet. Bitte versuchen Sie es in Kürze erneut.',
+            { state: 'processing', assessmentId: assessment.id },
+            correlationId,
+          )
       }
       
       // E73.4: Return SSOT result
@@ -186,7 +188,7 @@ export async function GET(
         { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}/result` },
         funnelError,
       )
-      return internalErrorResponse('Fehler beim Laden des Funnels.')
+        return internalErrorResponse('Fehler beim Laden des Funnels.', correlationId)
     }
 
     funnelTitle = funnelRow?.title ?? null
@@ -261,6 +263,6 @@ export async function GET(
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION)
   } catch (error) {
     console.error('Error in GET /api/funnels/[slug]/assessments/[assessmentId]/result:', error)
-    return internalErrorResponse('Internal server error')
+    return internalErrorResponse('Internal server error', correlationId)
   }
 }

@@ -627,12 +627,45 @@ export default function AssessmentFlowV2Client({
         </div>
       )
     }
+    if (
+      errorObj?.code === 'STATE_CONFLICT' &&
+      errorObj.details &&
+      typeof errorObj.details === 'object' &&
+      (errorObj.details as { state?: string }).state === 'processing'
+    ) {
+      return (
+        <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+          <Card padding="lg" shadow="md" className="mb-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-[#1f2937]">Ergebnis wird vorbereitet</h2>
+              <p className="text-[#6b7280]">Die Auswertung läuft noch. Bitte versuchen Sie es gleich erneut.</p>
+              <div className="flex flex-col gap-3 mt-4">
+                <Button variant="primary" size="lg" onClick={refetchResult}>
+                  Ergebnis aktualisieren
+                </Button>
+                <Button size="lg" onClick={() => router.push('/patient/assess')}>
+                  Zur Übersicht
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )
+    }
     if (resultError || !runtimeResult || !runtimeResult.result) {
+      const correlationId =
+        (errorObj?.details as { correlationId?: string })?.correlationId
       return (
         <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
           <ErrorState
             title="Fehler beim Laden des Ergebnisses"
-            message={typeof resultError === 'string' ? resultError : 'Das Ergebnis konnte nicht geladen werden.'}
+            message={
+              correlationId
+                ? `${typeof resultError === 'string' ? resultError : 'Das Ergebnis konnte nicht geladen werden.'} (ID: ${correlationId})`
+                : typeof resultError === 'string'
+                  ? resultError
+                  : 'Das Ergebnis konnte nicht geladen werden.'
+            }
             onRetry={refetchResult}
           />
         </div>
