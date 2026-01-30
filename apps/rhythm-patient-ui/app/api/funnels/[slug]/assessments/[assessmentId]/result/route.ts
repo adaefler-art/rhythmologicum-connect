@@ -6,8 +6,10 @@ import {
   notFoundResponse,
   internalErrorResponse,
   versionedSuccessResponse,
+  versionedErrorResponse,
   assessmentNotCompletedResponse,
   stateConflictResponse,
+  ErrorCode,
 } from '@/lib/api/responses'
 import { logUnauthorized, logForbidden, logDatabaseError, logIncompleteAssessmentAccess } from '@/lib/logging/logger'
 import {
@@ -20,6 +22,7 @@ import type { AssessmentWithWorkup } from '@/lib/types/workupStatus'
 import { loadCalculatedResults } from '@/lib/results/persistence'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
 
 export async function GET(
   request: NextRequest,
@@ -27,6 +30,7 @@ export async function GET(
 ) {
   try {
     const { slug, assessmentId } = await context.params
+    const correlationId = getCorrelationId(request)
 
     if (!slug || !assessmentId) {
       return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
@@ -86,6 +90,24 @@ export async function GET(
 
     // E73.4: Check feature flag once for entire request
     const useStateContract = flagEnabled(env.E73_4_RESULT_SSOT)
+
+    if (useStateContract && !(env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY)) {
+      console.error('[result/route] Missing service role key', {
+        correlationId,
+        assessmentId,
+        stage: 'results_stage',
+        errorCode: 'CONFIGURATION_ERROR',
+      })
+
+      return versionedErrorResponse(
+        ErrorCode.CONFIGURATION_ERROR,
+        'Server configuration error',
+        500,
+        PATIENT_ASSESSMENT_SCHEMA_VERSION,
+        { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+        correlationId,
+      )
+    }
 
     if (assessment.status !== 'completed') {
       logIncompleteAssessmentAccess(

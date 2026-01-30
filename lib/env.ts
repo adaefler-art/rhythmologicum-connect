@@ -83,6 +83,9 @@ const baseEnvSchema = z.object({
 
   // Hosting provider (optional)
   VERCEL_ENV: z.string().optional(),
+  VERCEL_GIT_COMMIT_SHA: z.string().optional(),
+  GIT_COMMIT_SHA: z.string().optional(),
+  COMMIT_SHA: z.string().optional(),
 
   // OPTIONAL: Usage Telemetry Toggle
   USAGE_TELEMETRY_ENABLED: z.string().optional(),
@@ -176,6 +179,9 @@ function getRawClientEnv() {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+    GIT_COMMIT_SHA: process.env.GIT_COMMIT_SHA,
+    COMMIT_SHA: process.env.COMMIT_SHA,
     USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
   }
 }
@@ -229,6 +235,9 @@ export type Env = {
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
   VERCEL_ENV?: string
+  VERCEL_GIT_COMMIT_SHA?: string
+  GIT_COMMIT_SHA?: string
+  COMMIT_SHA?: string
   USAGE_TELEMETRY_ENABLED?: string
 
   // Dev/admin tooling
@@ -267,6 +276,9 @@ function getDefaultEnv(): Env {
     NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test' | undefined,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+    GIT_COMMIT_SHA: process.env.GIT_COMMIT_SHA,
+    COMMIT_SHA: process.env.COMMIT_SHA,
     USAGE_TELEMETRY_ENABLED: process.env.USAGE_TELEMETRY_ENABLED,
     DEV_ENDPOINT_CATALOG: process.env.DEV_ENDPOINT_CATALOG,
     STUDIO_BASE_URL: process.env.STUDIO_BASE_URL,
@@ -323,6 +335,9 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
       VERCEL_ENV: parsed.VERCEL_ENV,
+      VERCEL_GIT_COMMIT_SHA: parsed.VERCEL_GIT_COMMIT_SHA,
+      GIT_COMMIT_SHA: parsed.GIT_COMMIT_SHA,
+      COMMIT_SHA: parsed.COMMIT_SHA,
       USAGE_TELEMETRY_ENABLED: parsed.USAGE_TELEMETRY_ENABLED,
       DEV_ENDPOINT_CATALOG: parsed.DEV_ENDPOINT_CATALOG,
       STUDIO_BASE_URL: parsed.STUDIO_BASE_URL,

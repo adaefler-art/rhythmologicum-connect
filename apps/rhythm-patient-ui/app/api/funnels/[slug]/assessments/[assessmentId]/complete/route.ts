@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { validateAllRequiredQuestions } from '@/lib/validation/requiredQuestions'
 import {
   versionedSuccessResponse,
@@ -153,11 +154,33 @@ async function handleCompleteAssessment(
       // E73.2: For already completed assessments, try to fetch existing processing job
       let processingJob: { jobId: string; status: ProcessingStatus } | undefined
       try {
+        let adminClient
+        try {
+          adminClient = createAdminSupabaseClient()
+        } catch (error) {
+          console.error('[E73] Missing admin Supabase client', {
+            correlationId,
+            assessmentId,
+            stage: 'job_creation',
+            errorCode: 'CONFIGURATION_ERROR',
+          })
+
+          return versionedErrorResponse(
+            ErrorCode.CONFIGURATION_ERROR,
+            'Server configuration error',
+            500,
+            PATIENT_ASSESSMENT_SCHEMA_VERSION,
+            { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+            correlationId,
+          )
+        }
+
         const jobResult = await createProcessingJobIdempotent({
           assessmentId,
           correlationId,
           userId: user.id,
           userRole: 'patient',
+          supabase: adminClient,
         })
 
         if (jobResult.success && jobResult.jobId) {
@@ -304,11 +327,33 @@ async function handleCompleteAssessment(
     // E73.2: Create processing job idempotently
     let processingJob: { jobId: string; status: ProcessingStatus } | undefined
     try {
+      let adminClient
+      try {
+        adminClient = createAdminSupabaseClient()
+      } catch (error) {
+        console.error('[E73] Missing admin Supabase client', {
+          correlationId,
+          assessmentId,
+          stage: 'job_creation',
+          errorCode: 'CONFIGURATION_ERROR',
+        })
+
+        return versionedErrorResponse(
+          ErrorCode.CONFIGURATION_ERROR,
+          'Server configuration error',
+          500,
+          PATIENT_ASSESSMENT_SCHEMA_VERSION,
+          { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+          correlationId,
+        )
+      }
+
       const jobResult = await createProcessingJobIdempotent({
         assessmentId,
         correlationId,
         userId: user.id,
         userRole: 'patient',
+        supabase: adminClient,
       })
 
       if (jobResult.success && jobResult.jobId) {
@@ -326,13 +371,36 @@ async function handleCompleteAssessment(
           const jobId = jobResult.jobId
           const assessmentId = assessment.id
 
-          const stage = await processResultsStage(supabase, jobId, assessmentId)
+          let adminClient
+          try {
+            adminClient = createAdminSupabaseClient()
+          } catch (error) {
+            console.error('[E73] Missing admin Supabase client', {
+              correlationId,
+              assessmentId,
+              stage: 'results_stage',
+              errorCode: 'CONFIGURATION_ERROR',
+            })
+
+            return versionedErrorResponse(
+              ErrorCode.CONFIGURATION_ERROR,
+              'Server configuration error',
+              500,
+              PATIENT_ASSESSMENT_SCHEMA_VERSION,
+              { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+              correlationId,
+            )
+          }
+
+          const stage = await processResultsStage(adminClient, jobId, assessmentId)
 
           if (!stage.success) {
             console.error('[E73] processResultsStage failed', {
               correlationId,
               jobId,
               assessmentId,
+              stage: 'results_stage',
+              errorCode: stage.reason ?? 'unknown',
               reason: stage.reason,
               error: stage.error,
             })

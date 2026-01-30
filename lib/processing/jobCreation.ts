@@ -8,6 +8,7 @@
  * @module lib/processing/jobCreation
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { logAuditEvent } from '@/lib/audit/log'
 import {
@@ -37,6 +38,7 @@ export type CreateJobInput = {
   correlationId?: string
   userId?: string
   userRole?: string
+  supabase?: SupabaseClient
 }
 
 /**
@@ -77,7 +79,7 @@ export async function createProcessingJobIdempotent(
   const startTime = Date.now()
 
   try {
-    const { assessmentId, userId, userRole } = input
+    const { assessmentId, userId, userRole, supabase: providedSupabase } = input
 
     // Generate correlation ID if not provided
     // Note: This uses a timestamp-based format (assessment-{id}-{timestamp})
@@ -88,7 +90,7 @@ export async function createProcessingJobIdempotent(
     const correlationId = input.correlationId || generateCorrelationId(assessmentId)
     const schemaVersion = 'v1'
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = providedSupabase ?? (await createServerSupabaseClient())
 
     // Try to insert the job, but on conflict (duplicate), just select the existing one
     // This implements idempotency via the unique constraint
