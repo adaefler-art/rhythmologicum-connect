@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSyncExternalStore } from 'react'
 import ResultsV2Client from './client'
 
 /**
@@ -24,12 +24,23 @@ import ResultsV2Client from './client'
  * Route: /patient/results-v2
  */
 export default function ResultsV2Page() {
-  const searchParams = useSearchParams()
-  const fallbackParams =
-    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const assessmentId =
-    searchParams.get('assessmentId') ?? fallbackParams?.get('assessmentId') ?? ''
-  const slug = searchParams.get('funnel') ?? fallbackParams?.get('funnel') ?? ''
+  const search = useSyncExternalStore(
+    (onChange) => {
+      if (typeof window === 'undefined') return () => undefined
+      window.addEventListener('popstate', onChange)
+      window.addEventListener('hashchange', onChange)
+      return () => {
+        window.removeEventListener('popstate', onChange)
+        window.removeEventListener('hashchange', onChange)
+      }
+    },
+    () => (typeof window !== 'undefined' ? window.location.search : ''),
+    () => '',
+  )
+
+  const params = new URLSearchParams(search)
+  const assessmentId = params.get('assessmentId') ?? ''
+  const slug = params.get('funnel') ?? ''
   if (!assessmentId || !slug) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
