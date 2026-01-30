@@ -25,8 +25,11 @@ import ResultsV2Client from './client'
  */
 export default function ResultsV2Page() {
   const searchParams = useSearchParams()
-  const assessmentId = searchParams.get('assessmentId') ?? ''
-  const slug = searchParams.get('funnel') ?? ''
+  const fallbackParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const assessmentId =
+    searchParams.get('assessmentId') ?? fallbackParams?.get('assessmentId') ?? ''
+  const slug = searchParams.get('funnel') ?? fallbackParams?.get('funnel') ?? ''
   if (!assessmentId || !slug) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
