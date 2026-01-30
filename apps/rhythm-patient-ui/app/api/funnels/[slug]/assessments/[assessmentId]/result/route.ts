@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import {
   unauthorizedResponse,
   forbiddenResponse,
@@ -91,22 +92,29 @@ export async function GET(
     // E73.4: Check feature flag once for entire request
     const useStateContract = flagEnabled(env.E73_4_RESULT_SSOT)
 
-    if (useStateContract && !(env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_KEY)) {
-      console.error('[result/route] Missing service role key', {
-        correlationId,
-        assessmentId,
-        stage: 'results_stage',
-        errorCode: 'CONFIGURATION_ERROR',
-      })
+    let adminSupabase = null as ReturnType<typeof createAdminSupabaseClient> | null
+    if (useStateContract) {
+      try {
+        adminSupabase = createAdminSupabaseClient()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Admin client unavailable'
+        console.error('[result/route] Admin client unavailable', {
+          correlationId,
+          assessmentId,
+          stage: 'results_stage',
+          errorCode: 'CONFIGURATION_ERROR',
+          message,
+        })
 
-      return versionedErrorResponse(
-        ErrorCode.CONFIGURATION_ERROR,
-        'Server configuration error',
-        500,
-        PATIENT_ASSESSMENT_SCHEMA_VERSION,
-        { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
-        correlationId,
-      )
+        return versionedErrorResponse(
+          ErrorCode.CONFIGURATION_ERROR,
+          'Server configuration error',
+          500,
+          PATIENT_ASSESSMENT_SCHEMA_VERSION,
+          { reason: message },
+          correlationId,
+        )
+      }
     }
 
     if (assessment.status !== 'completed') {
@@ -138,7 +146,7 @@ export async function GET(
     if (useStateContract) {
       // E73.4: SSOT-first approach - fetch from calculated_results
       const { success: loadSuccess, result: calculatedResult, error: loadError } = await loadCalculatedResults(
-        supabase,
+        adminSupabase ?? supabase,
         assessmentId,
       )
       
