@@ -1,8 +1,8 @@
+"use client"
+
 import Link from 'next/link'
-
+import { useSearchParams } from 'next/navigation'
 import ResultsV2Client from './client'
-
-export const dynamic = 'force-dynamic'
 
 /**
  * Results & Next Steps v2 Page
@@ -23,9 +23,10 @@ export const dynamic = 'force-dynamic'
  * 
  * Route: /patient/results-v2
  */
-export default function ResultsV2Page({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  const assessmentId = typeof searchParams.assessmentId === 'string' ? searchParams.assessmentId : ''
-  const slug = typeof searchParams.funnel === 'string' ? searchParams.funnel : ''
+export default function ResultsV2Page() {
+  const searchParams = useSearchParams()
+  const assessmentId = searchParams.get('assessmentId') ?? ''
+  const slug = searchParams.get('funnel') ?? ''
   if (!assessmentId || !slug) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
