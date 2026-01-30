@@ -58,6 +58,7 @@ function guessAccessRoleFromApiPath(apiPath) {
   if (apiPath.startsWith('/api/health/')) return 'public'
   if (apiPath.startsWith('/api/account/')) return 'patient'
   if (apiPath.startsWith('/api/amy/')) return 'system'
+  if (apiPath.startsWith('/api/_debug/')) return 'system'
   if (apiPath.startsWith('/api/assessment-answers/')) return 'patient'
   if (apiPath.startsWith('/api/assessment-validation/')) return 'patient'
   if (apiPath.startsWith('/api/assessments/')) return 'patient'

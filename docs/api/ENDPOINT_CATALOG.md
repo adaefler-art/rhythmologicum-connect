@@ -4,6 +4,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 
 | Path | Methods | Access | Intent | Used by | Route file |
 | --- | --- | --- | --- | ---: | --- |
+| /api/_debug/env | GET | system |  | 0 | apps/rhythm-patient-ui/app/api/_debug/env/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 | apps/rhythm-legacy/app/api/account/deletion-request/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 | legacy/code/app/api/account/deletion-request/route.ts |
 | /api/admin/content-pages | GET, POST | admin |  | 1 | apps/rhythm-legacy/app/api/admin/content-pages/route.ts |
@@ -80,7 +81,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | legacy/code/app/api/admin/reassessment-rules/[id]/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | apps/rhythm-legacy/app/api/admin/usage/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | legacy/code/app/api/admin/usage/route.ts |
-| /api/amy/chat | GET, POST | system |  | 2 | apps/rhythm-patient-ui/app/api/amy/chat/route.ts |
+| /api/amy/chat | GET, POST | system |  | 3 | apps/rhythm-patient-ui/app/api/amy/chat/route.ts |
 | /api/amy/stress-report | POST | system |  | 0 | apps/rhythm-legacy/app/api/amy/stress-report/route.ts |
 | /api/amy/stress-report | POST | system |  | 0 | legacy/code/app/api/amy/stress-report/route.ts |
 | /api/amy/stress-summary | POST | system |  | 0 | apps/rhythm-legacy/app/api/amy/stress-summary/route.ts |
@@ -194,8 +195,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient-profiles | (none) | patient |  | 2 | apps/rhythm-studio-ui/app/api/patient-profiles/route.ts |
 | /api/patient-profiles | GET | patient |  | 2 | legacy/code/app/api/patient-profiles/route.ts |
 | /api/patient/assessments | GET | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient/assessments/route.ts |
-| /api/patient/assessments-with-results | GET | patient |  | 2 | apps/rhythm-patient-ui/app/api/patient/assessments-with-results/route.ts |
-| /api/patient/assessments-with-results | GET | patient |  | 2 | apps/rhythm-studio-ui/app/api/patient/assessments-with-results/route.ts |
+| /api/patient/assessments-with-results | GET | patient |  | 3 | apps/rhythm-patient-ui/app/api/patient/assessments-with-results/route.ts |
+| /api/patient/assessments-with-results | GET | patient |  | 3 | apps/rhythm-studio-ui/app/api/patient/assessments-with-results/route.ts |
 | /api/patient/dashboard | GET | patient |  | 0 | apps/rhythm-legacy/app/api/patient/dashboard/route.ts |
 | /api/patient/dashboard | (none) | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/dashboard/route.ts |
 | /api/patient/dashboard | GET | patient |  | 0 | legacy/code/app/api/patient/dashboard/route.ts |

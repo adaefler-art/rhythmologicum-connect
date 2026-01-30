@@ -2,6 +2,19 @@
   "version": "v0.6",
   "endpoints": [
     {
+      "path": "/api/_debug/env",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/_debug/env/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/account/deletion-request",
       "methods": [
         "POST"
@@ -2283,7 +2296,7 @@
       "file": "apps/rhythm-patient-ui/app/api/amy/chat/route.ts",
       "intent": null,
       "accessRole": "system",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
@@ -2292,6 +2305,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
           "apiPath": "/api/amy/chat",
           "kind": "fetch"
         }
@@ -6367,10 +6385,15 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/assessments-with-results/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/history/PatientHistoryClient.tsx",
+          "apiPath": "/api/patient/assessments-with-results",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/profile/ProfileClient.tsx",
           "apiPath": "/api/patient/assessments-with-results",
           "kind": "fetch"
         },
@@ -6391,10 +6414,15 @@
       "file": "apps/rhythm-studio-ui/app/api/patient/assessments-with-results/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 3,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/history/PatientHistoryClient.tsx",
+          "apiPath": "/api/patient/assessments-with-results",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/profile/ProfileClient.tsx",
           "apiPath": "/api/patient/assessments-with-results",
           "kind": "fetch"
         },
