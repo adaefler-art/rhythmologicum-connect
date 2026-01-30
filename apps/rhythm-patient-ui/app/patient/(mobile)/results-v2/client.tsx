@@ -108,6 +108,22 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
       </div>
     )
   }
+  if (!error && runtimeResult?.state && runtimeResult.state !== 'ready') {
+    return (
+      <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
+        <Card padding="lg" shadow="md" className="mb-6 text-center">
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-[#1f2937]">Ergebnis wird vorbereitet…</h2>
+            <p className="text-[#6b7280]">Bitte warten Sie einen Moment.</p>
+            <Button variant="primary" size="lg" onClick={refetch}>
+              Ergebnis aktualisieren
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   if (error || !runtimeResult || !runtimeResult.result) {
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6 flex flex-col items-center justify-center">
@@ -119,11 +135,22 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
       </div>
     )
   }
-  const { result, report, funnelTitle, completedAt } = runtimeResult
+  const { report, funnelTitle, completedAt } = runtimeResult
+  const result =
+    runtimeResult.result && typeof runtimeResult.result === 'object'
+      ? runtimeResult.result
+      : {}
   const summaryBullets = Array.isArray(result.summaryBullets) ? result.summaryBullets : []
-  const derived = result.derived || {}
-  const riskScore = result.scores?.riskScore
-  const riskLevel = result.riskModels?.riskLevel
+  const derived =
+    result.derived && typeof result.derived === 'object' && !Array.isArray(result.derived)
+      ? result.derived
+      : {}
+  const riskScore = result.scores && typeof result.scores === 'object'
+    ? (result.scores as { riskScore?: number | null }).riskScore
+    : undefined
+  const riskLevel = result.riskModels && typeof result.riskModels === 'object'
+    ? (result.riskModels as { riskLevel?: string | null }).riskLevel
+    : undefined
   const priorityRanking = result.priorityRanking
 
   const formatRiskLevel = (value?: string | null) => {
