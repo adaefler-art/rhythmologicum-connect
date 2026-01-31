@@ -109,18 +109,18 @@ export default function StudioLoginClient() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-start justify-between gap-12 px-6 py-12 sm:px-8 lg:flex-row lg:items-center">
-        <section className="flex-1 min-w-0 max-w-2xl space-y-5">
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-12">
+        <section className="mb-8 text-center space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
             Rhythmologicum Connect
           </p>
-          <h1 className="text-5xl font-semibold">Studio Login</h1>
-          <p className="text-lg text-slate-300">
+          <h1 className="text-4xl sm:text-5xl font-semibold">Studio Login</h1>
+          <p className="text-base sm:text-lg text-slate-300">
             Melden Sie sich an, um das Clinician/Admin Studio zu verwalten.
           </p>
         </section>
 
-        <section className="w-full max-w-md shrink-0">
+        <section className="mx-auto w-full max-w-md sm:min-w-90">
           <Card className="border-slate-800 bg-slate-900/70" shadow="lg">
             <div className="space-y-4">
               <div>
