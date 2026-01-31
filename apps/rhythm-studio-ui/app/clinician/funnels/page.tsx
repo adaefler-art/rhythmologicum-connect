@@ -163,7 +163,9 @@ export default function FunnelListPage() {
                   )}
 
                   <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
-                    <span>ID: {funnel.slug}</span>
+                    <span>ID: {funnel.id}</span>
+                    <span>•</span>
+                    <span>Slug: {funnel.slug}</span>
                     <span>•</span>
                     <span>
                       Erstellt: {new Date(funnel.created_at).toLocaleDateString('de-DE')}
@@ -171,7 +173,7 @@ export default function FunnelListPage() {
                   </div>
                 </div>
 
-                <Link href={`/clinician/funnels/${funnel.slug}`}>
+                <Link href={`/clinician/funnels/${funnel.id}`}>
                   <Button variant="primary" size="sm">
                     Details
                   </Button>

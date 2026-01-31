@@ -584,7 +584,9 @@ export default function FunnelDetailPage() {
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{funnel.description}</p>
                   )}
                   <div className="flex items-center gap-3 text-sm text-slate-400 dark:text-slate-500">
-                    <span>ID: {funnel.slug}</span>
+                    <span>ID: {funnel.id}</span>
+                    <span>•</span>
+                    <span>Slug: {funnel.slug}</span>
                     <span>•</span>
                     <span>{steps.length} Schritte</span>
                     <span>•</span>
@@ -598,7 +600,7 @@ export default function FunnelDetailPage() {
 
             <div className="flex items-center gap-2">
               <Link
-                href={`/clinician/funnels/${funnel.slug}/editor`}
+                href={`/clinician/funnels/${identifier}/editor`}
                 className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors inline-flex items-center"
               >
                 Content Editor
