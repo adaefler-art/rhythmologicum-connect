@@ -60,6 +60,8 @@ const baseEnvSchema = z.object({
   // Client-safe vars (may be inlined at build time by Next.js)
   NEXT_PUBLIC_SUPABASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(sanitizeEnvString, z.string().optional()),
+  NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: z.string().optional(),
+  NEXT_PUBLIC_BUILD_TIME: z.string().optional(),
 
   // OPTIONAL: Review Queue Sampling
   REVIEW_SAMPLING_PERCENTAGE: z.string().optional(),
@@ -165,6 +167,8 @@ function getRawClientEnv() {
   return {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
+    NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
     REVIEW_SAMPLING_PERCENTAGE: process.env.REVIEW_SAMPLING_PERCENTAGE,
     REVIEW_SAMPLING_SALT: process.env.REVIEW_SAMPLING_SALT,
     NEXT_PUBLIC_FEATURE_AMY_ENABLED: process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
@@ -214,6 +218,8 @@ function getRawServerEnv() {
 export type Env = {
   NEXT_PUBLIC_SUPABASE_URL: string
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
+  NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID?: string
+  NEXT_PUBLIC_BUILD_TIME?: string
   SUPABASE_SERVICE_ROLE_KEY: string
   ANTHROPIC_API_KEY?: string
   ANTHROPIC_API_TOKEN?: string
@@ -254,6 +260,8 @@ function getDefaultEnv(): Env {
   return {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
+    NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
     SUPABASE_SERVICE_ROLE_KEY:
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '',
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_TOKEN,
@@ -313,6 +321,8 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
     return {
       NEXT_PUBLIC_SUPABASE_URL: parsed.NEXT_PUBLIC_SUPABASE_URL || parsed.SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: parsed.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
+      NEXT_PUBLIC_BUILD_TIME: parsed.NEXT_PUBLIC_BUILD_TIME,
       SUPABASE_SERVICE_ROLE_KEY: parsed.SUPABASE_SERVICE_ROLE_KEY || parsed.SUPABASE_SERVICE_KEY || '',
       ANTHROPIC_API_KEY: parsed.ANTHROPIC_API_KEY || parsed.ANTHROPIC_API_TOKEN,
       ANTHROPIC_API_TOKEN: parsed.ANTHROPIC_API_TOKEN,
