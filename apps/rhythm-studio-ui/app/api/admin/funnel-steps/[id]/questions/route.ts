@@ -19,18 +19,20 @@ import {
   isBlank,
 } from '@/lib/db/errors'
 import { env } from '@/lib/env'
-import { FunnelQuestionnaireConfigSchema } from '@/lib/contracts/funnelManifest'
+import {
+  FunnelQuestionnaireConfigSchema,
+  QuestionConfigSchema,
+} from '@/lib/contracts/funnelManifest'
 
-export async function DELETE(
+export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ stepId: string; questionId: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const requestId = getRequestId(request)
 
   try {
-    const { stepId, questionId } = await params
-    const url = new URL(request.url)
-    const versionId = url.searchParams.get('versionId')
+    const { id } = await params
+    const body = await request.json()
 
     if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
       return withRequestId(
@@ -56,8 +58,15 @@ export async function DELETE(
       return withRequestId(forbiddenResponse(), requestId)
     }
 
+    const versionId = typeof body?.versionId === 'string' ? body.versionId : null
+    const question = body?.question as Record<string, unknown> | undefined
+
     if (!versionId) {
       return withRequestId(validationErrorResponse('versionId is required'), requestId)
+    }
+
+    if (!question || typeof question !== 'object') {
+      return withRequestId(validationErrorResponse('question payload is required'), requestId)
     }
 
     const adminClient = createAdminSupabaseClient()
@@ -92,23 +101,54 @@ export async function DELETE(
     }
 
     const config = parsedConfig.data
-    const stepIndex = config.steps.findIndex((step) => step.id === stepId)
+    const stepIndex = config.steps.findIndex((step) => step.id === id)
     if (stepIndex === -1) {
       return withRequestId(notFoundResponse('Funnel step'), requestId)
     }
 
-    const questions = config.steps[stepIndex].questions
-    const nextQuestions = questions.filter((question) => question.id !== questionId)
+    const rawType = typeof question.type === 'string' ? question.type : ''
+    const normalizedType = rawType.toLowerCase()
 
-    if (nextQuestions.length === questions.length) {
-      return withRequestId(notFoundResponse('Question'), requestId)
+    const options = Array.isArray(question.options)
+      ? question.options
+          .map((opt) => ({
+            value: typeof opt.value === 'string' ? opt.value : String(opt.value ?? ''),
+            label: typeof opt.label === 'string' ? opt.label : String(opt.label ?? ''),
+            helpText: typeof opt.helpText === 'string' ? opt.helpText : undefined,
+          }))
+          .filter((opt) => opt.value.length > 0 && opt.label.length > 0)
+      : undefined
+
+    const newQuestion = {
+      id: typeof question.id === 'string' && question.id.trim() ? question.id.trim() : crypto.randomUUID(),
+      key: typeof question.key === 'string' ? question.key.trim() : '',
+      type: normalizedType,
+      label: typeof question.label === 'string' ? question.label.trim() : '',
+      helpText: typeof question.helpText === 'string' ? question.helpText.trim() : undefined,
+      required: Boolean(question.required),
+      options: normalizedType === 'radio' || normalizedType === 'checkbox' ? options : undefined,
+      minValue: typeof question.minValue === 'number' ? question.minValue : undefined,
+      maxValue: typeof question.maxValue === 'number' ? question.maxValue : undefined,
+    }
+
+    const validated = QuestionConfigSchema.safeParse(newQuestion)
+    if (!validated.success) {
+      return withRequestId(validationErrorResponse('Invalid question payload'), requestId)
+    }
+
+    const hasDuplicateKey = config.steps
+      .flatMap((step) => step.questions)
+      .some((q) => q.key === validated.data.key)
+
+    if (hasDuplicateKey) {
+      return withRequestId(validationErrorResponse('Question key must be unique'), requestId)
     }
 
     const updatedConfig = { ...config }
     updatedConfig.steps = [...config.steps]
     updatedConfig.steps[stepIndex] = {
       ...config.steps[stepIndex],
-      questions: nextQuestions,
+      questions: [...config.steps[stepIndex].questions, validated.data],
     }
 
     const { error: updateError } = await adminClient
@@ -130,10 +170,10 @@ export async function DELETE(
       return withRequestId(internalErrorResponse('Failed to update questionnaire_config.'), requestId)
     }
 
-    return withRequestId(successResponse({ questionId }), requestId)
+    return withRequestId(successResponse({ question: validated.data }), requestId)
   } catch (error) {
     const safeErr = sanitizeSupabaseError(error)
-    console.error({ requestId, operation: 'DELETE /api/admin/funnel-steps/[stepId]/questions/[questionId]', error: safeErr })
+    console.error({ requestId, operation: 'POST /api/admin/funnel-steps/[id]/questions', error: safeErr })
     return withRequestId(internalErrorResponse(), requestId)
   }
 }
