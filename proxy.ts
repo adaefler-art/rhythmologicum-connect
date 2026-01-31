@@ -27,6 +27,10 @@ export async function proxy(request: NextRequest) {
   const engineEnv = getEngineEnv()
   const { pathname } = request.nextUrl
 
+  if (pathname === '/api/admin/funnels' || pathname.startsWith('/api/admin/funnels/')) {
+    return NextResponse.next()
+  }
+
   // Only protect /clinician and /admin routes
   if (!pathname.startsWith('/clinician') && !pathname.startsWith('/admin')) {
     return NextResponse.next()
@@ -97,5 +101,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/clinician/:path*', '/admin/:path*'],
+  matcher: ['/clinician/:path*', '/admin/:path*', '/api/admin/funnels', '/api/admin/funnels/:path*'],
 }
