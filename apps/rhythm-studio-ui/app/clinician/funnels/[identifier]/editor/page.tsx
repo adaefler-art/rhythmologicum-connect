@@ -42,7 +42,7 @@ type ApiEnvelope<T> = {
 export default function ManifestEditorPage() {
   const params = useParams()
   const router = useRouter()
-  const funnelSlug = params.identifier as string
+  const funnelId = params.identifier as string
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -61,7 +61,7 @@ export default function ManifestEditorPage() {
       setError(null)
 
       // First, get funnel to find default version
-      const funnelRes = await fetch(`/api/admin/funnels/${funnelSlug}`)
+      const funnelRes = await fetch(`/api/admin/funnels/${funnelId}`)
       if (!funnelRes.ok) {
         throw new Error('Failed to load funnel')
       }
@@ -97,7 +97,7 @@ export default function ManifestEditorPage() {
     } finally {
       setLoading(false)
     }
-  }, [funnelSlug])
+  }, [funnelId])
 
   useEffect(() => {
     loadFunnelVersion()
@@ -270,7 +270,7 @@ export default function ManifestEditorPage() {
         <ErrorState title="Fehler beim Laden" message={error || 'Manifest nicht gefunden'} centered />
         <div className="mt-4 text-center">
           <Link
-            href={`/clinician/funnels/${funnelSlug}`}
+            href={`/clinician/funnels/${funnelId}`}
             className="inline-flex items-center text-sm text-sky-600 hover:text-sky-700 font-medium"
           >
             ← Zurück zum Funnel
@@ -288,7 +288,7 @@ export default function ManifestEditorPage() {
       <div className="mb-8">
         <div className="mb-4">
           <Link
-            href={`/clinician/funnels/${funnelSlug}`}
+            href={`/clinician/funnels/${funnelId}`}
             className="inline-flex items-center text-sm text-sky-600 hover:text-sky-700 font-medium"
           >
             ← Zurück zum Funnel
