@@ -10,14 +10,27 @@ type ResolvedRoleResponse =
   | { success: true; data?: { role?: string } }
   | { success: false; error?: { code?: string; message?: string } }
 
+type CallbackResponse =
+  | { ok: true }
+  | { ok: false; error?: { code?: string; message?: string } }
+
 async function syncServerSession(event: string, session: Session | null) {
   if (!session) return
-  await fetch('/api/auth/callback', {
+  const response = await fetch('/api/auth/callback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ event, session }),
   })
+
+  let payload: CallbackResponse | null = null
+  try {
+    payload = (await response.json()) as CallbackResponse
+  } catch {
+    payload = null
+  }
+
+  return { response, payload }
 }
 
 async function resolveStudioRedirect(): Promise<string | null> {
@@ -50,11 +63,23 @@ export default function StudioLoginClient() {
 
       if (!session) return
 
-      await syncServerSession('SIGNED_IN', session)
-      const target = await resolveStudioRedirect()
-      if (target) {
-        router.replace(target)
+      const callbackResult = await syncServerSession('SIGNED_IN', session)
+      if (!callbackResult?.response?.ok) {
+        setError(
+          callbackResult?.payload && 'ok' in callbackResult.payload && !callbackResult.payload.ok
+            ? callbackResult.payload.error?.message || 'Login fehlgeschlagen (Callback).'
+            : 'Login fehlgeschlagen (Callback).',
+        )
+        return
       }
+
+      const target = await resolveStudioRedirect()
+      if (!target) {
+        setError('Keine Berechtigung für das Studio oder Sitzung fehlt.')
+        return
+      }
+
+      router.replace(target)
     }
 
     checkSession()
@@ -63,7 +88,14 @@ export default function StudioLoginClient() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') return
-      await syncServerSession(event, session ?? null)
+      const callbackResult = await syncServerSession(event, session ?? null)
+      if (!callbackResult?.response?.ok) {
+        setError(
+          callbackResult?.payload && 'ok' in callbackResult.payload && !callbackResult.payload.ok
+            ? callbackResult.payload.error?.message || 'Session konnte nicht synchronisiert werden.'
+            : 'Session konnte nicht synchronisiert werden.',
+        )
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -96,10 +128,23 @@ export default function StudioLoginClient() {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      await syncServerSession('SIGNED_IN', session ?? null)
+      const callbackResult = await syncServerSession('SIGNED_IN', session ?? null)
+      if (!callbackResult?.response?.ok) {
+        setError(
+          callbackResult?.payload && 'ok' in callbackResult.payload && !callbackResult.payload.ok
+            ? callbackResult.payload.error?.message || 'Login fehlgeschlagen (Callback).'
+            : 'Login fehlgeschlagen (Callback).',
+        )
+        return
+      }
 
       const target = await resolveStudioRedirect()
-      router.replace(target ?? '/clinician')
+      if (!target) {
+        setError('Keine Berechtigung für das Studio oder Sitzung fehlt.')
+        return
+      }
+
+      router.replace(target)
     } catch {
       setError('Login fehlgeschlagen. Bitte versuchen Sie es erneut.')
     } finally {
