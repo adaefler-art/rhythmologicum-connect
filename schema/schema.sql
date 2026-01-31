@@ -2050,6 +2050,7 @@ CREATE TABLE IF NOT EXISTS "public"."funnels_catalog" (
     "pillar_id" "text",
     "description" "text",
     "is_active" boolean DEFAULT true NOT NULL,
+    "published" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone,
     "org_id" "uuid",
@@ -4377,6 +4378,10 @@ CREATE INDEX "idx_funnel_versions_is_default" ON "public"."funnel_versions" USIN
 
 
 CREATE INDEX "idx_funnels_catalog_is_active" ON "public"."funnels_catalog" USING "btree" ("is_active");
+
+
+
+CREATE INDEX "funnels_catalog_published_idx" ON "public"."funnels_catalog" USING "btree" ("published");
 
 
 
