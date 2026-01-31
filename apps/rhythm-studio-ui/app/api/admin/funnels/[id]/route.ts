@@ -49,12 +49,12 @@ function isValidQuestionType(value: unknown): value is QuestionType {
  */
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	context: { params: Promise<{ id: string }> }
 ) {
 	const requestId = getRequestId(request)
   
 	try {
-		const { id: slugOrId } = params
+		const { id: slugOrId } = await context.params
 
 		// Check Supabase configuration
 		if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
@@ -371,12 +371,12 @@ export async function GET(
  */
 export async function PATCH(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	context: { params: Promise<{ id: string }> }
 ) {
 	const requestId = getRequestId(request)
   
 	try {
-		const { id: slugOrId } = params
+		const { id: slugOrId } = await context.params
 
 		// Check Supabase configuration
 		if (isBlank(env.NEXT_PUBLIC_SUPABASE_URL) || isBlank(env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
