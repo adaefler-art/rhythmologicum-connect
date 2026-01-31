@@ -35,6 +35,14 @@ const nextConfig: NextConfig = {
         destination: '/api/auth/:path*',
       },
       {
+        source: '/api/admin/funnels/:path*',
+        destination: '/api/admin/funnels/:path*',
+      },
+      {
+        source: '/api/admin/funnels',
+        destination: '/api/admin/funnels',
+      },
+      {
         source: '/api/:path*',
         destination: `${engineBaseUrl}/api/:path*`,
       },
