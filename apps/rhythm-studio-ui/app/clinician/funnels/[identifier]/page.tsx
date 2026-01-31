@@ -3,7 +3,19 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Input, Textarea, LoadingSpinner, ErrorState } from '@/lib/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  Label,
+  LoadingSpinner,
+  PageHeader,
+  SectionHeader,
+  Select,
+  Textarea,
+} from '@/lib/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,6 +70,17 @@ type FunnelVersion = {
   updated_at: string | null
 }
 
+type NewQuestionDraft = {
+  key: string
+  label: string
+  helpText: string
+  type: string
+  required: boolean
+  minValue: string
+  maxValue: string
+  optionsText: string
+}
+
 // Translation helpers
 const translateQuestionType = (type: string): string => {
   const translations: Record<string, string> = {
@@ -101,6 +124,19 @@ export default function FunnelDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const [addingQuestionStepId, setAddingQuestionStepId] = useState<string | null>(null)
+  const [newQuestion, setNewQuestion] = useState<NewQuestionDraft>({
+    key: '',
+    label: '',
+    helpText: '',
+    type: 'text',
+    required: false,
+    minValue: '',
+    maxValue: '',
+    optionsText: '',
+  })
+  const [questionError, setQuestionError] = useState<string | null>(null)
 
   // Edit mode state
   const [editingFunnel, setEditingFunnel] = useState(false)
@@ -483,6 +519,161 @@ export default function FunnelDetailPage() {
     }
   }
 
+  const getActiveVersionId = () => {
+    const defaultVersion = versions.find((version) => version.is_default)
+    return defaultVersion?.id ?? versions[0]?.id ?? null
+  }
+
+  const resetNewQuestion = () => {
+    setNewQuestion({
+      key: '',
+      label: '',
+      helpText: '',
+      type: 'text',
+      required: false,
+      minValue: '',
+      maxValue: '',
+      optionsText: '',
+    })
+  }
+
+  const openAddQuestion = (stepId: string) => {
+    setQuestionError(null)
+    resetNewQuestion()
+    setAddingQuestionStepId(stepId)
+  }
+
+  const closeAddQuestion = () => {
+    setAddingQuestionStepId(null)
+    setQuestionError(null)
+  }
+
+  const parseQuestionOptions = (raw: string) => {
+    return raw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        const [value, label, helpText] = line.split('|').map((part) => part?.trim() ?? '')
+        return {
+          value,
+          label: label || value,
+          helpText: helpText || undefined,
+        }
+      })
+      .filter((option) => option.value.length > 0 && option.label.length > 0)
+  }
+
+  const createQuestion = async () => {
+    if (!addingQuestionStepId) return
+
+    const versionId = getActiveVersionId()
+    if (!versionId) {
+      setQuestionError('Keine Funnel-Version verfügbar.')
+      return
+    }
+
+    const key = newQuestion.key.trim()
+    const label = newQuestion.label.trim()
+    const type = newQuestion.type.trim()
+
+    if (!key || !label || !type) {
+      setQuestionError('Bitte Schlüssel, Titel und Typ angeben.')
+      return
+    }
+
+    const minValue = newQuestion.minValue.trim().length > 0 ? Number(newQuestion.minValue) : undefined
+    const maxValue = newQuestion.maxValue.trim().length > 0 ? Number(newQuestion.maxValue) : undefined
+
+    const shouldIncludeOptions = type === 'radio' || type === 'checkbox'
+    const options = shouldIncludeOptions ? parseQuestionOptions(newQuestion.optionsText) : undefined
+
+    if (shouldIncludeOptions && (!options || options.length === 0)) {
+      setQuestionError('Bitte mindestens eine Option angeben (value|label pro Zeile).')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setQuestionError(null)
+
+      const response = await fetch(`/api/admin/funnel-steps/${addingQuestionStepId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          versionId,
+          question: {
+            key,
+            label,
+            helpText: newQuestion.helpText.trim() || undefined,
+            type,
+            required: newQuestion.required,
+            minValue: typeof minValue === 'number' && !Number.isNaN(minValue) ? minValue : undefined,
+            maxValue: typeof maxValue === 'number' && !Number.isNaN(maxValue) ? maxValue : undefined,
+            options,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        let requestId = response.headers.get('x-request-id')
+        let message = 'Failed to create question'
+
+        try {
+          const json: unknown = await response.json()
+          const envelope = asEnvelope<unknown>(json)
+          const errorMessage = envelope?.error?.message
+          const errorRequestId = envelope?.error?.requestId || envelope?.error?.details?.requestId
+          if (typeof errorMessage === 'string' && errorMessage.length > 0) message = errorMessage
+          if (typeof errorRequestId === 'string' && errorRequestId.length > 0) requestId = errorRequestId
+        } catch {
+          // ignore
+        }
+
+        throw new Error(requestId ? `${message} (requestId: ${requestId})` : message)
+      }
+
+      await loadFunnelDetails()
+      closeAddQuestion()
+    } catch (err) {
+      console.error('Error creating question:', err)
+      setQuestionError(
+        err instanceof Error ? err.message : 'Fehler beim Hinzufügen der Frage',
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteQuestion = async (stepId: string, questionId: string) => {
+    const versionId = getActiveVersionId()
+    if (!versionId) {
+      alert('Keine Funnel-Version verfügbar.')
+      return
+    }
+
+    if (!confirm('Soll diese Frage wirklich gelöscht werden?')) return
+
+    try {
+      setSaving(true)
+      const response = await fetch(
+        `/api/admin/funnel-steps/${stepId}/questions/${questionId}?versionId=${versionId}`,
+        { method: 'DELETE' },
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to delete question')
+      }
+
+      await loadFunnelDetails()
+    } catch (err) {
+      console.error('Error deleting question:', err)
+      alert('Fehler beim Löschen der Frage')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -512,128 +703,113 @@ export default function FunnelDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="mb-4">
-          <Link
-            href="/clinician/funnels"
-            className="inline-flex items-center text-sm text-sky-600 hover:text-sky-700 font-medium"
-          >
-            ← Zurück zur Übersicht
-          </Link>
-        </div>
-
-        {/* Funnel Header - Editable */}
-        <div className="bg-white border border-slate-200 rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex-1">
-              {editingFunnel ? (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="funnel-title" className="block text-sm font-medium text-slate-700 mb-1">
-                      Titel
-                    </label>
-                    <Input
-                      id="funnel-title"
-                      type="text"
-                      value={editedFunnel.title || ''}
-                      onChange={(e) =>
-                        setEditedFunnel({ ...editedFunnel, title: e.target.value })
-                      }
-                      inputSize="md"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="funnel-description" className="block text-sm font-medium text-slate-700 mb-1">
-                      Beschreibung
-                    </label>
-                    <Textarea
-                      id="funnel-description"
-                      value={editedFunnel.description || ''}
-                      onChange={(e) =>
-                        setEditedFunnel({ ...editedFunnel, description: e.target.value })
-                      }
-                      rows={3}
-                      textareaSize="md"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={saveFunnelEdit}
-                      disabled={saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {saving ? 'Speichert…' : 'Speichern'}
-                    </button>
-                    <button
-                      onClick={cancelEditingFunnel}
-                      disabled={saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Abbrechen
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-                    {funnel.title}
-                  </h1>
-                  {funnel.description && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{funnel.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 text-sm text-slate-400 dark:text-slate-500">
-                    <span>ID: {funnel.id}</span>
-                    <span>•</span>
-                    <span>Slug: {funnel.slug}</span>
-                    <span>•</span>
-                    <span>{steps.length} Schritte</span>
-                    <span>•</span>
-                    <span>
-                      {steps.reduce((total, step) => total + step.questions.length, 0)} Fragen
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/clinician/funnels/${identifier}/editor`}
-                className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors inline-flex items-center"
-              >
+    <div className="w-full">
+      <PageHeader
+        title={editingFunnel ? 'Funnel bearbeiten' : funnel.title}
+        description={
+          editingFunnel
+            ? 'Aktualisieren Sie die Metadaten dieses Funnels.'
+            : funnel.description || 'Details und Inhalte des ausgewählten Funnels.'
+        }
+        actions={
+          <>
+            <Link href={`/clinician/funnels/${identifier}/editor`}>
+              <Button variant="primary" size="sm">
                 Content Editor
-              </Link>
-              {!editingFunnel && (
-                <button
-                  onClick={startEditingFunnel}
-                  className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                >
-                  Bearbeiten
-                </button>
-              )}
-              <button
-                onClick={toggleFunnelActive}
-                disabled={saving}
-                className={`h-10 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  funnel.is_active
-                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {saving ? 'Speichert…' : funnel.is_active ? 'Aktiv' : 'Inaktiv'}
-              </button>
+              </Button>
+            </Link>
+            {!editingFunnel && (
+              <Button variant="secondary" size="sm" onClick={startEditingFunnel}>
+                Bearbeiten
+              </Button>
+            )}
+            <Button
+              variant={funnel.is_active ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={toggleFunnelActive}
+              disabled={saving}
+            >
+              {saving ? 'Speichert…' : funnel.is_active ? 'Aktiv' : 'Inaktiv'}
+            </Button>
+          </>
+        }
+      />
+
+      <div className="mb-4">
+        <Link href="/clinician/funnels">
+          <Button variant="ghost" size="sm">← Zurück zur Übersicht</Button>
+        </Link>
+      </div>
+
+      <Card>
+        {editingFunnel ? (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="funnel-title">Titel</Label>
+              <Input
+                id="funnel-title"
+                type="text"
+                value={editedFunnel.title || ''}
+                onChange={(e) => setEditedFunnel({ ...editedFunnel, title: e.target.value })}
+                inputSize="md"
+              />
+            </div>
+            <div>
+              <Label htmlFor="funnel-description">Beschreibung</Label>
+              <Textarea
+                id="funnel-description"
+                value={editedFunnel.description || ''}
+                onChange={(e) =>
+                  setEditedFunnel({ ...editedFunnel, description: e.target.value })
+                }
+                rows={3}
+                textareaSize="md"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="primary" size="sm" onClick={saveFunnelEdit} disabled={saving}>
+                {saving ? 'Speichert…' : 'Speichern'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={cancelEditingFunnel} disabled={saving}>
+                Abbrechen
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                {funnel.title}
+              </h2>
+              <Badge variant={funnel.is_active ? 'success' : 'secondary'} size="sm">
+                {funnel.is_active ? 'Aktiv' : 'Inaktiv'}
+              </Badge>
+            </div>
+            {funnel.description && (
+              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                {funnel.description}
+              </p>
+            )}
+            <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
+              <span>ID: {funnel.id}</span>
+              <span>•</span>
+              <span>Slug: {funnel.slug}</span>
+              <span>•</span>
+              <span>{steps.length} Schritte</span>
+              <span>•</span>
+              <span>
+                {steps.reduce((total, step) => total + step.questions.length, 0)} Fragen
+              </span>
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* Version Management Section */}
       {versions.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50 mb-4">Versionen</h2>
-          <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          <SectionHeader title="Versionen" />
+          <Card padding="none">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
@@ -668,24 +844,20 @@ export default function FunnelDetailPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-slate-900">{version.version}</span>
                           {version.is_default && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-800">
+                            <Badge variant="info" size="sm">
                               Standard
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          version.is_default 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
+                        <Badge variant={version.is_default ? 'success' : 'secondary'} size="sm">
                           {version.is_default ? 'Aktiv' : 'Bereit'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <input
+                          <Input
                             type="number"
                             min="0"
                             max="100"
@@ -700,7 +872,8 @@ export default function FunnelDetailPage() {
                               }
                             }}
                             disabled={saving}
-                            className="w-16 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 focus:border-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            inputSize="sm"
+                            className="max-w-22"
                           />
                           <span className="text-sm text-slate-600">%</span>
                         </div>
@@ -720,13 +893,14 @@ export default function FunnelDetailPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         {!version.is_default && (
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setDefaultVersion(version.id)}
                             disabled={saving}
-                            className="inline-flex items-center px-3 py-1.5 border border-sky-600 text-sky-600 hover:bg-sky-50 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Als Standard setzen
-                          </button>
+                          </Button>
                         )}
                       </td>
                     </tr>
@@ -734,7 +908,7 @@ export default function FunnelDetailPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
           <div className="mt-4 text-sm text-slate-600">
             <p className="mb-1">
               <strong>Rollout %:</strong> Prozentsatz der Nutzer, die diese Version sehen (0-100). Bei mehreren aktiven Versionen wird nach Prozentsatz gewichtet ausgewählt.
@@ -748,20 +922,15 @@ export default function FunnelDetailPage() {
 
       {/* Steps List */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Schritte</h2>
+        <SectionHeader title="Schritte" />
         {steps.map((step, stepIndex) => (
-          <div
-            key={step.id}
-            className="bg-white border border-slate-200 rounded-lg overflow-hidden"
-          >
+          <Card key={step.id} padding="none">
             {/* Step Header */}
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
               {editingStep === step.id ? (
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor={`step-title-${step.id}`} className="block text-sm font-medium text-slate-700 mb-1">
-                      Schritt-Titel
-                    </label>
+                    <Label htmlFor={`step-title-${step.id}`}>Schritt-Titel</Label>
                     <Input
                       id={`step-title-${step.id}`}
                       type="text"
@@ -771,9 +940,7 @@ export default function FunnelDetailPage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor={`step-desc-${step.id}`} className="block text-sm font-medium text-slate-700 mb-1">
-                      Schritt-Beschreibung
-                    </label>
+                    <Label htmlFor={`step-desc-${step.id}`}>Schritt-Beschreibung</Label>
                     <Textarea
                       id={`step-desc-${step.id}`}
                       value={editedStep.description || ''}
@@ -785,20 +952,22 @@ export default function FunnelDetailPage() {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => saveStepEdit(step.id)}
                       disabled={saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {saving ? 'Speichert…' : 'Speichern'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={cancelEditingStep}
                       disabled={saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Abbrechen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -819,28 +988,35 @@ export default function FunnelDetailPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => startEditingStep(step)}
-                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => openAddQuestion(step.id)}
+                      disabled={saving}
                     >
+                      Frage hinzufügen
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => startEditingStep(step)}>
                       Bearbeiten
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => moveStep(step.id, stepIndex, 'up')}
                       disabled={stepIndex === 0 || saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       title="Nach oben"
                     >
                       ↑
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => moveStep(step.id, stepIndex, 'down')}
                       disabled={stepIndex === steps.length - 1 || saving}
-                      className="h-10 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       title="Nach unten"
                     >
                       ↓
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -859,13 +1035,13 @@ export default function FunnelDetailPage() {
                         {step.content_page.excerpt && (
                           <p className="text-xs text-blue-600 mt-1">{step.content_page.excerpt}</p>
                         )}
-                        <span className={`inline-block mt-2 px-2 py-1 text-xs rounded ${
-                          step.content_page.status === 'published'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <Badge
+                          variant={step.content_page.status === 'published' ? 'success' : 'warning'}
+                          size="sm"
+                          className="mt-2"
+                        >
                           {step.content_page.status === 'published' ? 'Veröffentlicht' : 'Entwurf'}
-                        </span>
+                        </Badge>
                       </div>
                     ) : (
                       <p className="text-sm text-red-700">⚠️ Keine Inhaltsseite zugeordnet</p>
@@ -907,7 +1083,9 @@ export default function FunnelDetailPage() {
                         )}
                       </div>
 
-                      <button
+                      <Button
+                        variant={question.is_required ? 'secondary' : 'ghost'}
+                        size="sm"
                         onClick={() =>
                           toggleQuestionRequired(
                             question.funnel_step_question_id,
@@ -915,14 +1093,17 @@ export default function FunnelDetailPage() {
                           )
                         }
                         disabled={saving}
-                        className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                          question.is_required
-                            ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {question.is_required ? 'Pflichtfeld' : 'Optional'}
-                      </button>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteQuestion(step.id, question.id)}
+                        disabled={saving}
+                      >
+                        Löschen
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -934,13 +1115,165 @@ export default function FunnelDetailPage() {
                 Keine Fragen in diesem Schritt
               </div>
             )}
-          </div>
+          </Card>
         ))}
       </div>
 
       {steps.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg p-8 text-center">
-          <p className="text-slate-600">Keine Schritte definiert.</p>
+        <Card>
+          <p className="text-slate-600 text-center">Keine Schritte definiert.</p>
+        </Card>
+      )}
+
+      {addingQuestionStepId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4 py-8">
+          <Card className="w-full max-w-2xl" shadow="lg">
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Frage hinzufügen</h3>
+                <p className="text-sm text-slate-600">
+                  Neue Frage für diesen Schritt definieren.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="question-key">Frageschlüssel</Label>
+                  <Input
+                    id="question-key"
+                    type="text"
+                    value={newQuestion.key}
+                    onChange={(event) =>
+                      setNewQuestion((prev) => ({ ...prev, key: event.target.value }))
+                    }
+                    inputSize="md"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="question-type">Typ</Label>
+                  <Select
+                    id="question-type"
+                    value={newQuestion.type}
+                    onChange={(event) =>
+                      setNewQuestion((prev) => ({ ...prev, type: event.target.value }))
+                    }
+                    selectSize="md"
+                  >
+                    <option value="text">Text</option>
+                    <option value="textarea">Textfeld</option>
+                    <option value="number">Zahl</option>
+                    <option value="scale">Skala</option>
+                    <option value="slider">Slider</option>
+                    <option value="radio">Radio</option>
+                    <option value="checkbox">Checkbox</option>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="question-label">Fragetitel</Label>
+                <Input
+                  id="question-label"
+                  type="text"
+                  value={newQuestion.label}
+                  onChange={(event) =>
+                    setNewQuestion((prev) => ({ ...prev, label: event.target.value }))
+                  }
+                  inputSize="md"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="question-help">Hilfetext (optional)</Label>
+                <Textarea
+                  id="question-help"
+                  value={newQuestion.helpText}
+                  onChange={(event) =>
+                    setNewQuestion((prev) => ({ ...prev, helpText: event.target.value }))
+                  }
+                  rows={2}
+                  textareaSize="md"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="question-required"
+                  type="checkbox"
+                  checked={newQuestion.required}
+                  onChange={(event) =>
+                    setNewQuestion((prev) => ({ ...prev, required: event.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                />
+                <Label htmlFor="question-required">Pflichtfeld</Label>
+              </div>
+
+              {(newQuestion.type === 'number' ||
+                newQuestion.type === 'scale' ||
+                newQuestion.type === 'slider') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="question-min">Min-Wert</Label>
+                    <Input
+                      id="question-min"
+                      type="number"
+                      value={newQuestion.minValue}
+                      onChange={(event) =>
+                        setNewQuestion((prev) => ({ ...prev, minValue: event.target.value }))
+                      }
+                      inputSize="md"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="question-max">Max-Wert</Label>
+                    <Input
+                      id="question-max"
+                      type="number"
+                      value={newQuestion.maxValue}
+                      onChange={(event) =>
+                        setNewQuestion((prev) => ({ ...prev, maxValue: event.target.value }))
+                      }
+                      inputSize="md"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {(newQuestion.type === 'radio' || newQuestion.type === 'checkbox') && (
+                <div>
+                  <Label htmlFor="question-options">Optionen</Label>
+                  <Textarea
+                    id="question-options"
+                    value={newQuestion.optionsText}
+                    onChange={(event) =>
+                      setNewQuestion((prev) => ({ ...prev, optionsText: event.target.value }))
+                    }
+                    rows={4}
+                    textareaSize="md"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Eine Option pro Zeile, Format: <span className="font-mono">value|label|hilfetext</span>
+                  </p>
+                </div>
+              )}
+
+              {questionError && (
+                <p className="text-sm text-red-600" role="alert">
+                  {questionError}
+                </p>
+              )}
+
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="ghost" size="sm" onClick={closeAddQuestion} disabled={saving}>
+                  Abbrechen
+                </Button>
+                <Button variant="primary" size="sm" onClick={createQuestion} disabled={saving}>
+                  {saving ? 'Speichert…' : 'Hinzufügen'}
+                </Button>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
     </div>
