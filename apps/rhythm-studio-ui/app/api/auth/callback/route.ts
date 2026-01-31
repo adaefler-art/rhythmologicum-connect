@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { isSessionExpired } from '@/lib/api/authHelpers'
 import { createRouteSupabaseClient } from '@/lib/db/supabase.server'
+import { env } from '@/lib/env'
+import type { Session } from '@supabase/supabase-js'
 
-const DEBUG = process.env.AUTH_CALLBACK_DEBUG === '1'
-const TIMEOUT_MS = Number(process.env.AUTH_CALLBACK_TIMEOUT_MS ?? '10000')
+const DEBUG = env.AUTH_CALLBACK_DEBUG === '1'
+const TIMEOUT_MS = Number(env.AUTH_CALLBACK_TIMEOUT_MS ?? '10000')
 
 function rid() {
   return Math.random().toString(16).slice(2) + '-' + Date.now().toString(16)
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     const { supabase, applyCookies } = createRouteSupabaseClient(req)
 
-    let body: any
+    let body: unknown
     try {
       body = await req.json()
     } catch (e) {
@@ -57,7 +59,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { event, session } = body
+    const parsedBody = body && typeof body === 'object'
+      ? (body as { event?: unknown; session?: Session | null })
+      : {}
+    const event = typeof parsedBody.event === 'string' ? parsedBody.event : undefined
+    const session = parsedBody.session ?? null
     if (DEBUG) {
       console.log(
         `[auth-callback:${requestId}] parsed body event=${event} hasSession=${!!session}`,
@@ -73,11 +79,11 @@ export async function POST(req: NextRequest) {
       if (session) {
         const t0 = Date.now()
         if (DEBUG) console.log(`[auth-callback:${requestId}] setSession:begin`)
-        let error: any = null
+        let error: unknown = null
 
         try {
           const r = await withTimeout(supabase.auth.setSession(session), TIMEOUT_MS, 'setSession')
-          error = (r as any)?.error ?? null
+          error = (r as { error?: unknown })?.error ?? null
         } catch (e) {
           console.error(`[auth-callback:${requestId}] setSession:exception`, e)
           payload = {
