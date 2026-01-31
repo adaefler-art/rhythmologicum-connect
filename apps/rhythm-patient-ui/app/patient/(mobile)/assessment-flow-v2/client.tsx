@@ -34,6 +34,9 @@ interface AssessmentQuestion {
   key: string
   title: string
   subtitle?: string
+  questionType: string
+  minValue?: number | null
+  maxValue?: number | null
   stepId: string
   stepTitle: string
   stepIndex: number
@@ -307,6 +310,7 @@ export default function AssessmentFlowV2Client({
     ? Math.round((currentStep / totalSteps) * 100)
     : 0
   const selectedAnswer = currentQuestion ? answers[currentQuestion.id] : undefined
+  const hasAnswer = selectedAnswer !== undefined && selectedAnswer !== null && selectedAnswer !== ''
   
   // I2.5: Use canonical navigation utility for deterministic exit
   const exitRoute = getAssessmentFlowExitRoute(mode)
@@ -360,9 +364,28 @@ export default function AssessmentFlowV2Client({
     }))
   }
 
+  const handleNumberChange = (value: string) => {
+    if (!currentQuestion) return
+    if (value === '') {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentQuestion.id]: '',
+      }))
+      return
+    }
+
+    const numericValue = Number(value)
+    if (Number.isNaN(numericValue)) return
+
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: numericValue,
+    }))
+  }
+
   const handleContinue = async () => {
     if (!currentQuestion || !assessmentId) return
-    if (selectedAnswer === undefined || selectedAnswer === null) return
+    if (!hasAnswer) return
 
     setIsSubmitting(true)
     setValidationMessage(null)
@@ -826,17 +849,43 @@ export default function AssessmentFlowV2Client({
               )}
             </div>
 
-            {/* Options List */}
-            <div className="space-y-3 pt-2">
-              {currentQuestion.options.map((option) => (
-                <RadioOption
-                  key={option.id}
-                  option={option}
-                  selected={selectedAnswer === option.value}
-                  onSelect={() => handleSelectOption(option)}
+            {currentQuestion.questionType === 'number' ? (
+              <div className="pt-2">
+                <label className="block text-sm font-medium text-[#1f2937] mb-2" htmlFor="number-input">
+                  Antwort eingeben
+                </label>
+                <input
+                  id="number-input"
+                  type="number"
+                  inputMode="decimal"
+                  min={currentQuestion.minValue ?? undefined}
+                  max={currentQuestion.maxValue ?? undefined}
+                  value={
+                    typeof selectedAnswer === 'number' || selectedAnswer === ''
+                      ? String(selectedAnswer ?? '')
+                      : ''
+                  }
+                  onChange={(event) => handleNumberChange(event.target.value)}
+                  className="w-full rounded-xl border-2 border-[#e5e7eb] bg-white px-4 py-3 text-base text-[#1f2937] focus:border-[#4a90e2] focus:outline-none"
                 />
-              ))}
-            </div>
+                {(currentQuestion.minValue != null || currentQuestion.maxValue != null) && (
+                  <p className="mt-2 text-xs text-[#6b7280]">
+                    Bereich: {currentQuestion.minValue ?? '–'} bis {currentQuestion.maxValue ?? '–'}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3 pt-2">
+                {currentQuestion.options.map((option) => (
+                  <RadioOption
+                    key={option.id}
+                    option={option}
+                    selected={selectedAnswer === option.value}
+                    onSelect={() => handleSelectOption(option)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </Card>
 
@@ -865,7 +914,7 @@ export default function AssessmentFlowV2Client({
             variant="primary"
             size="lg"
             onClick={handleContinue}
-            disabled={!selectedAnswer || isSubmitting}
+            disabled={!hasAnswer || isSubmitting}
           >
             {currentStep < totalSteps ? 'Continue' : 'Complete'}
           </Button>
@@ -914,6 +963,9 @@ function buildQuestionsFromDefinition(definition: FunnelDefinition): AssessmentQ
         key: question.key,
         title: question.label,
         subtitle: question.helpText ?? undefined,
+            questionType: question.questionType,
+            minValue: question.minValue,
+            maxValue: question.maxValue,
         stepId: step.id,
         stepTitle: step.title,
         stepIndex: step.orderIndex,
@@ -928,6 +980,10 @@ function buildQuestionsFromDefinition(definition: FunnelDefinition): AssessmentQ
 }
 
 function mapQuestionOptions(question: QuestionDefinition): AssessmentOption[] {
+  if (question.questionType === 'number') {
+    return []
+  }
+
   if (question.options && question.options.length > 0) {
     return question.options.map((option) => ({
       id: String(option.value),
