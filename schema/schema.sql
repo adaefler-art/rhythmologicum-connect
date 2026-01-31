@@ -2050,13 +2050,13 @@ CREATE TABLE IF NOT EXISTS "public"."funnels_catalog" (
     "pillar_id" "text",
     "description" "text",
     "is_active" boolean DEFAULT true NOT NULL,
-    "published" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone,
     "org_id" "uuid",
     "est_duration_min" integer,
     "outcomes" "jsonb" DEFAULT '[]'::"jsonb",
-    "default_version_id" "uuid"
+    "default_version_id" "uuid",
+    "published" boolean DEFAULT false NOT NULL
 );
 
 
@@ -4133,6 +4133,10 @@ CREATE INDEX "funnel_steps_order_index_idx" ON "public"."funnel_steps" USING "bt
 
 
 
+CREATE INDEX "funnels_catalog_published_idx" ON "public"."funnels_catalog" USING "btree" ("published");
+
+
+
 CREATE INDEX "idx_assessment_answers_data" ON "public"."assessment_answers" USING "gin" ("answer_data") WHERE ("answer_data" IS NOT NULL);
 
 
@@ -4378,10 +4382,6 @@ CREATE INDEX "idx_funnel_versions_is_default" ON "public"."funnel_versions" USIN
 
 
 CREATE INDEX "idx_funnels_catalog_is_active" ON "public"."funnels_catalog" USING "btree" ("is_active");
-
-
-
-CREATE INDEX "funnels_catalog_published_idx" ON "public"."funnels_catalog" USING "btree" ("published");
 
 
 
