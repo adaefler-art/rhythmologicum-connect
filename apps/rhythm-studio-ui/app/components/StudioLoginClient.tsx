@@ -109,63 +109,67 @@ export default function StudioLoginClient() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-12">
-        <section className="mb-8 text-center space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
-            Rhythmologicum Connect
-          </p>
-          <h1 className="text-4xl sm:text-5xl font-semibold">Studio Login</h1>
-          <p className="text-base sm:text-lg text-slate-300">
-            Melden Sie sich an, um das Clinician/Admin Studio zu verwalten.
-          </p>
-        </section>
+      <div className="mx-auto w-full max-w-6xl px-6 py-12">
+        <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <section className="space-y-4 text-center lg:text-left">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-300">
+              Rhythmologicum Connect
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-semibold">Studio Login</h1>
+            <p className="text-base sm:text-lg text-slate-300 max-w-xl mx-auto lg:mx-0">
+              Melden Sie sich an, um das Clinician/Admin Studio zu verwalten.
+            </p>
+          </section>
 
-        <section className="mx-auto w-full max-w-md sm:min-w-90">
-          <Card className="border-slate-800 bg-slate-900/70" shadow="lg">
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold">Anmelden</h2>
-                <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
-              </div>
+          <section className="w-full mx-auto lg:mx-0">
+            <div className="mx-auto w-full max-w-md">
+              <Card className="border-slate-800 bg-slate-900/70" shadow="lg">
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-lg font-semibold">Anmelden</h2>
+                    <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
+                  </div>
 
-              <form className="w-full flex flex-col gap-3" onSubmit={handleSubmit}>
-                <div className="w-full">
-                  <Label htmlFor="studio-email">E-Mail</Label>
-                  <Input
-                    id="studio-email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@domain.de"
-                    inputSize="md"
-                    className="w-full"
-                  />
+                  <form className="w-full flex flex-col gap-3" onSubmit={handleSubmit}>
+                    <div className="w-full">
+                      <Label htmlFor="studio-email">E-Mail</Label>
+                      <Input
+                        id="studio-email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@domain.de"
+                        inputSize="md"
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="w-full">
+                      <Label htmlFor="studio-password">Passwort</Label>
+                      <Input
+                        id="studio-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        inputSize="md"
+                        className="w-full"
+                      />
+                    </div>
+
+                    {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+
+                    <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+                      {loading ? 'Anmelden…' : 'Einloggen'}
+                    </Button>
+                  </form>
                 </div>
-
-                <div className="w-full">
-                  <Label htmlFor="studio-password">Passwort</Label>
-                  <Input
-                    id="studio-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    inputSize="md"
-                    className="w-full"
-                  />
-                </div>
-
-                {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-
-                <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
-                  {loading ? 'Anmelden…' : 'Einloggen'}
-                </Button>
-              </form>
+              </Card>
             </div>
-          </Card>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   )
