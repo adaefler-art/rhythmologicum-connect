@@ -4,14 +4,35 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
+import { Button, Card, Input, Label } from '@/lib/ui'
 
-async function syncServerSession(session: Session | null) {
+type ResolvedRoleResponse =
+  | { success: true; data?: { role?: string } }
+  | { success: false; error?: { code?: string; message?: string } }
+
+async function syncServerSession(event: string, session: Session | null) {
   if (!session) return
   await fetch('/api/auth/callback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event: 'SIGNED_IN', session }),
+    credentials: 'include',
+    body: JSON.stringify({ event, session }),
   })
+}
+
+async function resolveStudioRedirect(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/auth/resolve-role', { credentials: 'include' })
+    const payload = (await response.json()) as ResolvedRoleResponse
+    if (!response.ok || !payload.success) return null
+
+    const role = payload.data?.role
+    if (role === 'admin') return '/admin'
+    if (role === 'clinician' || role === 'nurse') return '/clinician'
+    return null
+  } catch {
+    return null
+  }
 }
 
 export default function StudioLoginClient() {
@@ -27,16 +48,12 @@ export default function StudioLoginClient() {
         data: { session },
       } = await supabase.auth.getSession()
 
-      if (session) {
-        const response = await fetch('/api/auth/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event: 'SIGNED_IN', session }),
-        })
+      if (!session) return
 
-        if (response.ok) {
-          router.replace('/admin')
-        }
+      await syncServerSession('SIGNED_IN', session)
+      const target = await resolveStudioRedirect()
+      if (target) {
+        router.replace(target)
       }
     }
 
@@ -46,7 +63,7 @@ export default function StudioLoginClient() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') return
-      await syncServerSession(session ?? null)
+      await syncServerSession(event, session ?? null)
     })
 
     return () => subscription.unsubscribe()
@@ -79,9 +96,10 @@ export default function StudioLoginClient() {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      await syncServerSession(session ?? null)
+      await syncServerSession('SIGNED_IN', session ?? null)
 
-      router.replace('/admin')
+      const target = await resolveStudioRedirect()
+      router.replace(target ?? '/clinician')
     } catch {
       setError('Login fehlgeschlagen. Bitte versuchen Sie es erneut.')
     } finally {
@@ -102,45 +120,51 @@ export default function StudioLoginClient() {
           </p>
         </section>
 
-        <section className="w-full max-w-md lg:max-w-lg shrink-0 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 sm:p-8 shadow-2xl">
-          <h2 className="text-lg font-semibold">Anmelden</h2>
-          <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
+        <section className="w-full max-w-md shrink-0">
+          <Card className="border-slate-800 bg-slate-900/70" shadow="lg">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Anmelden</h2>
+                <p className="mt-1 text-sm text-slate-400">Bitte Zugangsdaten eingeben.</p>
+              </div>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            <label className="block text-sm text-slate-300">
-              E-Mail
-              <input
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
-                placeholder="name@domain.de"
-              />
-            </label>
+              <form className="w-full flex flex-col gap-3" onSubmit={handleSubmit}>
+                <div className="w-full">
+                  <Label htmlFor="studio-email">E-Mail</Label>
+                  <Input
+                    id="studio-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@domain.de"
+                    inputSize="md"
+                    className="w-full"
+                  />
+                </div>
 
-            <label className="block text-sm text-slate-300">
-              Passwort
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none"
-                placeholder="••••••••"
-              />
-            </label>
+                <div className="w-full">
+                  <Label htmlFor="studio-password">Passwort</Label>
+                  <Input
+                    id="studio-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    inputSize="md"
+                    className="w-full"
+                  />
+                </div>
 
-            {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+                {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? 'Anmelden…' : 'Einloggen'}
-            </button>
-          </form>
+                <Button type="submit" variant="primary" size="md" fullWidth disabled={loading}>
+                  {loading ? 'Anmelden…' : 'Einloggen'}
+                </Button>
+              </form>
+            </div>
+          </Card>
         </section>
       </div>
     </main>
