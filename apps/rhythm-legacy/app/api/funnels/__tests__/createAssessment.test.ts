@@ -47,8 +47,6 @@ function createMockSupabase(overrides: {
   authError?: Error | null
   patientProfile?: { id: string } | null
   profileError?: Error | null
-  existingAssessment?: { id: string } | null
-  existingAssessmentError?: { code?: string; message?: string } | null
   legacyFunnel?: { id: string; title: string; is_active: boolean } | null
   legacyError?: Error | null
   assessment?: { id: string; status: string } | null
@@ -79,14 +77,6 @@ function createMockSupabase(overrides: {
       return {
         insert: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        is: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        maybeSingle: jest.fn().mockResolvedValue({
-          data: overrides.existingAssessment ?? null,
-          error: overrides.existingAssessmentError ?? null,
-        }),
         single: jest.fn().mockResolvedValue({
           data: overrides.assessment ?? { id: 'assessment-123', status: 'in_progress' },
           error: overrides.assessmentError ?? null,
