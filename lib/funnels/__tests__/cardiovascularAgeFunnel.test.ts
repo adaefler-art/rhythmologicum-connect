@@ -142,7 +142,25 @@ describe('Cardiovascular Age Funnel - Definition Loading', () => {
         },
       ],
     },
-    content_manifest: { version: '1.0', pages: [] },
+    content_manifest: {
+      schema_version: 'v1',
+      version: '1.0',
+      pages: [
+        {
+          slug: 'intro',
+          title: 'Willkommen',
+          sections: [
+            {
+              key: 'hero',
+              type: 'hero',
+              content: {
+                title: 'Cardiovascular Age Assessment',
+              },
+            },
+          ],
+        },
+      ],
+    },
     created_at: '2026-01-01T00:00:00Z',
     updated_at: null,
   }

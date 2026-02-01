@@ -130,7 +130,26 @@ describe('GET /api/funnels/[slug]/definition', () => {
             },
           ],
         },
-        content_manifest: { version: '1.0', pages: [], assets: [] },
+        content_manifest: {
+          schema_version: 'v1',
+          version: '1.0',
+          pages: [
+            {
+              slug: 'intro',
+              title: 'Willkommen',
+              sections: [
+                {
+                  key: 'hero',
+                  type: 'hero',
+                  content: {
+                    title: 'Cardiovascular Age',
+                  },
+                },
+              ],
+            },
+          ],
+          assets: [],
+        },
         algorithm_bundle_version: 'v1.0.0',
         prompt_version: '1.0',
         is_default: true,
