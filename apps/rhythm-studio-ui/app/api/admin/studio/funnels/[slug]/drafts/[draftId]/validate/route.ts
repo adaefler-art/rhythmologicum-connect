@@ -7,7 +7,9 @@ import { getRequestId, withRequestId, logError } from '@/lib/db/errors'
 import {
   validateFunnelVersion,
   formatValidationErrors,
+  type ValidationError,
 } from '@/lib/validators/funnelDefinition'
+import type { Json } from '@/lib/types/supabase'
 
 /**
  * E74.3 Studio API: Validate draft
@@ -107,11 +109,18 @@ export async function POST(
       content_manifest: draft.content_manifest,
     })
 
+    const serializedErrors: Json = validationResult.errors.map((error: ValidationError) => ({
+      code: error.code,
+      message: error.message,
+      path: error.path ?? null,
+      details: (error.details ?? null) as Json | null,
+    }))
+
     // Update draft with validation results
     const { data: updatedDraft, error: updateError } = await adminClient
       .from('funnel_versions')
       .update({
-        validation_errors: validationResult.errors,
+        validation_errors: serializedErrors,
         last_validated_at: new Date().toISOString(),
       })
       .eq('id', draftId)
