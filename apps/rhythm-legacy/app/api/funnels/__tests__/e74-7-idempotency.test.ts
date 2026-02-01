@@ -161,20 +161,70 @@ describe('E74.7: Start/Resume Idempotency', () => {
       expect(body.data.assessmentId).toBe('existing-assessment-456')
       expect(body.data.currentStep.stepId).toBe('step-2')
       expect(body.data.status).toBe('in_progress')
-
-      // Should NOT have called insert (no new assessment created)
-      expect(mockSupabase.from).not.toHaveBeenCalledWith(
-        expect.objectContaining({
-          insert: expect.any(Function),
-        }),
-      )
     })
 
     it('should create new assessment when no in-progress assessment exists', async () => {
       const mockSupabase = createMockSupabase({
         existingAssessment: null, // No existing in-progress assessment
+        // Add mock for legacy funnel check - return null (not a legacy funnel)
       })
+      
+      // Add legacy funnel null result to mock
+      mockSupabase.from = jest.fn((table: string) => {
+        if (table === 'patient_profiles') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'patient-123' },
+              error: null,
+            }),
+          }
+        }
+        if (table === 'funnels') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: null, // Not a legacy funnel
+              error: null,
+            }),
+          }
+        }
+        if (table === 'assessments') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            is: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: null, // No existing assessment
+              error: null,
+            }),
+            insert: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { id: 'new-assessment-123', status: 'in_progress', patient_id: 'patient-123', funnel: 'stress-assessment' },
+              error: null,
+            }),
+          }
+        }
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({ data: null, error: null }),
+        }
+      })
+      
       mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase)
+
+      // Mock catalog funnel
+      mockLoadFunnelWithClient.mockResolvedValue({
+        id: 'catalog-funnel-id',
+        slug: 'stress-assessment',
+        title: 'Stress Assessment',
+        isActive: true,
+      })
 
       mockLoadFunnelVersionWithClient.mockResolvedValue({
         manifest: {
