@@ -3574,6 +3574,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/clinician/assessments/[assessmentId]/details",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AssessmentRunDetails.tsx",
+          "apiPath": "/api/clinician/assessments/${assessmentId}/details",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/clinician/patient-funnels",
       "methods": [
         "POST"
