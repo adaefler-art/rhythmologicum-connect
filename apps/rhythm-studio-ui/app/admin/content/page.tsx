@@ -228,7 +228,7 @@ export default function AdminContentDashboard() {
     if (sortField !== field) {
       return (
         <svg
-          className="w-4 h-4 text-slate-400"
+          className="w-4 h-4 text-muted-foreground"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -266,7 +266,7 @@ export default function AdminContentDashboard() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-slate-600">Content-Pages werden geladen…</p>
+        <p className="text-muted-foreground">Content-Pages werden geladen…</p>
       </div>
     )
   }
@@ -289,10 +289,10 @@ export default function AdminContentDashboard() {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-[center] sm:justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Content Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-slate-600">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Verwaltung aller Content-Pages mit Filter- und Suchfunktionen
             </p>
           </div>
@@ -320,11 +320,11 @@ export default function AdminContentDashboard() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-4">
+        <div className="bg-card rounded-lg border border-border p-4 mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div>
-              <label htmlFor="search" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="search" className="block text-sm font-medium text-foreground mb-2">
                 Suche
               </label>
               <Input
@@ -339,7 +339,7 @@ export default function AdminContentDashboard() {
 
             {/* Funnel Filter */}
             <div>
-              <label htmlFor="funnel" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="funnel" className="block text-sm font-medium text-foreground mb-2">
                 Funnel
               </label>
               <Select
@@ -359,7 +359,7 @@ export default function AdminContentDashboard() {
 
             {/* Layout/Category Filter */}
             <div>
-              <label htmlFor="layout" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="layout" className="block text-sm font-medium text-foreground mb-2">
                 Kategorie
               </label>
               <Select
@@ -379,7 +379,7 @@ export default function AdminContentDashboard() {
 
             {/* Status Filter */}
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="status" className="block text-sm font-medium text-foreground mb-2">
                 Status
               </label>
               <Select
@@ -401,7 +401,7 @@ export default function AdminContentDashboard() {
       </div>
 
       {/* Results Summary */}
-      <div className="mb-4 text-sm text-slate-600">
+      <div className="mb-4 text-sm text-muted-foreground">
         {filteredPages.length === contentPages.length ? (
           <span>
             {filteredPages.length} {filteredPages.length === 1 ? 'Seite' : 'Seiten'} gesamt
@@ -415,15 +415,15 @@ export default function AdminContentDashboard() {
       </div>
 
       {filteredPages.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
           <div className="max-w-md">
             <p className="text-4xl mb-4" aria-label="Kein Inhalt Symbol">
               📄
             </p>
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-foreground">
               {contentPages.length === 0 ? 'Noch keine Seiten vorhanden' : 'Keine Ergebnisse'}
             </h2>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
               {contentPages.length === 0
                 ? 'Erstellen Sie Ihre erste Content-Page.'
                 : 'Keine Seiten entsprechen Ihren Filterkriterien.'}
@@ -433,12 +433,12 @@ export default function AdminContentDashboard() {
       ) : (
         <>
           {/* Table */}
-          <div className="overflow-x-auto border rounded-xl bg-white shadow-sm mb-4">
+          <div className="overflow-x-auto border rounded-xl bg-card shadow-sm mb-4">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-muted/30 border-b border-border">
                 <tr>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('title')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -447,7 +447,7 @@ export default function AdminContentDashboard() {
                     </div>
                   </th>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('slug')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -456,7 +456,7 @@ export default function AdminContentDashboard() {
                     </div>
                   </th>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('funnel')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -465,7 +465,7 @@ export default function AdminContentDashboard() {
                     </div>
                   </th>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('layout')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -474,7 +474,7 @@ export default function AdminContentDashboard() {
                     </div>
                   </th>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('status')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -483,7 +483,7 @@ export default function AdminContentDashboard() {
                     </div>
                   </th>
                   <th
-                    className="text-left px-4 py-4 font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition touch-manipulation"
+                    className="text-left px-4 py-4 font-semibold text-muted-foreground cursor-pointer hover:bg-muted/20 transition touch-manipulation"
                     onClick={() => handleSort('updated_at')}
                   >
                     <div className="flex items-[center] gap-2">
@@ -497,33 +497,33 @@ export default function AdminContentDashboard() {
                 {paginatedPages.map((page, index) => (
                   <tr
                     key={page.id}
-                    className={`hover:bg-slate-50 transition cursor-pointer touch-manipulation ${
-                      index !== paginatedPages.length - 1 ? 'border-b border-slate-100' : ''
+                    className={`hover:bg-muted/20 transition cursor-pointer touch-manipulation ${
+                      index !== paginatedPages.length - 1 ? 'border-b border-border' : ''
                     }`}
                     onClick={() => handlePageClick(page)}
                   >
                     <td className="px-4 py-4">
-                      <span className="font-medium text-slate-900">{page.title}</span>
+                      <span className="font-medium text-foreground">{page.title}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-slate-600 font-mono text-xs">{page.slug}</span>
+                      <span className="text-muted-foreground font-mono text-xs">{page.slug}</span>
                     </td>
                     <td className="px-4 py-4">
                       {page.funnels ? (
-                        <span className="text-slate-700">{page.funnels.title}</span>
+                        <span className="text-foreground">{page.funnels.title}</span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="text-slate-700">{page.layout || '—'}</span>
+                      <span className="text-foreground">{page.layout || '—'}</span>
                     </td>
                     <td className="px-4 py-4">
                       <Badge variant={getStatusBadgeVariant(page.status)} size="sm">
                         {getStatusLabel(page.status)}
                       </Badge>
                     </td>
-                    <td className="px-4 py-4 text-slate-700 whitespace-nowrap">
+                    <td className="px-4 py-4 text-foreground whitespace-nowrap">
                       {formatDateTime(page.updated_at)}
                     </td>
                   </tr>
@@ -543,7 +543,7 @@ export default function AdminContentDashboard() {
               >
                 Zurück
               </Button>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted-foreground">
                 Seite {currentPage} von {totalPages}
               </span>
               <Button

@@ -109,6 +109,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             minHeight: config.minHeight,
             borderRadius: radii.lg,
             backgroundImage,
+            backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 0.5rem center',
             backgroundSize: '1.5rem 1.5rem',
           }}
