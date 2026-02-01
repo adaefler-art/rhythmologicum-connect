@@ -9,7 +9,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
+import { loadFunnelWithClient, loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
 
 // Mock dependencies
@@ -37,6 +37,7 @@ jest.mock('@/lib/api/idempotency', () => ({
 }))
 
 const mockCreateServerSupabaseClient = createServerSupabaseClient as jest.Mock
+const mockLoadFunnelWithClient = loadFunnelWithClient as jest.Mock
 const mockLoadFunnelVersionWithClient = loadFunnelVersionWithClient as jest.Mock
 const mockGetCurrentStep = getCurrentStep as jest.Mock
 

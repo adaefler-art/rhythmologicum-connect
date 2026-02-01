@@ -5,7 +5,8 @@
 -- Rule R-E74.7-001: ONE in-progress assessment per patient+funnel
 -- Create unique partial index to enforce constraint
 -- This prevents creating multiple in-progress assessments for same patient+funnel combination
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_assessments_one_in_progress_per_patient_funnel
+-- Note: Index created without CONCURRENTLY to ensure transactional safety in migration
+CREATE UNIQUE INDEX IF NOT EXISTS idx_assessments_one_in_progress_per_patient_funnel
   ON assessments (patient_id, funnel)
   WHERE completed_at IS NULL;
 

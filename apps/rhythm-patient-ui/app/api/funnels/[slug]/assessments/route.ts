@@ -58,11 +58,15 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       return missingFieldsResponse('Funnel-Slug fehlt.', undefined, correlationId)
     }
 
-    // E74.7: Parse request body for forceNew parameter
+    // E74.7: Parse request body once and store for potential reuse
     let forceNew = false
+    let requestBody = null
     try {
-      const body = await request.json()
-      forceNew = body?.forceNew === true
+      const bodyText = await request.text()
+      if (bodyText) {
+        requestBody = JSON.parse(bodyText)
+        forceNew = requestBody?.forceNew === true
+      }
     } catch {
       // No body or invalid JSON - use default behavior (resume or create)
     }
