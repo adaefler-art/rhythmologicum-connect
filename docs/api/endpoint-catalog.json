@@ -62,7 +62,10 @@
     },
     {
       "path": "/api/admin/content-pages",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -120,7 +123,11 @@
     },
     {
       "path": "/api/admin/content-pages/[id]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -183,7 +190,10 @@
     },
     {
       "path": "/api/admin/content-pages/[id]/sections",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/[id]/sections/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -275,7 +285,10 @@
     },
     {
       "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/content-pages/[id]/sections/[sectionId]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -382,7 +395,10 @@
     },
     {
       "path": "/api/admin/design-tokens",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/design-tokens/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -432,7 +448,9 @@
     },
     {
       "path": "/api/admin/dev/endpoint-catalog",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/dev/endpoint-catalog/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -501,7 +519,9 @@
     },
     {
       "path": "/api/admin/funnel-step-questions/[id]",
-      "methods": [],
+      "methods": [
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnel-step-questions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -592,7 +612,9 @@
     },
     {
       "path": "/api/admin/funnel-steps/[id]",
-      "methods": [],
+      "methods": [
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnel-steps/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -640,6 +662,44 @@
         {
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
           "apiPath": "/api/admin/funnel-steps/${otherStep.id}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-steps/[id]/questions",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/funnel-steps/[id]/questions/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-steps/${addingQuestionStepId}/questions",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/admin/funnel-steps/[id]/questions/[questionId]",
+      "methods": [
+        "DELETE"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/funnel-steps/[id]/questions/[questionId]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/page.tsx",
+          "apiPath": "/api/admin/funnel-steps/${stepId}/questions/${questionId}",
           "kind": "fetch"
         }
       ],
@@ -727,7 +787,9 @@
     },
     {
       "path": "/api/admin/funnel-versions/[id]",
-      "methods": [],
+      "methods": [
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnel-versions/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -908,7 +970,10 @@
     },
     {
       "path": "/api/admin/funnel-versions/[id]/manifest",
-      "methods": [],
+      "methods": [
+        "GET",
+        "PUT"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnel-versions/[id]/manifest/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1089,7 +1154,9 @@
     },
     {
       "path": "/api/admin/funnels",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnels/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1401,7 +1468,7 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
-          "apiPath": "/api/admin/funnels/${funnelSlug}",
+          "apiPath": "/api/admin/funnels/${funnelId}",
           "kind": "fetch"
         },
         {
@@ -1460,7 +1527,10 @@
     },
     {
       "path": "/api/admin/funnels/[id]",
-      "methods": [],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/funnels/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1503,7 +1573,7 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
-          "apiPath": "/api/admin/funnels/${funnelSlug}",
+          "apiPath": "/api/admin/funnels/${funnelId}",
           "kind": "fetch"
         },
         {
@@ -1608,7 +1678,7 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/funnels/[identifier]/editor/page.tsx",
-          "apiPath": "/api/admin/funnels/${funnelSlug}",
+          "apiPath": "/api/admin/funnels/${funnelId}",
           "kind": "fetch"
         },
         {
@@ -1687,7 +1757,10 @@
     },
     {
       "path": "/api/admin/kpi-thresholds",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/kpi-thresholds/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1744,7 +1817,10 @@
     },
     {
       "path": "/api/admin/kpi-thresholds/[id]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/kpi-thresholds/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1805,7 +1881,9 @@
     },
     {
       "path": "/api/admin/navigation",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/admin/navigation/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1827,7 +1905,9 @@
     },
     {
       "path": "/api/admin/navigation",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/navigation/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1892,7 +1972,9 @@
     },
     {
       "path": "/api/admin/navigation/[role]",
-      "methods": [],
+      "methods": [
+        "PUT"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/navigation/[role]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -1948,7 +2030,10 @@
     },
     {
       "path": "/api/admin/notification-templates",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/notification-templates/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -2005,7 +2090,10 @@
     },
     {
       "path": "/api/admin/notification-templates/[id]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/notification-templates/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -2061,7 +2149,9 @@
     },
     {
       "path": "/api/admin/operational-settings-audit",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/operational-settings-audit/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -2169,7 +2259,10 @@
     },
     {
       "path": "/api/admin/reassessment-rules",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/reassessment-rules/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -2226,7 +2319,10 @@
     },
     {
       "path": "/api/admin/reassessment-rules/[id]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "PUT"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/admin/reassessment-rules/[id]/route.ts",
       "intent": null,
       "accessRole": "admin",
@@ -2390,7 +2486,9 @@
     },
     {
       "path": "/api/amy/triage",
-      "methods": [],
+      "methods": [
+        "POST"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/amy/triage/route.ts",
       "intent": null,
       "accessRole": "system",
@@ -2777,7 +2875,7 @@
       "file": "apps/rhythm-legacy/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 10,
+      "usedByCount": 11,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -2815,7 +2913,12 @@
           "kind": "fetch"
         },
         {
-          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         },
@@ -2835,11 +2938,13 @@
     },
     {
       "path": "/api/auth/callback",
-      "methods": [],
+      "methods": [
+        "POST"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 10,
+      "usedByCount": 11,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -2877,7 +2982,12 @@
           "kind": "fetch"
         },
         {
-          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         },
@@ -2903,7 +3013,7 @@
       "file": "apps/rhythm-studio-ui/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 10,
+      "usedByCount": 11,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -2941,7 +3051,12 @@
           "kind": "fetch"
         },
         {
-          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         },
@@ -2967,7 +3082,7 @@
       "file": "legacy/code/app/api/auth/callback/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 10,
+      "usedByCount": 11,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3005,7 +3120,12 @@
           "kind": "fetch"
         },
         {
-          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
+          "apiPath": "/api/auth/callback",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/callback",
           "kind": "fetch"
         },
@@ -3057,7 +3177,7 @@
       "file": "apps/rhythm-legacy/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 5,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3076,6 +3196,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         },
@@ -3090,11 +3220,13 @@
     },
     {
       "path": "/api/auth/resolve-role",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 5,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3113,6 +3245,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         },
@@ -3133,7 +3275,7 @@
       "file": "apps/rhythm-studio-ui/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 5,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3152,6 +3294,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         },
@@ -3172,7 +3324,7 @@
       "file": "legacy/code/app/api/auth/resolve-role/route.ts",
       "intent": null,
       "accessRole": "public",
-      "usedByCount": 5,
+      "usedByCount": 7,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -3191,6 +3343,16 @@
         },
         {
           "file": "apps/rhythm-studio-ui/app/clinician/ClinicianLayoutClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/components/StudioLoginClient.tsx",
+          "apiPath": "/api/auth/resolve-role",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/auth/resolve-role",
           "kind": "fetch"
         },
@@ -3240,7 +3402,10 @@
     },
     {
       "path": "/api/auth/signout",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/auth/signout/route.ts",
       "intent": null,
       "accessRole": "public",
@@ -6199,7 +6364,9 @@
     },
     {
       "path": "/api/patient-measures/export",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/patient-measures/export/route.ts",
       "intent": null,
       "accessRole": "patient",
@@ -6254,7 +6421,9 @@
     },
     {
       "path": "/api/patient-measures/history",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/patient-measures/history/route.ts",
       "intent": null,
       "accessRole": "patient",
@@ -6314,7 +6483,9 @@
     },
     {
       "path": "/api/patient-profiles",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/patient-profiles/route.ts",
       "intent": null,
       "accessRole": "patient",
@@ -6450,7 +6621,9 @@
     },
     {
       "path": "/api/patient/dashboard",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/patient/dashboard/route.ts",
       "intent": null,
       "accessRole": "patient",
@@ -6499,7 +6672,7 @@
       "file": "apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 3,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -6508,6 +6681,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         },
@@ -6522,11 +6700,13 @@
     },
     {
       "path": "/api/patient/onboarding-status",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-patient-ui/app/api/patient/onboarding-status/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 3,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -6535,6 +6715,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         },
@@ -6555,7 +6740,7 @@
       "file": "legacy/code/app/api/patient/onboarding-status/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 3,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/page.tsx",
@@ -6564,6 +6749,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/components/LoginPage.tsx",
+          "apiPath": "/api/patient/onboarding-status",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/page.tsx",
           "apiPath": "/api/patient/onboarding-status",
           "kind": "fetch"
         },
@@ -6667,7 +6857,10 @@
     },
     {
       "path": "/api/pre-screening-calls",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/pre-screening-calls/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -6801,7 +6994,9 @@
     },
     {
       "path": "/api/processing/jobs/[jobId]/download",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/processing/jobs/[jobId]/download/route.ts",
       "intent": null,
       "accessRole": "system",
@@ -7119,7 +7314,9 @@
     },
     {
       "path": "/api/review/[id]/decide",
-      "methods": [],
+      "methods": [
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/review/[id]/decide/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7184,7 +7381,9 @@
     },
     {
       "path": "/api/review/[id]/details",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/review/[id]/details/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7233,7 +7432,9 @@
     },
     {
       "path": "/api/review/queue",
-      "methods": [],
+      "methods": [
+        "GET"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/review/queue/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7282,7 +7483,10 @@
     },
     {
       "path": "/api/shipments",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/shipments/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7349,7 +7553,10 @@
     },
     {
       "path": "/api/shipments/[id]",
-      "methods": [],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/shipments/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7434,7 +7641,10 @@
     },
     {
       "path": "/api/support-cases",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/support-cases/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7492,7 +7702,11 @@
     },
     {
       "path": "/api/support-cases/[id]",
-      "methods": [],
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/support-cases/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7549,7 +7763,9 @@
     },
     {
       "path": "/api/support-cases/[id]/escalate",
-      "methods": [],
+      "methods": [
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/support-cases/[id]/escalate/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7660,7 +7876,10 @@
     },
     {
       "path": "/api/tasks",
-      "methods": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/tasks/route.ts",
       "intent": null,
       "accessRole": "clinician",
@@ -7886,7 +8105,9 @@
     },
     {
       "path": "/api/tasks/[id]",
-      "methods": [],
+      "methods": [
+        "PATCH"
+      ],
       "file": "apps/rhythm-studio-ui/app/api/tasks/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
