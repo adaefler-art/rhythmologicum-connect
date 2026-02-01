@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Button, Badge } from '@/lib/ui'
 import { Plus, Play, Pause, CheckCircle, Archive, RefreshCw } from 'lucide-react'
 import type { Database } from '@/lib/types/database.types'
@@ -40,7 +40,7 @@ export function FunnelsSection({ patientId }: FunnelsSectionProps) {
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const loadFunnels = async () => {
+  const loadFunnels = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -59,11 +59,11 @@ export function FunnelsSection({ patientId }: FunnelsSectionProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])
 
   useEffect(() => {
     loadFunnels()
-  }, [patientId])
+  }, [loadFunnels])
 
   const handleStatusChange = async (funnelId: string, newStatus: 'active' | 'paused' | 'completed') => {
     try {

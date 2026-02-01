@@ -134,7 +134,11 @@ export async function PATCH(
 		}
 
 		// Build update object
-		const updateData: any = {}
+		const updateData: {
+			status?: 'active' | 'paused' | 'completed' | 'archived'
+			completed_at?: string | null
+			active_version_id?: string
+		} = {}
 
 		if (status) {
 			updateData.status = status

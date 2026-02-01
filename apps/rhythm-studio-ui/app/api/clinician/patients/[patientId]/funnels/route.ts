@@ -120,7 +120,7 @@ export async function GET(
 			)
 		}
 
-		// Transform data to flatten nested objects
+		// Transform data to flatten nested objects and handle array responses safely
 		const transformedFunnels = (patientFunnels ?? []).map((pf) => ({
 			id: pf.id,
 			patient_id: pf.patient_id,
@@ -131,8 +131,12 @@ export async function GET(
 			completed_at: pf.completed_at,
 			created_at: pf.created_at,
 			updated_at: pf.updated_at,
-			funnel: Array.isArray(pf.funnels_catalog) ? pf.funnels_catalog[0] : pf.funnels_catalog,
-			version: Array.isArray(pf.funnel_versions) ? pf.funnel_versions[0] : pf.funnel_versions,
+			funnel: (Array.isArray(pf.funnels_catalog) 
+				? pf.funnels_catalog[0] 
+				: pf.funnels_catalog) ?? null,
+			version: (Array.isArray(pf.funnel_versions) 
+				? pf.funnel_versions[0] 
+				: pf.funnel_versions) ?? null,
 		}))
 
 		return NextResponse.json(
