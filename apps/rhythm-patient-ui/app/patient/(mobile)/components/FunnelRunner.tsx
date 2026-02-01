@@ -494,7 +494,7 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
             <div key={question.id}>
               <QuestionRenderer
                 question={question}
-                value={answers[question.id]}
+                value={answers[question.id] as string | number | boolean | string[] | undefined}
                 onChange={(value) => handleAnswerChange(question.id, value)}
                 error={validationErrors.find((err) => err.includes(question.label))}
               />
