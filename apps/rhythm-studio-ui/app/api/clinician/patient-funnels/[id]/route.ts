@@ -158,9 +158,9 @@ export async function PATCH(
 			// Verify version exists and is published
 			const { data: versionData, error: versionError } = await supabase
 				.from('funnel_versions')
-				.select('id, version_number, status')
+				.select('id, version, status')
 				.eq('id', active_version_id)
-				.eq('funnel_catalog_id', currentFunnel.funnel_id)
+				.eq('funnel_id', currentFunnel.funnel_id)
 				.single()
 
 			if (versionError || !versionData) {
