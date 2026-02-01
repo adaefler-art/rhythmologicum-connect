@@ -3962,7 +3962,7 @@
       "file": "apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 22,
+      "usedByCount": 26,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -4011,6 +4011,26 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
@@ -4086,7 +4106,7 @@
       "file": "apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 22,
+      "usedByCount": 26,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -4135,6 +4155,26 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },
@@ -4210,7 +4250,7 @@
       "file": "legacy/code/app/api/funnels/[slug]/assessments/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 22,
+      "usedByCount": 26,
       "usedBy": [
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/cardiovascular-age-lifecycle.test.ts",
@@ -4259,6 +4299,26 @@
         },
         {
           "file": "apps/rhythm-legacy/app/api/funnels/__tests__/createAssessment.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
+          "apiPath": "/api/funnels/stress-assessment/assessments",
+          "kind": "request"
+        },
+        {
+          "file": "apps/rhythm-legacy/app/api/funnels/__tests__/e74-7-idempotency.test.ts",
           "apiPath": "/api/funnels/stress-assessment/assessments",
           "kind": "request"
         },

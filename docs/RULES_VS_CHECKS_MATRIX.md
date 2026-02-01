@@ -80,6 +80,17 @@ This document maps validation rules to their check implementations for the Canon
 | R-E74.6-007 | API endpoints require authentication | `API_ENDPOINT_MISSING` | All patient_funnels API endpoints check auth | ✅ Implemented |
 | R-E74.6-008 | API endpoints require staff role (clinician/admin/nurse) | `API_ROLE_CHECK_MISSING` | All patient_funnels API endpoints check role | ✅ Implemented |
 
+### E74.7: Start/Resume Idempotency
+
+| Rule ID | Description | Error Code | Check Implementation | Status |
+|---------|-------------|------------|---------------------|---------|
+| R-E74.7-001 | ONE in-progress assessment per patient+funnel | `MISSING_UNIQUE_INDEX` | Unique partial index "idx_assessments_one_in_progress_per_patient_funnel" | ✅ Implemented |
+| R-E74.7-002 | Efficient lookup index for in-progress assessments | `MISSING_LOOKUP_INDEX` | Index "idx_assessments_patient_in_progress" | ✅ Implemented |
+| R-E74.7-003 | API returns existing assessment by default (RESUME_OR_CREATE) | `API_NO_RESUME_LOGIC` | POST /api/funnels/[slug]/assessments checks for existing assessment | ✅ Implemented |
+| R-E74.7-004 | API supports forceNew parameter to create new assessment | `API_NO_FORCE_NEW` | POST /api/funnels/[slug]/assessments accepts forceNew parameter | ✅ Implemented |
+| R-E74.7-005 | API completes old assessment when forceNew=true | `API_NO_COMPLETE_OLD` | POST /api/funnels/[slug]/assessments updates old assessment to completed | ✅ Implemented |
+| R-E74.7-006 | Parallel requests don't create duplicate assessments | `API_NO_RACE_PROTECTION` | Unique constraint + query ordering prevents race conditions | ✅ Implemented |
+
 ## Check Implementations
 
 ### E74.1: Runtime Validators
@@ -128,6 +139,14 @@ This document maps validation rules to their check implementations for the Canon
 | `checkTriggers()` | R-E74.6-004, R-E74.6-005 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies audit logging and updated_at triggers |
 | `checkStatusConstraint()` | R-E74.6-006 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies status constraint allows only valid values |
 | `checkAPIEndpoints()` | R-E74.6-007, R-E74.6-008 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies API endpoints exist and have proper auth/role checks |
+
+### E74.7: Start/Resume Idempotency Checks
+
+| Check | Rule ID(s) | Location | Description |
+|-------|-----------|----------|-------------|
+| `checkDatabaseConstraints()` | R-E74.7-001, R-E74.7-002 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies unique index and lookup index for idempotency |
+| `checkAPIImplementation()` | R-E74.7-003, R-E74.7-004, R-E74.7-005, R-E74.7-006 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies API has RESUME_OR_CREATE logic and forceNew support |
+| `checkMigration()` | R-E74.7-001 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies migration file creates required index |
 
 ## Error Code Reference
 
@@ -221,6 +240,19 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 | `API_ENDPOINT_MISSING` | R-E74.6-007 | Required API endpoint file not found |
 | `API_ROLE_CHECK_MISSING` | R-E74.6-008 | API endpoint missing role authorization check |
 
+### E74.7: Start/Resume Idempotency Errors
+
+All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
+
+| Error Code | Rule ID | Description |
+|------------|---------|-------------|
+| `MISSING_UNIQUE_INDEX` | R-E74.7-001 | Unique partial index on assessments(patient_id, funnel) WHERE completed_at IS NULL not found |
+| `MISSING_LOOKUP_INDEX` | R-E74.7-002 | Lookup index idx_assessments_patient_in_progress not found |
+| `API_NO_RESUME_LOGIC` | R-E74.7-003 | API doesn't check for existing in-progress assessment before creating new one |
+| `API_NO_FORCE_NEW` | R-E74.7-004 | API doesn't support forceNew parameter |
+| `API_NO_COMPLETE_OLD` | R-E74.7-005 | API doesn't complete old assessment when forceNew=true |
+| `API_NO_RACE_PROTECTION` | R-E74.7-006 | API doesn't prevent race conditions in parallel requests |
+
 ## Audit Results
 
 **Last Updated:** 2026-02-01
@@ -233,8 +265,9 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 - **Total rules (E74.2):** 8
 - **Total rules (E74.3):** 10 (1 deferred)
 - **Total rules (E74.6):** 8
-- **Total rules (E74 combined):** 44
-- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 4 (E74.6 checks) + 4 (CI scripts)
+- **Total rules (E74.7):** 6
+- **Total rules (E74 combined):** 50
+- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 4 (E74.6 checks) + 3 (E74.7 checks) + 5 (CI scripts)
 - **Coverage:** 100%
 
 ### Scope Verification
@@ -246,6 +279,7 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.2: Migration rules (8 rules) - Implemented
 - ✅ E74.3: Studio editor rules (10 rules) - Implemented (1 deferred)
 - ✅ E74.6: Patient funnels lifecycle rules (8 rules) - Implemented
+- ✅ E74.7: Start/resume idempotency rules (6 rules) - Implemented
 
 ### Implementation Status
 

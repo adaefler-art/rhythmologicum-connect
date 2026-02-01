@@ -153,9 +153,9 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/documents/upload | POST | system |  | 0 | legacy/code/app/api/documents/upload/route.ts |
 | /api/escalation/log-click | POST | patient |  | 0 | apps/rhythm-legacy/app/api/escalation/log-click/route.ts |
 | /api/escalation/log-click | POST | patient |  | 0 | legacy/code/app/api/escalation/log-click/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 22 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 22 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts |
-| /api/funnels/[slug]/assessments | POST | patient |  | 22 | legacy/code/app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 26 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 26 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/route.ts |
+| /api/funnels/[slug]/assessments | POST | patient |  | 26 | legacy/code/app/api/funnels/[slug]/assessments/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 16 | apps/rhythm-legacy/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 16 | apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
 | /api/funnels/[slug]/assessments/[assessmentId] | GET | patient |  | 16 | legacy/code/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts |
