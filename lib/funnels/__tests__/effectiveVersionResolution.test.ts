@@ -7,6 +7,10 @@
  */
 
 import { loadFunnelVersionWithClient } from '../loadFunnelVersion'
+import {
+  createMinimalContentManifest,
+  createMinimalQuestionnaireConfig,
+} from '@/lib/fixtures/funnelManifestFixtures'
 
 type QueryResult<T> = Promise<{ data: T | null; error: any }>
 
@@ -48,28 +52,8 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
       id: 'version-active',
       funnel_id: 'funnel-1',
       version: '2.0.0',
-      questionnaire_config: {
-        schema_version: 'v1',
-        version: '1.0',
-        steps: [
-          {
-            id: 'step-1',
-            title: 'Grunddaten',
-            questions: [
-              {
-                id: 'q1-age',
-                key: 'age',
-                type: 'number',
-                label: 'Wie alt sind Sie?',
-                required: true,
-              },
-            ],
-          },
-        ],
-      },
-      content_manifest: {
-        schema_version: 'v1',
-        version: '1.0',
+      questionnaire_config: createMinimalQuestionnaireConfig(),
+      content_manifest: createMinimalContentManifest({
         pages: [
           {
             slug: 'intro',
@@ -85,7 +69,7 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
             ],
           },
         ],
-      },
+      }),
       algorithm_bundle_version: 'v2',
       prompt_version: '2.0',
       is_default: false,
@@ -154,28 +138,8 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
       id: 'version-default',
       funnel_id: 'funnel-1',
       version: '1.0.0',
-      questionnaire_config: {
-        schema_version: 'v1',
-        version: '1.0',
-        steps: [
-          {
-            id: 'step-1',
-            title: 'Grunddaten',
-            questions: [
-              {
-                id: 'q1-age',
-                key: 'age',
-                type: 'number',
-                label: 'Wie alt sind Sie?',
-                required: true,
-              },
-            ],
-          },
-        ],
-      },
-      content_manifest: {
-        schema_version: 'v1',
-        version: '1.0',
+      questionnaire_config: createMinimalQuestionnaireConfig(),
+      content_manifest: createMinimalContentManifest({
         pages: [
           {
             slug: 'intro',
@@ -191,7 +155,7 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
             ],
           },
         ],
-      },
+      }),
       algorithm_bundle_version: 'v1',
       prompt_version: '1.0',
       is_default: true,
