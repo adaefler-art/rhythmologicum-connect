@@ -1,8 +1,14 @@
 # E74: Rules vs Checks Matrix
 
+**Last Updated:** 2026-02-01 (E74.9)  
+**Status:** Canonical - All rules have checks, all checks reference rules  
+**Coverage:** 100% (50 rules, 50 checks)
+
 This document maps validation rules to their check implementations for the Canonical Funnel Definition Schema v1 and related migrations.
 
 **Purpose:** Ensure every rule has a check implementation and every check references a rule ID.
+
+**Guardrail (E74.9):** Every rule has a check implementation (Script/CI) and every check references a rule-ID. Output of each check must include "violates R-XYZ" format for traceability.
 
 ## Validation Rules
 
@@ -349,3 +355,21 @@ When adding a new validation rule:
 - Schema version is enforced at the contract level (Zod literal)
 - Referential integrity is checked after schema validation
 - CI check runs against database state, not file system
+
+## Related Documentation
+
+For comprehensive documentation on the funnel system, see:
+
+- **[/docs/funnels/README.md](/docs/funnels/README.md)** - Documentation index and quick reference
+- **[/docs/funnels/DEFINITION_V1.md](/docs/funnels/DEFINITION_V1.md)** - Canonical Funnel Definition Schema v1
+- **[/docs/funnels/START_RESUME_SEMANTICS.md](/docs/funnels/START_RESUME_SEMANTICS.md)** - Assessment start/resume behavior
+- **[/docs/funnels/STUDIO_PUBLISH_GATES.md](/docs/funnels/STUDIO_PUBLISH_GATES.md)** - Publishing workflow and gates
+- **[/docs/funnels/TEST_E2E.md](/docs/funnels/TEST_E2E.md)** - End-to-end manual test script
+
+For implementation details:
+
+- **[/docs/E74_1_IMPLEMENTATION_SUMMARY.md](/docs/E74_1_IMPLEMENTATION_SUMMARY.md)** - E74.1 implementation
+- **[/docs/E74_2_IMPLEMENTATION_SUMMARY.md](/docs/E74_2_IMPLEMENTATION_SUMMARY.md)** - E74.2 implementation
+- **[/docs/E74_3_IMPLEMENTATION_SUMMARY.md](/docs/E74_3_IMPLEMENTATION_SUMMARY.md)** - E74.3 implementation
+- **[/E74.7-COMPLETE.md](/E74.7-COMPLETE.md)** - E74.7 completion summary
+- **[/E74.7-SUMMARY.md](/E74.7-SUMMARY.md)** - E74.7 summary
