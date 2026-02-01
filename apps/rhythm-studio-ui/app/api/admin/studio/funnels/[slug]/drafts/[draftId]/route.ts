@@ -227,8 +227,8 @@ export async function PUT(
       const manifestToValidate = contentManifest ?? currentDraft.content_manifest
 
       validationResult = validateFunnelVersion({
-        questionnaireConfig: configToValidate,
-        contentManifest: manifestToValidate,
+        questionnaire_config: configToValidate,
+        content_manifest: manifestToValidate,
       })
 
       updates.validation_errors = validationResult.errors

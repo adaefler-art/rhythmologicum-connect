@@ -6,7 +6,14 @@
 -- =============================================================================
 
 -- Add status enum for funnel versions
-CREATE TYPE funnel_version_status AS ENUM ('draft', 'published', 'archived');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type WHERE typname = 'funnel_version_status'
+  ) THEN
+    CREATE TYPE funnel_version_status AS ENUM ('draft', 'published', 'archived');
+  END IF;
+END $$;
 
 -- Add status column to funnel_versions if not exists
 DO $$
