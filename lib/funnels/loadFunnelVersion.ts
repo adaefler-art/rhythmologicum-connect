@@ -24,6 +24,11 @@ import {
   type FunnelContentManifest,
 } from '@/lib/contracts/funnelManifest'
 import { getCanonicalFunnelSlug } from '@/lib/contracts/registry'
+import {
+  validateQuestionnaireConfig as validateQuestionnaireConfigV1,
+  validateContentManifest as validateContentManifestV1,
+  formatValidationErrors,
+} from '@/lib/validators/funnelDefinition'
 
 // ============================================================
 // Type Definitions
@@ -335,6 +340,7 @@ export async function loadFunnelVersionWithClient(
 
 /**
  * Parses and validates a funnel version row from the database
+ * E74.1: Now uses comprehensive v1 validator with deterministic error codes
  * 
  * @param row - Raw funnel version data
  * @returns Validated funnel version with parsed manifest
@@ -342,10 +348,24 @@ export async function loadFunnelVersionWithClient(
  */
 function parseAndValidateFunnelVersion(row: FunnelVersionRow): LoadedFunnelVersion {
   try {
-    // Parse and validate questionnaire config
-    const questionnaireConfig = parseQuestionnaireConfig(row.questionnaire_config)
+    // E74.1: Validate questionnaire config with comprehensive validator
+    const questionnaireValidation = validateQuestionnaireConfigV1(row.questionnaire_config)
+    if (!questionnaireValidation.valid) {
+      throw new Error(
+        `Questionnaire config validation failed:\n${formatValidationErrors(questionnaireValidation.errors)}`
+      )
+    }
 
-    // Parse and validate content manifest
+    // E74.1: Validate content manifest with comprehensive validator
+    const manifestValidation = validateContentManifestV1(row.content_manifest)
+    if (!manifestValidation.valid) {
+      throw new Error(
+        `Content manifest validation failed:\n${formatValidationErrors(manifestValidation.errors)}`
+      )
+    }
+
+    // Parse with Zod for type safety (already validated)
+    const questionnaireConfig = parseQuestionnaireConfig(row.questionnaire_config)
     const contentManifest = parseContentManifest(row.content_manifest)
 
     // Construct complete manifest

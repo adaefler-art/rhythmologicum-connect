@@ -48,8 +48,44 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
       id: 'version-active',
       funnel_id: 'funnel-1',
       version: '2.0.0',
-      questionnaire_config: { version: '1.0', steps: [] },
-      content_manifest: { version: '1.0', pages: [] },
+      questionnaire_config: {
+        schema_version: 'v1',
+        version: '1.0',
+        steps: [
+          {
+            id: 'step-1',
+            title: 'Grunddaten',
+            questions: [
+              {
+                id: 'q1-age',
+                key: 'age',
+                type: 'number',
+                label: 'Wie alt sind Sie?',
+                required: true,
+              },
+            ],
+          },
+        ],
+      },
+      content_manifest: {
+        schema_version: 'v1',
+        version: '1.0',
+        pages: [
+          {
+            slug: 'intro',
+            title: 'Willkommen',
+            sections: [
+              {
+                key: 'hero',
+                type: 'hero',
+                content: {
+                  title: 'Stress Assessment',
+                },
+              },
+            ],
+          },
+        ],
+      },
       algorithm_bundle_version: 'v2',
       prompt_version: '2.0',
       is_default: false,
@@ -118,8 +154,44 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
       id: 'version-default',
       funnel_id: 'funnel-1',
       version: '1.0.0',
-      questionnaire_config: { version: '1.0', steps: [] },
-      content_manifest: { version: '1.0', pages: [] },
+      questionnaire_config: {
+        schema_version: 'v1',
+        version: '1.0',
+        steps: [
+          {
+            id: 'step-1',
+            title: 'Grunddaten',
+            questions: [
+              {
+                id: 'q1-age',
+                key: 'age',
+                type: 'number',
+                label: 'Wie alt sind Sie?',
+                required: true,
+              },
+            ],
+          },
+        ],
+      },
+      content_manifest: {
+        schema_version: 'v1',
+        version: '1.0',
+        pages: [
+          {
+            slug: 'intro',
+            title: 'Willkommen',
+            sections: [
+              {
+                key: 'hero',
+                type: 'hero',
+                content: {
+                  title: 'Stress Assessment',
+                },
+              },
+            ],
+          },
+        ],
+      },
       algorithm_bundle_version: 'v1',
       prompt_version: '1.0',
       is_default: true,

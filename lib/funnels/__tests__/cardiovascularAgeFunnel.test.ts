@@ -98,6 +98,7 @@ describe('Cardiovascular Age Funnel - Definition Loading', () => {
     algorithm_bundle_version: 'v0.5.0',
     prompt_version: '1.0',
     questionnaire_config: {
+      schema_version: 'v1',
       version: '1.0',
       steps: [
         {
@@ -106,7 +107,18 @@ describe('Cardiovascular Age Funnel - Definition Loading', () => {
           description: 'Ihre persönlichen Daten',
           questions: [
             { id: 'q1-age', key: 'age', type: 'number', label: 'Wie alt sind Sie?', required: true },
-            { id: 'q2-gender', key: 'gender', type: 'radio', label: 'Geschlecht', required: true },
+            {
+              id: 'q2-gender',
+              key: 'gender',
+              type: 'radio',
+              label: 'Geschlecht',
+              required: true,
+              options: [
+                { value: 'male', label: 'Männlich' },
+                { value: 'female', label: 'Weiblich' },
+                { value: 'other', label: 'Divers' },
+              ],
+            },
           ],
         },
         {
@@ -114,12 +126,41 @@ describe('Cardiovascular Age Funnel - Definition Loading', () => {
           title: 'Gesundheitsfaktoren',
           description: 'Aktuelle Gesundheitsindikatoren',
           questions: [
-            { id: 'q3-blood-pressure', key: 'blood_pressure', type: 'radio', label: 'Blutdruck-Status', required: true },
+            {
+              id: 'q3-blood-pressure',
+              key: 'blood_pressure',
+              type: 'radio',
+              label: 'Blutdruck-Status',
+              required: true,
+              options: [
+                { value: 'normal', label: 'Normal' },
+                { value: 'elevated', label: 'Erhöht' },
+                { value: 'high', label: 'Hoch' },
+              ],
+            },
           ],
         },
       ],
     },
-    content_manifest: { version: '1.0', pages: [] },
+    content_manifest: {
+      schema_version: 'v1',
+      version: '1.0',
+      pages: [
+        {
+          slug: 'intro',
+          title: 'Willkommen',
+          sections: [
+            {
+              key: 'hero',
+              type: 'hero',
+              content: {
+                title: 'Cardiovascular Age Assessment',
+              },
+            },
+          ],
+        },
+      ],
+    },
     created_at: '2026-01-01T00:00:00Z',
     updated_at: null,
   }
