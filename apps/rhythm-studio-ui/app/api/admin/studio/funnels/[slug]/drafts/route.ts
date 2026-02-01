@@ -96,7 +96,7 @@ export async function POST(
     if (!versionId) {
       return jsonError(
         400,
-        ErrorCode.VALIDATION_ERROR,
+        ErrorCode.VALIDATION_FAILED,
         'No source version specified and funnel has no default version',
         requestId,
       )
