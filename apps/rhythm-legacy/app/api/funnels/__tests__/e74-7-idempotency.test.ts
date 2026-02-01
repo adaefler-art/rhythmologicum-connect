@@ -281,6 +281,17 @@ describe('E74.7: Start/Resume Idempotency', () => {
           }
         }
 
+        if (table === 'funnels') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          }
+        }
+
         if (table === 'assessments') {
           // First call: check for existing
           if (!updateCalled) {
@@ -328,6 +339,13 @@ describe('E74.7: Start/Resume Idempotency', () => {
       }
 
       mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase)
+
+      mockLoadFunnelWithClient.mockResolvedValue({
+        id: 'catalog-funnel-id',
+        slug: 'stress-assessment',
+        title: 'Stress Assessment',
+        isActive: true,
+      })
 
       mockLoadFunnelVersionWithClient.mockResolvedValue({
         manifest: {
