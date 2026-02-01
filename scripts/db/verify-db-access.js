@@ -35,6 +35,7 @@ const ALLOWED_DIRECT_USAGE = [
 const ALLOWED_ADMIN_USAGE = [
   // API routes
   'app/api/admin/',
+  'apps/rhythm-studio-ui/app/api/admin/',
   'app/api/funnels/catalog/',
   'app/api/funnels/[slug]/content-pages/route.ts',  // Specific file only - content metadata
   'app/api/content-pages/',
