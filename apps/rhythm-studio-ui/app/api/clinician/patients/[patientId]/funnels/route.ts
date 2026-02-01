@@ -11,18 +11,18 @@
  * - Only staff in same org as patient can view
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 /**
  * GET /api/clinician/patients/[patientId]/funnels - List patient funnels
  */
 export async function GET(
-	request: Request,
-	{ params }: { params: { patientId: string } }
+	request: NextRequest,
+	{ params }: { params: Promise<{ patientId: string }> }
 ) {
 	try {
-		const { patientId } = params
+		const { patientId } = await params
 		const supabase = await createServerSupabaseClient()
     
 		// Auth check
