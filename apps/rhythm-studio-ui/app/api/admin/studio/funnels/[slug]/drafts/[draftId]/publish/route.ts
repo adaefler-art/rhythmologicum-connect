@@ -119,7 +119,7 @@ export async function POST(
       ) {
         return jsonError(
           400,
-          ErrorCode.VALIDATION_ERROR,
+          ErrorCode.VALIDATION_FAILED,
           'Cannot publish draft with validation errors. Run validation first.',
           requestId,
         )
