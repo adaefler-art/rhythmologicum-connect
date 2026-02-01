@@ -13,6 +13,7 @@
 
 -- Staff can insert patient funnels for patients in their org
 -- This allows clinicians to assign funnels to patients
+DROP POLICY IF EXISTS "Staff can insert org patient funnels" ON "public"."patient_funnels";
 CREATE POLICY "Staff can insert org patient funnels" 
 ON "public"."patient_funnels" 
 FOR INSERT 
@@ -45,6 +46,7 @@ WITH CHECK (
 
 -- Staff can update patient funnels for patients in their org
 -- This allows clinicians to change status, version, etc.
+DROP POLICY IF EXISTS "Staff can update org patient funnels" ON "public"."patient_funnels";
 CREATE POLICY "Staff can update org patient funnels" 
 ON "public"."patient_funnels" 
 FOR UPDATE 

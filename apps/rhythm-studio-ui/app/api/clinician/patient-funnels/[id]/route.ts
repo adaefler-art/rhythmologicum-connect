@@ -12,7 +12,7 @@
  * - Audit logging for all changes
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 type UpdateFunnelRequest = {
@@ -24,11 +24,11 @@ type UpdateFunnelRequest = {
  * PATCH /api/clinician/patient-funnels/[id] - Update patient funnel
  */
 export async function PATCH(
-	request: Request,
-	{ params }: { params: { id: string } }
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const { id } = params
+		const { id } = await params
 		const supabase = await createServerSupabaseClient()
     
 		// Auth check
