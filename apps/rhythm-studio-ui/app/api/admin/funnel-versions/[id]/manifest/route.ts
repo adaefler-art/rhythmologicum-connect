@@ -27,6 +27,7 @@ import { AUDIT_ACTION, AUDIT_ENTITY_TYPE, AUDIT_SOURCE } from '@/lib/contracts/r
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { ZodError } from 'zod'
 import { createHash } from 'crypto'
+import { validateContentManifest, formatValidationErrors } from '@/lib/validators/funnelDefinition'
 
 /**
  * UUID v4 regex pattern for strict validation
@@ -141,38 +142,39 @@ export async function GET(
 			return withRequestId(notFoundResponse('Funnel version'), requestId)
 		}
 
-		// Validate manifest structure
-		try {
-			const validatedManifest = FunnelContentManifestSchema.parse(version.content_manifest)
+		// E74.1: Validate manifest structure with comprehensive validator
+		const validationResult = validateContentManifest(version.content_manifest)
+		
+		if (!validationResult.valid) {
+			logError({
+				requestId,
+				operation: 'validate_manifest_get',
+				error: { validationErrors: validationResult.errors },
+				versionId,
+			})
 
+			// 422 for manifest validation
 			return withRequestId(
-				successResponse({
-					versionId: version.id,
-					funnelId: version.funnel_id,
-					version: version.version,
-					manifest: validatedManifest,
+				errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
+					errors: validationResult.errors,
+					formatted: formatValidationErrors(validationResult.errors),
 				}),
 				requestId,
 			)
-		} catch (error) {
-			if (error instanceof ZodError) {
-				logError({
-					requestId,
-					operation: 'validate_manifest_get',
-					error,
-					versionId,
-				})
-
-				// 422 for manifest validation
-				return withRequestId(
-					errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
-						issues: error.issues,
-					}),
-					requestId,
-				)
-			}
-			throw error
 		}
+
+		// Parse with Zod for type safety (already validated)
+		const validatedManifest = FunnelContentManifestSchema.parse(version.content_manifest)
+
+		return withRequestId(
+			successResponse({
+				versionId: version.id,
+				funnelId: version.funnel_id,
+				version: version.version,
+				manifest: validatedManifest,
+			}),
+			requestId,
+		)
 	} catch (error) {
 		logError({
 			requestId,
@@ -271,28 +273,29 @@ export async function PUT(
 			)
 		}
 
-		// Strict validation of manifest
-		let validatedManifest
-		try {
-			validatedManifest = FunnelContentManifestSchema.parse((body as { manifest: unknown }).manifest)
-		} catch (error) {
-			if (error instanceof ZodError) {
-				logError({
-					requestId,
-					operation: 'validate_manifest_put',
-					error,
-					versionId,
-				})
-				// 422 for manifest validation
-				return withRequestId(
-					errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
-						issues: error.issues,
-					}),
-					requestId,
-				)
-			}
-			throw error
+		// E74.1: Strict validation of manifest with comprehensive validator
+		const manifestData = (body as { manifest: unknown }).manifest
+		const validationResult = validateContentManifest(manifestData)
+		
+		if (!validationResult.valid) {
+			logError({
+				requestId,
+				operation: 'validate_manifest_put',
+				error: { validationErrors: validationResult.errors },
+				versionId,
+			})
+			// 422 for manifest validation - block publish with error list & codes
+			return withRequestId(
+				errorResponse(ErrorCode.VALIDATION_FAILED, 'Invalid manifest structure', 422, {
+					errors: validationResult.errors,
+					formatted: formatValidationErrors(validationResult.errors),
+				}),
+				requestId,
+			)
 		}
+
+		// Parse with Zod for type safety (already validated)
+		const validatedManifest = FunnelContentManifestSchema.parse(manifestData)
 
 		// Update manifest using admin client for audit trail
 		const adminClient = createAdminSupabaseClient()
