@@ -67,6 +67,54 @@ export const VALIDATION_ERROR_CODES = {
   DEF_INVALID_ASSET_URL: 'DEF_INVALID_ASSET_URL',
 } as const
 
+/**
+ * Error code to rule ID mapping for traceability
+ * Maps each validation error code to its corresponding rule in the RULES_VS_CHECKS_MATRIX
+ */
+export const ERROR_CODE_TO_RULE_ID: Record<ValidationErrorCode, string> = {
+  // Schema structure (R-E74-001, R-E74-002)
+  DEF_INVALID_SCHEMA: 'R-E74-002',
+  DEF_INVALID_SCHEMA_VERSION: 'R-E74-001',
+  DEF_MISSING_SCHEMA_VERSION: 'R-E74-001',
+  
+  // Step rules (R-E74-003, R-E74-004, R-E74-005, R-E74-006)
+  DEF_MISSING_STEPS: 'R-E74-003',
+  DEF_EMPTY_STEPS: 'R-E74-003',
+  DEF_MISSING_STEP_TITLE: 'R-E74-005',
+  DEF_MISSING_STEP_ID: 'R-E74-004',
+  DEF_DUPLICATE_STEP_ID: 'R-E74-004',
+  
+  // Question rules (R-E74-006, R-E74-007, R-E74-008, R-E74-009, R-E74-010, R-E74-011)
+  DEF_MISSING_QUESTIONS: 'R-E74-006',
+  DEF_EMPTY_QUESTIONS: 'R-E74-006',
+  DEF_MISSING_QUESTION_ID: 'R-E74-007',
+  DEF_DUPLICATE_QUESTION_ID: 'R-E74-007',
+  DEF_MISSING_QUESTION_KEY: 'R-E74-008',
+  DEF_DUPLICATE_QUESTION_KEY: 'R-E74-008',
+  DEF_MISSING_QUESTION_TYPE: 'R-E74-009',
+  DEF_INVALID_QUESTION_TYPE: 'R-E74-009',
+  DEF_MISSING_QUESTION_LABEL: 'R-E74-010',
+  DEF_MISSING_OPTIONS_FOR_CHOICE: 'R-E74-011',
+  DEF_EMPTY_OPTIONS_FOR_CHOICE: 'R-E74-011',
+  
+  // Conditional logic (R-E74-012, R-E74-013)
+  DEF_INVALID_CONDITIONAL_REFERENCE: 'R-E74-012',
+  DEF_CONDITIONAL_SELF_REFERENCE: 'R-E74-012',
+  DEF_CONDITIONAL_FORWARD_REFERENCE: 'R-E74-013',
+  
+  // Content manifest (R-E74-014, R-E74-015, R-E74-016, R-E74-017, R-E74-018)
+  DEF_MISSING_PAGES: 'R-E74-014',
+  DEF_EMPTY_PAGES: 'R-E74-014',
+  DEF_MISSING_PAGE_SLUG: 'R-E74-015',
+  DEF_DUPLICATE_PAGE_SLUG: 'R-E74-015',
+  DEF_INVALID_PAGE_SLUG: 'R-E74-015',
+  DEF_MISSING_PAGE_TITLE: 'R-E74-016',
+  DEF_MISSING_SECTIONS: 'R-E74-017',
+  DEF_EMPTY_SECTIONS: 'R-E74-017',
+  DEF_DUPLICATE_ASSET_KEY: 'R-E74-018',
+  DEF_INVALID_ASSET_URL: 'R-E74-018',
+}
+
 export type ValidationErrorCode = typeof VALIDATION_ERROR_CODES[keyof typeof VALIDATION_ERROR_CODES]
 
 /**
@@ -559,13 +607,15 @@ export function validateFunnelVersion(data: {
 }
 
 /**
- * Formats validation errors for display
+ * Formats validation errors for display with rule ID traceability
+ * Output format: "[ERROR_CODE] violates RULE_ID: path: message"
  */
 export function formatValidationErrors(errors: ValidationError[]): string {
   return errors
     .map((err) => {
       const pathStr = err.path ? err.path.join('.') : 'root'
-      return `[${err.code}] ${pathStr}: ${err.message}`
+      const ruleId = ERROR_CODE_TO_RULE_ID[err.code] || 'UNKNOWN'
+      return `[${err.code}] violates ${ruleId}: ${pathStr}: ${err.message}`
     })
     .join('\n')
 }
