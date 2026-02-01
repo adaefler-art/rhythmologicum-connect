@@ -1,5 +1,10 @@
 export {}
 
+import {
+  createMinimalContentManifest,
+  createMinimalQuestionnaireConfig,
+} from '@/lib/fixtures/funnelManifestFixtures'
+
 type SupabaseQueryResult<T> = { data: T | null; error: unknown }
 
 type MockSupabaseClient = {
@@ -108,9 +113,7 @@ describe('GET /api/funnels/[slug]/definition', () => {
         id: 'version-1',
         funnel_id: 'funnel-1',
         version: '1.0.0',
-        questionnaire_config: {
-          schema_version: 'v1',
-          version: '1.0',
+        questionnaire_config: createMinimalQuestionnaireConfig({
           steps: [
             {
               id: 'step-1',
@@ -129,10 +132,8 @@ describe('GET /api/funnels/[slug]/definition', () => {
               ],
             },
           ],
-        },
-        content_manifest: {
-          schema_version: 'v1',
-          version: '1.0',
+        }),
+        content_manifest: createMinimalContentManifest({
           pages: [
             {
               slug: 'intro',
@@ -149,7 +150,7 @@ describe('GET /api/funnels/[slug]/definition', () => {
             },
           ],
           assets: [],
-        },
+        }),
         algorithm_bundle_version: 'v1.0.0',
         prompt_version: '1.0',
         is_default: true,
