@@ -25,8 +25,8 @@ import {
   ErrorState,
 } from '@/lib/ui/mobile-v2'
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
-import { QuestionRenderer } from '@/lib/questionnaire/QuestionRenderer'
-import { evaluateConditionalLogic, getVisibleSteps } from '@/lib/questionnaire/conditionalLogic'
+import QuestionRenderer from '@/lib/questionnaire/QuestionRenderer'
+import { isStepVisible } from '@/lib/questionnaire/conditionalLogic'
 import type { FunnelQuestionnaireConfig, QuestionnaireStep, QuestionConfig, ConditionalLogic } from '@/lib/contracts/funnelManifest'
 import type { StartAssessmentResponseData, ResumeAssessmentResponseData } from '@/lib/api/contracts/patient'
 
@@ -461,11 +461,11 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
   }
 
   // Get visible questions based on conditional logic
+  // Note: Conditional logic is at step level, not question level
+  // All questions in a visible step are shown (unless they have their own conditional logic in future)
   const visibleQuestions = currentStep.questions.filter((question) => {
-    if (!question.validation?.required && currentStep.conditionalLogic) {
-      const isVisible = evaluateConditionalLogic(currentStep.conditionalLogic, answers)
-      return isVisible
-    }
+    // For now, show all questions in the current step
+    // Future: Add question-level conditional logic support
     return true
   })
 
