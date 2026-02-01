@@ -3574,6 +3574,57 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/clinician/patient-funnels",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient-funnels/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/clinician/patient-funnels/[id]",
+      "methods": [
+        "PATCH"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient-funnels/[id]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/FunnelsSection.tsx",
+          "apiPath": "/api/clinician/patient-funnels/${funnelId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/clinician/patients/[patientId]/funnels",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patients/[patientId]/funnels/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/FunnelsSection.tsx",
+          "apiPath": "/api/clinician/patients/${patientId}/funnels",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/consent/record",
       "methods": [
         "POST"
