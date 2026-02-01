@@ -81,6 +81,11 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | apps/rhythm-legacy/app/api/admin/reassessment-rules/[id]/route.ts |
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | apps/rhythm-studio-ui/app/api/admin/reassessment-rules/[id]/route.ts |
 | /api/admin/reassessment-rules/[id] | DELETE, PUT | admin |  | 1 | legacy/code/app/api/admin/reassessment-rules/[id]/route.ts |
+| /api/admin/studio/funnels/[slug]/drafts | GET, POST | admin |  | 0 | apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/route.ts |
+| /api/admin/studio/funnels/[slug]/drafts/[draftId] | DELETE, GET, PUT | admin |  | 0 | apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/route.ts |
+| /api/admin/studio/funnels/[slug]/drafts/[draftId]/publish | POST | admin |  | 0 | apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/publish/route.ts |
+| /api/admin/studio/funnels/[slug]/drafts/[draftId]/validate | POST | admin |  | 0 | apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate/route.ts |
+| /api/admin/studio/funnels/[slug]/history | GET | admin |  | 0 | apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/history/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | apps/rhythm-legacy/app/api/admin/usage/route.ts |
 | /api/admin/usage | GET | admin |  | 0 | legacy/code/app/api/admin/usage/route.ts |
 | /api/amy/chat | GET, POST | system |  | 3 | apps/rhythm-patient-ui/app/api/amy/chat/route.ts |

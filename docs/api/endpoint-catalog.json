@@ -2358,6 +2358,74 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/admin/studio/funnels/[slug]/drafts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PUT"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]/publish",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/publish/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/admin/studio/funnels/[slug]/history",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/history/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/admin/usage",
       "methods": [
         "GET"
