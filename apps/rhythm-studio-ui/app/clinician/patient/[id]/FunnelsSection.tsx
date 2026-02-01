@@ -210,7 +210,7 @@ export function FunnelsSection({ patientId }: FunnelsSectionProps) {
                 </p>
                 <p>
                   <span className="font-medium">Version:</span>{' '}
-                  v{funnel.version?.version_number ?? 'N/A'}
+                  v{funnel.version?.version ?? 'N/A'}
                 </p>
                 <p>
                   <span className="font-medium">Gestartet:</span>{' '}
