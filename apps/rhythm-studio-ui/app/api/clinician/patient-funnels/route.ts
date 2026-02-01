@@ -149,9 +149,9 @@ export async function POST(request: Request) {
 		// Verify version exists
 		const { data: versionData, error: versionError } = await supabase
 			.from('funnel_versions')
-			.select('id, version_number, status')
+			.select('id, version, status')
 			.eq('id', versionId)
-			.eq('funnel_catalog_id', funnel_id)
+			.eq('funnel_id', funnel_id)
 			.single()
 
 		if (versionError || !versionData) {
