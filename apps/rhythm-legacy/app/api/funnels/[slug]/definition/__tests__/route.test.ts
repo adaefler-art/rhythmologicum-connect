@@ -109,6 +109,7 @@ describe('GET /api/funnels/[slug]/definition', () => {
         funnel_id: 'funnel-1',
         version: '1.0.0',
         questionnaire_config: {
+          schema_version: 'v1',
           version: '1.0',
           steps: [
             {
