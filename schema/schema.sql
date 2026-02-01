@@ -2003,7 +2003,7 @@ CREATE TABLE IF NOT EXISTS "public"."funnel_versions" (
 ALTER TABLE "public"."funnel_versions" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."funnel_versions" IS 'V0.5: Versioned funnel configurations with JSONB for dynamic content';
+COMMENT ON TABLE "public"."funnel_versions" IS 'V0.5: Versioned funnel configurations with JSONB for dynamic content. E74.2: Backfilled canonical v1 schema_version on 2026-02-01.';
 
 
 
