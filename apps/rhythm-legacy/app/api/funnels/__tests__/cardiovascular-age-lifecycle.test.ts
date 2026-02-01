@@ -77,6 +77,9 @@ const createMockBuilder = (result: { data: unknown; error: unknown }) => ({
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
   in: jest.fn().mockReturnThis(),
+  is: jest.fn().mockReturnThis(),
+  order: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
   insert: jest.fn().mockReturnThis(),
   update: jest.fn().mockReturnThis(),
   upsert: jest.fn().mockReturnThis(),
@@ -122,16 +125,25 @@ describe('V061-I02: Cardiovascular Age Lifecycle', () => {
             })
           }
           if (table === 'assessments') {
-            return createMockBuilder({
-              data: {
-                id: assessmentId,
-                patient_id: patientId,
-                funnel: funnelSlug,
-                funnel_id: null,
-                status: 'in_progress',
-              },
-              error: null,
-            })
+            return {
+              select: jest.fn().mockReturnThis(),
+              eq: jest.fn().mockReturnThis(),
+              is: jest.fn().mockReturnThis(),
+              order: jest.fn().mockReturnThis(),
+              limit: jest.fn().mockReturnThis(),
+              maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+              insert: jest.fn().mockReturnThis(),
+              single: jest.fn().mockResolvedValue({
+                data: {
+                  id: assessmentId,
+                  patient_id: patientId,
+                  funnel: funnelSlug,
+                  funnel_id: null,
+                  status: 'in_progress',
+                },
+                error: null,
+              }),
+            }
           }
           return createMockBuilder({ data: null, error: null })
         }),
