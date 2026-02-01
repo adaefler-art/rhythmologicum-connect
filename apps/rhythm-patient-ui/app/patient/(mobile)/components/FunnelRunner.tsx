@@ -91,7 +91,7 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
   const assessmentIdFromQuery = searchParams.get('assessmentId')
 
   // Loading and error states
-  const [isInitializing, setIsInitializing] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(() => mode !== 'demo')
   const [error, setError] = useState<ErrorDetails | null>(null)
 
   // Funnel definition from database
@@ -264,7 +264,6 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
 
   useEffect(() => {
     if (mode === 'demo') {
-      setIsInitializing(false)
       return
     }
 
