@@ -181,8 +181,10 @@ export type QuestionnaireStep = z.infer<typeof QuestionnaireStepSchema>
 
 /**
  * Complete questionnaire configuration
+ * E74.1: Added schema_version for canonical contract versioning
  */
 export const FunnelQuestionnaireConfigSchema = z.object({
+  schema_version: z.literal('v1').default('v1'),
   version: z.string().default('1.0'),
   steps: z.array(QuestionnaireStepSchema),
   conditionalLogic: z.array(ConditionalLogicSchema).optional(),
@@ -304,6 +306,7 @@ export type ContentPage = z.infer<typeof ContentPageSchema>
  * Complete content manifest
  * 
  * V05-I06.2 Hardening: Added strict bounds
+ * E74.1: Added schema_version for canonical contract versioning
  * - version: max 20 chars
  * - pages: max 50 pages per manifest
  * - assets: max 200 assets per manifest
@@ -313,6 +316,7 @@ export type ContentPage = z.infer<typeof ContentPageSchema>
  */
 export const FunnelContentManifestSchema = z
   .object({
+    schema_version: z.literal('v1').default('v1'),
     version: z.string().max(20).default('1.0'),
     pages: z.array(ContentPageSchema).max(50),
     assets: z
