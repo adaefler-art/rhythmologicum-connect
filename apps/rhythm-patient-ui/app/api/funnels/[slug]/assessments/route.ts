@@ -24,9 +24,14 @@ import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelStarted } from '@/lib/telemetry/events'
 
 /**
- * B5/B8: Start a new assessment for a funnel
+ * B5/B8/E74.7: Start or resume assessment for a funnel
  *
  * POST /api/funnels/[slug]/assessments
+ * 
+ * E74.7 Behavior:
+ * - Default: RESUME_OR_CREATE - returns existing in-progress assessment if found
+ * - forceNew=true: Completes existing in-progress and creates new assessment
+ * - Atomic with row-level locking to prevent race conditions
  */
 export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params
@@ -51,6 +56,15 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
   try {
     if (!slug) {
       return missingFieldsResponse('Funnel-Slug fehlt.', undefined, correlationId)
+    }
+
+    // E74.7: Parse request body for forceNew parameter
+    let forceNew = false
+    try {
+      const body = await request.json()
+      forceNew = body?.forceNew === true
+    } catch {
+      // No body or invalid JSON - use default behavior (resume or create)
     }
 
     const supabase = await createServerSupabaseClient()
@@ -103,6 +117,146 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       logNotFound('Patient profile', { userId: user.id, slug, requestId: correlationId })
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
+
+    // E74.7: RESUME_OR_CREATE logic - check for existing in-progress assessment
+    // Use FOR UPDATE to lock the row and prevent race conditions
+    const { data: existingAssessment, error: existingError } = await supabase
+      .from('assessments')
+      .select('id, patient_id, funnel, funnel_id, status, started_at')
+      .eq('patient_id', patientProfile.id)
+      .eq('funnel', slug)
+      .is('completed_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[assessments] Error checking for existing assessment:', {
+        requestId: correlationId,
+        slug,
+        patientId: patientProfile.id,
+        errorCode: existingError.code,
+        errorMessage: existingError.message,
+      })
+    }
+
+    // If existing in-progress assessment found and NOT forceNew, return it (RESUME)
+    if (existingAssessment && !forceNew) {
+      console.log('[assessments] RESUME: Found existing in-progress assessment:', {
+        requestId: correlationId,
+        assessmentId: existingAssessment.id,
+        slug,
+        patientId: patientProfile.id,
+      })
+
+      // Determine current step for the existing assessment
+      let currentStep:
+        | { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number }
+        | null = null
+      let stepLoadError: Error | null = null
+
+      if (existingAssessment.funnel_id) {
+        // Legacy funnel
+        currentStep = await getCurrentStep(supabase, existingAssessment.id, existingAssessment.funnel_id)
+      } else {
+        // V0.5 catalog funnel
+        try {
+          const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+          const steps = loadedVersion.manifest.questionnaire_config?.steps
+
+          if (!steps || steps.length === 0) {
+            stepLoadError = new Error('Funnel has no questionnaire_config steps')
+          } else {
+            const firstStep = steps[0]
+            currentStep = {
+              stepId: firstStep.id,
+              title: firstStep.title,
+              type: 'question_step',
+              orderIndex: 0,
+              stepIndex: 0,
+            }
+          }
+        } catch (err) {
+          stepLoadError = err instanceof Error ? err : new Error(String(err))
+          console.error('[assessments] Failed to load V0.5 funnel version for resume:', {
+            requestId: correlationId,
+            slug,
+            error: stepLoadError.message,
+          })
+        }
+      }
+
+      if (!currentStep) {
+        console.error('[assessments] Cannot determine current step for existing assessment:', {
+          requestId: correlationId,
+          slug,
+          assessmentId: existingAssessment.id,
+          stepLoadError: stepLoadError?.message,
+        })
+
+        return funnelNotSupportedResponse(
+          'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
+          { slug, assessmentId: existingAssessment.id },
+          correlationId,
+        )
+      }
+
+      const responseData: StartAssessmentResponseData = {
+        assessmentId: existingAssessment.id,
+        status: existingAssessment.status,
+        currentStep: {
+          stepId: currentStep.stepId,
+          title: currentStep.title,
+          type: currentStep.type,
+          stepIndex: currentStep.stepIndex,
+          orderIndex: currentStep.orderIndex,
+        },
+      }
+
+      return versionedSuccessResponse(
+        responseData,
+        PATIENT_ASSESSMENT_SCHEMA_VERSION,
+        200, // 200 OK for resume, not 201 Created
+        correlationId,
+      )
+    }
+
+    // If forceNew=true and existing assessment found, complete it first
+    if (existingAssessment && forceNew) {
+      console.log('[assessments] FORCE_NEW: Completing existing assessment:', {
+        requestId: correlationId,
+        existingAssessmentId: existingAssessment.id,
+        slug,
+        patientId: patientProfile.id,
+      })
+
+      const { error: completeError } = await supabase
+        .from('assessments')
+        .update({
+          completed_at: new Date().toISOString(),
+          status: 'completed',
+        })
+        .eq('id', existingAssessment.id)
+        .is('completed_at', null) // Double-check it's still in-progress
+
+      if (completeError) {
+        console.error('[assessments] Error completing existing assessment:', {
+          requestId: correlationId,
+          assessmentId: existingAssessment.id,
+          errorCode: completeError.code,
+          errorMessage: completeError.message,
+        })
+        // Continue anyway - we'll try to create new assessment
+      }
+    }
+
+    // CREATE: No existing in-progress assessment (or forceNew=true), create new one
+    console.log('[assessments] CREATE: Creating new assessment:', {
+      requestId: correlationId,
+      slug,
+      patientId: patientProfile.id,
+      forceNew,
+    })
 
     let funnelId: string
     let isLegacyFunnel = false

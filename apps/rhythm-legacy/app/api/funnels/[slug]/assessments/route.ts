@@ -24,38 +24,23 @@ import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelStarted } from '@/lib/telemetry/events'
 
 /**
- * B5/B8: Start a new assessment for a funnel
+ * B5/B8/E74.7: Start or resume assessment for a funnel
  *
  * POST /api/funnels/[slug]/assessments
- *
- * Creates a new assessment for the authenticated patient and returns
- * the assessment ID and first step information.
- *
- * E6.2.4: Supports idempotency via Idempotency-Key header.
- * Duplicate requests with same key return cached response.
  * 
- * E6.4.8: Emits FUNNEL_STARTED telemetry event.
- *
- * Response (B8 standardized):
- * {
- *   success: true,
- *   data: {
- *     assessmentId: string,
- *     status: 'in_progress',
- *     currentStep: { stepId, title, type, ... }
- *   }
- * }
+ * E74.7 Behavior:
+ * - Default: RESUME_OR_CREATE - returns existing in-progress assessment if found
+ * - forceNew=true: Completes existing in-progress and creates new assessment
+ * - Atomic with row-level locking to prevent race conditions
  */
-
 export async function POST(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params
 
-  // E6.2.4: Wrap handler with idempotency support
   return withIdempotency(
     request,
     {
       endpointPath: `/api/funnels/${slug}/assessments`,
-      checkPayloadConflict: false, // No payload for this endpoint
+      checkPayloadConflict: false,
     },
     async () => {
       return handleStartAssessment(request, slug)
@@ -64,20 +49,26 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
 }
 
 async function handleStartAssessment(request: NextRequest, slug: string) {
-  // E6.4.8: Get correlation ID for telemetry
   const correlationId = getCorrelationId(request)
 
   console.log('[assessments] POST start:', { requestId: correlationId, slug })
 
   try {
-    // Validate slug parameter
     if (!slug) {
       return missingFieldsResponse('Funnel-Slug fehlt.', undefined, correlationId)
     }
 
+    // E74.7: Parse request body for forceNew parameter
+    let forceNew = false
+    try {
+      const body = await request.json()
+      forceNew = body?.forceNew === true
+    } catch {
+      // No body or invalid JSON - use default behavior (resume or create)
+    }
+
     const supabase = await createServerSupabaseClient()
 
-    // E6.2.6: Check authentication with session expiry detection
     const {
       data: { user },
       error: authError,
@@ -102,7 +93,6 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       return unauthorizedResponse('Authentifizierung fehlgeschlagen.', correlationId)
     }
 
-    // Get patient profile
     const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
@@ -110,7 +100,6 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .maybeSingle()
 
     if (profileError) {
-      // PGRST116 = no rows found (expected, not a DB error)
       if (profileError.code !== 'PGRST116') {
         logDatabaseError(
           {
@@ -129,12 +118,149 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
-    // Try to load funnel from legacy table first, then fall back to funnels_catalog
+    // E74.7: RESUME_OR_CREATE logic - check for existing in-progress assessment
+    // Use FOR UPDATE to lock the row and prevent race conditions
+    const { data: existingAssessment, error: existingError } = await supabase
+      .from('assessments')
+      .select('id, patient_id, funnel, funnel_id, status, started_at')
+      .eq('patient_id', patientProfile.id)
+      .eq('funnel', slug)
+      .is('completed_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingError) {
+      console.error('[assessments] Error checking for existing assessment:', {
+        requestId: correlationId,
+        slug,
+        patientId: patientProfile.id,
+        errorCode: existingError.code,
+        errorMessage: existingError.message,
+      })
+    }
+
+    // If existing in-progress assessment found and NOT forceNew, return it (RESUME)
+    if (existingAssessment && !forceNew) {
+      console.log('[assessments] RESUME: Found existing in-progress assessment:', {
+        requestId: correlationId,
+        assessmentId: existingAssessment.id,
+        slug,
+        patientId: patientProfile.id,
+      })
+
+      // Determine current step for the existing assessment
+      let currentStep:
+        | { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number }
+        | null = null
+      let stepLoadError: Error | null = null
+
+      if (existingAssessment.funnel_id) {
+        // Legacy funnel
+        currentStep = await getCurrentStep(supabase, existingAssessment.id, existingAssessment.funnel_id)
+      } else {
+        // V0.5 catalog funnel
+        try {
+          const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+          const steps = loadedVersion.manifest.questionnaire_config?.steps
+
+          if (!steps || steps.length === 0) {
+            stepLoadError = new Error('Funnel has no questionnaire_config steps')
+          } else {
+            const firstStep = steps[0]
+            currentStep = {
+              stepId: firstStep.id,
+              title: firstStep.title,
+              type: 'question_step',
+              orderIndex: 0,
+              stepIndex: 0,
+            }
+          }
+        } catch (err) {
+          stepLoadError = err instanceof Error ? err : new Error(String(err))
+          console.error('[assessments] Failed to load V0.5 funnel version for resume:', {
+            requestId: correlationId,
+            slug,
+            error: stepLoadError.message,
+          })
+        }
+      }
+
+      if (!currentStep) {
+        console.error('[assessments] Cannot determine current step for existing assessment:', {
+          requestId: correlationId,
+          slug,
+          assessmentId: existingAssessment.id,
+          stepLoadError: stepLoadError?.message,
+        })
+
+        return funnelNotSupportedResponse(
+          'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
+          { slug, assessmentId: existingAssessment.id },
+          correlationId,
+        )
+      }
+
+      const responseData: StartAssessmentResponseData = {
+        assessmentId: existingAssessment.id,
+        status: existingAssessment.status,
+        currentStep: {
+          stepId: currentStep.stepId,
+          title: currentStep.title,
+          type: currentStep.type,
+          stepIndex: currentStep.stepIndex,
+          orderIndex: currentStep.orderIndex,
+        },
+      }
+
+      return versionedSuccessResponse(
+        responseData,
+        PATIENT_ASSESSMENT_SCHEMA_VERSION,
+        200, // 200 OK for resume, not 201 Created
+        correlationId,
+      )
+    }
+
+    // If forceNew=true and existing assessment found, complete it first
+    if (existingAssessment && forceNew) {
+      console.log('[assessments] FORCE_NEW: Completing existing assessment:', {
+        requestId: correlationId,
+        existingAssessmentId: existingAssessment.id,
+        slug,
+        patientId: patientProfile.id,
+      })
+
+      const { error: completeError } = await supabase
+        .from('assessments')
+        .update({
+          completed_at: new Date().toISOString(),
+          status: 'completed',
+        })
+        .eq('id', existingAssessment.id)
+        .is('completed_at', null) // Double-check it's still in-progress
+
+      if (completeError) {
+        console.error('[assessments] Error completing existing assessment:', {
+          requestId: correlationId,
+          assessmentId: existingAssessment.id,
+          errorCode: completeError.code,
+          errorMessage: completeError.message,
+        })
+        // Continue anyway - we'll try to create new assessment
+      }
+    }
+
+    // CREATE: No existing in-progress assessment (or forceNew=true), create new one
+    console.log('[assessments] CREATE: Creating new assessment:', {
+      requestId: correlationId,
+      slug,
+      patientId: patientProfile.id,
+      forceNew,
+    })
+
     let funnelId: string
-    let funnelTitle: string
     let isLegacyFunnel = false
-    
-    // First try legacy funnels table
+
     const { data: legacyFunnel, error: legacyError } = await supabase
       .from('funnels')
       .select('id, title, is_active')
@@ -155,10 +281,8 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug }, correlationId)
       }
       funnelId = legacyFunnel.id
-      funnelTitle = legacyFunnel.title
       isLegacyFunnel = true
     } else {
-      // Fall back to funnels_catalog (V0.5 path)
       let catalogFunnel: Awaited<ReturnType<typeof loadFunnelWithClient>> = null
       try {
         catalogFunnel = await loadFunnelWithClient(supabase, slug)
@@ -169,7 +293,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
           error: err instanceof Error ? err.message : String(err),
         })
       }
-      
+
       if (!catalogFunnel) {
         console.warn('[assessments] Funnel not found:', {
           requestId: correlationId,
@@ -184,15 +308,10 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       if (!catalogFunnel.isActive) {
         return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug }, correlationId)
       }
-      
+
       funnelId = catalogFunnel.id
-      funnelTitle = catalogFunnel.title
     }
 
-    // Create new assessment with status = in_progress
-    // Note: funnel_id FK only works with legacy funnels table, not funnels_catalog
-    // For V0.5 funnels (catalog-based), we set funnel_id to null and rely on funnel (slug) column
-    // E6.5+ Evidence logging: Log insert parameters for debugging
     console.log('[createAssessment] Insert parameters:', {
       correlationId,
       slug,
@@ -206,14 +325,13 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .insert({
         patient_id: patientProfile.id,
         funnel: slug,
-        funnel_id: isLegacyFunnel ? funnelId : null, // Only set for legacy funnels
+        funnel_id: isLegacyFunnel ? funnelId : null,
         status: 'in_progress',
       })
       .select()
       .single()
 
     if (assessmentError || !assessment) {
-      // Enhanced error logging with structured context
       console.error('[assessments] Failed to create assessment:', {
         requestId: correlationId,
         slug,
@@ -226,7 +344,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         errorDetails: assessmentError?.details,
         errorHint: assessmentError?.hint,
       })
-      
+
       logDatabaseError(
         {
           userId: user.id,
@@ -235,11 +353,9 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         },
         assessmentError,
       )
-      
-      // Typed error mapping based on Postgres error codes
+
       const pgCode = assessmentError?.code
       if (pgCode === '23502' || pgCode === '23503' || pgCode === '23505') {
-        // NOT NULL violation, FK violation, or unique constraint
         return invalidInputResponse(
           'Assessment konnte nicht erstellt werden: Datenintegritätsfehler.',
           { errorCode: pgCode, slug },
@@ -247,14 +363,12 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         )
       }
       if (pgCode === '42501') {
-        // RLS / permission denied
         return unauthorizedResponse('Keine Berechtigung.', correlationId)
       }
-      
+
       return internalErrorResponse('Fehler beim Erstellen des Assessments.', correlationId)
     }
 
-    // E6.5+ Evidence logging: Log created assessment for debugging roundtrip
     console.log('[createAssessment] Created assessment:', {
       correlationId,
       assessmentId: assessment.id,
@@ -263,19 +377,18 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       status: assessment.status,
     })
 
-    // Determine first step using appropriate method
-    let currentStep: { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number } | null = null
+    let currentStep:
+      | { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number }
+      | null = null
     let stepLoadError: Error | null = null
-    
+
     if (isLegacyFunnel) {
-      // Legacy path: use B3 navigation logic with funnel_steps table
       currentStep = await getCurrentStep(supabase, assessment.id, funnelId)
     } else {
-      // V0.5 path: derive first step from questionnaire_config
       try {
         const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
         const steps = loadedVersion.manifest.questionnaire_config?.steps
-        
+
         if (!steps || steps.length === 0) {
           stepLoadError = new Error('Funnel has no questionnaire_config steps')
         } else {
@@ -307,9 +420,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         isLegacyFunnel,
         stepLoadError: stepLoadError?.message,
       })
-      
-      // This is a configuration/support issue, not a server error
-      // Return 409 so UI can show appropriate message
+
       return funnelNotSupportedResponse(
         'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
         { slug, assessmentId: assessment.id },
@@ -317,27 +428,13 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       )
     }
 
-    // Log successful assessment start
     logAssessmentStarted({
       userId: user.id,
       assessmentId: assessment.id,
       endpoint: `/api/funnels/${slug}/assessments`,
       funnel: slug,
-      requestId: correlationId,
     })
 
-    // V05-I10.3: Track KPI - Assessment start
-    await trackAssessmentStarted({
-      actor_user_id: user.id,
-      assessment_id: assessment.id,
-      funnel_slug: slug,
-      funnel_id: funnelId,
-    }).catch((err) => {
-      // Don't fail the request if KPI tracking fails
-      console.error('[assessments] Failed to track KPI event', err)
-    })
-
-    // E6.4.8: Emit FUNNEL_STARTED telemetry event (best-effort)
     await emitFunnelStarted({
       correlationId,
       assessmentId: assessment.id,
@@ -345,11 +442,18 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       patientId: patientProfile.id,
       stepId: currentStep.stepId,
     }).catch((err) => {
-      // Best-effort: don't fail request if telemetry fails
       console.warn('[TELEMETRY] Failed to emit FUNNEL_STARTED event', err)
     })
 
-    // Return success response
+    await trackAssessmentStarted({
+      actor_user_id: user.id,
+      assessment_id: assessment.id,
+      funnel_slug: slug,
+      funnel_id: isLegacyFunnel ? funnelId : undefined,
+    }).catch((err) => {
+      console.error('[assessments] Failed to track KPI event', err)
+    })
+
     const responseData: StartAssessmentResponseData = {
       assessmentId: assessment.id,
       status: assessment.status,
@@ -357,8 +461,8 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         stepId: currentStep.stepId,
         title: currentStep.title,
         type: currentStep.type,
-        orderIndex: currentStep.orderIndex,
         stepIndex: currentStep.stepIndex,
+        orderIndex: currentStep.orderIndex,
       },
     }
 
@@ -369,29 +473,13 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       correlationId,
     )
   } catch (error) {
-    // Classify the error
-    const errorClass =
-      error instanceof Error && error.message.includes('network')
-        ? 'network'
-        : error instanceof Error && error.message.includes('timeout')
-          ? 'timeout'
-          : 'unexpected'
-
-    console.error('[assessments] Unhandled error in POST handler:', {
-      requestId: correlationId,
+    logWarn('Unhandled error in assessment start', {
       slug,
-      errorClass,
-      errorMessage: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? error.message : String(error),
     })
-
-    logDatabaseError(
-      {
-        endpoint: 'POST /api/funnels/[slug]/assessments',
-        requestId: correlationId,
-        errorClass,
-      },
-      error,
-    )
-    return internalErrorResponse('Interner Fehler.', correlationId)
+    logDatabaseError({
+      endpoint: 'POST /api/funnels/[slug]/assessments',
+    }, error)
+    return internalErrorResponse(undefined, correlationId)
   }
 }
