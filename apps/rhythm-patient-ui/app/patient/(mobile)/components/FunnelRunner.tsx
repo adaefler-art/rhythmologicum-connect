@@ -411,7 +411,7 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     return (
       <div className="min-h-screen bg-[#f5f7fa] px-4 py-6">
         <Card padding="lg" shadow="md">
-          <LoadingSkeleton lines={5} />
+          <LoadingSkeleton variant="text" count={5} />
           <p className="text-center text-[#6b7280] mt-4">Lade Assessment...</p>
         </Card>
       </div>
