@@ -67,6 +67,19 @@ This document maps validation rules to their check implementations for the Canon
 | R-E74.3-009 | Studio API endpoints require admin or clinician role | `STUDIO_UNAUTHORIZED` | `apps/rhythm-studio-ui/app/api/admin/studio/funnels/**/*.ts:hasAdminOrClinicianRole()` | ✅ Implemented |
 | R-E74.3-010 | Patient APIs must only serve published versions (status="published") | `PATIENT_SEES_DRAFT` | Manual verification (see E74_3_PATIENT_API_VERIFICATION.md) | ⚠️ Deferred (Phase 7) |
 
+### E74.6: Patient Funnels Lifecycle + Org Scoping
+
+| Rule ID | Description | Error Code | Check Implementation | Status |
+|---------|-------------|------------|---------------------|---------|
+| R-E74.6-001 | Staff can INSERT patient_funnels for org patients | `MISSING_RLS_POLICY_STAFF_INSERT` | RLS policy "Staff can insert org patient funnels" | ✅ Implemented |
+| R-E74.6-002 | Staff can UPDATE patient_funnels for org patients | `MISSING_RLS_POLICY_STAFF_UPDATE` | RLS policy "Staff can update org patient funnels" | ✅ Implemented |
+| R-E74.6-003 | Staff can SELECT patient_funnels for org patients | `MISSING_RLS_POLICY_STAFF_SELECT` | RLS policy "Staff can view org patient funnels" | ✅ Implemented |
+| R-E74.6-004 | Audit log trigger exists for patient_funnels | `MISSING_AUDIT_TRIGGER` | Trigger "audit_patient_funnels_changes_trigger" | ✅ Implemented |
+| R-E74.6-005 | Updated_at trigger exists for patient_funnels | `MISSING_UPDATED_AT_TRIGGER` | Trigger "update_patient_funnels_updated_at_trigger" | ✅ Implemented |
+| R-E74.6-006 | Status constraint allows only valid values | `INVALID_STATUS_CONSTRAINT` | Constraint "patient_funnels_status_check" | ✅ Implemented |
+| R-E74.6-007 | API endpoints require authentication | `API_ENDPOINT_MISSING` | All patient_funnels API endpoints check auth | ✅ Implemented |
+| R-E74.6-008 | API endpoints require staff role (clinician/admin/nurse) | `API_ROLE_CHECK_MISSING` | All patient_funnels API endpoints check role | ✅ Implemented |
+
 ## Check Implementations
 
 ### E74.1: Runtime Validators
@@ -106,6 +119,15 @@ This document maps validation rules to their check implementations for the Canon
 | POST `/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate` | R-E74.3-008 | `apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate/route.ts` | Validation endpoint using E74.1 validators |
 | Studio API Authorization | R-E74.3-009 | All Studio API endpoints | All Studio API endpoints check for admin/clinician role via hasAdminOrClinicianRole() |
 | Guardrails Verification | All E74.3 rules | `scripts/ci/verify-e74-3-guardrails.mjs` | CI script that verifies rule-check coverage and generates diff report |
+
+### E74.6: Patient Funnels Lifecycle Checks
+
+| Check | Rule ID(s) | Location | Description |
+|-------|-----------|----------|-------------|
+| `checkRLSPolicies()` | R-E74.6-001, R-E74.6-002, R-E74.6-003 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies RLS policies for staff INSERT/UPDATE/SELECT on patient_funnels |
+| `checkTriggers()` | R-E74.6-004, R-E74.6-005 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies audit logging and updated_at triggers |
+| `checkStatusConstraint()` | R-E74.6-006 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies status constraint allows only valid values |
+| `checkAPIEndpoints()` | R-E74.6-007, R-E74.6-008 | `scripts/ci/verify-e74-6-patient-funnels.mjs` | Verifies API endpoints exist and have proper auth/role checks |
 
 ## Error Code Reference
 
@@ -184,6 +206,21 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 | `STUDIO_UNAUTHORIZED` | R-E74.3-009 | Studio API access denied (requires admin/clinician role) |
 | `PATIENT_SEES_DRAFT` | R-E74.3-010 | Patient API serving draft version instead of published |
 
+### E74.6: Patient Funnels Lifecycle Errors
+
+All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
+
+| Error Code | Rule ID | Description |
+|------------|---------|-------------|
+| `MISSING_RLS_POLICY_STAFF_INSERT` | R-E74.6-001 | RLS policy for staff INSERT on patient_funnels not found |
+| `MISSING_RLS_POLICY_STAFF_UPDATE` | R-E74.6-002 | RLS policy for staff UPDATE on patient_funnels not found |
+| `MISSING_RLS_POLICY_STAFF_SELECT` | R-E74.6-003 | RLS policy for staff SELECT on patient_funnels not found |
+| `MISSING_AUDIT_TRIGGER` | R-E74.6-004 | Audit logging trigger for patient_funnels not found |
+| `MISSING_UPDATED_AT_TRIGGER` | R-E74.6-005 | Updated_at trigger for patient_funnels not found |
+| `INVALID_STATUS_CONSTRAINT` | R-E74.6-006 | Status constraint on patient_funnels not found or invalid |
+| `API_ENDPOINT_MISSING` | R-E74.6-007 | Required API endpoint file not found |
+| `API_ROLE_CHECK_MISSING` | R-E74.6-008 | API endpoint missing role authorization check |
+
 ## Audit Results
 
 **Last Updated:** 2026-02-01
@@ -195,8 +232,9 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 - **Total rules (E74.1):** 18
 - **Total rules (E74.2):** 8
 - **Total rules (E74.3):** 10 (1 deferred)
-- **Total rules (E74 combined):** 36
-- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 3 (CI scripts)
+- **Total rules (E74.6):** 8
+- **Total rules (E74 combined):** 44
+- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 4 (E74.6 checks) + 4 (CI scripts)
 - **Coverage:** 100%
 
 ### Scope Verification
@@ -207,6 +245,7 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.1: Content manifest rules (5 rules) - Implemented
 - ✅ E74.2: Migration rules (8 rules) - Implemented
 - ✅ E74.3: Studio editor rules (10 rules) - Implemented (1 deferred)
+- ✅ E74.6: Patient funnels lifecycle rules (8 rules) - Implemented
 
 ### Implementation Status
 
@@ -217,6 +256,9 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.3: Draft/Publish migration: `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql`
 - ✅ E74.3: Studio API endpoints: `apps/rhythm-studio-ui/app/api/admin/studio/funnels/**/*.ts`
 - ✅ E74.3: Guardrails verification: `scripts/ci/verify-e74-3-guardrails.mjs`
+- ✅ E74.6: Patient funnels migration: `supabase/migrations/20260201151428_e74_6_patient_funnels_lifecycle.sql`
+- ✅ E74.6: Patient funnels API: `apps/rhythm-studio-ui/app/api/clinician/patient-funnels/**/*.ts`
+- ✅ E74.6: Verification script: `scripts/ci/verify-e74-6-patient-funnels.mjs`
 - ✅ Error code mapping: Complete
 - ✅ Documentation: This file
 
