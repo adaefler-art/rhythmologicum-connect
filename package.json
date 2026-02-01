@@ -32,6 +32,7 @@
     "test:e74-2": "node scripts/ci/test-e74-2-logic.mjs",
     "verify:e74-3": "node scripts/ci/verify-e74-3-guardrails.mjs",
     "verify:e74-4": "node scripts/ci/verify-e74-4-guardrails.mjs",
+    "verify:e74-5": "node scripts/ci/verify-e74-5-persistence.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
