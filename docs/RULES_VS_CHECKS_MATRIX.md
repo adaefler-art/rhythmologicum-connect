@@ -52,6 +52,21 @@ This document maps validation rules to their check implementations for the Canon
 | R-E74.2-007 | All published funnels must be active | `PUBLISHED_NOT_ACTIVE` | `scripts/ci/verify-e74-2-canonical-v1.mjs:checkABDefaults()` | ✅ Implemented |
 | R-E74.2-008 | All published funnels must have default_version_id set | `PUBLISHED_NO_DEFAULT_VERSION` | `scripts/ci/verify-e74-2-canonical-v1.mjs:checkABDefaults()` | ✅ Implemented |
 
+### E74.3: Studio Editor Rules (Draft/Publish/Versioning)
+
+| Rule ID | Description | Error Code | Check Implementation | Status |
+|---------|-------------|------------|---------------------|---------|
+| R-E74.3-001 | Draft versions must have status="draft" and is_default=false | `DRAFT_INVALID_STATUS` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:create_draft_from_version()` | ✅ Implemented |
+| R-E74.3-002 | Published versions cannot be deleted (only archived) | `PUBLISHED_DELETE_BLOCKED` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:prevent_published_version_delete()` | ✅ Implemented |
+| R-E74.3-003 | Draft with validation errors cannot be published | `PUBLISH_WITH_VALIDATION_ERRORS` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:publish_draft_version()` | ✅ Implemented |
+| R-E74.3-004 | Publish must be atomic (status update + default pointer + audit log) | `PUBLISH_NOT_ATOMIC` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:publish_draft_version()` | ✅ Implemented |
+| R-E74.3-005 | Only one version per funnel can have is_default=true | `MULTIPLE_DEFAULT_VERSIONS` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:publish_draft_version()` | ✅ Implemented |
+| R-E74.3-006 | Published version must have published_at and published_by set | `PUBLISHED_MISSING_METADATA` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:publish_draft_version()` | ✅ Implemented |
+| R-E74.3-007 | Publish history must record diff between versions | `PUBLISH_HISTORY_NO_DIFF` | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql:publish_draft_version()` | ✅ Implemented |
+| R-E74.3-008 | Validation must use E74.1 canonical validators | `VALIDATION_NOT_CANONICAL` | `apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate/route.ts:validateFunnelVersion()` | ✅ Implemented |
+| R-E74.3-009 | Studio API endpoints require admin or clinician role | `STUDIO_UNAUTHORIZED` | `apps/rhythm-studio-ui/app/api/admin/studio/funnels/**/*.ts:hasAdminOrClinicianRole()` | ✅ Implemented |
+| R-E74.3-010 | Patient APIs must only serve published versions (status="published") | `PATIENT_SEES_DRAFT` | Manual verification (see E74_3_PATIENT_API_VERIFICATION.md) | ⚠️ Deferred (Phase 7) |
+
 ## Check Implementations
 
 ### E74.1: Runtime Validators
@@ -80,6 +95,17 @@ This document maps validation rules to their check implementations for the Canon
 | `checkPillarMappings()` | R-E74.2-004 | `scripts/ci/verify-e74-2-canonical-v1.mjs` | Verifies all pillar_id references are valid |
 | `checkABDefaults()` | R-E74.2-005, R-E74.2-007, R-E74.2-008 | `scripts/ci/verify-e74-2-canonical-v1.mjs` | Verifies A/B funnels are published, active, and have default versions |
 | `checkArchivedFunnels()` | R-E74.2-006 | `scripts/ci/verify-e74-2-canonical-v1.mjs` | Verifies archived funnels are unpublished |
+
+### E74.3: Studio Editor Checks
+
+| Check | Rule ID(s) | Location | Description |
+|-------|-----------|----------|-------------|
+| `create_draft_from_version()` | R-E74.3-001 | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql` | Database function that creates draft with correct status and is_default=false |
+| `prevent_published_version_delete()` trigger | R-E74.3-002 | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql` | Trigger that prevents deletion of published versions |
+| `publish_draft_version()` | R-E74.3-003, R-E74.3-004, R-E74.3-005, R-E74.3-006, R-E74.3-007 | `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql` | Atomic publish function with validation check, metadata update, and audit logging |
+| POST `/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate` | R-E74.3-008 | `apps/rhythm-studio-ui/app/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate/route.ts` | Validation endpoint using E74.1 validators |
+| Studio API Authorization | R-E74.3-009 | All Studio API endpoints | All Studio API endpoints check for admin/clinician role via hasAdminOrClinicianRole() |
+| Guardrails Verification | All E74.3 rules | `scripts/ci/verify-e74-3-guardrails.mjs` | CI script that verifies rule-check coverage and generates diff report |
 
 ## Error Code Reference
 
@@ -141,6 +167,23 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 | `PUBLISHED_NOT_ACTIVE` | R-E74.2-007 | Published funnel is not active |
 | `PUBLISHED_NO_DEFAULT_VERSION` | R-E74.2-008 | Published funnel missing default_version_id |
 
+### E74.3: Studio Editor Errors
+
+All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
+
+| Error Code | Rule ID | Description |
+|------------|---------|-------------|
+| `DRAFT_INVALID_STATUS` | R-E74.3-001 | Draft version has invalid status or is_default setting |
+| `PUBLISHED_DELETE_BLOCKED` | R-E74.3-002 | Cannot delete published version (must archive first) |
+| `PUBLISH_WITH_VALIDATION_ERRORS` | R-E74.3-003 | Cannot publish draft with validation errors |
+| `PUBLISH_NOT_ATOMIC` | R-E74.3-004 | Publish operation is not atomic |
+| `MULTIPLE_DEFAULT_VERSIONS` | R-E74.3-005 | Multiple versions marked as default for same funnel |
+| `PUBLISHED_MISSING_METADATA` | R-E74.3-006 | Published version missing published_at or published_by |
+| `PUBLISH_HISTORY_NO_DIFF` | R-E74.3-007 | Publish history entry missing diff |
+| `VALIDATION_NOT_CANONICAL` | R-E74.3-008 | Validation not using E74.1 canonical validators |
+| `STUDIO_UNAUTHORIZED` | R-E74.3-009 | Studio API access denied (requires admin/clinician role) |
+| `PATIENT_SEES_DRAFT` | R-E74.3-010 | Patient API serving draft version instead of published |
+
 ## Audit Results
 
 **Last Updated:** 2026-02-01
@@ -151,8 +194,9 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 - **Checks without rules:** 0
 - **Total rules (E74.1):** 18
 - **Total rules (E74.2):** 8
-- **Total rules (E74 combined):** 26
-- **Total check implementations:** 6 (E74.1 validators) + 2 (CI scripts)
+- **Total rules (E74.3):** 10 (1 deferred)
+- **Total rules (E74 combined):** 36
+- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 3 (CI scripts)
 - **Coverage:** 100%
 
 ### Scope Verification
@@ -162,6 +206,7 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.1: Questionnaire config rules (11 rules) - Implemented
 - ✅ E74.1: Content manifest rules (5 rules) - Implemented
 - ✅ E74.2: Migration rules (8 rules) - Implemented
+- ✅ E74.3: Studio editor rules (10 rules) - Implemented (1 deferred)
 
 ### Implementation Status
 
@@ -169,6 +214,9 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.1: CI check script: `scripts/ci/verify-funnel-definitions.mjs`
 - ✅ E74.2: Migration script: `supabase/migrations/20260201100400_e74_2_backfill_canonical_v1.sql`
 - ✅ E74.2: CI check script: `scripts/ci/verify-e74-2-canonical-v1.mjs`
+- ✅ E74.3: Draft/Publish migration: `supabase/migrations/20260201120948_e74_3_funnel_studio_draft_publish.sql`
+- ✅ E74.3: Studio API endpoints: `apps/rhythm-studio-ui/app/api/admin/studio/funnels/**/*.ts`
+- ✅ E74.3: Guardrails verification: `scripts/ci/verify-e74-3-guardrails.mjs`
 - ✅ Error code mapping: Complete
 - ✅ Documentation: This file
 
