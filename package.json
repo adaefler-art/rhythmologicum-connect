@@ -28,6 +28,7 @@
     "tokens:export": "node scripts/design/export-tokens.js",
     "verify": "node scripts/ci/verify-critical-api-handlers.js",
     "verify:funnel-definitions": "node scripts/ci/verify-funnel-definitions.mjs",
+    "verify:e74-2": "node scripts/ci/verify-e74-2-canonical-v1.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
