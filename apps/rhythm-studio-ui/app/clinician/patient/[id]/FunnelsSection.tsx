@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, Button, Badge } from '@/lib/ui'
 import { Plus, Play, Pause, CheckCircle, Archive, RefreshCw } from 'lucide-react'
-import type { Database } from '@/lib/types/database.types'
+import type { Database } from '@/lib/types/supabase'
 
 type PatientFunnel = {
   id: string
@@ -24,8 +24,8 @@ type PatientFunnel = {
   } | null
   version?: {
     id: string
-    version_number: number
-    status: string
+    version: string
+    status: Database['public']['Enums']['funnel_version_status']
     published_at: string | null
   } | null
 }
