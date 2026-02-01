@@ -7,7 +7,7 @@
  */
 
 import { useRouter } from 'next/navigation'
-import { FunnelRunner } from '../../components/FunnelRunner'
+import { FunnelRunner } from '../../../components/FunnelRunner'
 
 interface FunnelRunnerPageProps {
   slug: string
