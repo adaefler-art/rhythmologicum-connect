@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
+// Type definitions for Supabase joined query responses
+type FunnelData = {
+  slug?: string
+  title?: string
+} | null
+
+type QuestionData = {
+  id?: string
+  question_text?: string
+  question_type?: string
+} | null
+
 /**
  * E74.8 — Clinician Assessment Run Timeline Details
  * 
@@ -187,7 +199,7 @@ export async function GET(
 
     // Transform answers data
     const answers = (answersData || []).map((answer) => {
-      const questionData = answer.questions as { id?: string; question_text?: string; question_type?: string } | null
+      const questionData = answer.questions as QuestionData
       return {
         id: answer.id,
         questionId: answer.question_id,
@@ -200,7 +212,7 @@ export async function GET(
     })
 
     // Transform assessment data
-    const funnelData = assessment.funnels as { slug?: string; title?: string } | null
+    const funnelData = assessment.funnels as FunnelData
     const transformedAssessment = {
       id: assessment.id,
       patientId: assessment.patient_id,

@@ -20,7 +20,7 @@ export interface AssessmentAnswer {
   questionText: string
   questionType: string | null
   answerValue: number
-  answerData: any
+  answerData: unknown
   createdAt: string
 }
 
@@ -122,9 +122,12 @@ function getStatusLabel(status: string): string {
  */
 function formatAnswerValue(answer: AssessmentAnswer): string {
   // If answerData exists and has a value, use that
-  if (answer.answerData) {
-    if (typeof answer.answerData === 'object' && answer.answerData.value !== undefined) {
-      return String(answer.answerData.value)
+  if (answer.answerData !== null && answer.answerData !== undefined) {
+    if (typeof answer.answerData === 'object' && answer.answerData !== null) {
+      const dataObj = answer.answerData as Record<string, unknown>
+      if (dataObj.value !== undefined) {
+        return String(dataObj.value)
+      }
     }
     if (typeof answer.answerData === 'string' || typeof answer.answerData === 'number') {
       return String(answer.answerData)
@@ -271,14 +274,12 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
                     Stress-Score: {report.scoreNumeric ?? '—'}
                   </span>
                 </div>
-                {report.sleepScore !== null && (
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
-                      Schlaf-Score: {report.sleepScore}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                    Schlaf-Score: {report.sleepScore ?? '—'}
+                  </span>
+                </div>
               </div>
             )}
 
