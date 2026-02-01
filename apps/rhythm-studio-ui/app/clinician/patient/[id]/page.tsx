@@ -8,6 +8,7 @@ import { Badge, Card, Button, Tabs, TabsList, TabTrigger, TabContent } from '@/l
 import { colors } from '@/lib/design-tokens'
 import { PatientOverviewHeader } from './PatientOverviewHeader'
 import { AssessmentList } from './AssessmentList'
+import { AssessmentRunDetails } from './AssessmentRunDetails'
 import { KeyLabsSection } from './KeyLabsSection'
 import { MedicationsSection } from './MedicationsSection'
 import { FindingsScoresSection } from './FindingsScoresSection'
@@ -137,6 +138,9 @@ export default function PatientDetailPage() {
   
   // V05-I07.3: Review records for QA Panel
   const [reviewRecords, setReviewRecords] = useState<string[]>([])
+  
+  // E74.8: Selected assessment for detailed view
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null)
   
   const [showRawData, setShowRawData] = useState(false)
 
@@ -618,58 +622,79 @@ export default function PatientDetailPage() {
 
         {/* Assessments Tab */}
         <TabContent value="assessments">
-          {/* E73.5: New assessments with calculated results (SSOT) */}
-          {assessmentsWithResults.length > 0 && (
+          {/* E74.8: Show detailed view if an assessment is selected */}
+          {selectedAssessmentId ? (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">
-                Abgeschlossene Assessments mit Ergebnissen
-              </h3>
-              <div className="space-y-3">
-                {assessmentsWithResults.map((assessment) => {
-                  const stressScore = assessment.result?.scores?.stress_score
-                  const sleepScore = assessment.result?.scores?.sleep_score
-                  
-                  return (
-                    <Card key={assessment.id} padding="lg" shadow="md">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                              {assessment.funnelName}
-                            </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Abgeschlossen: {new Date(assessment.completedAt).toLocaleDateString('de-DE')}
-                            </p>
-                          </div>
-                          <Badge variant="success" size="sm">Abgeschlossen</Badge>
-                        </div>
-                        
-                        {(stressScore != null || sleepScore != null) && (
-                          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700">
-                            {stressScore != null && (
-                              <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
-                                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Stress-Score</p>
-                                <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
-                                  {Math.round(stressScore)}
-                                </p>
-                              </div>
-                            )}
-                            {sleepScore != null && (
-                              <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
-                                <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Schlaf-Score</p>
-                                <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
-                                  {Math.round(sleepScore)}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
+              <AssessmentRunDetails
+                assessmentId={selectedAssessmentId}
+                onClose={() => setSelectedAssessmentId(null)}
+              />
             </div>
+          ) : (
+            <>
+              {/* E73.5: New assessments with calculated results (SSOT) */}
+              {assessmentsWithResults.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">
+                    Abgeschlossene Assessments mit Ergebnissen
+                  </h3>
+                  <div className="space-y-3">
+                    {assessmentsWithResults.map((assessment) => {
+                      const stressScore = assessment.result?.scores?.stress_score
+                      const sleepScore = assessment.result?.scores?.sleep_score
+                      
+                      return (
+                        <Card 
+                          key={assessment.id} 
+                          padding="lg" 
+                          shadow="md"
+                          interactive
+                          onClick={() => setSelectedAssessmentId(assessment.id)}
+                        >
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                                  {assessment.funnelName}
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Abgeschlossen: {new Date(assessment.completedAt).toLocaleDateString('de-DE')}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="success" size="sm">Abgeschlossen</Badge>
+                                <span className="text-sky-600 text-sm font-medium">Details →</span>
+                              </div>
+                            </div>
+                            
+                            {(stressScore != null || sleepScore != null) && (
+                              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                {stressScore != null && (
+                                  <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+                                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Stress-Score</p>
+                                    <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
+                                      {Math.round(stressScore)}
+                                    </p>
+                                  </div>
+                                )}
+                                {sleepScore != null && (
+                                  <div className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+                                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Schlaf-Score</p>
+                                    <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-50">
+                                      {Math.round(sleepScore)}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Legacy measures */}
