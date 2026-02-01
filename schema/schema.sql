@@ -72,6 +72,16 @@ CREATE TYPE "public"."assessment_status" AS ENUM (
 ALTER TYPE "public"."assessment_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."funnel_version_status" AS ENUM (
+    'draft',
+    'published',
+    'archived'
+);
+
+
+ALTER TYPE "public"."funnel_version_status" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."notification_status" AS ENUM (
     'scheduled',
     'sent',
@@ -596,6 +606,69 @@ ALTER FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_salt" "tex
 
 
 COMMENT ON FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_salt" "text") IS 'V05-I05.7: Compute deterministic sampling hash from job_id + salt';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_new_draft_id uuid;
+  v_source_version record;
+  v_new_version_label text;
+BEGIN
+  -- Get source version
+  SELECT * INTO v_source_version
+  FROM funnel_versions
+  WHERE id = p_source_version_id;
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Source version not found: %', p_source_version_id;
+  END IF;
+  
+  -- Generate version label
+  IF p_version_label IS NULL THEN
+    v_new_version_label := v_source_version.version || '-draft-' || 
+                           to_char(now(), 'YYYYMMDD-HH24MISS');
+  ELSE
+    v_new_version_label := p_version_label;
+  END IF;
+  
+  -- Create new draft version
+  INSERT INTO funnel_versions (
+    funnel_id,
+    version,
+    questionnaire_config,
+    content_manifest,
+    algorithm_bundle_version,
+    prompt_version,
+    rollout_percent,
+    status,
+    parent_version_id,
+    is_default
+  ) VALUES (
+    v_source_version.funnel_id,
+    v_new_version_label,
+    v_source_version.questionnaire_config,
+    v_source_version.content_manifest,
+    v_source_version.algorithm_bundle_version,
+    v_source_version.prompt_version,
+    v_source_version.rollout_percent,
+    'draft',
+    p_source_version_id,
+    false  -- Drafts are never default
+  )
+  RETURNING id INTO v_new_draft_id;
+  
+  RETURN v_new_draft_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text") IS 'E74.3: Create a draft version from a published version for editing';
 
 
 
@@ -1151,6 +1224,132 @@ ALTER FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "te
 
 
 COMMENT ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") IS 'Logs RLS policy violations for security monitoring';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."prevent_published_version_delete"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  IF OLD.status = 'published' THEN
+    RAISE EXCEPTION 'Cannot delete published funnel version. Archive it first.';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."prevent_published_version_delete"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean DEFAULT true, "p_change_summary" "text" DEFAULT NULL::"text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_draft record;
+  v_previous_version record;
+  v_publish_history_id uuid;
+  v_result jsonb;
+BEGIN
+  -- Get draft version
+  SELECT * INTO v_draft
+  FROM funnel_versions
+  WHERE id = p_draft_id AND status = 'draft';
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Draft version not found or already published: %', p_draft_id;
+  END IF;
+  
+  -- Check if validation errors exist
+  IF jsonb_array_length(v_draft.validation_errors) > 0 THEN
+    RAISE EXCEPTION 'Cannot publish draft with validation errors';
+  END IF;
+  
+  -- Get previous published version (if exists)
+  SELECT * INTO v_previous_version
+  FROM funnel_versions
+  WHERE funnel_id = v_draft.funnel_id 
+    AND status = 'published'
+    AND is_default = true
+  ORDER BY created_at DESC
+  LIMIT 1;
+  
+  -- Begin atomic publish
+  -- 1. Update draft to published status
+  UPDATE funnel_versions
+  SET 
+    status = 'published',
+    published_at = now(),
+    published_by = p_user_id,
+    is_default = p_set_as_default
+  WHERE id = p_draft_id;
+  
+  -- 2. If setting as default, unset previous default
+  IF p_set_as_default THEN
+    UPDATE funnel_versions
+    SET is_default = false
+    WHERE funnel_id = v_draft.funnel_id 
+      AND id != p_draft_id
+      AND is_default = true;
+      
+    -- 3. Update funnels_catalog default_version_id
+    UPDATE funnels_catalog
+    SET default_version_id = p_draft_id,
+        updated_at = now()
+    WHERE id = v_draft.funnel_id;
+  END IF;
+  
+  -- 4. Create publish history entry with diff
+  INSERT INTO funnel_publish_history (
+    funnel_id,
+    version_id,
+    previous_version_id,
+    published_by,
+    published_at,
+    diff,
+    change_summary,
+    metadata
+  ) VALUES (
+    v_draft.funnel_id,
+    p_draft_id,
+    v_previous_version.id,
+    p_user_id,
+    now(),
+    jsonb_build_object(
+      'questionnaire_config_changed', 
+        CASE WHEN v_previous_version.questionnaire_config IS DISTINCT FROM v_draft.questionnaire_config 
+        THEN true ELSE false END,
+      'content_manifest_changed',
+        CASE WHEN v_previous_version.content_manifest IS DISTINCT FROM v_draft.content_manifest
+        THEN true ELSE false END
+    ),
+    COALESCE(p_change_summary, 'Published from draft'),
+    jsonb_build_object(
+      'parent_version_id', v_draft.parent_version_id,
+      'version_label', v_draft.version,
+      'set_as_default', p_set_as_default
+    )
+  )
+  RETURNING id INTO v_publish_history_id;
+  
+  -- Return result
+  v_result := jsonb_build_object(
+    'success', true,
+    'version_id', p_draft_id,
+    'publish_history_id', v_publish_history_id,
+    'previous_version_id', v_previous_version.id,
+    'set_as_default', p_set_as_default
+  );
+  
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean, "p_change_summary" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean, "p_change_summary" "text") IS 'E74.3: Atomically publish a draft version with audit logging';
 
 
 
@@ -1910,6 +2109,39 @@ COMMENT ON COLUMN "public"."documents"."confidence_json" IS 'V05-I04.2: Per-fiel
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."funnel_publish_history" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "funnel_id" "uuid" NOT NULL,
+    "version_id" "uuid" NOT NULL,
+    "previous_version_id" "uuid",
+    "published_by" "uuid",
+    "published_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "diff" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "change_summary" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."funnel_publish_history" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."funnel_publish_history" IS 'E74.3: Audit trail for funnel version publishing with diffs';
+
+
+
+COMMENT ON COLUMN "public"."funnel_publish_history"."diff" IS 'E74.3: JSONB diff between previous and new version';
+
+
+
+COMMENT ON COLUMN "public"."funnel_publish_history"."change_summary" IS 'E74.3: Human-readable summary of changes';
+
+
+
+COMMENT ON COLUMN "public"."funnel_publish_history"."metadata" IS 'E74.3: Additional metadata (validation results, etc.)';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."funnel_question_rules" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "question_id" "uuid" NOT NULL,
@@ -1994,6 +2226,12 @@ CREATE TABLE IF NOT EXISTS "public"."funnel_versions" (
     "rollout_percent" integer DEFAULT 100,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone,
+    "status" "public"."funnel_version_status" DEFAULT 'published'::"public"."funnel_version_status" NOT NULL,
+    "parent_version_id" "uuid",
+    "validation_errors" "jsonb" DEFAULT '[]'::"jsonb",
+    "last_validated_at" timestamp with time zone,
+    "published_at" timestamp with time zone,
+    "published_by" "uuid",
     CONSTRAINT "check_algorithm_bundle_version_not_empty" CHECK (("length"(TRIM(BOTH FROM "algorithm_bundle_version")) > 0)),
     CONSTRAINT "check_prompt_version_not_empty" CHECK (("length"(TRIM(BOTH FROM "prompt_version")) > 0)),
     CONSTRAINT "funnel_versions_rollout_percent_check" CHECK ((("rollout_percent" >= 0) AND ("rollout_percent" <= 100)))
@@ -2003,7 +2241,7 @@ CREATE TABLE IF NOT EXISTS "public"."funnel_versions" (
 ALTER TABLE "public"."funnel_versions" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."funnel_versions" IS 'V0.5: Versioned funnel configurations with JSONB for dynamic content. E74.2: Backfilled canonical v1 schema_version on 2026-02-01.';
+COMMENT ON TABLE "public"."funnel_versions" IS 'V0.5: Versioned funnel configurations with JSONB for dynamic content. E74.3: Extended with draft/publish workflow.';
 
 
 
@@ -2024,6 +2262,30 @@ COMMENT ON COLUMN "public"."funnel_versions"."prompt_version" IS 'V05-I02.2: Req
 
 
 COMMENT ON COLUMN "public"."funnel_versions"."rollout_percent" IS 'Percentage of users receiving this version (A/B testing)';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."status" IS 'E74.3: Version status - draft (editable), published (active for patients), archived (deprecated)';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."parent_version_id" IS 'E74.3: Reference to parent version if this is a draft or derived version';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."validation_errors" IS 'E74.3: Array of validation errors from last validation check';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."last_validated_at" IS 'E74.3: Timestamp of last validation check';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."published_at" IS 'E74.3: Timestamp when version was published';
+
+
+
+COMMENT ON COLUMN "public"."funnel_versions"."published_by" IS 'E74.3: User who published this version';
 
 
 
@@ -3759,6 +4021,11 @@ ALTER TABLE ONLY "public"."documents"
 
 
 
+ALTER TABLE ONLY "public"."funnel_publish_history"
+    ADD CONSTRAINT "funnel_publish_history_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."funnel_question_rules"
     ADD CONSTRAINT "funnel_question_rules_pkey" PRIMARY KEY ("id");
 
@@ -4338,6 +4605,22 @@ CREATE INDEX "idx_documents_input_hash" ON "public"."documents" USING "btree" ("
 
 
 CREATE INDEX "idx_documents_parsing_status" ON "public"."documents" USING "btree" ("parsing_status");
+
+
+
+CREATE INDEX "idx_funnel_publish_history_funnel_id" ON "public"."funnel_publish_history" USING "btree" ("funnel_id");
+
+
+
+CREATE INDEX "idx_funnel_publish_history_published_at" ON "public"."funnel_publish_history" USING "btree" ("published_at" DESC);
+
+
+
+CREATE INDEX "idx_funnel_publish_history_published_by" ON "public"."funnel_publish_history" USING "btree" ("published_by");
+
+
+
+CREATE INDEX "idx_funnel_publish_history_version_id" ON "public"."funnel_publish_history" USING "btree" ("version_id");
 
 
 
@@ -4985,6 +5268,10 @@ CREATE OR REPLACE TRIGGER "pre_screening_calls_updated_at" BEFORE UPDATE ON "pub
 
 
 
+CREATE OR REPLACE TRIGGER "prevent_published_version_delete_trigger" BEFORE DELETE ON "public"."funnel_versions" FOR EACH ROW EXECUTE FUNCTION "public"."prevent_published_version_delete"();
+
+
+
 CREATE OR REPLACE TRIGGER "report_sections_updated_at" BEFORE UPDATE ON "public"."report_sections" FOR EACH ROW EXECUTE FUNCTION "public"."update_report_sections_updated_at"();
 
 
@@ -5174,6 +5461,26 @@ COMMENT ON CONSTRAINT "fk_patient_measures_report" ON "public"."patient_measures
 
 
 
+ALTER TABLE ONLY "public"."funnel_publish_history"
+    ADD CONSTRAINT "funnel_publish_history_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."funnel_publish_history"
+    ADD CONSTRAINT "funnel_publish_history_previous_version_id_fkey" FOREIGN KEY ("previous_version_id") REFERENCES "public"."funnel_versions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."funnel_publish_history"
+    ADD CONSTRAINT "funnel_publish_history_published_by_fkey" FOREIGN KEY ("published_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."funnel_publish_history"
+    ADD CONSTRAINT "funnel_publish_history_version_id_fkey" FOREIGN KEY ("version_id") REFERENCES "public"."funnel_versions"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."funnel_question_rules"
     ADD CONSTRAINT "funnel_question_rules_funnel_step_id_fkey" FOREIGN KEY ("funnel_step_id") REFERENCES "public"."funnel_steps"("id") ON DELETE CASCADE;
 
@@ -5206,6 +5513,16 @@ ALTER TABLE ONLY "public"."funnel_steps"
 
 ALTER TABLE ONLY "public"."funnel_versions"
     ADD CONSTRAINT "funnel_versions_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."funnel_versions"
+    ADD CONSTRAINT "funnel_versions_parent_version_id_fkey" FOREIGN KEY ("parent_version_id") REFERENCES "public"."funnel_versions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."funnel_versions"
+    ADD CONSTRAINT "funnel_versions_published_by_fkey" FOREIGN KEY ("published_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -5933,6 +6250,21 @@ CREATE POLICY "device_shipments_update_staff_org" ON "public"."device_shipments"
 ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."funnel_publish_history" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "funnel_publish_history_insert_policy" ON "public"."funnel_publish_history" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text"))))));
+
+
+
+CREATE POLICY "funnel_publish_history_read_policy" ON "public"."funnel_publish_history" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text"))))));
+
+
+
 ALTER TABLE "public"."funnel_step_questions" ENABLE ROW LEVEL SECURITY;
 
 
@@ -6639,6 +6971,12 @@ GRANT ALL ON FUNCTION "public"."compute_sampling_hash"("p_job_id" "uuid", "p_sal
 
 
 
+GRANT ALL ON FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."create_draft_from_version"("p_source_version_id" "uuid", "p_user_id" "uuid", "p_version_label" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "anon";
 GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "service_role";
@@ -6739,6 +7077,18 @@ GRANT ALL ON FUNCTION "public"."is_pilot_eligible"("user_id" "uuid") TO "service
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation" "text", "attempted_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "anon";
+GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean, "p_change_summary" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean, "p_change_summary" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."publish_draft_version"("p_draft_id" "uuid", "p_user_id" "uuid", "p_set_as_default" boolean, "p_change_summary" "text") TO "service_role";
 
 
 
@@ -6923,6 +7273,12 @@ GRANT ALL ON TABLE "public"."device_shipments" TO "service_role";
 GRANT ALL ON TABLE "public"."documents" TO "anon";
 GRANT ALL ON TABLE "public"."documents" TO "authenticated";
 GRANT ALL ON TABLE "public"."documents" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."funnel_publish_history" TO "anon";
+GRANT ALL ON TABLE "public"."funnel_publish_history" TO "authenticated";
+GRANT ALL ON TABLE "public"."funnel_publish_history" TO "service_role";
 
 
 
