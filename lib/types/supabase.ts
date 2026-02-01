@@ -865,10 +865,16 @@ export type Database = {
           funnel_id: string
           id: string
           is_default: boolean
+          last_validated_at: string | null
+          parent_version_id: string | null
           prompt_version: string
+          published_at: string | null
+          published_by: string | null
           questionnaire_config: Json
           rollout_percent: number | null
+          status: Database["public"]["Enums"]["funnel_version_status"]
           updated_at: string | null
+          validation_errors: Json | null
           version: string
         }
         Insert: {
@@ -878,10 +884,16 @@ export type Database = {
           funnel_id: string
           id?: string
           is_default?: boolean
+          last_validated_at?: string | null
+          parent_version_id?: string | null
           prompt_version?: string
+          published_at?: string | null
+          published_by?: string | null
           questionnaire_config?: Json
           rollout_percent?: number | null
+          status?: Database["public"]["Enums"]["funnel_version_status"]
           updated_at?: string | null
+          validation_errors?: Json | null
           version: string
         }
         Update: {
@@ -891,10 +903,16 @@ export type Database = {
           funnel_id?: string
           id?: string
           is_default?: boolean
+          last_validated_at?: string | null
+          parent_version_id?: string | null
           prompt_version?: string
+          published_at?: string | null
+          published_by?: string | null
           questionnaire_config?: Json
           rollout_percent?: number | null
+          status?: Database["public"]["Enums"]["funnel_version_status"]
           updated_at?: string | null
+          validation_errors?: Json | null
           version?: string
         }
         Relationships: [
@@ -905,6 +923,74 @@ export type Database = {
             referencedRelation: "funnels_catalog"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      funnel_publish_history: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          diff: Json
+          funnel_id: string
+          id: string
+          metadata: Json | null
+          previous_version_id: string | null
+          published_at: string
+          published_by: string | null
+          version_id: string
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          diff?: Json
+          funnel_id: string
+          id?: string
+          metadata?: Json | null
+          previous_version_id?: string | null
+          published_at?: string
+          published_by?: string | null
+          version_id: string
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          diff?: Json
+          funnel_id?: string
+          id?: string
+          metadata?: Json | null
+          previous_version_id?: string | null
+          published_at?: string
+          published_by?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_publish_history_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          }
         ]
       }
       funnels: {
@@ -2898,6 +2984,14 @@ export type Database = {
         Args: { org_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      create_draft_from_version: {
+        Args: {
+          p_source_version_id: string
+          p_user_id: string
+          p_version_label?: string | null
+        }
+        Returns: string
+      }
       diagnostics_pillars_sot: { Args: never; Returns: Json }
       execute_account_deletion: {
         Args: { executed_by?: string; target_user_id: string }
@@ -2935,6 +3029,15 @@ export type Database = {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
       }
+      publish_draft_version: {
+        Args: {
+          p_draft_id: string
+          p_user_id: string
+          p_set_as_default?: boolean
+          p_change_summary?: string | null
+        }
+        Returns: Json
+      }
       request_account_deletion: {
         Args: {
           deletion_reason?: string
@@ -2959,6 +3062,7 @@ export type Database = {
     Enums: {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
+      funnel_version_status: "draft" | "published" | "archived"
       notification_status:
         | "scheduled"
         | "sent"
