@@ -103,8 +103,8 @@ export async function POST(
 
     // Validate using E74.1 validators
     const validationResult = validateFunnelVersion({
-      questionnaireConfig: draft.questionnaire_config,
-      contentManifest: draft.content_manifest,
+      questionnaire_config: draft.questionnaire_config,
+      content_manifest: draft.content_manifest,
     })
 
     // Update draft with validation results
