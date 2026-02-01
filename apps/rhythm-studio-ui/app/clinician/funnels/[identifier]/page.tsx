@@ -778,7 +778,7 @@ export default function FunnelDetailPage() {
         ) : (
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+              <h2 className="text-xl font-semibold text-foreground">
                 {funnel.title}
               </h2>
               <Badge variant={funnel.is_active ? 'success' : 'secondary'} size="sm">
@@ -786,11 +786,11 @@ export default function FunnelDetailPage() {
               </Badge>
             </div>
             {funnel.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 {funnel.description}
               </p>
             )}
-            <div className="flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span>ID: {funnel.id}</span>
               <span>•</span>
               <span>Slug: {funnel.slug}</span>
@@ -811,38 +811,38 @@ export default function FunnelDetailPage() {
           <SectionHeader title="Versionen" />
           <Card padding="none">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted/30">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Version
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Rollout %
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Algorithmus
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Prompt
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Erstellt
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Aktionen
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
+                <tbody className="bg-transparent divide-y divide-border">
                   {versions.map((version) => (
-                    <tr key={version.id} className={version.is_default ? 'bg-sky-50' : ''}>
+                    <tr key={version.id} className={version.is_default ? 'bg-muted/40' : ''}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-slate-900">{version.version}</span>
+                          <span className="text-sm font-medium text-foreground">{version.version}</span>
                           {version.is_default && (
                             <Badge variant="info" size="sm">
                               Standard
@@ -875,20 +875,20 @@ export default function FunnelDetailPage() {
                             inputSize="sm"
                             className="max-w-22"
                           />
-                          <span className="text-sm text-slate-600">%</span>
+                          <span className="text-sm text-muted-foreground">%</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-slate-900 font-mono">
+                        <span className="text-sm text-foreground font-mono">
                           {version.algorithm_bundle_version}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-slate-900 font-mono">
+                        <span className="text-sm text-foreground font-mono">
                           {version.prompt_version}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {new Date(version.created_at).toLocaleDateString('de-DE')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
@@ -909,7 +909,7 @@ export default function FunnelDetailPage() {
               </table>
             </div>
           </Card>
-          <div className="mt-4 text-sm text-slate-600">
+          <div className="mt-4 text-sm text-muted-foreground">
             <p className="mb-1">
               <strong>Rollout %:</strong> Prozentsatz der Nutzer, die diese Version sehen (0-100). Bei mehreren aktiven Versionen wird nach Prozentsatz gewichtet ausgewählt.
             </p>
@@ -926,7 +926,7 @@ export default function FunnelDetailPage() {
         {steps.map((step, stepIndex) => (
           <Card key={step.id} padding="none">
             {/* Step Header */}
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+            <div className="bg-muted/30 px-6 py-4 border-b border-border">
               {editingStep === step.id ? (
                 <div className="space-y-4">
                   <div>
@@ -974,16 +974,16 @@ export default function FunnelDetailPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
-                      <span className="text-xs font-semibold text-slate-500 uppercase">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase">
                         Schritt {step.order_index + 1}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         (Typ: {translateStepType(step.type)})
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-900">{step.title}</h3>
+                    <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
                     {step.description && (
-                      <p className="text-sm text-slate-600 mt-1">{step.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
                     )}
                   </div>
 
@@ -1024,16 +1024,16 @@ export default function FunnelDetailPage() {
 
             {/* Content Page Info (for content_page steps) */}
             {step.type === 'content_page' && (
-              <div className="px-6 py-4 bg-blue-50 border-b border-blue-200">
+              <div className="px-6 py-4 bg-muted/20 border-b border-border">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-blue-900 mb-2">Zugeordnete Inhaltsseite</h4>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Zugeordnete Inhaltsseite</h4>
                     {step.content_page ? (
                       <div>
-                        <p className="text-sm font-medium text-blue-900">{step.content_page.title}</p>
-                        <p className="text-xs text-blue-700 mt-1">Slug: {step.content_page.slug}</p>
+                        <p className="text-sm font-medium text-foreground">{step.content_page.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Slug: {step.content_page.slug}</p>
                         {step.content_page.excerpt && (
-                          <p className="text-xs text-blue-600 mt-1">{step.content_page.excerpt}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{step.content_page.excerpt}</p>
                         )}
                         <Badge
                           variant={step.content_page.status === 'published' ? 'success' : 'warning'}
@@ -1044,7 +1044,7 @@ export default function FunnelDetailPage() {
                         </Badge>
                       </div>
                     ) : (
-                      <p className="text-sm text-red-700">⚠️ Keine Inhaltsseite zugeordnet</p>
+                      <p className="text-sm text-destructive">⚠️ Keine Inhaltsseite zugeordnet</p>
                     )}
                   </div>
                 </div>
@@ -1053,33 +1053,33 @@ export default function FunnelDetailPage() {
 
             {/* Questions */}
             {step.questions.length > 0 && (
-              <div className="divide-y divide-slate-200">
-                <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
-                  <h4 className="text-sm font-semibold text-slate-700">Fragen</h4>
+              <div className="divide-y divide-border">
+                <div className="px-6 py-3 bg-muted/30 border-b border-border">
+                  <h4 className="text-sm font-semibold text-foreground">Fragen</h4>
                 </div>
                 {step.questions.map((question) => (
                   <div key={question.id} className="px-6 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-slate-500">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             Frageschlüssel:
                           </span>
-                          <span className="text-xs font-mono text-slate-500">
+                          <span className="text-xs font-mono text-muted-foreground">
                             {question.key}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-slate-500">Typ:</span>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs font-semibold text-muted-foreground">Typ:</span>
+                          <span className="text-xs text-muted-foreground">
                             {translateQuestionType(question.question_type)}
                           </span>
                         </div>
-                        <p className="text-sm font-medium text-slate-900 mb-1">
+                        <p className="text-sm font-medium text-foreground mb-1">
                           {question.label}
                         </p>
                         {question.help_text && (
-                          <p className="text-xs text-slate-600">{question.help_text}</p>
+                          <p className="text-xs text-muted-foreground">{question.help_text}</p>
                         )}
                       </div>
 
@@ -1111,7 +1111,7 @@ export default function FunnelDetailPage() {
             )}
 
             {step.questions.length === 0 && (
-              <div className="px-6 py-4 text-center text-sm text-slate-500">
+              <div className="px-6 py-4 text-center text-sm text-muted-foreground">
                 Keine Fragen in diesem Schritt
               </div>
             )}
@@ -1121,7 +1121,7 @@ export default function FunnelDetailPage() {
 
       {steps.length === 0 && (
         <Card>
-          <p className="text-slate-600 text-center">Keine Schritte definiert.</p>
+          <p className="text-muted-foreground text-center">Keine Schritte definiert.</p>
         </Card>
       )}
 
@@ -1130,8 +1130,8 @@ export default function FunnelDetailPage() {
           <Card className="w-full max-w-2xl" shadow="lg">
             <div className="space-y-5">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Frage hinzufügen</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="text-lg font-semibold text-foreground">Frage hinzufügen</h3>
+                <p className="text-sm text-muted-foreground">
                   Neue Frage für diesen Schritt definieren.
                 </p>
               </div>
@@ -1204,7 +1204,7 @@ export default function FunnelDetailPage() {
                   onChange={(event) =>
                     setNewQuestion((prev) => ({ ...prev, required: event.target.checked }))
                   }
-                  className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
                 />
                 <Label htmlFor="question-required">Pflichtfeld</Label>
               </div>
@@ -1252,14 +1252,14 @@ export default function FunnelDetailPage() {
                     rows={4}
                     textareaSize="md"
                   />
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Eine Option pro Zeile, Format: <span className="font-mono">value|label|hilfetext</span>
                   </p>
                 </div>
               )}
 
               {questionError && (
-                <p className="text-sm text-red-600" role="alert">
+                <p className="text-sm text-destructive" role="alert">
                   {questionError}
                 </p>
               )}

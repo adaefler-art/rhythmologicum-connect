@@ -25,7 +25,7 @@ export default function AdminError({
 
   return (
     <div className="p-6">
-      <div className="rounded-lg border border-slate-200 bg-white p-6">
+      <div className="rounded-lg border border-border bg-card p-6 text-foreground">
         <ErrorState
           title="Ein Fehler ist aufgetreten"
           message="Beim Laden der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
@@ -34,7 +34,7 @@ export default function AdminError({
         <div className="mt-4">
           <Link
             href="/admin"
-            className="inline-flex gap-2 text-sm font-medium text-sky-600 hover:text-sky-700 transition"
+            className="inline-flex gap-2 text-sm font-medium text-primary hover:text-primary/90 transition"
           >
             Zurück zur Übersicht
           </Link>

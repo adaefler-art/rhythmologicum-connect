@@ -23,7 +23,7 @@ export default function ClinicianError({
   }, [error])
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="w-full min-h-screen flex items-center justify-center bg-background px-4 text-foreground">
       <ErrorState
         title="Ein Fehler ist aufgetreten"
         message="Beim Laden der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."

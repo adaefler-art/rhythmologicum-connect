@@ -318,9 +318,9 @@ export default function ManifestEditorPage() {
 
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
-        <Card padding="md" className="mb-6 bg-red-50 border-red-200">
-          <h3 className="text-sm font-semibold text-red-900 mb-2">Validierungsfehler:</h3>
-          <ul className="list-disc list-inside text-sm text-red-800 space-y-1">
+        <Card padding="md" className="mb-6 bg-destructive/10 border-destructive/30">
+          <h3 className="text-sm font-semibold text-destructive mb-2">Validierungsfehler:</h3>
+          <ul className="list-disc list-inside text-sm text-destructive space-y-1">
             {validationErrors.map((err, i) => (
               <li key={i}>{err}</li>
             ))}
@@ -332,7 +332,7 @@ export default function ManifestEditorPage() {
         {/* Left Panel: Page List */}
         <div className="lg:col-span-1">
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">Seiten</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Seiten</h2>
             <div className="space-y-2">
               {manifest.pages.map((page, index) => (
                 <button
@@ -344,12 +344,12 @@ export default function ManifestEditorPage() {
                   }}
                   className={`w-full text-left px-3 py-2 rounded transition-colors ${
                     selectedPageIndex === index
-                      ? 'bg-sky-100 text-sky-900 dark:bg-sky-900 dark:text-sky-50'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      ? 'bg-primary/10 text-foreground'
+                      : 'hover:bg-muted/30 text-muted-foreground'
                   }`}
                 >
                   <div className="font-medium truncate">{page.title}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  <div className="text-xs text-muted-foreground truncate">
                     {page.slug} • {page.sections.length} Block(s)
                   </div>
                 </button>
@@ -362,19 +362,19 @@ export default function ManifestEditorPage() {
         <div className="lg:col-span-1">
           <Card padding="md">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              <h2 className="text-lg font-semibold text-foreground">
                 Blocks: {currentPage?.title}
               </h2>
               <div className="relative group">
                 <Button variant="primary" size="sm">
                   + Block
                 </Button>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                <div className="absolute right-0 mt-2 w-48 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                   {Object.entries(SECTION_TYPE).map(([key, value]) => (
                     <button
                       key={value}
                       onClick={() => addBlock(value)}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 first:rounded-t-lg last:rounded-b-lg"
+                      className="block w-full text-left px-4 py-2 text-sm hover:bg-muted/30 first:rounded-t-lg last:rounded-b-lg"
                     >
                       {key}
                     </button>
@@ -389,8 +389,8 @@ export default function ManifestEditorPage() {
                   key={section.key}
                   className={`border rounded-lg transition-colors ${
                     selectedSectionIndex === index
-                      ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/20'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-ring/50'
                   }`}
                 >
                   <button
@@ -402,10 +402,10 @@ export default function ManifestEditorPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                        <div className="text-sm font-medium text-foreground">
                           {section.type}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <div className="text-xs text-muted-foreground truncate">
                           {section.key}
                         </div>
                       </div>
@@ -416,7 +416,7 @@ export default function ManifestEditorPage() {
                             moveBlock(index, 'up')
                           }}
                           disabled={index === 0}
-                          className="p-1 text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Nach oben"
                         >
                           ↑
@@ -427,7 +427,7 @@ export default function ManifestEditorPage() {
                             moveBlock(index, 'down')
                           }}
                           disabled={index === currentPage.sections.length - 1}
-                          className="p-1 text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Nach unten"
                         >
                           ↓
@@ -437,7 +437,7 @@ export default function ManifestEditorPage() {
                             e.stopPropagation()
                             removeBlock(index)
                           }}
-                          className="p-1 text-red-500 hover:text-red-700"
+                          className="p-1 text-destructive hover:text-destructive/90"
                           title="Löschen"
                         >
                           ✕
@@ -450,7 +450,7 @@ export default function ManifestEditorPage() {
             </div>
 
             {currentPage?.sections.length === 0 && (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+              <div className="text-center py-8 text-muted-foreground text-sm">
                 Keine Blocks vorhanden. Fügen Sie einen Block hinzu.
               </div>
             )}

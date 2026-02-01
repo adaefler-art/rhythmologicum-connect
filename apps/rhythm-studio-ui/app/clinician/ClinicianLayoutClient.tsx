@@ -186,8 +186,8 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <p className="text-slate-600 dark:text-slate-300">Authentifizierung wird überprüft…</p>
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <p className="text-muted-foreground">Authentifizierung wird überprüft…</p>
       </div>
     )
   }
@@ -204,9 +204,9 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       navItems={resolvedNavItems}
     >
       {/* Role indicator */}
-      <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mb-4 text-xs text-muted-foreground">
         Angemeldet als:{' '}
-        <span className="font-medium text-slate-700 dark:text-slate-300">{roleDisplay}</span>
+        <span className="font-medium text-foreground">{roleDisplay}</span>
       </div>
       {children}
     </DesktopLayout>

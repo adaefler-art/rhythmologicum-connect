@@ -147,25 +147,25 @@ export default function SupportCasesPage() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support-Fälle</h1>
-          <p className="text-gray-600 mt-1">Übersicht und Verwaltung aller Support-Anfragen</p>
+          <h1 className="text-2xl font-bold text-foreground">Support-Fälle</h1>
+          <p className="text-muted-foreground mt-1">Übersicht und Verwaltung aller Support-Anfragen</p>
         </div>
       </div>
 
       {/* Filters */}
       <Card className="p-4">
         <div className="flex items-center gap-4">
-          <Filter size={20} className="text-gray-500" />
+          <Filter size={20} className="text-muted-foreground" />
           <div className="flex gap-4 flex-1">
             <div>
-              <label htmlFor="status-filter" className="text-sm font-medium text-gray-700 mr-2">
+              <label htmlFor="status-filter" className="text-sm font-medium text-foreground mr-2">
                 Status:
               </label>
               <select
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="px-3 py-1 border border-border rounded-md text-sm bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <option value="all">Alle</option>
                 {Object.values(SUPPORT_CASE_STATUS).map((status) => (
@@ -176,14 +176,14 @@ export default function SupportCasesPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="priority-filter" className="text-sm font-medium text-gray-700 mr-2">
+              <label htmlFor="priority-filter" className="text-sm font-medium text-foreground mr-2">
                 Priorität:
               </label>
               <select
                 id="priority-filter"
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="px-3 py-1 border border-border rounded-md text-sm bg-card text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <option value="all">Alle</option>
                 {Object.values(SUPPORT_CASE_PRIORITY).map((priority) => (
@@ -194,7 +194,7 @@ export default function SupportCasesPage() {
               </select>
             </div>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {supportCases.length} {supportCases.length === 1 ? 'Fall' : 'Fälle'}
           </div>
         </div>
@@ -204,8 +204,8 @@ export default function SupportCasesPage() {
       <div className="space-y-4">
         {supportCases.length === 0 ? (
           <Card className="p-8 text-center">
-            <AlertCircle size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600">Keine Support-Fälle gefunden.</p>
+            <AlertCircle size={48} className="mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Keine Support-Fälle gefunden.</p>
           </Card>
         ) : (
           supportCases.map((supportCase) => (
@@ -213,7 +213,7 @@ export default function SupportCasesPage() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{supportCase.subject}</h3>
+                    <h3 className="text-lg font-semibold text-foreground">{supportCase.subject}</h3>
                     <Badge className={getSupportCaseStatusColor(supportCase.status)}>
                       {getSupportCaseStatusLabel(supportCase.status)}
                     </Badge>
@@ -221,7 +221,7 @@ export default function SupportCasesPage() {
                       {getSupportCasePriorityLabel(supportCase.priority)}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <span>{getSupportCaseCategoryLabel(supportCase.category)}</span>
                     <span>•</span>
                     <span>Patient: {supportCase.patient_profiles?.full_name || 'Unbekannt'}</span>
@@ -238,7 +238,7 @@ export default function SupportCasesPage() {
                     )}
                   </div>
                   {supportCase.description && (
-                    <p className="text-gray-700 text-sm mb-3">{supportCase.description}</p>
+                    <p className="text-muted-foreground text-sm mb-3">{supportCase.description}</p>
                   )}
                   {supportCase.notes && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">

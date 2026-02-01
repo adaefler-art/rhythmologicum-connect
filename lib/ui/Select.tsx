@@ -69,19 +69,19 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
     const baseClasses = `
       w-full
-      border-2
+      border
       rounded-lg
       transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1
-      disabled:bg-slate-100 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background
+      disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60
       appearance-none
       bg-no-repeat
       cursor-pointer
     `
 
     const stateClasses = error
-      ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100'
-      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-sky-500'
+      ? 'border-destructive bg-destructive/10 text-foreground'
+      : 'border-border bg-card text-foreground focus-visible:border-ring'
 
     // Custom dropdown arrow
     // Note: SVG data URLs cannot use CSS classes, so we use a mid-tone that works in both themes
@@ -123,7 +123,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {errorMessage && error && (
           <p
             id={`${selectId}-error`}
-            className="text-sm text-red-600 dark:text-red-400 mt-1.5"
+            className="text-sm text-destructive mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {errorMessage}
@@ -132,7 +132,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {helperText && !error && (
           <p
             id={`${selectId}-helper`}
-            className="text-sm text-slate-500 dark:text-slate-400 mt-1.5"
+            className="text-sm text-muted-foreground mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {helperText}

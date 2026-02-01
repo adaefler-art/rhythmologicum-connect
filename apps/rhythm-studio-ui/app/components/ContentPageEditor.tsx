@@ -437,15 +437,15 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
     <div className="p-4 sm:p-6 w-full">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
           {mode === 'create' ? 'Neue Content-Page erstellen' : 'Content-Page bearbeiten'}
         </h1>
-        <p className="text-sm sm:text-base text-slate-600">Markdown-Editor mit Live-Vorschau</p>
+        <p className="text-sm sm:text-base text-muted-foreground">Markdown-Editor mit Live-Vorschau</p>
       </div>
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm">
           {error}
         </div>
       )}
@@ -453,13 +453,13 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
       {/* Form */}
       <div className="space-y-6">
         {/* Metadata Section */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Metadaten</h2>
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Metadaten</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Title */}
             <div className="md:col-span-2">
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
                 Titel *
               </label>
               <Input
@@ -475,7 +475,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Slug */}
             <div>
-              <label htmlFor="slug" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-2">
                 Slug *
               </label>
               <Input
@@ -495,7 +495,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Category */}
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="category" className="block text-sm font-medium text-foreground mb-2">
                 Kategorie
               </label>
               <Input
@@ -510,7 +510,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Funnel */}
             <div>
-              <label htmlFor="funnel" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="funnel" className="block text-sm font-medium text-foreground mb-2">
                 Funnel
               </label>
               <Select
@@ -531,7 +531,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Flow Step */}
             <div>
-              <label htmlFor="flowStep" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="flowStep" className="block text-sm font-medium text-foreground mb-2">
                 Flow Step
               </label>
               <Input
@@ -549,7 +549,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Order Index */}
             <div>
-              <label htmlFor="orderIndex" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="orderIndex" className="block text-sm font-medium text-foreground mb-2">
                 Order Index
               </label>
               <Input
@@ -567,7 +567,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Priority */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="priority" className="block text-sm font-medium text-foreground mb-2">
                 Priorität
               </label>
               <Input
@@ -583,7 +583,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
             {/* Excerpt */}
             <div className="md:col-span-2">
-              <label htmlFor="excerpt" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="excerpt" className="block text-sm font-medium text-foreground mb-2">
                 Auszug / Kurzbeschreibung
               </label>
               <Textarea
@@ -599,13 +599,13 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         </div>
 
         {/* Editor Section */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Inhalt (Markdown)</h2>
+            <h2 className="text-lg font-semibold text-foreground">Inhalt (Markdown)</h2>
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="h-10 px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50 transition"
+              className="h-10 px-4 py-2 text-sm border border-border rounded-md text-foreground hover:bg-muted/30 transition"
             >
               {showPreview ? 'Nur Editor' : 'Vorschau anzeigen'}
             </button>
@@ -614,7 +614,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Markdown Editor */}
             <div>
-              <label htmlFor="markdown" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="markdown" className="block text-sm font-medium text-foreground mb-2">
                 Markdown *
               </label>
               <Textarea
@@ -632,17 +632,17 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             {/* Preview */}
             {showPreview && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Live-Vorschau
                 </label>
                 <div
-                  className="border border-slate-300 rounded-md p-4 bg-slate-50 overflow-auto"
+                  className="border border-border rounded-md p-4 bg-muted/20 overflow-auto"
                   style={{ height: '500px' }}
                 >
                   {bodyMarkdown ? (
                     <MarkdownRenderer content={bodyMarkdown} />
                   ) : (
-                    <p className="text-slate-400 text-sm">Vorschau erscheint hier...</p>
+                    <p className="text-muted-foreground text-sm">Vorschau erscheint hier...</p>
                   )}
                 </div>
               </div>
@@ -652,25 +652,25 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
 
         {/* F3: Sections Management - Only show for edit mode */}
         {mode === 'edit' && pageId && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">
+              <h2 className="text-lg font-semibold text-foreground">
                 Sections ({sections.length})
               </h2>
               <button
                 type="button"
                 onClick={handleAddSection}
                 disabled={saving}
-                className="h-10 px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-md hover:bg-sky-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-10 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 + Section hinzufügen
               </button>
             </div>
 
             {sectionsLoading ? (
-              <p className="text-slate-600 text-sm">Sections werden geladen...</p>
+              <p className="text-muted-foreground text-sm">Sections werden geladen...</p>
             ) : sections.length === 0 ? (
-              <p className="text-slate-500 text-sm">
+              <p className="text-muted-foreground text-sm">
                 Keine Sections vorhanden. Klicken Sie auf &quot;Section hinzufügen&quot; um eine
                 neue Section zu erstellen.
               </p>
@@ -694,12 +694,12 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-end bg-white rounded-xl border border-slate-200 p-6">
+        <div className="flex flex-col sm:flex-row gap-3 justify-end bg-card rounded-xl border border-border p-6">
           <button
             type="button"
             onClick={handleCancel}
             disabled={saving}
-            className="px-6 py-3 min-h-11 rounded-lg border border-slate-300 text-slate-700 text-sm md:text-base font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg border border-border text-foreground text-sm md:text-base font-medium hover:bg-muted/30 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             Abbrechen
           </button>
@@ -708,7 +708,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             type="button"
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-6 py-3 min-h-11 rounded-lg border border-sky-600 text-sky-600 text-sm md:text-base font-medium hover:bg-sky-50 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg border border-primary text-primary text-sm md:text-base font-medium hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             {saving ? 'Speichere...' : 'Als Entwurf speichern'}
           </button>
@@ -717,7 +717,7 @@ export default function ContentPageEditor({ initialData, mode, pageId }: Content
             type="button"
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="px-6 py-3 min-h-11 rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
+            className="px-6 py-3 min-h-11 rounded-lg bg-primary text-primary-foreground text-sm md:text-base font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition touch-manipulation"
           >
             {saving ? 'Speichere...' : 'Veröffentlichen'}
           </button>

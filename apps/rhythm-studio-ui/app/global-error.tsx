@@ -29,7 +29,7 @@ export default function GlobalError({
   return (
     <html lang="de">
       <body>
-        <div className="w-full min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="w-full min-h-screen flex items-center justify-center bg-background px-4 text-foreground">
           <ErrorState
             title="Ein Fehler ist aufgetreten"
             message={message}
