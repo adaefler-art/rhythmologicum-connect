@@ -297,7 +297,7 @@ export async function PUT(
 		// Parse with Zod for type safety (already validated)
 		const validatedManifest = FunnelContentManifestSchema.parse(manifestData)
 
-		// Update manifest using admin client for audit trail
+		// Justification: Admin client required to update funnel versions and write audit log (RLS-bypassed admin metadata)
 		const adminClient = createAdminSupabaseClient()
 
 		const { data: updatedVersion, error: updateError } = (await adminClient

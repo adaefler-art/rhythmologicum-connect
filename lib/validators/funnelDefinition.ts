@@ -461,7 +461,7 @@ export function validateQuestionnaireConfig(config: unknown): ValidationResult {
   
   if (!schemaResult.success) {
     // Convert Zod errors to our error format
-    schemaResult.error.errors.forEach((err) => {
+    schemaResult.error.issues.forEach((err) => {
       errors.push({
         code: VALIDATION_ERROR_CODES.DEF_INVALID_SCHEMA,
         message: err.message,
@@ -500,7 +500,7 @@ export function validateContentManifest(manifest: unknown): ValidationResult {
   
   if (!schemaResult.success) {
     // Convert Zod errors to our error format
-    schemaResult.error.errors.forEach((err) => {
+    schemaResult.error.issues.forEach((err) => {
       errors.push({
         code: VALIDATION_ERROR_CODES.DEF_INVALID_SCHEMA,
         message: err.message,
