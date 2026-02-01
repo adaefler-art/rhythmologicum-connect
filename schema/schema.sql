@@ -429,6 +429,105 @@ $$;
 ALTER FUNCTION "public"."audit_notification_templates"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."audit_patient_funnels_changes"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_diff JSONB;
+  v_action TEXT;
+  v_org_id UUID;
+BEGIN
+  -- Determine action
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'assigned';
+    v_diff := jsonb_build_object(
+      'funnel_id', NEW.funnel_id,
+      'active_version_id', NEW.active_version_id,
+      'status', NEW.status
+    );
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- Build diff object with only changed fields
+    v_diff := '{}'::jsonb;
+    
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+      v_diff := v_diff || jsonb_build_object(
+        'status', jsonb_build_object('old', OLD.status, 'new', NEW.status)
+      );
+      v_action := 'status_changed';
+    END IF;
+    
+    IF OLD.active_version_id IS DISTINCT FROM NEW.active_version_id THEN
+      v_diff := v_diff || jsonb_build_object(
+        'active_version_id', jsonb_build_object('old', OLD.active_version_id, 'new', NEW.active_version_id)
+      );
+      v_action := COALESCE(v_action, 'version_changed');
+    END IF;
+    
+    IF OLD.completed_at IS DISTINCT FROM NEW.completed_at THEN
+      v_diff := v_diff || jsonb_build_object(
+        'completed_at', jsonb_build_object('old', OLD.completed_at, 'new', NEW.completed_at)
+      );
+      v_action := COALESCE(v_action, 'completed');
+    END IF;
+    
+    -- Default action if no specific change detected
+    IF v_action IS NULL THEN
+      v_action := 'updated';
+    END IF;
+  ELSIF TG_OP = 'DELETE' THEN
+    v_action := 'deleted';
+    v_diff := jsonb_build_object(
+      'funnel_id', OLD.funnel_id,
+      'status', OLD.status
+    );
+  END IF;
+
+  -- Get org_id from patient profile
+  SELECT uom.organization_id INTO v_org_id
+  FROM "public"."patient_profiles" pp
+  JOIN "public"."user_org_membership" uom ON pp.user_id = uom.user_id
+  WHERE pp.id = COALESCE(NEW.patient_id, OLD.patient_id)
+  AND uom.is_active = true
+  LIMIT 1;
+
+  -- Insert audit log entry
+  INSERT INTO "public"."audit_log" (
+    actor_user_id,
+    actor_role,
+    entity_type,
+    entity_id,
+    action,
+    diff,
+    org_id,
+    source,
+    metadata
+  ) VALUES (
+    auth.uid(),
+    (SELECT app_metadata->>'role' FROM auth.users WHERE id = auth.uid()),
+    'patient_funnel',
+    COALESCE(NEW.id, OLD.id),
+    v_action,
+    v_diff,
+    v_org_id,
+    'api',
+    jsonb_build_object(
+      'patient_id', COALESCE(NEW.patient_id, OLD.patient_id),
+      'funnel_id', COALESCE(NEW.funnel_id, OLD.funnel_id)
+    )
+  );
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."audit_patient_funnels_changes"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."audit_patient_funnels_changes"() IS 'E74.6: Audit logging for patient_funnels lifecycle changes';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."audit_reassessment_rules"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1526,6 +1625,23 @@ $$;
 
 
 ALTER FUNCTION "public"."update_operational_settings_timestamp"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_patient_funnels_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_patient_funnels_updated_at"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."update_patient_funnels_updated_at"() IS 'E74.6: Auto-update updated_at timestamp on patient_funnels changes';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."update_patient_state_updated_at"() RETURNS "trigger"
@@ -5252,6 +5368,10 @@ CREATE OR REPLACE TRIGGER "audit_notification_templates_trigger" AFTER INSERT OR
 
 
 
+CREATE OR REPLACE TRIGGER "audit_patient_funnels_changes_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."patient_funnels" FOR EACH ROW EXECUTE FUNCTION "public"."audit_patient_funnels_changes"();
+
+
+
 CREATE OR REPLACE TRIGGER "audit_reassessment_rules_trigger" AFTER INSERT OR DELETE OR UPDATE ON "public"."reassessment_rules" FOR EACH ROW EXECUTE FUNCTION "public"."audit_reassessment_rules"();
 
 
@@ -5313,6 +5433,10 @@ CREATE OR REPLACE TRIGGER "update_kpi_thresholds_timestamp" BEFORE UPDATE ON "pu
 
 
 CREATE OR REPLACE TRIGGER "update_notification_templates_timestamp" BEFORE UPDATE ON "public"."notification_templates" FOR EACH ROW EXECUTE FUNCTION "public"."update_operational_settings_timestamp"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_patient_funnels_updated_at_trigger" BEFORE UPDATE ON "public"."patient_funnels" FOR EACH ROW EXECUTE FUNCTION "public"."update_patient_funnels_updated_at"();
 
 
 
@@ -6011,6 +6135,43 @@ CREATE POLICY "Service can update measures" ON "public"."patient_measures" FOR U
 
 
 CREATE POLICY "Service can update reports" ON "public"."reports" FOR UPDATE USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Staff can insert org patient funnels" ON "public"."patient_funnels" FOR INSERT WITH CHECK (((EXISTS ( SELECT 1
+   FROM ("public"."patient_profiles" "pp"
+     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND (EXISTS ( SELECT 1
+           FROM "public"."user_org_membership" "uom2"
+          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role") OR ("uom2"."role" = 'admin'::"public"."user_role")))))))) OR (EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND "public"."is_assigned_to_patient"("pp"."user_id"))))));
+
+
+
+COMMENT ON POLICY "Staff can insert org patient funnels" ON "public"."patient_funnels" IS 'E74.6: Staff can assign funnels to patients in their organization';
+
+
+
+CREATE POLICY "Staff can update org patient funnels" ON "public"."patient_funnels" FOR UPDATE USING (((EXISTS ( SELECT 1
+   FROM ("public"."patient_profiles" "pp"
+     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND (EXISTS ( SELECT 1
+           FROM "public"."user_org_membership" "uom2"
+          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role") OR ("uom2"."role" = 'admin'::"public"."user_role")))))))) OR (EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND "public"."is_assigned_to_patient"("pp"."user_id")))))) WITH CHECK (((EXISTS ( SELECT 1
+   FROM ("public"."patient_profiles" "pp"
+     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND (EXISTS ( SELECT 1
+           FROM "public"."user_org_membership" "uom2"
+          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role") OR ("uom2"."role" = 'admin'::"public"."user_role")))))))) OR (EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "patient_funnels"."patient_id") AND "public"."is_assigned_to_patient"("pp"."user_id"))))));
+
+
+
+COMMENT ON POLICY "Staff can update org patient funnels" ON "public"."patient_funnels" IS 'E74.6: Staff can update funnel status/version for patients in their organization';
 
 
 
@@ -6934,6 +7095,12 @@ GRANT ALL ON FUNCTION "public"."audit_notification_templates"() TO "service_role
 
 
 
+GRANT ALL ON FUNCTION "public"."audit_patient_funnels_changes"() TO "anon";
+GRANT ALL ON FUNCTION "public"."audit_patient_funnels_changes"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."audit_patient_funnels_changes"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "anon";
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "service_role";
@@ -7138,6 +7305,12 @@ GRANT ALL ON FUNCTION "public"."update_notifications_updated_at"() TO "service_r
 GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_operational_settings_timestamp"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_patient_funnels_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_patient_funnels_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_patient_funnels_updated_at"() TO "service_role";
 
 
 
