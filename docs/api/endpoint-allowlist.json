@@ -64,6 +64,7 @@
     "/api/funnels/[slug]/content-pages",
     "/api/funnels/active",
     "/api/health/env",
+    "/api/mcp",
     "/api/notifications",
     "/api/notifications/[id]",
     "/api/patient-measures/export",

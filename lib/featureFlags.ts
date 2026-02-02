@@ -10,6 +10,7 @@
  * - NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: Enable/disable clinician dashboard (default: true)
  * - NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: Enable/disable charts in clinician views (default: true)
  * - NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: Enable/disable processing results endpoint (default: false)
+ * - NEXT_PUBLIC_FEATURE_MCP_ENABLED: Enable/disable MCP server integration (E76.1) (default: false)
  */
 
 import { env } from '@/lib/env'
@@ -21,6 +22,7 @@ export type FeatureFlags = {
   CLINICIAN_DASHBOARD_ENABLED: boolean
   CHARTS_ENABLED: boolean
   PROCESSING_RESULTS_ENABLED: boolean
+  MCP_ENABLED: boolean
 }
 
 function resolveFlag(value: string | undefined, defaultValue: boolean): boolean {
@@ -46,6 +48,7 @@ export const featureFlags: FeatureFlags = {
     env.NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED,
     false,
   ),
+  MCP_ENABLED: resolveFlag(env.NEXT_PUBLIC_FEATURE_MCP_ENABLED, false),
 }
 
 /**
