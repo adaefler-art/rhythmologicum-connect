@@ -4,77 +4,128 @@
  * Tests for creating system-generated anamnesis entries from assessments
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
-import { createClient } from '@supabase/supabase-js'
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import {
   createFunnelSummary,
   extractKeyAnswers,
   extractResultsSummary,
 } from '@/lib/anamnesis/summaryGenerator'
+import { getPatientProfileId, getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 
-// Test configuration
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321'
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+jest.mock('@/lib/api/anamnesis/helpers', () => ({
+  getPatientProfileId: jest.fn(),
+  getPatientOrganizationId: jest.fn(),
+}))
 
 // Test IDs (must match E75.1 test data)
 const TEST_ORG_ID = '11111111-1111-1111-1111-111111111111'
 const TEST_PATIENT_USER_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 const TEST_PATIENT_ID = 'a1111111-1111-1111-1111-111111111111'
 
+type MockRow = Record<string, any>
+
+function createMockSupabase() {
+  const tables: Record<string, MockRow[]> = {
+    anamnesis_entries: [],
+    assessment_answers: [],
+    calculated_results: [],
+  }
+  let idCounter = 0
+
+  const createQuery = (tableName: string) => {
+    const filters: Array<{ key: string; value: any }> = []
+    let mode: 'select' | 'delete' = 'select'
+
+    const getRows = () => {
+      const rows = tables[tableName] || []
+      return rows.filter((row) => {
+        return filters.every(({ key, value }) => {
+          if (key === 'content->>assessment_id') {
+            return row.content?.assessment_id === value
+          }
+          if (key === 'is_archived') {
+            return (row.is_archived ?? false) === value
+          }
+          return row[key] === value
+        })
+      })
+    }
+
+    const runQuery = () => {
+      if (mode === 'delete') {
+        const rows = tables[tableName] || []
+        const remaining = rows.filter((row) => !getRows().includes(row))
+        tables[tableName] = remaining
+        return { data: null, error: null }
+      }
+
+      return { data: getRows(), error: null }
+    }
+
+    const query: any = {
+      select: () => query,
+      eq: (key: string, value: any) => {
+        filters.push({ key, value })
+        return query
+      },
+      maybeSingle: async () => {
+        const { data } = runQuery()
+        const row = Array.isArray(data) ? data[0] ?? null : data
+        return { data: row, error: null }
+      },
+      single: async () => {
+        const { data } = runQuery()
+        const row = Array.isArray(data) ? data[0] : data
+        if (!row) {
+          return { data: null, error: new Error('Not found') }
+        }
+        return { data: row, error: null }
+      },
+      delete: () => {
+        mode = 'delete'
+        return query
+      },
+      insert: (payload: MockRow | MockRow[]) => {
+        const records = Array.isArray(payload) ? payload : [payload]
+        const stored = records.map((record) => {
+          const id = record.id ?? `mock-${tableName}-${(idCounter += 1)}`
+          const row = { is_archived: false, ...record, id }
+          tables[tableName] = [...(tables[tableName] || []), row]
+          return row
+        })
+
+        const insertResult: any = {
+          select: () => ({
+            single: async () => ({ data: { id: stored[0]?.id }, error: null }),
+          }),
+          then: (resolve: any, reject: any) =>
+            Promise.resolve({ data: stored, error: null }).then(resolve, reject),
+        }
+
+        return insertResult
+      },
+      then: (resolve: any, reject: any) => Promise.resolve(runQuery()).then(resolve, reject),
+    }
+
+    return query
+  }
+
+  return {
+    from: (tableName: string) => createQuery(tableName),
+  }
+}
+
 describe('E75.5: Funnel Summary Generator', () => {
-  let supabase: ReturnType<typeof createClient>
+  let supabase: ReturnType<typeof createMockSupabase>
   let testAssessmentId: string
   let testJobId: string
 
-  beforeAll(async () => {
-    // Create admin client
-    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-
-    // Create test assessment
-    const { data: assessment, error: assessmentError } = await supabase
-      .from('assessments')
-      .insert({
-        patient_id: TEST_PATIENT_ID,
-        funnel: 'stress',
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single()
-
-    if (assessmentError || !assessment) {
-      throw new Error(`Failed to create test assessment: ${assessmentError?.message}`)
-    }
-
-    testAssessmentId = assessment.id
-
-    // Create test processing job
-    const { data: job, error: jobError } = await supabase
-      .from('processing_jobs')
-      .insert({
-        assessment_id: testAssessmentId,
-        correlation_id: `test-${Date.now()}`,
-        status: 'completed',
-        stage: 'completed',
-      })
-      .select('id')
-      .single()
-
-    if (jobError || !job) {
-      throw new Error(`Failed to create test job: ${jobError?.message}`)
-    }
-
-    testJobId = job.id
-  })
-
-  afterAll(async () => {
-    // Clean up test data
-    if (testAssessmentId) {
-      await supabase.from('assessments').delete().eq('id', testAssessmentId)
-    }
-    if (testJobId) {
-      await supabase.from('processing_jobs').delete().eq('id', testJobId)
-    }
+  beforeEach(() => {
+    supabase = createMockSupabase()
+    testAssessmentId = 'assessment-1'
+    testJobId = 'job-1'
+    ;(getPatientProfileId as jest.Mock).mockResolvedValue(TEST_PATIENT_ID)
+    ;(getPatientOrganizationId as jest.Mock).mockResolvedValue(TEST_ORG_ID)
   })
 
   describe('createFunnelSummary', () => {
@@ -186,6 +237,7 @@ describe('E75.5: Funnel Summary Generator', () => {
     })
 
     it('should handle missing patient profile', async () => {
+      ;(getPatientProfileId as jest.Mock).mockResolvedValueOnce(null)
       const result = await createFunnelSummary(supabase, {
         assessmentId: testAssessmentId,
         funnelSlug: 'stress',

@@ -285,10 +285,53 @@ function matchCallsiteToAnyRoute(callsiteApiPath, routePatterns) {
     ? templateToLooseMatchApiPath(callsiteApiPath)
     : callsiteApiPath
 
+  const matches = []
   for (const rp of routePatterns) {
-    if (matchApiPathToRoutePattern(candidate, rp)) return rp
+    if (matchApiPathToRoutePattern(candidate, rp)) matches.push(rp)
   }
-  return null
+  if (!matches.length) return null
+  if (matches.length === 1) return matches[0]
+
+  const specificityFor = (routePattern) => {
+    const segs = routePatternToSegments(routePattern)
+    let staticCount = 0
+    let dynamicCount = 0
+    let catchAllCount = 0
+    let optionalCatchAllCount = 0
+    for (const seg of segs) {
+      if (isOptionalCatchAll(seg)) {
+        optionalCatchAllCount += 1
+      } else if (isCatchAll(seg)) {
+        catchAllCount += 1
+      } else if (isDynamic(seg)) {
+        dynamicCount += 1
+      } else {
+        staticCount += 1
+      }
+    }
+    return [staticCount, -dynamicCount, -catchAllCount, -optionalCatchAllCount, segs.length]
+  }
+
+  const cmpTuple = (a, b) => {
+    const len = Math.max(a.length, b.length)
+    for (let i = 0; i < len; i += 1) {
+      const av = a[i] ?? 0
+      const bv = b[i] ?? 0
+      if (av !== bv) return av > bv ? -1 : 1
+    }
+    return 0
+  }
+
+  matches.sort((a, b) => {
+    const specA = specificityFor(a)
+    const specB = specificityFor(b)
+    const specCmp = cmpTuple(specA, specB)
+    if (specCmp !== 0) return specCmp
+    if (a === b) return 0
+    return a < b ? -1 : 1
+  })
+
+  return matches[0]
 }
 
 function normalizeRepoRelative(p) {

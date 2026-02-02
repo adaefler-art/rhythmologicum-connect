@@ -6930,6 +6930,25 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/patient/anamnesis/export.json",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/patient/anamnesis/export.json/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/api/anamnesis/exportClient.ts",
+          "apiPath": "/api/patient/anamnesis/export.json",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/assessments",
       "methods": [
         "GET"
@@ -7658,16 +7677,10 @@
       "file": "apps/rhythm-legacy/app/api/review/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
-          "apiPath": "/api/review/queue",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]",
@@ -7677,16 +7690,10 @@
       "file": "legacy/code/app/api/review/[id]/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
-          "apiPath": "/api/review/queue",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/review/[id]/decide",
@@ -7825,10 +7832,16 @@
       "file": "apps/rhythm-legacy/app/api/review/queue/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+          "apiPath": "/api/review/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/review/queue",
@@ -7838,10 +7851,16 @@
       "file": "apps/rhythm-studio-ui/app/api/review/queue/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+          "apiPath": "/api/review/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/review/queue",
@@ -7851,10 +7870,16 @@
       "file": "legacy/code/app/api/review/queue/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/review-queue/page.tsx",
+          "apiPath": "/api/review/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/shipments",
@@ -8076,6 +8101,25 @@
         {
           "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
           "apiPath": "/api/studio/patients/${patientId}/anamnesis",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/studio/patients/[patientId]/anamnesis/export.json",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/export.json/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "lib/api/anamnesis/exportClient.ts",
+          "apiPath": "/api/studio/patients/${patientId}/anamnesis/export.json",
           "kind": "fetch"
         }
       ],
