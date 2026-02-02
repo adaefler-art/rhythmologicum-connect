@@ -29,11 +29,11 @@ export async function exportPatientAnamnesis(
     throw new Error('Anamnesis export feature is not enabled')
   }
 
-  const url = `/api/patient/anamnesis/export.json${includeVersions ? '?include_versions=true' : ''}`
-  
   // Literal callsite - DO NOT REFACTOR
-  const response = await fetch('/api/patient/anamnesis/export.json' + 
-    (includeVersions ? '?include_versions=true' : ''))
+  const url = '/api/patient/anamnesis/export.json' + 
+    (includeVersions ? '?include_versions=true' : '')
+  
+  const response = await fetch(url)
   
   if (!response.ok) {
     const error = await response.json()
