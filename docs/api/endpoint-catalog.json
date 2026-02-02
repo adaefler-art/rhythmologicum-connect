@@ -6856,23 +6856,46 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/client.tsx",
+          "apiPath": "/api/patient/anamnesis",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/client.tsx",
+          "apiPath": "/api/patient/anamnesis",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/patient/anamnesis/[entryId]",
       "methods": [
-        "GET"
+        "GET",
+        "PATCH"
       ],
       "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/[entryId]/detail/client.tsx",
+          "apiPath": "/api/patient/anamnesis/${entry.id}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/[entryId]/detail/client.tsx",
+          "apiPath": "/api/patient/anamnesis/${entryId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/patient/anamnesis/[entryId]/archive",
@@ -6882,10 +6905,16 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/archive/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/[entryId]/detail/client.tsx",
+          "apiPath": "/api/patient/anamnesis/${entryId}/archive",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/patient/anamnesis/[entryId]/versions",

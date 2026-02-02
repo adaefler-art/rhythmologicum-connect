@@ -96,6 +96,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       active: pathname?.startsWith('/clinician/funnels') ?? false,
     },
     {
+      href: '/clinician/anamnesis',
+      label: 'Anamnese',
+      active: pathname?.startsWith('/clinician/anamnesis') ?? false,
+    },
+    {
       href: '/admin/content',
       label: 'Inhalte',
       active: pathname?.startsWith('/admin/content') ?? false,
@@ -139,6 +144,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician/funnels',
       label: 'Fragebögen',
       active: pathname?.startsWith('/clinician/funnels') ?? false,
+    },
+    {
+      href: '/clinician/anamnesis',
+      label: 'Anamnese',
+      active: pathname?.startsWith('/clinician/anamnesis') ?? false,
     },
     {
       href: '/admin/content',
