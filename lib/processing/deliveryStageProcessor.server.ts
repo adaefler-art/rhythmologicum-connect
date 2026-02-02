@@ -167,7 +167,7 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
 
     // E75.5: Create anamnesis summary entry before marking as delivered
     try {
-      await createAnamnesiseSummaryEntry(jobId, userId, assessmentId)
+      await createAnamnesisSummaryEntry(jobId, userId, assessmentId)
     } catch (err) {
       // Don't fail delivery if summary creation fails
       logWarn('Failed to create anamnesis summary (non-blocking)', {
@@ -387,7 +387,7 @@ export async function processPendingDeliveries(limit = 10): Promise<{
  * @param userId - User ID (for patient lookup)
  * @param assessmentId - Assessment ID
  */
-async function createAnamnesiseSummaryEntry(
+async function createAnamnesisSummaryEntry(
   jobId: string,
   userId: string,
   assessmentId: string,
