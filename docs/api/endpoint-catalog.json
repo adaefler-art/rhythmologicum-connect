@@ -8027,10 +8027,16 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/studio/anamnesis/${entryId}/archive",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/studio/anamnesis/[entryId]/versions",
@@ -8040,10 +8046,16 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/studio/anamnesis/${selectedEntry.id}/versions",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/studio/patients/[patientId]/anamnesis",
@@ -8054,10 +8066,21 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/studio/patients/${patientId}/anamnesis",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/studio/patients/${patientId}/anamnesis",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "path": "/api/support-cases",
