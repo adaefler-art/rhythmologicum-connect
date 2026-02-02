@@ -206,6 +206,10 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient-profiles | GET | patient |  | 2 | apps/rhythm-legacy/app/api/patient-profiles/route.ts |
 | /api/patient-profiles | GET | patient |  | 2 | apps/rhythm-studio-ui/app/api/patient-profiles/route.ts |
 | /api/patient-profiles | GET | patient |  | 2 | legacy/code/app/api/patient-profiles/route.ts |
+| /api/patient/anamnesis | GET, POST | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/anamnesis/route.ts |
+| /api/patient/anamnesis/[entryId] | GET | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/route.ts |
+| /api/patient/anamnesis/[entryId]/archive | POST | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/archive/route.ts |
+| /api/patient/anamnesis/[entryId]/versions | POST | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/versions/route.ts |
 | /api/patient/assessments | GET | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient/assessments/route.ts |
 | /api/patient/assessments-with-results | GET | patient |  | 3 | apps/rhythm-patient-ui/app/api/patient/assessments-with-results/route.ts |
 | /api/patient/assessments-with-results | GET | patient |  | 3 | apps/rhythm-studio-ui/app/api/patient/assessments-with-results/route.ts |
@@ -267,6 +271,9 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/shipments/[id] | GET, PATCH | clinician |  | 1 | legacy/code/app/api/shipments/[id]/route.ts |
 | /api/shipments/[id]/events | GET, POST | clinician |  | 0 | apps/rhythm-legacy/app/api/shipments/[id]/events/route.ts |
 | /api/shipments/[id]/events | GET, POST | clinician |  | 0 | legacy/code/app/api/shipments/[id]/events/route.ts |
+| /api/studio/anamnesis/[entryId]/archive | POST | clinician |  | 0 | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts |
+| /api/studio/anamnesis/[entryId]/versions | POST | clinician |  | 0 | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts |
+| /api/studio/patients/[patientId]/anamnesis | GET, POST | clinician |  | 0 | apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 | apps/rhythm-legacy/app/api/support-cases/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 | apps/rhythm-studio-ui/app/api/support-cases/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 | legacy/code/app/api/support-cases/route.ts |
