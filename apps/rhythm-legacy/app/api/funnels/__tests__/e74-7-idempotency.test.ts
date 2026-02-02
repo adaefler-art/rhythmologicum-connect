@@ -57,6 +57,8 @@ function createMockSupabase(overrides: {
   authError?: Error | null
   patientProfile?: { id: string } | null
   profileError?: Error | null
+  legacyFunnel?: { id: string; title: string; is_active: boolean } | null
+  legacyError?: Error | null
   existingAssessment?: MockAssessment | null
   existingAssessmentError?: Error | null
   assessmentInsertResult?: { id: string; status: string } | null
@@ -72,6 +74,17 @@ function createMockSupabase(overrides: {
         maybeSingle: jest.fn().mockResolvedValue({
           data: overrides.patientProfile ?? { id: 'patient-123' },
           error: overrides.profileError ?? null,
+        }),
+      }
+    }
+
+    if (table === 'funnels') {
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({
+          data: overrides.legacyFunnel ?? null,
+          error: overrides.legacyError ?? null,
         }),
       }
     }
@@ -99,6 +112,7 @@ function createMockSupabase(overrides: {
     return {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
       single: jest.fn().mockResolvedValue({ data: null, error: null }),
     }
   })
@@ -281,32 +295,40 @@ describe('E74.7: Start/Resume Idempotency', () => {
           }
         }
 
+        if (table === 'funnels') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          }
+        }
+
         if (table === 'assessments') {
-          // First call: check for existing
-          if (!updateCalled) {
-            return {
-              select: jest.fn().mockReturnThis(),
-              eq: jest.fn().mockReturnThis(),
-              is: jest.fn().mockReturnThis(),
-              order: jest.fn().mockReturnThis(),
-              limit: jest.fn().mockReturnThis(),
-              maybeSingle: jest.fn().mockResolvedValue({
-                data: existingAssessment,
-                error: null,
-              }),
-              update: jest.fn(() => {
-                updateCalled = true
-                return {
-                  eq: jest.fn().mockReturnThis(),
-                  is: jest.fn().mockReturnThis(),
-                }
-              }),
-              insert: jest.fn().mockReturnThis(),
-              single: jest.fn().mockResolvedValue({
-                data: { id: 'force-new-assessment-777', status: 'in_progress' },
-                error: null,
-              }),
-            }
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            is: jest.fn().mockReturnThis(),
+            order: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: updateCalled ? null : existingAssessment,
+              error: null,
+            }),
+            update: jest.fn(() => {
+              updateCalled = true
+              return {
+                eq: jest.fn().mockReturnThis(),
+                is: jest.fn().mockReturnThis(),
+              }
+            }),
+            insert: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { id: 'force-new-assessment-777', status: 'in_progress' },
+              error: null,
+            }),
           }
         }
 
@@ -328,6 +350,13 @@ describe('E74.7: Start/Resume Idempotency', () => {
       }
 
       mockCreateServerSupabaseClient.mockResolvedValue(mockSupabase)
+
+      mockLoadFunnelWithClient.mockResolvedValue({
+        id: 'catalog-funnel-id',
+        slug: 'stress-assessment',
+        title: 'Stress Assessment',
+        isActive: true,
+      })
 
       mockLoadFunnelVersionWithClient.mockResolvedValue({
         manifest: {
@@ -363,6 +392,7 @@ describe('E74.7: Start/Resume Idempotency', () => {
     it('should handle unique constraint violation gracefully', async () => {
       const mockSupabase = createMockSupabase({
         existingAssessment: null,
+        legacyFunnel: { id: 'stress-funnel-id', title: 'Stress Assessment', is_active: true },
         assessmentInsertError: {
           code: '23505', // PostgreSQL unique violation
           message: 'duplicate key value violates unique constraint',

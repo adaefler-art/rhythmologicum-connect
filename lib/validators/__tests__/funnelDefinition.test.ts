@@ -140,7 +140,7 @@ describe('E74.1: Funnel Definition Validator', () => {
   })
 
   describe('Error Formatting', () => {
-    it('should format errors with rule codes', () => {
+    it('should format errors with rule codes and violates format', () => {
       const config = {
         schema_version: 'v1',
         version: '1.0',
@@ -151,7 +151,22 @@ describe('E74.1: Funnel Definition Validator', () => {
       const formatted = formatValidationErrors(result.errors)
 
       expect(formatted).toContain('DEF_EMPTY_STEPS')
+      expect(formatted).toContain('violates R-E74-003')
       expect(formatted).toContain('steps')
+    })
+
+    it('should include rule ID for all error codes', () => {
+      const config = {
+        schema_version: 'v0',  // Invalid version
+        version: '1.0',
+        steps: [],
+      }
+
+      const result = validateQuestionnaireConfig(config)
+      const formatted = formatValidationErrors(result.errors)
+
+      // Check that "violates R-" appears in the output
+      expect(formatted).toMatch(/violates R-E74-\d+/)
     })
   })
 })
