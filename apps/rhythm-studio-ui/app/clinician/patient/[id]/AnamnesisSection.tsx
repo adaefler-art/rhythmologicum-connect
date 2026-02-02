@@ -14,8 +14,8 @@
  * Access control: Requires clinician role + patient assignment
  */
 
-import { useState, useEffect } from 'react'
-import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select } from '@/lib/ui'
+import { useState, useEffect, useCallback } from 'react'
+import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select, Alert } from '@/lib/ui'
 import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
 import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
 import type { EntryType } from '@/lib/api/anamnesis/validation'
@@ -102,6 +102,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
 
     setIsSaving(true)
+    setFormError(null)
 
     try {
       const response = await fetch(`/api/studio/patients/${patientId}/anamnesis`, {
@@ -116,7 +117,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       })
 
       if (!response.ok) {
-        throw new Error('Fehler beim Erstellen des Eintrags')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || 'Fehler beim Erstellen des Eintrags')
       }
 
       // Reset form and close dialog
@@ -127,7 +129,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       await fetchEntries()
     } catch (err) {
       console.error('[AnamnesisSection] Add error:', err)
-      alert('Fehler beim Erstellen des Eintrags')
+      setFormError(err instanceof Error ? err.message : 'Fehler beim Erstellen des Eintrags')
     } finally {
       setIsSaving(false)
     }
@@ -139,6 +141,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
 
     setIsSaving(true)
+    setFormError(null)
 
     try {
       const response = await fetch(`/api/studio/anamnesis/${selectedEntry.id}/versions`, {
@@ -154,7 +157,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       })
 
       if (!response.ok) {
-        throw new Error('Fehler beim Aktualisieren des Eintrags')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || 'Fehler beim Aktualisieren des Eintrags')
       }
 
       // Reset form and close dialog
@@ -166,7 +170,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       await fetchEntries()
     } catch (err) {
       console.error('[AnamnesisSection] Edit error:', err)
-      alert('Fehler beim Aktualisieren des Eintrags')
+      setFormError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren des Eintrags')
     } finally {
       setIsSaving(false)
     }
@@ -183,14 +187,15 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       })
 
       if (!response.ok) {
-        throw new Error('Fehler beim Archivieren')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || 'Fehler beim Archivieren')
       }
 
       // Refresh entries
       await fetchEntries()
     } catch (err) {
       console.error('[AnamnesisSection] Archive error:', err)
-      alert('Fehler beim Archivieren des Eintrags')
+      setError(err instanceof Error ? err.message : 'Fehler beim Archivieren des Eintrags')
     }
   }
 
@@ -212,6 +217,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setFormContent('')
     setFormEntryType('')
     setFormTags('')
+    setFormError(null)
   }
 
   const formatDate = (isoString: string): string => {
@@ -415,6 +421,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         }
       >
         <div className="space-y-4">
+          {formError && (
+            <Alert variant="danger">
+              {formError}
+            </Alert>
+          )}
+
           <FormField label="Titel" required>
             <Input
               type="text"
@@ -493,6 +505,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         }
       >
         <div className="space-y-4">
+          {formError && (
+            <Alert variant="danger">
+              {formError}
+            </Alert>
+          )}
+
           <FormField label="Titel" required>
             <Input
               type="text"
