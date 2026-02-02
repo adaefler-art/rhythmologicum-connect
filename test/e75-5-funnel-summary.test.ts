@@ -15,13 +15,16 @@ import {
 // Test configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321'
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const HAS_SUPABASE_SERVICE_KEY = Boolean(SUPABASE_SERVICE_KEY)
 
 // Test IDs (must match E75.1 test data)
 const TEST_ORG_ID = '11111111-1111-1111-1111-111111111111'
 const TEST_PATIENT_USER_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 const TEST_PATIENT_ID = 'a1111111-1111-1111-1111-111111111111'
 
-describe('E75.5: Funnel Summary Generator', () => {
+const describeWithSupabase = HAS_SUPABASE_SERVICE_KEY ? describe : describe.skip
+
+describeWithSupabase('E75.5: Funnel Summary Generator', () => {
   let supabase: ReturnType<typeof createClient>
   let testAssessmentId: string
   let testJobId: string
