@@ -1,6 +1,4 @@
 'use client'
-
-import { useMemo } from 'react'
 import { Card, Button } from '@/lib/ui/mobile-v2'
 
 type DashboardHeroProps = {
@@ -8,46 +6,11 @@ type DashboardHeroProps = {
   onChat: () => void
 }
 
-function getInitials(name: string): string {
-  const parts = name
-    .split(' ')
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  if (parts.length === 0) return '🙂'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
-
 export default function DashboardHero({ greetingName, onChat }: DashboardHeroProps) {
   const resolvedName = greetingName?.trim() || 'there'
-  const initials = useMemo(() => getInitials(resolvedName), [resolvedName])
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          aria-label="Open menu"
-          className="h-10 w-10 rounded-full bg-white shadow-sm border border-slate-200 text-lg text-slate-700 flex items-center justify-center"
-        >
-          ☰
-        </button>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="h-10 w-10 rounded-full bg-white shadow-sm border border-slate-200 text-lg text-slate-700 flex items-center justify-center"
-          >
-            🔔
-          </button>
-          <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-700 text-sm font-semibold flex items-center justify-center">
-            {initials}
-          </div>
-        </div>
-      </div>
-
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-slate-900">
           Good morning, {resolvedName}

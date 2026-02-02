@@ -3,10 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { LoadingSkeleton, ErrorState, Card, Badge, ProgressBar, Button } from '@/lib/ui/mobile-v2'
-import {
-  AMYChatWidget,
-  ContentTilesGrid,
-} from '../components'
+import { ContentTilesGrid } from '../components'
 import { useDashboardData } from '@/lib/hooks/useDashboardData'
 import { useAppFocus } from '@/lib/hooks/useAppFocus'
 import { useDesignTokens } from '@/lib/contexts/DesignTokensContext'
@@ -322,8 +319,6 @@ export default function DashboardClient({
         </div>
       </main>
 
-      {/* E73.8: AMY Chat Widget - Feature gated */}
-      <AMYChatWidget />
     </div>
   )
 }
