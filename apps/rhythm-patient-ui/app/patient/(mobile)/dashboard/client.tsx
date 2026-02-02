@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { LoadingSkeleton, ErrorState } from '@/lib/ui/mobile-v2'
 import {
-  DashboardHeader,
   AMYComposer,
   AMYChatWidget,
   NextStepCard,
@@ -14,6 +13,8 @@ import {
 import { useDashboardData } from '@/lib/hooks/useDashboardData'
 import { useAppFocus } from '@/lib/hooks/useAppFocus'
 import { useDesignTokens } from '@/lib/contexts/DesignTokensContext'
+import { supabase } from '@/lib/supabaseClient'
+import DashboardHero from './DashboardHero'
 
 /**
  * Patient Dashboard Client Component (E6.5.4 + E6.5.9)
@@ -53,12 +54,44 @@ export default function DashboardClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [greetingName, setGreetingName] = useState('there')
   
   // E73.9: Get dynamic design tokens from context
   const tokens = useDesignTokens()
   
   // E6.5.9: Use dashboard data hook with stale-while-revalidate
   const { data: dashboardData, state, error, isStale, refresh, retry } = useDashboardData()
+
+  useEffect(() => {
+    let active = true
+
+    const loadUserName = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!active) return
+
+        const metadata = (user?.user_metadata ?? {}) as Record<string, unknown>
+        const firstName = typeof metadata.first_name === 'string' ? metadata.first_name : null
+        const givenName = typeof metadata.given_name === 'string' ? metadata.given_name : null
+        const fullName = typeof metadata.full_name === 'string' ? metadata.full_name : null
+        const displayName = typeof metadata.display_name === 'string' ? metadata.display_name : null
+        const name = firstName || givenName || fullName || displayName || 'there'
+
+        setGreetingName(name)
+      } catch {
+        if (!active) return
+        setGreetingName('there')
+      }
+    }
+
+    loadUserName()
+    return () => {
+      active = false
+    }
+  }, [])
 
   // E6.5.9: Auto-refresh on app focus (mobile-friendly)
   useAppFocus(() => {
@@ -128,6 +161,10 @@ export default function DashboardClient({
     }
   }
 
+  const handleAmyChat = () => {
+    router.push('/patient/dialog')
+  }
+
 
   return (
     <div className="min-h-screen flex flex-col bg-linear-to-b from-sky-50 via-slate-50 to-slate-100 transition-colors duration-150">
@@ -177,8 +214,8 @@ export default function DashboardClient({
           {/* E6.5.9: Show stale data during revalidation (stale-while-revalidate) */}
           {dashboardData && (
             <>
-              {/* Header Section */}
-              <DashboardHeader />
+              {/* New Greeting + AMY Card */}
+              <DashboardHero greetingName={greetingName} onChat={handleAmyChat} />
 
               {/* E6.6.1: AMY Composer - Guided Mode for bounded input */}
               <AMYComposer />
