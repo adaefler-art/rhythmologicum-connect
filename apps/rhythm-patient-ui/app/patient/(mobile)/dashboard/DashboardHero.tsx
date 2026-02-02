@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Card, Button } from '@/lib/ui/mobile-v2'
 
 type DashboardHeroProps = {
-  greetingName: string
+  greetingName?: string
   onChat: () => void
 }
 
@@ -20,7 +20,8 @@ function getInitials(name: string): string {
 }
 
 export default function DashboardHero({ greetingName, onChat }: DashboardHeroProps) {
-  const initials = useMemo(() => getInitials(greetingName), [greetingName])
+  const resolvedName = greetingName?.trim() || 'there'
+  const initials = useMemo(() => getInitials(resolvedName), [resolvedName])
 
   return (
     <div className="space-y-4">
@@ -49,7 +50,7 @@ export default function DashboardHero({ greetingName, onChat }: DashboardHeroPro
 
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-slate-900">
-          Good morning, {greetingName}
+          Good morning, {resolvedName}
         </h1>
         <p className="text-slate-600">How are you feeling today?</p>
       </div>
