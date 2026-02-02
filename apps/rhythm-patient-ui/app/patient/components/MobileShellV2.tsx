@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { TopBarV2, type TopBarVariant } from './TopBarV2'
-import { BottomNavV2 } from './BottomNavV2'
+import { BottomNavV2 } from '@/app/patient/(mobile)/BottomNavV2'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 interface MobileShellV2Props {
