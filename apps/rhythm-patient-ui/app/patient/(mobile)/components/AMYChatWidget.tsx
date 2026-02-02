@@ -127,7 +127,7 @@ export default function AMYChatWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center z-50"
+        className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center z-50"
         aria-label="Open AMY Chat"
       >
         <svg
@@ -148,7 +148,7 @@ export default function AMYChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200">
+    <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200">
       {/* Header */}
       <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
         <div className="flex items-center gap-2">
