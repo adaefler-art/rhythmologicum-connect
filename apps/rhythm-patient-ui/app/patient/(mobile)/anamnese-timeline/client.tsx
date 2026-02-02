@@ -308,8 +308,8 @@ export default function AnamneseTimelineClient() {
                         {entry.is_archived ? 'Archiviert' : 'Aktiv'}
                       </Badge>
                       {entry.version_count > 1 && (
-                        <span className="text-xs text-slate-500">
-                          v{entry.version_count}
+                        <span className="text-xs text-slate-500" aria-label="Anzahl Versionen">
+                          Version {entry.version_count}
                         </span>
                       )}
                     </div>
