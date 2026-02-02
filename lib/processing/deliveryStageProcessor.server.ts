@@ -31,6 +31,7 @@ import {
 } from '@/lib/notifications/notificationService'
 import { NotificationType, NotificationChannel } from '@/lib/contracts/delivery'
 import { logInfo, logError, logWarn } from '@/lib/logging/logger'
+import { createFunnelSummary, extractResultsSummary } from '@/lib/anamnesis/summaryGenerator'
 
 // ============================================================
 // TYPES
@@ -161,6 +162,18 @@ export async function processDeliveryStage(jobId: string): Promise<DeliveryResul
       logWarn('Failed to create notification', {
         jobId,
         error: notificationResult.error,
+      })
+    }
+
+    // E75.5: Create anamnesis summary entry before marking as delivered
+    try {
+      await createAnamnesiseSummaryEntry(jobId, userId, assessmentId)
+    } catch (err) {
+      // Don't fail delivery if summary creation fails
+      logWarn('Failed to create anamnesis summary (non-blocking)', {
+        jobId,
+        assessmentId,
+        error: String(err),
       })
     }
 
@@ -357,5 +370,88 @@ export async function processPendingDeliveries(limit = 10): Promise<{
   } catch (err) {
     logError('Error in processPendingDeliveries', {}, err)
     return { processed: 0, succeeded: 0, failed: 0 }
+  }
+}
+
+// ============================================================
+// E75.5: ANAMNESIS SUMMARY CREATION
+// ============================================================
+
+/**
+ * E75.5: Create anamnesis summary entry for completed assessment
+ * 
+ * Creates a system-generated funnel_summary entry in anamnesis_entries
+ * Idempotent - won't create duplicates if summary already exists
+ * 
+ * @param jobId - Processing job ID
+ * @param userId - User ID (for patient lookup)
+ * @param assessmentId - Assessment ID
+ */
+async function createAnamnesiseSummaryEntry(
+  jobId: string,
+  userId: string,
+  assessmentId: string,
+): Promise<void> {
+  const supabase = createAdminSupabaseClient()
+
+  try {
+    // Load assessment to get funnel info and completion time
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .select('funnel, completed_at')
+      .eq('id', assessmentId)
+      .single()
+
+    if (assessmentError || !assessment) {
+      logError('Failed to load assessment for anamnesis summary', {
+        assessmentId,
+        jobId,
+      }, assessmentError)
+      return
+    }
+
+    // Extract results summary from job (if available)
+    let resultsSummary
+    try {
+      resultsSummary = await extractResultsSummary(supabase, jobId)
+    } catch (err) {
+      logWarn('Could not extract results summary for anamnesis', {
+        jobId,
+        error: String(err),
+      })
+    }
+
+    // Create funnel summary
+    const summaryResult = await createFunnelSummary(supabase, {
+      assessmentId,
+      funnelSlug: assessment.funnel,
+      funnelVersion: 'v1', // TODO: Get actual version from funnel_versions table
+      userId,
+      completedAt: assessment.completed_at || new Date().toISOString(),
+      processingJobId: jobId,
+      resultsSummary,
+    })
+
+    if (summaryResult.success) {
+      logInfo('Anamnesis summary created', {
+        entryId: summaryResult.entryId,
+        assessmentId,
+        jobId,
+        isNew: summaryResult.isNew,
+      })
+    } else {
+      logWarn('Failed to create anamnesis summary', {
+        assessmentId,
+        jobId,
+        error: summaryResult.error,
+        errorCode: summaryResult.errorCode,
+      })
+    }
+  } catch (err) {
+    logError('Error creating anamnesis summary', {
+      assessmentId,
+      jobId,
+    }, err)
+    throw err
   }
 }
