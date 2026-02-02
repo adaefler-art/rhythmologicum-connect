@@ -16,6 +16,7 @@ import { InterventionsSection, type RankedIntervention } from './InterventionsSe
 import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { FunnelsSection } from './FunnelsSection'
+import { AnamnesisSection } from './AnamnesisSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus, AssessmentListItemWithWorkup } from '@/lib/types/workupStatus'
@@ -470,6 +471,7 @@ export default function PatientDetailPage() {
         <TabsList>
           <TabTrigger value="overview">Overview</TabTrigger>
           <TabTrigger value="assessments">Assessments</TabTrigger>
+          <TabTrigger value="anamnese">Anamnese</TabTrigger>
           <TabTrigger value="funnels">Funnels</TabTrigger>
           <TabTrigger value="insights">AMY Insights</TabTrigger>
           <TabTrigger value="actions">Actions</TabTrigger>
@@ -715,6 +717,11 @@ export default function PatientDetailPage() {
               />
             </>
           )}
+        </TabContent>
+
+        {/* Anamnese Tab - E75.4 */}
+        <TabContent value="anamnese">
+          <AnamnesisSection patientId={patientId} />
         </TabContent>
 
         {/* Funnels Tab - E74.6 */}
