@@ -32,16 +32,7 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     },
     order: 1,
   },
-  {
-    id: 'anamnese',
-    label: 'Timeline',
-    href: CANONICAL_ROUTES.ANAMNESE_TIMELINE,
-    icon: {
-      src: '/icons/nav-timeline.png',
-      alt: 'Timeline',
-    },
-    order: 2,
-  },
+ 
   {
     id: 'dialog',
     label: 'Dialog',
@@ -50,7 +41,7 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
       src: '/icons/nav-dialog.png',
       alt: 'Dialog',
     },
-    order: 3,
+    order: 2,
   },
   {
     id: 'profile',
@@ -60,6 +51,6 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
       src: '/icons/nav-profile.png',
       alt: 'Profile',
     },
-    order: 4,
+    order: 3,
   },
 ]
