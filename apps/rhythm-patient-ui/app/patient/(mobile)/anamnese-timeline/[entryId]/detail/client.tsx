@@ -309,7 +309,7 @@ export default function AnamneseDetailClient({ entryId }: { entryId: string }) {
       {/* Archive Confirmation Modal */}
       {showArchiveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+          <div className="bg-white rounded-xl p-6 w-full">
             <h3 className="text-lg font-bold text-slate-900 mb-2">
               Eintrag archivieren?
             </h3>

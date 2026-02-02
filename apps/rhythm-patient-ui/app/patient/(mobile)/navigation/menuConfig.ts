@@ -24,17 +24,24 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     order: 1,
   },
   {
+    id: 'anamnese',
+    label: 'Timeline',
+    href: CANONICAL_ROUTES.ANAMNESE_TIMELINE,
+    icon: '📋',
+    order: 2,
+  },
+  {
     id: 'dialog',
     label: 'Dialog',
     href: CANONICAL_ROUTES.DIALOG,
     icon: '💬',
-    order: 2,
+    order: 3,
   },
   {
     id: 'profile',
     label: 'Profile',
     href: CANONICAL_ROUTES.PROFILE,
     icon: '👤',
-    order: 3,
+    order: 4,
   },
 ]
