@@ -1,8 +1,8 @@
-# E74: Rules vs Checks Matrix
+# E74 & E76: Rules vs Checks Matrix
 
-**Last Updated:** 2026-02-01 (E74.9)  
+**Last Updated:** 2026-02-02 (E76.4)  
 **Status:** Canonical - All rules have checks, all checks reference rules  
-**Coverage:** 100% (50 rules, 50 checks)
+**Coverage:** 100% (56 rules, 56 checks)
 
 This document maps validation rules to their check implementations for the Canonical Funnel Definition Schema v1 and related migrations.
 
@@ -97,6 +97,17 @@ This document maps validation rules to their check implementations for the Canon
 | R-E74.7-005 | API completes old assessment when forceNew=true | `API_NO_COMPLETE_OLD` | POST /api/funnels/[slug]/assessments updates old assessment to completed | ✅ Implemented |
 | R-E74.7-006 | Parallel requests don't create duplicate assessments | `API_NO_RACE_PROTECTION` | Unique constraint + query ordering prevents race conditions | ✅ Implemented |
 
+### E76.4: Diagnosis Run Execution Worker
+
+| Rule ID | Description | Error Code | Check Implementation | Status |
+|---------|-------------|------------|---------------------|---------|
+| R-E76-001 | diagnosis_runs table exists with required columns | `TABLE_SCHEMA_INVALID` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkTableSchema()` | ✅ Implemented |
+| R-E76-002 | RLS policies exist for patient and clinician access | `MISSING_RLS_POLICY` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkRLSPolicies()` | ✅ Implemented |
+| R-E76-003 | Unique constraint on (assessment_id, correlation_id, schema_version) | `MISSING_UNIQUE_CONSTRAINT` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkUniqueConstraint()` | ✅ Implemented |
+| R-E76-004 | Status index exists for queue processing | `MISSING_STATUS_INDEX` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkStatusIndex()` | ✅ Implemented |
+| R-E76-005 | API endpoints have literal callsites (Strategy A) | `MISSING_LITERAL_CALLSITE` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkLiteralCallsites()` | ✅ Implemented |
+| R-E76-006 | Error codes match validation logic | `ERROR_CODE_MISMATCH` | `scripts/ci/verify-e76-4-diagnosis-runs.mjs:checkErrorCodes()` | ✅ Implemented |
+
 ## Check Implementations
 
 ### E74.1: Runtime Validators
@@ -153,6 +164,17 @@ This document maps validation rules to their check implementations for the Canon
 | `checkDatabaseConstraints()` | R-E74.7-001, R-E74.7-002 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies unique index and lookup index for idempotency |
 | `checkAPIImplementation()` | R-E74.7-003, R-E74.7-004, R-E74.7-005, R-E74.7-006 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies API has RESUME_OR_CREATE logic and forceNew support |
 | `checkMigration()` | R-E74.7-001 | `scripts/ci/verify-e74-7-idempotency.mjs` | Verifies migration file creates required index |
+
+### E76.4: Diagnosis Run Execution Worker
+
+| Check | Rule ID(s) | Location | Description |
+|-------|-----------|----------|-------------|
+| `checkTableSchema()` | R-E76-001 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies diagnosis_runs table exists with required columns |
+| `checkRLSPolicies()` | R-E76-002 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies RLS policies for patient and clinician access |
+| `checkUniqueConstraint()` | R-E76-003 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies unique constraint on (assessment_id, correlation_id, schema_version) |
+| `checkStatusIndex()` | R-E76-004 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies status index exists for queue processing |
+| `checkLiteralCallsites()` | R-E76-005 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies API endpoints have literal callsites |
+| `checkErrorCodes()` | R-E76-006 | `scripts/ci/verify-e76-4-diagnosis-runs.mjs` | Verifies error codes match validation logic |
 
 ## Error Code Reference
 
@@ -259,9 +281,23 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 | `API_NO_COMPLETE_OLD` | R-E74.7-005 | API doesn't complete old assessment when forceNew=true |
 | `API_NO_RACE_PROTECTION` | R-E74.7-006 | API doesn't prevent race conditions in parallel requests |
 
+### E76.4: Diagnosis Run Errors
+
+All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
+
+| Error Code | Rule ID | Description |
+|------------|---------|-------------|
+| `RUN_NOT_FOUND` | R-E76-001 | Diagnosis run not found in database |
+| `INVALID_STATUS` | R-E76-001 | Run status is invalid for requested operation |
+| `CONTEXT_FETCH_ERROR` | R-E76-001 | Failed to fetch context pack for diagnosis |
+| `LLM_ERROR` | R-E76-001 | LLM/MCP call failed |
+| `VALIDATION_ERROR` | R-E76-006 | Diagnosis result schema validation failed |
+| `PERSISTENCE_ERROR` | R-E76-001 | Failed to persist diagnosis artifact |
+| `MAX_ATTEMPTS_REACHED` | R-E76-001 | Run exceeded maximum retry attempts |
+
 ## Audit Results
 
-**Last Updated:** 2026-02-01
+**Last Updated:** 2026-02-02
 
 ### Coverage Analysis
 
@@ -272,8 +308,9 @@ All error codes follow the pattern: `<CATEGORY>_<SPECIFIC_ERROR>`
 - **Total rules (E74.3):** 10 (1 deferred)
 - **Total rules (E74.6):** 8
 - **Total rules (E74.7):** 6
-- **Total rules (E74 combined):** 50
-- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 4 (E74.6 checks) + 3 (E74.7 checks) + 5 (CI scripts)
+- **Total rules (E76.4):** 6
+- **Total rules (E74+E76 combined):** 56
+- **Total check implementations:** 6 (E74.1 validators) + 6 (E74.2 checks) + 6 (E74.3 checks) + 4 (E74.6 checks) + 3 (E74.7 checks) + 6 (E76.4 checks) + 5 (CI scripts)
 - **Coverage:** 100%
 
 ### Scope Verification
@@ -286,6 +323,7 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.3: Studio editor rules (10 rules) - Implemented (1 deferred)
 - ✅ E74.6: Patient funnels lifecycle rules (8 rules) - Implemented
 - ✅ E74.7: Start/resume idempotency rules (6 rules) - Implemented
+- ✅ E76.4: Diagnosis run execution worker rules (6 rules) - Implemented
 
 ### Implementation Status
 
@@ -299,6 +337,10 @@ All rules are correctly mapped to check implementations:
 - ✅ E74.6: Patient funnels migration: `supabase/migrations/20260201151428_e74_6_patient_funnels_lifecycle.sql`
 - ✅ E74.6: Patient funnels API: `apps/rhythm-studio-ui/app/api/clinician/patient-funnels/**/*.ts`
 - ✅ E74.6: Verification script: `scripts/ci/verify-e74-6-patient-funnels.mjs`
+- ✅ E76.4: Diagnosis runs migration: `supabase/migrations/20260202100000_e76_4_create_diagnosis_runs.sql`
+- ✅ E76.4: Diagnosis worker: `lib/diagnosis/worker.ts`
+- ✅ E76.4: Diagnosis runs API: `apps/rhythm-studio-ui/app/api/diagnosis-runs/**/*.ts`
+- ✅ E76.4: Verification script: `scripts/ci/verify-e76-4-diagnosis-runs.mjs`
 - ✅ Error code mapping: Complete
 - ✅ Documentation: This file
 
