@@ -60,6 +60,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [formEntryType, setFormEntryType] = useState<EntryType | ''>('')
   const [formTags, setFormTags] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
   // Fetch entries on mount
   useEffect(() => {
@@ -250,6 +251,13 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return labels[type] || type
   }
 
+  const getContentText = (content: Record<string, unknown>): string | null => {
+    const textValue = (content as { text?: unknown }).text
+    if (typeof textValue === 'string' && textValue.trim()) return textValue
+    if (typeof textValue === 'number') return String(textValue)
+    return null
+  }
+
   if (isLoading) {
     return (
       <Card padding="lg" shadow="md">
@@ -371,14 +379,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     </div>
                   </div>
 
-                  {typeof entry.content === 'object' &&
-                    entry.content !== null &&
-                    'text' in entry.content &&
-                    entry.content.text && (
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                        {String(entry.content.text)}
-                      </p>
-                    )}
+                  {getContentText(entry.content) && (
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                      {getContentText(entry.content)}
+                    </p>
+                  )}
 
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Aktualisiert: {formatDate(entry.updated_at)}
@@ -422,7 +427,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       >
         <div className="space-y-4">
           {formError && (
-            <Alert variant="danger">
+            <Alert variant="error">
               {formError}
             </Alert>
           )}
@@ -506,7 +511,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       >
         <div className="space-y-4">
           {formError && (
-            <Alert variant="danger">
+            <Alert variant="error">
               {formError}
             </Alert>
           )}
