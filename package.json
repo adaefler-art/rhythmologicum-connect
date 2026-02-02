@@ -37,7 +37,7 @@
     "verify:e74-7": "node scripts/ci/verify-e74-7-idempotency.mjs",
     "verify:e75-2": "node scripts/ci/verify-e75-2-anamnesis-api.mjs",
     "verify:e75-3": "node scripts/ci/verify-e75-3-ui.mjs",
-    "verify:e75-4": "bash scripts/ci/verify-e75-4-anamnesis-ui.mjs",
+    "verify:e75-4": "node scripts/ci/verify-e75-4-anamnesis-ui.mjs",
     "verify:e75-7:rls": "bash scripts/ci/verify-rls-smoke.sh",
     "verify:e75-7:docs": "bash scripts/ci/verify-e75-7-docs.sh",
     "verify:e75-7": "npm run verify:e75-7:docs",

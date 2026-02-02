@@ -125,7 +125,7 @@ This document provides complete bidirectional traceability between:
 | Rule ID | Rule Description | Check Implementation | Check File | Status |
 |---------|------------------|---------------------|------------|--------|
 | R-E75.4-1 | Anamnese tab integration in patient detail page | `checkAnamneseTabIntegration` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
-| R-E75.4-2 | AnamnesisSection component exists | `checkAnamnesissectionComponent` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
+| R-E75.4-2 | AnamnesisSection component exists | `checkAnamnesisSection` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
 | R-E75.4-3 | Add/Edit/Archive dialogs implemented | `checkDialogs` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
 | R-E75.4-4 | Correct API endpoints used | `checkApiEndpoints` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
 | R-E75.4-5 | Access control messaging | `checkAccessControl` | `verify-e75-4-anamnesis-ui.mjs` | ✅ |
