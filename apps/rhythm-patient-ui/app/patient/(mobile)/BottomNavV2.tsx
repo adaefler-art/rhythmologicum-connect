@@ -61,7 +61,14 @@ export function BottomNavV2() {
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
             >
-              <span className="text-xl mb-0.5">{item.icon}</span>
+              <span className="mb-0.5 flex h-6 w-6 items-center justify-center">
+                <img
+                  src={item.icon.src}
+                  alt={item.icon.alt || item.label}
+                  className="h-5 w-5"
+                  loading="lazy"
+                />
+              </span>
               <span className="text-[10px] font-semibold uppercase tracking-wide">
                 {item.label}
               </span>
