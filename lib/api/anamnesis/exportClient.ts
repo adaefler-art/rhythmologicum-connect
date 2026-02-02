@@ -30,10 +30,9 @@ export async function exportPatientAnamnesis(
   }
 
   // Literal callsite - DO NOT REFACTOR
-  const url = '/api/patient/anamnesis/export.json' + 
-    (includeVersions ? '?include_versions=true' : '')
-  
-  const response = await fetch(url)
+  const response = await fetch(
+    `/api/patient/anamnesis/export.json?include_versions=${includeVersions ? 'true' : 'false'}`
+  )
   
   if (!response.ok) {
     const error = await response.json()
@@ -64,10 +63,10 @@ export async function exportClinicianPatientAnamnesis(
     throw new Error('Anamnesis export feature is not enabled')
   }
 
-  const queryParams = includeVersions ? '?include_versions=true' : ''
-  
   // Literal callsite - DO NOT REFACTOR
-  const response = await fetch(`/api/studio/patients/${patientId}/anamnesis/export.json${queryParams}`)
+  const response = await fetch(
+    `/api/studio/patients/${patientId}/anamnesis/export.json?include_versions=${includeVersions ? 'true' : 'false'}`
+  )
   
   if (!response.ok) {
     const error = await response.json()
