@@ -11,8 +11,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { featureFlags } from '@/lib/featureFlags'
+import { env } from '@/lib/env'
 
-const MCP_SERVER_URL = process.env.MCP_SERVER_URL || 'http://localhost:3001'
+const MCP_SERVER_URL = env.MCP_SERVER_URL || 'http://localhost:3001'
 
 export async function POST(request: NextRequest) {
   // Feature flag check

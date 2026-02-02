@@ -10,9 +10,10 @@ import { getVersionMetadata, generateRunVersion } from './version.js'
 import { logger } from './logger.js'
 import { handleGetPatientContext, handleRunDiagnosis } from './handlers.js'
 import type { GetPatientContextInput, RunDiagnosisInput } from './tools.js'
+import { env } from '../../../lib/env.js'
 
-const PORT = process.env.MCP_SERVER_PORT || 3001
-const HOST = process.env.MCP_SERVER_HOST || '0.0.0.0'
+const PORT = env.MCP_SERVER_PORT || 3001
+const HOST = env.MCP_SERVER_HOST || '0.0.0.0'
 
 interface HealthResponse {
   status: 'ok'
