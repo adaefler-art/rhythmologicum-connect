@@ -6848,6 +6848,59 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/anamnesis",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/anamnesis/[entryId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/anamnesis/[entryId]/archive",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/archive/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/patient/anamnesis/[entryId]/versions",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/versions/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/patient/assessments",
       "methods": [
         "GET"
@@ -7930,6 +7983,46 @@
         "POST"
       ],
       "file": "legacy/code/app/api/shipments/[id]/events/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/studio/anamnesis/[entryId]/archive",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/studio/anamnesis/[entryId]/versions",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/studio/patients/[patientId]/anamnesis",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 0,

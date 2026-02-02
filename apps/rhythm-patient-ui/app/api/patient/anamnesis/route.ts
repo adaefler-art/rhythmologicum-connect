@@ -33,6 +33,7 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientProfileId, getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { validateCreateEntry } from '@/lib/api/anamnesis/validation'
+import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
 export async function GET() {
@@ -233,7 +234,7 @@ export async function POST(request: Request) {
             error: {
               code: ErrorCode.VALIDATION_FAILED,
               message: 'Validation failed',
-              details: err.errors,
+              details: err.issues,
             },
           },
           { status: 400 }
@@ -250,7 +251,7 @@ export async function POST(request: Request) {
         patient_id: patientId,
         organization_id: organizationId,
         title: validatedData.title,
-        content: validatedData.content,
+        content: validatedData.content as Json,
         entry_type: validatedData.entry_type || null,
         tags: validatedData.tags || [],
         created_by: user.id,

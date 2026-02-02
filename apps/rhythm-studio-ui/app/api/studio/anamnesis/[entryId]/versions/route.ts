@@ -38,6 +38,7 @@ import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.
 import { getAnamnesisEntry } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { validateCreateVersion } from '@/lib/api/anamnesis/validation'
+import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
 type RouteContext = {
@@ -128,7 +129,7 @@ export async function POST(request: Request, context: RouteContext) {
             error: {
               code: ErrorCode.VALIDATION_FAILED,
               message: 'Validation failed',
-              details: err.errors,
+              details: err.issues,
             },
           },
           { status: 400 }
@@ -142,7 +143,7 @@ export async function POST(request: Request, context: RouteContext) {
       .from('anamnesis_entries')
       .update({
         title: validatedData.title,
-        content: validatedData.content,
+        content: validatedData.content as Json,
         entry_type: validatedData.entry_type || entry.entry_type,
         tags: validatedData.tags || entry.tags,
         updated_by: user.id,

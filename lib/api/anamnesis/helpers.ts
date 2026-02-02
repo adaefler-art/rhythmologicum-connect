@@ -45,18 +45,33 @@ export async function getPatientOrganizationId(
   supabase: SupabaseClientType,
   patientId: string
 ): Promise<string | null> {
-  const { data: profile, error } = await supabase
+  const { data: patient, error: patientError } = await supabase
     .from('patient_profiles')
-    .select('organization_id')
+    .select('user_id')
     .eq('id', patientId)
     .maybeSingle()
 
-  if (error) {
-    console.error('[anamnesis-helpers] Error fetching patient organization:', error)
+  if (patientError) {
+    console.error('[anamnesis-helpers] Error fetching patient user:', patientError)
     return null
   }
 
-  return profile?.organization_id || null
+  if (!patient?.user_id) {
+    return null
+  }
+
+  const { data: userProfile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('organization_id')
+    .eq('user_id', patient.user_id)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('[anamnesis-helpers] Error fetching patient organization:', profileError)
+    return null
+  }
+
+  return userProfile?.organization_id || null
 }
 
 /**

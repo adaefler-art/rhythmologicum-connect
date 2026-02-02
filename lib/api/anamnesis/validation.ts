@@ -36,7 +36,7 @@ export const MAX_JSONB_SIZE_BYTES = 1024 * 1024 // 1MB
  */
 export const createAnamnesisEntrySchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
-  content: z.record(z.unknown()).default({}),
+  content: z.record(z.string(), z.unknown()).default({}),
   entry_type: z.enum(ENTRY_TYPES).optional(),
   tags: z.array(z.string()).optional().default([]),
   change_reason: z.string().optional(),
@@ -47,7 +47,7 @@ export const createAnamnesisEntrySchema = z.object({
  */
 export const createVersionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
-  content: z.record(z.unknown()).default({}),
+  content: z.record(z.string(), z.unknown()).default({}),
   entry_type: z.enum(ENTRY_TYPES).optional(),
   tags: z.array(z.string()).optional(),
   change_reason: z.string().optional(),
