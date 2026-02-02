@@ -3,12 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
-
-interface BottomNavItem {
-  href: string
-  label: string
-  icon: string
-}
+import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 
 /**
  * BottomNavV2 Component (I2.5 Navigation Consistency)
@@ -32,28 +27,7 @@ interface BottomNavItem {
 export function BottomNavV2() {
   const pathname = usePathname()
 
-  const navItems: BottomNavItem[] = [
-    {
-      href: CANONICAL_ROUTES.DASHBOARD,
-      label: 'Home',
-      icon: '🏠',
-    },
-    {
-      href: CANONICAL_ROUTES.ASSESS,
-      label: 'Assess',
-      icon: '📝',
-    },
-    {
-      href: CANONICAL_ROUTES.DIALOG,
-      label: 'Dialog',
-      icon: '💬',
-    },
-    {
-      href: CANONICAL_ROUTES.PROFILE,
-      label: 'Profile',
-      icon: '👤',
-    },
-  ]
+  const navItems = [...PATIENT_MOBILE_MENU_ITEMS].sort((a, b) => a.order - b.order)
 
   const isActive = (href: string) => {
     // Exact match for dashboard
@@ -77,7 +51,7 @@ export function BottomNavV2() {
           const active = isActive(item.href)
           return (
             <Link
-              key={item.href}
+              key={item.id}
               href={item.href}
               className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg transition-all duration-200 ${
                 active
@@ -87,7 +61,14 @@ export function BottomNavV2() {
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
             >
-              <span className="text-xl mb-0.5">{item.icon}</span>
+              <span className="mb-0.5 flex h-6 w-6 items-center justify-center">
+                <img
+                  src={item.icon.src}
+                  alt={item.icon.alt || item.label}
+                  className="h-5 w-5"
+                  loading="lazy"
+                />
+              </span>
               <span className="text-[10px] font-semibold uppercase tracking-wide">
                 {item.label}
               </span>
