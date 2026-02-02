@@ -75,6 +75,7 @@ const baseEnvSchema = z.object({
   NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_FEATURE_MCP_ENABLED: z.string().optional(),
   E73_4_RESULT_SSOT: z.string().optional(),
 
   // OPTIONAL: E6.4.1 Pilot Feature Flags
@@ -124,6 +125,11 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   // OPTIONAL: Legacy/Alternative Variable Names
   SUPABASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()), // Alternative to NEXT_PUBLIC_SUPABASE_URL
   SUPABASE_SERVICE_KEY: z.preprocess(sanitizeEnvString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
+
+  // OPTIONAL: MCP Server configuration (server-only)
+  MCP_SERVER_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
+  MCP_SERVER_HOST: z.preprocess(sanitizeEnvString, z.string().optional()),
+  MCP_SERVER_PORT: z.preprocess(sanitizeEnvString, z.string().optional()),
 })
 
 const patientEnvSchema = baseEnvSchema.extend({
@@ -181,6 +187,7 @@ function getRawClientEnv() {
       process.env.NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED,
     NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_CHARTS_ENABLED,
     NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: process.env.NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED,
+    NEXT_PUBLIC_FEATURE_MCP_ENABLED: process.env.NEXT_PUBLIC_FEATURE_MCP_ENABLED,
     E73_4_RESULT_SSOT: process.env.E73_4_RESULT_SSOT,
     NEXT_PUBLIC_PILOT_ENABLED: process.env.NEXT_PUBLIC_PILOT_ENABLED,
     NEXT_PUBLIC_PILOT_ENV: process.env.NEXT_PUBLIC_PILOT_ENV,
@@ -208,6 +215,9 @@ function getRawServerEnv() {
     ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
+    MCP_SERVER_URL: process.env.MCP_SERVER_URL,
+    MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
+    MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
   }
 }
 
@@ -237,6 +247,7 @@ export type Env = {
   NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED?: string
   NEXT_PUBLIC_FEATURE_CHARTS_ENABLED?: string
   NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED?: string
+  NEXT_PUBLIC_FEATURE_MCP_ENABLED?: string
   E73_4_RESULT_SSOT?: string
   NEXT_PUBLIC_PILOT_ENABLED?: string
   NEXT_PUBLIC_PILOT_ENV?: string
@@ -257,6 +268,9 @@ export type Env = {
   STUDIO_BASE_URL?: string
   PATIENT_BASE_URL?: string
   ENGINE_BASE_URL?: string
+  MCP_SERVER_URL?: string
+  MCP_SERVER_HOST?: string
+  MCP_SERVER_PORT?: string
 }
 
 /**

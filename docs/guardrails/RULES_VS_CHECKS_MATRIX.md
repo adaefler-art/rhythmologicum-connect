@@ -1314,3 +1314,218 @@ node scripts/verify-ui-v2.mjs
   - Mapped rules to enforcement mechanisms
   - Identified gaps in automated enforcement
   - Added "How to add rule/check" section
+
+
+---
+
+## E76.1 - MCP Server Rules
+
+### R-E76.1-001: MCP Server Package Structure
+
+**Rule Text**: MCP server package must exist with required structure including version.ts, logger.ts, tools.ts, handlers.ts, server.ts, and index.ts files.
+
+**Scope**:
+- `packages/mcp-server/` directory
+- Required files: package.json, tsconfig.json, src/version.ts, src/logger.ts, src/tools.ts, src/handlers.ts, src/server.ts, src/index.ts
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+- Workflow: Manual (to be integrated in CI)
+
+**Pass Condition**:
+- All required files exist at expected paths
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "✅ All E76.1 guardrails satisfied" or violations list
+- Each violation: "[ERROR_CODE] violates R-E76.1-XXX: details"
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-002: MCP Tool Schemas
+
+**Rule Text**: MCP tools must have Zod schemas for both input and output (get_patient_context, run_diagnosis).
+
+**Scope**:
+- `packages/mcp-server/src/tools.ts`
+- Required exports: GetPatientContextInputSchema, GetPatientContextOutputSchema, RunDiagnosisInputSchema, RunDiagnosisOutputSchema, MCP_TOOLS
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- All required schema exports present
+- Zod import present
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-003: Version Metadata
+
+**Rule Text**: Version metadata must include mcp_server_version, run_version, and prompt_version fields.
+
+**Scope**:
+- `packages/mcp-server/src/version.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- All version fields present in code
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-004: Logging Correlation ID
+
+**Rule Text**: Logging must include correlation ID (run_id) support for request tracing.
+
+**Scope**:
+- `packages/mcp-server/src/logger.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- `run_id` support detected in logger code
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-005: Secret Redaction
+
+**Rule Text**: Secrets (LLM API keys) must not leak in logs - redaction must be implemented.
+
+**Scope**:
+- `packages/mcp-server/src/logger.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- Redaction logic detected (REDACTED or redact keywords)
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: Runtime behavior not tested (only static code check)
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-006: MCP API Route Exists
+
+**Rule Text**: API route /api/mcp must exist in studio app.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/mcp/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- File exists at expected path
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-007: Literal Callsite Exists
+
+**Rule Text**: Literal callsite for /api/mcp must exist (Strategy A compliance).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx`
+- Must contain literal string "/api/mcp"
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- Callsite page exists
+- Literal string '/api/mcp' or "/api/mcp" present
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.1-008: Feature Flag Exists
+
+**Rule Text**: Feature flag MCP_ENABLED must exist in featureFlags.ts.
+
+**Scope**:
+- `lib/featureFlags.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-1-mcp-server.mjs`
+
+**Pass Condition**:
+- MCP_ENABLED flag present
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.1-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+## Summary Statistics (Updated for E76.1)
+
+**Total Rules**: 34 (26 prior + 8 E76.1)
+**Total Checks**: 34
+**Coverage**: 100%
+**Scope Mismatch**: 0
+**Orphaned Rules**: 0
+**Orphaned Checks**: 0
+
