@@ -36,6 +36,7 @@
     "verify:e74-6": "node scripts/ci/verify-e74-6-patient-funnels.mjs",
     "verify:e74-7": "node scripts/ci/verify-e74-7-idempotency.mjs",
     "verify:e75-2": "node scripts/ci/verify-e75-2-anamnesis-api.mjs",
+    "verify:e75-3": "node scripts/ci/verify-e75-3-ui.mjs",
     "verify:e76-1": "node scripts/ci/verify-e76-1-mcp-server.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
