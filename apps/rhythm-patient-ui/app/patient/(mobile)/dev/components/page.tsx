@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Component & Screen Gallery - Dev Page
  * 
@@ -26,7 +28,7 @@ export default function ComponentsDevPage() {
         {/* Dashboard Header v1 */}
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-[#1f2937]">Dashboard Header v1</h2>
-          <DashboardHero greetingName="Taylor" onChat={() => {}} />
+          <DashboardHero greetingName="Sarah" onChat={() => {}} />
         </section>
 
         {/* Component Gallery */}

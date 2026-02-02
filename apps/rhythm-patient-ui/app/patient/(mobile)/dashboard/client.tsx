@@ -54,7 +54,7 @@ export default function DashboardClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [greetingName, setGreetingName] = useState('there')
+  const [greetingName, setGreetingName] = useState<string | undefined>(undefined)
   
   // E73.9: Get dynamic design tokens from context
   const tokens = useDesignTokens()
@@ -78,12 +78,12 @@ export default function DashboardClient({
         const givenName = typeof metadata.given_name === 'string' ? metadata.given_name : null
         const fullName = typeof metadata.full_name === 'string' ? metadata.full_name : null
         const displayName = typeof metadata.display_name === 'string' ? metadata.display_name : null
-        const name = firstName || givenName || fullName || displayName || 'there'
+        const name = firstName || givenName || fullName || displayName || undefined
 
         setGreetingName(name)
       } catch {
         if (!active) return
-        setGreetingName('there')
+        setGreetingName(undefined)
       }
     }
 
@@ -173,6 +173,9 @@ export default function DashboardClient({
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
         <div className="w-full space-y-6">
+          {/* New Greeting + AMY Card */}
+          <DashboardHero greetingName={greetingName} onChat={handleAmyChat} />
+
           {/* E6.5.9: Loading state - show spinner only on initial load */}
           {state === 'loading' && !dashboardData && (
             <div className="py-12">
@@ -214,9 +217,6 @@ export default function DashboardClient({
           {/* E6.5.9: Show stale data during revalidation (stale-while-revalidate) */}
           {dashboardData && (
             <>
-              {/* New Greeting + AMY Card */}
-              <DashboardHero greetingName={greetingName} onChat={handleAmyChat} />
-
               {/* E6.6.1: AMY Composer - Guided Mode for bounded input */}
               <AMYComposer />
 
