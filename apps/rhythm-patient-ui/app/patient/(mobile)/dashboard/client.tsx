@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { LoadingSkeleton, ErrorState } from '@/lib/ui/mobile-v2'
+import { LoadingSkeleton, ErrorState, Card, Badge, ProgressBar, Button } from '@/lib/ui/mobile-v2'
 import {
-  AMYComposer,
   AMYChatWidget,
-  NextStepCard,
   ContentTilesGrid,
-  ProgressSummary,
 } from '../components'
 import { useDashboardData } from '@/lib/hooks/useDashboardData'
 import { useAppFocus } from '@/lib/hooks/useAppFocus'
@@ -145,12 +142,6 @@ export default function DashboardClient({
     }
   }, [searchParams, router, refresh, dashboardData])
 
-  const handleNextStepAction = () => {
-    if (dashboardData?.nextStep?.target) {
-      router.push(dashboardData.nextStep.target)
-    }
-  }
-
   const handleFunnelClick = (funnel: any) => {
     router.push(`/patient/assess/${funnel.slug}/flow`)
   }
@@ -217,16 +208,105 @@ export default function DashboardClient({
           {/* E6.5.9: Show stale data during revalidation (stale-while-revalidate) */}
           {dashboardData && (
             <>
-              {/* E6.6.1: AMY Composer - Guided Mode for bounded input */}
-              <AMYComposer />
+              {/* Ihre Assessments */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Ihre Assessments
+                </h3>
 
-              {/* E6.5.4 AC3: Next Step Card - Always visible when available */}
-              {dashboardData.nextStep && (
-                <NextStepCard
-                  nextStep={dashboardData.nextStep}
-                  onAction={handleNextStepAction}
-                />
-              )}
+                {dashboardData.funnelSummaries.length === 0 ? (
+                  <Card padding="lg" className="rounded-lg">
+                    <div className="text-center py-6">
+                      <div className="text-4xl mb-3">📋</div>
+                      <h4 className="text-base font-medium text-slate-900 mb-2">
+                        Noch keine Assessments
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Starten Sie Ihr erstes Assessment, um Ihren Fortschritt zu verfolgen.
+                      </p>
+                      <div className="mt-4 flex justify-center">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={() => router.push('/patient/assess')}
+                        >
+                          Assessment starten
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {dashboardData.funnelSummaries.map((funnel) => (
+                      <Card
+                        key={funnel.slug}
+                        padding="md"
+                        className="rounded-lg"
+                        hover={funnel.status === 'in_progress'}
+                        onClick={() => {
+                          if (funnel.status === 'in_progress') {
+                            handleFunnelClick(funnel)
+                          }
+                        }}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-slate-900 mb-1">
+                                {funnel.title}
+                              </h4>
+                              {funnel.description && (
+                                <p className="text-sm text-slate-600 line-clamp-2">
+                                  {funnel.description}
+                                </p>
+                              )}
+                            </div>
+                            <Badge
+                              variant={
+                                funnel.status === 'completed'
+                                  ? 'success'
+                                  : funnel.status === 'in_progress'
+                                    ? 'warning'
+                                    : 'neutral'
+                              }
+                              size="sm"
+                            >
+                              {funnel.status === 'completed'
+                                ? 'Abgeschlossen'
+                                : funnel.status === 'in_progress'
+                                  ? 'In Bearbeitung'
+                                  : 'Nicht begonnen'}
+                            </Badge>
+                          </div>
+
+                          {funnel.progress && (
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-slate-600">
+                                <span>Fortschritt</span>
+                                <span>
+                                  {funnel.progress.current} / {funnel.progress.total}
+                                </span>
+                              </div>
+                              <ProgressBar
+                                value={(funnel.progress.current / funnel.progress.total) * 100}
+                                color="primary"
+                                showLabel={false}
+                                size="sm"
+                              />
+                            </div>
+                          )}
+
+                          {funnel.completedAt && (
+                            <p className="text-xs text-slate-500">
+                              Abgeschlossen am {new Date(funnel.completedAt).toLocaleDateString('de-DE')}
+                            </p>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Content Tiles Grid - E6.6.5: Add id for scroll-to navigation */}
               <div id="content-tiles">
@@ -237,13 +317,6 @@ export default function DashboardClient({
                   />
                 )}
               </div>
-
-              {/* Progress Summary */}
-              <ProgressSummary
-                funnelSummaries={dashboardData.funnelSummaries}
-                workupSummary={dashboardData.workupSummary}
-                onFunnelClick={handleFunnelClick}
-              />
             </>
           )}
         </div>
