@@ -192,6 +192,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/funnels/catalog/[slug] | GET | patient |  | 12 | legacy/code/app/api/funnels/catalog/[slug]/route.ts |
 | /api/health/env | GET | public |  | 0 | apps/rhythm-legacy/app/api/health/env/route.ts |
 | /api/health/env | GET | public |  | 0 | legacy/code/app/api/health/env/route.ts |
+| /api/mcp | GET, POST | system |  | 3 | apps/rhythm-studio-ui/app/api/mcp/route.ts |
 | /api/notifications | GET | patient |  | 0 | apps/rhythm-legacy/app/api/notifications/route.ts |
 | /api/notifications | GET | patient |  | 0 | legacy/code/app/api/notifications/route.ts |
 | /api/notifications/[id] | PATCH | patient |  | 0 | apps/rhythm-legacy/app/api/notifications/[id]/route.ts |

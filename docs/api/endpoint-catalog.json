@@ -6580,6 +6580,36 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/mcp",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/mcp/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
+          "apiPath": "/api/mcp",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
+          "apiPath": "/api/mcp",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
+          "apiPath": "/api/mcp",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/notifications",
       "methods": [
         "GET"
