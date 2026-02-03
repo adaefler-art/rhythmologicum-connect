@@ -226,7 +226,7 @@ export async function GET(request: Request) {
 		} = await readClient
 			.from('funnels_catalog')
 			.select(
-				'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,published,default_version_id,created_at,updated_at',
+				'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
 			)
 			.order('title', { ascending: true })
 			.order('slug', { ascending: true })
