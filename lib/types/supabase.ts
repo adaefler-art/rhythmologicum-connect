@@ -34,6 +34,116 @@ export type Database = {
 	}
 	public: {
 		Tables: {
+			anamnesis_entries: {
+				Row: {
+					content: Json
+					created_at: string
+					created_by: string | null
+					entry_type: string | null
+					id: string
+					is_archived: boolean
+					organization_id: string
+					patient_id: string
+					tags: string[] | null
+					title: string
+					updated_at: string
+					updated_by: string | null
+				}
+				Insert: {
+					content?: Json
+					created_at?: string
+					created_by?: string | null
+					entry_type?: string | null
+					id?: string
+					is_archived?: boolean
+					organization_id: string
+					patient_id: string
+					tags?: string[] | null
+					title: string
+					updated_at?: string
+					updated_by?: string | null
+				}
+				Update: {
+					content?: Json
+					created_at?: string
+					created_by?: string | null
+					entry_type?: string | null
+					id?: string
+					is_archived?: boolean
+					organization_id?: string
+					patient_id?: string
+					tags?: string[] | null
+					title?: string
+					updated_at?: string
+					updated_by?: string | null
+				}
+				Relationships: [
+					{
+						foreignKeyName: "anamnesis_entries_organization_id_fkey"
+						columns: ["organization_id"]
+						isOneToOne: false
+						referencedRelation: "organizations"
+						referencedColumns: ["id"]
+					},
+					{
+						foreignKeyName: "anamnesis_entries_patient_id_fkey"
+						columns: ["patient_id"]
+						isOneToOne: false
+						referencedRelation: "patient_profiles"
+						referencedColumns: ["id"]
+					},
+				]
+			}
+			anamnesis_entry_versions: {
+				Row: {
+					change_reason: string | null
+					changed_at: string
+					changed_by: string | null
+					content: Json
+					diff: Json | null
+					entry_id: string
+					entry_type: string | null
+					id: string
+					tags: string[] | null
+					title: string
+					version_number: number
+				}
+				Insert: {
+					change_reason?: string | null
+					changed_at?: string
+					changed_by?: string | null
+					content: Json
+					diff?: Json | null
+					entry_id: string
+					entry_type?: string | null
+					id?: string
+					tags?: string[] | null
+					title: string
+					version_number: number
+				}
+				Update: {
+					change_reason?: string | null
+					changed_at?: string
+					changed_by?: string | null
+					content?: Json
+					diff?: Json | null
+					entry_id?: string
+					entry_type?: string | null
+					id?: string
+					tags?: string[] | null
+					title?: string
+					version_number?: number
+				}
+				Relationships: [
+					{
+						foreignKeyName: "anamnesis_entry_versions_entry_id_fkey"
+						columns: ["entry_id"]
+						isOneToOne: false
+						referencedRelation: "anamnesis_entries"
+						referencedColumns: ["id"]
+					},
+				]
+			}
 			assessment_answers: {
 				Row: {
 					answer_data: Json | null
