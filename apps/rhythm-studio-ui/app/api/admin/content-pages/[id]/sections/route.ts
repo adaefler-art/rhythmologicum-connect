@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import type { Database } from '@/lib/types/supabase'
 
 // UUID v4 validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -135,14 +136,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		const nextOrderIndex = maxOrderData ? maxOrderData.order_index + 1 : 0
 
 		// Create section
-		const { data: newSection, error: insertError } = await supabase
+		type ContentPageSectionInsert = Database['public']['Tables']['content_page_sections']['Insert']
+		const insertData: ContentPageSectionInsert = {
+			content_page_id: id,
+			title,
+			body_markdown,
+			order_index: nextOrderIndex,
+		}
+
+		const { data: newSection, error: insertError } = await (supabase as any)
 			.from('content_page_sections')
-			.insert({
-				content_page_id: id,
-				title,
-				body_markdown,
-				order_index: nextOrderIndex,
-			})
+			.insert(insertData)
 			.select()
 			.single()
 
