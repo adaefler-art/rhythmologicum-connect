@@ -10,7 +10,7 @@
  */
 
 import { createHash } from 'crypto'
-import { createAdminClient } from '@/lib/db/supabase.admin'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 
 export interface AnamnesisEntry {
   id: string
@@ -81,7 +81,7 @@ const CONTEXT_VERSION = 'v1'
 export async function buildPatientContextPack(
   patientId: string,
 ): Promise<PatientContextPack> {
-  const supabase = createAdminClient()
+  const supabase = createAdminSupabaseClient()
 
   // Fetch anamnesis entries (max 30, most recent first)
   const { data: anamnesisData, error: anamnesisError } = await supabase
