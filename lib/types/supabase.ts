@@ -951,6 +951,67 @@ export type Database = {
 					{
 						foreignKeyName: "funnel_steps_content_page_id_fkey"
 						columns: ["content_page_id"]
+			funnel_publish_history: {
+				Row: {
+					change_summary: string | null
+					created_at: string
+					diff: Json
+					funnel_id: string
+					id: string
+					metadata: Json | null
+					previous_version_id: string | null
+					published_at: string
+					published_by: string | null
+					version_id: string
+				}
+				Insert: {
+					change_summary?: string | null
+					created_at?: string
+					diff?: Json
+					funnel_id: string
+					id?: string
+					metadata?: Json | null
+					previous_version_id?: string | null
+					published_at?: string
+					published_by?: string | null
+					version_id: string
+				}
+				Update: {
+					change_summary?: string | null
+					created_at?: string
+					diff?: Json
+					funnel_id?: string
+					id?: string
+					metadata?: Json | null
+					previous_version_id?: string | null
+					published_at?: string
+					published_by?: string | null
+					version_id?: string
+				}
+				Relationships: [
+					{
+						foreignKeyName: "funnel_publish_history_funnel_id_fkey"
+						columns: ["funnel_id"]
+						isOneToOne: false
+						referencedRelation: "funnels_catalog"
+						referencedColumns: ["id"]
+					},
+					{
+						foreignKeyName: "funnel_publish_history_previous_version_id_fkey"
+						columns: ["previous_version_id"]
+						isOneToOne: false
+						referencedRelation: "funnel_versions"
+						referencedColumns: ["id"]
+					},
+					{
+						foreignKeyName: "funnel_publish_history_version_id_fkey"
+						columns: ["version_id"]
+						isOneToOne: false
+						referencedRelation: "funnel_versions"
+						referencedColumns: ["id"]
+					},
+				]
+			}
 						isOneToOne: false
 						referencedRelation: "content_pages"
 						referencedColumns: ["id"]
