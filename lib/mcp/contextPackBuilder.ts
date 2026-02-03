@@ -9,7 +9,9 @@
  * - Stable inputs_hash for determinism
  */
 
+import 'server-only'
 import { createHash } from 'crypto'
+// Justification: context pack requires cross-patient access for clinician/admin tooling.
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 
 export interface AnamnesisEntry {
