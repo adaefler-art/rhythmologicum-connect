@@ -128,7 +128,7 @@ export async function GET(
 
     const previousAnswers: Record<string, number> = {}
     if (answers.data) {
-      answers.data.forEach((answer) => {
+      answers.data.forEach((answer: { question_id: string; answer_value: number }) => {
         previousAnswers[answer.question_id] = answer.answer_value
       })
     }
