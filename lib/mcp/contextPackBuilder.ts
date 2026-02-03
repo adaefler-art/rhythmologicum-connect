@@ -126,7 +126,7 @@ export async function buildPatientContextPack(
       status,
       funnels!inner(
         slug,
-        name
+        title
       )
     `)
     .eq('patient_id', patientId)
@@ -208,7 +208,7 @@ export async function buildPatientContextPack(
     funnelRuns.push({
       assessment_id: assessment.id,
       funnel_slug: assessment.funnels?.slug || assessment.funnel,
-      funnel_name: assessment.funnels?.name || assessment.funnel,
+      funnel_name: assessment.funnels?.title || assessment.funnel,
       started_at: assessment.started_at,
       completed_at: assessment.completed_at,
       status: assessment.status,
