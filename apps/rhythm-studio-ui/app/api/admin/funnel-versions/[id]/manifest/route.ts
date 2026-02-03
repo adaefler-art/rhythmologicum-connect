@@ -300,7 +300,7 @@ export async function PUT(
 		// Justification: Admin client required to update funnel versions and write audit log (RLS-bypassed admin metadata)
 		const adminClient = createAdminSupabaseClient()
 
-		const { data: updatedVersion, error: updateError } = (await adminClient
+		const { data: updatedVersion, error: updateError } = (await (adminClient as any)
 			.from('funnel_versions')
 			.update({
 				content_manifest: validatedManifest,
