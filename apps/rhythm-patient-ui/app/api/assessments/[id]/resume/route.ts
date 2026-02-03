@@ -42,7 +42,7 @@ export async function GET(
       )
     }
 
-    const { data: patientProfile, error: profileError } = await supabase
+    const { data: patientProfile, error: profileError } = await (supabase as any)
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -59,7 +59,7 @@ export async function GET(
       )
     }
 
-    const { data: assessment, error: assessmentError } = await supabase
+    const { data: assessment, error: assessmentError } = await (supabase as any)
       .from('assessments')
       .select('id, patient_id, funnel_id')
       .eq('id', assessmentId)
@@ -104,7 +104,7 @@ export async function GET(
     const [currentStep, navState, answers] = await Promise.all([
       getCurrentStep(supabase, assessmentId),
       getNavigationState(supabase, assessmentId),
-      supabase
+      (supabase as any)
         .from('assessment_answers')
         .select('question_id, answer_value')
         .eq('assessment_id', assessmentId),
