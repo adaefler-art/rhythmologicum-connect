@@ -376,6 +376,11 @@ Use in all API routes for consistency.
   - **Scope**: `anamnesis_entries`, `assessments`, `assessment_answers`, `calculated_results`, `patient_measures`, `patient_profiles`, `questions`
   - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), minimal field selection
 
+7. **Diagnosis Run Execution Worker** (`apps/rhythm-studio-ui/app/api/studio/diagnosis-runs/[runId]/execute/route.ts`)
+  - **Why**: Clinician/admin worker endpoint builds cross-patient context packs for queued diagnosis runs; requires RLS bypass
+  - **Scope**: `anamnesis_entries`, `assessments`, `assessment_answers`, `calculated_results`, `patient_measures`, `patient_profiles`, `questions`, `diagnosis_runs`, `diagnosis_run_artifacts`, `diagnosis_artifacts`
+  - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), strict state transition checks, minimal field selection
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.

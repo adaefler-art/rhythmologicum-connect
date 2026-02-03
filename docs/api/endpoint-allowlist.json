@@ -104,6 +104,7 @@
     "/api/studio/anamnesis/[entryId]/versions",
     "/api/studio/diagnosis-artifacts/[artifactId]",
     "/api/studio/diagnosis-runs/[runId]",
+    "/api/studio/diagnosis-runs/[runId]/execute",
     "/api/studio/patients/[patientId]/diagnosis-runs",
     "/api/studio/patients/[patientId]/anamnesis",
     "/api/_debug/env",

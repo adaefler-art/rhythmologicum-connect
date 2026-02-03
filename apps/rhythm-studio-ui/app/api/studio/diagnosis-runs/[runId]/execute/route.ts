@@ -8,7 +8,7 @@ import {
   validationErrorResponse,
   internalErrorResponse,
   databaseErrorResponse,
-  conflictResponse,
+  stateConflictResponse,
 } from '@/lib/api/responses'
 import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
@@ -161,7 +161,7 @@ export async function POST(
     // Concurrency protection: Only 'queued' runs can be executed
     if (run.status !== 'queued') {
       return withRequestId(
-        conflictResponse(
+        stateConflictResponse(
           `Run is not in 'queued' status (current: ${run.status})`,
           undefined,
           requestId
