@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: patientProfile, error: profileError } = await supabase
+    const { data: patientProfile, error: profileError } = await (supabase as any)
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: assessment, error: assessmentError } = await supabase
+    const { data: assessment, error: assessmentError } = await (supabase as any)
       .from('assessments')
       .select('id, patient_id')
       .eq('id', assessmentId)
