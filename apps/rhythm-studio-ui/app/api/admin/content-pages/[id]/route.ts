@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { requireAdminOrClinicianRole } from '@/lib/api/authHelpers'
+import type { Database } from '@/lib/types/supabase'
 
 /**
  * F2 API Endpoint: Get single content page by ID for editing
@@ -217,7 +218,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		}
 
 		// Prepare update data
-		const updateData: Record<string, unknown> = {
+		const updateData: Database['public']['Tables']['content_pages']['Update'] = {
 			title,
 			slug,
 			body_markdown,
