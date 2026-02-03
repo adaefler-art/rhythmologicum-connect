@@ -6610,6 +6610,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/mcp/context-pack",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts",
+      "intent": "mcp:context-pack",
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
+          "apiPath": "/api/mcp/context-pack",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/notifications",
       "methods": [
         "GET"

@@ -33,18 +33,56 @@ export async function handleGetPatientContext(
       age: 42,
       gender: 'not_specified',
     },
-    recent_assessments: [
-      {
-        assessment_id: 'stub-assessment-001',
-        funnel_slug: 'stress-assessment',
-        completed_at: new Date().toISOString(),
-        status: 'completed',
-      },
-    ],
-    active_diagnoses: ['stress-level-moderate'],
+    anamnesis: {
+      entries: [
+        {
+          id: 'stub-anamnesis-001',
+          title: 'Initial intake notes',
+          content: { note: 'Patient reports elevated stress levels.' },
+          entry_type: 'intake',
+          tags: ['stress', 'intake'],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+      total_count: 1,
+      limited_to: 30,
+    },
+    funnel_runs: {
+      runs: [
+        {
+          assessment_id: 'stub-assessment-001',
+          funnel_slug: 'stress-assessment',
+          funnel_name: 'Stress Assessment',
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          status: 'completed',
+          answers: [
+            {
+              question_id: 'stub-question-001',
+              question_label: 'How stressed do you feel today?',
+              answer_value: 6,
+            },
+          ],
+          result: {
+            scores: { stress_score: 6 },
+            risk_models: { stress_risk: 'moderate' },
+            algorithm_version: 'v1-stub',
+          },
+        },
+      ],
+      total_count: 1,
+      limit_per_funnel: 2,
+    },
+    current_measures: {
+      stress_score: 6,
+      sleep_score: 7,
+      risk_level: 'moderate',
+    },
     metadata: {
       retrieved_at: new Date().toISOString(),
       context_version: 'v1-stub',
+      inputs_hash: 'stub-inputs-hash',
     },
   }
 

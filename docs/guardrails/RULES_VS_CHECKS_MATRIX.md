@@ -1520,12 +1520,231 @@ node scripts/verify-ui-v2.mjs
 
 ---
 
-## Summary Statistics (Updated for E76.1)
+## Summary Statistics (Updated for E76.2)
 
-**Total Rules**: 34 (26 prior + 8 E76.1)
-**Total Checks**: 34
+**Total Rules**: 42 (26 prior + 8 E76.1 + 8 E76.2)
+**Total Checks**: 42
 **Coverage**: 100%
 **Scope Mismatch**: 0
 **Orphaned Rules**: 0
 **Orphaned Checks**: 0
+
+---
+
+## E76.2: Context Pack Builder Rules
+
+### R-E76.2-001: Context Pack Builder Module Exists
+
+**Rule Text**: Context pack builder module must exist at lib/mcp/contextPackBuilder.ts with buildPatientContextPack function.
+
+**Scope**:
+- `lib/mcp/contextPackBuilder.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- File exists at lib/mcp/contextPackBuilder.ts
+- Exports buildPatientContextPack function
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "✅ All E76.2 guardrails satisfied" OR
+- Console: "[CONTEXT_PACK_BUILDER_MISSING] violates R-E76.2-001: details"
+
+**Known Gaps**: Static check only, does not validate runtime behavior
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-002: Anamnesis Entries Limited to 30
+
+**Rule Text**: Context pack must limit anamnesis entries to maximum 30 (most recent first).
+
+**Scope**:
+- `lib/mcp/contextPackBuilder.ts`
+- Constant: MAX_ANAMNESIS_ENTRIES = 30
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- MAX_ANAMNESIS_ENTRIES constant exists
+- Value is exactly 30
+- Used in .limit() call
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: Does not verify runtime behavior, only static constant value
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-003: Funnel Runs Limited to 2 Per Funnel
+
+**Rule Text**: Context pack must limit funnel runs to maximum 2 per funnel (most recent first).
+
+**Scope**:
+- `lib/mcp/contextPackBuilder.ts`
+- Constant: MAX_RUNS_PER_FUNNEL = 2
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- MAX_RUNS_PER_FUNNEL constant exists
+- Value is exactly 2
+- Used in limit logic per funnel grouping
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: Does not verify runtime behavior, only static constant value
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-004: Stable inputs_hash Calculated
+
+**Rule Text**: Context pack must calculate deterministic inputs_hash using SHA256 for detecting equivalent runs.
+
+**Scope**:
+- `lib/mcp/contextPackBuilder.ts`
+- Function: calculateInputsHash
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- calculateInputsHash function exists
+- Uses createHash('sha256')
+- Returns hash in metadata.inputs_hash
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: Does not verify hash stability across runs (requires runtime testing)
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-005: API Route /api/mcp/context-pack Exists
+
+**Rule Text**: API route /api/mcp/context-pack must exist in studio app.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- File exists at expected path
+- Calls buildPatientContextPack
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-006: Literal Callsite Exists
+
+**Rule Text**: Literal callsite for /api/mcp/context-pack must exist (Strategy A compliance).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx`
+- Must contain literal string "/api/mcp/context-pack"
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- Callsite page exists
+- Literal string '/api/mcp/context-pack' or "/api/mcp/context-pack" present
+- Test function exists
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-007: Authorization Check Required
+
+**Rule Text**: API route /api/mcp/context-pack must check user authorization (clinician or admin only).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- Code checks for 'clinician' or 'admin' role
+- Returns 403 for unauthorized users
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: Static check only, does not verify runtime authorization flow
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.2-008: MCP Tool Schema Updated
+
+**Rule Text**: MCP get_patient_context tool schema must be updated to include new context pack structure (anamnesis, funnel_runs, current_measures, inputs_hash).
+
+**Scope**:
+- `packages/mcp-server/src/tools.ts`
+- GetPatientContextOutputSchema
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-2-context-pack.mjs`
+
+**Pass Condition**:
+- Schema includes anamnesis field
+- Schema includes funnel_runs field
+- Schema includes current_measures field
+- Schema includes metadata.inputs_hash field
+- File includes E76.2 documentation comment
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**: Same as R-E76.2-001
+
+**Known Gaps**: Static check only, does not verify Zod validation at runtime
+
+**Owner**: E76 / MCP Integration
+
+---
+
 

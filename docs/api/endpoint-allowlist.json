@@ -65,6 +65,7 @@
     "/api/funnels/active",
     "/api/health/env",
     "/api/mcp",
+    "/api/mcp/context-pack",
     "/api/notifications",
     "/api/notifications/[id]",
     "/api/patient-measures/export",
