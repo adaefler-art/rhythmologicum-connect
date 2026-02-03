@@ -3020,6 +3020,14 @@ export type Database = {
 				Args: { org_id: string }
 				Returns: Database["public"]["Enums"]["user_role"]
 			}
+			create_draft_from_version: {
+				Args: {
+					p_source_version_id: string
+					p_user_id: string
+					p_version_label?: string | null
+				}
+				Returns: string
+			}
 			diagnostics_pillars_sot: { Args: never; Returns: Json }
 			execute_account_deletion: {
 				Args: { executed_by?: string; target_user_id: string }
