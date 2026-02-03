@@ -951,6 +951,19 @@ export type Database = {
 					{
 						foreignKeyName: "funnel_steps_content_page_id_fkey"
 						columns: ["content_page_id"]
+						isOneToOne: false
+						referencedRelation: "content_pages"
+						referencedColumns: ["id"]
+					},
+					{
+						foreignKeyName: "funnel_steps_funnel_id_fkey"
+						columns: ["funnel_id"]
+						isOneToOne: false
+						referencedRelation: "funnels"
+						referencedColumns: ["id"]
+					},
+				]
+			}
 			funnel_publish_history: {
 				Row: {
 					change_summary: string | null
@@ -1008,19 +1021,6 @@ export type Database = {
 						columns: ["version_id"]
 						isOneToOne: false
 						referencedRelation: "funnel_versions"
-						referencedColumns: ["id"]
-					},
-				]
-			}
-						isOneToOne: false
-						referencedRelation: "content_pages"
-						referencedColumns: ["id"]
-					},
-					{
-						foreignKeyName: "funnel_steps_funnel_id_fkey"
-						columns: ["funnel_id"]
-						isOneToOne: false
-						referencedRelation: "funnels"
 						referencedColumns: ["id"]
 					},
 				]
