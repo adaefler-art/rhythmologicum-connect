@@ -4,10 +4,6 @@ export type PatientMobileMenuItem = {
   id: string
   label: string
   href: string
-  icon: {
-    src: string
-    alt: string
-  }
   order: number
 }
 
@@ -16,20 +12,12 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     id: 'home',
     label: 'Home',
     href: CANONICAL_ROUTES.DASHBOARD,
-    icon: {
-      src: '/icons/nav-home.png',
-      alt: 'Home',
-    },
     order: 0,
   },
   {
     id: 'check-in',
     label: 'Check-In',
     href: CANONICAL_ROUTES.ASSESS,
-    icon: {
-      src: '/icons/nav-check-in.png',
-      alt: 'Check-In',
-    },
     order: 1,
   },
  
@@ -37,20 +25,12 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     id: 'dialog',
     label: 'Dialog',
     href: CANONICAL_ROUTES.DIALOG,
-    icon: {
-      src: '/icons/nav-dialog.png',
-      alt: 'Dialog',
-    },
     order: 2,
   },
   {
     id: 'profile',
     label: 'Profile',
     href: CANONICAL_ROUTES.PROFILE,
-    icon: {
-      src: '/icons/nav-profile.png',
-      alt: 'Profile',
-    },
     order: 3,
   },
 ]

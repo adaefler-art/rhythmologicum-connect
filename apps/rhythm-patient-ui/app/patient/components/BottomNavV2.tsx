@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ClipboardList, Home, MessageCircle, User } from 'lucide-react'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 
@@ -49,6 +50,14 @@ export function BottomNavV2() {
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const active = isActive(item.href)
+          const Icon =
+            item.id === 'home'
+              ? Home
+              : item.id === 'check-in'
+                ? ClipboardList
+                : item.id === 'dialog'
+                  ? MessageCircle
+                  : User
           return (
             <Link
               key={item.id}
@@ -62,12 +71,7 @@ export function BottomNavV2() {
               aria-current={active ? 'page' : undefined}
             >
               <span className="mb-0.5 flex h-6 w-6 items-center justify-center">
-                <img
-                  src={item.icon.src}
-                  alt={item.icon.alt || item.label}
-                  className="h-5 w-5"
-                  loading="lazy"
-                />
+                <Icon className="h-6 w-6" />
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wide">
                 {item.label}
