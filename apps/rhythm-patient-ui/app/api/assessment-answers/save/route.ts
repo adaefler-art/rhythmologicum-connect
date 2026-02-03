@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       return notFoundResponse('Benutzerprofil')
     }
 
-    const { data: assessment, error: assessmentError } = await supabase
+    const { data: assessment, error: assessmentError } = await (supabase as any)
       .from('assessments')
       .select('id, patient_id, status')
       .eq('id', assessmentId)
