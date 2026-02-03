@@ -650,7 +650,7 @@ async function updatePatientStateOnAssessmentComplete(
     stateData.updatedAt = new Date().toISOString()
 
     if (isNewState) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('patient_state')
         .insert({
           user_id: userId,
@@ -662,7 +662,7 @@ async function updatePatientStateOnAssessmentComplete(
         throw insertError
       }
     } else {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('patient_state')
         .update({ state_data: stateData as any })
         .eq('user_id', userId)
