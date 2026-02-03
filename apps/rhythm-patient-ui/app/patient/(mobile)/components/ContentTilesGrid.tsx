@@ -83,7 +83,7 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
           >
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0" role="img" aria-label={tile.type}>
+                <span className="text-2xl shrink-0" role="img" aria-label={tile.type}>
                   {iconMap[tile.type]}
                 </span>
                 <div className="flex-1 min-w-0">

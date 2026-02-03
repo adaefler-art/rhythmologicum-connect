@@ -86,7 +86,7 @@ export default function ContentPageClient({ contentPage }: ContentPageClientProp
                 a: SafeLink,
                 table: ({ children, ...props }) => (
                   <div className="w-full overflow-x-auto">
-                    <table className="w-full min-w-[640px]" {...props}>
+                    <table className="w-full min-w-160" {...props}>
                       {children}
                     </table>
                   </div>
