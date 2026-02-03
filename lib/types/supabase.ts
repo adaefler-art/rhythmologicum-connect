@@ -972,10 +972,16 @@ export type Database = {
 					funnel_id: string
 					id: string
 					is_default: boolean
+					last_validated_at: string | null
+					parent_version_id: string | null
 					prompt_version: string
+					published_at: string | null
+					published_by: string | null
 					questionnaire_config: Json
 					rollout_percent: number | null
+					status: Database["public"]["Enums"]["funnel_version_status"]
 					updated_at: string | null
+					validation_errors: Json | null
 					version: string
 				}
 				Insert: {
@@ -985,10 +991,16 @@ export type Database = {
 					funnel_id: string
 					id?: string
 					is_default?: boolean
+					last_validated_at?: string | null
+					parent_version_id?: string | null
 					prompt_version?: string
+					published_at?: string | null
+					published_by?: string | null
 					questionnaire_config?: Json
 					rollout_percent?: number | null
+					status?: Database["public"]["Enums"]["funnel_version_status"]
 					updated_at?: string | null
+					validation_errors?: Json | null
 					version: string
 				}
 				Update: {
@@ -998,10 +1010,16 @@ export type Database = {
 					funnel_id?: string
 					id?: string
 					is_default?: boolean
+					last_validated_at?: string | null
+					parent_version_id?: string | null
 					prompt_version?: string
+					published_at?: string | null
+					published_by?: string | null
 					questionnaire_config?: Json
 					rollout_percent?: number | null
+					status?: Database["public"]["Enums"]["funnel_version_status"]
 					updated_at?: string | null
+					validation_errors?: Json | null
 					version?: string
 				}
 				Relationships: [
@@ -3072,6 +3090,7 @@ export type Database = {
 		Enums: {
 			assessment_state: "draft" | "in_progress" | "completed" | "archived"
 			assessment_status: "in_progress" | "completed"
+			funnel_version_status: "draft" | "published" | "archived"
 			diagnosis_run_status: "queued" | "running" | "succeeded" | "failed"
 			notification_status:
 				| "scheduled"
@@ -3274,6 +3293,7 @@ export const Constants = {
 		Enums: {
 			assessment_state: ["draft", "in_progress", "completed", "archived"],
 			assessment_status: ["in_progress", "completed"],
+			funnel_version_status: ["draft", "published", "archived"],
 			diagnosis_run_status: ["queued", "running", "succeeded", "failed"],
 			notification_status: [
 				"scheduled",
