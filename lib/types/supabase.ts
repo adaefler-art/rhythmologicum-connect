@@ -3016,6 +3016,15 @@ export type Database = {
 				}
 				Returns: string
 			}
+			publish_draft_version: {
+				Args: {
+					p_draft_id: string
+					p_user_id: string
+					p_set_as_default?: boolean
+					p_change_summary?: string | null
+				}
+				Returns: Json
+			}
 			get_design_tokens: { Args: { org_id?: string }; Returns: Json }
 			get_my_patient_profile_id: { Args: never; Returns: string }
 			get_user_org_ids: { Args: never; Returns: string[] }
