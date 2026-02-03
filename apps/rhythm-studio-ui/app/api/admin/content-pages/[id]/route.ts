@@ -236,7 +236,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 		if (body.layout !== undefined) updateData.layout = body.layout || null
 
 		// Update content page
-		const { data: updatedPage, error: updateError } = await adminClient
+		const { data: updatedPage, error: updateError } = await (adminClient as any)
 			.from('content_pages')
 			.update(updateData)
 			.eq('id', id)
