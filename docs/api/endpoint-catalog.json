@@ -8102,6 +8102,33 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/studio/diagnosis-artifacts/[artifactId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis-artifacts/[artifactId]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/studio/diagnosis-runs/[runId]",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis-runs/[runId]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/studio/patients/[patientId]/anamnesis",
       "methods": [
         "GET",
@@ -8144,6 +8171,20 @@
       ],
       "isOrphan": false,
       "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/studio/patients/[patientId]/diagnosis-runs",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/diagnosis-runs/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "path": "/api/support-cases",
