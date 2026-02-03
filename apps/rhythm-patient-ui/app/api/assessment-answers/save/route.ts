@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse()
     }
 
-    const { data: patientProfile, error: profileError } = await supabase
+    const { data: patientProfile, error: profileError } = await (supabase as any)
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
