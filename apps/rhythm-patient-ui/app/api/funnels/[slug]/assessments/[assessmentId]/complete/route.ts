@@ -58,6 +58,7 @@ function asProcessingStatus(s: unknown): ProcessingStatus {
 /**
  * B5/B8: Complete an assessment
  *
+ * DB Access: Uses admin client to create processing jobs after completion (service role required).
  * POST /api/funnels/[slug]/assessments/[assessmentId]/complete
  */
 export async function POST(
@@ -172,7 +173,7 @@ async function handleCompleteAssessment(
             'Server configuration error',
             500,
             PATIENT_ASSESSMENT_SCHEMA_VERSION,
-            { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+            { reason: 'Service role key missing' },
             correlationId,
           )
         }
