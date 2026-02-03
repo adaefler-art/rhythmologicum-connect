@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data, error: upsertError } = await supabase
+    const { data, error: upsertError } = await (supabase as any)
       .from('assessment_answers')
       .upsert(
         {
