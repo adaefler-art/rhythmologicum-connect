@@ -552,7 +552,11 @@ async function validateV05AllRequiredQuestions(
     throw new Error('Antworten konnten nicht geladen werden.')
   }
 
-  const answeredIds = new Set(answeredQuestions?.map((a) => a.question_id) || [])
+  const answeredIds = new Set(
+    (answeredQuestions as Array<{ question_id: string }> | null)?.map(
+      (a) => a.question_id,
+    ) || [],
+  )
 
   const missingQuestions: Array<{
     questionId: string
