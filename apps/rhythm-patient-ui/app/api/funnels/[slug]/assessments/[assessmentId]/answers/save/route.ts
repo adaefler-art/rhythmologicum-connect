@@ -245,7 +245,7 @@ async function handleSaveAnswer(
       isV05CatalogFunnel,
     })
 
-    const { data, error: upsertError } = await supabase
+    const { data, error: upsertError } = await (supabase as any)
       .from('assessment_answers')
       .upsert(
         {
