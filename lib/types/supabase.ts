@@ -592,6 +592,13 @@ export type Database = {
 					},
 					{
 						foreignKeyName: "design_tokens_organization_id_fkey"
+						columns: ["organization_id"]
+						isOneToOne: false
+						referencedRelation: "organizations"
+						referencedColumns: ["id"]
+					},
+				]
+			}
 			diagnosis_artifacts: {
 				Row: {
 					artifact_data: Json
@@ -1899,6 +1906,7 @@ export type Database = {
 					full_name: string | null
 					id: string
 					onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
+					organization_id: string | null
 					sex: string | null
 					user_id: string
 				}
@@ -1908,6 +1916,7 @@ export type Database = {
 					full_name?: string | null
 					id?: string
 					onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+					organization_id?: string | null
 					sex?: string | null
 					user_id: string
 				}
@@ -1917,10 +1926,18 @@ export type Database = {
 					full_name?: string | null
 					id?: string
 					onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+					organization_id?: string | null
 					sex?: string | null
 					user_id?: string
 				}
 				Relationships: [
+					{
+						foreignKeyName: "patient_profiles_organization_id_fkey"
+						columns: ["organization_id"]
+						isOneToOne: false
+						referencedRelation: "organizations"
+						referencedColumns: ["id"]
+					},
 					{
 						foreignKeyName: "patient_profiles_user_id_fkey"
 						columns: ["user_id"]
