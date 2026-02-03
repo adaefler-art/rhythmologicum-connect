@@ -60,7 +60,7 @@ export async function handleGetPatientContext(
           answers: [
             {
               question_id: 'stub-question-001',
-              question_text: 'How stressed do you feel today?',
+              question_label: 'How stressed do you feel today?',
               answer_value: 6,
             },
           ],

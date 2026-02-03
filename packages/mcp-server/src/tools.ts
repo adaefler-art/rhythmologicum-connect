@@ -51,7 +51,7 @@ export const GetPatientContextOutputSchema = z.object({
         answers: z.array(
           z.object({
             question_id: z.string(),
-            question_text: z.string(),
+            question_label: z.string(),
             answer_value: z.unknown(),
           }),
         ),

@@ -33,7 +33,7 @@ export interface FunnelRun {
   status: string
   answers: Array<{
     question_id: string
-    question_text: string
+    question_label: string
     answer_value: unknown
   }>
   result: {
@@ -159,14 +159,36 @@ export async function buildPatientContextPack(
 
   for (const assessment of limitedAssessments) {
     // Fetch answers with joined question data
-    const { data: answersData } = await supabase
+    const { data: answersData, error: answersError } = await supabase
       .from('assessment_answers')
       .select(`
         question_id,
-        answer_value,
-        questions(question_text)
+        answer_value
       `)
       .eq('assessment_id', assessment.id)
+
+    if (answersError) {
+      throw new Error(`Failed to fetch assessment answers: ${answersError.message}`)
+    }
+
+    const answerRows = answersData || []
+    const questionIds = answerRows.map((answer) => answer.question_id).filter(Boolean)
+    const questionLabelByKey = new Map<string, string>()
+
+    if (questionIds.length > 0) {
+      const { data: questionsData, error: questionsError } = await supabase
+        .from('questions')
+        .select('key, label')
+        .in('key', questionIds)
+
+      if (questionsError) {
+        throw new Error(`Failed to fetch question labels: ${questionsError.message}`)
+      }
+
+      for (const question of questionsData || []) {
+        questionLabelByKey.set(question.key, question.label)
+      }
+    }
 
     // Fetch calculated results
     const { data: resultData } = await supabase
@@ -177,16 +199,9 @@ export async function buildPatientContextPack(
       .limit(1)
       .single()
 
-    // Type for the joined questions response
-    type AnswerWithQuestion = {
-      question_id: string
-      answer_value: unknown
-      questions: { question_text: string } | null
-    }
-
-    const answers = (answersData as unknown as AnswerWithQuestion[] || []).map((answer) => ({
+    const answers = answerRows.map((answer) => ({
       question_id: answer.question_id,
-      question_text: answer.questions?.question_text || '',
+      question_label: questionLabelByKey.get(answer.question_id) || '',
       answer_value: answer.answer_value,
     }))
 
@@ -220,20 +235,14 @@ export async function buildPatientContextPack(
   // Fetch patient profile for demographics
   const { data: profileData } = await supabase
     .from('patient_profiles')
-    .select('date_of_birth, gender')
+    .select('birth_year, sex')
     .eq('id', patientId)
     .single()
 
-  // Calculate age from date_of_birth
+  // Calculate age from birth_year
   let age: number | undefined
-  if (profileData?.date_of_birth) {
-    const dob = new Date(profileData.date_of_birth)
-    const today = new Date()
-    age = today.getFullYear() - dob.getFullYear()
-    const monthDiff = today.getMonth() - dob.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--
-    }
+  if (typeof profileData?.birth_year === 'number') {
+    age = new Date().getFullYear() - profileData.birth_year
   }
 
   // Build the context pack
@@ -241,7 +250,7 @@ export async function buildPatientContextPack(
     patient_id: patientId,
     demographics: {
       age,
-      gender: profileData?.gender || undefined,
+      gender: profileData?.sex || undefined,
     },
     anamnesis: {
       entries: anamnesisEntries,
