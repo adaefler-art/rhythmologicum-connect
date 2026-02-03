@@ -8129,6 +8129,19 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/studio/diagnosis-runs/[runId]/execute",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis-runs/[runId]/execute/route.ts",
+      "intent": "studio:diagnosis-worker",
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/studio/patients/[patientId]/anamnesis",
       "methods": [
         "GET",
