@@ -197,7 +197,7 @@ export async function PATCH(
 
 			if (versionData?.funnel_id) {
 				// Unset is_default for all other versions of this funnel
-				const { error: unsetError } = await writeClient
+				const { error: unsetError } = await (writeClient as any)
 					.from('funnel_versions')
 					.update({ is_default: false, updated_at: new Date().toISOString() })
 					.eq('funnel_id', versionData.funnel_id)
