@@ -371,6 +371,11 @@ Use in all API routes for consistency.
   - **Scope**: `device_shipments`, `shipment_events`, RPC `increment_reminder_count_atomic` (shipment reminder tracking)
   - **Mitigation**: Server-only module, selects minimal fields, atomic cooldown enforcement via RPC to prevent duplicate reminders; notification metadata is PHI-free
 
+6. **MCP Context Pack API** (`apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts`)
+  - **Why**: Clinician/admin endpoint aggregates cross-patient context for diagnosis tooling; requires RLS bypass
+  - **Scope**: `anamnesis_entries`, `assessments`, `assessment_answers`, `calculated_results`, `patient_measures`, `patient_profiles`, `questions`
+  - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), minimal field selection
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.
