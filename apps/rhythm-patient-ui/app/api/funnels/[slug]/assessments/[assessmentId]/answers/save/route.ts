@@ -307,7 +307,7 @@ async function handleSaveAnswer(
     }
 
     if (!isV05CatalogFunnel) {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('assessments')
         .update({ current_step_id: stepId })
         .eq('id', assessmentId)
