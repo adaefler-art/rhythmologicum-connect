@@ -346,7 +346,7 @@ async function handleCompleteAssessment(
           'Server configuration error',
           500,
           PATIENT_ASSESSMENT_SCHEMA_VERSION,
-          { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+          { reason: 'Service role key missing' },
           correlationId,
         )
       }
@@ -390,7 +390,7 @@ async function handleCompleteAssessment(
               'Server configuration error',
               500,
               PATIENT_ASSESSMENT_SCHEMA_VERSION,
-              { reason: 'SUPABASE_SERVICE_ROLE_KEY missing' },
+              { reason: 'Service role key missing' },
               correlationId,
             )
           }
