@@ -41,7 +41,7 @@ export async function GET() {
     )
   }
 
-  const { data: profileData, error: profileError } = await supabase
+  const { data: profileData, error: profileError } = await (supabase as any)
     .from('patient_profiles')
     .select('id')
     .eq('user_id', user.id)
@@ -57,7 +57,7 @@ export async function GET() {
     )
   }
 
-  const { data: assessmentData, error: assessmentError } = await supabase
+  const { data: assessmentData, error: assessmentError } = await (supabase as any)
     .from('assessments')
     .select('id, funnel, funnel_id, started_at, completed_at')
     .eq('patient_id', profileData.id)
