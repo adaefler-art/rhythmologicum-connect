@@ -157,7 +157,7 @@ export async function buildPatientContextPack(
   const funnelRuns: FunnelRun[] = []
 
   for (const assessment of limitedAssessments) {
-    // Fetch answers
+    // Fetch answers with joined question data
     const { data: answersData } = await supabase
       .from('assessment_answers')
       .select(`
@@ -176,9 +176,16 @@ export async function buildPatientContextPack(
       .limit(1)
       .single()
 
-    const answers = (answersData || []).map((answer) => ({
+    // Type for the joined questions response
+    type AnswerWithQuestion = {
+      question_id: string
+      answer_value: unknown
+      questions: { question_text: string } | null
+    }
+
+    const answers = (answersData as unknown as AnswerWithQuestion[] || []).map((answer) => ({
       question_id: answer.question_id,
-      question_text: (answer.questions as any)?.question_text || '',
+      question_text: answer.questions?.question_text || '',
       answer_value: answer.answer_value,
     }))
 
@@ -264,16 +271,28 @@ export async function buildPatientContextPack(
  * Used for detecting equivalent runs and ensuring reproducibility
  */
 function calculateInputsHash(contextPack: PatientContextPack): string {
-  // Create normalized representation for hashing
+  // Create normalized representation for hashing with sorted keys
   const normalized = {
-    patient_id: contextPack.patient_id,
-    demographics: contextPack.demographics,
     anamnesis_ids: contextPack.anamnesis.entries.map((e) => e.id).sort(),
+    context_version: contextPack.metadata.context_version,
+    demographics: contextPack.demographics,
     funnel_run_ids: contextPack.funnel_runs.runs.map((r) => r.assessment_id).sort(),
     measures: contextPack.current_measures,
-    context_version: contextPack.metadata.context_version,
+    patient_id: contextPack.patient_id,
   }
 
-  const jsonString = JSON.stringify(normalized, Object.keys(normalized).sort())
+  // Use a replacer function to ensure deterministic key ordering
+  const jsonString = JSON.stringify(normalized, (key, value) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.keys(value)
+        .sort()
+        .reduce((sorted: Record<string, unknown>, k) => {
+          sorted[k] = value[k]
+          return sorted
+        }, {})
+    }
+    return value
+  })
+
   return createHash('sha256').update(jsonString).digest('hex')
 }
