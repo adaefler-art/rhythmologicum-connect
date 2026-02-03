@@ -1,9 +1,10 @@
 /**
  * E76.1: MCP Tool Schemas
+ * E76.2: Updated get_patient_context with full context pack structure
  * 
  * Defines Zod schemas for MCP tools ensuring deterministic, type-safe responses.
  * Tools:
- * - get_patient_context(patient_id): Retrieves patient context
+ * - get_patient_context(patient_id): Retrieves comprehensive patient context pack
  * - run_diagnosis(patient_id, options): Runs diagnostic analysis
  */
 
@@ -23,18 +24,60 @@ export const GetPatientContextOutputSchema = z.object({
     age: z.number().optional(),
     gender: z.string().optional(),
   }),
-  recent_assessments: z.array(
-    z.object({
-      assessment_id: z.string(),
-      funnel_slug: z.string(),
-      completed_at: z.string(),
-      status: z.string(),
-    }),
-  ),
-  active_diagnoses: z.array(z.string()),
+  anamnesis: z.object({
+    entries: z.array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        content: z.record(z.unknown()),
+        entry_type: z.string().nullable(),
+        tags: z.array(z.string()),
+        created_at: z.string(),
+        updated_at: z.string(),
+      }),
+    ),
+    total_count: z.number(),
+    limited_to: z.number(),
+  }),
+  funnel_runs: z.object({
+    runs: z.array(
+      z.object({
+        assessment_id: z.string(),
+        funnel_slug: z.string(),
+        funnel_name: z.string(),
+        started_at: z.string(),
+        completed_at: z.string().nullable(),
+        status: z.string(),
+        answers: z.array(
+          z.object({
+            question_id: z.string(),
+            question_text: z.string(),
+            answer_value: z.unknown(),
+          }),
+        ),
+        result: z
+          .object({
+            scores: z.record(z.unknown()),
+            risk_models: z.record(z.unknown()),
+            algorithm_version: z.string(),
+          })
+          .nullable(),
+      }),
+    ),
+    total_count: z.number(),
+    limit_per_funnel: z.number(),
+  }),
+  current_measures: z
+    .object({
+      stress_score: z.number().optional(),
+      sleep_score: z.number().optional(),
+      risk_level: z.string().optional(),
+    })
+    .nullable(),
   metadata: z.object({
     retrieved_at: z.string(),
     context_version: z.string(),
+    inputs_hash: z.string(),
   }),
 })
 
@@ -86,7 +129,8 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
 export const MCP_TOOLS = {
   get_patient_context: {
     name: 'get_patient_context',
-    description: 'Retrieves comprehensive patient context including demographics, assessments, and diagnoses',
+    description:
+      'Retrieves comprehensive patient context pack including demographics, anamnesis entries (max 30), funnel runs (max 2 per funnel), assessment results, and current measures with stable inputs_hash',
     inputSchema: GetPatientContextInputSchema,
     outputSchema: GetPatientContextOutputSchema,
   } as ToolDefinition<GetPatientContextInput, GetPatientContextOutput>,
