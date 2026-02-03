@@ -113,7 +113,7 @@ async function handleSaveAnswer(
       return unauthorizedResponse()
     }
 
-    const { data: patientProfile, error: profileError } = await supabase
+    const { data: patientProfile, error: profileError } = await (supabase as any)
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -130,7 +130,7 @@ async function handleSaveAnswer(
       return notFoundResponse('Benutzerprofil')
     }
 
-    const { data: assessment, error: assessmentError } = await supabase
+    const { data: assessment, error: assessmentError } = await (supabase as any)
       .from('assessments')
       .select('id, patient_id, status, funnel, funnel_id')
       .eq('id', assessmentId)
