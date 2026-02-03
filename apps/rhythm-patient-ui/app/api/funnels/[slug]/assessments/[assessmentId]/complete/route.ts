@@ -594,7 +594,7 @@ async function updatePatientStateOnAssessmentComplete(
   completedAt: string,
 ): Promise<void> {
   try {
-    const { data, error: fetchError } = await supabase
+    const { data, error: fetchError } = await (supabase as any)
       .from('patient_state')
       .select('state_data')
       .eq('user_id', userId)
@@ -611,7 +611,9 @@ async function updatePatientStateOnAssessmentComplete(
         throw fetchError
       }
     } else {
-      const validatedState = safeValidatePatientState(data.state_data)
+      const validatedState = safeValidatePatientState(
+        (data as { state_data: PatientStateV01 }).state_data,
+      )
       stateData = validatedState || createEmptyPatientState()
     }
 
