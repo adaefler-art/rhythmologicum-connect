@@ -391,7 +391,7 @@ export async function POST(req: Request) {
 		// I72.6: Fetch patient state to get lastAssessment for AMY handoff
 		let lastAssessmentSummary: { status: string; funnelSlug: string | null } | null = null
 		try {
-			const { data: stateData, error: stateError } = await supabase
+			const { data: stateData, error: stateError } = await (supabase as any)
 				.from('patient_state')
 				.select('state_data')
 				.eq('user_id', user.id)
