@@ -11,8 +11,8 @@
 
 import 'server-only'
 import { createHash } from 'crypto'
-// Justification: context pack requires cross-patient access for clinician/admin tooling.
-import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/types/supabase'
 
 export interface AnamnesisEntry {
   id: string
@@ -81,10 +81,9 @@ const CONTEXT_VERSION = 'v1'
  * @returns Comprehensive patient context with stable hash
  */
 export async function buildPatientContextPack(
+  supabase: SupabaseClient<Database>,
   patientId: string,
 ): Promise<PatientContextPack> {
-  const supabase = createAdminSupabaseClient()
-
   // Fetch anamnesis entries (max 30, most recent first)
   const { data: anamnesisData, error: anamnesisError } = await supabase
     .from('anamnesis_entries')

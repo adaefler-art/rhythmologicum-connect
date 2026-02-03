@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
@@ -83,7 +84,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Build context pack
-    const contextPack = await buildPatientContextPack(patient_id)
+    // Justification: clinician/admin endpoint requires cross-patient access.
+    const adminSupabase = createAdminSupabaseClient()
+    const contextPack = await buildPatientContextPack(adminSupabase, patient_id)
 
     return NextResponse.json({
       success: true,
