@@ -71,7 +71,7 @@ export async function POST(
 
     const adminClient = createAdminSupabaseClient()
 
-    const { data: version, error: versionError } = await adminClient
+    const { data: version, error: versionError } = await (adminClient as any)
       .from('funnel_versions')
       .select('id, questionnaire_config')
       .eq('id', versionId)
@@ -151,7 +151,7 @@ export async function POST(
       questions: [...config.steps[stepIndex].questions, validated.data],
     }
 
-    const { error: updateError } = await adminClient
+    const { error: updateError } = await (adminClient as any)
       .from('funnel_versions')
       .update({
         questionnaire_config: updatedConfig,
