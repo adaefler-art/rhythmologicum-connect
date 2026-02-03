@@ -13,6 +13,7 @@ import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { classifySupabaseError, sanitizeSupabaseError, getRequestId, withRequestId, isBlank } from '@/lib/db/errors'
 import { env } from '@/lib/env'
+import type { Database } from '@/lib/types/supabase'
 
 /**
  * B7 API Endpoint: Update question is_required flag
@@ -67,12 +68,14 @@ export async function PATCH(
 		const adminClient = createAdminSupabaseClient()
 
 		// Update question is_required
-		const { data, error } = await adminClient
+		const updateData: Database['public']['Tables']['funnel_step_questions']['Update'] = {
+			is_required: body.is_required,
+			updated_at: new Date().toISOString(),
+		}
+
+		const { data, error } = await (adminClient as any)
 			.from('funnel_step_questions')
-			.update({ 
-				is_required: body.is_required,
-				updated_at: new Date().toISOString(),
-			})
+			.update(updateData)
 			.eq('id', id)
 			.select()
 			.single()
