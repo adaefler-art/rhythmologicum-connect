@@ -43,6 +43,10 @@ CREATE TABLE IF NOT EXISTS public.diagnosis_runs (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   
   -- Constraints
+  CONSTRAINT diagnosis_runs_patient_org_fk 
+    FOREIGN KEY (patient_id, organization_id) 
+    REFERENCES public.patient_profiles(id, organization_id) 
+    ON DELETE CASCADE,
   CONSTRAINT diagnosis_runs_status_timestamps_check 
     CHECK (
       (status = 'queued' AND started_at IS NULL AND completed_at IS NULL) OR
@@ -50,24 +54,6 @@ CREATE TABLE IF NOT EXISTS public.diagnosis_runs (
       (status IN ('succeeded', 'failed') AND started_at IS NOT NULL AND completed_at IS NOT NULL)
     )
 );
-
--- Optional composite FK if patient_profiles has organization_id
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'patient_profiles'
-      AND column_name = 'organization_id'
-  ) THEN
-    ALTER TABLE public.diagnosis_runs
-      ADD CONSTRAINT diagnosis_runs_patient_org_fk
-      FOREIGN KEY (patient_id, organization_id)
-      REFERENCES public.patient_profiles(id, organization_id)
-      ON DELETE CASCADE;
-  END IF;
-END $$;
 
 -- Diagnosis run artifacts (many-to-many relationship between runs and artifacts)
 CREATE TABLE IF NOT EXISTS public.diagnosis_run_artifacts (
