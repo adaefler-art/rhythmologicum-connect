@@ -245,6 +245,14 @@ export async function buildPatientContextPack(
     age = new Date().getFullYear() - profileData.birth_year
   }
 
+  const currentMeasures = measuresData
+    ? {
+        stress_score: measuresData.stress_score ?? undefined,
+        sleep_score: measuresData.sleep_score ?? undefined,
+        risk_level: measuresData.risk_level ?? undefined,
+      }
+    : null
+
   // Build the context pack
   const contextPack: PatientContextPack = {
     patient_id: patientId,
@@ -262,7 +270,7 @@ export async function buildPatientContextPack(
       total_count: assessmentsArray.length,
       limit_per_funnel: MAX_RUNS_PER_FUNNEL,
     },
-    current_measures: measuresData || null,
+    current_measures: currentMeasures,
     metadata: {
       retrieved_at: new Date().toISOString(),
       context_version: CONTEXT_VERSION,
