@@ -120,7 +120,32 @@ export function DiagnosisRunsPanel({ patientId }: { patientId: string }) {
     }
   }
 
-  // Feature flag check - only show if enabled
+  // E76.4: POST /api/studio/diagnosis-runs/{runId}/execute
+  const executeRun = async (runId: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/studio/diagnosis-runs/${runId}/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(`Run executed successfully. Status: ${data.data.run.status}`)
+        // Refresh the run details
+        fetchRun(runId)
+        fetchRuns() // Refresh the list
+      } else {
+        setError(data.error?.message || 'Failed to execute run')
+      }
+    } catch (err) {
+      setError('Network error executing run')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Feature flag check - only show if enabled (E76.3 + E76.4)
   if (typeof window !== 'undefined' && !window.location.search.includes('enableDiagnosisRuns')) {
     return null
   }
@@ -128,7 +153,7 @@ export function DiagnosisRunsPanel({ patientId }: { patientId: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6">
       <h3 className="mb-4 text-lg font-semibold">
-        Diagnosis Runs (E76.3 - Feature Flagged)
+        Diagnosis Runs (E76.3 + E76.4 - Feature Flagged)
       </h3>
       
       {error && (
@@ -182,6 +207,15 @@ export function DiagnosisRunsPanel({ patientId }: { patientId: string }) {
                     >
                       Artifacts
                     </button>
+                    {run.status === 'queued' && (
+                      <button
+                        onClick={() => executeRun(run.id)}
+                        className="text-xs text-green-600 hover:underline"
+                        disabled={loading}
+                      >
+                        Execute
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
