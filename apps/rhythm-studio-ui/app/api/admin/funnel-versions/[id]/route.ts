@@ -159,7 +159,7 @@ export async function PATCH(
 		// 3. Set is_default on target version
 		if (updateData.is_default === true) {
 			// Get the funnel_id for this version
-			const { data: versionData, error: versionError } = await writeClient
+			const { data: versionData, error: versionError } = await (writeClient as any)
 				.from('funnel_versions')
 				.select('funnel_id')
 				.eq('id', versionId)
