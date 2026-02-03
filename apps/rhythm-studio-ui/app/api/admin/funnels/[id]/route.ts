@@ -94,14 +94,14 @@ export async function GET(
 			// UUID path: query by ID only, no fallback
 			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
 				.eq('id', slugOrId)
 				.single())
 		} else {
 			// Slug path: query by slug only
 			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
 				.eq('slug', slugOrId)
 				.single())
 		}
