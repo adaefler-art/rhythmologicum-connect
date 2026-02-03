@@ -37,7 +37,7 @@ export async function GET(
       return notFoundResponse('Assessment', 'Assessment nicht gefunden.')
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

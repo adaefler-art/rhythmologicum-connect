@@ -39,7 +39,7 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
  * }
  */
 export async function GET(request: Request) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = (await createServerSupabaseClient()) as any
 
   // Check authentication
   const {

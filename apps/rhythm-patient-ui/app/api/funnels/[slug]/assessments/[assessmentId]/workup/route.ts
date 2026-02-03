@@ -28,7 +28,7 @@ export async function POST(
       return notFoundResponse('Assessment', 'Assessment nicht gefunden.', correlationId)
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

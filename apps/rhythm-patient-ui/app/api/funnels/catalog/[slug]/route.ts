@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: Params) {
     const { slug } = await params
     const canonicalSlug = getCanonicalFunnelSlug(slug)
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

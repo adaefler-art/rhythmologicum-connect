@@ -55,7 +55,7 @@ export async function GET() {
     })
 
     // Get supabase client
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     // Fetch patient state
     const { data, error } = await supabase
@@ -229,7 +229,7 @@ export async function POST(request: Request) {
     }
 
     // Get supabase client
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     // Fetch existing state
     const { data: existingData, error: fetchError } = await supabase

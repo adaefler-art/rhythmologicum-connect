@@ -8,7 +8,7 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
  * Includes assessment status, funnel info, timestamps, and result summaries.
  */
 export async function GET(request: Request) {
-  const supabase = await createServerSupabaseClient()
+  const supabase = (await createServerSupabaseClient()) as any
 
   // Check authentication
   const {

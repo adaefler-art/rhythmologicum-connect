@@ -57,7 +57,7 @@ async function handleValidateStep(
       return missingFieldsResponse('Fehlende Parameter.')
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return invalidInputResponse('Der Wert answerValue muss eine ganze Zahl sein.')
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

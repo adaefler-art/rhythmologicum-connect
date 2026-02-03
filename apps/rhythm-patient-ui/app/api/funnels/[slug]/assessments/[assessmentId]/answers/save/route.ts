@@ -98,7 +98,7 @@ async function handleSaveAnswer(
 
     const { stepId, questionId, answerValue } = validationResult.data
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

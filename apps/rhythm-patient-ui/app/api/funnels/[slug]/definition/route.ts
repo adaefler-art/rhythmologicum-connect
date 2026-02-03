@@ -47,7 +47,7 @@ export async function GET(
 
     const effectiveSlug = getCanonicalFunnelSlug(slug)
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const catalogFunnel = await loadFunnelWithClient(supabase, effectiveSlug)
 

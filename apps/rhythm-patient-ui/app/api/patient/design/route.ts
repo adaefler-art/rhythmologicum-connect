@@ -63,7 +63,7 @@ export async function GET() {
     })
     
     // Create Supabase client
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
     
     // Get patient's organization ID (if assigned)
     // For now, we'll use null (global tokens) as org assignment is not yet implemented

@@ -31,7 +31,7 @@ export async function GET(
       return missingFieldsResponse('Assessment-ID fehlt.', undefined, correlationId)
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },

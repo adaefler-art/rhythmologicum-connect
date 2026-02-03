@@ -90,7 +90,7 @@ async function handleCompleteAssessment(
       return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.', undefined, correlationId)
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
 
     const {
       data: { user },
@@ -493,7 +493,7 @@ async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string,
     const workupResult = performWorkupCheck(evidencePack)
     const rulesetVersion = getRulesetVersion(funnelSlug) ?? 'default'
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = (await createServerSupabaseClient()) as any
     const { error: updateError } = await supabase
       .from('assessments')
       .update({
