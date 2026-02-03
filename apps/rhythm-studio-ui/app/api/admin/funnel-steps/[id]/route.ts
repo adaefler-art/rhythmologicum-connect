@@ -144,7 +144,7 @@ export async function PATCH(
 		}
 
 		// Update step
-		const { data, error } = await adminClient
+		const { data, error } = await (adminClient as any)
 			.from('funnel_steps')
 			.update(updateData)
 			.eq('id', id)
