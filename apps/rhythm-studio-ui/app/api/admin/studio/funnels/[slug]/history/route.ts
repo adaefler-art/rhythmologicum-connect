@@ -144,7 +144,9 @@ export async function GET(
     // Enrich history with version labels
     const enrichedHistory = (history || []).map((entry: HistoryEntry) => ({
       ...entry,
-      version_label: versionDetails[entry.version_id]?.version || entry.version_id,
+      version_label: entry.version_id
+        ? versionDetails[entry.version_id]?.version || entry.version_id
+        : null,
       previous_version_label: entry.previous_version_id
         ? versionDetails[entry.previous_version_id]?.version || entry.previous_version_id
         : null,
