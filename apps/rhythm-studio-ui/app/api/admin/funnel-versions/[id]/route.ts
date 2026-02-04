@@ -245,7 +245,7 @@ export async function PATCH(
 		}
 
 		// Update the version
-		let { data, error } = await writeClient
+		let { data, error } = await (writeClient as any)
 			.from('funnel_versions')
 			.update(updateData)
 			.eq('id', versionId)
@@ -266,7 +266,7 @@ export async function PATCH(
 				writeClient = authClient
 
 				// Retry the update
-				;({ data, error } = await writeClient
+				;({ data, error } = await (writeClient as any)
 					.from('funnel_versions')
 					.update(updateData)
 					.eq('id', versionId)
