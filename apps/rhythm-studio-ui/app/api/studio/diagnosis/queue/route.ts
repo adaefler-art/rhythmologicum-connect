@@ -15,6 +15,7 @@ import { checkDuplicateRun, extractInputsMeta } from '@/lib/diagnosis/dedupe'
 import { isFeatureEnabled } from '@/lib/featureFlags'
 import { isValidUUID } from '@/lib/validators/uuid'
 import { DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
+import type { Database, Json } from '@/lib/types/supabase'
 
 /**
  * Admin client usage - DOCUMENTED JUSTIFICATION
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     }
 
     const inputs_hash = contextPack.metadata.inputs_hash
-    const inputs_meta = extractInputsMeta(contextPack)
+    const inputs_meta = extractInputsMeta(contextPack) as Json
 
     // E76.8: Check for duplicate runs (Policy B: time-window-based)
     const dedupeResult = await checkDuplicateRun(adminClient, inputs_hash, patient_id)
@@ -162,15 +163,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new diagnosis run
+    const insertPayload: Database['public']['Tables']['diagnosis_runs']['Insert'] = {
+      patient_id,
+      clinician_id: user.id,
+      status: DIAGNOSIS_RUN_STATUS.QUEUED,
+      inputs_hash,
+      inputs_meta,
+    }
+
     const { data: newRun, error: insertError } = await adminClient
       .from('diagnosis_runs')
-      .insert({
-        patient_id,
-        clinician_id: user.id,
-        status: DIAGNOSIS_RUN_STATUS.QUEUED,
-        inputs_hash,
-        inputs_meta,
-      })
+      .insert(insertPayload)
       .select('id, status, created_at')
       .single()
 
