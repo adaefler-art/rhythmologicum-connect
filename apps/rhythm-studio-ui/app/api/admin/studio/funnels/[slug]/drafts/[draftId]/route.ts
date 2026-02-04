@@ -236,7 +236,7 @@ export async function PUT(
     }
 
     // Update draft
-    const { data: updatedDraft, error: updateError } = await adminClient
+    const { data: updatedDraft, error: updateError } = await (adminClient as any)
       .from('funnel_versions')
       .update(updates)
       .eq('id', draftId)
