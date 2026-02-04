@@ -15,6 +15,10 @@ import { AUDIT_ENTITY_TYPE } from '@/lib/contracts/registry'
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
 
+type UserOrgMembershipRow = {
+	organization_id: string | null
+}
+
 /**
  * Get user's organization ID server-side
  */
@@ -35,7 +39,8 @@ async function getUserOrgId(
 		return null
 	}
   
-	return data.organization_id
+	const row = data as UserOrgMembershipRow
+	return row.organization_id
 }
 
 /**
