@@ -22,6 +22,24 @@ type AssignFunnelRequest = {
   status?: 'active' | 'paused'
 }
 
+type FunnelCatalogRow = {
+	id: string
+	slug: string
+	default_version_id: string | null
+	is_active: boolean
+}
+
+type FunnelVersionRow = {
+	id: string
+	version: string
+	status: string
+}
+
+type PatientFunnelAssignmentRow = {
+	id: string
+	status: string
+}
+
 /**
  * POST /api/clinician/patient-funnels - Assign funnel to patient
  */
@@ -117,7 +135,8 @@ export async function POST(request: Request) {
 			)
 		}
 
-		if (!funnelData.is_active) {
+		const funnelRow = funnelData as FunnelCatalogRow
+		if (!funnelRow.is_active) {
 			return NextResponse.json(
 				{
 					success: false,
@@ -131,7 +150,7 @@ export async function POST(request: Request) {
 		}
 
 		// Use provided version or default version
-		const versionId = active_version_id || funnelData.default_version_id
+		const versionId = active_version_id || funnelRow.default_version_id
 
 		if (!versionId) {
 			return NextResponse.json(
@@ -168,7 +187,8 @@ export async function POST(request: Request) {
 			)
 		}
 
-		if (versionData.status !== 'published') {
+		const versionRow = versionData as FunnelVersionRow
+		if (versionRow.status !== 'published') {
 			return NextResponse.json(
 				{
 					success: false,
@@ -190,7 +210,8 @@ export async function POST(request: Request) {
 			.in('status', ['active', 'paused'])
 			.maybeSingle()
 
-		if (existingAssignment) {
+		const assignmentRow = existingAssignment as PatientFunnelAssignmentRow | null
+		if (assignmentRow) {
 			return NextResponse.json(
 				{
 					success: false,
@@ -198,8 +219,8 @@ export async function POST(request: Request) {
 						code: 'FUNNEL_ALREADY_ASSIGNED',
 						message: 'Patient already has an active or paused assignment for this funnel',
 						data: {
-							existing_assignment_id: existingAssignment.id,
-							current_status: existingAssignment.status,
+							existing_assignment_id: assignmentRow.id,
+							current_status: assignmentRow.status,
 						},
 					},
 				},
@@ -209,7 +230,7 @@ export async function POST(request: Request) {
 
 		// Insert patient funnel assignment
 		// RLS will verify org scoping
-		const { data: patientFunnel, error: insertError } = await supabase
+		const { data: patientFunnel, error: insertError } = await (supabase as any)
 			.from('patient_funnels')
 			.insert({
 				patient_id,
