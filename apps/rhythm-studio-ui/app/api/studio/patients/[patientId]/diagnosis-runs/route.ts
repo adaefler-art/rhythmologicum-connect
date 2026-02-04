@@ -125,7 +125,7 @@ export async function POST(
     }
 
     // Create diagnosis run in 'queued' state
-    const { data: run, error: createError } = await supabase
+    const { data: run, error: createError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('diagnosis_runs')
       .insert({
         patient_id: patientId,
@@ -211,7 +211,7 @@ export async function GET(
     }
 
     // Build query
-    let query = supabase
+    let query = (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('diagnosis_runs')
       .select('*')
       .eq('patient_id', patientId)

@@ -106,7 +106,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     // Fetch anamnesis entries
     // RLS policies automatically filter to assigned patients
-    const { data: entries, error: queryError } = await supabase
+    const { data: entries, error: queryError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('anamnesis_entries')
       .select(
         `
@@ -156,8 +156,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
     // Get version counts for each entry
     const entriesWithVersions = await Promise.all(
-      (entries || []).map(async (entry) => {
-        const { count } = await supabase
+      (entries || []).map(async (entry: any) => {  // Type cast due to outdated Supabase types (E76.4)
+        const { count } = await (supabase as any)
           .from('anamnesis_entry_versions')
           .select('*', { count: 'exact', head: true })
           .eq('entry_id', entry.id)
@@ -323,7 +323,7 @@ export async function POST(request: Request, context: RouteContext) {
     // Create anamnesis entry
     // Database trigger will automatically create version 1
     // RLS will ensure clinician has access to this patient
-    const { data: entry, error: createError } = await supabase
+    const { data: entry, error: createError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('anamnesis_entries')
       .insert({
         patient_id: patientId,
@@ -368,7 +368,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Fetch the version that was created by the trigger
-    const { data: version, error: versionError } = await supabase
+    const { data: version, error: versionError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('anamnesis_entry_versions')
       .select('*')
       .eq('entry_id', entry.id)

@@ -88,8 +88,8 @@ export async function POST(_request: Request, context: RouteContext) {
     }
 
     // Archive entry
-    const { data: archivedEntry, error: archiveError } = await supabase
-      .from('anamnesis_entries')
+    const { data: archivedEntry, error: archiveError } = await (supabase as any)
+      .from('anamnesis_entries')  // Type cast due to outdated Supabase types (E76.4)
       .update({
         is_archived: true,
         updated_by: user.id,

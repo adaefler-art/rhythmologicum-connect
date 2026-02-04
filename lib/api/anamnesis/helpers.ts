@@ -82,7 +82,7 @@ export async function getPatientOrganizationId(
  * @returns Entry data or null
  */
 export async function getAnamnesisEntry(supabase: SupabaseClientType, entryId: string) {
-  const { data: entry, error } = await supabase
+  const { data: entry, error } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
     .from('anamnesis_entries')
     .select('*')
     .eq('id', entryId)

@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Fetch diagnosis artifact (RLS will automatically filter to only accessible artifacts)
-    const { data: artifact, error: fetchError } = await supabase
+    const { data: artifact, error: fetchError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('diagnosis_artifacts')
       .select('*')
       .eq('id', artifactId)

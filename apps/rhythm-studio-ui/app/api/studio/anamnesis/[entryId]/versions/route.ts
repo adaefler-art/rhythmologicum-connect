@@ -139,7 +139,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Update entry (trigger will create new version)
-    const { data: updatedEntry, error: updateError } = await supabase
+    const { data: updatedEntry, error: updateError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('anamnesis_entries')
       .update({
         title: validatedData.title,
@@ -182,7 +182,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Fetch the latest version that was created by the trigger
-    const { data: version, error: versionError } = await supabase
+    const { data: version, error: versionError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('anamnesis_entry_versions')
       .select('*')
       .eq('entry_id', entryId)

@@ -55,7 +55,7 @@ export async function GET(
     }
 
     // Fetch diagnosis run (RLS will automatically filter to only accessible runs)
-    const { data: run, error: fetchError } = await supabase
+    const { data: run, error: fetchError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('diagnosis_runs')
       .select('*')
       .eq('id', runId)
@@ -201,7 +201,7 @@ export async function PATCH(
     }
 
     // Perform update (RLS will verify user owns the run)
-    const { data: run, error: updateError } = await supabase
+    const { data: run, error: updateError } = await (supabase as any)  // Type cast due to outdated Supabase types (E76.4)
       .from('diagnosis_runs')
       .update(updateData)
       .eq('id', runId)
