@@ -3,9 +3,10 @@
  * E76.2: Added test for context pack endpoint
  * E76.4: Added test for diagnosis execution endpoint
  * E76.5: Added test for diagnosis prompt endpoint
+ * E76.8: Added test for diagnosis queue endpoint with dedupe
  * 
- * Literal callsite for /api/mcp, /api/mcp/context-pack, /api/studio/diagnosis/execute, and /api/studio/diagnosis/prompt endpoints (Strategy A compliance).
- * Tests MCP server integration with real context pack builder, diagnosis execution worker, and diagnosis prompt schema.
+ * Literal callsite for /api/mcp, /api/mcp/context-pack, /api/studio/diagnosis/execute, /api/studio/diagnosis/prompt, and /api/studio/diagnosis/queue endpoints (Strategy A compliance).
+ * Tests MCP server integration with real context pack builder, diagnosis execution worker, diagnosis prompt schema, and deduplication policy.
  */
 
 'use client'
@@ -18,6 +19,7 @@ export default function MCPTestPage() {
   const [contextPackResult, setContextPackResult] = useState<string>('')
   const [diagnosisExecutionResult, setDiagnosisExecutionResult] = useState<string>('')
   const [diagnosisPromptResult, setDiagnosisPromptResult] = useState<string>('')
+  const [diagnosisQueueResult, setDiagnosisQueueResult] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   async function testHealth() {
@@ -183,10 +185,30 @@ export default function MCPTestPage() {
     }
   }
 
+  async function testDiagnosisQueue() {
+    setLoading(true)
+    try {
+      // Literal callsite: /api/studio/diagnosis/queue (E76.8)
+      const response = await fetch('/api/studio/diagnosis/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: '123e4567-e89b-12d3-a456-426614174000',
+        }),
+      })
+      const data = await response.json()
+      setDiagnosisQueueResult(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setDiagnosisQueueResult(`Error: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-6">
-        MCP Server Test (E76.1 + E76.2 + E76.4 + E76.5)
+        MCP Server Test (E76.1 + E76.2 + E76.4 + E76.5 + E76.8)
       </h1>
 
       <div className="space-y-4">
@@ -280,6 +302,22 @@ export default function MCPTestPage() {
           {diagnosisPromptResult && (
             <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
               {diagnosisPromptResult}
+            </pre>
+          )}
+        </div>
+
+        <div className="border p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">Diagnosis Queue with Dedupe (E76.8)</h2>
+          <button
+            onClick={testDiagnosisQueue}
+            disabled={loading}
+            className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50"
+          >
+            Test Queue Endpoint (with inputs_hash & dedupe)
+          </button>
+          {diagnosisQueueResult && (
+            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+              {diagnosisQueueResult}
             </pre>
           )}
         </div>
