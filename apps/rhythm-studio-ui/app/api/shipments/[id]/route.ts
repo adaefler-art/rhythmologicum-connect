@@ -15,6 +15,10 @@ type RouteContext = {
 	params: Promise<{ id: string }>
 }
 
+type DeviceShipmentRow = {
+	status: ShipmentStatus | null
+}
+
 // ============================================================
 // GET /api/shipments/[id] - Get shipment details
 // ============================================================
@@ -155,7 +159,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 				.eq('id', id)
 				.single()
 
-			if (fetchError || !currentShipment) {
+			const currentShipmentRow = currentShipment as DeviceShipmentRow | null
+			if (fetchError || !currentShipmentRow || !currentShipmentRow.status) {
 				return NextResponse.json(
 					{ success: false, error: { code: 'not_found', message: 'Shipment not found' } },
 					{ status: 404 }
@@ -163,14 +168,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 			}
 
 			// Validate transition using helper function
-			const validTransitions = getValidStatusTransitions(currentShipment.status as ShipmentStatus)
-			if (!validTransitions.includes(updateData.status as ShipmentStatus) && updateData.status !== currentShipment.status) {
+			const validTransitions = getValidStatusTransitions(currentShipmentRow.status)
+			if (!validTransitions.includes(updateData.status as ShipmentStatus) && updateData.status !== currentShipmentRow.status) {
 				return NextResponse.json(
 					{
 						success: false,
 						error: {
 							code: 'invalid_transition',
-							message: `Cannot transition from ${currentShipment.status} to ${updateData.status}`,
+							message: `Cannot transition from ${currentShipmentRow.status} to ${updateData.status}`,
 						},
 					},
 					{ status: 400 }
