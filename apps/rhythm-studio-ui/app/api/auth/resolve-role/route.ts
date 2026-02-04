@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { isSessionExpired } from '@/lib/api/authHelpers'
-import type { Database } from '@/lib/types/supabase'
-
-export type ResolvedUserRole = Database['public']['Enums']['user_role']
+export type ResolvedUserRole = 'admin' | 'clinician' | 'nurse' | 'patient'
 
 type ApiResponse<T> = {
   success: boolean
