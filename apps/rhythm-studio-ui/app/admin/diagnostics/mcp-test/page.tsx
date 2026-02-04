@@ -2,9 +2,10 @@
  * E76.1: MCP Server Test Page
  * E76.2: Added test for context pack endpoint
  * E76.4: Added test for diagnosis execution endpoint
+ * E76.5: Added test for diagnosis prompt endpoint
  * 
- * Literal callsite for /api/mcp, /api/mcp/context-pack, and /api/studio/diagnosis/execute endpoints (Strategy A compliance).
- * Tests MCP server integration with real context pack builder and diagnosis execution worker.
+ * Literal callsite for /api/mcp, /api/mcp/context-pack, /api/studio/diagnosis/execute, and /api/studio/diagnosis/prompt endpoints (Strategy A compliance).
+ * Tests MCP server integration with real context pack builder, diagnosis execution worker, and diagnosis prompt schema.
  */
 
 'use client'
@@ -16,6 +17,7 @@ export default function MCPTestPage() {
   const [toolResult, setToolResult] = useState<string>('')
   const [contextPackResult, setContextPackResult] = useState<string>('')
   const [diagnosisExecutionResult, setDiagnosisExecutionResult] = useState<string>('')
+  const [diagnosisPromptResult, setDiagnosisPromptResult] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   async function testHealth() {
@@ -117,9 +119,75 @@ export default function MCPTestPage() {
     }
   }
 
+  async function testDiagnosisPromptGet() {
+    setLoading(true)
+    try {
+      // Literal callsite: /api/studio/diagnosis/prompt (E76.5)
+      const response = await fetch('/api/studio/diagnosis/prompt')
+      const data = await response.json()
+      setDiagnosisPromptResult(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setDiagnosisPromptResult(`Error: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function testDiagnosisPromptValidate() {
+    setLoading(true)
+    try {
+      // Literal callsite: /api/studio/diagnosis/prompt (E76.5)
+      const response = await fetch('/api/studio/diagnosis/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          output: {
+            summary: 'Test diagnosis summary for validation',
+            patient_context_used: {
+              assessments_count: 2,
+              date_range: {
+                earliest: '2026-01-01T00:00:00Z',
+                latest: '2026-02-01T00:00:00Z',
+              },
+              data_sources: ['stress_assessment'],
+              completeness_score: 0.8,
+            },
+            differential_diagnoses: [
+              {
+                condition: 'Test condition',
+                rationale: 'Test rationale for diagnosis',
+                confidence: 'moderate',
+                supporting_factors: ['Factor 1', 'Factor 2'],
+              },
+            ],
+            recommended_next_steps: [
+              {
+                step: 'Follow-up assessment',
+                rationale: 'To monitor progress',
+                priority: 'medium',
+              },
+            ],
+            urgent_red_flags: [],
+            disclaimer:
+              'This analysis is NOT medical advice and is provided solely for clinician review.',
+            schema_version: 'v1',
+          },
+        }),
+      })
+      const data = await response.json()
+      setDiagnosisPromptResult(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setDiagnosisPromptResult(`Error: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">MCP Server Test (E76.1 + E76.2 + E76.4)</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        MCP Server Test (E76.1 + E76.2 + E76.4 + E76.5)
+      </h1>
 
       <div className="space-y-4">
         <div className="border p-4 rounded">
@@ -187,6 +255,31 @@ export default function MCPTestPage() {
           {diagnosisExecutionResult && (
             <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
               {diagnosisExecutionResult}
+            </pre>
+          )}
+        </div>
+
+        <div className="border p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">Diagnosis Prompt Schema (E76.5)</h2>
+          <div className="space-x-2">
+            <button
+              onClick={testDiagnosisPromptGet}
+              disabled={loading}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+            >
+              Test GET Prompt Metadata
+            </button>
+            <button
+              onClick={testDiagnosisPromptValidate}
+              disabled={loading}
+              className="px-4 py-2 bg-pink-600 text-white rounded hover:bg-pink-700 disabled:opacity-50"
+            >
+              Test POST Validate Output
+            </button>
+          </div>
+          {diagnosisPromptResult && (
+            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+              {diagnosisPromptResult}
             </pre>
           )}
         </div>
