@@ -29,6 +29,33 @@ type RouteContext = {
 	params: Promise<{ id: string }>
 }
 
+type ValidationResultRow = {
+	id: string
+	overall_status: string | null
+	overall_passed: boolean | null
+	flags_raised_count: number | null
+	critical_flags_count: number | null
+	warning_flags_count: number | null
+	info_flags_count: number | null
+	rules_evaluated_count: number | null
+	validation_data: unknown
+	validated_at: string | null
+}
+
+type SafetyCheckRow = {
+	id: string
+	overall_action: string | null
+	safety_score: number | null
+	overall_severity: string | null
+	findings_count: number | null
+	critical_findings_count: number | null
+	high_findings_count: number | null
+	medium_findings_count: number | null
+	low_findings_count: number | null
+	check_data: unknown
+	evaluated_at: string | null
+}
+
 // Schema version for API response
 const API_VERSION = 'v1'
 
@@ -129,18 +156,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
 				.eq('id', review.validationResultId)
 				.single()
       
-			if (!validationError && validation) {
+			const validationRow = validation as ValidationResultRow | null
+			if (!validationError && validationRow) {
 				validationData = {
-					id: validation.id,
-					overallStatus: validation.overall_status,
-					overallPassed: validation.overall_passed,
-					flagsRaisedCount: validation.flags_raised_count,
-					criticalFlagsCount: validation.critical_flags_count,
-					warningFlagsCount: validation.warning_flags_count,
-					infoFlagsCount: validation.info_flags_count,
-					rulesEvaluatedCount: validation.rules_evaluated_count,
-					validationData: validation.validation_data,
-					validatedAt: validation.validated_at,
+					id: validationRow.id,
+					overallStatus: validationRow.overall_status,
+					overallPassed: validationRow.overall_passed,
+					flagsRaisedCount: validationRow.flags_raised_count,
+					criticalFlagsCount: validationRow.critical_flags_count,
+					warningFlagsCount: validationRow.warning_flags_count,
+					infoFlagsCount: validationRow.info_flags_count,
+					rulesEvaluatedCount: validationRow.rules_evaluated_count,
+					validationData: validationRow.validation_data,
+					validatedAt: validationRow.validated_at,
 				}
 			}
 		}
@@ -154,19 +182,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
 				.eq('id', review.safetyCheckId)
 				.single()
       
-			if (!safetyError && safety) {
+			const safetyRow = safety as SafetyCheckRow | null
+			if (!safetyError && safetyRow) {
 				safetyData = {
-					id: safety.id,
-					overallAction: safety.overall_action,
-					safetyScore: safety.safety_score,
-					overallSeverity: safety.overall_severity,
-					findingsCount: safety.findings_count,
-					criticalFindingsCount: safety.critical_findings_count,
-					highFindingsCount: safety.high_findings_count,
-					mediumFindingsCount: safety.medium_findings_count,
-					lowFindingsCount: safety.low_findings_count,
-					checkData: safety.check_data,
-					evaluatedAt: safety.evaluated_at,
+					id: safetyRow.id,
+					overallAction: safetyRow.overall_action,
+					safetyScore: safetyRow.safety_score,
+					overallSeverity: safetyRow.overall_severity,
+					findingsCount: safetyRow.findings_count,
+					criticalFindingsCount: safetyRow.critical_findings_count,
+					highFindingsCount: safetyRow.high_findings_count,
+					mediumFindingsCount: safetyRow.medium_findings_count,
+					lowFindingsCount: safetyRow.low_findings_count,
+					checkData: safetyRow.check_data,
+					evaluatedAt: safetyRow.evaluated_at,
 				}
 			}
 		}
