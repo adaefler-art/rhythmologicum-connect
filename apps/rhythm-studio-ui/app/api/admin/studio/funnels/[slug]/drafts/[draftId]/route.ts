@@ -309,7 +309,7 @@ export async function DELETE(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await adminClient
+    const { data: funnel, error: funnelError } = await (adminClient as any)
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
