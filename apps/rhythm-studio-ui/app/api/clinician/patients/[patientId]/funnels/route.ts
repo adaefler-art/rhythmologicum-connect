@@ -14,6 +14,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
+type PatientFunnelRow = {
+	id: string
+	patient_id: string
+	funnel_id: string
+	active_version_id: string | null
+	status: string
+	started_at: string | null
+	completed_at: string | null
+	created_at: string
+	updated_at: string
+	funnels_catalog?: unknown | unknown[] | null
+	funnel_versions?: unknown | unknown[] | null
+}
+
 /**
  * GET /api/clinician/patients/[patientId]/funnels - List patient funnels
  */
@@ -121,7 +135,7 @@ export async function GET(
 		}
 
 		// Transform data to flatten nested objects and handle array responses safely
-		const transformedFunnels = (patientFunnels ?? []).map((pf) => ({
+		const transformedFunnels = ((patientFunnels as PatientFunnelRow[]) ?? []).map((pf) => ({
 			id: pf.id,
 			patient_id: pf.patient_id,
 			funnel_id: pf.funnel_id,
