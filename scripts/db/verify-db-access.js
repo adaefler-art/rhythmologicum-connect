@@ -50,6 +50,12 @@ const ALLOWED_ADMIN_USAGE = [
   // to service_role (RLS guardrail) and the API must be able to enqueue work after
   // auth/RBAC checks.
   'app/api/processing/',
+  // Monorepo patient runtime: completion triggers background processing stages.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts',
+  // Monorepo studio: processing job download requires service role to access stored artifacts.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-studio-ui/app/api/processing/',
   // Results: SSOT read requires service role to bypass RLS for calculated_results.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts',
