@@ -16,7 +16,6 @@ import {
   DIAGNOSIS_PROMPT_BUNDLE_VERSION,
   DIAGNOSIS_PROMPT_VERSION,
   DIAGNOSIS_SCHEMA_VERSION,
-  type DiagnosisPromptOutputV1,
 } from '@/lib/contracts/diagnosis-prompt'
 
 /**
