@@ -209,7 +209,8 @@ export async function GET(
 		}
 
 		// Find default version
-		const defaultVersion = (versions || []).find((v) => v.is_default) || null
+		const defaultVersion =
+			(versions || []).find((v: { is_default?: boolean }) => v.is_default) || null
 
 		// ADAPTER LAYER: Convert manifest to steps/questions format for backward compat UI
 		// This allows the UI to continue working while we transition to manifest-based editing
