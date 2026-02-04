@@ -142,7 +142,7 @@ export async function GET(
     }
 
     // Enrich history with version labels
-    const enrichedHistory = (history || []).map((entry) => ({
+    const enrichedHistory = (history || []).map((entry: HistoryEntry) => ({
       ...entry,
       version_label: versionDetails[entry.version_id]?.version || entry.version_id,
       previous_version_label: entry.previous_version_id
