@@ -38,7 +38,27 @@ export interface DiagnosisExecutionResult {
   error?: {
     code: DiagnosisErrorCode
     message: string
-    details?: Record<string, unknown>
+    details?: Json
+  }
+}
+
+function serializeErrorDetails(error: unknown): Json {
+  if (error === undefined || error === null) {
+    return null
+  }
+
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack || null,
+    }
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(error)) as Json
+  } catch {
+    return String(error)
   }
 }
 
@@ -73,7 +93,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
           message: 'Failed to fetch diagnosis run',
-          details: { fetchError },
+          details: { fetchError: serializeErrorDetails(fetchError) },
         },
       }
     }
@@ -109,7 +129,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
           message: 'Failed to update run status to running',
-          details: { updateRunningError },
+          details: { updateRunningError: serializeErrorDetails(updateRunningError) },
         },
       }
     }
@@ -125,7 +145,7 @@ export async function executeDiagnosisRun(
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.CONTEXT_PACK_ERROR,
         message: 'Failed to build patient context pack',
-        details: { contextError: String(contextError) },
+        details: { contextError: serializeErrorDetails(contextError) },
       })
       return {
         success: false,
@@ -133,7 +153,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.CONTEXT_PACK_ERROR,
           message: 'Failed to build patient context pack',
-          details: { contextError: String(contextError) },
+          details: { contextError: serializeErrorDetails(contextError) },
         },
       }
     }
@@ -180,7 +200,7 @@ export async function executeDiagnosisRun(
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.MCP_ERROR,
         message: 'Failed to call MCP server',
-        details: { mcpError: String(mcpError) },
+        details: { mcpError: serializeErrorDetails(mcpError) },
       })
       return {
         success: false,
@@ -188,7 +208,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.MCP_ERROR,
           message: 'Failed to call MCP server',
-          details: { mcpError: String(mcpError) },
+          details: { mcpError: serializeErrorDetails(mcpError) },
         },
       }
     }
@@ -204,9 +224,9 @@ export async function executeDiagnosisRun(
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR,
         message: 'Diagnosis result failed schema validation',
-        details: { 
-          validationError: String(validationError),
-          receivedData: mcpResponse.data.diagnosis_result,
+        details: {
+          validationError: serializeErrorDetails(validationError),
+          receivedData: serializeErrorDetails(mcpResponse.data.diagnosis_result),
         },
       })
       return {
@@ -215,7 +235,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR,
           message: 'Diagnosis result failed schema validation',
-          details: { validationError: String(validationError) },
+          details: { validationError: serializeErrorDetails(validationError) },
         },
       }
     }
@@ -260,7 +280,7 @@ export async function executeDiagnosisRun(
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
         message: 'Failed to persist diagnosis artifact',
-        details: { artifactError },
+        details: { artifactError: serializeErrorDetails(artifactError) },
       })
       return {
         success: false,
@@ -268,7 +288,7 @@ export async function executeDiagnosisRun(
         error: {
           code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
           message: 'Failed to persist diagnosis artifact',
-          details: { artifactError },
+          details: { artifactError: serializeErrorDetails(artifactError) },
         },
       }
     }
@@ -303,7 +323,7 @@ export async function executeDiagnosisRun(
     await updateRunAsFailed(adminClient, runId, {
       code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
       message: 'Unexpected error during diagnosis execution',
-      details: { unexpectedError: String(unexpectedError) },
+      details: { unexpectedError: serializeErrorDetails(unexpectedError) },
     })
 
     return {
@@ -312,7 +332,7 @@ export async function executeDiagnosisRun(
       error: {
         code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
         message: 'Unexpected error during diagnosis execution',
-        details: { unexpectedError: String(unexpectedError) },
+        details: { unexpectedError: serializeErrorDetails(unexpectedError) },
       },
     }
   }
