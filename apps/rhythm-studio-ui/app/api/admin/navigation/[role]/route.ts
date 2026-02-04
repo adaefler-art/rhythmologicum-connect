@@ -123,7 +123,7 @@ export async function PUT(
 			order_index: config.order_index,
 		}))
 
-		const { data: insertedConfigs, error: insertError } = await supabase
+		const { data: insertedConfigs, error: insertError } = await (supabase as any)
 			.from('navigation_item_configs')
 			.insert(configsToInsert)
 			.select()
