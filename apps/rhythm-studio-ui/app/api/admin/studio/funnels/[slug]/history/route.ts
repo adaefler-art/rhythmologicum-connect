@@ -34,6 +34,11 @@ function jsonError(
   )
 }
 
+type HistoryEntry = {
+  version_id: string | null
+  previous_version_id: string | null
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -112,7 +117,7 @@ export async function GET(
 
     // Get version details for all versions in history
     const versionIds = new Set<string>()
-    ;(history || []).forEach((entry) => {
+    ;(history || []).forEach((entry: HistoryEntry) => {
       if (entry.version_id) versionIds.add(entry.version_id)
       if (entry.previous_version_id) versionIds.add(entry.previous_version_id)
     })
