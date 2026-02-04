@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
 
 		const supabase = createAdminSupabaseClient()
 
-		const { data: rule, error } = await supabase
-			.from('reassessment_rules' as any)
+		const { data: rule, error } = await (supabase as any)
+			.from('reassessment_rules')
 			.insert({
 				rule_name: body.rule_name,
 				description: body.description || null,
