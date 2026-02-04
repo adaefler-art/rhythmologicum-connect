@@ -144,9 +144,14 @@ export async function executeDiagnosisRun(
     let mcpResponse
     try {
       // Call MCP server's run_diagnosis tool
-      // Note: In production, this would call the actual MCP server
-      // For now, we use the stubbed implementation
+      // Note: In production, MCP_SERVER_URL must be set to the actual MCP server endpoint
+      // Default 'http://localhost:3001' is for local development only
       const mcpUrl = process.env.MCP_SERVER_URL || 'http://localhost:3001'
+      
+      if (!process.env.MCP_SERVER_URL && process.env.NODE_ENV === 'production') {
+        throw new Error('MCP_SERVER_URL must be configured in production environment')
+      }
+      
       const response = await fetch(`${mcpUrl}/tools`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

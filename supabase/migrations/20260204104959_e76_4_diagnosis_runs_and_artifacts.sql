@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS "public"."diagnosis_artifacts" (
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "created_by" uuid NOT NULL,
   "risk_level" text,
-  "confidence_score" numeric(3, 2),
+  "confidence_score" real,
   "primary_findings" text[],
   "recommendations_count" integer,
   "metadata" jsonb DEFAULT '{}'::jsonb,

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { executeDiagnosisRun, processQueuedDiagnosisRuns } from '@/lib/diagnosis/worker'
+import { isValidUUID } from '@/lib/validators/uuid'
 
 /**
  * POST /api/studio/diagnosis/execute
@@ -89,9 +90,7 @@ export async function POST(request: NextRequest) {
     // Execute specific run or process queue
     if (run_id) {
       // Validate UUID format
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(run_id)) {
+      if (!isValidUUID(run_id)) {
         return NextResponse.json(
           {
             success: false,
