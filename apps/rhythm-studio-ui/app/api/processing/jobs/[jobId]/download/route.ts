@@ -123,6 +123,7 @@ export async function GET(
 
 			const assessmentRow = assessment as AssessmentRow | null
 			if (!assessmentRow) return notFoundResponse('Processing Job')
+			if (!assessmentRow.patient_id) return notFoundResponse('Processing Job')
 
 			const { data: assignment } = await supabase
 				.from('clinician_patient_assignments')
