@@ -15,6 +15,7 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/supabase'
+import { env } from '@/lib/env'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import {
   DIAGNOSIS_RUN_STATUS,
@@ -146,9 +147,9 @@ export async function executeDiagnosisRun(
       // Call MCP server's run_diagnosis tool
       // Note: In production, MCP_SERVER_URL must be set to the actual MCP server endpoint
       // Default 'http://localhost:3001' is for local development only
-      const mcpUrl = process.env.MCP_SERVER_URL || 'http://localhost:3001'
+      const mcpUrl = env.MCP_SERVER_URL || 'http://localhost:3001'
       
-      if (!process.env.MCP_SERVER_URL && process.env.NODE_ENV === 'production') {
+      if (!env.MCP_SERVER_URL && env.NODE_ENV === 'production') {
         throw new Error('MCP_SERVER_URL must be configured in production environment')
       }
       

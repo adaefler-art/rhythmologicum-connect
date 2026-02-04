@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { executeDiagnosisRun, processQueuedDiagnosisRuns } from '@/lib/diagnosis/worker'
+import { isFeatureEnabled } from '@/lib/featureFlags'
 import { isValidUUID } from '@/lib/validators/uuid'
 
 /**
@@ -29,7 +30,7 @@ import { isValidUUID } from '@/lib/validators/uuid'
 export async function POST(request: NextRequest) {
   try {
     // Feature flag check
-    const diagnosisEnabled = process.env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED === 'true'
+    const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_ENABLED')
     if (!diagnosisEnabled) {
       return NextResponse.json(
         {
