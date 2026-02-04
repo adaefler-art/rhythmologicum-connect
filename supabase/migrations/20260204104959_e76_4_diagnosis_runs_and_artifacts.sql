@@ -20,7 +20,7 @@ COMMENT ON TYPE diagnosis_run_status IS 'E76.4: Status lifecycle for diagnosis r
 -- 2. DIAGNOSIS_RUNS TABLE
 -- =============================================================================
 
-CREATE TABLE IF NOT EXISTS "public"."diagnosis_runs" (
+CREATE TABLE IF NOT EXISTS public.diagnosis_runs (
   "id" uuid DEFAULT gen_random_uuid() NOT NULL,
   "patient_id" uuid NOT NULL,
   "clinician_id" uuid NOT NULL,
@@ -64,7 +64,7 @@ COMMENT ON COLUMN "public"."diagnosis_runs"."processing_time_ms" IS 'Total proce
 -- 3. DIAGNOSIS_ARTIFACTS TABLE
 -- =============================================================================
 
-CREATE TABLE IF NOT EXISTS "public"."diagnosis_artifacts" (
+CREATE TABLE IF NOT EXISTS public.diagnosis_artifacts (
   "id" uuid DEFAULT gen_random_uuid() NOT NULL,
   "run_id" uuid NOT NULL,
   "patient_id" uuid NOT NULL,

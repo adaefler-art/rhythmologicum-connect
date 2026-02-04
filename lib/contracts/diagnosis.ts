@@ -102,7 +102,7 @@ export const DiagnosisErrorDetailsSchema = z.object({
     DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
   ]),
   message: z.string(),
-  details: z.record(z.any()).optional(),
+  details: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().datetime(),
 })
 
@@ -166,7 +166,7 @@ export const DiagnosisRunSchema = z.object({
   completed_at: z.string().datetime().nullable(),
   error_code: z.string().nullable(),
   error_message: z.string().nullable(),
-  error_details: z.record(z.any()).nullable(),
+  error_details: z.record(z.string(), z.any()).nullable(),
   mcp_run_id: z.string().nullable(),
   processing_time_ms: z.number().nullable(),
   retry_count: z.number().min(0).max(10),
@@ -187,7 +187,7 @@ export const DiagnosisArtifactSchema = z.object({
     ARTIFACT_TYPE.CONTEXT_PACK,
     ARTIFACT_TYPE.MCP_RESPONSE,
   ]),
-  artifact_data: z.record(z.any()),
+  artifact_data: z.record(z.string(), z.any()),
   schema_version: z.string(),
   created_at: z.string().datetime(),
   created_by: z.string().uuid(),
@@ -200,7 +200,7 @@ export const DiagnosisArtifactSchema = z.object({
   confidence_score: z.number().min(0).max(1).nullable(),
   primary_findings: z.array(z.string()).nullable(),
   recommendations_count: z.number().nullable(),
-  metadata: z.record(z.any()),
+  metadata: z.record(z.string(), z.any()),
 })
 
 export type DiagnosisArtifact = z.infer<typeof DiagnosisArtifactSchema>
@@ -231,7 +231,7 @@ export const UpdateDiagnosisRunSchema = z.object({
   completed_at: z.string().datetime().optional(),
   error_code: z.string().optional(),
   error_message: z.string().optional(),
-  error_details: z.record(z.any()).optional(),
+  error_details: z.record(z.string(), z.any()).optional(),
   mcp_run_id: z.string().optional(),
   processing_time_ms: z.number().optional(),
   retry_count: z.number().min(0).max(10).optional(),

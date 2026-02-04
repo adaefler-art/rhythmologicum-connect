@@ -23,6 +23,8 @@ import { isValidUUID } from '@/lib/validators/uuid'
  * - run_id (optional): UUID of specific run to execute
  * - limit (optional): Max runs to process if run_id not provided (default: 10)
  * 
+ * DB Access: Uses admin client for diagnosis worker execution (documented justification)
+ * 
  * Response:
  * - success: boolean
  * - data: Array of execution results or single result
