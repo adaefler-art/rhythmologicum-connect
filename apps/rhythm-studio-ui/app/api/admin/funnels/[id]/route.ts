@@ -159,7 +159,7 @@ export async function GET(
 		// Fetch pillar information if funnel has a pillar_id
 		let pillar = null
 		if (funnel.pillar_id) {
-			const { data: pillarData } = await authClient
+			const { data: pillarData } = await (authClient as any)
 				.from('pillars')
 				.select('id, key, title, description')
 				.eq('id', funnel.pillar_id)
@@ -168,7 +168,7 @@ export async function GET(
 		}
 
 		// Fetch all versions for this funnel
-		const { data: versions, error: versionsError } = await authClient
+		const { data: versions, error: versionsError } = await (authClient as any)
 			.from('funnel_versions')
 			.select('id, funnel_id, version, is_default, rollout_percent, questionnaire_config, content_manifest, algorithm_bundle_version, prompt_version, created_at, updated_at')
 			.eq('funnel_id', funnel.id)
