@@ -26,6 +26,9 @@ import { isFeatureEnabled } from '@/lib/featureFlags'
  */
 export async function GET(request: NextRequest) {
   try {
+    const allowedStatuses = ['queued', 'running', 'completed', 'failed'] as const
+    type DiagnosisRunStatus = (typeof allowedStatuses)[number]
+
     // Feature flag check
     const diagnosisPatientEnabled = isFeatureEnabled('DIAGNOSIS_PATIENT_ENABLED')
     if (!diagnosisPatientEnabled) {
@@ -76,8 +79,8 @@ export async function GET(request: NextRequest) {
       .limit(limit)
 
     // Apply status filter if provided
-    if (status && ['queued', 'running', 'completed', 'failed'].includes(status)) {
-      query = query.eq('status', status)
+    if (status && allowedStatuses.includes(status as DiagnosisRunStatus)) {
+      query = query.eq('status', status as DiagnosisRunStatus)
     }
 
     const { data: runs, error } = await query
