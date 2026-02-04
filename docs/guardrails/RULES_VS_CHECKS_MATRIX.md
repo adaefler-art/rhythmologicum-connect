@@ -1748,3 +1748,299 @@ node scripts/verify-ui-v2.mjs
 ---
 
 
+
+## E76.4: Diagnosis Execution Worker Rules
+
+### R-E76.4-001: Diagnosis Tables Migration Exists
+
+**Rule Text**: Database migration for diagnosis_runs and diagnosis_artifacts tables must exist with proper schema (status enum, indexes, RLS policies).
+
+**Scope**:
+- `supabase/migrations/*_e76_4_diagnosis_runs_and_artifacts.sql`
+- Must create diagnosis_runs table
+- Must create diagnosis_artifacts table
+- Must define diagnosis_run_status enum
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Migration file exists matching pattern e76_4_diagnosis_runs_and_artifacts.sql
+- Contains CREATE TABLE for diagnosis_runs
+- Contains CREATE TABLE for diagnosis_artifacts
+- Contains diagnosis_run_status enum
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_MIGRATION_MISSING] violates R-E76.4-001: {details}" (on failure)
+- Console: "✓ R-E76.4-001: Database migration for diagnosis_runs and diagnosis_artifacts must exist" (on success)
+
+**Known Gaps**: Static check only, does not verify migration actually runs or enforces constraints
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-002: Diagnosis Contract Exists
+
+**Rule Text**: Diagnosis contract with types and Zod schemas must exist at lib/contracts/diagnosis.ts.
+
+**Scope**:
+- `lib/contracts/diagnosis.ts`
+- Must export DIAGNOSIS_RUN_STATUS, DIAGNOSIS_ERROR_CODE
+- Must export DiagnosisResultSchema, DiagnosisRunSchema, DiagnosisArtifactSchema
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- File exists
+- Contains required type exports
+- Imports Zod for schema validation
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_CONTRACT_MISSING] violates R-E76.4-002: {details}" (on failure)
+- Console: "✓ R-E76.4-002: Diagnosis contract with types and schemas must exist" (on success)
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-003: Worker Module Exists
+
+**Rule Text**: Worker module must exist at lib/diagnosis/worker.ts and export executeDiagnosisRun function.
+
+**Scope**:
+- `lib/diagnosis/worker.ts`
+- Must export executeDiagnosisRun function
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- File exists
+- Exports executeDiagnosisRun function
+- Integrates with buildPatientContextPack
+- Calls MCP run_diagnosis tool
+- Persists to diagnosis_artifacts table
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_WORKER_MISSING] violates R-E76.4-003: {details}" (on failure)
+- Console: "✓ R-E76.4-003: Worker module must exist at lib/diagnosis/worker.ts" (on success)
+
+**Known Gaps**: Static check only, does not verify runtime execution logic
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-004: Schema Validation Implemented
+
+**Rule Text**: Worker must implement schema validation for diagnosis result using DiagnosisResultSchema.
+
+**Scope**:
+- `lib/diagnosis/worker.ts`
+- Must call DiagnosisResultSchema.parse
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Code contains DiagnosisResultSchema.parse call
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_VALIDATION_MISSING] violates R-E76.4-004: {details}" (on failure)
+- Console: "✓ R-E76.4-004: Worker must implement schema validation for diagnosis result" (on success)
+
+**Known Gaps**: Static check only, does not verify validation catches all invalid cases
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-005: VALIDATION_ERROR Handling
+
+**Rule Text**: Worker must handle VALIDATION_ERROR for invalid diagnosis results and update run status to failed.
+
+**Scope**:
+- `lib/diagnosis/worker.ts`
+- Must reference VALIDATION_ERROR constant
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Code contains VALIDATION_ERROR error code
+- Error handling updates run status to failed
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[VALIDATION_ERROR_HANDLING_MISSING] violates R-E76.4-005: {details}" (on failure)
+- Console: "✓ R-E76.4-005: Worker must handle VALIDATION_ERROR for invalid results" (on success)
+
+**Known Gaps**: Static check only, does not verify error is properly caught and handled
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-006: Concurrency Prevention
+
+**Rule Text**: Worker must implement concurrency prevention by checking run status is 'queued' before processing.
+
+**Scope**:
+- `lib/diagnosis/worker.ts`
+- Must check DIAGNOSIS_RUN_STATUS.QUEUED before starting
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Code contains DIAGNOSIS_RUN_STATUS.QUEUED check
+- Status validation happens before processing
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[CONCURRENCY_PREVENTION_MISSING] violates R-E76.4-006: {details}" (on failure)
+- Console: "✓ R-E76.4-006: Worker must implement concurrency prevention (status check)" (on success)
+
+**Known Gaps**: Static check only, does not verify race condition handling
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-007: API Route Exists
+
+**Rule Text**: API route /api/studio/diagnosis/execute must exist.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts`
+- Must export POST handler
+- Must call executeDiagnosisRun from worker
+- Must check DIAGNOSIS_ENABLED feature flag
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- File exists
+- Exports POST function
+- Calls executeDiagnosisRun
+- Checks NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_EXECUTE_API_MISSING] violates R-E76.4-007: {details}" (on failure)
+- Console: "✓ R-E76.4-007: API route /api/studio/diagnosis/execute must exist" (on success)
+
+**Known Gaps**: Static check only, does not verify HTTP response codes or error handling
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-008: Literal Callsite Exists
+
+**Rule Text**: Literal callsite for /api/studio/diagnosis/execute must exist (Strategy A compliance).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx`
+- Must contain literal string "/api/studio/diagnosis/execute"
+- Must make fetch call
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Test page exists
+- Contains literal string '/api/studio/diagnosis/execute' or "/api/studio/diagnosis/execute"
+- Contains fetch call
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_EXECUTE_LITERAL_MISSING] violates R-E76.4-008: {details}" (on failure)
+- Console: "✓ R-E76.4-008: Literal callsite for /api/studio/diagnosis/execute must exist" (on success)
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-009: Feature Flag Exists
+
+**Rule Text**: Feature flag DIAGNOSIS_ENABLED must exist in lib/featureFlags.ts and reference NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED.
+
+**Scope**:
+- `lib/featureFlags.ts`
+- Must define DIAGNOSIS_ENABLED flag
+- Must reference NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- File contains DIAGNOSIS_ENABLED
+- File contains NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_FEATURE_FLAG_MISSING] violates R-E76.4-009: {details}" (on failure)
+- Console: "✓ R-E76.4-009: Feature flag DIAGNOSIS_ENABLED must exist" (on success)
+
+**Known Gaps**: None
+
+**Owner**: E76 / MCP Integration
+
+---
+
+### R-E76.4-010: Authorization Check Required
+
+**Rule Text**: API route /api/studio/diagnosis/execute must check user authorization (clinician or admin only).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-4-diagnosis-worker.mjs`
+
+**Pass Condition**:
+- Code checks for 'clinician' or 'admin' role
+- Returns 403 for unauthorized users
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DIAGNOSIS_EXECUTE_NO_AUTHORIZATION] violates R-E76.4-010: {details}" (on failure)
+- Console: "✓ R-E76.4-010: API route must check authorization (clinician/admin only)" (on success)
+
+**Known Gaps**: Static check only, does not verify runtime authorization flow
+
+**Owner**: E76 / MCP Integration
+
+---
