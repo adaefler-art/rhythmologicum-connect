@@ -312,7 +312,14 @@ export async function GET(request: Request) {
 		}
 
 		const funnelsWithVersions = (funnels ?? []).map(
-			(f: { [key: string]: unknown; outcomes?: unknown; default_version_id?: string | null }) => ({
+			(
+				f: {
+					[key: string]: unknown
+					outcomes?: unknown
+					default_version_id?: string | null
+					pillar_id?: string | null
+				},
+			) => ({
 			...f,
 			subtitle: null,
 			outcomes: Array.isArray(f.outcomes) ? f.outcomes : [],
