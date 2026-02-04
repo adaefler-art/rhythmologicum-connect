@@ -92,14 +92,14 @@ export async function GET(
     
 		if (isUuidParam) {
 			// UUID path: query by ID only, no fallback
-			;({ data: funnel, error: funnelError } = await authClient
+			;({ data: funnel, error: funnelError } = await (authClient as any)
 				.from('funnels_catalog')
 				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
 				.eq('id', slugOrId)
 				.single())
 		} else {
 			// Slug path: query by slug only
-			;({ data: funnel, error: funnelError } = await authClient
+			;({ data: funnel, error: funnelError } = await (authClient as any)
 				.from('funnels_catalog')
 				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
 				.eq('slug', slugOrId)
