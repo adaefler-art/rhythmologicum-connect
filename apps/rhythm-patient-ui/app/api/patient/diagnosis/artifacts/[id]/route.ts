@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { isFeatureEnabled } from '@/lib/featureFlags'
+import { logDiagnosisArtifactViewed } from '@/lib/audit/diagnosisAudit'
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -118,6 +119,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
         { status: 500 },
       )
     }
+
+    // E76.7: Log artifact viewed event (audit trail)
+    await logDiagnosisArtifactViewed(artifact.id, user.id, 'patient')
 
     return NextResponse.json({
       success: true,
