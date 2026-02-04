@@ -17,6 +17,7 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { FunnelsSection } from './FunnelsSection'
 import { AnamnesisSection } from './AnamnesisSection'
+import { DiagnosisSection } from './DiagnosisSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus, AssessmentListItemWithWorkup } from '@/lib/types/workupStatus'
@@ -473,6 +474,7 @@ export default function PatientDetailPage() {
           <TabTrigger value="assessments">Assessments</TabTrigger>
           <TabTrigger value="anamnese">Anamnese</TabTrigger>
           <TabTrigger value="funnels">Funnels</TabTrigger>
+          <TabTrigger value="diagnosis">Diagnosis</TabTrigger>
           <TabTrigger value="insights">AMY Insights</TabTrigger>
           <TabTrigger value="actions">Actions</TabTrigger>
         </TabsList>
@@ -727,6 +729,11 @@ export default function PatientDetailPage() {
         {/* Funnels Tab - E74.6 */}
         <TabContent value="funnels">
           <FunnelsSection patientId={patientId} />
+        </TabContent>
+
+        {/* Diagnosis Tab */}
+        <TabContent value="diagnosis">
+          <DiagnosisSection patientId={patientId} />
         </TabContent>
 
         {/* AMY Insights Tab */}
