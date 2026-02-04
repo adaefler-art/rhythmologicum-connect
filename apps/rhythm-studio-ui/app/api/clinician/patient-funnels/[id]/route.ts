@@ -28,6 +28,12 @@ type PatientFunnelRow = {
 	active_version_id: string | null
 }
 
+type FunnelVersionRow = {
+	id: string
+	version: string
+	status: string
+}
+
 /**
  * PATCH /api/clinician/patient-funnels/[id] - Update patient funnel
  */
@@ -187,7 +193,8 @@ export async function PATCH(
 				)
 			}
 
-			if (versionData.status !== 'published') {
+			const versionRow = versionData as FunnelVersionRow
+			if (versionRow.status !== 'published') {
 				return NextResponse.json(
 					{
 						success: false,
