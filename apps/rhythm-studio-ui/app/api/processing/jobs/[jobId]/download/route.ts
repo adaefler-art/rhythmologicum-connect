@@ -16,6 +16,10 @@ type ProcessingJobRow = {
 	pdf_path: string | null
 }
 
+type AssessmentRow = {
+	patient_id: string | null
+}
+
 /**
  * V06: Processing Job PDF Download (Signed URL)
  * 
@@ -95,7 +99,8 @@ export async function GET(
 				.eq('id', jobRow.assessment_id)
 				.single()
 
-			if (!assessment || assessment.patient_id !== patientProfile.id) {
+			const assessmentRow = assessment as AssessmentRow | null
+			if (!assessmentRow || assessmentRow.patient_id !== patientProfile.id) {
 				logForbidden(
 					{ userId: user.id, jobId, endpoint: `/api/processing/jobs/${jobId}/download` },
 					'Patient does not own assessment',
@@ -111,13 +116,14 @@ export async function GET(
 				.eq('id', jobRow.assessment_id)
 				.single()
 
-			if (!assessment) return notFoundResponse('Processing Job')
+			const assessmentRow = assessment as AssessmentRow | null
+			if (!assessmentRow) return notFoundResponse('Processing Job')
 
 			const { data: assignment } = await supabase
 				.from('clinician_patient_assignments')
 				.select('id')
 				.eq('clinician_user_id', user.id)
-				.eq('patient_id', assessment.patient_id)
+				.eq('patient_id', assessmentRow.patient_id)
 				.single()
 
 			if (!assignment) {
