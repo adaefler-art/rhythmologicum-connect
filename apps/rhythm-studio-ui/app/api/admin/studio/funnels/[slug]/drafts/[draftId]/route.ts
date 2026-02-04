@@ -65,7 +65,7 @@ export async function GET(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await adminClient
+    const { data: funnel, error: funnelError } = await (adminClient as any)
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -167,7 +167,7 @@ export async function PUT(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await adminClient
+    const { data: funnel, error: funnelError } = await (adminClient as any)
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
