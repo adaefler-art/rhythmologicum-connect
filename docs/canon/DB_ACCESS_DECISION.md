@@ -376,6 +376,11 @@ Use in all API routes for consistency.
   - **Scope**: `anamnesis_entries`, `assessments`, `assessment_answers`, `calculated_results`, `patient_measures`, `patient_profiles`, `questions`
   - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), minimal field selection
 
+7. **Diagnosis Execute API** (`apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts`)
+  - **Why**: Executes system-owned diagnosis runs and writes artifacts; requires RLS bypass
+  - **Scope**: `diagnosis_runs`, `diagnosis_artifacts`
+  - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), no client exposure
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.

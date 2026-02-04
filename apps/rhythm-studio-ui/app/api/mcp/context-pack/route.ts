@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { isValidUUID } from '@/lib/validators/uuid'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,9 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate UUID format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(patient_id)) {
+    if (!isValidUUID(patient_id)) {
       return NextResponse.json(
         {
           success: false,
