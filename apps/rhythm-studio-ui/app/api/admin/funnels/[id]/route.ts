@@ -480,7 +480,7 @@ export async function PATCH(
     
 		if (isUuidParam) {
 			// UUID path: update by ID only
-			;({ data, error } = await writeClient
+			;({ data, error } = await (writeClient as any)
 				.from('funnels_catalog')
 				.update(updateData)
 				.eq('id', slugOrId)
@@ -488,7 +488,7 @@ export async function PATCH(
 				.single())
 		} else {
 			// Slug path: update by slug only
-			;({ data, error } = await writeClient
+			;({ data, error } = await (writeClient as any)
 				.from('funnels_catalog')
 				.update(updateData)
 				.eq('slug', slugOrId)
@@ -510,14 +510,14 @@ export async function PATCH(
 				writeClient = authClient
         
 				if (isUuidParam) {
-					;({ data, error } = await writeClient
+					;({ data, error } = await (writeClient as any)
 						.from('funnels_catalog')
 						.update(updateData)
 						.eq('id', slugOrId)
 						.select()
 						.single())
 				} else {
-					;({ data, error } = await writeClient
+					;({ data, error } = await (writeClient as any)
 						.from('funnels_catalog')
 						.update(updateData)
 						.eq('slug', slugOrId)
