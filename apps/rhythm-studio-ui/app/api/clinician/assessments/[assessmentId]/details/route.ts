@@ -22,6 +22,16 @@ type AnswerRow = {
   questions?: QuestionData
 }
 
+type AssessmentRow = {
+  id: string
+  patient_id: string
+  funnel: string | null
+  status: string
+  started_at: string
+  completed_at: string | null
+  funnels?: FunnelData
+}
+
 /**
  * E74.8 — Clinician Assessment Run Timeline Details
  * 
@@ -221,15 +231,16 @@ export async function GET(
     })
 
     // Transform assessment data
-    const funnelData = assessment.funnels as FunnelData
+    const assessmentRow = assessment as AssessmentRow
+    const funnelData = assessmentRow.funnels ?? null
     const transformedAssessment = {
-      id: assessment.id,
-      patientId: assessment.patient_id,
-      funnelSlug: assessment.funnel || funnelData?.slug || null,
-      funnelName: funnelData?.title || assessment.funnel || 'Unbekannt',
-      status: assessment.status,
-      startedAt: assessment.started_at,
-      completedAt: assessment.completed_at,
+      id: assessmentRow.id,
+      patientId: assessmentRow.patient_id,
+      funnelSlug: assessmentRow.funnel || funnelData?.slug || null,
+      funnelName: funnelData?.title || assessmentRow.funnel || 'Unbekannt',
+      status: assessmentRow.status,
+      startedAt: assessmentRow.started_at,
+      completedAt: assessmentRow.completed_at,
     }
 
     // Transform result data
