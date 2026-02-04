@@ -65,12 +65,12 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
       <h3 className="text-lg font-semibold text-slate-900">
         Empfohlene Inhalte
       </h3>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sortedTiles.map((tile) => (
           <Card
             key={tile.id}
             padding="md"
-            className="rounded-lg"
+            className="w-full min-w-0 rounded-lg"
             hover={!!tile.actionTarget}
             onClick={() => {
               if (!tile.actionTarget) return
