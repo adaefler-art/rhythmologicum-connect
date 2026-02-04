@@ -140,7 +140,7 @@ export default function DiagnosisDetailClient({ runId }: DiagnosisDetailClientPr
   // In a real implementation, this would display the artifact data
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto max-w-4xl">
+      <div className="w-full">
         <button
           onClick={() => router.push('/patient/diagnosis')}
           className="mb-4 flex items-center gap-2 text-blue-600 hover:text-blue-700"

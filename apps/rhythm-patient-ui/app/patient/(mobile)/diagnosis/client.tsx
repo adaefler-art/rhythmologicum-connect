@@ -120,7 +120,7 @@ export default function DiagnosisListClient() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mx-auto max-w-4xl">
+      <div className="w-full">
         <h1 className="mb-6 text-2xl font-bold text-gray-900">Diagnose-Analysen</h1>
         
         <div className="space-y-4">
