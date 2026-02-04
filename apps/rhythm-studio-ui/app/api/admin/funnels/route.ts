@@ -306,7 +306,7 @@ export async function GET(request: Request) {
 				})
 			}
 
-			;(versions ?? []).forEach((v) => {
+			;(versions ?? []).forEach((v: { id: string; version: string }) => {
 				defaultVersionLookup.set(v.id, v.version)
 			})
 		}
