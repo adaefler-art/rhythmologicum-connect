@@ -21,6 +21,16 @@ COMMENT ON COLUMN public.diagnosis_runs.inputs_meta IS 'E76.8: Metadata about co
 CREATE INDEX IF NOT EXISTS idx_diagnosis_runs_inputs_meta ON public.diagnosis_runs USING gin (inputs_meta);
 
 -- Add constraint to ensure inputs_meta is a JSON object (not array or primitive)
-ALTER TABLE public.diagnosis_runs
-  ADD CONSTRAINT diagnosis_runs_inputs_meta_is_object
-  CHECK (jsonb_typeof(inputs_meta) = 'object');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'diagnosis_runs_inputs_meta_is_object'
+      AND conrelid = 'public.diagnosis_runs'::regclass
+  ) THEN
+    ALTER TABLE public.diagnosis_runs
+      ADD CONSTRAINT diagnosis_runs_inputs_meta_is_object
+      CHECK (jsonb_typeof(inputs_meta) = 'object');
+  END IF;
+END $$;
