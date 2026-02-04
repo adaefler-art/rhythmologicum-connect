@@ -163,17 +163,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new diagnosis run
-    const insertPayload: Database['public']['Tables']['diagnosis_runs']['Insert'] = {
-      patient_id,
-      clinician_id: user.id,
-      status: DIAGNOSIS_RUN_STATUS.QUEUED,
-      inputs_hash,
-      inputs_meta,
-    }
-
     const { data: newRun, error: insertError } = await adminClient
       .from('diagnosis_runs')
-      .insert(insertPayload)
+      .insert({
+        patient_id,
+        clinician_id: user.id,
+        status: DIAGNOSIS_RUN_STATUS.QUEUED,
+        inputs_hash,
+        inputs_meta,
+      } as Database['public']['Tables']['diagnosis_runs']['Insert'])
       .select('id, status, created_at')
       .single()
 
