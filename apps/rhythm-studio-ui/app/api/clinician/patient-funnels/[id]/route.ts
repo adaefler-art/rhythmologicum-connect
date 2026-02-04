@@ -212,7 +212,7 @@ export async function PATCH(
 
 		// Update patient funnel
 		// RLS will verify org scoping
-		const { data: updatedFunnel, error: updateError } = await supabase
+		const { data: updatedFunnel, error: updateError } = await (supabase as any)
 			.from('patient_funnels')
 			.update(updateData)
 			.eq('id', id)
