@@ -275,6 +275,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/shipments/[id]/events | GET, POST | clinician |  | 0 | legacy/code/app/api/shipments/[id]/events/route.ts |
 | /api/studio/anamnesis/[entryId]/archive | POST | clinician |  | 1 | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts |
 | /api/studio/anamnesis/[entryId]/versions | POST | clinician |  | 1 | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts |
+| /api/studio/diagnosis/execute | POST | clinician | diagnosis:execute | 1 | apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts |
 | /api/studio/patients/[patientId]/anamnesis | GET, POST | clinician |  | 2 | apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/route.ts |
 | /api/studio/patients/[patientId]/anamnesis/export.json | GET | clinician |  | 1 | apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/export.json/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 | apps/rhythm-legacy/app/api/support-cases/route.ts |
