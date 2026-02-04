@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           valid: false,
-          errors: validationResult.error.errors,
+          errors: validationResult.error.issues,
           schema_version: DIAGNOSIS_SCHEMA_VERSION,
         },
       })
