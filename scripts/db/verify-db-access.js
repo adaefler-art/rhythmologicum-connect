@@ -62,6 +62,9 @@ const ALLOWED_ADMIN_USAGE = [
   // MCP context pack: clinician/admin cross-patient aggregation for diagnosis tooling.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts',
+  // Diagnosis worker execution: requires service role for system updates.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts',
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
