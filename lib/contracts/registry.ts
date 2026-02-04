@@ -282,6 +282,8 @@ export const AUDIT_ENTITY_TYPE = {
   DEVICE_SHIPMENT: 'device_shipment', // V05-I08.3: Shipment tracking
   SUPPORT_CASE: 'support_case', // V05-I08.4: Support case documentation
   ACCOUNT: 'account', // V05-I10.2: Account lifecycle (deletion/retention)
+  DIAGNOSIS_RUN: 'diagnosis_run', // E76.7: Diagnosis execution run tracking
+  DIAGNOSIS_ARTIFACT: 'diagnosis_artifact', // E76.7: Diagnosis artifacts and results
 } as const
 
 export type AuditEntityType = typeof AUDIT_ENTITY_TYPE[keyof typeof AUDIT_ENTITY_TYPE]
