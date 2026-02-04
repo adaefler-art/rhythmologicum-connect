@@ -311,14 +311,16 @@ export async function GET(request: Request) {
 			})
 		}
 
-		const funnelsWithVersions = (funnels ?? []).map((f) => ({
+		const funnelsWithVersions = (funnels ?? []).map(
+			(f: { [key: string]: unknown; outcomes?: unknown; default_version_id?: string | null }) => ({
 			...f,
 			subtitle: null,
 			outcomes: Array.isArray(f.outcomes) ? f.outcomes : [],
 			default_version: f.default_version_id
 				? (defaultVersionLookup.get(f.default_version_id) ?? null)
 				: null,
-		}))
+			}),
+		)
 
 		const pillarById = new Map(
 			(pillars ?? []).map((p) => [
