@@ -20,6 +20,14 @@ type UpdateFunnelRequest = {
   active_version_id?: string
 }
 
+type PatientFunnelRow = {
+	id: string
+	patient_id: string
+	funnel_id: string
+	status: 'active' | 'paused' | 'completed' | 'archived' | string
+	active_version_id: string | null
+}
+
 /**
  * PATCH /api/clinician/patient-funnels/[id] - Update patient funnel
  */
@@ -133,6 +141,8 @@ export async function PATCH(
 			)
 		}
 
+		const current = currentFunnel as PatientFunnelRow
+
 		// Build update object
 		const updateData: {
 			status?: 'active' | 'paused' | 'completed' | 'archived'
@@ -144,12 +154,12 @@ export async function PATCH(
 			updateData.status = status
       
 			// If marking as completed, set completed_at
-			if (status === 'completed' && currentFunnel.status !== 'completed') {
+			if (status === 'completed' && current.status !== 'completed') {
 				updateData.completed_at = new Date().toISOString()
 			}
       
 			// If reactivating from completed, clear completed_at
-			if (status !== 'completed' && currentFunnel.status === 'completed') {
+			if (status !== 'completed' && current.status === 'completed') {
 				updateData.completed_at = null
 			}
 		}
@@ -160,7 +170,7 @@ export async function PATCH(
 				.from('funnel_versions')
 				.select('id, version, status')
 				.eq('id', active_version_id)
-				.eq('funnel_id', currentFunnel.funnel_id)
+				.eq('funnel_id', current.funnel_id)
 				.single()
 
 			if (versionError || !versionData) {
