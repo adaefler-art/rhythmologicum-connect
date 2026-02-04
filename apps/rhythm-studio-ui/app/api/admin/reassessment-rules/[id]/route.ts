@@ -49,8 +49,8 @@ export async function PUT(
 		if (body.priority !== undefined) updateData.priority = body.priority
 		if (body.is_active !== undefined) updateData.is_active = body.is_active
 
-		const { data: rule, error } = await supabase
-			.from('reassessment_rules' as any)
+		const { data: rule, error } = await (supabase as any)
+			.from('reassessment_rules')
 			.update(updateData)
 			.eq('id', id)
 			.select()
