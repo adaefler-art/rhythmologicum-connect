@@ -34,6 +34,7 @@ export default function DiagnosisDetailClient({ runId }: DiagnosisDetailClientPr
   const [artifact, setArtifact] = useState<DiagnosisArtifact | null>(null)
   const [loadingState, setLoadingState] = useState<LoadingState>('loading')
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [emptyMessage, setEmptyMessage] = useState<string>('')
 
   useEffect(() => {
     async function fetchArtifact() {
@@ -56,16 +57,29 @@ export default function DiagnosisDetailClient({ runId }: DiagnosisDetailClientPr
           return
         }
 
-        // If run is not completed, don't try to fetch artifact
         if (run.status !== 'completed') {
-          setLoadingState('error')
-          setErrorMessage('Diagnosis run is not yet completed')
+          setLoadingState('empty')
+          setEmptyMessage('Noch kein Artefakt vorhanden (Run queued/processing)')
           return
         }
 
-        // Fetch the artifact - we need to query for artifacts with this run_id
-        // For now, we'll show a message if no artifact endpoint is available
-        // In a real implementation, we'd need an endpoint to get artifacts by run_id
+        const artifactResponse = await fetch(`/api/patient/diagnosis/runs/${runId}/artifact`)
+
+        if (artifactResponse.status === 404) {
+          setLoadingState('empty')
+          setEmptyMessage('Noch kein Artefakt vorhanden (Run queued/processing)')
+          return
+        }
+
+        const artifactResult = await artifactResponse.json()
+
+        if (!artifactResponse.ok || !artifactResult.success) {
+          setLoadingState('error')
+          setErrorMessage('Failed to load diagnosis artifact')
+          return
+        }
+
+        setArtifact(artifactResult.data)
         setLoadingState('success')
       } catch (error) {
         console.error('Error fetching diagnosis artifact:', error)
@@ -136,8 +150,23 @@ export default function DiagnosisDetailClient({ runId }: DiagnosisDetailClientPr
     )
   }
 
-  // This is a placeholder for when artifacts are available
-  // In a real implementation, this would display the artifact data
+  if (loadingState === 'empty') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-6">
+        <div className="rounded-lg bg-gray-50 p-8 text-center">
+          <h2 className="text-lg font-semibold text-gray-800">Noch kein Artefakt</h2>
+          <p className="mt-2 text-gray-600">{emptyMessage}</p>
+          <button
+            onClick={() => router.push('/patient/diagnosis')}
+            className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            Zurück zur Übersicht
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="w-full">
