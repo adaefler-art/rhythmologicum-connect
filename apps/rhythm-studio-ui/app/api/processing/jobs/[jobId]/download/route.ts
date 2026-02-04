@@ -71,6 +71,10 @@ export async function GET(
 
 		// Verify ownership/access for all users
 		if (userRole === 'patient') {
+			if (!jobRow.assessment_id) {
+				return notFoundResponse('Processing Job')
+			}
+
 			const { data: patientProfile } = await supabase
 				.from('patient_profiles')
 				.select('id')
@@ -99,6 +103,8 @@ export async function GET(
 				return notFoundResponse('Processing Job')
 			}
 		} else if (userRole === 'clinician') {
+			if (!jobRow.assessment_id) return notFoundResponse('Processing Job')
+
 			const { data: assessment } = await supabase
 				.from('assessments')
 				.select('patient_id')
