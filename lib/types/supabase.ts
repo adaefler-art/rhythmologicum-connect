@@ -855,6 +855,7 @@ export type Database = {
           error_message: string | null
           id: string
           inputs_hash: string
+          inputs_meta: Json
           max_retries: number
           mcp_run_id: string | null
           patient_id: string
@@ -874,6 +875,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           inputs_hash: string
+          inputs_meta?: Json
           max_retries?: number
           mcp_run_id?: string | null
           patient_id: string
@@ -893,6 +895,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           inputs_hash?: string
+          inputs_meta?: Json
           max_retries?: number
           mcp_run_id?: string | null
           patient_id?: string

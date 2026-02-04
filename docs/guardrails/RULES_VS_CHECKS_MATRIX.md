@@ -2044,3 +2044,244 @@ node scripts/verify-ui-v2.mjs
 **Owner**: E76 / MCP Integration
 
 ---
+
+## E76.8: Idempotency & Deduplication Rules
+
+### R-E76.8-001: inputs_meta Column in diagnosis_runs
+
+**Rule Text**: The `diagnosis_runs` table must have an `inputs_meta` JSONB column to store context pack metadata.
+
+**Scope**:
+- `supabase/migrations/20260204164641_e76_8_add_inputs_meta.sql`
+- Database table: `diagnosis_runs`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Migration file exists with inputs_meta JSONB column
+- Has E76.8 documentation comment
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[INPUTS_META_COLUMN_MISSING] violates R-E76.8-001: {details}" (on failure)
+- Console: "✓ R-E76.8-001: inputs_meta column must exist in diagnosis_runs table migration" (on success)
+
+**Known Gaps**: Does not validate runtime column existence
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-002: Deduplication Logic Module Exists
+
+**Rule Text**: A deduplication logic module must exist at lib/diagnosis/dedupe.ts.
+
+**Scope**:
+- `lib/diagnosis/dedupe.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- File exists with checkDuplicateRun and extractInputsMeta functions
+- Has E76.8 documentation comment
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DEDUPE_MODULE_MISSING] violates R-E76.8-002: {details}" (on failure)
+- Console: "✓ R-E76.8-002: Deduplication logic module must exist" (on success)
+
+**Known Gaps**: Does not validate function signatures or runtime behavior
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-003: Deduplication Checks inputs_hash
+
+**Rule Text**: The deduplication logic must query for existing runs by inputs_hash.
+
+**Scope**:
+- `lib/diagnosis/dedupe.ts` (checkDuplicateRun function)
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Contains .eq('inputs_hash' query
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DEDUPE_HASH_CHECK_MISSING] violates R-E76.8-003: {details}" (on failure)
+- Console: "✓ R-E76.8-003: Deduplication must check inputs_hash for duplicates" (on success)
+
+**Known Gaps**: Static code check only
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-004: inputs_meta Extraction Function
+
+**Rule Text**: The extractInputsMeta() function must exist to extract metadata from context pack.
+
+**Scope**:
+- `lib/diagnosis/dedupe.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Function is exported
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[INPUTS_META_EXTRACTION_MISSING] violates R-E76.8-004: {details}" (on failure)
+- Console: "✓ R-E76.8-004: inputs_meta extraction function must exist" (on success)
+
+**Known Gaps**: Does not validate extracted metadata structure
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-005: Queue API Route Exists
+
+**Rule Text**: A diagnosis queue API route must exist at /api/studio/diagnosis/queue.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- File exists at expected path with E76.8 documentation
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[QUEUE_API_ROUTE_MISSING] violates R-E76.8-005: {details}" (on failure)
+- Console: "✓ R-E76.8-005: API route /api/studio/diagnosis/queue must exist" (on success)
+
+**Known Gaps**: Does not validate API handler implementation
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-006: Queue API Uses Dedupe Logic
+
+**Rule Text**: The queue API must call checkDuplicateRun() before creating a new diagnosis run.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Imports and calls checkDuplicateRun
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[QUEUE_NO_DEDUPE] violates R-E76.8-006: {details}" (on failure)
+- Console: "✓ R-E76.8-006: Queue API must use dedupe logic before creating run" (on success)
+
+**Known Gaps**: Static analysis only
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-007: Queue API Persists inputs_meta
+
+**Rule Text**: The queue API must persist inputs_meta when creating a new diagnosis run.
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Includes inputs_meta in .insert() call
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[QUEUE_NO_INPUTS_META] violates R-E76.8-007: {details}" (on failure)
+- Console: "✓ R-E76.8-007: Queue API must persist inputs_meta" (on success)
+
+**Known Gaps**: Does not verify inputs_meta content
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-008: Literal Callsite for Queue Endpoint
+
+**Rule Text**: A literal callsite for '/api/studio/diagnosis/queue' must exist (Strategy A compliance).
+
+**Scope**:
+- `apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx`
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- File contains literal string '/api/studio/diagnosis/queue'
+- Has E76.8 documentation comment
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[QUEUE_LITERAL_CALLSITE_MISSING] violates R-E76.8-008: {details}" (on failure)
+- Console: "✓ R-E76.8-008: Literal callsite for /api/studio/diagnosis/queue must exist" (on success)
+
+**Known Gaps**: Does not verify callsite is reachable or functional
+
+**Owner**: E76 / Diagnosis Team
+
+---
+
+### R-E76.8-009: Dedupe Policy Logs Warnings
+
+**Rule Text**: The deduplication policy must log warnings when duplicate runs are detected.
+
+**Scope**:
+- `lib/diagnosis/dedupe.ts` (checkDuplicateRun function)
+
+**Enforced By**:
+- Script: `scripts/ci/verify-e76-8-idempotency.mjs`
+
+**Pass Condition**:
+- Contains console.warn with "DEDUPE WARNING" marker
+- Exit code 0
+
+**Exceptions**: None
+
+**Evidence Output**:
+- Console: "[DEDUPE_NO_WARNING_LOG] violates R-E76.8-009: {details}" (on failure)
+- Console: "✓ R-E76.8-009: Dedupe policy must log warnings for duplicates" (on success)
+
+**Known Gaps**: Static check only
+
+**Owner**: E76 / Diagnosis Team
+
+---
+

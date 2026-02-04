@@ -381,6 +381,11 @@ Use in all API routes for consistency.
   - **Scope**: `diagnosis_runs`, `diagnosis_artifacts`
   - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), no client exposure
 
+8. **Diagnosis Queue API** (`apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts`)
+  - **Why**: Queues diagnosis runs and persists inputs metadata; requires RLS bypass for system insert
+  - **Scope**: `diagnosis_runs`
+  - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), no client exposure
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.

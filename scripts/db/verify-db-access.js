@@ -65,6 +65,9 @@ const ALLOWED_ADMIN_USAGE = [
   // Diagnosis worker execution: requires service role for system updates.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts',
+  // Diagnosis queue: requires service role to enqueue runs and persist inputs_meta.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts',
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
