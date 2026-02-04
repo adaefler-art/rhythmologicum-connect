@@ -32,6 +32,20 @@ type AssessmentRow = {
   funnels?: FunnelData
 }
 
+type ResultRow = {
+  scores: Record<string, unknown> | null
+  risk_models: Record<string, unknown> | null
+  algorithm_version: string | null
+  computed_at: string | null
+}
+
+type ReportRow = {
+  score_numeric: number | null
+  sleep_score: number | null
+  risk_level: string | null
+  report_text_short: string | null
+}
+
 /**
  * E74.8 — Clinician Assessment Run Timeline Details
  * 
@@ -244,22 +258,24 @@ export async function GET(
     }
 
     // Transform result data
-    const result = resultData
+    const resultRow = resultData as ResultRow | null
+    const result = resultRow
       ? {
-          scores: resultData.scores || {},
-          riskModels: resultData.risk_models || null,
-          algorithmVersion: resultData.algorithm_version,
-          computedAt: resultData.computed_at,
+          scores: resultRow.scores || {},
+          riskModels: resultRow.risk_models || null,
+          algorithmVersion: resultRow.algorithm_version,
+          computedAt: resultRow.computed_at,
         }
       : null
 
     // Transform report data
-    const report = reportData
+    const reportRow = reportData as ReportRow | null
+    const report = reportRow
       ? {
-          scoreNumeric: reportData.score_numeric,
-          sleepScore: reportData.sleep_score,
-          riskLevel: reportData.risk_level,
-          reportTextShort: reportData.report_text_short,
+          scoreNumeric: reportRow.score_numeric,
+          sleepScore: reportRow.sleep_score,
+          riskLevel: reportRow.risk_level,
+          reportTextShort: reportRow.report_text_short,
         }
       : null
 
