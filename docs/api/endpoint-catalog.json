@@ -8170,6 +8170,25 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/studio/diagnosis/queue",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts",
+      "intent": "diagnosis:queue",
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
+          "apiPath": "/api/studio/diagnosis/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/studio/patients/[patientId]/anamnesis",
       "methods": [
         "GET",
