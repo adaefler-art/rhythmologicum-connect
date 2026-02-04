@@ -326,7 +326,7 @@ export async function DELETE(
     }
 
     // Delete draft
-    const { error: deleteError } = await adminClient
+    const { error: deleteError } = await (adminClient as any)
       .from('funnel_versions')
       .delete()
       .eq('id', draftId)
