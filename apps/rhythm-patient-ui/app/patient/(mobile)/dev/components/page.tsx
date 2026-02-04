@@ -11,6 +11,7 @@ import ComponentGallery from './ComponentGallery'
 import ScreenGallery from './ScreenGallery'
 import DashboardHero from '../../dashboard/DashboardHero'
 import { BottomNavV2 } from '../../BottomNavV2'
+import { Card } from '@/lib/ui/mobile-v2/components/Card'
 
 export default function ComponentsDevPage() {
   return (
@@ -38,7 +39,11 @@ export default function ComponentsDevPage() {
           <p className="text-sm text-[#6b7280]">
             BottomNavV2 is fixed to the viewport for accurate mobile behavior.
           </p>
-          <div className="relative min-h-[120px] rounded-2xl border border-slate-200 bg-white/70" />
+          <Card
+            padding="none"
+            shadow="none"
+            className="relative min-h-[120px] border border-slate-200 bg-white/70"
+          />
           <BottomNavV2 />
         </section>
 

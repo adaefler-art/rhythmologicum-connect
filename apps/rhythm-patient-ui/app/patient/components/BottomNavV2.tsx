@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Home, MessageCircle, User } from 'lucide-react'
+import { ClipboardList, Home, MessageCircle, User } from '@/lib/ui/mobile-v2/icons'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 
