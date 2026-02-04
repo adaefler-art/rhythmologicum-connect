@@ -62,7 +62,7 @@ export async function GET(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await adminClient
+    const { data: funnel, error: funnelError } = await (adminClient as any)
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -79,7 +79,7 @@ export async function GET(
     }
 
     // Fetch publish history
-    const { data: history, error: historyError } = await adminClient
+    const { data: history, error: historyError } = await (adminClient as any)
       .from('funnel_publish_history')
       .select(`
         id,
@@ -119,7 +119,7 @@ export async function GET(
 
     let versionDetails: Record<string, { version: string; id: string }> = {}
     if (versionIds.size > 0) {
-      const { data: versions, error: versionsError } = await adminClient
+      const { data: versions, error: versionsError } = await (adminClient as any)
         .from('funnel_versions')
         .select('id, version')
         .in('id', Array.from(versionIds))
