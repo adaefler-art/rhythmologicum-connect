@@ -131,7 +131,7 @@ export async function GET(request: Request) {
 			)
 		}
 
-		const serverClient = (await createServerSupabaseClient()) as any
+		const serverClient = await createServerSupabaseClient()
 		const {
 			data: { user },
 		} = await serverClient.auth.getUser()

@@ -65,12 +65,12 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
       <h3 className="text-lg font-semibold text-slate-900">
         Empfohlene Inhalte
       </h3>
-      <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sortedTiles.map((tile) => (
           <Card
             key={tile.id}
             padding="md"
-            className="w-full min-w-0 rounded-lg"
+            className="rounded-lg"
             hover={!!tile.actionTarget}
             onClick={() => {
               if (!tile.actionTarget) return
@@ -83,7 +83,7 @@ export function ContentTilesGrid({ tiles, onTileClick }: ContentTilesGridProps) 
           >
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <span className="text-2xl shrink-0" role="img" aria-label={tile.type}>
+                <span className="text-2xl flex-shrink-0" role="img" aria-label={tile.type}>
                   {iconMap[tile.type]}
                 </span>
                 <div className="flex-1 min-w-0">

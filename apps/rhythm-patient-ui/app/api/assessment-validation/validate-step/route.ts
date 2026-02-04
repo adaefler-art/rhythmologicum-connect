@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: patientProfile, error: profileError } = await (supabase as any)
+    const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: assessment, error: assessmentError } = await (supabase as any)
+    const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id')
       .eq('id', assessmentId)

@@ -38,7 +38,7 @@ import { z } from 'zod'
 
 export async function GET() {
   try {
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {
@@ -167,7 +167,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

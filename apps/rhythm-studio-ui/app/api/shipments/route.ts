@@ -16,10 +16,6 @@ import {
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
 
-type UserOrgMembershipRow = {
-	organization_id: string | null
-}
-
 async function getUserOrgId(supabase: ServerSupabaseClient, userId: string): Promise<string | null> {
 	const { data, error } = await supabase
 		.from('user_org_membership')
@@ -35,8 +31,7 @@ async function getUserOrgId(supabase: ServerSupabaseClient, userId: string): Pro
 		return null
 	}
 
-	const row = data as UserOrgMembershipRow
-	return row.organization_id
+	return data.organization_id
 }
 
 async function getPatientProfileIdForUser(

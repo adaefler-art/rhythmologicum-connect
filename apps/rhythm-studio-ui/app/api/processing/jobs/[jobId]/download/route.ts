@@ -10,20 +10,6 @@ import {
 import { logDatabaseError, logUnauthorized, logForbidden } from '@/lib/logging/logger'
 import { generateSignedUrl } from '@/lib/pdf/storage'
 
-type ProcessingJobRow = {
-	id: string
-	assessment_id: string | null
-	pdf_path: string | null
-}
-
-type AssessmentRow = {
-	patient_id: string | null
-}
-
-type PatientProfileRow = {
-	id: string
-}
-
 /**
  * V06: Processing Job PDF Download (Signed URL)
  * 
@@ -75,22 +61,15 @@ export async function GET(
 			return notFoundResponse('Processing Job')
 		}
 
-		const jobRow = job as ProcessingJobRow
-
 		// Verify ownership/access for all users
 		if (userRole === 'patient') {
-			if (!jobRow.assessment_id) {
-				return notFoundResponse('Processing Job')
-			}
-
 			const { data: patientProfile } = await supabase
 				.from('patient_profiles')
 				.select('id')
 				.eq('user_id', user.id)
 				.single()
 
-			const patientProfileRow = patientProfile as PatientProfileRow | null
-			if (!patientProfileRow) {
+			if (!patientProfile) {
 				logForbidden(
 					{ userId: user.id, jobId, endpoint: `/api/processing/jobs/${jobId}/download` },
 					'Patient profile not found',
@@ -101,11 +80,10 @@ export async function GET(
 			const { data: assessment } = await supabase
 				.from('assessments')
 				.select('patient_id')
-				.eq('id', jobRow.assessment_id)
+				.eq('id', job.assessment_id)
 				.single()
 
-			const assessmentRow = assessment as AssessmentRow | null
-			if (!assessmentRow || assessmentRow.patient_id !== patientProfileRow.id) {
+			if (!assessment || assessment.patient_id !== patientProfile.id) {
 				logForbidden(
 					{ userId: user.id, jobId, endpoint: `/api/processing/jobs/${jobId}/download` },
 					'Patient does not own assessment',
@@ -113,23 +91,19 @@ export async function GET(
 				return notFoundResponse('Processing Job')
 			}
 		} else if (userRole === 'clinician') {
-			if (!jobRow.assessment_id) return notFoundResponse('Processing Job')
-
 			const { data: assessment } = await supabase
 				.from('assessments')
 				.select('patient_id')
-				.eq('id', jobRow.assessment_id)
+				.eq('id', job.assessment_id)
 				.single()
 
-			const assessmentRow = assessment as AssessmentRow | null
-			if (!assessmentRow) return notFoundResponse('Processing Job')
-			if (!assessmentRow.patient_id) return notFoundResponse('Processing Job')
+			if (!assessment) return notFoundResponse('Processing Job')
 
 			const { data: assignment } = await supabase
 				.from('clinician_patient_assignments')
 				.select('id')
 				.eq('clinician_user_id', user.id)
-				.eq('patient_id', assessmentRow.patient_id)
+				.eq('patient_id', assessment.patient_id)
 				.single()
 
 			if (!assignment) {
@@ -141,12 +115,12 @@ export async function GET(
 			}
 		}
 
-		if (!jobRow.pdf_path) {
+		if (!job.pdf_path) {
 			return notFoundResponse('PDF')
 		}
 
 		const expiresIn = 3600
-		const urlResult = await generateSignedUrl(jobRow.pdf_path, expiresIn)
+		const urlResult = await generateSignedUrl(job.pdf_path, expiresIn)
 		if (!urlResult.success || !urlResult.url) {
 			return internalErrorResponse('Signed URL generation failed')
 		}

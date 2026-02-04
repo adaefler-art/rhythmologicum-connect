@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Create template
-		const { data: template, error } = await (supabase as any)
-			.from('notification_templates')
+		const { data: template, error } = await supabase
+			.from('notification_templates' as any)
 			.insert({
 				template_key: body.template_key,
 				name: body.name,

@@ -69,7 +69,7 @@ export function NextStepCard({ nextStep, onAction }: NextStepCardProps) {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div 
-              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+              className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: primaryColorLight }}
             >
               <span className="text-2xl" role="img" aria-label="Next step">

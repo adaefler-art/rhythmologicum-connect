@@ -50,7 +50,7 @@ export async function GET(
 
     // Fetch content page - ONLY if published and not deleted
     // Deterministic 404: no fallback to draft/archived
-    const { data: contentPage, error: pageError } = await (supabase as any)
+    const { data: contentPage, error: pageError } = await supabase
       .from('content_pages')
       .select(
         `

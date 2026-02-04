@@ -43,8 +43,6 @@
     "verify:e75-7": "npm run verify:e75-7:docs",
     "verify:e76-1": "node scripts/ci/verify-e76-1-mcp-server.mjs",
     "verify:e76-2": "node scripts/ci/verify-e76-2-context-pack.mjs",
-    "verify:e76-3": "node scripts/ci/verify-e76-3-diagnosis-runs.mjs",
-    "verify:e76-4": "node scripts/ci/verify-e76-4-worker.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",

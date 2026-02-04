@@ -68,7 +68,7 @@ export async function POST(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -85,7 +85,7 @@ export async function POST(
     }
 
     // Fetch draft
-    const { data: draft, error: draftError } = await (adminClient as any)
+    const { data: draft, error: draftError } = await adminClient
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
@@ -117,7 +117,7 @@ export async function POST(
     }))
 
     // Update draft with validation results
-    const { data: updatedDraft, error: updateError } = await (adminClient as any)
+    const { data: updatedDraft, error: updateError } = await adminClient
       .from('funnel_versions')
       .update({
         validation_errors: serializedErrors,

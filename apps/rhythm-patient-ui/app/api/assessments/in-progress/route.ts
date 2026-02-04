@@ -24,7 +24,7 @@ type InProgressAssessment = {
  * Returns the most recent in-progress assessment for the authenticated user.
  */
 export async function GET() {
-  const supabase = (await createServerSupabaseClient()) as any
+  const supabase = await createServerSupabaseClient()
 
   const {
     data: { user },
@@ -41,7 +41,7 @@ export async function GET() {
     )
   }
 
-  const { data: profileData, error: profileError } = await (supabase as any)
+  const { data: profileData, error: profileError } = await supabase
     .from('patient_profiles')
     .select('id')
     .eq('user_id', user.id)
@@ -57,7 +57,7 @@ export async function GET() {
     )
   }
 
-  const { data: assessmentData, error: assessmentError } = await (supabase as any)
+  const { data: assessmentData, error: assessmentError } = await supabase
     .from('assessments')
     .select('id, funnel, funnel_id, started_at, completed_at')
     .eq('patient_id', profileData.id)

@@ -34,16 +34,6 @@ function jsonError(
   )
 }
 
-type HistoryEntry = {
-  version_id: string | null
-  previous_version_id: string | null
-}
-
-type VersionRow = {
-  id: string
-  version: string
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -72,7 +62,7 @@ export async function GET(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -89,7 +79,7 @@ export async function GET(
     }
 
     // Fetch publish history
-    const { data: history, error: historyError } = await (adminClient as any)
+    const { data: history, error: historyError } = await adminClient
       .from('funnel_publish_history')
       .select(`
         id,
@@ -122,31 +112,29 @@ export async function GET(
 
     // Get version details for all versions in history
     const versionIds = new Set<string>()
-    ;(history || []).forEach((entry: HistoryEntry) => {
+    ;(history || []).forEach((entry) => {
       if (entry.version_id) versionIds.add(entry.version_id)
       if (entry.previous_version_id) versionIds.add(entry.previous_version_id)
     })
 
     let versionDetails: Record<string, { version: string; id: string }> = {}
     if (versionIds.size > 0) {
-      const { data: versions, error: versionsError } = await (adminClient as any)
+      const { data: versions, error: versionsError } = await adminClient
         .from('funnel_versions')
         .select('id, version')
         .in('id', Array.from(versionIds))
 
       if (!versionsError && versions) {
         versionDetails = Object.fromEntries(
-          versions.map((v: VersionRow) => [v.id, { version: v.version, id: v.id }]),
+          versions.map((v) => [v.id, { version: v.version, id: v.id }]),
         )
       }
     }
 
     // Enrich history with version labels
-    const enrichedHistory = (history || []).map((entry: HistoryEntry) => ({
+    const enrichedHistory = (history || []).map((entry) => ({
       ...entry,
-      version_label: entry.version_id
-        ? versionDetails[entry.version_id]?.version || entry.version_id
-        : null,
+      version_label: versionDetails[entry.version_id]?.version || entry.version_id,
       previous_version_label: entry.previous_version_id
         ? versionDetails[entry.previous_version_id]?.version || entry.previous_version_id
         : null,

@@ -219,7 +219,7 @@ export function AMYComposer() {
       <div className="space-y-4">
         {/* Header with AMY branding */}
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
             <span className="text-2xl" role="img" aria-label="AMY Assistant">
               🤖
             </span>

@@ -53,15 +53,9 @@ const ALLOWED_ADMIN_USAGE = [
   // Results: SSOT read requires service role to bypass RLS for calculated_results.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/result/route.ts',
-  // Assessments completion: job creation requires service role (admin client) after completion.
-  // Documented in docs/canon/DB_ACCESS_DECISION.md.
-  'apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts',
   // MCP context pack: clinician/admin cross-patient aggregation for diagnosis tooling.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts',
-  // Diagnosis run execution: clinician/admin worker endpoint needs admin client for cross-patient context pack.
-  // Documented in docs/canon/DB_ACCESS_DECISION.md.
-  'apps/rhythm-studio-ui/app/api/studio/diagnosis-runs/[runId]/execute/route.ts',
   // Documents: server-side upload/processing pipelines may need service role to update status
   // without depending on end-user cookies or RLS in background jobs.
   'app/api/documents/',
