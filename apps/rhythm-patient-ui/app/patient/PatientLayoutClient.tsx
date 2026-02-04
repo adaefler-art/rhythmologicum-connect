@@ -111,7 +111,7 @@ export default function PatientLayoutClient({ children }: { children: ReactNode 
   return (
     <>
       {/* Desktop Layout - Light mode only */}
-      <div className="hidden md:block min-h-screen bg-slate-50 flex flex-col transition-colors duration-150">
+      <div className="hidden md:flex min-h-screen bg-slate-50 flex-col transition-colors duration-150">
         {/* Desktop Header */}
         <header className="border-b border-slate-200 bg-white transition-colors duration-150">
           <div className="max-w-6xl mx-auto px-4 py-3">
