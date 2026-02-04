@@ -23,7 +23,7 @@ type DiagnosisArtifact = {
   recommendations_count: number | null
 }
 
-type LoadingState = 'loading' | 'success' | 'error' | 'not_found'
+type LoadingState = 'loading' | 'success' | 'error' | 'not_found' | 'empty'
 
 type DiagnosisDetailClientProps = {
   runId: string
