@@ -89,8 +89,8 @@ export async function PUT(
 		if (body.is_active !== undefined) updateData.is_active = body.is_active
 
 		// Update template
-		const { data: template, error } = await supabase
-			.from('notification_templates' as any)
+		const { data: template, error } = await (supabase as any)
+			.from('notification_templates')
 			.update(updateData)
 			.eq('id', id)
 			.select()
