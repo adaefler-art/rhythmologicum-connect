@@ -51,8 +51,8 @@ export async function PUT(
 		if (body.is_active !== undefined) updateData.is_active = body.is_active
 		if (body.notify_on_breach !== undefined) updateData.notify_on_breach = body.notify_on_breach
 
-		const { data: threshold, error } = await supabase
-			.from('kpi_thresholds' as any)
+		const { data: threshold, error } = await (supabase as any)
+			.from('kpi_thresholds')
 			.update(updateData)
 			.eq('id', id)
 			.select()
