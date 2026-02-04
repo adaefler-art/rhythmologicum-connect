@@ -774,6 +774,151 @@ export type Database = {
           },
         ]
       }
+      diagnosis_artifacts: {
+        Row: {
+          artifact_data: Json
+          artifact_type: string
+          confidence_score: number | null
+          created_at: string
+          created_by: string
+          id: string
+          metadata: Json | null
+          patient_id: string
+          primary_findings: string[] | null
+          recommendations_count: number | null
+          risk_level: string | null
+          run_id: string
+          schema_version: string
+        }
+        Insert: {
+          artifact_data: Json
+          artifact_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by: string
+          id?: string
+          metadata?: Json | null
+          patient_id: string
+          primary_findings?: string[] | null
+          recommendations_count?: number | null
+          risk_level?: string | null
+          run_id: string
+          schema_version?: string
+        }
+        Update: {
+          artifact_data?: Json
+          artifact_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string
+          primary_findings?: string[] | null
+          recommendations_count?: number | null
+          risk_level?: string | null
+          run_id?: string
+          schema_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosis_artifacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_artifacts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_artifacts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "diagnosis_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnosis_runs: {
+        Row: {
+          clinician_id: string
+          completed_at: string | null
+          context_pack_id: string | null
+          created_at: string
+          error_code: string | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          inputs_hash: string
+          max_retries: number
+          mcp_run_id: string | null
+          patient_id: string
+          processing_time_ms: number | null
+          retry_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at: string
+        }
+        Insert: {
+          clinician_id: string
+          completed_at?: string | null
+          context_pack_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          inputs_hash: string
+          max_retries?: number
+          mcp_run_id?: string | null
+          patient_id: string
+          processing_time_ms?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at?: string
+        }
+        Update: {
+          clinician_id?: string
+          completed_at?: string | null
+          context_pack_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          inputs_hash?: string
+          max_retries?: number
+          mcp_run_id?: string | null
+          patient_id?: string
+          processing_time_ms?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosis_runs_clinician_id_fkey"
+            columns: ["clinician_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_runs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           assessment_id: string | null
@@ -3202,6 +3347,7 @@ export type Database = {
     Enums: {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
+      diagnosis_run_status: "queued" | "running" | "completed" | "failed"
       funnel_version_status: "draft" | "published" | "archived"
       notification_status:
         | "scheduled"
@@ -3404,6 +3550,7 @@ export const Constants = {
     Enums: {
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
+      diagnosis_run_status: ["queued", "running", "completed", "failed"],
       funnel_version_status: ["draft", "published", "archived"],
       notification_status: [
         "scheduled",
