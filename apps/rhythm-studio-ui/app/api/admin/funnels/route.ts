@@ -263,7 +263,7 @@ export async function GET(request: Request) {
 			})
 		}
 
-		const funnelIds = (funnels ?? []).map((f) => f.id)
+		const funnelIds = (funnels ?? []).map((f: { id: string }) => f.id)
 
 		const defaultVersionLookup = new Map<string, string>()
 		if (funnelIds.length > 0) {
