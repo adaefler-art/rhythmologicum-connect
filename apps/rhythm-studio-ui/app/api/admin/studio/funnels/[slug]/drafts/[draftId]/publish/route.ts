@@ -94,7 +94,7 @@ export async function POST(
     }
 
     // Call database function to publish draft atomically
-    const { data: publishResult, error: publishError } = await adminClient.rpc(
+    const { data: publishResult, error: publishError } = await (adminClient as any).rpc(
       'publish_draft_version',
       {
         p_draft_id: draftId,
