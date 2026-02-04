@@ -39,6 +39,11 @@ type HistoryEntry = {
   previous_version_id: string | null
 }
 
+type VersionRow = {
+  id: string
+  version: string
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -131,7 +136,7 @@ export async function GET(
 
       if (!versionsError && versions) {
         versionDetails = Object.fromEntries(
-          versions.map((v) => [v.id, { version: v.version, id: v.id }]),
+          versions.map((v: VersionRow) => [v.id, { version: v.version, id: v.id }]),
         )
       }
     }
