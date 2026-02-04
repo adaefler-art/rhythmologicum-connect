@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Insert into database
-		const { data: callRecord, error: insertError } = await supabase
+		const { data: callRecord, error: insertError } = await (supabase as any)
 			.from('pre_screening_calls')
 			.insert(callData)
 			.select()
