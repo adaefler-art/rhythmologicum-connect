@@ -206,7 +206,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 		}
 
 		// Update shipment (RLS will enforce access control)
-		const { data: shipment, error: updateError } = await supabase
+		const { data: shipment, error: updateError } = await (supabase as any)
 			.from('device_shipments')
 			.update(updateData)
 			.eq('id', id)
