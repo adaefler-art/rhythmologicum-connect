@@ -226,7 +226,7 @@ export async function PATCH(
 				}
 
 				// Also update the funnels_catalog.default_version_id
-				const { error: catalogError } = await writeClient
+				const { error: catalogError } = await (writeClient as any)
 					.from('funnels_catalog')
 					.update({ default_version_id: versionId, updated_at: new Date().toISOString() })
 					.eq('id', versionData.funnel_id)
