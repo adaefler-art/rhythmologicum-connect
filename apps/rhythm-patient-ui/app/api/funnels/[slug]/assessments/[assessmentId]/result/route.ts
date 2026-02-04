@@ -25,6 +25,11 @@ import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 
+type AssessmentAnswerRow = {
+  question_id: string
+  answer_value: unknown
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ slug: string; assessmentId: string }> },
@@ -223,7 +228,8 @@ export async function GET(
       )
     }
 
-    const answersEcho = (answers || []).map((row) => ({
+    const answersRows = (answers || []) as AssessmentAnswerRow[]
+    const answersEcho = answersRows.map((row) => ({
       questionId: row.question_id,
       value: row.answer_value,
     }))
