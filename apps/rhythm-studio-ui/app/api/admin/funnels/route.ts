@@ -323,7 +323,7 @@ export async function GET(request: Request) {
 		)
 
 		const pillarById = new Map(
-			(pillars ?? []).map((p) => [
+			(pillars ?? []).map((p: { id: string }) => [
 				p.id,
 				{
 					pillar: p,
