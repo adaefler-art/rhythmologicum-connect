@@ -19,6 +19,10 @@ type UserOrgMembershipRow = {
 	organization_id: string | null
 }
 
+type PreScreeningCallRow = Record<string, unknown> & {
+	red_flags?: unknown
+}
+
 /**
  * Get user's organization ID server-side
  */
@@ -264,10 +268,11 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Parse red_flags JSON
-		const parsedData = (data || []).map((call) => ({
+		const typedData = (data || []) as PreScreeningCallRow[]
+		const parsedData = typedData.map((call) => ({
 			...call,
-			red_flags: typeof call.red_flags === 'string' 
-				? JSON.parse(call.red_flags) 
+			red_flags: typeof call.red_flags === 'string'
+				? JSON.parse(call.red_flags)
 				: call.red_flags,
 		}))
 
