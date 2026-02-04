@@ -1,9 +1,10 @@
 /**
  * E76.1: MCP Server Test Page
  * E76.2: Added test for context pack endpoint
+ * E76.4: Added test for diagnosis execution endpoint
  * 
- * Literal callsite for /api/mcp and /api/mcp/context-pack endpoints (Strategy A compliance).
- * Tests MCP server integration with real context pack builder.
+ * Literal callsite for /api/mcp, /api/mcp/context-pack, and /api/studio/diagnosis/execute endpoints (Strategy A compliance).
+ * Tests MCP server integration with real context pack builder and diagnosis execution worker.
  */
 
 'use client'
@@ -14,6 +15,7 @@ export default function MCPTestPage() {
   const [healthStatus, setHealthStatus] = useState<string>('')
   const [toolResult, setToolResult] = useState<string>('')
   const [contextPackResult, setContextPackResult] = useState<string>('')
+  const [diagnosisExecutionResult, setDiagnosisExecutionResult] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   async function testHealth() {
@@ -95,9 +97,29 @@ export default function MCPTestPage() {
     }
   }
 
+  async function testDiagnosisExecution() {
+    setLoading(true)
+    try {
+      // Literal callsite: /api/studio/diagnosis/execute (E76.4)
+      const response = await fetch('/api/studio/diagnosis/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          limit: 5, // Process up to 5 queued runs
+        }),
+      })
+      const data = await response.json()
+      setDiagnosisExecutionResult(JSON.stringify(data, null, 2))
+    } catch (error) {
+      setDiagnosisExecutionResult(`Error: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">MCP Server Test (E76.1 + E76.2)</h1>
+      <h1 className="text-2xl font-bold mb-6">MCP Server Test (E76.1 + E76.2 + E76.4)</h1>
 
       <div className="space-y-4">
         <div className="border p-4 rounded">
@@ -149,6 +171,22 @@ export default function MCPTestPage() {
           {contextPackResult && (
             <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
               {contextPackResult}
+            </pre>
+          )}
+        </div>
+
+        <div className="border p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">Diagnosis Execution Worker (E76.4)</h2>
+          <button
+            onClick={testDiagnosisExecution}
+            disabled={loading}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+          >
+            Test Diagnosis Execution Endpoint
+          </button>
+          {diagnosisExecutionResult && (
+            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+              {diagnosisExecutionResult}
             </pre>
           )}
         </div>
