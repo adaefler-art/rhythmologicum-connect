@@ -10,6 +10,12 @@ import {
 import { logDatabaseError, logUnauthorized, logForbidden } from '@/lib/logging/logger'
 import { generateSignedUrl } from '@/lib/pdf/storage'
 
+type ProcessingJobRow = {
+	id: string
+	assessment_id: string | null
+	pdf_path: string | null
+}
+
 /**
  * V06: Processing Job PDF Download (Signed URL)
  * 
@@ -61,6 +67,8 @@ export async function GET(
 			return notFoundResponse('Processing Job')
 		}
 
+		const jobRow = job as ProcessingJobRow
+
 		// Verify ownership/access for all users
 		if (userRole === 'patient') {
 			const { data: patientProfile } = await supabase
@@ -80,7 +88,7 @@ export async function GET(
 			const { data: assessment } = await supabase
 				.from('assessments')
 				.select('patient_id')
-				.eq('id', job.assessment_id)
+				.eq('id', jobRow.assessment_id)
 				.single()
 
 			if (!assessment || assessment.patient_id !== patientProfile.id) {
@@ -94,7 +102,7 @@ export async function GET(
 			const { data: assessment } = await supabase
 				.from('assessments')
 				.select('patient_id')
-				.eq('id', job.assessment_id)
+				.eq('id', jobRow.assessment_id)
 				.single()
 
 			if (!assessment) return notFoundResponse('Processing Job')
@@ -115,12 +123,12 @@ export async function GET(
 			}
 		}
 
-		if (!job.pdf_path) {
+		if (!jobRow.pdf_path) {
 			return notFoundResponse('PDF')
 		}
 
 		const expiresIn = 3600
-		const urlResult = await generateSignedUrl(job.pdf_path, expiresIn)
+		const urlResult = await generateSignedUrl(jobRow.pdf_path, expiresIn)
 		if (!urlResult.success || !urlResult.url) {
 			return internalErrorResponse('Signed URL generation failed')
 		}
