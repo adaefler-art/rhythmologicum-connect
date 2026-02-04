@@ -43,7 +43,9 @@ export default function ComponentsDevPage() {
             padding="none"
             shadow="none"
             className="relative min-h-[120px] border border-slate-200 bg-white/70"
-          />
+          >
+            <div aria-hidden="true" />
+          </Card>
           <BottomNavV2 />
         </section>
 
