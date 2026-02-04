@@ -20,6 +20,10 @@ type AssessmentRow = {
 	patient_id: string | null
 }
 
+type PatientProfileRow = {
+	id: string
+}
+
 /**
  * V06: Processing Job PDF Download (Signed URL)
  * 
@@ -85,7 +89,8 @@ export async function GET(
 				.eq('user_id', user.id)
 				.single()
 
-			if (!patientProfile) {
+			const patientProfileRow = patientProfile as PatientProfileRow | null
+			if (!patientProfileRow) {
 				logForbidden(
 					{ userId: user.id, jobId, endpoint: `/api/processing/jobs/${jobId}/download` },
 					'Patient profile not found',
@@ -100,7 +105,7 @@ export async function GET(
 				.single()
 
 			const assessmentRow = assessment as AssessmentRow | null
-			if (!assessmentRow || assessmentRow.patient_id !== patientProfile.id) {
+			if (!assessmentRow || assessmentRow.patient_id !== patientProfileRow.id) {
 				logForbidden(
 					{ userId: user.id, jobId, endpoint: `/api/processing/jobs/${jobId}/download` },
 					'Patient does not own assessment',
