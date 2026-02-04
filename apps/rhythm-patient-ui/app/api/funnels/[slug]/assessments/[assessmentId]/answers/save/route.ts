@@ -98,7 +98,7 @@ async function handleSaveAnswer(
 
     const { stepId, questionId, answerValue } = validationResult.data
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -113,7 +113,7 @@ async function handleSaveAnswer(
       return unauthorizedResponse()
     }
 
-    const { data: patientProfile, error: profileError } = await (supabase as any)
+    const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -130,7 +130,7 @@ async function handleSaveAnswer(
       return notFoundResponse('Benutzerprofil')
     }
 
-    const { data: assessment, error: assessmentError } = await (supabase as any)
+    const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id, status, funnel, funnel_id')
       .eq('id', assessmentId)
@@ -245,7 +245,7 @@ async function handleSaveAnswer(
       isV05CatalogFunnel,
     })
 
-    const { data, error: upsertError } = await (supabase as any)
+    const { data, error: upsertError } = await supabase
       .from('assessment_answers')
       .upsert(
         {
@@ -307,7 +307,7 @@ async function handleSaveAnswer(
     }
 
     if (!isV05CatalogFunnel) {
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('assessments')
         .update({ current_step_id: stepId })
         .eq('id', assessmentId)

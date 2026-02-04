@@ -226,7 +226,7 @@ export async function GET(request: Request) {
 		} = await readClient
 			.from('funnels_catalog')
 			.select(
-				'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
+				'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,published,default_version_id,created_at,updated_at',
 			)
 			.order('title', { ascending: true })
 			.order('slug', { ascending: true })
@@ -247,7 +247,7 @@ export async function GET(request: Request) {
 				;({ data: funnels, error: funnelsError } = await readClient
 					.from('funnels_catalog')
 					.select(
-						'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,default_version_id,created_at,updated_at',
+						'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,published,default_version_id,created_at,updated_at',
 					)
 					.order('title', { ascending: true })
 					.order('slug', { ascending: true }))
@@ -263,7 +263,7 @@ export async function GET(request: Request) {
 			})
 		}
 
-		const funnelIds = (funnels ?? []).map((f: { id: string }) => f.id)
+		const funnelIds = (funnels ?? []).map((f) => f.id)
 
 		const defaultVersionLookup = new Map<string, string>()
 		if (funnelIds.length > 0) {
@@ -306,31 +306,22 @@ export async function GET(request: Request) {
 				})
 			}
 
-			;(versions ?? []).forEach((v: { id: string; version: string }) => {
+			;(versions ?? []).forEach((v) => {
 				defaultVersionLookup.set(v.id, v.version)
 			})
 		}
 
-		const funnelsWithVersions = (funnels ?? []).map(
-			(
-				f: {
-					[key: string]: unknown
-					outcomes?: unknown
-					default_version_id?: string | null
-					pillar_id?: string | null
-				},
-			) => ({
+		const funnelsWithVersions = (funnels ?? []).map((f) => ({
 			...f,
 			subtitle: null,
 			outcomes: Array.isArray(f.outcomes) ? f.outcomes : [],
 			default_version: f.default_version_id
 				? (defaultVersionLookup.get(f.default_version_id) ?? null)
 				: null,
-			}),
-		)
+		}))
 
 		const pillarById = new Map(
-			(pillars ?? []).map((p: { id: string }) => [
+			(pillars ?? []).map((p) => [
 				p.id,
 				{
 					pillar: p,

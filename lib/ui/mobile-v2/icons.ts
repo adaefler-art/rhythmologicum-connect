@@ -20,6 +20,7 @@ export {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Home,
   
   // Actions
   Check,
@@ -54,6 +55,7 @@ export {
   Shield,
   TrendingUp,
   TrendingDown,
+  User,
   
   // Type
   type LucideIcon,

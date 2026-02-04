@@ -67,14 +67,12 @@ export async function PATCH(
 		const adminClient = createAdminSupabaseClient()
 
 		// Update question is_required
-		const updateData: Record<string, unknown> = {
-			is_required: body.is_required,
-			updated_at: new Date().toISOString(),
-		}
-
-		const { data, error } = await (adminClient as any)
+		const { data, error } = await adminClient
 			.from('funnel_step_questions')
-			.update(updateData)
+			.update({ 
+				is_required: body.is_required,
+				updated_at: new Date().toISOString(),
+			})
 			.eq('id', id)
 			.select()
 			.single()

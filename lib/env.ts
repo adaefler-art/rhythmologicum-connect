@@ -77,7 +77,6 @@ const baseEnvSchema = z.object({
   NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_MCP_ENABLED: z.string().optional(),
   NEXT_PUBLIC_FEATURE_ANAMNESIS_EXPORT_ENABLED: z.string().optional(),
-  NEXT_PUBLIC_FEATURE_DIAGNOSIS_WORKER_ENABLED: z.string().optional(),
   E73_4_RESULT_SSOT: z.string().optional(),
 
   // OPTIONAL: E6.4.1 Pilot Feature Flags

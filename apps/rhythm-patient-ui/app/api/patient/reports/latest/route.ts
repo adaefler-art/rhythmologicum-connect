@@ -25,7 +25,7 @@ export async function GET() {
   // ==========================================
   let supabase
   try {
-    supabase = (await createServerSupabaseClient()) as any
+    supabase = await createServerSupabaseClient()
     console.log('[REPORTS_LATEST] STEP=createClient success=true')
   } catch (err) {
     console.error('[REPORTS_LATEST] STEP=createClient success=false', {

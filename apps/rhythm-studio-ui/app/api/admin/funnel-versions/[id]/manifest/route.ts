@@ -300,7 +300,7 @@ export async function PUT(
 		// Justification: Admin client required to update funnel versions and write audit log (RLS-bypassed admin metadata)
 		const adminClient = createAdminSupabaseClient()
 
-		const { data: updatedVersion, error: updateError } = (await (adminClient as any)
+		const { data: updatedVersion, error: updateError } = (await adminClient
 			.from('funnel_versions')
 			.update({
 				content_manifest: validatedManifest,
@@ -341,7 +341,7 @@ export async function PUT(
 
 		// Audit log with manifest hash (no PHI/content)
 		const manifestHash = hashManifest(validatedManifest)
-		const { error: auditError } = await (adminClient as any).from('audit_log').insert({
+		const { error: auditError } = await adminClient.from('audit_log').insert({
 			entity_type: AUDIT_ENTITY_TYPE.FUNNEL_VERSION,
 			entity_id: versionId,
 			action: AUDIT_ACTION.UPDATE,

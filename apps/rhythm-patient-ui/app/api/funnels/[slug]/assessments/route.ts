@@ -71,7 +71,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       // No body or invalid JSON - use default behavior (resume or create)
     }
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },

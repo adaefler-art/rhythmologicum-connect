@@ -199,11 +199,11 @@ export function DialogScreenV2() {
               {chatMessages.map((message) => (
                 <div
                   key={message.id}
-                  className={`p-4 ${message.sender === 'amy' ? 'bg-linear-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
+                  className={`p-4 ${message.sender === 'amy' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
                 >
                   <div className="flex items-start gap-3">
                     {message.sender === 'amy' && (
-                      <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                         <Bot className="w-5 h-5 text-white" />
                       </div>
                     )}

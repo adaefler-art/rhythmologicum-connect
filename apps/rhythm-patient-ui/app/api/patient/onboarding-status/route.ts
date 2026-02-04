@@ -40,7 +40,7 @@ function fail(code: string, message: string, status: number) {
 }
 
 export async function GET() {
-	const supabase = (await createServerSupabaseClient()) as any
+	const supabase = await createServerSupabaseClient()
 
 	const {
 		data: { user },

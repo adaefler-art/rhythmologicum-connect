@@ -65,7 +65,7 @@ export async function GET(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -82,7 +82,7 @@ export async function GET(
     }
 
     // Fetch draft
-    const { data: draft, error: draftError } = await (adminClient as any)
+    const { data: draft, error: draftError } = await adminClient
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
@@ -167,7 +167,7 @@ export async function PUT(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -184,7 +184,7 @@ export async function PUT(
     }
 
     // Fetch current draft
-    const { data: currentDraft, error: draftError } = await (adminClient as any)
+    const { data: currentDraft, error: draftError } = await adminClient
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
@@ -236,7 +236,7 @@ export async function PUT(
     }
 
     // Update draft
-    const { data: updatedDraft, error: updateError } = await (adminClient as any)
+    const { data: updatedDraft, error: updateError } = await adminClient
       .from('funnel_versions')
       .update(updates)
       .eq('id', draftId)
@@ -309,7 +309,7 @@ export async function DELETE(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -326,7 +326,7 @@ export async function DELETE(
     }
 
     // Delete draft
-    const { error: deleteError } = await (adminClient as any)
+    const { error: deleteError } = await adminClient
       .from('funnel_versions')
       .delete()
       .eq('id', draftId)

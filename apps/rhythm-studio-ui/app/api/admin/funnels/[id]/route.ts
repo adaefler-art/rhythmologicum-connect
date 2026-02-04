@@ -92,16 +92,16 @@ export async function GET(
     
 		if (isUuidParam) {
 			// UUID path: query by ID only, no fallback
-			;({ data: funnel, error: funnelError } = await (authClient as any)
+			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
 				.eq('id', slugOrId)
 				.single())
 		} else {
 			// Slug path: query by slug only
-			;({ data: funnel, error: funnelError } = await (authClient as any)
+			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
 				.eq('slug', slugOrId)
 				.single())
 		}
@@ -159,7 +159,7 @@ export async function GET(
 		// Fetch pillar information if funnel has a pillar_id
 		let pillar = null
 		if (funnel.pillar_id) {
-			const { data: pillarData } = await (authClient as any)
+			const { data: pillarData } = await authClient
 				.from('pillars')
 				.select('id, key, title, description')
 				.eq('id', funnel.pillar_id)
@@ -168,7 +168,7 @@ export async function GET(
 		}
 
 		// Fetch all versions for this funnel
-		const { data: versions, error: versionsError } = await (authClient as any)
+		const { data: versions, error: versionsError } = await authClient
 			.from('funnel_versions')
 			.select('id, funnel_id, version, is_default, rollout_percent, questionnaire_config, content_manifest, algorithm_bundle_version, prompt_version, created_at, updated_at')
 			.eq('funnel_id', funnel.id)
@@ -209,8 +209,7 @@ export async function GET(
 		}
 
 		// Find default version
-		const defaultVersion =
-			(versions || []).find((v: { is_default?: boolean }) => v.is_default) || null
+		const defaultVersion = (versions || []).find((v) => v.is_default) || null
 
 		// ADAPTER LAYER: Convert manifest to steps/questions format for backward compat UI
 		// This allows the UI to continue working while we transition to manifest-based editing
@@ -480,7 +479,7 @@ export async function PATCH(
     
 		if (isUuidParam) {
 			// UUID path: update by ID only
-			;({ data, error } = await (writeClient as any)
+			;({ data, error } = await writeClient
 				.from('funnels_catalog')
 				.update(updateData)
 				.eq('id', slugOrId)
@@ -488,7 +487,7 @@ export async function PATCH(
 				.single())
 		} else {
 			// Slug path: update by slug only
-			;({ data, error } = await (writeClient as any)
+			;({ data, error } = await writeClient
 				.from('funnels_catalog')
 				.update(updateData)
 				.eq('slug', slugOrId)
@@ -510,14 +509,14 @@ export async function PATCH(
 				writeClient = authClient
         
 				if (isUuidParam) {
-					;({ data, error } = await (writeClient as any)
+					;({ data, error } = await writeClient
 						.from('funnels_catalog')
 						.update(updateData)
 						.eq('id', slugOrId)
 						.select()
 						.single())
 				} else {
-					;({ data, error } = await (writeClient as any)
+					;({ data, error } = await writeClient
 						.from('funnels_catalog')
 						.update(updateData)
 						.eq('slug', slugOrId)

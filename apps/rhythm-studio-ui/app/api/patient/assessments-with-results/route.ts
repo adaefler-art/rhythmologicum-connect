@@ -1,30 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
-type FunnelInfo = {
-  slug?: string
-  title?: string
-} | null
-
-type AssessmentResultRow = {
-  id: string
-  scores: Record<string, unknown> | null
-  risk_models: Record<string, unknown> | null
-  algorithm_version: string | null
-  computed_at: string | null
-}
-
-type AssessmentWithResultsRow = {
-  id: string
-  funnel: string | null
-  funnel_id: string | null
-  status: string
-  started_at: string | null
-  completed_at: string | null
-  funnels?: FunnelInfo | FunnelInfo[] | null
-  calculated_results?: AssessmentResultRow[] | null
-}
-
 /**
  * E73.5 — SSOT for Patient Assessments with Results (Clinician View)
  * 
@@ -142,34 +118,30 @@ export async function GET(request: Request) {
     }
 
     // Transform data for client
-    const transformedAssessments = ((assessmentsWithResults as AssessmentWithResultsRow[]) || []).map(
-      (a) => {
-        const funnelData = (Array.isArray(a.funnels)
-          ? a.funnels[0]
-          : a.funnels) as FunnelInfo
+    const transformedAssessments = (assessmentsWithResults || []).map((a) => {
+      const funnelData = a.funnels as { slug?: string; title?: string } | null
       // calculated_results is an array due to join, but we only want latest
-        const resultsArray = (a.calculated_results || []) as AssessmentResultRow[]
+      const resultsArray = a.calculated_results as any[]
       const latestResult = resultsArray && resultsArray.length > 0 ? resultsArray[0] : null
 
-        return {
-          id: a.id,
-          funnelSlug: a.funnel || funnelData?.slug || null,
-          funnelName: funnelData?.title || a.funnel || 'Unbekannt',
-          status: a.status,
-          startedAt: a.started_at,
-          completedAt: a.completed_at,
-          result: latestResult
-            ? {
-                id: latestResult.id,
-                scores: latestResult.scores || {},
-                riskModels: latestResult.risk_models || null,
-                algorithmVersion: latestResult.algorithm_version,
-                computedAt: latestResult.computed_at,
-              }
-            : null,
-        }
-      },
-    )
+      return {
+        id: a.id,
+        funnelSlug: a.funnel || funnelData?.slug || null,
+        funnelName: funnelData?.title || a.funnel || 'Unbekannt',
+        status: a.status,
+        startedAt: a.started_at,
+        completedAt: a.completed_at,
+        result: latestResult
+          ? {
+              id: latestResult.id,
+              scores: latestResult.scores || {},
+              riskModels: latestResult.risk_models || null,
+              algorithmVersion: latestResult.algorithm_version,
+              computedAt: latestResult.computed_at,
+            }
+          : null,
+      }
+    })
 
     // Filter out any without results (shouldn't happen with inner join, but safety check)
     const validAssessments = transformedAssessments.filter((a) => a.result !== null)

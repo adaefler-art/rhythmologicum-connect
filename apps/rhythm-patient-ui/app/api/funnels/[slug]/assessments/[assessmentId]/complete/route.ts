@@ -58,7 +58,6 @@ function asProcessingStatus(s: unknown): ProcessingStatus {
 /**
  * B5/B8: Complete an assessment
  *
- * DB Access: Uses admin client to create processing jobs after completion (service role required).
  * POST /api/funnels/[slug]/assessments/[assessmentId]/complete
  */
 export async function POST(
@@ -91,7 +90,7 @@ async function handleCompleteAssessment(
       return missingFieldsResponse('Funnel-Slug oder Assessment-ID fehlt.', undefined, correlationId)
     }
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -106,7 +105,7 @@ async function handleCompleteAssessment(
       return unauthorizedResponse(undefined, correlationId)
     }
 
-    const { data: patientProfile, error: profileError } = await (supabase as any)
+    const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -123,7 +122,7 @@ async function handleCompleteAssessment(
       return notFoundResponse('Benutzerprofil', undefined, correlationId)
     }
 
-    const { data: assessment, error: assessmentError } = await (supabase as any)
+    const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id, funnel, funnel_id, status, started_at')
       .eq('id', assessmentId)
@@ -173,7 +172,7 @@ async function handleCompleteAssessment(
             'Server configuration error',
             500,
             PATIENT_ASSESSMENT_SCHEMA_VERSION,
-            { reason: 'Service role key missing' },
+                { reason: 'SERVICE_ROLE_KEY_MISSING' },
             correlationId,
           )
         }
@@ -346,7 +345,7 @@ async function handleCompleteAssessment(
           'Server configuration error',
           500,
           PATIENT_ASSESSMENT_SCHEMA_VERSION,
-          { reason: 'Service role key missing' },
+          { reason: 'SERVICE_ROLE_KEY_MISSING' },
           correlationId,
         )
       }
@@ -390,7 +389,7 @@ async function handleCompleteAssessment(
               'Server configuration error',
               500,
               PATIENT_ASSESSMENT_SCHEMA_VERSION,
-              { reason: 'Service role key missing' },
+              { reason: 'SERVICE_ROLE_KEY_MISSING' },
               correlationId,
             )
           }
@@ -494,7 +493,7 @@ async function performWorkupCheckAsync(assessmentId: string, funnelSlug: string,
     const workupResult = performWorkupCheck(evidencePack)
     const rulesetVersion = getRulesetVersion(funnelSlug) ?? 'default'
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
     const { error: updateError } = await supabase
       .from('assessments')
       .update({
@@ -553,11 +552,7 @@ async function validateV05AllRequiredQuestions(
     throw new Error('Antworten konnten nicht geladen werden.')
   }
 
-  const answeredIds = new Set(
-    (answeredQuestions as Array<{ question_id: string }> | null)?.map(
-      (a) => a.question_id,
-    ) || [],
-  )
+  const answeredIds = new Set(answeredQuestions?.map((a) => a.question_id) || [])
 
   const missingQuestions: Array<{
     questionId: string
@@ -595,7 +590,7 @@ async function updatePatientStateOnAssessmentComplete(
   completedAt: string,
 ): Promise<void> {
   try {
-    const { data, error: fetchError } = await (supabase as any)
+    const { data, error: fetchError } = await supabase
       .from('patient_state')
       .select('state_data')
       .eq('user_id', userId)
@@ -612,9 +607,7 @@ async function updatePatientStateOnAssessmentComplete(
         throw fetchError
       }
     } else {
-      const validatedState = safeValidatePatientState(
-        (data as { state_data: PatientStateV01 }).state_data,
-      )
+      const validatedState = safeValidatePatientState(data.state_data)
       stateData = validatedState || createEmptyPatientState()
     }
 
@@ -651,7 +644,7 @@ async function updatePatientStateOnAssessmentComplete(
     stateData.updatedAt = new Date().toISOString()
 
     if (isNewState) {
-      const { error: insertError } = await (supabase as any)
+      const { error: insertError } = await supabase
         .from('patient_state')
         .insert({
           user_id: userId,
@@ -663,7 +656,7 @@ async function updatePatientStateOnAssessmentComplete(
         throw insertError
       }
     } else {
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('patient_state')
         .update({ state_data: stateData as any })
         .eq('user_id', userId)

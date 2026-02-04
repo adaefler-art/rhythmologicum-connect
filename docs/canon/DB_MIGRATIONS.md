@@ -79,8 +79,6 @@ When introducing a new canonical table or enum:
 - `idempotency_keys` (E6.2.4)
 - `funnel_publish_history` (E74.3)
 - `funnel_version_status` (E74.3)
-- `diagnosis_runs`, `diagnosis_run_artifacts`, `diagnosis_artifacts` (E76.3)
-- `diagnosis_run_status` (E76.3)
 
 **Example manifest entry:**
 ```json

@@ -12,7 +12,6 @@
  * - NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: Enable/disable processing results endpoint (default: false)
  * - NEXT_PUBLIC_FEATURE_MCP_ENABLED: Enable/disable MCP server integration (E76.1) (default: false)
  * - NEXT_PUBLIC_FEATURE_ANAMNESIS_EXPORT_ENABLED: Enable/disable anamnesis export endpoints (E75.6) (default: false)
- * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_WORKER_ENABLED: Enable/disable diagnosis worker execution (E76.4) (default: false)
  */
 
 import { env } from '@/lib/env'
@@ -26,7 +25,6 @@ export type FeatureFlags = {
   PROCESSING_RESULTS_ENABLED: boolean
   MCP_ENABLED: boolean
   ANAMNESIS_EXPORT_ENABLED: boolean
-  DIAGNOSIS_WORKER_ENABLED: boolean
 }
 
 function resolveFlag(value: string | undefined, defaultValue: boolean): boolean {
@@ -55,10 +53,6 @@ export const featureFlags: FeatureFlags = {
   MCP_ENABLED: resolveFlag(env.NEXT_PUBLIC_FEATURE_MCP_ENABLED, false),
   ANAMNESIS_EXPORT_ENABLED: resolveFlag(
     env.NEXT_PUBLIC_FEATURE_ANAMNESIS_EXPORT_ENABLED,
-    false,
-  ),
-  DIAGNOSIS_WORKER_ENABLED: resolveFlag(
-    env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_WORKER_ENABLED,
     false,
   ),
 }

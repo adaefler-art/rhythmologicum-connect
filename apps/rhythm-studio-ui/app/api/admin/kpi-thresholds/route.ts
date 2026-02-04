@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
 
 		const supabase = createAdminSupabaseClient()
 
-		const { data: threshold, error } = await (supabase as any)
-			.from('kpi_thresholds')
+		const { data: threshold, error } = await supabase
+			.from('kpi_thresholds' as any)
 			.insert({
 				kpi_key: body.kpi_key,
 				name: body.name,

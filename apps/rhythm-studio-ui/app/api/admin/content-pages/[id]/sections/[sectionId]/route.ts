@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import type { Database } from '@/lib/types/supabase'
 
 /**
  * F3 API Endpoint: Update section
@@ -33,7 +32,7 @@ export async function PATCH(
 		}
 
 		// Prepare update data
-		const updateData: Database['public']['Tables']['content_page_sections']['Update'] = {
+		const updateData: Record<string, unknown> = {
 			updated_at: new Date().toISOString(),
 		}
 
@@ -42,7 +41,7 @@ export async function PATCH(
 		if (body.order_index !== undefined) updateData.order_index = body.order_index
 
 		// Update section
-		const { data: updatedSection, error: updateError } = await (supabase as any)
+		const { data: updatedSection, error: updateError } = await supabase
 			.from('content_page_sections')
 			.update(updateData)
 			.eq('id', sectionId)

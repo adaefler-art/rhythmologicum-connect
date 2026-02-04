@@ -75,7 +75,7 @@ export async function POST(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title, default_version_id')
       .eq('slug', slug)
@@ -103,7 +103,7 @@ export async function POST(
     }
 
     // Call database function to create draft
-    const { data: draftId, error: createError } = await (adminClient as any).rpc(
+    const { data: draftId, error: createError } = await adminClient.rpc(
       'create_draft_from_version',
       {
         p_source_version_id: versionId,
@@ -128,7 +128,7 @@ export async function POST(
     }
 
     // Fetch the created draft
-    const { data: draft, error: fetchError } = await (adminClient as any)
+    const { data: draft, error: fetchError } = await adminClient
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
@@ -208,7 +208,7 @@ export async function GET(
     const adminClient = createAdminSupabaseClient()
 
     // Get funnel by slug
-    const { data: funnel, error: funnelError } = await (adminClient as any)
+    const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')
       .select('id, slug, title')
       .eq('slug', slug)
@@ -225,7 +225,7 @@ export async function GET(
     }
 
     // Fetch all drafts for this funnel
-    const { data: drafts, error: draftsError } = await (adminClient as any)
+    const { data: drafts, error: draftsError } = await adminClient
       .from('funnel_versions')
       .select('id, version, status, parent_version_id, validation_errors, last_validated_at, created_at, updated_at')
       .eq('funnel_id', funnel.id)

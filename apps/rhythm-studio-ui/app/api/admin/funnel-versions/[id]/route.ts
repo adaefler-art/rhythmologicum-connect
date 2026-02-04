@@ -159,7 +159,7 @@ export async function PATCH(
 		// 3. Set is_default on target version
 		if (updateData.is_default === true) {
 			// Get the funnel_id for this version
-			const { data: versionData, error: versionError } = await (writeClient as any)
+			const { data: versionData, error: versionError } = await writeClient
 				.from('funnel_versions')
 				.select('funnel_id')
 				.eq('id', versionId)
@@ -197,7 +197,7 @@ export async function PATCH(
 
 			if (versionData?.funnel_id) {
 				// Unset is_default for all other versions of this funnel
-				const { error: unsetError } = await (writeClient as any)
+				const { error: unsetError } = await writeClient
 					.from('funnel_versions')
 					.update({ is_default: false, updated_at: new Date().toISOString() })
 					.eq('funnel_id', versionData.funnel_id)
@@ -226,7 +226,7 @@ export async function PATCH(
 				}
 
 				// Also update the funnels_catalog.default_version_id
-				const { error: catalogError } = await (writeClient as any)
+				const { error: catalogError } = await writeClient
 					.from('funnels_catalog')
 					.update({ default_version_id: versionId, updated_at: new Date().toISOString() })
 					.eq('id', versionData.funnel_id)
@@ -245,7 +245,7 @@ export async function PATCH(
 		}
 
 		// Update the version
-		let { data, error } = await (writeClient as any)
+		let { data, error } = await writeClient
 			.from('funnel_versions')
 			.update(updateData)
 			.eq('id', versionId)
@@ -266,7 +266,7 @@ export async function PATCH(
 				writeClient = authClient
 
 				// Retry the update
-				;({ data, error } = await (writeClient as any)
+				;({ data, error } = await writeClient
 					.from('funnel_versions')
 					.update(updateData)
 					.eq('id', versionId)

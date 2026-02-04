@@ -74,7 +74,7 @@ type RouteContext = {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { entryId } = await context.params
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {
@@ -163,7 +163,7 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { entryId } = await context.params
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     // Check authentication
     const {

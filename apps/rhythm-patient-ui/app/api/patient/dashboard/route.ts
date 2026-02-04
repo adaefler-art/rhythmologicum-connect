@@ -160,7 +160,7 @@ export async function GET() {
 	try {
 		let supabase
 		try {
-			supabase = (await createServerSupabaseClient()) as any
+			supabase = await createServerSupabaseClient()
 			console.log('[DASHBOARD_API] STEP=createSupabaseClient success=true', {
 				correlationId,
 			})

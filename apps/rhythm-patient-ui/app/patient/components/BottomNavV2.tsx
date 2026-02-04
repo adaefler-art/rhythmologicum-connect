@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Home, MessageCircle, User } from 'lucide-react'
+import { ClipboardList, Home, MessageCircle, User } from '@/lib/ui/mobile-v2/icons'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 
@@ -62,7 +62,7 @@ export function BottomNavV2() {
             <Link
               key={item.id}
               href={item.href}
-              className={`flex flex-col items-center justify-center min-w-15 px-3 py-2 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center min-w-[60px] px-3 py-2 rounded-lg transition-all duration-200 ${
                 active
                   ? 'text-sky-600 bg-sky-50'
                   : 'text-slate-600 hover:bg-slate-100'

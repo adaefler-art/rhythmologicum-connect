@@ -13,39 +13,6 @@ type QuestionData = {
   question_type?: string
 } | null
 
-type AnswerRow = {
-  id: string
-  question_id: string
-  answer_value: number | null
-  answer_data: unknown
-  created_at: string
-  questions?: QuestionData
-}
-
-type AssessmentRow = {
-  id: string
-  patient_id: string
-  funnel: string | null
-  status: string
-  started_at: string
-  completed_at: string | null
-  funnels?: FunnelData
-}
-
-type ResultRow = {
-  scores: Record<string, unknown> | null
-  risk_models: Record<string, unknown> | null
-  algorithm_version: string | null
-  computed_at: string | null
-}
-
-type ReportRow = {
-  score_numeric: number | null
-  sleep_score: number | null
-  risk_level: string | null
-  report_text_short: string | null
-}
-
 /**
  * E74.8 — Clinician Assessment Run Timeline Details
  * 
@@ -231,7 +198,7 @@ export async function GET(
     }
 
     // Transform answers data
-    const answers = ((answersData as AnswerRow[]) || []).map((answer) => {
+    const answers = (answersData || []).map((answer) => {
       const questionData = answer.questions as QuestionData
       return {
         id: answer.id,
@@ -245,37 +212,34 @@ export async function GET(
     })
 
     // Transform assessment data
-    const assessmentRow = assessment as AssessmentRow
-    const funnelData = assessmentRow.funnels ?? null
+    const funnelData = assessment.funnels as FunnelData
     const transformedAssessment = {
-      id: assessmentRow.id,
-      patientId: assessmentRow.patient_id,
-      funnelSlug: assessmentRow.funnel || funnelData?.slug || null,
-      funnelName: funnelData?.title || assessmentRow.funnel || 'Unbekannt',
-      status: assessmentRow.status,
-      startedAt: assessmentRow.started_at,
-      completedAt: assessmentRow.completed_at,
+      id: assessment.id,
+      patientId: assessment.patient_id,
+      funnelSlug: assessment.funnel || funnelData?.slug || null,
+      funnelName: funnelData?.title || assessment.funnel || 'Unbekannt',
+      status: assessment.status,
+      startedAt: assessment.started_at,
+      completedAt: assessment.completed_at,
     }
 
     // Transform result data
-    const resultRow = resultData as ResultRow | null
-    const result = resultRow
+    const result = resultData
       ? {
-          scores: resultRow.scores || {},
-          riskModels: resultRow.risk_models || null,
-          algorithmVersion: resultRow.algorithm_version,
-          computedAt: resultRow.computed_at,
+          scores: resultData.scores || {},
+          riskModels: resultData.risk_models || null,
+          algorithmVersion: resultData.algorithm_version,
+          computedAt: resultData.computed_at,
         }
       : null
 
     // Transform report data
-    const reportRow = reportData as ReportRow | null
-    const report = reportRow
+    const report = reportData
       ? {
-          scoreNumeric: reportRow.score_numeric,
-          sleepScore: reportRow.sleep_score,
-          riskLevel: reportRow.risk_level,
-          reportTextShort: reportRow.report_text_short,
+          scoreNumeric: reportData.score_numeric,
+          sleepScore: reportData.sleep_score,
+          riskLevel: reportData.risk_level,
+          reportTextShort: reportData.report_text_short,
         }
       : null
 

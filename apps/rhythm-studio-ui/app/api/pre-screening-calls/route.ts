@@ -15,14 +15,6 @@ import { AUDIT_ENTITY_TYPE } from '@/lib/contracts/registry'
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
 
-type UserOrgMembershipRow = {
-	organization_id: string | null
-}
-
-type PreScreeningCallRow = Record<string, unknown> & {
-	red_flags?: unknown
-}
-
 /**
  * Get user's organization ID server-side
  */
@@ -43,8 +35,7 @@ async function getUserOrgId(
 		return null
 	}
   
-	const row = data as UserOrgMembershipRow
-	return row.organization_id
+	return data.organization_id
 }
 
 /**
@@ -125,7 +116,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Insert into database
-		const { data: callRecord, error: insertError } = await (supabase as any)
+		const { data: callRecord, error: insertError } = await supabase
 			.from('pre_screening_calls')
 			.insert(callData)
 			.select()
@@ -268,11 +259,10 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Parse red_flags JSON
-		const typedData = (data || []) as PreScreeningCallRow[]
-		const parsedData = typedData.map((call) => ({
+		const parsedData = (data || []).map((call) => ({
 			...call,
-			red_flags: typeof call.red_flags === 'string'
-				? JSON.parse(call.red_flags)
+			red_flags: typeof call.red_flags === 'string' 
+				? JSON.parse(call.red_flags) 
 				: call.red_flags,
 		}))
 

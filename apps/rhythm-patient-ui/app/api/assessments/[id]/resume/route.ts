@@ -24,7 +24,7 @@ export async function GET(
       )
     }
 
-    const supabase = (await createServerSupabaseClient()) as any
+    const supabase = await createServerSupabaseClient()
 
     const {
       data: { user },
@@ -42,7 +42,7 @@ export async function GET(
       )
     }
 
-    const { data: patientProfile, error: profileError } = await (supabase as any)
+    const { data: patientProfile, error: profileError } = await supabase
       .from('patient_profiles')
       .select('id')
       .eq('user_id', user.id)
@@ -59,7 +59,7 @@ export async function GET(
       )
     }
 
-    const { data: assessment, error: assessmentError } = await (supabase as any)
+    const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .select('id, patient_id, funnel_id')
       .eq('id', assessmentId)
@@ -104,7 +104,7 @@ export async function GET(
     const [currentStep, navState, answers] = await Promise.all([
       getCurrentStep(supabase, assessmentId),
       getNavigationState(supabase, assessmentId),
-      (supabase as any)
+      supabase
         .from('assessment_answers')
         .select('question_id, answer_value')
         .eq('assessment_id', assessmentId),
@@ -128,7 +128,7 @@ export async function GET(
 
     const previousAnswers: Record<string, number> = {}
     if (answers.data) {
-      answers.data.forEach((answer: { question_id: string; answer_value: number }) => {
+      answers.data.forEach((answer) => {
         previousAnswers[answer.question_id] = answer.answer_value
       })
     }

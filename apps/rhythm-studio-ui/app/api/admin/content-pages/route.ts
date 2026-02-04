@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
 		if (body.layout !== undefined) insertData.layout = body.layout || null
 
 		// Create content page
-		const { data: newPage, error: insertError } = await (supabase as any)
+		const { data: newPage, error: insertError } = await supabase
 			.from('content_pages')
 			.insert(insertData)
 			.select()
