@@ -25,8 +25,8 @@ describe('Audit Constants', () => {
       expect(AUDIT_ENTITY_TYPE.REVIEW_RECORD).toBe('review_record') // V05-I05.7
     })
 
-    it('has exactly 17 entity types', () => {
-      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(17)
+    it('has exactly 19 entity types', () => {
+      expect(Object.keys(AUDIT_ENTITY_TYPE)).toHaveLength(19)
     })
   })
 
