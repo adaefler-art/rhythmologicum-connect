@@ -29,6 +29,12 @@ import { isValidUUID } from '@/lib/validators/uuid'
  * - success: boolean
  * - data: Array of execution results or single result
  */
+/**
+ * Admin client usage - DOCUMENTED JUSTIFICATION
+ * Purpose: Execute diagnosis worker with RLS bypass for system-owned updates
+ * Scope: diagnosis_runs, diagnosis_artifacts
+ * Mitigation: Server-side auth gate; clinician/admin only; API route only
+ */
 export async function POST(request: NextRequest) {
   try {
     // Feature flag check

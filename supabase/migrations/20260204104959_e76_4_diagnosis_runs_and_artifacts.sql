@@ -125,59 +125,109 @@ ALTER TABLE "public"."diagnosis_runs" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."diagnosis_artifacts" ENABLE ROW LEVEL SECURITY;
 
 -- Clinicians and admins can read all diagnosis runs
-CREATE POLICY "diagnosis_runs_clinician_read" ON "public"."diagnosis_runs"
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND (
-        (auth.users.raw_app_meta_data->>'role' = 'clinician')
-        OR (auth.users.raw_app_meta_data->>'role' = 'admin')
-      )
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'diagnosis_runs'
+      AND policyname = 'diagnosis_runs_clinician_read'
+  ) THEN
+    CREATE POLICY "diagnosis_runs_clinician_read" ON public.diagnosis_runs
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM auth.users
+          WHERE auth.users.id = auth.uid()
+          AND (
+            (auth.users.raw_app_meta_data->>'role' = 'clinician')
+            OR (auth.users.raw_app_meta_data->>'role' = 'admin')
+          )
+        )
+      );
+  END IF;
+END $$;
 
 -- Clinicians and admins can create diagnosis runs
-CREATE POLICY "diagnosis_runs_clinician_insert" ON "public"."diagnosis_runs"
-  FOR INSERT
-  WITH CHECK (
-    clinician_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND (
-        (auth.users.raw_app_meta_data->>'role' = 'clinician')
-        OR (auth.users.raw_app_meta_data->>'role' = 'admin')
-      )
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'diagnosis_runs'
+      AND policyname = 'diagnosis_runs_clinician_insert'
+  ) THEN
+    CREATE POLICY "diagnosis_runs_clinician_insert" ON public.diagnosis_runs
+      FOR INSERT
+      WITH CHECK (
+        clinician_id = auth.uid()
+        AND EXISTS (
+          SELECT 1 FROM auth.users
+          WHERE auth.users.id = auth.uid()
+          AND (
+            (auth.users.raw_app_meta_data->>'role' = 'clinician')
+            OR (auth.users.raw_app_meta_data->>'role' = 'admin')
+          )
+        )
+      );
+  END IF;
+END $$;
 
 -- Only system can update diagnosis runs (worker processes)
 -- Note: In production, this would be restricted further with service role
-CREATE POLICY "diagnosis_runs_system_update" ON "public"."diagnosis_runs"
-  FOR UPDATE
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'diagnosis_runs'
+      AND policyname = 'diagnosis_runs_system_update'
+  ) THEN
+    CREATE POLICY "diagnosis_runs_system_update" ON public.diagnosis_runs
+      FOR UPDATE
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Clinicians and admins can read all diagnosis artifacts
-CREATE POLICY "diagnosis_artifacts_clinician_read" ON "public"."diagnosis_artifacts"
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND (
-        (auth.users.raw_app_meta_data->>'role' = 'clinician')
-        OR (auth.users.raw_app_meta_data->>'role' = 'admin')
-      )
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'diagnosis_artifacts'
+      AND policyname = 'diagnosis_artifacts_clinician_read'
+  ) THEN
+    CREATE POLICY "diagnosis_artifacts_clinician_read" ON public.diagnosis_artifacts
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM auth.users
+          WHERE auth.users.id = auth.uid()
+          AND (
+            (auth.users.raw_app_meta_data->>'role' = 'clinician')
+            OR (auth.users.raw_app_meta_data->>'role' = 'admin')
+          )
+        )
+      );
+  END IF;
+END $$;
 
 -- Only system can insert diagnosis artifacts (worker processes)
-CREATE POLICY "diagnosis_artifacts_system_insert" ON "public"."diagnosis_artifacts"
-  FOR INSERT
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'diagnosis_artifacts'
+      AND policyname = 'diagnosis_artifacts_system_insert'
+  ) THEN
+    CREATE POLICY "diagnosis_artifacts_system_insert" ON public.diagnosis_artifacts
+      FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- =============================================================================
 -- 6. UPDATED_AT TRIGGER

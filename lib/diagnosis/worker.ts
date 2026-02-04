@@ -120,7 +120,7 @@ export async function executeDiagnosisRun(
     
     let contextPack
     try {
-      contextPack = await buildPatientContextPack(run.patient_id, adminClient)
+      contextPack = await buildPatientContextPack(adminClient, run.patient_id)
     } catch (contextError) {
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.CONTEXT_PACK_ERROR,
