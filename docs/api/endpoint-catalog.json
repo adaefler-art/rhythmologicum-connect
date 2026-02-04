@@ -7103,6 +7103,30 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/patient/diagnosis/runs",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/diagnosis/runs/route.ts",
+      "intent": "diagnosis:patient:list",
+      "accessRole": "patient",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/diagnosis/[id]/client.tsx",
+          "apiPath": "/api/patient/diagnosis/runs",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/diagnosis/client.tsx",
+          "apiPath": "/api/patient/diagnosis/runs",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"

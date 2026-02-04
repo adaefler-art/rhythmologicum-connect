@@ -219,6 +219,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient/dashboard | GET | patient |  | 0 | apps/rhythm-patient-ui/app/api/patient/dashboard/route.ts |
 | /api/patient/dashboard | GET | patient |  | 0 | legacy/code/app/api/patient/dashboard/route.ts |
 | /api/patient/design | GET | patient |  | 1 | apps/rhythm-patient-ui/app/api/patient/design/route.ts |
+| /api/patient/diagnosis/runs | GET | patient | diagnosis:patient:list | 2 | apps/rhythm-patient-ui/app/api/patient/diagnosis/runs/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 | apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 | apps/rhythm-patient-ui/app/api/patient/onboarding-status/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 | legacy/code/app/api/patient/onboarding-status/route.ts |

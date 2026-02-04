@@ -14,6 +14,7 @@
  * - NEXT_PUBLIC_FEATURE_ANAMNESIS_EXPORT_ENABLED: Enable/disable anamnesis export endpoints (E75.6) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED: Enable/disable diagnosis execution worker (E76.4) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PROMPT_ENABLED: Enable/disable diagnosis prompt API (E76.5) (default: false)
+ * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PATIENT_ENABLED: Enable/disable diagnosis patient UI (E76.6) (default: false)
  */
 
 import { env } from '@/lib/env'
@@ -29,6 +30,7 @@ export type FeatureFlags = {
   ANAMNESIS_EXPORT_ENABLED: boolean
   DIAGNOSIS_ENABLED: boolean
   DIAGNOSIS_PROMPT_ENABLED: boolean
+  DIAGNOSIS_PATIENT_ENABLED: boolean
 }
 
 function resolveFlag(value: string | undefined, defaultValue: boolean): boolean {
@@ -62,6 +64,10 @@ export const featureFlags: FeatureFlags = {
   DIAGNOSIS_ENABLED: resolveFlag(env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED, false),
   DIAGNOSIS_PROMPT_ENABLED: resolveFlag(
     env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_PROMPT_ENABLED,
+    false,
+  ),
+  DIAGNOSIS_PATIENT_ENABLED: resolveFlag(
+    env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_PATIENT_ENABLED,
     false,
   ),
 }
