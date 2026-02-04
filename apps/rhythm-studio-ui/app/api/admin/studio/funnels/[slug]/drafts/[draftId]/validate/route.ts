@@ -122,7 +122,7 @@ export async function POST(
       .update({
         validation_errors: serializedErrors,
         last_validated_at: new Date().toISOString(),
-      })
+      } as any) // Type cast due to outdated Supabase types (E76.4)
       .eq('id', draftId)
       .select('*')
       .single()

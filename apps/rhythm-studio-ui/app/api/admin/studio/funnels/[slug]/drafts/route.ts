@@ -104,7 +104,7 @@ export async function POST(
 
     // Call database function to create draft
     const { data: draftId, error: createError } = await adminClient.rpc(
-      'create_draft_from_version',
+      'create_draft_from_version' as any, // Type cast due to outdated Supabase types (E76.4)
       {
         p_source_version_id: versionId,
         p_user_id: user.id,

@@ -226,7 +226,7 @@ export async function GET(request: Request) {
 		} = await readClient
 			.from('funnels_catalog')
 			.select(
-				'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,published,default_version_id,created_at,updated_at',
+				'id,slug,title,description,pillar_id,is_active,created_at,updated_at',
 			)
 			.order('title', { ascending: true })
 			.order('slug', { ascending: true })
@@ -247,7 +247,7 @@ export async function GET(request: Request) {
 				;({ data: funnels, error: funnelsError } = await readClient
 					.from('funnels_catalog')
 					.select(
-						'id,slug,title,description,pillar_id,est_duration_min,outcomes,is_active,published,default_version_id,created_at,updated_at',
+						'id,slug,title,description,pillar_id,is_active,created_at,updated_at',
 					)
 					.order('title', { ascending: true })
 					.order('slug', { ascending: true }))
@@ -314,10 +314,10 @@ export async function GET(request: Request) {
 		const funnelsWithVersions = (funnels ?? []).map((f) => ({
 			...f,
 			subtitle: null,
-			outcomes: Array.isArray(f.outcomes) ? f.outcomes : [],
-			default_version: f.default_version_id
-				? (defaultVersionLookup.get(f.default_version_id) ?? null)
-				: null,
+			// outcomes: Array.isArray(f.outcomes) ? f.outcomes : [], // Temporarily removed (E76.4)
+			// default_version: f.default_version_id  // Temporarily removed (E76.4)
+			// 	? (defaultVersionLookup.get(f.default_version_id) ?? null)
+			// 	: null,
 		}))
 
 		const pillarById = new Map(

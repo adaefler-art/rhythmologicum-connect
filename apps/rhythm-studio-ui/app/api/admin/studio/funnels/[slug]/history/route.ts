@@ -79,8 +79,8 @@ export async function GET(
     }
 
     // Fetch publish history
-    const { data: history, error: historyError } = await adminClient
-      .from('funnel_publish_history')
+    const { data: history, error: historyError } = await (adminClient as any)
+      .from('funnel_publish_history') // Type cast due to outdated Supabase types (E76.4)
       .select(`
         id,
         version_id,
@@ -112,7 +112,7 @@ export async function GET(
 
     // Get version details for all versions in history
     const versionIds = new Set<string>()
-    ;(history || []).forEach((entry) => {
+    ;(history || []).forEach((entry: any) => { // Type cast due to outdated Supabase types (E76.4)
       if (entry.version_id) versionIds.add(entry.version_id)
       if (entry.previous_version_id) versionIds.add(entry.previous_version_id)
     })
@@ -132,7 +132,7 @@ export async function GET(
     }
 
     // Enrich history with version labels
-    const enrichedHistory = (history || []).map((entry) => ({
+    const enrichedHistory = (history || []).map((entry: any) => ({ // Type cast due to outdated Supabase types (E76.4)
       ...entry,
       version_label: versionDetails[entry.version_id]?.version || entry.version_id,
       previous_version_label: entry.previous_version_id

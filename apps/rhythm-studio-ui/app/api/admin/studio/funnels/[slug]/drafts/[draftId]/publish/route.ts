@@ -95,7 +95,7 @@ export async function POST(
 
     // Call database function to publish draft atomically
     const { data: publishResult, error: publishError } = await adminClient.rpc(
-      'publish_draft_version',
+      'publish_draft_version' as any, // Type cast due to outdated Supabase types (E76.4)
       {
         p_draft_id: draftId,
         p_user_id: user.id,

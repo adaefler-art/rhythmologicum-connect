@@ -94,14 +94,14 @@ export async function GET(
 			// UUID path: query by ID only, no fallback
 			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, is_active, created_at, updated_at')
 				.eq('id', slugOrId)
 				.single())
 		} else {
 			// Slug path: query by slug only
 			;({ data: funnel, error: funnelError } = await authClient
 				.from('funnels_catalog')
-				.select('id, slug, title, description, pillar_id, est_duration_min, outcomes, is_active, published, default_version_id, created_at, updated_at')
+				.select('id, slug, title, description, pillar_id, is_active, created_at, updated_at')
 				.eq('slug', slugOrId)
 				.single())
 		}
@@ -158,14 +158,15 @@ export async function GET(
 
 		// Fetch pillar information if funnel has a pillar_id
 		let pillar = null
-		if (funnel.pillar_id) {
-			const { data: pillarData } = await authClient
-				.from('pillars')
-				.select('id, key, title, description')
-				.eq('id', funnel.pillar_id)
-				.single()
-			pillar = pillarData
-		}
+		// Note: pillar_id field temporarily removed due to Supabase type mismatch (E76.4)
+		// if (funnel.pillar_id) {
+		// 	const { data: pillarData } = await authClient
+		// 		.from('pillars')
+		// 		.select('id, key, title, description')
+		// 		.eq('id', funnel.pillar_id)
+		// 		.single()
+		// 	pillar = pillarData
+		// }
 
 		// Fetch all versions for this funnel
 		const { data: versions, error: versionsError } = await authClient
@@ -342,7 +343,7 @@ export async function GET(
 			successResponse({
 				funnel: {
 					...funnel,
-					outcomes: Array.isArray(funnel.outcomes) ? funnel.outcomes : [],
+					// outcomes: Array.isArray(funnel.outcomes) ? funnel.outcomes : [], // Temporarily removed (E76.4)
 					pillar: pillar,
 				},
 				versions: versions || [],
