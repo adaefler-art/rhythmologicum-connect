@@ -196,7 +196,6 @@ export async function POST(request: NextRequest) {
         status: newRun.status,
         created_at: newRun.created_at,
         is_duplicate: false,
-        inputs_hash: inputs_hash.substring(0, 12) + '...', // Truncated for response
       },
     })
   } catch (error) {
