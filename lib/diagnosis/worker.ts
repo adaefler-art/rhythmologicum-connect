@@ -14,7 +14,7 @@
 
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/supabase'
+import type { Database, Json } from '@/lib/types/supabase'
 import { env } from '@/lib/env'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import {
@@ -327,7 +327,7 @@ async function updateRunAsFailed(
   error: {
     code: DiagnosisErrorCode
     message: string
-    details?: Record<string, unknown>
+    details?: Json
   },
 ): Promise<void> {
   await adminClient
@@ -337,7 +337,7 @@ async function updateRunAsFailed(
       completed_at: new Date().toISOString(),
       error_code: error.code,
       error_message: error.message,
-      error_details: error.details || null,
+      error_details: error.details ?? null,
     })
     .eq('id', runId)
 }
