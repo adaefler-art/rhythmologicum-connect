@@ -13,6 +13,15 @@ type QuestionData = {
   question_type?: string
 } | null
 
+type AnswerRow = {
+  id: string
+  question_id: string
+  answer_value: number | null
+  answer_data: unknown
+  created_at: string
+  questions?: QuestionData
+}
+
 /**
  * E74.8 — Clinician Assessment Run Timeline Details
  * 
@@ -198,7 +207,7 @@ export async function GET(
     }
 
     // Transform answers data
-    const answers = (answersData || []).map((answer) => {
+    const answers = ((answersData as AnswerRow[]) || []).map((answer) => {
       const questionData = answer.questions as QuestionData
       return {
         id: answer.id,
