@@ -46,8 +46,13 @@ MCP_SERVER_PORT=3001          # Server port (default: 3001)
 MCP_SERVER_HOST=0.0.0.0       # Server host (default: 0.0.0.0)
 MCP_SERVER_URL=http://localhost:3001  # For API proxy
 
-# LLM configuration (for future integration)
-LLM_API_KEY=your-key-here     # Automatically redacted in logs
+# LLM configuration
+ANTHROPIC_API_KEY=your-key-here     # Preferred Anthropic key (redacted in logs)
+ANTHROPIC_API_TOKEN=your-key-here   # Legacy fallback key
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
+
+# MCP behavior
+FEATURE_MCP_STUB=false              # true -> deterministic stub responses for run_diagnosis
 ```
 
 ## API Endpoints

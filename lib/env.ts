@@ -135,6 +135,7 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   MCP_SERVER_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
   MCP_SERVER_HOST: z.preprocess(sanitizeEnvString, z.string().optional()),
   MCP_SERVER_PORT: z.preprocess(sanitizeEnvString, z.string().optional()),
+  FEATURE_MCP_STUB: z.string().optional(),
 })
 
 const patientEnvSchema = baseEnvSchema.extend({
@@ -231,6 +232,7 @@ function getRawServerEnv() {
     MCP_SERVER_URL: process.env.MCP_SERVER_URL,
     MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
+    FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
   }
 }
 
@@ -289,6 +291,7 @@ export type Env = {
   MCP_SERVER_URL?: string
   MCP_SERVER_HOST?: string
   MCP_SERVER_PORT?: string
+  FEATURE_MCP_STUB?: string
 }
 
 /**
@@ -339,6 +342,7 @@ function getDefaultEnv(): Env {
     STUDIO_BASE_URL: process.env.STUDIO_BASE_URL,
     PATIENT_BASE_URL: process.env.PATIENT_BASE_URL,
     ENGINE_BASE_URL: process.env.ENGINE_BASE_URL,
+    FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
   }
 }
 
@@ -409,6 +413,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       STUDIO_BASE_URL: parsed.STUDIO_BASE_URL,
       PATIENT_BASE_URL: parsed.PATIENT_BASE_URL,
       ENGINE_BASE_URL: parsed.ENGINE_BASE_URL,
+      FEATURE_MCP_STUB: parsed.FEATURE_MCP_STUB,
     } as z.infer<T>
   } catch (error) {
     if (error instanceof z.ZodError) {

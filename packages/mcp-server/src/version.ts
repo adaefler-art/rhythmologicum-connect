@@ -8,7 +8,7 @@
  */
 
 export const MCP_SERVER_VERSION = '0.1.0'
-export const PROMPT_VERSION = 'v1'
+export const PROMPT_VERSION = 'v1.0.0'
 
 export interface VersionMetadata {
   mcp_server_version: string
