@@ -82,7 +82,7 @@ export async function GET(
     }
 
     // Fetch draft
-    const { data: draft, error: draftError } = await adminClient
+    const { data: draft, error: draftError } = await (adminClient as any)
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
@@ -184,7 +184,7 @@ export async function PUT(
     }
 
     // Fetch current draft
-    const { data: currentDraft, error: draftError } = await adminClient
+    const { data: currentDraft, error: draftError } = await (adminClient as any)
       .from('funnel_versions')
       .select('*')
       .eq('id', draftId)
