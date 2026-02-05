@@ -302,4 +302,5 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/tasks/[id] | PATCH | clinician |  | 13 | legacy/code/app/api/tasks/[id]/route.ts |
 | /api/test/correlation-id | GET | system |  | 0 | apps/rhythm-legacy/app/api/test/correlation-id/route.ts |
 | /api/test/correlation-id | GET | system |  | 0 | legacy/code/app/api/test/correlation-id/route.ts |
+| /api/triage/fix-membership | POST | clinician |  | 1 | apps/rhythm-studio-ui/app/api/triage/fix-membership/route.ts |
 | /api/triage/health | GET | clinician |  | 1 | apps/rhythm-studio-ui/app/api/triage/health/route.ts |

@@ -3767,6 +3767,122 @@ COMMENT ON VIEW "public"."pending_account_deletions" IS 'V05-I10.2: View of acco
 
 
 
+CREATE OR REPLACE VIEW "public"."triage_cases_v1" AS
+WITH 
+  latest_jobs AS (
+    SELECT DISTINCT ON (assessment_id)
+      assessment_id,
+      id AS job_id,
+      status AS job_status,
+      stage AS job_stage,
+      attempt,
+      max_attempts,
+      delivery_status,
+      created_at AS job_created_at
+    FROM processing_jobs
+    ORDER BY assessment_id, created_at DESC
+  ),
+  latest_reviews AS (
+    SELECT DISTINCT ON (pj.assessment_id)
+      pj.assessment_id,
+      rr.status AS review_status,
+      rr.decided_at
+    FROM review_records rr
+    JOIN processing_jobs pj ON pj.id = rr.job_id
+    ORDER BY pj.assessment_id, rr.created_at DESC
+  ),
+  attention_computation AS (
+    SELECT
+      a.id AS assessment_id,
+      ARRAY_REMOVE(ARRAY[
+        CASE WHEN (
+          EXISTS (SELECT 1 FROM reports r WHERE r.assessment_id = a.id AND r.risk_level = 'high')
+          OR EXISTS (SELECT 1 FROM risk_bundles rb JOIN latest_jobs lj ON lj.job_id = rb.job_id WHERE lj.assessment_id = a.id AND rb.bundle_data->>'overall_risk_level' = 'critical')
+          OR EXISTS (SELECT 1 FROM safety_check_results scr JOIN latest_jobs lj ON lj.job_id = scr.job_id WHERE lj.assessment_id = a.id AND scr.overall_action = 'BLOCK')
+        ) THEN 'critical_flag'::text END,
+        CASE WHEN (a.status = 'in_progress' AND a.started_at < (NOW() - INTERVAL '7 days') AND a.completed_at IS NULL) THEN 'overdue'::text END,
+        CASE WHEN (a.status = 'completed' AND a.completed_at < (NOW() - INTERVAL '2 days') AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'overdue'::text END,
+        CASE WHEN (EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'failed' AND lj.attempt >= lj.max_attempts) OR (a.status = 'in_progress' AND a.started_at < (NOW() - INTERVAL '14 days') AND a.completed_at IS NULL)) THEN 'stuck'::text END,
+        CASE WHEN (a.status = 'completed' AND a.workup_status = 'ready_for_review' AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status != 'PENDING')) THEN 'review_ready'::text END,
+        CASE WHEN (a.status = 'in_progress' AND a.missing_data_fields IS NOT NULL AND jsonb_array_length(a.missing_data_fields) > 0) THEN 'missing_data'::text END
+      ], NULL) AS attention_items_array
+    FROM assessments a
+    LEFT JOIN latest_jobs lj ON lj.assessment_id = a.id
+  )
+SELECT
+  a.id AS case_id,
+  a.patient_id,
+  a.funnel_id,
+  f.slug AS funnel_slug,
+  pp.first_name,
+  pp.last_name,
+  pp.preferred_name,
+  COALESCE(pp.preferred_name, CONCAT(pp.first_name, ' ', pp.last_name)) AS patient_display,
+  CASE
+    WHEN (a.status = 'completed' AND (EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status = 'APPROVED') OR EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.delivery_status = 'DELIVERED'))) THEN 'resolved'::text
+    WHEN (a.status = 'completed' AND a.workup_status = 'ready_for_review' AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'ready_for_review'::text
+    WHEN (a.status = 'completed' AND EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'completed' AND lj.job_stage = 'report_generated') AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'ready_for_review'::text
+    WHEN (a.status = 'in_progress' AND a.workup_status = 'needs_more_data' AND a.completed_at IS NULL) THEN 'needs_input'::text
+    WHEN (a.status = 'in_progress' AND a.completed_at IS NULL) THEN 'in_progress'::text
+    ELSE 'in_progress'::text
+  END AS case_state,
+  ac.attention_items_array AS attention_items,
+  CASE
+    WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 'critical'::text
+    WHEN 'overdue' = ANY(ac.attention_items_array) OR 'stuck' = ANY(ac.attention_items_array) THEN 'warn'::text
+    WHEN array_length(ac.attention_items_array, 1) > 0 THEN 'info'::text
+    ELSE 'none'::text
+  END AS attention_level,
+  CASE
+    WHEN (a.status = 'completed' AND a.workup_status = 'ready_for_review' AND 'critical_flag' = ANY(ac.attention_items_array)) THEN 'clinician_review'::text
+    WHEN ('stuck' = ANY(ac.attention_items_array) AND EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'failed' AND lj.attempt >= lj.max_attempts)) THEN 'admin_investigate'::text
+    WHEN (a.status = 'completed' AND a.workup_status = 'ready_for_review') THEN 'clinician_review'::text
+    WHEN (a.status = 'in_progress' AND 'stuck' = ANY(ac.attention_items_array)) THEN 'clinician_contact'::text
+    WHEN (EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'failed' AND lj.attempt < lj.max_attempts)) THEN 'system_retry'::text
+    WHEN (a.status = 'in_progress' AND a.workup_status = 'needs_more_data') THEN 'patient_provide_data'::text
+    WHEN (a.status = 'in_progress' AND NOT ('stuck' = ANY(ac.attention_items_array))) THEN 'patient_continue'::text
+    WHEN (a.status = 'completed' AND (EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status = 'APPROVED') OR EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.delivery_status = 'DELIVERED'))) THEN 'none'::text
+    ELSE 'patient_continue'::text
+  END AS next_action,
+  a.started_at AS assigned_at,
+  GREATEST(a.started_at, COALESCE(lj.job_created_at, a.started_at), COALESCE(lr.decided_at, a.started_at)) AS last_activity_at,
+  a.started_at AS updated_at,
+  a.completed_at,
+  CASE
+    WHEN (a.status = 'completed' AND (EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status = 'APPROVED') OR EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.delivery_status = 'DELIVERED'))) THEN false
+    ELSE true
+  END AS is_active,
+  NULL::timestamptz AS snoozed_until,
+  (
+    CASE WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 500 WHEN 'overdue' = ANY(ac.attention_items_array) OR 'stuck' = ANY(ac.attention_items_array) THEN 300 WHEN array_length(ac.attention_items_array, 1) > 0 THEN 100 ELSE 0 END +
+    CASE WHEN a.status = 'completed' AND a.workup_status = 'ready_for_review' THEN 200 WHEN a.status = 'in_progress' AND a.workup_status = 'needs_more_data' THEN 150 WHEN a.status = 'in_progress' THEN 50 ELSE 0 END +
+    LEAST(EXTRACT(EPOCH FROM (NOW() - a.started_at))::INTEGER / 86400 * 2, 100) +
+    CASE WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 200 ELSE 0 END +
+    CASE WHEN 'stuck' = ANY(ac.attention_items_array) THEN 150 ELSE 0 END +
+    CASE WHEN 'overdue' = ANY(ac.attention_items_array) THEN 100 ELSE 0 END
+  )::INTEGER AS priority_score,
+  lj.job_id,
+  lj.job_status,
+  lj.job_stage,
+  lj.delivery_status,
+  lr.review_status,
+  lr.decided_at AS review_decided_at
+FROM assessments a
+LEFT JOIN latest_jobs lj ON lj.assessment_id = a.id
+LEFT JOIN latest_reviews lr ON lr.assessment_id = a.id
+LEFT JOIN attention_computation ac ON ac.assessment_id = a.id
+LEFT JOIN patient_profiles pp ON pp.id = a.patient_id
+LEFT JOIN funnels_catalog f ON f.id = a.funnel_id
+WHERE a.status IN ('in_progress', 'completed');
+
+
+ALTER VIEW "public"."triage_cases_v1" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."triage_cases_v1" IS 'E78.2: SSOT aggregation view for triage inbox. Provides deterministic case states, attention items, and next actions based on E78.1 specification. No direct risk/score fields exposed.';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."pillars" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "key" "text" NOT NULL,
