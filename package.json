@@ -59,6 +59,7 @@
     "db:migrate": "supabase migration up",
     "db:seed": "supabase db reset",
     "db:seed:verify": "pwsh -File scripts/verify/verify-e6-4-10-seed.ps1",
+    "db:seed:org": "node scripts/db/seed-org-membership.js",
     "db:diff": "supabase db diff",
     "db:verify": "pwsh -File scripts/verify-db-determinism.ps1",
     "db:verify-sync": "pwsh -File scripts/verify-migration-sync.ps1",

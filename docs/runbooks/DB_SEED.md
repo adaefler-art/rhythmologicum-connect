@@ -175,6 +175,45 @@ This script (located at `scripts/verify/verify-e6-4-10-seed.ps1`) checks:
 - Onboarding states
 - Funnel configurations
 
+---
+
+## Org Membership Bootstrap (Dev/Staging)
+
+If Studio shows `RLS_BLOCKING`, ensure the Studio user and the patient belong to the same
+organization. Use the bootstrapper:
+
+```bash
+npm run db:seed:org
+```
+
+### Required Environment Variables
+
+Server connection:
+- `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`)
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Studio user (one of):
+- `STUDIO_ADMIN_USER_ID`
+- `STUDIO_ADMIN_EMAIL`
+
+Patient (one of):
+- `SEED_PATIENT_USER_ID`
+- `SEED_PATIENT_EMAIL`
+- `SEED_PATIENT_PROFILE_ID`
+- `SEED_ASSESSMENT_ID`
+
+Optional:
+- `ORG_ID` (if you want a fixed org ID)
+- `ORG_SLUG` (default: `pilot-org`)
+- `ORG_NAME` (default: `Pilot Organization`)
+- `STUDIO_ROLE` (default: `admin`, use `clinician` if needed)
+
+### Behavior
+
+- Ensures the org exists (create-if-missing by slug).
+- Upserts `user_org_membership` for the Studio user and the patient (idempotent).
+- Keeps RLS unchanged; only fixes org membership for visibility.
+
 ### Acceptance Criteria (E6.4.10)
 
 #### AC1: Deterministic Seeds ✅
