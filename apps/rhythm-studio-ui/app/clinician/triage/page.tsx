@@ -201,6 +201,7 @@ export default function InboxPage() {
     }
   }, [])
 
+  // PatientKey SSOT: /clinician/patient/[id] expects patient_profiles.id
   const getPatientDisplay = useCallback((row: TriageCase) => {
     const display = row.patient_display?.trim()
     if (display) return display
@@ -211,8 +212,14 @@ export default function InboxPage() {
       .trim()
 
     if (nameFallback) return nameFallback
-    if (row.patient_id) return `Patient ${row.patient_id.slice(0, 8)}`
-    return 'Unbekannt'
+    if (row.patient_id) return 'Patientin (kein Zugriff)'
+    return 'Patientin (nicht gefunden)'
+  }, [])
+
+  const getPatientResolutionStatus = useCallback((row: TriageCase) => {
+    if (row.patient_display?.trim()) return 'FOUND'
+    if (row.patient_id) return 'RLS_BLOCKED'
+    return 'NOT_FOUND'
   }, [])
 
   const getFunnelDisplay = useCallback((row: TriageCase) => {
@@ -285,9 +292,18 @@ export default function InboxPage() {
       {
         header: 'Patient:in',
         accessor: (row) => (
-          <span className="font-medium text-slate-900 dark:text-slate-50">
-            {getPatientDisplay(row)}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="font-medium text-slate-900 dark:text-slate-50">
+              {getPatientDisplay(row)}
+            </span>
+            {getPatientResolutionStatus(row) !== 'FOUND' && (
+              <span className="text-xs text-amber-600 dark:text-amber-300">
+                {getPatientResolutionStatus(row) === 'RLS_BLOCKED'
+                  ? 'Kein Zugriff auf Profil'
+                  : 'Profil nicht gefunden'}
+              </span>
+            )}
+          </div>
         ),
         sortable: true,
       },
@@ -420,6 +436,7 @@ export default function InboxPage() {
       getAttentionBadge,
       getNextActionLabel,
       getPatientDisplay,
+      getPatientResolutionStatus,
       getFunnelDisplay,
       formatDateTime,
       handleRowClick,

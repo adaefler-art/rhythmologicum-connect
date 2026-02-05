@@ -116,6 +116,7 @@ function mapSupabaseErrorToEvidenceCode(error: unknown, source: string): string 
 export default function PatientDetailPage() {
   const params = useParams()
   const router = useRouter()
+  // PatientKey SSOT: /clinician/patient/[id] expects patient_profiles.id
   const patientId = params.id as string
 
   const [loading, setLoading] = useState(true)
@@ -154,8 +155,8 @@ export default function PatientDetailPage() {
         setError(null)
 
         const logProfileResolution = (details: {
-          lookupBy: 'id' | 'user_id'
-          outcome: 'match' | 'not_found' | 'multiple' | 'error'
+          lookupBy: 'id'
+          outcome: 'match' | 'not_found' | 'multiple' | 'rls_blocked' | 'error'
           rowCount: number | null
         }) => {
           console.info(
@@ -169,66 +170,78 @@ export default function PatientDetailPage() {
         }
 
         const resolvePatientProfile = async (): Promise<PatientProfile | null> => {
-          const lookups = [
-            { lookupBy: 'id' as const, column: 'id' },
-            { lookupBy: 'user_id' as const, column: 'user_id' },
-          ]
+          const { data, error: profileError } = await supabase
+            .from('patient_profiles')
+            .select('*')
+            .eq('id', patientId)
+            .maybeSingle()
 
-          for (const lookup of lookups) {
-            const { data, error: profileError } = await supabase
-              .from('patient_profiles')
-              .select('*')
-              .eq(lookup.column, patientId)
-              .maybeSingle()
-
-            if (profileError) {
-              if ((profileError as { code?: string }).code === 'PGRST116') {
-                const { data: diagnosticRows } = await supabase
-                  .from('patient_profiles')
-                  .select('id')
-                  .eq(lookup.column, patientId)
-                  .limit(2)
-
-                logProfileResolution({
-                  lookupBy: lookup.lookupBy,
-                  outcome: 'multiple',
-                  rowCount: diagnosticRows?.length ?? 0,
-                })
-                return null
-              }
+          if (profileError) {
+            if ((profileError as { code?: string }).code === 'PGRST116') {
+              const { data: diagnosticRows } = await supabase
+                .from('patient_profiles')
+                .select('id')
+                .eq('id', patientId)
+                .limit(2)
 
               logProfileResolution({
-                lookupBy: lookup.lookupBy,
-                outcome: 'error',
-                rowCount: null,
+                lookupBy: 'id',
+                outcome: 'multiple',
+                rowCount: diagnosticRows?.length ?? 0,
               })
-              throw profileError
-            }
-
-            if (data) {
-              logProfileResolution({
-                lookupBy: lookup.lookupBy,
-                outcome: 'match',
-                rowCount: 1,
-              })
-              return data
+              return null
             }
 
             logProfileResolution({
-              lookupBy: lookup.lookupBy,
-              outcome: 'not_found',
-              rowCount: 0,
+              lookupBy: 'id',
+              outcome: 'error',
+              rowCount: null,
             })
+            throw profileError
           }
+
+          if (data) {
+            logProfileResolution({
+              lookupBy: 'id',
+              outcome: 'match',
+              rowCount: 1,
+            })
+            return data
+          }
+
+          logProfileResolution({
+            lookupBy: 'id',
+            outcome: 'not_found',
+            rowCount: 0,
+          })
 
           return null
         }
 
         const resolvedProfile = await resolvePatientProfile()
         if (!resolvedProfile) {
+          const { data: assessmentProbe, error: assessmentError } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('patient_id', patientId)
+            .limit(1)
+
+          const hasAssessment = !assessmentError && (assessmentProbe?.length ?? 0) > 0
+          const errorMessage = hasAssessment
+            ? 'Kein Zugriff auf patient_profiles (RLS).' 
+            : 'Patientenprofil nicht gefunden.'
+
+          if (hasAssessment) {
+            logProfileResolution({
+              lookupBy: 'id',
+              outcome: 'rls_blocked',
+              rowCount: 0,
+            })
+          }
+
           setPatient(null)
           setResolvedPatientId(null)
-          setError('Patientenprofil nicht gefunden.')
+          setError(errorMessage)
           return
         }
 
