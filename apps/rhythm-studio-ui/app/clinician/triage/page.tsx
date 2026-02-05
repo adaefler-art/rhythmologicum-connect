@@ -57,6 +57,7 @@ export default function TriagePage() {
   const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
   const [diagnosis, setDiagnosis] = useState<TriageDiagnosisResult | null>(null)
   const [healthAssessmentsTotal, setHealthAssessmentsTotal] = useState<number | null>(null)
+  const [latestAssessmentId, setLatestAssessmentId] = useState<string | null>(null)
   const [retryTrigger, setRetryTrigger] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [baseCount, setBaseCount] = useState(0)
@@ -384,8 +385,11 @@ export default function TriagePage() {
         const payload = await response.json()
         const assessmentsTotal =
           typeof payload.assessmentsTotal === 'number' ? payload.assessmentsTotal : null
+        const latestAssessmentIdValue =
+          typeof payload.latestAssessmentId === 'string' ? payload.latestAssessmentId : null
 
         nextAssessmentsTotal = assessmentsTotal
+        setLatestAssessmentId(latestAssessmentIdValue)
 
         if (assessmentsTotal === 0) {
           nextError = 'Keine Daten in diesem Supabase-Projekt (0 Assessments laut Server).'
@@ -426,9 +430,29 @@ export default function TriagePage() {
   }, [diagnosis?.kind])
 
   // Retry handler that triggers data reload without full page refresh
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
+    if (diagnosis?.kind === 'NO_ROWS_VISIBLE' && healthAssessmentsTotal && latestAssessmentId) {
+      setLoading(true)
+      try {
+        const response = await fetch(
+          `/api/triage/fix-membership?assessmentId=${encodeURIComponent(latestAssessmentId)}`,
+          { method: 'POST' },
+        )
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null)
+          setError(payload?.error?.message || 'Konnte Mitgliedschaft nicht reparieren.')
+        }
+      } catch (err) {
+        setError('Konnte Mitgliedschaft nicht reparieren.')
+      } finally {
+        setRetryTrigger((prev) => prev + 1)
+      }
+      return
+    }
+
     setRetryTrigger((prev) => prev + 1)
-  }, [])
+  }, [diagnosis?.kind, healthAssessmentsTotal, latestAssessmentId])
 
   // Calculate statistics
   const stats = useMemo(() => {

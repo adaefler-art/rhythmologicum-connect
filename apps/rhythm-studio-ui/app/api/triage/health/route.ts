@@ -43,10 +43,31 @@ export async function GET() {
       )
     }
 
+    const { data: latestAssessment, error: latestError } = await adminClient
+      .from('assessments')
+      .select('id')
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (latestError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: latestError.message || 'Failed to fetch latest assessment',
+          },
+        },
+        { status: 500 },
+      )
+    }
+
     return NextResponse.json(
       {
         success: true,
         assessmentsTotal: assessmentsTotal ?? 0,
+        latestAssessmentId: latestAssessment?.id ?? null,
         projectUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
       },
       { status: 200 },
