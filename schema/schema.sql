@@ -7089,7 +7089,7 @@ CREATE POLICY "Staff can view org patient assessments" ON "public"."assessments"
      JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
   WHERE (("pp"."id" = "assessments"."patient_id") AND (EXISTS ( SELECT 1
            FROM "public"."user_org_membership" "uom2"
-          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role")))))))) OR (EXISTS ( SELECT 1
+          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND ("uom2"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"])))))))) OR (EXISTS ( SELECT 1
    FROM "public"."patient_profiles" "pp"
   WHERE (("pp"."id" = "assessments"."patient_id") AND "public"."is_assigned_to_patient"("pp"."user_id"))))));
 
