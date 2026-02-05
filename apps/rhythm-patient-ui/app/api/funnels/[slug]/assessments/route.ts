@@ -349,7 +349,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .insert({
         patient_id: patientProfile.id,
         funnel: slug,
-        funnel_id: isLegacyFunnel ? funnelId : null,
+        funnel_id: funnelId,
         status: 'in_progress',
         state: 'in_progress',
       })

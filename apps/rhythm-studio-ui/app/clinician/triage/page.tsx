@@ -36,96 +36,122 @@ type AssessmentTriage = {
   flagged_reason: string | null
 }
 
+type TriageDiagnosisKind =
+  | 'NO_SESSION'
+  | 'QUERY_ERROR'
+  | 'NO_ROWS_VISIBLE'
+  | 'JOIN_BLOCKED'
+  | 'OK'
+
+type TriageDiagnosisResult =
+  | { kind: 'NO_SESSION' }
+  | { kind: 'QUERY_ERROR'; message: string }
+  | { kind: 'NO_ROWS_VISIBLE' }
+  | { kind: 'JOIN_BLOCKED' }
+  | { kind: 'OK'; data: AssessmentTriage[] }
+
 export default function TriagePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
+  const [diagnosis, setDiagnosis] = useState<TriageDiagnosisResult | null>(null)
   const [retryTrigger, setRetryTrigger] = useState(0)
 
-  const loadTriageData = useCallback(async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-        const {
-          data: { user },
-          error: authError,
-        } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { kind: 'NO_SESSION' }
+    }
 
-        console.log('[triage] user', user?.id)
-
-        if (authError || !user) {
-          setError('Bitte einloggen, um Assessments zu sehen.')
-          setAssessments([])
-          setLoading(false)
-          return
-        }
-
-        // Query assessments with joined processing jobs and reports
-        const { data: assessmentsData, error: assessmentsError } = await supabase
-          .from('assessments')
-          .select(
-            `
+    const { data: assessmentsData, error: assessmentsError } = await supabase
+      .from('assessments')
+      .select(
+        `
+          id,
+          patient_id,
+          funnel,
+          funnel_id,
+          started_at,
+          completed_at,
+          status,
+          state,
+          patient_profiles!assessments_patient_id_fkey (
             id,
-            patient_id,
-            funnel,
-            funnel_id,
-            started_at,
-            completed_at,
-            status,
-            state,
-            patient_profiles!assessments_patient_id_fkey (
-              id,
-              full_name,
-              user_id
-            ),
-            funnels!assessments_funnel_id_fkey (
-              id,
-              slug,
-              title
-            )
-          `
+            full_name,
+            user_id
+          ),
+          funnels!assessments_funnel_id_fkey (
+            id,
+            slug,
+            title
           )
-          .order('started_at', { ascending: false })
-          .limit(100)
+        `,
+      )
+      .order('started_at', { ascending: false })
+      .limit(100)
 
-        if (assessmentsError) throw assessmentsError
+    if (assessmentsError) {
+      return {
+        kind: 'QUERY_ERROR',
+        message: assessmentsError.message || 'Unbekannter Fehler',
+      }
+    }
 
-        // Get processing jobs for these assessments
-        const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
+    const { data: bareData } = await supabase
+      .from('assessments')
+      .select('id, patient_id, started_at, completed_at, status', { count: 'exact' })
+      .limit(5)
+
+    const bareLen = bareData?.length ?? 0
+    const assessmentsLen = assessmentsData?.length ?? 0
+    const hasJoinData = (assessmentsData ?? []).some(
+      (row: any) => row.patient_profiles || row.funnels,
+    )
+
+    if (bareLen === 0) {
+      return { kind: 'NO_ROWS_VISIBLE' }
+    }
+
+    if (assessmentsLen === 0 || !hasJoinData) {
+      return { kind: 'JOIN_BLOCKED' }
+    }
+
+    const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
         
-        let processingData = null
-        let reportsData = null
-        let resultsData = null
+      let processingData = null
+      let reportsData = null
+      let resultsData = null
 
-        // Only query if there are assessments to avoid unnecessary queries
-        if (assessmentIds.length > 0) {
-          const { data: pData, error: processingError } = await supabase
-            .from('processing_jobs')
-            .select('assessment_id, status, stage, delivery_status')
-            .in('assessment_id', assessmentIds)
+    if (assessmentIds.length > 0) {
+      const { data: pData, error: processingError } = await supabase
+        .from('processing_jobs')
+        .select('assessment_id, status, stage, delivery_status')
+        .in('assessment_id', assessmentIds)
 
-          if (processingError) console.warn('Processing jobs query failed:', processingError)
-          processingData = pData
+      if (processingError) console.warn('Processing jobs query failed:', processingError)
+      processingData = pData
 
-          // Get reports for these assessments
-          const { data: rData, error: reportsError } = await supabase
-            .from('reports')
-            .select('assessment_id, id, status, risk_level')
-            .in('assessment_id', assessmentIds)
+      const { data: rData, error: reportsError } = await supabase
+        .from('reports')
+        .select('assessment_id, id, status, risk_level')
+        .in('assessment_id', assessmentIds)
 
-          if (reportsError) console.warn('Reports query failed:', reportsError)
-          reportsData = rData
+      if (reportsError) console.warn('Reports query failed:', reportsError)
+      reportsData = rData
 
-          const { data: crData, error: resultsError } = await supabase
-            .from('calculated_results')
-            .select('assessment_id, scores, risk_models, computed_at')
-            .in('assessment_id', assessmentIds)
+      const { data: crData, error: resultsError } = await supabase
+        .from('calculated_results')
+        .select('assessment_id, scores, risk_models, computed_at')
+        .in('assessment_id', assessmentIds)
 
-          if (resultsError) console.warn('Calculated results query failed:', resultsError)
-          resultsData = crData
-        }
+      if (resultsError) console.warn('Calculated results query failed:', resultsError)
+      resultsData = crData
+    }
 
         // Map processing and report data
         const processingMap = new Map(
@@ -138,100 +164,132 @@ export default function TriagePage() {
           (resultsData ?? []).map((r: any) => [r.assessment_id, r])
         )
 
-        // Transform data to triage format
-        const triageData: AssessmentTriage[] = (assessmentsData ?? []).map((a: any) => {
-          const processing = processingMap.get(a.id)
-          const report = reportsMap.get(a.id)
-          const calculated = resultsMap.get(a.id)
-          const riskLevel =
-            calculated?.risk_models?.riskLevel ||
-            calculated?.risk_models?.risk_level ||
-            report?.risk_level ||
-            null
-          const riskScore =
-            calculated?.scores?.riskScore ??
-            calculated?.scores?.stress_score ??
-            null
-          const resultComputedAt = calculated?.computed_at || null
-          
-          // Determine triage status
-          let triageStatus: TriageStatus
-          let flaggedReason: string | null = null
+    const triageData: AssessmentTriage[] = (assessmentsData ?? []).map((a: any) => {
+      const processing = processingMap.get(a.id)
+      const report = reportsMap.get(a.id)
+      const calculated = resultsMap.get(a.id)
+      const riskLevel =
+        calculated?.risk_models?.riskLevel ||
+        calculated?.risk_models?.risk_level ||
+        report?.risk_level ||
+        null
+      const riskScore = calculated?.scores?.riskScore ?? calculated?.scores?.stress_score ?? null
+      const resultComputedAt = calculated?.computed_at || null
 
-          if (a.status === 'in_progress') {
-            // Assessment not yet completed by patient
-            triageStatus = 'incomplete'
-          } else if (a.completed_at && processing) {
-            // Assessment completed and has processing job
-            if (processing.status === 'failed') {
-              triageStatus = 'flagged'
-              flaggedReason = 'Processing failed'
-            } else if (calculated) {
-              triageStatus = 'report_ready'
-              if (riskLevel === 'high' || riskLevel === 'critical') {
-                triageStatus = 'flagged'
-                flaggedReason = 'High risk detected'
-              }
-            } else if (
-              processing.status === 'queued' ||
-              processing.status === 'in_progress'
-            ) {
-              triageStatus = 'processing'
-            } else {
-              // Processing job exists but status is unknown - assume report ready
-              triageStatus = calculated ? 'report_ready' : 'processing'
-            }
-          } else if (a.completed_at && !processing) {
-            // Assessment completed but no processing job yet - awaiting processing
-            triageStatus = calculated ? 'report_ready' : 'processing'
-            if (calculated && (riskLevel === 'high' || riskLevel === 'critical')) {
-              triageStatus = 'flagged'
-              flaggedReason = 'High risk detected'
-            }
-          } else {
-            // Fallback for unexpected states - treat as incomplete
-            triageStatus = 'incomplete'
+      let triageStatus: TriageStatus
+      let flaggedReason: string | null = null
+
+      if (a.status === 'in_progress') {
+        triageStatus = 'incomplete'
+      } else if (a.completed_at && processing) {
+        if (processing.status === 'failed') {
+          triageStatus = 'flagged'
+          flaggedReason = 'Processing failed'
+        } else if (calculated) {
+          triageStatus = 'report_ready'
+          if (riskLevel === 'high' || riskLevel === 'critical') {
+            triageStatus = 'flagged'
+            flaggedReason = 'High risk detected'
           }
-
-          return {
-            assessment_id: a.id,
-            patient_id: a.patient_id,
-            patient_name:
-              a.patient_profiles?.full_name ??
-              a.patient_profiles?.user_id ??
-              'Unbekannt',
-            funnel_slug: a.funnel || a.funnels?.slug || 'unknown',
-            funnel_title: a.funnels?.title || null,
-            started_at: a.started_at,
-            completed_at: a.completed_at,
-            assessment_status: a.status,
-            assessment_state: a.state,
-            processing_status: processing?.status || null,
-            processing_stage: processing?.stage || null,
-            report_status: report?.status || null,
-            report_id: report?.id || null,
-            risk_level: riskLevel,
-            risk_score: typeof riskScore === 'number' ? riskScore : null,
-            result_computed_at: resultComputedAt,
-            triage_status: triageStatus,
-            flagged_reason: flaggedReason,
-          }
-        })
-
-        setAssessments(triageData)
-      } catch (e: unknown) {
-        console.error(e)
-        const errorMessage =
-          e instanceof Error ? e.message : 'Fehler beim Laden der Triage-Daten.'
-        setError(errorMessage)
-      } finally {
-        setLoading(false)
+        } else if (processing.status === 'queued' || processing.status === 'in_progress') {
+          triageStatus = 'processing'
+        } else {
+          triageStatus = calculated ? 'report_ready' : 'processing'
+        }
+      } else if (a.completed_at && !processing) {
+        triageStatus = calculated ? 'report_ready' : 'processing'
+        if (calculated && (riskLevel === 'high' || riskLevel === 'critical')) {
+          triageStatus = 'flagged'
+          flaggedReason = 'High risk detected'
+        }
+      } else {
+        triageStatus = 'incomplete'
       }
-    }, [])
+
+      return {
+        assessment_id: a.id,
+        patient_id: a.patient_id,
+        patient_name: a.patient_profiles?.full_name ?? a.patient_profiles?.user_id ?? 'Unbekannt',
+        funnel_slug: a.funnel || a.funnels?.slug || 'unknown',
+        funnel_title: a.funnels?.title || null,
+        started_at: a.started_at,
+        completed_at: a.completed_at,
+        assessment_status: a.status,
+        assessment_state: a.state,
+        processing_status: processing?.status || null,
+        processing_stage: processing?.stage || null,
+        report_status: report?.status || null,
+        report_id: report?.id || null,
+        risk_level: riskLevel,
+        risk_score: typeof riskScore === 'number' ? riskScore : null,
+        result_computed_at: resultComputedAt,
+        triage_status: triageStatus,
+        flagged_reason: flaggedReason,
+      }
+    })
+
+    return { kind: 'OK', data: triageData }
+  }, [])
+
+  const handleDiagnosis = useCallback((result: TriageDiagnosisResult) => {
+    setDiagnosis(result)
+    switch (result.kind) {
+      case 'NO_SESSION':
+        setError('Bitte einloggen')
+        setAssessments([])
+        break
+      case 'QUERY_ERROR':
+        setError(`Datenabfrage fehlgeschlagen: ${result.message}`)
+        setAssessments([])
+        break
+      case 'JOIN_BLOCKED':
+        setError('Zugriff auf Patient/Funnel-Daten blockiert (RLS auf patient_profiles/funnels prüfen)')
+        setAssessments([])
+        break
+      case 'NO_ROWS_VISIBLE':
+        setError('Keine Assessments sichtbar (RLS oder falsches Supabase-Projekt)')
+        setAssessments([])
+        break
+      case 'OK':
+        setError(null)
+        setAssessments(result.data)
+        break
+    }
+
+    if (result.kind !== 'OK') {
+      console.warn('[triage-diagnose]', {
+        kind: result.kind,
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+      })
+    }
+  }, [])
 
   useEffect(() => {
-    loadTriageData()
-  }, [loadTriageData, retryTrigger])
+    let isMounted = true
+
+    const run = async () => {
+      setLoading(true)
+      try {
+        const result = await loadTriageData()
+        if (!isMounted) return
+        handleDiagnosis(result)
+      } catch (e) {
+        if (!isMounted) return
+        console.error(e)
+        setError('Fehler beim Laden der Triage-Daten.')
+        setAssessments([])
+        setDiagnosis(null)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    run()
+
+    return () => {
+      isMounted = false
+    }
+  }, [loadTriageData, handleDiagnosis, retryTrigger])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
