@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
@@ -61,6 +61,14 @@ export default function TriagePage() {
   const [retryTrigger, setRetryTrigger] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [baseCount, setBaseCount] = useState(0)
+  const healthCheckHasRunRef = useRef(false)
+  const triageLogHasRunRef = useRef(false)
+
+  const logDiagnosisOnce = useCallback((payload: Record<string, unknown>) => {
+    if (triageLogHasRunRef.current) return
+    triageLogHasRunRef.current = true
+    console.warn('[triage-diagnose]', payload)
+  }, [])
 
   const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
     const {
@@ -302,8 +310,8 @@ export default function TriagePage() {
         break
     }
 
-    if (result.kind !== 'OK_BASE_VISIBLE') {
-      console.warn('[triage-diagnose]', {
+    if (result.kind !== 'OK_BASE_VISIBLE' && result.kind !== 'NO_ROWS_VISIBLE') {
+      logDiagnosisOnce({
         kind: result.kind,
         supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
         baseCount,
@@ -311,7 +319,7 @@ export default function TriagePage() {
         userId,
       })
     }
-  }, [baseCount, healthAssessmentsTotal, userId])
+  }, [baseCount, healthAssessmentsTotal, logDiagnosisOnce, userId])
 
   useEffect(() => {
     let isMounted = true
@@ -342,10 +350,22 @@ export default function TriagePage() {
 
   useEffect(() => {
     if (diagnosis?.kind !== 'NO_ROWS_VISIBLE') return
+    if (healthCheckHasRunRef.current) return
+    healthCheckHasRunRef.current = true
+
+    const runId =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `healthcheck-${Date.now()}`
+    const startedAt = new Date().toISOString()
 
     let isMounted = true
 
     const loadHealth = async () => {
+      let nextAssessmentsTotal: number | null = null
+      let nextError: string | null = null
+      let nextKind = 'HEALTHCHECK_FAILED'
+
       try {
         const response = await fetch('/api/triage/health')
         if (!response.ok) return
@@ -354,40 +374,37 @@ export default function TriagePage() {
         const assessmentsTotal =
           typeof payload.assessmentsTotal === 'number' ? payload.assessmentsTotal : null
 
-        if (!isMounted) return
-
-        setHealthAssessmentsTotal(assessmentsTotal)
+        nextAssessmentsTotal = assessmentsTotal
 
         if (assessmentsTotal === 0) {
-          setError('Keine Daten in diesem Supabase-Projekt (0 Assessments laut Server).')
-          console.warn('[triage-diagnose]', {
-            kind: 'NO_DATA_IN_PROJECT',
-            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-            assessmentsTotal,
-            baseCount,
-            userId,
-          })
+          nextError = 'Keine Daten in diesem Supabase-Projekt (0 Assessments laut Server).'
+          nextKind = 'NO_DATA_IN_PROJECT'
         } else if (typeof assessmentsTotal === 'number') {
-          setError(
-            `RLS blockt (Server sieht Daten, Client nicht). Server count = ${assessmentsTotal}`,
-          )
-          console.warn('[triage-diagnose]', {
-            kind: 'RLS_BLOCKING',
-            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-            assessmentsTotal,
-            baseCount,
-            userId,
-          })
+          nextError = `RLS blockt (Server sieht Daten, Client nicht). Server count = ${assessmentsTotal}`
+          nextKind = 'RLS_BLOCKING'
         }
       } catch (err) {
-        console.warn('[triage-diagnose]', {
-          kind: 'HEALTHCHECK_FAILED',
-          supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-          baseCount,
-          assessmentsTotal: healthAssessmentsTotal,
-          userId,
-        })
+        nextKind = 'HEALTHCHECK_FAILED'
       }
+
+        if (!isMounted) return
+
+      setHealthAssessmentsTotal(nextAssessmentsTotal)
+      if (nextError) {
+        setError(nextError)
+      }
+      setLoading(false)
+
+      logDiagnosisOnce({
+        kind: nextKind,
+        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        baseCount,
+        assessmentsTotal: nextAssessmentsTotal,
+        userId,
+        runId,
+        startedAt,
+        endedAt: new Date().toISOString(),
+      })
     }
 
     loadHealth()
@@ -395,7 +412,7 @@ export default function TriagePage() {
     return () => {
       isMounted = false
     }
-  }, [baseCount, diagnosis, healthAssessmentsTotal, userId])
+  }, [baseCount, diagnosis, logDiagnosisOnce, userId])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
