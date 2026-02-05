@@ -74,7 +74,8 @@
     "test:core": "npm run --workspace packages/rhythm-core --if-present test",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:studio:layout": "playwright test tests/studio-admin-layout.spec.ts"
+    "test:studio:layout": "playwright test tests/studio-admin-layout.spec.ts",
+    "test:studio:e2e": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
