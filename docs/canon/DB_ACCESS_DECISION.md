@@ -386,6 +386,16 @@ Use in all API routes for consistency.
   - **Scope**: `diagnosis_runs`
   - **Mitigation**: Server-only API route, explicit RBAC gate (clinician/admin only), no client exposure
 
+9. **Triage Fix Membership API** (`apps/rhythm-studio-ui/app/api/triage/fix-membership/route.ts`)
+  - **Why**: Repairs staff/patient organization membership links across users; requires RLS bypass
+  - **Scope**: `assessments`, `patient_profiles`, `user_org_membership`
+  - **Mitigation**: Server-only API route, authenticated staff only, minimal fields selected
+
+10. **Triage Health API** (`apps/rhythm-studio-ui/app/api/triage/health/route.ts`)
+  - **Why**: System-level triage metrics (global assessment count) require RLS bypass
+  - **Scope**: `assessments` (count only)
+  - **Mitigation**: Server-only API route, authenticated users only, read-only aggregate
+
 ### Unjustified Uses (To Be Refactored)
 
 Any service role usage NOT listed above should be reviewed and likely replaced with server client + proper RLS policies.

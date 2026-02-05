@@ -51,9 +51,11 @@ function extractEndpointIntent(sourceText) {
 }
 
 function guessAccessRoleFromApiPath(apiPath) {
+  if (apiPath === '/api/me') return 'clinician'
   if (apiPath.startsWith('/api/admin/')) return 'admin'
   if (apiPath.startsWith('/api/clinician/')) return 'clinician'
   if (apiPath.startsWith('/api/studio/')) return 'clinician'
+  if (apiPath.startsWith('/api/triage/')) return 'clinician'
   if (apiPath.startsWith('/api/patient/')) return 'patient'
   if (apiPath.startsWith('/api/auth/')) return 'public'
   if (apiPath.startsWith('/api/health/')) return 'public'
