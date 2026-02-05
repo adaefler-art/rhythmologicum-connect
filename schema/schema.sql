@@ -6920,7 +6920,7 @@ CREATE POLICY "Patients can view own assessment events" ON "public"."assessment_
 
 
 
-CREATE POLICY "Patients can view own assessments" ON "public"."assessments" FOR SELECT USING (("patient_id" = "public"."get_my_patient_profile_id"()));
+CREATE POLICY "Patients can view own assessments" ON "public"."assessments" FOR SELECT TO "authenticated" USING (("patient_id" = "public"."get_my_patient_profile_id"()));
 
 
 
@@ -7080,7 +7080,7 @@ CREATE POLICY "Staff can view org or assigned patients" ON "public"."patient_pro
 
 
 
-CREATE POLICY "Staff can view org patient assessments" ON "public"."assessments" FOR SELECT USING ((EXISTS ( SELECT 1
+CREATE POLICY "Staff can view org patient assessments" ON "public"."assessments" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM (("public"."patient_profiles" "pp"
      JOIN "public"."user_org_membership" "uom_patient" ON ((("uom_patient"."user_id" = "pp"."user_id") AND ("uom_patient"."is_active" = true))))
      JOIN "public"."user_org_membership" "uom_staff" ON ((("uom_staff"."organization_id" = "uom_patient"."organization_id") AND ("uom_staff"."user_id" = "auth"."uid"()) AND ("uom_staff"."is_active" = true) AND ("uom_staff"."role" = ANY (ARRAY['admin'::"public"."user_role", 'clinician'::"public"."user_role", 'nurse'::"public"."user_role"])))))
