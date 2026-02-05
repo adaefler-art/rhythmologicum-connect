@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select } from '@/lib/ui'
+import { resolvePatientDisplayName } from '@/lib/utils/patientDisplayName'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   AlertTriangle,
@@ -203,17 +204,33 @@ export default function InboxPage() {
 
   // PatientKey SSOT: /clinician/patient/[id] expects patient_profiles.id
   const getPatientDisplay = useCallback((row: TriageCase) => {
-    const display = row.patient_display?.trim()
-    if (display) return display
+    const hasProfileName = Boolean(
+      row.patient_display?.trim() || row.first_name?.trim() || row.last_name?.trim(),
+    )
 
-    const nameFallback = [row.preferred_name, row.first_name, row.last_name]
-      .filter(Boolean)
-      .join(' ')
-      .trim()
+    if (hasProfileName) {
+      return resolvePatientDisplayName({
+        id: row.patient_id,
+        full_name: row.patient_display,
+        first_name: row.first_name,
+        last_name: row.last_name,
+      }).displayName
+    }
 
-    if (nameFallback) return nameFallback
     if (row.patient_id) return 'Patientin (kein Zugriff)'
     return 'Patientin (nicht gefunden)'
+  }, [])
+
+  const getPatientSecondaryLabel = useCallback((row: TriageCase) => {
+    if (row.patient_display?.trim() || row.first_name?.trim() || row.last_name?.trim()) {
+      return undefined
+    }
+
+    if (row.patient_id) {
+      return `ID: ${row.patient_id.slice(0, 8)}`
+    }
+
+    return undefined
   }, [])
 
   const getPatientResolutionStatus = useCallback((row: TriageCase) => {
@@ -301,6 +318,11 @@ export default function InboxPage() {
                 {getPatientResolutionStatus(row) === 'RLS_BLOCKED'
                   ? 'Kein Zugriff auf Profil'
                   : 'Profil nicht gefunden'}
+              </span>
+            )}
+            {getPatientSecondaryLabel(row) && (
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {getPatientSecondaryLabel(row)}
               </span>
             )}
           </div>
@@ -437,6 +459,7 @@ export default function InboxPage() {
       getNextActionLabel,
       getPatientDisplay,
       getPatientResolutionStatus,
+      getPatientSecondaryLabel,
       getFunnelDisplay,
       formatDateTime,
       handleRowClick,

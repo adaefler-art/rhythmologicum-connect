@@ -40,6 +40,8 @@ type PatientMeasure = {
 type PatientProfile = {
   id: string
   full_name: string | null
+  first_name?: string | null
+  last_name?: string | null
   birth_year: number | null
   sex: string | null
   user_id: string
@@ -554,6 +556,8 @@ export default function PatientDetailPage() {
       {/* Patient Overview Header */}
       <PatientOverviewHeader
         fullName={patient.full_name}
+        firstName={patient.first_name ?? null}
+        lastName={patient.last_name ?? null}
         birthYear={patient.birth_year}
         sex={patient.sex}
         patientId={patientProfileId}
