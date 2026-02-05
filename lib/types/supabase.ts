@@ -3339,6 +3339,10 @@ export type Database = {
         }
         Returns: Json
       }
+      rls_audit_assessment_access: {
+        Args: { assessment_id: string; staff_user_id: string }
+        Returns: Json
+      }
       set_user_role: {
         Args: { user_email: string; user_role: string }
         Returns: undefined
