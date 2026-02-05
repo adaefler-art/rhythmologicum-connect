@@ -3222,6 +3222,57 @@ export type Database = {
       }
     }
     Views: {
+      triage_cases_v1: {
+        Row: {
+          assigned_at: string | null
+          attention_items: string[] | null
+          attention_level: string | null
+          case_id: string | null
+          case_state: string | null
+          funnel_id: string | null
+          funnel_slug: string | null
+          is_active: boolean | null
+          next_action: string | null
+          patient_display: string | null
+          patient_id: string | null
+          priority_score: number | null
+          sla_deadline: string | null
+          sla_status: string | null
+        }
+        Insert: {
+          assigned_at?: never
+          attention_items?: never
+          attention_level?: never
+          case_id?: never
+          case_state?: never
+          funnel_id?: never
+          funnel_slug?: never
+          is_active?: never
+          next_action?: never
+          patient_display?: never
+          patient_id?: never
+          priority_score?: never
+          sla_deadline?: never
+          sla_status?: never
+        }
+        Update: {
+          assigned_at?: never
+          attention_items?: never
+          attention_level?: never
+          case_id?: never
+          case_state?: never
+          funnel_id?: never
+          funnel_slug?: never
+          is_active?: never
+          next_action?: never
+          patient_display?: never
+          patient_id?: never
+          priority_score?: never
+          sla_deadline?: never
+          sla_status?: never
+        }
+        Relationships: []
+      }
       pending_account_deletions: {
         Row: {
           account_status: string | null
