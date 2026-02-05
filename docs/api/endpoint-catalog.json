@@ -6629,6 +6629,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/me",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/me/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/notifications",
       "methods": [
         "GET"
@@ -7120,6 +7133,25 @@
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/diagnosis/client.tsx",
           "apiPath": "/api/patient/diagnosis/runs",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/patient/diagnosis/runs/[runId]/artifact",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/diagnosis/runs/[runId]/artifact/route.ts",
+      "intent": "diagnosis:patient:artifact_by_run",
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/diagnosis/[id]/client.tsx",
+          "apiPath": "/api/patient/diagnosis/runs/${runId}/artifact",
           "kind": "fetch"
         }
       ],
@@ -8177,11 +8209,35 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts",
       "intent": "diagnosis:queue",
       "accessRole": "clinician",
-      "usedByCount": 1,
+      "usedByCount": 2,
       "usedBy": [
         {
           "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
           "apiPath": "/api/studio/diagnosis/queue",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/diagnosis/queue",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/studio/diagnosis/runs/[runId]/artifact",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/diagnosis/runs/${runId}/artifact",
           "kind": "fetch"
         }
       ],
@@ -8226,6 +8282,25 @@
         {
           "file": "lib/api/anamnesis/exportClient.ts",
           "apiPath": "/api/studio/patients/${patientId}/anamnesis/export.json",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "path": "/api/studio/patients/[patientId]/diagnosis/runs",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/diagnosis/runs/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/patients/${patientId}/diagnosis/runs",
           "kind": "fetch"
         }
       ],
@@ -8899,6 +8974,25 @@
       "usedBy": [],
       "isOrphan": true,
       "isAllowedOrphan": true
+    },
+    {
+      "path": "/api/triage/health",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/triage/health/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "apiPath": "/api/triage/health",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     }
   ],
   "unknownCallsites": []

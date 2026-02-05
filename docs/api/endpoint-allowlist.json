@@ -81,6 +81,7 @@
     "/api/funnels/active",
     "/api/health/env",
     "/api/mcp",
+    "/api/me",
     "/api/mcp/context-pack",
     "/api/notifications",
     "/api/notifications/[id]",
