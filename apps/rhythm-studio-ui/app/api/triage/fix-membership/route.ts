@@ -5,6 +5,8 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 
 const STAFF_ROLES = new Set(['admin', 'clinician', 'nurse'])
 
+type OrgRole = 'patient' | 'clinician' | 'nurse' | 'admin'
+
 type FixMembershipError = {
   code: string
   message: string
@@ -19,9 +21,9 @@ function getAssessmentId(request: NextRequest, body: Record<string, unknown> | n
   return bodyId
 }
 
-function normalizeStaffRole(rawRole: unknown) {
+function normalizeStaffRole(rawRole: unknown): OrgRole {
   if (typeof rawRole === 'string' && STAFF_ROLES.has(rawRole)) {
-    return rawRole
+    return rawRole as OrgRole
   }
   return 'admin'
 }
@@ -141,7 +143,12 @@ export async function POST(request: NextRequest) {
 
   const staffRole = normalizeStaffRole(user.app_metadata?.role)
 
-  const upsertPayload = [
+  const upsertPayload: Array<{
+    user_id: string
+    organization_id: string
+    role: OrgRole
+    is_active: true
+  }> = [
     {
       user_id: user.id,
       organization_id: organizationId,
