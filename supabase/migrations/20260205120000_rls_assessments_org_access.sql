@@ -3,7 +3,7 @@ begin;
 drop policy if exists "Clinicians can view all assessments" on public.assessments;
 drop policy if exists "Staff can view org patient assessments" on public.assessments;
 
-do $$
+do $body$
 declare
   has_org_tables boolean := to_regclass('public.user_org_membership') is not null;
   has_is_admin boolean := to_regprocedure('public.is_admin()') is not null;
@@ -14,7 +14,7 @@ begin
   end if;
 
   if has_org_tables then
-    execute $$
+    execute $policy$
       create policy "Staff can view org patient assessments" on public.assessments
       for select
       using (
@@ -36,7 +36,7 @@ begin
           where pp.id = assessments.patient_id
         )
       )
-    $$;
+    $policy$;
   else
     raise notice 'Org tables missing: applied clinician-only fallback policy';
     execute format($sql$
@@ -45,6 +45,6 @@ begin
       using (%s)
     $sql$, fallback_predicate);
   end if;
-end $$;
+end $body$;
 
 commit;
