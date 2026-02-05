@@ -76,6 +76,7 @@ export async function POST(
     // Get admin client
     const adminClient = createAdminSupabaseClient()
 
+
     // Get funnel by slug
     const { data: funnel, error: funnelError } = await adminClient
       .from('funnels_catalog')

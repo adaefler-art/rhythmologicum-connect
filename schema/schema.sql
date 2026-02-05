@@ -3814,14 +3814,12 @@ SELECT
   a.patient_id,
   a.funnel_id,
   f.slug AS funnel_slug,
-  pp.first_name,
-  pp.last_name,
-  pp.preferred_name,
-  COALESCE(pp.preferred_name, CONCAT(pp.first_name, ' ', pp.last_name)) AS patient_display,
+  pp.full_name,
+  COALESCE(pp.full_name, a.patient_id::text) AS patient_display,
   CASE
     WHEN (a.status = 'completed' AND (EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status = 'APPROVED') OR EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.delivery_status = 'DELIVERED'))) THEN 'resolved'::text
     WHEN (a.status = 'completed' AND a.workup_status = 'ready_for_review' AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'ready_for_review'::text
-    WHEN (a.status = 'completed' AND EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'completed' AND lj.job_stage = 'report_generated') AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'ready_for_review'::text
+    WHEN (a.status = 'completed' AND EXISTS (SELECT 1 FROM latest_jobs lj WHERE lj.assessment_id = a.id AND lj.job_status = 'completed' AND lj.job_stage = 'completed') AND NOT EXISTS (SELECT 1 FROM latest_reviews lr WHERE lr.assessment_id = a.id AND lr.review_status IN ('APPROVED', 'REJECTED'))) THEN 'ready_for_review'::text
     WHEN (a.status = 'in_progress' AND a.workup_status = 'needs_more_data' AND a.completed_at IS NULL) THEN 'needs_input'::text
     WHEN (a.status = 'in_progress' AND a.completed_at IS NULL) THEN 'in_progress'::text
     ELSE 'in_progress'::text

@@ -34,6 +34,172 @@ export type Database = {
   }
   public: {
     Tables: {
+      amy_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amy_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      anamnesis_entries: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          entry_type: string | null
+          id: string
+          is_archived: boolean
+          organization_id: string
+          patient_id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          entry_type?: string | null
+          id?: string
+          is_archived?: boolean
+          organization_id: string
+          patient_id: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          entry_type?: string | null
+          id?: string
+          is_archived?: boolean
+          organization_id?: string
+          patient_id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "anamnesis_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_entries_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnesis_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      anamnesis_entry_versions: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string | null
+          content: Json
+          diff: Json | null
+          entry_id: string
+          entry_type: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          content: Json
+          diff?: Json | null
+          entry_id: string
+          entry_type?: string | null
+          id?: string
+          tags?: string[] | null
+          title: string
+          version_number: number
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          content?: Json
+          diff?: Json | null
+          entry_id?: string
+          entry_type?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnesis_entry_versions_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "anamnesis_entry_versions_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "anamnesis_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_answers: {
         Row: {
           answer_data: Json | null
@@ -67,6 +233,13 @@ export type Database = {
             referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_answers_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       assessment_events: {
@@ -98,6 +271,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_events_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -266,6 +446,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "calculated_results_funnel_version_id_fkey"
@@ -608,6 +795,154 @@ export type Database = {
           },
         ]
       }
+      diagnosis_artifacts: {
+        Row: {
+          artifact_data: Json
+          artifact_type: string
+          confidence_score: number | null
+          created_at: string
+          created_by: string
+          id: string
+          metadata: Json | null
+          patient_id: string
+          primary_findings: string[] | null
+          recommendations_count: number | null
+          risk_level: string | null
+          run_id: string
+          schema_version: string
+        }
+        Insert: {
+          artifact_data: Json
+          artifact_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by: string
+          id?: string
+          metadata?: Json | null
+          patient_id: string
+          primary_findings?: string[] | null
+          recommendations_count?: number | null
+          risk_level?: string | null
+          run_id: string
+          schema_version?: string
+        }
+        Update: {
+          artifact_data?: Json
+          artifact_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string
+          primary_findings?: string[] | null
+          recommendations_count?: number | null
+          risk_level?: string | null
+          run_id?: string
+          schema_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosis_artifacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_artifacts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_artifacts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "diagnosis_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnosis_runs: {
+        Row: {
+          clinician_id: string
+          completed_at: string | null
+          context_pack_id: string | null
+          created_at: string
+          error_code: string | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          inputs_hash: string
+          inputs_meta: Json
+          max_retries: number
+          mcp_run_id: string | null
+          patient_id: string
+          processing_time_ms: number | null
+          retry_count: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at: string
+        }
+        Insert: {
+          clinician_id: string
+          completed_at?: string | null
+          context_pack_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          inputs_hash: string
+          inputs_meta?: Json
+          max_retries?: number
+          mcp_run_id?: string | null
+          patient_id: string
+          processing_time_ms?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at?: string
+        }
+        Update: {
+          clinician_id?: string
+          completed_at?: string | null
+          context_pack_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          inputs_hash?: string
+          inputs_meta?: Json
+          max_retries?: number
+          mcp_run_id?: string | null
+          patient_id?: string
+          processing_time_ms?: number | null
+          retry_count?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["diagnosis_run_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnosis_runs_clinician_id_fkey"
+            columns: ["clinician_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "diagnosis_runs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           assessment_id: string | null
@@ -666,6 +1001,81 @@ export type Database = {
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+        ]
+      }
+      funnel_publish_history: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          diff: Json
+          funnel_id: string
+          id: string
+          metadata: Json | null
+          previous_version_id: string | null
+          published_at: string
+          published_by: string | null
+          version_id: string
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          diff?: Json
+          funnel_id: string
+          id?: string
+          metadata?: Json | null
+          previous_version_id?: string | null
+          published_at?: string
+          published_by?: string | null
+          version_id: string
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          diff?: Json
+          funnel_id?: string
+          id?: string
+          metadata?: Json | null
+          previous_version_id?: string | null
+          published_at?: string
+          published_by?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_publish_history_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "funnel_publish_history_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -825,10 +1235,16 @@ export type Database = {
           funnel_id: string
           id: string
           is_default: boolean
+          last_validated_at: string | null
+          parent_version_id: string | null
           prompt_version: string
+          published_at: string | null
+          published_by: string | null
           questionnaire_config: Json
           rollout_percent: number | null
+          status: Database["public"]["Enums"]["funnel_version_status"]
           updated_at: string | null
+          validation_errors: Json | null
           version: string
         }
         Insert: {
@@ -838,10 +1254,16 @@ export type Database = {
           funnel_id: string
           id?: string
           is_default?: boolean
+          last_validated_at?: string | null
+          parent_version_id?: string | null
           prompt_version?: string
+          published_at?: string | null
+          published_by?: string | null
           questionnaire_config?: Json
           rollout_percent?: number | null
+          status?: Database["public"]["Enums"]["funnel_version_status"]
           updated_at?: string | null
+          validation_errors?: Json | null
           version: string
         }
         Update: {
@@ -851,10 +1273,16 @@ export type Database = {
           funnel_id?: string
           id?: string
           is_default?: boolean
+          last_validated_at?: string | null
+          parent_version_id?: string | null
           prompt_version?: string
+          published_at?: string | null
+          published_by?: string | null
           questionnaire_config?: Json
           rollout_percent?: number | null
+          status?: Database["public"]["Enums"]["funnel_version_status"]
           updated_at?: string | null
+          validation_errors?: Json | null
           version?: string
         }
         Relationships: [
@@ -864,6 +1292,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "funnels_catalog"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_versions_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -914,6 +1356,7 @@ export type Database = {
           org_id: string | null
           outcomes: Json | null
           pillar_id: string | null
+          published: boolean
           slug: string
           title: string
           updated_at: string | null
@@ -928,6 +1371,7 @@ export type Database = {
           org_id?: string | null
           outcomes?: Json | null
           pillar_id?: string | null
+          published?: boolean
           slug: string
           title: string
           updated_at?: string | null
@@ -942,6 +1386,7 @@ export type Database = {
           org_id?: string | null
           outcomes?: Json | null
           pillar_id?: string | null
+          published?: boolean
           slug?: string
           title?: string
           updated_at?: string | null
@@ -1829,6 +2274,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "priority_rankings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
+          },
+          {
             foreignKeyName: "priority_rankings_risk_bundle_id_fkey"
             columns: ["risk_bundle_id"]
             isOneToOne: false
@@ -2174,6 +2626,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reports_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "reports_funnel_version_id_fkey"
             columns: ["funnel_version_id"]
             isOneToOne: false
@@ -2291,11 +2750,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "risk_bundles_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "risk_bundles_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: true
             referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_bundles_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -2609,6 +3082,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "tasks_assigned_to_user_id_fkey"
             columns: ["assigned_to_user_id"]
             isOneToOne: false
@@ -2835,6 +3315,49 @@ export type Database = {
         }
         Relationships: []
       }
+      triage_cases_v1: {
+        Row: {
+          assigned_at: string | null
+          attention_items: string[] | null
+          attention_level: string | null
+          case_id: string | null
+          case_state: string | null
+          completed_at: string | null
+          delivery_status: string | null
+          full_name: string | null
+          funnel_id: string | null
+          funnel_slug: string | null
+          is_active: boolean | null
+          job_id: string | null
+          job_stage: Database["public"]["Enums"]["processing_stage"] | null
+          job_status: Database["public"]["Enums"]["processing_status"] | null
+          last_activity_at: string | null
+          next_action: string | null
+          patient_display: string | null
+          patient_id: string | null
+          priority_score: number | null
+          review_decided_at: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
+          snoozed_until: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       cancel_account_deletion: {
@@ -2849,6 +3372,14 @@ export type Database = {
       }
       compute_sampling_hash: {
         Args: { p_job_id: string; p_salt?: string }
+        Returns: string
+      }
+      create_draft_from_version: {
+        Args: {
+          p_source_version_id: string
+          p_user_id: string
+          p_version_label?: string
+        }
         Returns: string
       }
       current_user_role: {
@@ -2892,12 +3423,25 @@ export type Database = {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
       }
+      publish_draft_version: {
+        Args: {
+          p_change_summary?: string
+          p_draft_id: string
+          p_set_as_default?: boolean
+          p_user_id: string
+        }
+        Returns: Json
+      }
       request_account_deletion: {
         Args: {
           deletion_reason?: string
           retention_days?: number
           target_user_id: string
         }
+        Returns: Json
+      }
+      rls_audit_assessment_access: {
+        Args: { assessment_id: string; staff_user_id: string }
         Returns: Json
       }
       set_user_role: {
@@ -2916,6 +3460,8 @@ export type Database = {
     Enums: {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
+      diagnosis_run_status: "queued" | "running" | "completed" | "failed"
+      funnel_version_status: "draft" | "published" | "archived"
       notification_status:
         | "scheduled"
         | "sent"
@@ -3117,6 +3663,8 @@ export const Constants = {
     Enums: {
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
+      diagnosis_run_status: ["queued", "running", "completed", "failed"],
+      funnel_version_status: ["draft", "published", "archived"],
       notification_status: [
         "scheduled",
         "sent",
