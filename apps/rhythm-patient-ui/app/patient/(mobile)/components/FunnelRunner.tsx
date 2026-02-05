@@ -207,8 +207,6 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
               id: q.id,
               key: q.key,
               type: q.questionType || q.type,
-          } finally {
-            startRequestRef.current.inFlight = false
               label: q.label,
               helpText: q.helpText,
               required: q.isRequired || false,
