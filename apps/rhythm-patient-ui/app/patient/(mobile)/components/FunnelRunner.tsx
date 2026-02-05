@@ -157,42 +157,33 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     }
   }, [slug])
 
-  const resumeAssessment = useCallback(async (assessmentId: string): Promise<ResumeAssessmentResponseData | null> => {
-    try {
-      const response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
-        method: 'GET',
-      })
+  const resumeAssessment = useCallback(
+    async (assessmentId: string): Promise<ResumeAssessmentResponseData | null> => {
+      try {
+        const response = await fetch(`/api/funnels/${slug}/assessments/${assessmentId}`, {
+          method: 'GET',
+        })
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError({ type: 'not_found', message: 'Assessment nicht gefunden', retryable: false })
-        } else if (response.status === 401) {
-          setError({ type: 'unauthorized', message: 'Bitte melden Sie sich an', retryable: false })
-      if (startRequestRef.current.inFlight) {
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError({ type: 'not_found', message: 'Assessment nicht gefunden', retryable: false })
+          } else if (response.status === 401) {
+            setError({ type: 'unauthorized', message: 'Bitte melden Sie sich an', retryable: false })
+          } else {
+            setError({ type: 'server', message: 'Fehler beim Laden', retryable: true })
+          }
+          return null
+        }
+
+        const payload = await response.json()
+        return payload.data || payload
+      } catch (err) {
+        setError({ type: 'network', message: 'Netzwerkfehler', retryable: true })
         return null
       }
-
-      startRequestRef.current.inFlight = true
-      if (!startRequestRef.current.idempotencyKey) {
-        startRequestRef.current.idempotencyKey = crypto.randomUUID()
-      }
-
-      const idempotencyKey = startRequestRef.current.idempotencyKey
-        } else {
-          setError({ type: 'server', message: 'Fehler beim Laden', retryable: true })
-        }
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
-          'X-Correlation-Id': idempotencyKey,
-      }
-
-      const payload = await response.json()
-      return payload.data || payload
-    } catch (err) {
-      setError({ type: 'network', message: 'Netzwerkfehler', retryable: true })
-      return null
-    }
-  }, [slug])
+    },
+    [slug],
+  )
 
   const loadManifest = useCallback(async (): Promise<FunnelManifest | null> => {
     try {
