@@ -125,7 +125,6 @@ function checkApiEndpoint(content) {
  */
 function checkNoMultiFetch(content) {
 	const hasSupabaseFrom = content.includes('supabase.from(')
-	const hasMultipleQueries = content.match(/supabase\.from\(/g)?.length > 0
 	
 	logCheck(
 		'E78.7-002',
@@ -178,7 +177,6 @@ function checkSearchBox(content) {
 	const hasSearchInput = content.includes('searchInput')
 	const hasSearchQuery = content.includes('searchQuery')
 	const hasSearchPlaceholder = content.includes('suchen')
-	const hasSearchButton = content.includes('Suchen')
 	
 	logCheck(
 		'E78.7-005',
@@ -279,7 +277,6 @@ function checkReasonsColumn(content) {
 	const hasReasonsHeader = content.includes("header: 'Gründe'")
 	const hasAttentionLevel = content.includes('attention_level')
 	const hasGetAttentionBadge = content.includes('getAttentionBadge')
-	const hasAttentionItems = content.includes('attention_items')
 	
 	logCheck(
 		'E78.7-011',
