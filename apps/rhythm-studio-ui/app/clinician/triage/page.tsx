@@ -323,10 +323,10 @@ export default function TriagePage() {
         supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
         baseCount,
         assessmentsTotal: healthAssessmentsTotal,
-        userId,
+        userId: userIdRef.current,
       })
     }
-  }, [baseCount, healthAssessmentsTotal, logDiagnosisOnce, userId])
+  }, [baseCount, healthAssessmentsTotal, logDiagnosisOnce])
 
   useEffect(() => {
     let isMounted = true
