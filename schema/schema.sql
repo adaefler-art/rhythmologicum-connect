@@ -752,6 +752,52 @@ $$;
 ALTER FUNCTION "public"."audit_reassessment_rules"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  patient_user_id uuid;
+BEGIN
+  IF staff_user_id IS NULL OR patient_profile_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT user_id
+    INTO patient_user_id
+    FROM public.patient_profiles
+   WHERE id = patient_profile_id;
+
+  IF patient_user_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+      FROM public.user_org_membership uom_patient
+      JOIN public.user_org_membership uom_staff
+        ON uom_staff.organization_id = uom_patient.organization_id
+       AND uom_staff.user_id = staff_user_id
+       AND uom_staff.is_active = true
+       AND uom_staff.role IN (
+         'admin'::public.user_role,
+         'clinician'::public.user_role,
+         'nurse'::public.user_role
+       )
+     WHERE uom_patient.user_id = patient_user_id
+       AND uom_patient.is_active = true
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") IS 'V0.5: Returns true if staff shares an active organization membership with the patient profile owner';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1558,52 +1604,6 @@ ALTER FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") OWNER TO 
 
 
 COMMENT ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") IS 'V0.5: Checks if current user is assigned to specified patient';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-DECLARE
-  patient_user_id uuid;
-BEGIN
-  IF staff_user_id IS NULL OR patient_profile_id IS NULL THEN
-    RETURN false;
-  END IF;
-
-  SELECT user_id
-    INTO patient_user_id
-    FROM public.patient_profiles
-   WHERE id = patient_profile_id;
-
-  IF patient_user_id IS NULL THEN
-    RETURN false;
-  END IF;
-
-  RETURN EXISTS (
-    SELECT 1
-      FROM public.user_org_membership uom_patient
-      JOIN public.user_org_membership uom_staff
-        ON uom_staff.organization_id = uom_patient.organization_id
-       AND uom_staff.user_id = staff_user_id
-       AND uom_staff.is_active = true
-       AND uom_staff.role IN (
-         'admin'::public.user_role,
-         'clinician'::public.user_role,
-         'nurse'::public.user_role
-       )
-     WHERE uom_patient.user_id = patient_user_id
-       AND uom_patient.is_active = true
-  );
-END;
-$$;
-
-
-ALTER FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") IS 'V0.5: Returns true if staff shares an active organization membership with the patient profile owner';
 
 
 
@@ -7152,10 +7152,6 @@ CREATE POLICY "Clinicians can view all profiles" ON "public"."patient_profiles" 
 
 
 
-CREATE POLICY "Staff can view patient profiles by org" ON "public"."patient_profiles" FOR SELECT TO "authenticated" USING ("public"."can_staff_see_patient_profile"("auth"."uid"(), "id"));
-
-
-
 CREATE POLICY "Clinicians can view all reports" ON "public"."reports" FOR SELECT USING ("public"."is_clinician"());
 
 
@@ -7479,6 +7475,10 @@ CREATE POLICY "Staff can view org results" ON "public"."calculated_results" FOR 
   WHERE (("a"."id" = "calculated_results"."assessment_id") AND (EXISTS ( SELECT 1
            FROM "public"."user_org_membership" "uom2"
           WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role")))))))));
+
+
+
+CREATE POLICY "Staff can view patient profiles by org" ON "public"."patient_profiles" FOR SELECT TO "authenticated" USING ("public"."can_staff_see_patient_profile"("auth"."uid"(), "id"));
 
 
 
@@ -8397,6 +8397,12 @@ GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") TO "authenticated";
@@ -8522,12 +8528,6 @@ GRANT ALL ON FUNCTION "public"."increment_reminder_count_atomic"("p_shipment_id"
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_assigned_to_patient"("patient_uid" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "service_role";
 
 
 
