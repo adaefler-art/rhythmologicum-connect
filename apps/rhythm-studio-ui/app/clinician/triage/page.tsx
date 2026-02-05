@@ -614,37 +614,34 @@ export default function InboxPage() {
           {(searchQuery || statusFilter || attentionFilter) && (
             <div className="flex gap-2 flex-wrap">
               {searchQuery && (
-                <Badge
-                  variant="secondary"
-                  size="sm"
-                  className="cursor-pointer"
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
                   onClick={() => {
                     setSearchQuery('')
                     setSearchInput('')
                   }}
                 >
                   Suche: {searchQuery} ×
-                </Badge>
+                </button>
               )}
               {statusFilter && (
-                <Badge
-                  variant="secondary"
-                  size="sm"
-                  className="cursor-pointer"
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
                   onClick={() => setStatusFilter('')}
                 >
                   Status: {getCaseStateBadge(statusFilter).label} ×
-                </Badge>
+                </button>
               )}
               {attentionFilter && (
-                <Badge
-                  variant="secondary"
-                  size="sm"
-                  className="cursor-pointer"
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
                   onClick={() => setAttentionFilter('')}
                 >
                   Priorität: {getAttentionBadge(attentionFilter)?.label} ×
-                </Badge>
+                </button>
               )}
             </div>
           )}
