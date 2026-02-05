@@ -233,6 +233,13 @@ export type Database = {
             referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_answers_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
         ]
       }
       assessment_events: {
@@ -264,6 +271,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_events_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -432,6 +446,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calculated_results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
           },
           {
             foreignKeyName: "calculated_results_funnel_version_id_fkey"
@@ -981,6 +1002,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assessments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
           },
         ]
       }
@@ -1977,27 +2005,36 @@ export type Database = {
         Row: {
           birth_year: number | null
           created_at: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name: string | null
           sex: string | null
           user_id: string
         }
         Insert: {
           birth_year?: number | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name?: string | null
           sex?: string | null
           user_id: string
         }
         Update: {
           birth_year?: number | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name?: string | null
           sex?: string | null
           user_id?: string
         }
@@ -2244,6 +2281,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_rankings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
           },
           {
             foreignKeyName: "priority_rankings_risk_bundle_id_fkey"
@@ -2591,6 +2635,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reports_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "reports_funnel_version_id_fkey"
             columns: ["funnel_version_id"]
             isOneToOne: false
@@ -2708,11 +2759,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "risk_bundles_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "risk_bundles_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: true
             referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_bundles_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -3026,6 +3091,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
             foreignKeyName: "tasks_assigned_to_user_id_fkey"
             columns: ["assigned_to_user_id"]
             isOneToOne: false
@@ -3252,6 +3324,51 @@ export type Database = {
         }
         Relationships: []
       }
+      triage_cases_v1: {
+        Row: {
+          assigned_at: string | null
+          attention_items: string[] | null
+          attention_level: string | null
+          case_id: string | null
+          case_state: string | null
+          completed_at: string | null
+          delivery_status: string | null
+          first_name: string | null
+          funnel_id: string | null
+          funnel_slug: string | null
+          is_active: boolean | null
+          job_id: string | null
+          job_stage: Database["public"]["Enums"]["processing_stage"] | null
+          job_status: Database["public"]["Enums"]["processing_status"] | null
+          last_activity_at: string | null
+          last_name: string | null
+          next_action: string | null
+          patient_display: string | null
+          patient_id: string | null
+          preferred_name: string | null
+          priority_score: number | null
+          review_decided_at: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
+          snoozed_until: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       cancel_account_deletion: {
@@ -3396,6 +3513,7 @@ export type Database = {
         | "delivery"
         | "completed"
         | "failed"
+        | "report_generated"
       processing_status: "queued" | "in_progress" | "completed" | "failed"
       report_status: "pending" | "generating" | "completed" | "failed"
       review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
@@ -3602,6 +3720,7 @@ export const Constants = {
         "delivery",
         "completed",
         "failed",
+        "report_generated",
       ],
       processing_status: ["queued", "in_progress", "completed", "failed"],
       report_status: ["pending", "generating", "completed", "failed"],

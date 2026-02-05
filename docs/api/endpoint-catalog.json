@@ -3644,6 +3644,19 @@
       "isAllowedOrphan": false
     },
     {
+      "path": "/api/clinician/triage",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "path": "/api/consent/record",
       "methods": [
         "POST"
