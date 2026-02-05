@@ -22,6 +22,16 @@ import {
 import { withIdempotency } from '@/lib/api/idempotency'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelStarted } from '@/lib/telemetry/events'
+import type { Database } from '@/lib/types/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+type ServerSupabaseClient = SupabaseClient<Database>
+
+type ResumeAssessment = {
+  id: string
+  funnel_id: string | null
+  status: string
+}
 
 /**
  * B5/B8/E74.7: Start or resume assessment for a funnel
@@ -45,6 +55,81 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
     async () => {
       return handleStartAssessment(request, slug)
     },
+  )
+}
+
+async function buildResumeResponse(
+  supabase: ServerSupabaseClient,
+  slug: string,
+  assessment: ResumeAssessment,
+  correlationId: string,
+): Promise<ReturnType<typeof versionedSuccessResponse>> {
+  let currentStep:
+    | { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number }
+    | null = null
+  let stepLoadError: Error | null = null
+
+  if (assessment.funnel_id) {
+    currentStep = await getCurrentStep(supabase, assessment.id, assessment.funnel_id)
+  } else {
+    try {
+      const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
+      const steps = loadedVersion.manifest.questionnaire_config?.steps
+
+      if (!steps || steps.length === 0) {
+        stepLoadError = new Error('Funnel has no questionnaire_config steps')
+      } else {
+        const firstStep = steps[0]
+        currentStep = {
+          stepId: firstStep.id,
+          title: firstStep.title,
+          type: 'question_step',
+          orderIndex: 0,
+          stepIndex: 0,
+        }
+      }
+    } catch (err) {
+      stepLoadError = err instanceof Error ? err : new Error(String(err))
+      console.error('[assessments] Failed to load V0.5 funnel version for resume:', {
+        requestId: correlationId,
+        slug,
+        error: stepLoadError.message,
+      })
+    }
+  }
+
+  if (!currentStep) {
+    console.error('[assessments] Cannot determine current step for existing assessment:', {
+      requestId: correlationId,
+      slug,
+      assessmentId: assessment.id,
+      stepLoadError: stepLoadError?.message,
+    })
+
+    return funnelNotSupportedResponse(
+      'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
+      { slug, assessmentId: assessment.id },
+      correlationId,
+    )
+  }
+
+  const responseData: StartAssessmentResponseData = {
+    assessmentId: assessment.id,
+    status: assessment.status,
+    currentStep: {
+      stepId: currentStep.stepId,
+      title: currentStep.title,
+      type: currentStep.type,
+      stepIndex: currentStep.stepIndex,
+      orderIndex: currentStep.orderIndex,
+    },
+  }
+
+  return versionedSuccessResponse(
+    responseData,
+    PATIENT_ASSESSMENT_SCHEMA_VERSION,
+    200,
+    correlationId,
   )
 }
 
@@ -153,76 +238,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         patientId: patientProfile.id,
       })
 
-      // Determine current step for the existing assessment
-      let currentStep:
-        | { stepId: string; title: string; type: string; orderIndex: number; stepIndex: number }
-        | null = null
-      let stepLoadError: Error | null = null
-
-      if (existingAssessment.funnel_id) {
-        // Legacy funnel
-        currentStep = await getCurrentStep(supabase, existingAssessment.id, existingAssessment.funnel_id)
-      } else {
-        // V0.5 catalog funnel
-        try {
-          const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
-          const steps = loadedVersion.manifest.questionnaire_config?.steps
-
-          if (!steps || steps.length === 0) {
-            stepLoadError = new Error('Funnel has no questionnaire_config steps')
-          } else {
-            const firstStep = steps[0]
-            currentStep = {
-              stepId: firstStep.id,
-              title: firstStep.title,
-              type: 'question_step',
-              orderIndex: 0,
-              stepIndex: 0,
-            }
-          }
-        } catch (err) {
-          stepLoadError = err instanceof Error ? err : new Error(String(err))
-          console.error('[assessments] Failed to load V0.5 funnel version for resume:', {
-            requestId: correlationId,
-            slug,
-            error: stepLoadError.message,
-          })
-        }
-      }
-
-      if (!currentStep) {
-        console.error('[assessments] Cannot determine current step for existing assessment:', {
-          requestId: correlationId,
-          slug,
-          assessmentId: existingAssessment.id,
-          stepLoadError: stepLoadError?.message,
-        })
-
-        return funnelNotSupportedResponse(
-          'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
-          { slug, assessmentId: existingAssessment.id },
-          correlationId,
-        )
-      }
-
-      const responseData: StartAssessmentResponseData = {
-        assessmentId: existingAssessment.id,
-        status: existingAssessment.status,
-        currentStep: {
-          stepId: currentStep.stepId,
-          title: currentStep.title,
-          type: currentStep.type,
-          stepIndex: currentStep.stepIndex,
-          orderIndex: currentStep.orderIndex,
-        },
-      }
-
-      return versionedSuccessResponse(
-        responseData,
-        PATIENT_ASSESSMENT_SCHEMA_VERSION,
-        200, // 200 OK for resume, not 201 Created
-        correlationId,
-      )
+      return buildResumeResponse(supabase, slug, existingAssessment, correlationId)
     }
 
     // If forceNew=true and existing assessment found, complete it first
@@ -239,6 +255,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         .update({
           completed_at: new Date().toISOString(),
           status: 'completed',
+          state: 'completed',
         })
         .eq('id', existingAssessment.id)
         .is('completed_at', null) // Double-check it's still in-progress
@@ -331,6 +348,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         funnel: slug,
         funnel_id: isLegacyFunnel ? funnelId : null,
         status: 'in_progress',
+        state: 'in_progress',
       })
       .select()
       .single()
@@ -359,6 +377,31 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       )
 
       const pgCode = assessmentError?.code
+      if (pgCode === '23505') {
+        const { data: resumedAssessment, error: resumeError } = await supabase
+          .from('assessments')
+          .select('id, patient_id, funnel, funnel_id, status, started_at')
+          .eq('patient_id', patientProfile.id)
+          .eq('funnel', slug)
+          .is('completed_at', null)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (resumeError) {
+          console.error('[assessments] 23505: Failed to fetch existing assessment:', {
+            requestId: correlationId,
+            slug,
+            patientId: patientProfile.id,
+            errorCode: resumeError.code,
+            errorMessage: resumeError.message,
+          })
+        }
+
+        if (resumedAssessment) {
+          return buildResumeResponse(supabase, slug, resumedAssessment, correlationId)
+        }
+      }
       if (pgCode === '23502' || pgCode === '23503' || pgCode === '23505') {
         return invalidInputResponse(
           'Assessment konnte nicht erstellt werden: Datenintegritätsfehler.',

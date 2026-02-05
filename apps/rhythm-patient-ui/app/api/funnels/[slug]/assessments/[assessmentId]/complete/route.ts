@@ -242,6 +242,7 @@ async function handleCompleteAssessment(
       .update({
         status: 'completed',
         completed_at: completedAt,
+        state: 'completed',
       })
       .eq('id', assessmentId)
       .eq('patient_id', patientProfile.id)

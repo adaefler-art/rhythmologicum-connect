@@ -48,6 +48,20 @@ export default function TriagePage() {
         setLoading(true)
         setError(null)
 
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser()
+
+        console.log('[triage] user', user?.id)
+
+        if (authError || !user) {
+          setError('Bitte einloggen, um Assessments zu sehen.')
+          setAssessments([])
+          setLoading(false)
+          return
+        }
+
         // Query assessments with joined processing jobs and reports
         const { data: assessmentsData, error: assessmentsError } = await supabase
           .from('assessments')

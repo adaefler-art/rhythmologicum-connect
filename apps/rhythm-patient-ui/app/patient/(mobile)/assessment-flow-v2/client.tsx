@@ -305,6 +305,10 @@ export default function AssessmentFlowV2Client({
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [completionError, setCompletionError] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const startRequestRef = useRef<{ inFlight: boolean; idempotencyKey: string | null }>({
+    inFlight: false,
+    idempotencyKey: null,
+  })
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
   const totalSteps = resolvedQuestions.length
@@ -538,8 +542,22 @@ export default function AssessmentFlowV2Client({
           return
         }
 
+        if (!startRequestRef.current.idempotencyKey) {
+          startRequestRef.current.idempotencyKey = crypto.randomUUID()
+        }
+
+        const idempotencyKey = startRequestRef.current.idempotencyKey
+        if (startRequestRef.current.inFlight) {
+          return
+        }
+
+        startRequestRef.current.inFlight = true
         const startResponse = await fetch(`/api/funnels/${slug}/assessments`, {
           method: 'POST',
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+            'X-Correlation-Id': idempotencyKey,
+          },
         })
 
         if (!startResponse.ok) {
@@ -562,6 +580,8 @@ export default function AssessmentFlowV2Client({
         setError(true)
         setErrorMessage(err instanceof Error ? err.message : 'Unbekannter Fehler')
         setIsLoading(false)
+      } finally {
+        startRequestRef.current.inFlight = false
       }
     }
 

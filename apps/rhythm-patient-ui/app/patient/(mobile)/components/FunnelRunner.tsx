@@ -106,6 +106,10 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
   // Navigation state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const startRequestRef = useRef<{ inFlight: boolean; idempotencyKey: string | null }>({
+    inFlight: false,
+    idempotencyKey: null,
+  })
 
   // ============================================================
   // API Helpers
@@ -113,9 +117,23 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
 
   const startAssessment = useCallback(async (): Promise<StartAssessmentResponseData | null> => {
     try {
+      if (startRequestRef.current.inFlight) {
+        return null
+      }
+
+      startRequestRef.current.inFlight = true
+      if (!startRequestRef.current.idempotencyKey) {
+        startRequestRef.current.idempotencyKey = crypto.randomUUID()
+      }
+
+      const idempotencyKey = startRequestRef.current.idempotencyKey
       const response = await fetch(`/api/funnels/${slug}/assessments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          'X-Correlation-Id': idempotencyKey,
+        },
       })
 
       if (!response.ok) {
@@ -134,6 +152,8 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     } catch (err) {
       setError({ type: 'network', message: 'Netzwerkfehler', retryable: true })
       return null
+    } finally {
+      startRequestRef.current.inFlight = false
     }
   }, [slug])
 
@@ -148,10 +168,22 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
           setError({ type: 'not_found', message: 'Assessment nicht gefunden', retryable: false })
         } else if (response.status === 401) {
           setError({ type: 'unauthorized', message: 'Bitte melden Sie sich an', retryable: false })
+      if (startRequestRef.current.inFlight) {
+        return null
+      }
+
+      startRequestRef.current.inFlight = true
+      if (!startRequestRef.current.idempotencyKey) {
+        startRequestRef.current.idempotencyKey = crypto.randomUUID()
+      }
+
+      const idempotencyKey = startRequestRef.current.idempotencyKey
         } else {
           setError({ type: 'server', message: 'Fehler beim Laden', retryable: true })
         }
-        return null
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          'X-Correlation-Id': idempotencyKey,
       }
 
       const payload = await response.json()
@@ -184,6 +216,8 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
               id: q.id,
               key: q.key,
               type: q.questionType || q.type,
+          } finally {
+            startRequestRef.current.inFlight = false
               label: q.label,
               helpText: q.helpText,
               required: q.isRequired || false,
