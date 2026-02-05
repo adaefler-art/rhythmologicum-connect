@@ -1,482 +1,201 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
-  FileCheck,
   AlertTriangle,
-  Clock,
-  Loader,
+  Search,
+  MoreHorizontal,
+  Flag,
+  Clock as ClockIcon,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Archive,
+  Inbox,
+  ArrowRight,
 } from 'lucide-react'
 
-// Triage status types matching the acceptance criteria
-type TriageStatus = 'incomplete' | 'processing' | 'report_ready' | 'flagged'
+// Case state types from triage_cases_v1 view
+type CaseState = 'needs_input' | 'in_progress' | 'ready_for_review' | 'resolved' | 'snoozed'
 
-type AssessmentTriage = {
-  assessment_id: string
+// Attention level types from triage_cases_v1 view
+type AttentionLevel = 'critical' | 'warn' | 'info' | 'none'
+
+// Next action types from triage_cases_v1 view
+type NextAction =
+  | 'clinician_review'
+  | 'admin_investigate'
+  | 'clinician_contact'
+  | 'system_retry'
+  | 'patient_provide_data'
+  | 'patient_continue'
+  | 'none'
+
+// Triage case from API
+type TriageCase = {
+  case_id: string
   patient_id: string
-  patient_name: string
+  funnel_id: string
   funnel_slug: string
-  funnel_title: string | null
-  started_at: string
+  first_name: string | null
+  last_name: string | null
+  preferred_name: string | null
+  patient_display: string
+  case_state: CaseState
+  attention_items: string[] | null
+  attention_level: AttentionLevel
+  next_action: NextAction
+  assigned_at: string
+  last_activity_at: string
+  updated_at: string
   completed_at: string | null
-  assessment_status: string
-  assessment_state: string | null
-  processing_status: string | null
-  processing_stage: string | null
-  report_status: string | null
-  report_id: string | null
-  risk_level: string | null
-  risk_score: number | null
-  result_computed_at: string | null
-  triage_status: TriageStatus
-  flagged_reason: string | null
+  is_active: boolean
+  snoozed_until: string | null
+  priority_score: number
 }
 
-type TriageDiagnosisKind =
-  | 'NO_SESSION'
-  | 'QUERY_ERROR'
-  | 'NO_ROWS_VISIBLE'
-  | 'OK_BASE_VISIBLE'
-  | 'JOIN_BLOCKED'
-
-type TriageDiagnosisResult =
-  | { kind: 'NO_SESSION' }
-  | { kind: 'QUERY_ERROR'; message: string }
-  | { kind: 'NO_ROWS_VISIBLE' }
-  | { kind: 'OK_BASE_VISIBLE'; data: AssessmentTriage[] }
-  | { kind: 'JOIN_BLOCKED'; data: AssessmentTriage[] }
-
-export default function TriagePage() {
+export default function InboxPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
-  const [diagnosis, setDiagnosis] = useState<TriageDiagnosisResult | null>(null)
-  const [healthAssessmentsTotal, setHealthAssessmentsTotal] = useState<number | null>(null)
-  const [latestAssessmentId, setLatestAssessmentId] = useState<string | null>(null)
-  const [retryTrigger, setRetryTrigger] = useState(0)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [baseCount, setBaseCount] = useState(0)
-  const baseCountRef = useRef(0)
-  const userIdRef = useRef<string | null>(null)
-  const healthCheckHasRunRef = useRef(false)
-  const triageLogHasRunRef = useRef(false)
-  const triageRunIdRef = useRef<string | null>(null)
+  const [cases, setCases] = useState<TriageCase[]>([])
+  
+  // Filter states
+  const [showActive, setShowActive] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [statusFilter, setStatusFilter] = useState<CaseState | ''>('')
+  const [attentionFilter, setAttentionFilter] = useState<AttentionLevel | ''>('')
 
-  const logDiagnosisOnce = useCallback((payload: Record<string, unknown>) => {
-    if (triageLogHasRunRef.current) return
-    triageLogHasRunRef.current = true
-    if (!triageRunIdRef.current) {
-      triageRunIdRef.current =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `triage-${Date.now()}`
-    }
-    console.warn('[triage-diagnose]', { ...payload, runId: triageRunIdRef.current })
-  }, [])
+  // Load triage data from API
+  const loadTriageData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
 
-  const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      setUserId(null)
-      userIdRef.current = null
-      return { kind: 'NO_SESSION' }
-    }
-
-    setUserId(user.id)
-    userIdRef.current = user.id
-
-    const base = await supabase
-      .from('assessments')
-      .select(
-        `
-          id,
-          patient_id,
-          funnel,
-          funnel_id,
-          started_at,
-          completed_at,
-          status,
-          state
-        `,
-      )
-      .order('started_at', { ascending: false })
-      .limit(100)
-
-    if (base.error) {
-      return {
-        kind: 'QUERY_ERROR',
-        message: base.error.message || 'Unbekannter Fehler',
+    try {
+      // Build query parameters
+      const params = new URLSearchParams()
+      params.set('activeOnly', showActive.toString())
+      
+      if (searchQuery.trim()) {
+        params.set('q', searchQuery.trim())
       }
-    }
-
-    const assessmentsData = base.data ?? []
-    const assessmentsLen = assessmentsData.length
-    setBaseCount(assessmentsLen)
-    baseCountRef.current = assessmentsLen
-
-    if (assessmentsLen === 0) {
-      return { kind: 'NO_ROWS_VISIBLE' }
-    }
-
-    const patientIds = Array.from(
-      new Set((assessmentsData ?? []).map((row: any) => row.patient_id).filter(Boolean)),
-    )
-    const funnelIds = Array.from(
-      new Set((assessmentsData ?? []).map((row: any) => row.funnel_id).filter(Boolean)),
-    )
-
-    let patientProfiles: any[] = []
-    let funnels: any[] = []
-    let joinFailed = false
-
-    if (patientIds.length > 0) {
-      const { data: patientData, error: patientError } = await supabase
-        .from('patient_profiles')
-        .select('id, full_name, user_id')
-        .in('id', patientIds)
-
-      if (patientError) {
-        joinFailed = true
-      } else {
-        patientProfiles = patientData ?? []
+      
+      if (statusFilter) {
+        params.set('status', statusFilter)
       }
-    }
-
-    if (funnelIds.length > 0) {
-      const { data: funnelData, error: funnelError } = await supabase
-        .from('funnels')
-        .select('id, slug, title')
-        .in('id', funnelIds)
-
-      if (funnelError) {
-        joinFailed = true
-      } else {
-        funnels = funnelData ?? []
-      }
-    }
-
-    const patientMap = new Map(patientProfiles.map((profile: any) => [profile.id, profile]))
-    const funnelMap = new Map(funnels.map((funnel: any) => [funnel.id, funnel]))
-
-    const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
-        
-      let processingData = null
-      let reportsData = null
-      let resultsData = null
-
-    if (assessmentIds.length > 0) {
-      const { data: pData, error: processingError } = await supabase
-        .from('processing_jobs')
-        .select('assessment_id, status, stage, delivery_status')
-        .in('assessment_id', assessmentIds)
-
-      if (processingError) console.warn('Processing jobs query failed:', processingError)
-      processingData = pData
-
-      const { data: rData, error: reportsError } = await supabase
-        .from('reports')
-        .select('assessment_id, id, status, risk_level')
-        .in('assessment_id', assessmentIds)
-
-      if (reportsError) console.warn('Reports query failed:', reportsError)
-      reportsData = rData
-
-      const { data: crData, error: resultsError } = await supabase
-        .from('calculated_results')
-        .select('assessment_id, scores, risk_models, computed_at')
-        .in('assessment_id', assessmentIds)
-
-      if (resultsError) console.warn('Calculated results query failed:', resultsError)
-      resultsData = crData
-    }
-
-        // Map processing and report data
-        const processingMap = new Map(
-          (processingData ?? []).map((p: any) => [p.assessment_id, p])
-        )
-        const reportsMap = new Map(
-          (reportsData ?? []).map((r: any) => [r.assessment_id, r])
-        )
-        const resultsMap = new Map(
-          (resultsData ?? []).map((r: any) => [r.assessment_id, r])
-        )
-
-    const triageData: AssessmentTriage[] = (assessmentsData ?? []).map((a: any) => {
-      const processing = processingMap.get(a.id)
-      const report = reportsMap.get(a.id)
-      const calculated = resultsMap.get(a.id)
-      const patientProfile = patientMap.get(a.patient_id)
-      const funnel = a.funnel_id ? funnelMap.get(a.funnel_id) : null
-      const riskLevel =
-        calculated?.risk_models?.riskLevel ||
-        calculated?.risk_models?.risk_level ||
-        report?.risk_level ||
-        null
-      const riskScore = calculated?.scores?.riskScore ?? calculated?.scores?.stress_score ?? null
-      const resultComputedAt = calculated?.computed_at || null
-
-      let triageStatus: TriageStatus
-      let flaggedReason: string | null = null
-
-      if (a.status === 'in_progress') {
-        triageStatus = 'incomplete'
-      } else if (a.completed_at && processing) {
-        if (processing.status === 'failed') {
-          triageStatus = 'flagged'
-          flaggedReason = 'Processing failed'
-        } else if (calculated) {
-          triageStatus = 'report_ready'
-          if (riskLevel === 'high' || riskLevel === 'critical') {
-            triageStatus = 'flagged'
-            flaggedReason = 'High risk detected'
-          }
-        } else if (processing.status === 'queued' || processing.status === 'in_progress') {
-          triageStatus = 'processing'
-        } else {
-          triageStatus = calculated ? 'report_ready' : 'processing'
-        }
-      } else if (a.completed_at && !processing) {
-        triageStatus = calculated ? 'report_ready' : 'processing'
-        if (calculated && (riskLevel === 'high' || riskLevel === 'critical')) {
-          triageStatus = 'flagged'
-          flaggedReason = 'High risk detected'
-        }
-      } else {
-        triageStatus = 'incomplete'
+      
+      if (attentionFilter) {
+        params.set('attention', attentionFilter)
       }
 
-      return {
-        assessment_id: a.id,
-        patient_id: a.patient_id,
-        patient_name:
-          patientProfile?.full_name ||
-          patientProfile?.user_id ||
-          (a.patient_id ? `Unbekannt (RLS) ${a.patient_id}` : 'Unbekannt (RLS)'),
-        funnel_slug: a.funnel || funnel?.slug || a.funnel_id || 'unknown',
-        funnel_title: funnel?.title || null,
-        started_at: a.started_at,
-        completed_at: a.completed_at,
-        assessment_status: a.status,
-        assessment_state: a.state,
-        processing_status: processing?.status || null,
-        processing_stage: processing?.stage || null,
-        report_status: report?.status || null,
-        report_id: report?.id || null,
-        risk_level: riskLevel,
-        risk_score: typeof riskScore === 'number' ? riskScore : null,
-        result_computed_at: resultComputedAt,
-        triage_status: triageStatus,
-        flagged_reason: flaggedReason,
-      }
-    })
-
-    const missingJoins =
-      joinFailed ||
-      (patientIds.length > 0 && patientProfiles.length === 0) ||
-      (funnelIds.length > 0 && funnels.length === 0)
-
-    if (missingJoins) {
-      return { kind: 'JOIN_BLOCKED', data: triageData }
-    }
-
-    return { kind: 'OK_BASE_VISIBLE', data: triageData }
-  }, [])
-
-  const handleDiagnosis = useCallback((result: TriageDiagnosisResult) => {
-    setDiagnosis(result)
-    switch (result.kind) {
-      case 'NO_SESSION':
-        setError('Bitte einloggen')
-        setAssessments([])
-        setHealthAssessmentsTotal(null)
-        break
-      case 'QUERY_ERROR':
-        setError(`Datenabfrage fehlgeschlagen: ${result.message}`)
-        setAssessments([])
-        setHealthAssessmentsTotal(null)
-        break
-      case 'NO_ROWS_VISIBLE':
-        setError('Keine Assessments sichtbar (RLS oder falsches Supabase-Projekt)')
-        setAssessments([])
-        setHealthAssessmentsTotal(null)
-        break
-      case 'JOIN_BLOCKED':
-        setError(null)
-        setAssessments(result.data)
-        setHealthAssessmentsTotal(null)
-        break
-      case 'OK_BASE_VISIBLE':
-        setError(null)
-        setAssessments(result.data)
-        setHealthAssessmentsTotal(null)
-        break
-    }
-
-    if (result.kind !== 'OK_BASE_VISIBLE' && result.kind !== 'NO_ROWS_VISIBLE') {
-      logDiagnosisOnce({
-        kind: result.kind,
-        baseCount,
-        assessmentsTotal: healthAssessmentsTotal,
-        userId: userIdRef.current,
-      })
-    }
-  }, [baseCount, healthAssessmentsTotal, logDiagnosisOnce])
-
-  useEffect(() => {
-    let isMounted = true
-
-    const run = async () => {
-      setLoading(true)
-      try {
-        const result = await loadTriageData()
-        if (!isMounted) return
-        handleDiagnosis(result)
-      } catch (e) {
-        if (!isMounted) return
-        console.error(e)
-        setError('Fehler beim Laden der Triage-Daten.')
-        setAssessments([])
-        setDiagnosis(null)
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    run()
-
-    return () => {
-      isMounted = false
-    }
-  }, [loadTriageData, handleDiagnosis, retryTrigger])
-
-  useEffect(() => {
-    if (diagnosis?.kind !== 'NO_ROWS_VISIBLE') return
-    if (healthCheckHasRunRef.current) return
-    healthCheckHasRunRef.current = true
-
-    if (!triageRunIdRef.current) {
-      triageRunIdRef.current =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `triage-${Date.now()}`
-    }
-    const controller = new AbortController()
-
-    let isMounted = true
-
-    const loadHealth = async () => {
-      let nextAssessmentsTotal: number | null = null
-      let nextError: string | null = null
-      let nextKind = 'HEALTHCHECK_FAILED'
-
-      try {
-        const response = await fetch('/api/triage/health', { signal: controller.signal })
-        if (!response.ok) return
-
-        const payload = await response.json()
-        const assessmentsTotal =
-          typeof payload.assessmentsTotal === 'number' ? payload.assessmentsTotal : null
-        const latestAssessmentIdValue =
-          typeof payload.latestAssessmentId === 'string' ? payload.latestAssessmentId : null
-
-        nextAssessmentsTotal = assessmentsTotal
-        setLatestAssessmentId(latestAssessmentIdValue)
-
-        if (assessmentsTotal === 0) {
-          nextError = 'Keine Daten in diesem Supabase-Projekt (0 Assessments laut Server).'
-          nextKind = 'NO_DATA_IN_PROJECT'
-        } else if (typeof assessmentsTotal === 'number') {
-          nextError = `RLS blockt (Server sieht Daten, Client nicht). Server count = ${assessmentsTotal}`
-          nextKind = 'RLS_BLOCKING'
-        }
-      } catch (err) {
-        if ((err as { name?: string }).name === 'AbortError') {
-          return
-        }
-        nextKind = 'HEALTHCHECK_FAILED'
+      const response = await fetch(`/api/clinician/triage?${params.toString()}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error?.message || `HTTP ${response.status}`)
       }
 
-      if (!isMounted) return
-
-      setHealthAssessmentsTotal(nextAssessmentsTotal)
-      if (nextError) {
-        setError(nextError)
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error?.message || 'API returned error')
       }
+
+      setCases(data.data?.cases || [])
+    } catch (err) {
+      console.error('Failed to load triage cases:', err)
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Inbox-Daten')
+      setCases([])
+    } finally {
       setLoading(false)
-
-      logDiagnosisOnce({
-        kind: nextKind,
-        baseCount: baseCountRef.current,
-        assessmentsTotal: nextAssessmentsTotal,
-        userId: userIdRef.current,
-      })
     }
+  }, [showActive, searchQuery, statusFilter, attentionFilter])
 
-    loadHealth()
+  // Load data on mount and when filters change
+  useEffect(() => {
+    loadTriageData()
+  }, [loadTriageData])
 
-    return () => {
-      isMounted = false
-      controller.abort()
-    }
-  }, [diagnosis?.kind])
+  // Handle search submit
+  const handleSearch = useCallback(() => {
+    setSearchQuery(searchInput)
+  }, [searchInput])
 
-  // Retry handler that triggers data reload without full page refresh
-  const handleRetry = useCallback(async () => {
-    if (diagnosis?.kind === 'NO_ROWS_VISIBLE' && healthAssessmentsTotal && latestAssessmentId) {
-      setLoading(true)
-      try {
-        const response = await fetch(
-          `/api/triage/fix-membership?assessmentId=${encodeURIComponent(latestAssessmentId)}`,
-          { method: 'POST' },
-        )
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null)
-          setError(payload?.error?.message || 'Konnte Mitgliedschaft nicht reparieren.')
-        }
-      } catch (err) {
-        setError('Konnte Mitgliedschaft nicht reparieren.')
-      } finally {
-        setRetryTrigger((prev) => prev + 1)
+  // Handle search key press
+  const handleSearchKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleSearch()
       }
-      return
-    }
-
-    setRetryTrigger((prev) => prev + 1)
-  }, [diagnosis?.kind, healthAssessmentsTotal, latestAssessmentId])
+    },
+    [handleSearch]
+  )
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const incomplete = assessments.filter((a) => a.triage_status === 'incomplete').length
-    const processing = assessments.filter((a) => a.triage_status === 'processing').length
-    const reportReady = assessments.filter((a) => a.triage_status === 'report_ready').length
-    const flagged = assessments.filter((a) => a.triage_status === 'flagged').length
+    const critical = cases.filter((c) => c.attention_level === 'critical').length
+    const warn = cases.filter((c) => c.attention_level === 'warn').length
+    const readyForReview = cases.filter((c) => c.case_state === 'ready_for_review').length
+    const needsInput = cases.filter((c) => c.case_state === 'needs_input').length
 
-    return { incomplete, processing, reportReady, flagged, total: assessments.length }
-  }, [assessments])
+    return { critical, warn, readyForReview, needsInput, total: cases.length }
+  }, [cases])
 
-  const getTriageStatusBadge = useCallback((status: TriageStatus) => {
-    switch (status) {
-      case 'incomplete':
-        return { variant: 'secondary' as const, label: 'Unvollständig', icon: Clock }
-      case 'processing':
-        return { variant: 'info' as const, label: 'In Bearbeitung', icon: Loader }
-      case 'report_ready':
-        return { variant: 'success' as const, label: 'Bericht bereit', icon: FileCheck }
-      case 'flagged':
-        return { variant: 'danger' as const, label: 'Markiert', icon: AlertTriangle }
+  // Get badge for case state
+  const getCaseStateBadge = useCallback((state: CaseState) => {
+    switch (state) {
+      case 'needs_input':
+        return { variant: 'secondary' as const, label: 'Eingabe erforderlich' }
+      case 'in_progress':
+        return { variant: 'info' as const, label: 'In Bearbeitung' }
+      case 'ready_for_review':
+        return { variant: 'primary' as const, label: 'Bereit zur Prüfung' }
+      case 'resolved':
+        return { variant: 'success' as const, label: 'Abgeschlossen' }
+      case 'snoozed':
+        return { variant: 'secondary' as const, label: 'Zurückgestellt' }
     }
   }, [])
 
+  // Get badge for attention level
+  const getAttentionBadge = useCallback((level: AttentionLevel) => {
+    switch (level) {
+      case 'critical':
+        return { variant: 'danger' as const, label: 'Kritisch', icon: AlertTriangle }
+      case 'warn':
+        return { variant: 'warning' as const, label: 'Warnung', icon: AlertTriangle }
+      case 'info':
+        return { variant: 'info' as const, label: 'Info', icon: FileText }
+      case 'none':
+        return null
+    }
+  }, [])
+
+  // Get next action label
+  const getNextActionLabel = useCallback((action: NextAction) => {
+    switch (action) {
+      case 'clinician_review':
+        return 'Klinische Prüfung'
+      case 'admin_investigate':
+        return 'Admin-Untersuchung'
+      case 'clinician_contact':
+        return 'Patientenkontakt'
+      case 'system_retry':
+        return 'Systemwiederholung'
+      case 'patient_provide_data':
+        return 'Daten bereitstellen'
+      case 'patient_continue':
+        return 'Fortsetzen'
+      case 'none':
+        return 'Keine Aktion'
+    }
+  }, [])
+
+  // Format datetime
   const formatDateTime = useCallback((isoString: string | null): string => {
     if (!isoString) return '—'
     try {
@@ -492,30 +211,31 @@ export default function TriagePage() {
     }
   }, [])
 
+  // Handle row click
   const handleRowClick = useCallback(
-    (assessment: AssessmentTriage) => {
-      router.push(`/clinician/patient/${assessment.patient_id}`)
+    (triageCase: TriageCase) => {
+      router.push(`/clinician/patient/${triageCase.patient_id}`)
     },
     [router]
   )
 
   // Define table columns
-  const columns: TableColumn<AssessmentTriage>[] = useMemo(
+  const columns: TableColumn<TriageCase>[] = useMemo(
     () => [
       {
         header: 'Patient:in',
         accessor: (row) => (
           <span className="font-medium text-slate-900 dark:text-slate-50">
-            {row.patient_name}
+            {row.patient_display}
           </span>
         ),
         sortable: true,
       },
       {
-        header: 'Funnel',
+        header: 'Funnel / Episode',
         accessor: (row) => (
           <span className="text-slate-700 dark:text-slate-300">
-            {row.funnel_title || row.funnel_slug}
+            {row.funnel_slug}
           </span>
         ),
         sortable: true,
@@ -523,59 +243,68 @@ export default function TriagePage() {
       {
         header: 'Status',
         accessor: (row) => {
-          const badge = getTriageStatusBadge(row.triage_status)
+          const stateBadge = getCaseStateBadge(row.case_state)
           return (
             <div className="flex flex-col gap-1">
-              <Badge variant={badge.variant}>{badge.label}</Badge>
-              {row.flagged_reason && (
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  {row.flagged_reason}
-                </span>
-              )}
+              <Badge variant={stateBadge.variant}>{stateBadge.label}</Badge>
             </div>
           )
         },
         sortable: true,
       },
       {
-        header: 'Result',
+        header: 'Gründe',
+        accessor: (row) => {
+          const attentionBadge = getAttentionBadge(row.attention_level)
+          if (!attentionBadge) return <span className="text-slate-500 dark:text-slate-400">—</span>
+          
+          return (
+            <div className="flex flex-wrap gap-1">
+              <Badge variant={attentionBadge.variant} size="sm">
+                {attentionBadge.label}
+              </Badge>
+              {row.attention_items && row.attention_items.length > 0 && (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  +{row.attention_items.length}
+                </span>
+              )}
+            </div>
+          )
+        },
+      },
+      {
+        header: 'Nächste Aktion',
         accessor: (row) => (
-          <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-300">
-            <span>
-              {row.risk_level ? `Risk: ${row.risk_level}` : 'Risk: —'}
-            </span>
-            <span>
-              {typeof row.risk_score === 'number' ? `Score: ${Math.round(row.risk_score)}` : 'Score: —'}
-            </span>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleRowClick(row)
+            }}
+            icon={<ArrowRight className="w-4 h-4" />}
+          >
+            {getNextActionLabel(row.next_action)}
+          </Button>
         ),
       },
       {
-        header: 'Gestartet',
+        header: 'Letzte Aktivität',
         accessor: (row) => (
           <span className="text-slate-700 dark:text-slate-300 whitespace-nowrap">
-            {formatDateTime(row.started_at)}
-          </span>
-        ),
-        sortable: true,
-      },
-      {
-        header: 'Abgeschlossen',
-        accessor: (row) => (
-          <span className="text-slate-700 dark:text-slate-300 whitespace-nowrap">
-            {formatDateTime(row.completed_at)}
+            {formatDateTime(row.last_activity_at)}
           </span>
         ),
         sortable: true,
       },
     ],
-    [getTriageStatusBadge, formatDateTime]
+    [getCaseStateBadge, getAttentionBadge, getNextActionLabel, formatDateTime, handleRowClick]
   )
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="md" text="Triage-Übersicht wird geladen…" />
+        <LoadingSpinner size="md" text="Inbox wird geladen…" />
       </div>
     )
   }
@@ -586,7 +315,7 @@ export default function TriagePage() {
         <ErrorState
           title="Fehler beim Laden"
           message={error}
-          onRetry={handleRetry}
+          onRetry={loadTriageData}
           retryText="Neu laden"
         />
       </div>
@@ -598,16 +327,16 @@ export default function TriagePage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-          Triage / Übersicht
+          Inbox
         </h1>
         <p className="text-slate-600 dark:text-slate-300">
-          Aktive Patienten und Funnels mit aktuellem Bearbeitungsstatus
+          Handlungsbedarf und Aufmerksamkeitselemente
         </p>
       </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Incomplete Assessments */}
+        {/* Critical Cases */}
         <Card
           padding="lg"
           shadow="md"
@@ -617,106 +346,224 @@ export default function TriagePage() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                Unvollständig
+                Kritisch
               </p>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
-                {stats.incomplete}
+                {stats.critical}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Noch in Bearbeitung
+                Sofortige Aufmerksamkeit
               </p>
-            </div>
-            <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              <Clock className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Processing */}
-        <Card
-          padding="lg"
-          shadow="md"
-          radius="lg"
-          className="hover:shadow-lg transition-shadow"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                In Bearbeitung
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
-                {stats.processing}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Bericht wird erstellt</p>
-            </div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Loader className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Report Ready */}
-        <Card
-          padding="lg"
-          shadow="md"
-          radius="lg"
-          className="hover:shadow-lg transition-shadow"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                Bericht bereit
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
-                {stats.reportReady}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Bereit zur Einsicht
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <FileCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </Card>
-
-        {/* Flagged */}
-        <Card
-          padding="lg"
-          shadow="md"
-          radius="lg"
-          className="hover:shadow-lg transition-shadow"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
-                Markiert
-              </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
-                {stats.flagged}
-              </p>
-              {stats.flagged > 0 && (
-                <Badge variant="danger" size="sm" className="mt-1">
-                  Aufmerksamkeit erforderlich
-                </Badge>
-              )}
             </div>
             <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
           </div>
         </Card>
+
+        {/* Warning Cases */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Warnungen
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.warn}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Aufmerksamkeit erforderlich</p>
+            </div>
+            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Ready for Review */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Bereit zur Prüfung
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.readyForReview}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Wartend auf Freigabe
+              </p>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        {/* Needs Input */}
+        <Card
+          padding="lg"
+          shadow="md"
+          radius="lg"
+          className="hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                Eingabe erforderlich
+              </p>
+              <p className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1">
+                {stats.needsInput}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Wartet auf Daten
+              </p>
+            </div>
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+              <ClockIcon className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Assessments Table */}
+      {/* Filters Section */}
+      <Card padding="lg" shadow="md" radius="lg" className="mb-6">
+        <div className="flex flex-col gap-4">
+          {/* Active/Archive Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={showActive ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setShowActive(true)}
+              icon={<Inbox className="w-4 h-4" />}
+            >
+              Aktiv
+            </Button>
+            <Button
+              variant={!showActive ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => setShowActive(false)}
+              icon={<Archive className="w-4 h-4" />}
+            >
+              Archiv
+            </Button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="md:col-span-2">
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="Patient oder Funnel suchen…"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  inputSize="sm"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSearch}
+                  icon={<Search className="w-4 h-4" />}
+                >
+                  Suchen
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as CaseState | '')}
+                selectSize="sm"
+              >
+                <option value="">Alle Status</option>
+                <option value="needs_input">Eingabe erforderlich</option>
+                <option value="in_progress">In Bearbeitung</option>
+                <option value="ready_for_review">Bereit zur Prüfung</option>
+                <option value="resolved">Abgeschlossen</option>
+                <option value="snoozed">Zurückgestellt</option>
+              </Select>
+            </div>
+
+            {/* Attention Filter */}
+            <div>
+              <Select
+                value={attentionFilter}
+                onChange={(e) => setAttentionFilter(e.target.value as AttentionLevel | '')}
+                selectSize="sm"
+              >
+                <option value="">Alle Prioritäten</option>
+                <option value="critical">Kritisch</option>
+                <option value="warn">Warnung</option>
+                <option value="info">Info</option>
+                <option value="none">Keine</option>
+              </Select>
+            </div>
+          </div>
+
+          {/* Active Filter Chips */}
+          {(searchQuery || statusFilter || attentionFilter) && (
+            <div className="flex gap-2 flex-wrap">
+              {searchQuery && (
+                <Badge
+                  variant="secondary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSearchInput('')
+                  }}
+                >
+                  Suche: {searchQuery} ×
+                </Badge>
+              )}
+              {statusFilter && (
+                <Badge
+                  variant="secondary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => setStatusFilter('')}
+                >
+                  Status: {getCaseStateBadge(statusFilter).label} ×
+                </Badge>
+              )}
+              {attentionFilter && (
+                <Badge
+                  variant="secondary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => setAttentionFilter('')}
+                >
+                  Priorität: {getAttentionBadge(attentionFilter)?.label} ×
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Cases Table */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-              Alle Assessments
+              {showActive ? 'Aktive Fälle' : 'Archivierte Fälle'}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-              {stats.total} aktive Assessments insgesamt
+              {stats.total} Fälle insgesamt
             </p>
           </div>
         </div>
@@ -724,12 +571,12 @@ export default function TriagePage() {
 
       <Table
         columns={columns}
-        data={assessments}
-        keyExtractor={(row) => row.assessment_id}
+        data={cases}
+        keyExtractor={(row) => row.case_id}
         hoverable
         bordered
         onRowClick={handleRowClick}
-        emptyMessage="Noch keine Assessments vorhanden"
+        emptyMessage="Keine Fälle gefunden"
       />
     </div>
   )
