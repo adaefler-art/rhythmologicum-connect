@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { env } from './lib/env'
 
-const baseURL = process.env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
+const baseURL = env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
+const reuseExistingServer = env.NODE_ENV !== 'test'
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -8,7 +10,7 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
-  retries: process.env.CI ? 1 : 0,
+  retries: 0,
   use: {
     baseURL,
     trace: 'retain-on-failure',
@@ -18,7 +20,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run start:studio',
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer,
     timeout: 120_000,
   },
   projects: [
