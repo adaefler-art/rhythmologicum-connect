@@ -17,6 +17,7 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
+import { AmyInsightsSection } from './AmyInsightsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus } from '@/lib/types/workupStatus'
@@ -942,64 +943,7 @@ export default function PatientDetailPage() {
 
         {/* AMY Insights Tab */}
         <TabContent value="insights">
-          {featureFlags.AMY_ENABLED && measures.some((m) => m.reports?.report_text_short) ? (
-            <div className="space-y-4">
-              <Card padding="lg" shadow="md">
-                <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">AMY-Berichte (Chronologisch)</h2>
-                </div>
-                <div className="space-y-4">
-                  {measures
-                    .filter((m) => m.reports?.report_text_short)
-                    .map((measure) => (
-                      <div
-                        key={measure.id}
-                        className={`border-l-4 pl-4 py-3 ${
-                          measure.risk_level === 'high'
-                            ? 'border-red-400'
-                            : measure.risk_level === 'moderate'
-                            ? 'border-amber-400'
-                            : 'border-emerald-400'
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                              {formatDate(measure.created_at)}
-                            </span>
-                            <Badge variant={getRiskBadgeVariant(measure.risk_level)} size="sm">
-                              {getRiskLabel(measure.risk_level)}
-                            </Badge>
-                          </div>
-                          <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                            Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
-                            {measure.sleep_score ?? '—'}
-                          </div>
-                        </div>
-                        <p className="text-sm md:text-base text-slate-700 dark:text-slate-300 whitespace-pre-line">
-                          {measure.reports!.report_text_short}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-            </div>
-          ) : (
-            <Card padding="lg" shadow="md">
-              <div className="text-center py-8">
-                <Brain className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
-                  Keine AMY Insights verfügbar
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  {!featureFlags.AMY_ENABLED
-                    ? 'AMY-Integration ist derzeit deaktiviert.'
-                    : 'Für diese:n Patient:in liegen noch keine AMY-generierten Berichte vor.'}
-                </p>
-              </div>
-            </Card>
-          )}
+          <AmyInsightsSection patientId={patientProfileId} isEnabled={featureFlags.AMY_CHAT_ENABLED} />
         </TabContent>
 
         {/* Actions Tab */}

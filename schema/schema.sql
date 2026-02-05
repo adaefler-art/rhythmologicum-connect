@@ -7541,6 +7541,15 @@ CREATE POLICY "amy_chat_messages_patient_select" ON "public"."amy_chat_messages"
 
 
 
+CREATE POLICY "Clinicians can view assigned patient AMY chat messages" ON "public"."amy_chat_messages" FOR SELECT USING (EXISTS (
+    SELECT 1
+    FROM "public"."clinician_patient_assignments" "cpa"
+    WHERE ("cpa"."clinician_user_id" = "auth"."uid"())
+      AND ("cpa"."patient_user_id" = "amy_chat_messages"."user_id")
+));
+
+
+
 ALTER TABLE "public"."anamnesis_entries" ENABLE ROW LEVEL SECURITY;
 
 
