@@ -121,6 +121,7 @@ export default function PatientDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [patient, setPatient] = useState<PatientProfile | null>(null)
+  const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
   
   // E73.5: Assessments with calculated results (SSOT)
@@ -152,13 +153,94 @@ export default function PatientDetailPage() {
         setLoading(true)
         setError(null)
 
+        const logProfileResolution = (details: {
+          lookupBy: 'id' | 'user_id'
+          outcome: 'match' | 'not_found' | 'multiple' | 'error'
+          rowCount: number | null
+        }) => {
+          console.info(
+            JSON.stringify({
+              event: 'PATIENT_PROFILE_RESOLUTION',
+              route: '/clinician/patient/[id]',
+              paramId: patientId,
+              ...details,
+            })
+          )
+        }
+
+        const resolvePatientProfile = async (): Promise<PatientProfile | null> => {
+          const lookups = [
+            { lookupBy: 'id' as const, column: 'id' },
+            { lookupBy: 'user_id' as const, column: 'user_id' },
+          ]
+
+          for (const lookup of lookups) {
+            const { data, error: profileError } = await supabase
+              .from('patient_profiles')
+              .select('*')
+              .eq(lookup.column, patientId)
+              .maybeSingle()
+
+            if (profileError) {
+              if ((profileError as { code?: string }).code === 'PGRST116') {
+                const { data: diagnosticRows } = await supabase
+                  .from('patient_profiles')
+                  .select('id')
+                  .eq(lookup.column, patientId)
+                  .limit(2)
+
+                logProfileResolution({
+                  lookupBy: lookup.lookupBy,
+                  outcome: 'multiple',
+                  rowCount: diagnosticRows?.length ?? 0,
+                })
+                return null
+              }
+
+              logProfileResolution({
+                lookupBy: lookup.lookupBy,
+                outcome: 'error',
+                rowCount: null,
+              })
+              throw profileError
+            }
+
+            if (data) {
+              logProfileResolution({
+                lookupBy: lookup.lookupBy,
+                outcome: 'match',
+                rowCount: 1,
+              })
+              return data
+            }
+
+            logProfileResolution({
+              lookupBy: lookup.lookupBy,
+              outcome: 'not_found',
+              rowCount: 0,
+            })
+          }
+
+          return null
+        }
+
+        const resolvedProfile = await resolvePatientProfile()
+        if (!resolvedProfile) {
+          setPatient(null)
+          setResolvedPatientId(null)
+          setError('Patientenprofil nicht gefunden.')
+          return
+        }
+
+        const profileId = resolvedProfile.id
+        setPatient(resolvedProfile)
+        setResolvedPatientId(profileId)
+
         // Load patient profile and measures in parallel for better performance
-        const [profileResult, measuresResult] = await Promise.all([
-          supabase.from('patient_profiles').select('*').eq('id', patientId).single(),
-          supabase
-            .from('patient_measures')
-            .select(
-              `
+        const measuresResult = await supabase
+          .from('patient_measures')
+          .select(
+            `
             id,
             patient_id,
             stress_score,
@@ -172,15 +254,11 @@ export default function PatientDetailPage() {
               created_at
             )
           `
-            )
-            .eq('patient_id', patientId)
-            .order('created_at', { ascending: false }),
-        ])
+          )
+          .eq('patient_id', profileId)
+          .order('created_at', { ascending: false })
 
-        if (profileResult.error) throw profileResult.error
         if (measuresResult.error) throw measuresResult.error
-
-        setPatient(profileResult.data)
         // Type assertion for Supabase joined query (one-to-one relationship)
         setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
 
@@ -196,7 +274,7 @@ export default function PatientDetailPage() {
         const { data: assessmentsData, error: assessmentsError } = (await supabase
           .from('assessments')
           .select('id, status, workup_status, missing_data_fields')
-          .eq('patient_id', patientId)
+          .eq('patient_id', profileId)
           .order('created_at', { ascending: false })) as {
           data: AssessmentListItemWithWorkup[] | null
           error: unknown
@@ -355,7 +433,9 @@ export default function PatientDetailPage() {
         // E73.5: Fetch assessments with results from SSOT endpoint
         // IMPORTANT: Literal string callsite for endpoint wiring
         try {
-          const response = await fetch(`/api/patient/assessments-with-results?patientId=${patientId}`)
+          const response = await fetch(
+            `/api/patient/assessments-with-results?patientId=${profileId}`
+          )
           if (response.ok) {
             const json = await response.json()
             if (json.success && json.data?.assessments) {
@@ -446,6 +526,7 @@ export default function PatientDetailPage() {
 
   // Get latest measure for status badges
   const latestMeasure = measures.length > 0 ? measures[0] : null
+  const patientProfileId = patient?.id ?? resolvedPatientId ?? patientId
 
   return (
     <div className="w-full">
@@ -462,7 +543,7 @@ export default function PatientDetailPage() {
         fullName={patient.full_name}
         birthYear={patient.birth_year}
         sex={patient.sex}
-        patientId={patientId}
+        patientId={patientProfileId}
         latestRiskLevel={latestMeasure?.risk_level}
         hasPendingAssessment={latestMeasure?.risk_level === 'pending'}
       />
@@ -723,17 +804,17 @@ export default function PatientDetailPage() {
 
         {/* Anamnese Tab - E75.4 */}
         <TabContent value="anamnese">
-          <AnamnesisSection patientId={patientId} />
+          <AnamnesisSection patientId={patientProfileId} />
         </TabContent>
 
         {/* Funnels Tab - E74.6 */}
         <TabContent value="funnels">
-          <FunnelsSection patientId={patientId} />
+          <FunnelsSection patientId={patientProfileId} />
         </TabContent>
 
         {/* Diagnosis Tab */}
         <TabContent value="diagnosis">
-          <DiagnosisSection patientId={patientId} />
+          <DiagnosisSection patientId={patientProfileId} />
         </TabContent>
 
         {/* AMY Insights Tab */}

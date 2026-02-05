@@ -201,6 +201,27 @@ export default function InboxPage() {
     }
   }, [])
 
+  const getPatientDisplay = useCallback((row: TriageCase) => {
+    const display = row.patient_display?.trim()
+    if (display) return display
+
+    const nameFallback = [row.preferred_name, row.first_name, row.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+
+    if (nameFallback) return nameFallback
+    if (row.patient_id) return `Patient ${row.patient_id.slice(0, 8)}`
+    return 'Unbekannt'
+  }, [])
+
+  const getFunnelDisplay = useCallback((row: TriageCase) => {
+    const display = row.funnel_slug?.trim()
+    if (display) return display
+    if (row.funnel_id) return `Funnel ${row.funnel_id.slice(0, 8)}`
+    return '—'
+  }, [])
+
   // Format datetime
   const formatDateTime = useCallback((isoString: string | null): string => {
     if (!isoString) return '—'
@@ -265,7 +286,7 @@ export default function InboxPage() {
         header: 'Patient:in',
         accessor: (row) => (
           <span className="font-medium text-slate-900 dark:text-slate-50">
-            {row.patient_display}
+            {getPatientDisplay(row)}
           </span>
         ),
         sortable: true,
@@ -274,7 +295,7 @@ export default function InboxPage() {
         header: 'Funnel / Episode',
         accessor: (row) => (
           <span className="text-slate-700 dark:text-slate-300">
-            {row.funnel_slug}
+            {getFunnelDisplay(row)}
           </span>
         ),
         sortable: true,
@@ -394,7 +415,18 @@ export default function InboxPage() {
         ),
       },
     ],
-    [getCaseStateBadge, getAttentionBadge, getNextActionLabel, formatDateTime, handleRowClick, toggleDropdown, openDropdownId, handleRowAction]
+    [
+      getCaseStateBadge,
+      getAttentionBadge,
+      getNextActionLabel,
+      getPatientDisplay,
+      getFunnelDisplay,
+      formatDateTime,
+      handleRowClick,
+      toggleDropdown,
+      openDropdownId,
+      handleRowAction,
+    ]
   )
 
   if (loading) {
