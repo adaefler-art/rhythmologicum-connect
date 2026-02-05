@@ -3229,15 +3229,28 @@ export type Database = {
           attention_level: string | null
           case_id: string | null
           case_state: string | null
+          completed_at: string | null
+          delivery_status: string | null
+          first_name: string | null
           funnel_id: string | null
           funnel_slug: string | null
           is_active: boolean | null
+          job_id: string | null
+          job_stage: Database["public"]["Enums"]["processing_stage"] | null
+          job_status: Database["public"]["Enums"]["processing_status"] | null
+          last_activity_at: string | null
+          last_name: string | null
           next_action: string | null
           patient_display: string | null
           patient_id: string | null
+          preferred_name: string | null
           priority_score: number | null
+          review_decided_at: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
           sla_deadline: string | null
           sla_status: string | null
+          snoozed_until: string | null
+          updated_at: string | null
         }
         Insert: {
           assigned_at?: never
@@ -3245,15 +3258,28 @@ export type Database = {
           attention_level?: never
           case_id?: never
           case_state?: never
+          completed_at?: never
+          delivery_status?: never
+          first_name?: never
           funnel_id?: never
           funnel_slug?: never
           is_active?: never
+          job_id?: never
+          job_stage?: never
+          job_status?: never
+          last_activity_at?: never
+          last_name?: never
           next_action?: never
           patient_display?: never
           patient_id?: never
+          preferred_name?: never
           priority_score?: never
+          review_decided_at?: never
+          review_status?: never
           sla_deadline?: never
           sla_status?: never
+          snoozed_until?: never
+          updated_at?: never
         }
         Update: {
           assigned_at?: never
@@ -3261,15 +3287,28 @@ export type Database = {
           attention_level?: never
           case_id?: never
           case_state?: never
+          completed_at?: never
+          delivery_status?: never
+          first_name?: never
           funnel_id?: never
           funnel_slug?: never
           is_active?: never
+          job_id?: never
+          job_stage?: never
+          job_status?: never
+          last_activity_at?: never
+          last_name?: never
           next_action?: never
           patient_display?: never
           patient_id?: never
+          preferred_name?: never
           priority_score?: never
+          review_decided_at?: never
+          review_status?: never
           sla_deadline?: never
           sla_status?: never
+          snoozed_until?: never
+          updated_at?: never
         }
         Relationships: []
       }
