@@ -61,8 +61,12 @@ export default function TriagePage() {
   const [retryTrigger, setRetryTrigger] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [baseCount, setBaseCount] = useState(0)
+  const baseCountRef = useRef(0)
+  const userIdRef = useRef<string | null>(null)
   const healthCheckHasRunRef = useRef(false)
   const triageLogHasRunRef = useRef(false)
+  const healthCheckRunIdRef = useRef<string | null>(null)
+  const healthCheckLogStateRef = useRef({ start: false, end: false })
 
   const logDiagnosisOnce = useCallback((payload: Record<string, unknown>) => {
     if (triageLogHasRunRef.current) return
@@ -78,10 +82,12 @@ export default function TriagePage() {
 
     if (authError || !user) {
       setUserId(null)
+      userIdRef.current = null
       return { kind: 'NO_SESSION' }
     }
 
     setUserId(user.id)
+    userIdRef.current = user.id
 
     const base = await supabase
       .from('assessments')
@@ -110,6 +116,7 @@ export default function TriagePage() {
     const assessmentsData = base.data ?? []
     const assessmentsLen = assessmentsData.length
     setBaseCount(assessmentsLen)
+    baseCountRef.current = assessmentsLen
 
     if (assessmentsLen === 0) {
       return { kind: 'NO_ROWS_VISIBLE' }
@@ -354,12 +361,26 @@ export default function TriagePage() {
     healthCheckHasRunRef.current = true
 
     const runId =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      healthCheckRunIdRef.current ||
+      (typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
-        : `healthcheck-${Date.now()}`
+        : `healthcheck-${Date.now()}`)
+    healthCheckRunIdRef.current = runId
     const startedAt = new Date().toISOString()
+    const controller = new AbortController()
 
     let isMounted = true
+
+    if (!healthCheckLogStateRef.current.start) {
+      healthCheckLogStateRef.current.start = true
+      console.info('[triage-healthcheck]', {
+        runId,
+        startedAt,
+        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        baseCount: baseCountRef.current,
+        userId: userIdRef.current,
+      })
+    }
 
     const loadHealth = async () => {
       let nextAssessmentsTotal: number | null = null
@@ -367,7 +388,7 @@ export default function TriagePage() {
       let nextKind = 'HEALTHCHECK_FAILED'
 
       try {
-        const response = await fetch('/api/triage/health')
+        const response = await fetch('/api/triage/health', { signal: controller.signal })
         if (!response.ok) return
 
         const payload = await response.json()
@@ -384,10 +405,13 @@ export default function TriagePage() {
           nextKind = 'RLS_BLOCKING'
         }
       } catch (err) {
+        if ((err as { name?: string }).name === 'AbortError') {
+          return
+        }
         nextKind = 'HEALTHCHECK_FAILED'
       }
 
-        if (!isMounted) return
+      if (!isMounted) return
 
       setHealthAssessmentsTotal(nextAssessmentsTotal)
       if (nextError) {
@@ -395,24 +419,28 @@ export default function TriagePage() {
       }
       setLoading(false)
 
-      logDiagnosisOnce({
-        kind: nextKind,
-        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-        baseCount,
-        assessmentsTotal: nextAssessmentsTotal,
-        userId,
-        runId,
-        startedAt,
-        endedAt: new Date().toISOString(),
-      })
+      if (!healthCheckLogStateRef.current.end) {
+        healthCheckLogStateRef.current.end = true
+        console.warn('[triage-diagnose]', {
+          kind: nextKind,
+          supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+          baseCount: baseCountRef.current,
+          assessmentsTotal: nextAssessmentsTotal,
+          userId: userIdRef.current,
+          runId,
+          startedAt,
+          endedAt: new Date().toISOString(),
+        })
+      }
     }
 
     loadHealth()
 
     return () => {
       isMounted = false
+      controller.abort()
     }
-  }, [baseCount, diagnosis, logDiagnosisOnce, userId])
+  }, [diagnosis?.kind])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
