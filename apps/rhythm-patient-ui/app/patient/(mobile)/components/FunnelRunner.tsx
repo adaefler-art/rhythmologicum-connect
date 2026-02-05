@@ -14,7 +14,7 @@
  * - Deterministic error states (loading/empty/offline)
  */
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Card,
