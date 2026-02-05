@@ -8976,6 +8976,25 @@
       "isAllowedOrphan": true
     },
     {
+      "path": "/api/triage/fix-membership",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/triage/fix-membership/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "apiPath": "/api/triage/fix-membership",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
       "path": "/api/triage/health",
       "methods": [
         "GET"
