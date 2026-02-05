@@ -135,6 +135,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/clinician/patient-funnels | POST | clinician |  | 0 | apps/rhythm-studio-ui/app/api/clinician/patient-funnels/route.ts |
 | /api/clinician/patient-funnels/[id] | PATCH | clinician |  | 1 | apps/rhythm-studio-ui/app/api/clinician/patient-funnels/[id]/route.ts |
 | /api/clinician/patients/[patientId]/funnels | GET | clinician |  | 1 | apps/rhythm-studio-ui/app/api/clinician/patients/[patientId]/funnels/route.ts |
+| /api/clinician/triage | GET | clinician |  | 0 | apps/rhythm-studio-ui/app/api/clinician/triage/route.ts |
 | /api/consent/record | POST | patient |  | 0 | apps/rhythm-legacy/app/api/consent/record/route.ts |
 | /api/consent/record | POST | patient |  | 0 | legacy/code/app/api/consent/record/route.ts |
 | /api/consent/status | GET | patient |  | 0 | apps/rhythm-legacy/app/api/consent/status/route.ts |
