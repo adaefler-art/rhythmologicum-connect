@@ -20,22 +20,9 @@
 
 import process from 'process'
 
-// Try to import Supabase client, but allow script to run without it
-let createClient
-let supabase = null
-
-try {
-  const supabaseModule = await import('@supabase/supabase-js')
-  createClient = supabaseModule.createClient
-  
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  }
-} catch (error) {
-  console.warn('⚠️  @supabase/supabase-js not available - running in documentation mode')
+// Placeholder: future implementation may use Supabase data. Keep script runnable without DB access.
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  console.log('ℹ️  Running in documentation mode (no Supabase credentials provided)')
 }
 
 // Error code to rule ID mapping (from RULES_VS_CHECKS_MATRIX.md)
