@@ -22,6 +22,7 @@ import {
 import { withIdempotency } from '@/lib/api/idempotency'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelStarted } from '@/lib/telemetry/events'
+import { ASSESSMENT_STATUS, isValidAssessmentStatus } from '@/lib/contracts/registry'
 import type { Database } from '@/lib/types/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -115,7 +116,9 @@ async function buildResumeResponse(
 
   const responseData: StartAssessmentResponseData = {
     assessmentId: assessment.id,
-    status: assessment.status,
+    status: isValidAssessmentStatus(assessment.status)
+      ? assessment.status
+      : ASSESSMENT_STATUS.IN_PROGRESS,
     currentStep: {
       stepId: currentStep.stepId,
       title: currentStep.title,
@@ -503,7 +506,9 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
 
     const responseData: StartAssessmentResponseData = {
       assessmentId: assessment.id,
-      status: assessment.status,
+      status: isValidAssessmentStatus(assessment.status)
+        ? assessment.status
+        : ASSESSMENT_STATUS.IN_PROGRESS,
       currentStep: {
         stepId: currentStep.stepId,
         title: currentStep.title,
