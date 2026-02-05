@@ -62,6 +62,12 @@ const ALLOWED_ADMIN_USAGE = [
   // MCP context pack: clinician/admin cross-patient aggregation for diagnosis tooling.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts',
+  // Triage: repair staff/patient org membership links (cross-user admin operation).
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-studio-ui/app/api/triage/fix-membership/route.ts',
+  // Triage health: system-level metrics that bypass RLS for global counts.
+  // Documented in docs/canon/DB_ACCESS_DECISION.md.
+  'apps/rhythm-studio-ui/app/api/triage/health/route.ts',
   // Diagnosis worker execution: requires service role for system updates.
   // Documented in docs/canon/DB_ACCESS_DECISION.md.
   'apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts',
