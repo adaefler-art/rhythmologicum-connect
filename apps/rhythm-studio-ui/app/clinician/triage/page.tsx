@@ -42,6 +42,7 @@ type TriageDiagnosisKind =
   | 'QUERY_ERROR'
   | 'NO_ROWS_VISIBLE'
   | 'JOIN_BLOCKED'
+  | 'JOIN_RLS_BLOCKING'
   | 'OK'
 
 type TriageDiagnosisResult =
@@ -49,6 +50,7 @@ type TriageDiagnosisResult =
   | { kind: 'QUERY_ERROR'; message: string }
   | { kind: 'NO_ROWS_VISIBLE' }
   | { kind: 'JOIN_BLOCKED' }
+  | { kind: 'JOIN_RLS_BLOCKING'; data: AssessmentTriage[] }
   | { kind: 'OK'; data: AssessmentTriage[] }
 
 export default function TriagePage() {
@@ -85,17 +87,7 @@ export default function TriagePage() {
           started_at,
           completed_at,
           status,
-          state,
-          patient_profiles!assessments_patient_id_fkey (
-            id,
-            full_name,
-            user_id
-          ),
-          funnels!assessments_funnel_id_fkey (
-            id,
-            slug,
-            title
-          )
+          state
         `,
       )
       .order('started_at', { ascending: false })
@@ -108,24 +100,51 @@ export default function TriagePage() {
       }
     }
 
-    const { data: bareData } = await supabase
-      .from('assessments')
-      .select('id, patient_id, started_at, completed_at, status', { count: 'exact' })
-      .limit(5)
-
-    const bareLen = bareData?.length ?? 0
     const assessmentsLen = assessmentsData?.length ?? 0
-    const hasJoinData = (assessmentsData ?? []).some(
-      (row: any) => row.patient_profiles || row.funnels,
-    )
 
-    if (bareLen === 0) {
+    if (assessmentsLen === 0) {
       return { kind: 'NO_ROWS_VISIBLE' }
     }
 
-    if (assessmentsLen === 0 || !hasJoinData) {
-      return { kind: 'JOIN_BLOCKED' }
+    const patientIds = Array.from(
+      new Set((assessmentsData ?? []).map((row: any) => row.patient_id).filter(Boolean)),
+    )
+    const funnelIds = Array.from(
+      new Set((assessmentsData ?? []).map((row: any) => row.funnel_id).filter(Boolean)),
+    )
+
+    let patientProfiles: any[] = []
+    let funnels: any[] = []
+    let joinFailed = false
+
+    if (patientIds.length > 0) {
+      const { data: patientData, error: patientError } = await supabase
+        .from('patient_profiles')
+        .select('id, full_name, user_id')
+        .in('id', patientIds)
+
+      if (patientError) {
+        joinFailed = true
+      } else {
+        patientProfiles = patientData ?? []
+      }
     }
+
+    if (funnelIds.length > 0) {
+      const { data: funnelData, error: funnelError } = await supabase
+        .from('funnels')
+        .select('id, slug, title')
+        .in('id', funnelIds)
+
+      if (funnelError) {
+        joinFailed = true
+      } else {
+        funnels = funnelData ?? []
+      }
+    }
+
+    const patientMap = new Map(patientProfiles.map((profile: any) => [profile.id, profile]))
+    const funnelMap = new Map(funnels.map((funnel: any) => [funnel.id, funnel]))
 
     const assessmentIds = (assessmentsData ?? []).map((a: any) => a.id)
         
@@ -174,6 +193,8 @@ export default function TriagePage() {
       const processing = processingMap.get(a.id)
       const report = reportsMap.get(a.id)
       const calculated = resultsMap.get(a.id)
+      const patientProfile = patientMap.get(a.patient_id)
+      const funnel = a.funnel_id ? funnelMap.get(a.funnel_id) : null
       const riskLevel =
         calculated?.risk_models?.riskLevel ||
         calculated?.risk_models?.risk_level ||
@@ -215,9 +236,13 @@ export default function TriagePage() {
       return {
         assessment_id: a.id,
         patient_id: a.patient_id,
-        patient_name: a.patient_profiles?.full_name ?? a.patient_profiles?.user_id ?? 'Unbekannt',
-        funnel_slug: a.funnel || a.funnels?.slug || 'unknown',
-        funnel_title: a.funnels?.title || null,
+        patient_name:
+          patientProfile?.full_name ||
+          patientProfile?.user_id ||
+          a.patient_id ||
+          'Unbekannt (RLS)',
+        funnel_slug: a.funnel || funnel?.slug || 'unknown',
+        funnel_title: funnel?.title || null,
         started_at: a.started_at,
         completed_at: a.completed_at,
         assessment_status: a.status,
@@ -233,6 +258,13 @@ export default function TriagePage() {
         flagged_reason: flaggedReason,
       }
     })
+
+    const missingJoins =
+      joinFailed || patientProfiles.length === 0 || (funnelIds.length > 0 && funnels.length === 0)
+
+    if (missingJoins) {
+      return { kind: 'JOIN_RLS_BLOCKING', data: triageData }
+    }
 
     return { kind: 'OK', data: triageData }
   }, [])
@@ -253,6 +285,11 @@ export default function TriagePage() {
       case 'JOIN_BLOCKED':
         setError('Zugriff auf Patient/Funnel-Daten blockiert (RLS auf patient_profiles/funnels prüfen)')
         setAssessments([])
+        setHealthAssessmentsTotal(null)
+        break
+      case 'JOIN_RLS_BLOCKING':
+        setError('Teilweise Daten sichtbar (RLS blockt patient_profiles/funnels)')
+        setAssessments(result.data)
         setHealthAssessmentsTotal(null)
         break
       case 'NO_ROWS_VISIBLE':
