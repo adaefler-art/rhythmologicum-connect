@@ -1,0 +1,66 @@
+import { NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { env } from '@/lib/env'
+
+export async function GET() {
+  try {
+    const supabase = await createServerSupabaseClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'AUTHENTICATION_REQUIRED',
+            message: 'User must be authenticated',
+          },
+        },
+        { status: 401 },
+      )
+    }
+
+    const adminClient = createAdminSupabaseClient()
+
+    const { count: assessmentsTotal, error: assessmentsError } = await adminClient
+      .from('assessments')
+      .select('id', { count: 'exact', head: true })
+
+    if (assessmentsError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'QUERY_FAILED',
+            message: assessmentsError.message || 'Failed to count assessments',
+          },
+        },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        assessmentsTotal: assessmentsTotal ?? 0,
+        projectUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+      },
+      { status: 200 },
+    )
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Internal error',
+        },
+      },
+      { status: 500 },
+    )
+  }
+}

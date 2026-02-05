@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { env } from '@/lib/env'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   FileCheck,
@@ -56,6 +57,7 @@ export default function TriagePage() {
   const [error, setError] = useState<string | null>(null)
   const [assessments, setAssessments] = useState<AssessmentTriage[]>([])
   const [diagnosis, setDiagnosis] = useState<TriageDiagnosisResult | null>(null)
+  const [healthAssessmentsTotal, setHealthAssessmentsTotal] = useState<number | null>(null)
   const [retryTrigger, setRetryTrigger] = useState(0)
 
   const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
@@ -237,29 +239,34 @@ export default function TriagePage() {
       case 'NO_SESSION':
         setError('Bitte einloggen')
         setAssessments([])
+        setHealthAssessmentsTotal(null)
         break
       case 'QUERY_ERROR':
         setError(`Datenabfrage fehlgeschlagen: ${result.message}`)
         setAssessments([])
+        setHealthAssessmentsTotal(null)
         break
       case 'JOIN_BLOCKED':
         setError('Zugriff auf Patient/Funnel-Daten blockiert (RLS auf patient_profiles/funnels prüfen)')
         setAssessments([])
+        setHealthAssessmentsTotal(null)
         break
       case 'NO_ROWS_VISIBLE':
         setError('Keine Assessments sichtbar (RLS oder falsches Supabase-Projekt)')
         setAssessments([])
+        setHealthAssessmentsTotal(null)
         break
       case 'OK':
         setError(null)
         setAssessments(result.data)
+        setHealthAssessmentsTotal(null)
         break
     }
 
     if (result.kind !== 'OK') {
       console.warn('[triage-diagnose]', {
         kind: result.kind,
-        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
       })
     }
   }, [])
@@ -290,6 +297,56 @@ export default function TriagePage() {
       isMounted = false
     }
   }, [loadTriageData, handleDiagnosis, retryTrigger])
+
+  useEffect(() => {
+    if (diagnosis?.kind !== 'NO_ROWS_VISIBLE') return
+
+    let isMounted = true
+
+    const loadHealth = async () => {
+      try {
+        const response = await fetch('/api/triage/health')
+        if (!response.ok) return
+
+        const payload = await response.json()
+        const assessmentsTotal =
+          typeof payload.assessmentsTotal === 'number' ? payload.assessmentsTotal : null
+
+        if (!isMounted) return
+
+        setHealthAssessmentsTotal(assessmentsTotal)
+
+        if (assessmentsTotal === 0) {
+          setError('Keine Daten in diesem Supabase-Projekt (0 Assessments laut Server).')
+          console.warn('[triage-diagnose]', {
+            kind: 'NO_DATA_IN_PROJECT',
+            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+            assessmentsTotal,
+          })
+        } else if (typeof assessmentsTotal === 'number') {
+          setError(
+            `RLS blockt (Server sieht Daten, Client nicht). Server count = ${assessmentsTotal}`,
+          )
+          console.warn('[triage-diagnose]', {
+            kind: 'RLS_BLOCKING',
+            supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+            assessmentsTotal,
+          })
+        }
+      } catch (err) {
+        console.warn('[triage-diagnose]', {
+          kind: 'HEALTHCHECK_FAILED',
+          supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        })
+      }
+    }
+
+    loadHealth()
+
+    return () => {
+      isMounted = false
+    }
+  }, [diagnosis])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
