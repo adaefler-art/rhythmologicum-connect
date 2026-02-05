@@ -2005,27 +2005,36 @@ export type Database = {
         Row: {
           birth_year: number | null
           created_at: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name: string | null
           sex: string | null
           user_id: string
         }
         Insert: {
           birth_year?: number | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name?: string | null
           sex?: string | null
           user_id: string
         }
         Update: {
           birth_year?: number | null
           created_at?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_name?: string | null
           sex?: string | null
           user_id?: string
         }
@@ -3324,7 +3333,7 @@ export type Database = {
           case_state: string | null
           completed_at: string | null
           delivery_status: string | null
-          full_name: string | null
+          first_name: string | null
           funnel_id: string | null
           funnel_slug: string | null
           is_active: boolean | null
@@ -3332,9 +3341,11 @@ export type Database = {
           job_stage: Database["public"]["Enums"]["processing_stage"] | null
           job_status: Database["public"]["Enums"]["processing_status"] | null
           last_activity_at: string | null
+          last_name: string | null
           next_action: string | null
           patient_display: string | null
           patient_id: string | null
+          preferred_name: string | null
           priority_score: number | null
           review_decided_at: string | null
           review_status: Database["public"]["Enums"]["review_status"] | null
@@ -3502,6 +3513,7 @@ export type Database = {
         | "delivery"
         | "completed"
         | "failed"
+        | "report_generated"
       processing_status: "queued" | "in_progress" | "completed" | "failed"
       report_status: "pending" | "generating" | "completed" | "failed"
       review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
@@ -3708,6 +3720,7 @@ export const Constants = {
         "delivery",
         "completed",
         "failed",
+        "report_generated",
       ],
       processing_status: ["queued", "in_progress", "completed", "failed"],
       report_status: ["pending", "generating", "completed", "failed"],
