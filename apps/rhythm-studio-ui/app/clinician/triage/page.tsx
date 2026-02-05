@@ -41,17 +41,15 @@ type TriageDiagnosisKind =
   | 'NO_SESSION'
   | 'QUERY_ERROR'
   | 'NO_ROWS_VISIBLE'
-  | 'JOIN_BLOCKED'
-  | 'JOIN_RLS_BLOCKING'
-  | 'OK'
+  | 'OK_BASE_VISIBLE'
+  | 'JOIN_OR_ENRICHMENT_BLOCKED'
 
 type TriageDiagnosisResult =
   | { kind: 'NO_SESSION' }
   | { kind: 'QUERY_ERROR'; message: string }
   | { kind: 'NO_ROWS_VISIBLE' }
-  | { kind: 'JOIN_BLOCKED' }
-  | { kind: 'JOIN_RLS_BLOCKING'; data: AssessmentTriage[] }
-  | { kind: 'OK'; data: AssessmentTriage[] }
+  | { kind: 'OK_BASE_VISIBLE'; data: AssessmentTriage[] }
+  | { kind: 'JOIN_OR_ENRICHMENT_BLOCKED'; data: AssessmentTriage[] }
 
 export default function TriagePage() {
   const router = useRouter()
@@ -62,6 +60,7 @@ export default function TriagePage() {
   const [healthAssessmentsTotal, setHealthAssessmentsTotal] = useState<number | null>(null)
   const [retryTrigger, setRetryTrigger] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
+  const [baseCount, setBaseCount] = useState(0)
 
   const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
     const {
@@ -76,7 +75,7 @@ export default function TriagePage() {
 
     setUserId(user.id)
 
-    const { data: assessmentsData, error: assessmentsError } = await supabase
+    const base = await supabase
       .from('assessments')
       .select(
         `
@@ -93,14 +92,16 @@ export default function TriagePage() {
       .order('started_at', { ascending: false })
       .limit(100)
 
-    if (assessmentsError) {
+    if (base.error) {
       return {
         kind: 'QUERY_ERROR',
-        message: assessmentsError.message || 'Unbekannter Fehler',
+        message: base.error.message || 'Unbekannter Fehler',
       }
     }
 
-    const assessmentsLen = assessmentsData?.length ?? 0
+    const assessmentsData = base.data ?? []
+    const assessmentsLen = assessmentsData.length
+    setBaseCount(assessmentsLen)
 
     if (assessmentsLen === 0) {
       return { kind: 'NO_ROWS_VISIBLE' }
@@ -240,7 +241,7 @@ export default function TriagePage() {
           patientProfile?.full_name ||
           patientProfile?.user_id ||
           a.patient_id ||
-          'Unbekannt (RLS)',
+          '(RLS)',
         funnel_slug: a.funnel || funnel?.slug || 'unknown',
         funnel_title: funnel?.title || null,
         started_at: a.started_at,
@@ -260,13 +261,15 @@ export default function TriagePage() {
     })
 
     const missingJoins =
-      joinFailed || patientProfiles.length === 0 || (funnelIds.length > 0 && funnels.length === 0)
+      joinFailed ||
+      (patientIds.length > 0 && patientProfiles.length === 0) ||
+      (funnelIds.length > 0 && funnels.length === 0)
 
     if (missingJoins) {
-      return { kind: 'JOIN_RLS_BLOCKING', data: triageData }
+      return { kind: 'JOIN_OR_ENRICHMENT_BLOCKED', data: triageData }
     }
 
-    return { kind: 'OK', data: triageData }
+    return { kind: 'OK_BASE_VISIBLE', data: triageData }
   }, [])
 
   const handleDiagnosis = useCallback((result: TriageDiagnosisResult) => {
@@ -282,36 +285,33 @@ export default function TriagePage() {
         setAssessments([])
         setHealthAssessmentsTotal(null)
         break
-      case 'JOIN_BLOCKED':
-        setError('Zugriff auf Patient/Funnel-Daten blockiert (RLS auf patient_profiles/funnels prüfen)')
-        setAssessments([])
-        setHealthAssessmentsTotal(null)
-        break
-      case 'JOIN_RLS_BLOCKING':
-        setError('Teilweise Daten sichtbar (RLS blockt patient_profiles/funnels)')
-        setAssessments(result.data)
-        setHealthAssessmentsTotal(null)
-        break
       case 'NO_ROWS_VISIBLE':
         setError('Keine Assessments sichtbar (RLS oder falsches Supabase-Projekt)')
         setAssessments([])
         setHealthAssessmentsTotal(null)
         break
-      case 'OK':
+      case 'JOIN_OR_ENRICHMENT_BLOCKED':
+        setError(null)
+        setAssessments(result.data)
+        setHealthAssessmentsTotal(null)
+        break
+      case 'OK_BASE_VISIBLE':
         setError(null)
         setAssessments(result.data)
         setHealthAssessmentsTotal(null)
         break
     }
 
-    if (result.kind !== 'OK') {
+    if (result.kind !== 'OK_BASE_VISIBLE') {
       console.warn('[triage-diagnose]', {
         kind: result.kind,
         supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        baseCount,
+        assessmentsTotal: healthAssessmentsTotal,
         userId,
       })
     }
-  }, [userId])
+  }, [baseCount, healthAssessmentsTotal, userId])
 
   useEffect(() => {
     let isMounted = true
@@ -364,6 +364,7 @@ export default function TriagePage() {
             kind: 'NO_DATA_IN_PROJECT',
             supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
             assessmentsTotal,
+            baseCount,
             userId,
           })
         } else if (typeof assessmentsTotal === 'number') {
@@ -374,6 +375,7 @@ export default function TriagePage() {
             kind: 'RLS_BLOCKING',
             supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
             assessmentsTotal,
+            baseCount,
             userId,
           })
         }
@@ -381,6 +383,8 @@ export default function TriagePage() {
         console.warn('[triage-diagnose]', {
           kind: 'HEALTHCHECK_FAILED',
           supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+          baseCount,
+          assessmentsTotal: healthAssessmentsTotal,
           userId,
         })
       }
@@ -391,7 +395,7 @@ export default function TriagePage() {
     return () => {
       isMounted = false
     }
-  }, [diagnosis, userId])
+  }, [baseCount, diagnosis, healthAssessmentsTotal, userId])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
