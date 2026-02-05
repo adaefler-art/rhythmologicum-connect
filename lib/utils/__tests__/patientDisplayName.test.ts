@@ -46,6 +46,26 @@ describe('resolvePatientDisplayName', () => {
     expect(result.isFallback).toBe(true)
   })
 
+  it('uses display_label when no name is present', () => {
+    const result = resolvePatientDisplayName({
+      id: '9e0b2d6c-1234-5678-9abc-def012345678',
+      display_label: 'Patientin A',
+    })
+
+    expect(result.displayName).toBe('Patientin A')
+    expect(result.isFallback).toBe(false)
+  })
+
+  it('skips display_label when it looks like an email', () => {
+    const result = resolvePatientDisplayName({
+      id: '9e0b2d6c-1234-5678-9abc-def012345678',
+      display_label: 'ada@example.com',
+    })
+
+    expect(result.displayName).toBe('Patient:in 9e0b2d6c')
+    expect(result.isFallback).toBe(true)
+  })
+
   it('never uses email as displayName', () => {
     const result = resolvePatientDisplayName({
       id: '9e0b2d6c-1234-5678-9abc-def012345678',

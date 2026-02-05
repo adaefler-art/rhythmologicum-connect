@@ -3,6 +3,7 @@ export type PatientDisplayInput = {
   full_name?: string | null
   first_name?: string | null
   last_name?: string | null
+  display_label?: string | null
   email?: string | null
 }
 
@@ -28,6 +29,11 @@ export function resolvePatientDisplayName(
   const joinedName = [firstName, lastName].filter(Boolean).join(' ').trim()
   if (joinedName) {
     return { displayName: joinedName, isFallback: false }
+  }
+
+  const displayLabel = normalizeValue(profile.display_label)
+  if (displayLabel && !isLikelyEmail(displayLabel)) {
+    return { displayName: displayLabel, isFallback: false }
   }
 
   const shortId = normalizeValue(profile.id).slice(0, 8)

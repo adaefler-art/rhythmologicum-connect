@@ -217,8 +217,8 @@ export default function InboxPage() {
       }).displayName
     }
 
-    if (row.patient_id) return 'Patientin (kein Zugriff)'
-    return 'Patientin (nicht gefunden)'
+    if (row.patient_id) return 'Patient:in'
+    return 'Patient:in'
   }, [])
 
   const getPatientSecondaryLabel = useCallback((row: TriageCase) => {
