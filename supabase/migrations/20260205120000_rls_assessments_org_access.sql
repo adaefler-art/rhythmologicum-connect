@@ -7,13 +7,21 @@ do $body$
 declare
   has_org_tables boolean := to_regclass('public.user_org_membership') is not null;
   has_is_admin boolean := to_regprocedure('public.is_admin()') is not null;
+  has_is_clinician boolean := to_regprocedure('public.is_clinician()') is not null;
   fallback_predicate text := 'public.is_clinician()';
 begin
+  fallback_predicate := 'auth.role() = ''authenticated''';
+
+  if has_is_clinician then
+    fallback_predicate := fallback_predicate || ' OR public.is_clinician()';
+  end if;
+
   if has_is_admin then
     fallback_predicate := fallback_predicate || ' OR public.is_admin()';
   end if;
 
   if has_org_tables then
+    raise notice 'ORG_SCOPED';
     execute $policy$
       create policy "Staff can view org patient assessments" on public.assessments
       for select
@@ -38,10 +46,15 @@ begin
       )
     $policy$;
   else
-    raise notice 'Org tables missing: applied clinician-only fallback policy';
+    if has_is_clinician or has_is_admin then
+      raise notice 'FALLBACK_IS_CLINICIAN';
+    else
+      raise notice 'FALLBACK_AUTHENTICATED_ONLY';
+    end if;
+
     execute format($sql$
       create policy "Staff can view org patient assessments" on public.assessments
-      for select
+      for select to authenticated
       using (%s)
     $sql$, fallback_predicate);
   end if;
