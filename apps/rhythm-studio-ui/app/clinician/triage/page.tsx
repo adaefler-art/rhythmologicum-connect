@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Badge, Card, Table, LoadingSpinner, ErrorState } from '@/lib/ui'
-import { env } from '@/lib/env'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   FileCheck,
@@ -42,14 +41,14 @@ type TriageDiagnosisKind =
   | 'QUERY_ERROR'
   | 'NO_ROWS_VISIBLE'
   | 'OK_BASE_VISIBLE'
-  | 'JOIN_OR_ENRICHMENT_BLOCKED'
+  | 'JOIN_BLOCKED'
 
 type TriageDiagnosisResult =
   | { kind: 'NO_SESSION' }
   | { kind: 'QUERY_ERROR'; message: string }
   | { kind: 'NO_ROWS_VISIBLE' }
   | { kind: 'OK_BASE_VISIBLE'; data: AssessmentTriage[] }
-  | { kind: 'JOIN_OR_ENRICHMENT_BLOCKED'; data: AssessmentTriage[] }
+  | { kind: 'JOIN_BLOCKED'; data: AssessmentTriage[] }
 
 export default function TriagePage() {
   const router = useRouter()
@@ -65,13 +64,18 @@ export default function TriagePage() {
   const userIdRef = useRef<string | null>(null)
   const healthCheckHasRunRef = useRef(false)
   const triageLogHasRunRef = useRef(false)
-  const healthCheckRunIdRef = useRef<string | null>(null)
-  const healthCheckLogStateRef = useRef({ start: false, end: false })
+  const triageRunIdRef = useRef<string | null>(null)
 
   const logDiagnosisOnce = useCallback((payload: Record<string, unknown>) => {
     if (triageLogHasRunRef.current) return
     triageLogHasRunRef.current = true
-    console.warn('[triage-diagnose]', payload)
+    if (!triageRunIdRef.current) {
+      triageRunIdRef.current =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `triage-${Date.now()}`
+    }
+    console.warn('[triage-diagnose]', { ...payload, runId: triageRunIdRef.current })
   }, [])
 
   const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
@@ -255,9 +259,8 @@ export default function TriagePage() {
         patient_name:
           patientProfile?.full_name ||
           patientProfile?.user_id ||
-          a.patient_id ||
-          '(RLS)',
-        funnel_slug: a.funnel || funnel?.slug || 'unknown',
+          (a.patient_id ? `Unbekannt (RLS) ${a.patient_id}` : 'Unbekannt (RLS)'),
+        funnel_slug: a.funnel || funnel?.slug || a.funnel_id || 'unknown',
         funnel_title: funnel?.title || null,
         started_at: a.started_at,
         completed_at: a.completed_at,
@@ -281,7 +284,7 @@ export default function TriagePage() {
       (funnelIds.length > 0 && funnels.length === 0)
 
     if (missingJoins) {
-      return { kind: 'JOIN_OR_ENRICHMENT_BLOCKED', data: triageData }
+      return { kind: 'JOIN_BLOCKED', data: triageData }
     }
 
     return { kind: 'OK_BASE_VISIBLE', data: triageData }
@@ -305,7 +308,7 @@ export default function TriagePage() {
         setAssessments([])
         setHealthAssessmentsTotal(null)
         break
-      case 'JOIN_OR_ENRICHMENT_BLOCKED':
+      case 'JOIN_BLOCKED':
         setError(null)
         setAssessments(result.data)
         setHealthAssessmentsTotal(null)
@@ -320,7 +323,6 @@ export default function TriagePage() {
     if (result.kind !== 'OK_BASE_VISIBLE' && result.kind !== 'NO_ROWS_VISIBLE') {
       logDiagnosisOnce({
         kind: result.kind,
-        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
         baseCount,
         assessmentsTotal: healthAssessmentsTotal,
         userId: userIdRef.current,
@@ -360,27 +362,15 @@ export default function TriagePage() {
     if (healthCheckHasRunRef.current) return
     healthCheckHasRunRef.current = true
 
-    const runId =
-      healthCheckRunIdRef.current ||
-      (typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `healthcheck-${Date.now()}`)
-    healthCheckRunIdRef.current = runId
-    const startedAt = new Date().toISOString()
+    if (!triageRunIdRef.current) {
+      triageRunIdRef.current =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `triage-${Date.now()}`
+    }
     const controller = new AbortController()
 
     let isMounted = true
-
-    if (!healthCheckLogStateRef.current.start) {
-      healthCheckLogStateRef.current.start = true
-      console.info('[triage-healthcheck]', {
-        runId,
-        startedAt,
-        supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-        baseCount: baseCountRef.current,
-        userId: userIdRef.current,
-      })
-    }
 
     const loadHealth = async () => {
       let nextAssessmentsTotal: number | null = null
@@ -419,19 +409,12 @@ export default function TriagePage() {
       }
       setLoading(false)
 
-      if (!healthCheckLogStateRef.current.end) {
-        healthCheckLogStateRef.current.end = true
-        console.warn('[triage-diagnose]', {
-          kind: nextKind,
-          supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
-          baseCount: baseCountRef.current,
-          assessmentsTotal: nextAssessmentsTotal,
-          userId: userIdRef.current,
-          runId,
-          startedAt,
-          endedAt: new Date().toISOString(),
-        })
-      }
+      logDiagnosisOnce({
+        kind: nextKind,
+        baseCount: baseCountRef.current,
+        assessmentsTotal: nextAssessmentsTotal,
+        userId: userIdRef.current,
+      })
     }
 
     loadHealth()
