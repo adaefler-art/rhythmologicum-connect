@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select } from '@/lib/ui'
 import type { TableColumn } from '@/lib/ui/Table'
@@ -16,6 +16,8 @@ import {
   Archive,
   Inbox,
   ArrowRight,
+  StickyNote,
+  RotateCcw,
 } from 'lucide-react'
 
 // Case state types from triage_cases_v1 view
@@ -69,6 +71,10 @@ export default function InboxPage() {
   const [searchInput, setSearchInput] = useState('')
   const [statusFilter, setStatusFilter] = useState<CaseState | ''>('')
   const [attentionFilter, setAttentionFilter] = useState<AttentionLevel | ''>('')
+  
+  // Row action dropdown state
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Load triage data from API
   const loadTriageData = useCallback(async () => {
@@ -219,6 +225,39 @@ export default function InboxPage() {
     [router]
   )
 
+  // Toggle dropdown
+  const toggleDropdown = useCallback((caseId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenDropdownId((prev) => (prev === caseId ? null : caseId))
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null)
+      }
+    }
+
+    if (openDropdownId) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openDropdownId])
+
+  // Row action handlers (placeholders for future backend implementation)
+  const handleRowAction = useCallback(
+    (action: string, triageCase: TriageCase, e: React.MouseEvent) => {
+      e.stopPropagation()
+      setOpenDropdownId(null)
+      
+      // TODO: Implement backend API calls for row actions
+      console.log(`Action "${action}" triggered for case ${triageCase.case_id}`)
+      alert(`Aktion "${action}" wird in einer zukünftigen Version implementiert.`)
+    },
+    []
+  )
+
   // Define table columns
   const columns: TableColumn<TriageCase>[] = useMemo(
     () => [
@@ -297,8 +336,64 @@ export default function InboxPage() {
         ),
         sortable: true,
       },
+      {
+        header: 'Aktionen',
+        accessor: (row) => (
+          <div className="relative" ref={openDropdownId === row.case_id ? dropdownRef : null}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => toggleDropdown(row.case_id, e)}
+              icon={<MoreHorizontal className="w-4 h-4" />}
+            >
+            </Button>
+            
+            {openDropdownId === row.case_id && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
+                <div className="py-1">
+                  <button
+                    onClick={(e) => handleRowAction('flag', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <Flag className="w-4 h-4" />
+                    Markieren
+                  </button>
+                  <button
+                    onClick={(e) => handleRowAction('snooze', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <ClockIcon className="w-4 h-4" />
+                    Zurückstellen
+                  </button>
+                  <button
+                    onClick={(e) => handleRowAction('close', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Schließen
+                  </button>
+                  <button
+                    onClick={(e) => handleRowAction('reopen', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Wiedereröffnen
+                  </button>
+                  <button
+                    onClick={(e) => handleRowAction('note', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <StickyNote className="w-4 h-4" />
+                    Notiz hinzufügen
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ),
+      },
     ],
-    [getCaseStateBadge, getAttentionBadge, getNextActionLabel, formatDateTime, handleRowClick]
+    [getCaseStateBadge, getAttentionBadge, getNextActionLabel, formatDateTime, handleRowClick, toggleDropdown, openDropdownId, handleRowAction]
   )
 
   if (loading) {
