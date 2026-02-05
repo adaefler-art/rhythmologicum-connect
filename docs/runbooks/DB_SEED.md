@@ -179,6 +179,10 @@ This script (located at `scripts/verify/verify-e6-4-10-seed.ps1`) checks:
 
 ## Org Membership Bootstrap (Dev/Staging)
 
+- In dev/stage, Studio admins/clinicians are mapped to the same org as the patient so RLS allows access.
+- The bootstrapper uses upsert and can be rerun safely (no duplicates).
+- No RLS policies are modified; this only fixes org membership.
+
 If Studio shows `RLS_BLOCKING`, ensure the Studio user and the patient belong to the same
 organization. Use the bootstrapper:
 

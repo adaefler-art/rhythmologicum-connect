@@ -106,56 +106,28 @@ async function resolveStudioUserId(supabase) {
 }
 
 async function ensureOrganization(supabase) {
+  const payload = {
+    name: ORG_NAME,
+    slug: ORG_SLUG,
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  }
+
   if (ORG_ID) {
-    const { data, error } = await supabase
-      .from('organizations')
-      .upsert(
-        {
-          id: ORG_ID,
-          name: ORG_NAME,
-          slug: ORG_SLUG,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' },
-      )
-      .select('id')
-      .single()
-
-    if (error || !data?.id) {
-      throw new Error(`Failed to upsert organization by id: ${error?.message}`)
-    }
-
-    return data.id
+    payload.id = ORG_ID
   }
 
-  const { data: existing, error: fetchError } = await supabase
+  const { data, error } = await supabase
     .from('organizations')
-    .select('id')
-    .eq('slug', ORG_SLUG)
-    .maybeSingle()
-
-  if (fetchError) {
-    throw new Error(`Failed to lookup organization by slug: ${fetchError.message}`)
-  }
-
-  if (existing?.id) return existing.id
-
-  const { data: inserted, error: insertError } = await supabase
-    .from('organizations')
-    .insert({
-      name: ORG_NAME,
-      slug: ORG_SLUG,
-      is_active: true,
-    })
+    .upsert(payload, { onConflict: ORG_ID ? 'id' : 'slug' })
     .select('id')
     .single()
 
-  if (insertError || !inserted?.id) {
-    throw new Error(`Failed to create organization: ${insertError?.message}`)
+  if (error || !data?.id) {
+    throw new Error(`Failed to upsert organization: ${error?.message}`)
   }
 
-  return inserted.id
+  return data.id
 }
 
 async function upsertMembership(supabase, payload) {
