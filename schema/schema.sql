@@ -6795,11 +6795,6 @@ CREATE POLICY "Clinicians can update anamnesis entries for assigned patients" ON
 CREATE POLICY "Clinicians can view all assessment answers" ON "public"."assessment_answers" FOR SELECT USING ("public"."is_clinician"());
 
 
-
-CREATE POLICY "Clinicians can view all assessments" ON "public"."assessments" FOR SELECT USING ("public"."is_clinician"());
-
-
-
 CREATE POLICY "Clinicians can view all measures" ON "public"."patient_measures" FOR SELECT USING ("public"."is_clinician"());
 
 
@@ -7084,14 +7079,11 @@ CREATE POLICY "Staff can view org or assigned patients" ON "public"."patient_pro
 
 
 
-CREATE POLICY "Staff can view org patient assessments" ON "public"."assessments" FOR SELECT USING (((EXISTS ( SELECT 1
-   FROM ("public"."patient_profiles" "pp"
-     JOIN "public"."user_org_membership" "uom1" ON (("pp"."user_id" = "uom1"."user_id")))
-  WHERE (("pp"."id" = "assessments"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."user_org_membership" "uom2"
-          WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND ("uom2"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"])))))))) OR (EXISTS ( SELECT 1
-   FROM "public"."patient_profiles" "pp"
-  WHERE (("pp"."id" = "assessments"."patient_id") AND "public"."is_assigned_to_patient"("pp"."user_id"))))));
+CREATE POLICY "Staff can view org patient assessments" ON "public"."assessments" FOR SELECT USING ((EXISTS ( SELECT 1
+  FROM (("public"."patient_profiles" "pp"
+    JOIN "public"."user_org_membership" "uom_patient" ON (("pp"."user_id" = "uom_patient"."user_id") AND ("uom_patient"."is_active" = true)))
+    JOIN "public"."user_org_membership" "uom_staff" ON (("uom_staff"."organization_id" = "uom_patient"."organization_id") AND ("uom_staff"."user_id" = "auth"."uid"()) AND ("uom_staff"."is_active" = true) AND (("uom_staff"."role" = 'clinician'::"public"."user_role") OR ("uom_staff"."role" = 'nurse'::"public"."user_role") OR ("uom_staff"."role" = 'admin'::"public"."user_role")))))
+  WHERE ("pp"."id" = "assessments"."patient_id"))));
 
 
 
