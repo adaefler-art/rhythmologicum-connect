@@ -87,21 +87,28 @@ async function main() {
   try {
     await client.query('begin')
 
-    const orgQuery = `
-      select distinct uom.organization_id
+    const studioUserId = await resolveStudioUserId(client)
+
+    const orgAndPatientQuery = `
+      select
+        uom.organization_id,
+        pp.user_id as patient_user_id
       from assessments a
       join patient_profiles pp on pp.id = a.patient_id
       join user_org_membership uom on uom.user_id = pp.user_id
       limit 1;
     `
 
-    const studioUserId = await resolveStudioUserId(client)
-
-    const orgResult = await client.query(orgQuery)
+    const orgResult = await client.query(orgAndPatientQuery)
     const orgId = orgResult.rows[0]?.organization_id
+    const patientUserId = orgResult.rows[0]?.patient_user_id
 
     if (!orgId) {
       throw new Error('No organization_id found for the existing assessment')
+    }
+
+    if (!patientUserId) {
+      throw new Error('No patient user_id found for the existing assessment')
     }
 
     const upsertQuery = `
@@ -111,11 +118,20 @@ async function main() {
       do update set role = 'admin', is_active = true;
     `
 
+    const upsertPatientQuery = `
+      insert into user_org_membership (user_id, organization_id, role, is_active)
+      values ($1, $2, 'patient', true)
+      on conflict (user_id, organization_id)
+      do update set is_active = true;
+    `
+
     await client.query(upsertQuery, [studioUserId, orgId])
+    await client.query(upsertPatientQuery, [patientUserId, orgId])
     await client.query('commit')
 
     console.log('[seed-org-membership-from-assessment] Upserted membership', {
       studioUserId,
+      patientUserId,
       organizationId: orgId,
     })
   } catch (error) {
