@@ -48,6 +48,7 @@
     "verify:e76-6": "node scripts/ci/verify-e76-6-diagnosis-ui.mjs",
     "verify:e76-8": "node scripts/ci/verify-e76-8-idempotency.mjs",
     "verify:e76-9": "node scripts/ci/verify-endpoint-wiring.mjs",
+    "verify:e78-1": "node scripts/ci/verify-e78-1-inbox.mjs",
     "verify:endpoint-wiring": "node scripts/ci/verify-endpoint-wiring.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
