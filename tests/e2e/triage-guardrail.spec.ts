@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test'
 
+function hasValidUrl(value?: string): boolean {
+  if (!value) return false
+  try {
+    new URL(value)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function getRequiredEnv(name: string): string {
   const value = process.env[name]
   if (!value) {
@@ -7,6 +17,12 @@ function getRequiredEnv(name: string): string {
   }
   return value
 }
+
+const shouldSkipE2E =
+  !hasValidUrl(process.env.NEXT_PUBLIC_SUPABASE_URL) ||
+  !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+test.skip(shouldSkipE2E, 'Missing Studio E2E Supabase environment variables.')
 
 test('triage does not spin forever or spam diagnosis logs', async ({ page }) => {
   const email = getRequiredEnv('STUDIO_E2E_EMAIL')

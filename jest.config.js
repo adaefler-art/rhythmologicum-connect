@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>'],
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx', '**/?(*.)+(spec|test).ts', '**/?(*.)+(spec|test).tsx'],
+  testPathIgnorePatterns: ['<rootDir>/tests/e2e/'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^rhythm-core$': '<rootDir>/packages/rhythm-core/src/index.ts',
