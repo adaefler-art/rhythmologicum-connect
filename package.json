@@ -51,6 +51,7 @@
     "verify:e78-1": "node scripts/ci/verify-e78-1-inbox.mjs",
     "verify:e78-2": "node scripts/ci/verify-e78-2-triage-view.mjs",
     "verify:e78-3": "node scripts/ci/verify-e78-3-triage-api.mjs",
+    "verify:e78-4": "node scripts/ci/verify-e78-4-actions.mjs",
     "verify:e78-7": "node scripts/ci/verify-e78-7-inbox-ui.mjs",
     "verify:endpoint-wiring": "node scripts/ci/verify-endpoint-wiring.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
