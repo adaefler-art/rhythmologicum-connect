@@ -59,6 +59,7 @@ export default function TriagePage() {
   const [diagnosis, setDiagnosis] = useState<TriageDiagnosisResult | null>(null)
   const [healthAssessmentsTotal, setHealthAssessmentsTotal] = useState<number | null>(null)
   const [retryTrigger, setRetryTrigger] = useState(0)
+  const [userId, setUserId] = useState<string | null>(null)
 
   const loadTriageData = useCallback(async (): Promise<TriageDiagnosisResult> => {
     const {
@@ -67,8 +68,11 @@ export default function TriagePage() {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      setUserId(null)
       return { kind: 'NO_SESSION' }
     }
+
+    setUserId(user.id)
 
     const { data: assessmentsData, error: assessmentsError } = await supabase
       .from('assessments')
@@ -267,9 +271,10 @@ export default function TriagePage() {
       console.warn('[triage-diagnose]', {
         kind: result.kind,
         supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        userId,
       })
     }
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     let isMounted = true
@@ -322,6 +327,7 @@ export default function TriagePage() {
             kind: 'NO_DATA_IN_PROJECT',
             supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
             assessmentsTotal,
+            userId,
           })
         } else if (typeof assessmentsTotal === 'number') {
           setError(
@@ -331,12 +337,14 @@ export default function TriagePage() {
             kind: 'RLS_BLOCKING',
             supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
             assessmentsTotal,
+            userId,
           })
         }
       } catch (err) {
         console.warn('[triage-diagnose]', {
           kind: 'HEALTHCHECK_FAILED',
           supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+          userId,
         })
       }
     }
@@ -346,7 +354,7 @@ export default function TriagePage() {
     return () => {
       isMounted = false
     }
-  }, [diagnosis])
+  }, [diagnosis, userId])
 
   // Retry handler that triggers data reload without full page refresh
   const handleRetry = useCallback(() => {
