@@ -346,6 +346,7 @@ export default function InboxPage() {
               onClick={(e) => toggleDropdown(row.case_id, e)}
               icon={<MoreHorizontal className="w-4 h-4" />}
             >
+              <span className="sr-only">Aktionen öffnen</span>
             </Button>
             
             {openDropdownId === row.case_id && (
