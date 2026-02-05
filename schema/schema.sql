@@ -72,6 +72,21 @@ CREATE TYPE "public"."assessment_status" AS ENUM (
 ALTER TYPE "public"."assessment_status" OWNER TO "postgres";
 
 
+CREATE TYPE "public"."diagnosis_run_status" AS ENUM (
+    'queued',
+    'running',
+    'completed',
+    'failed'
+);
+
+
+ALTER TYPE "public"."diagnosis_run_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."diagnosis_run_status" IS 'E76.4: Status lifecycle for diagnosis runs';
+
+
+
 CREATE TYPE "public"."funnel_version_status" AS ENUM (
     'draft',
     'published',
@@ -334,6 +349,168 @@ ALTER TYPE "public"."workup_status" OWNER TO "postgres";
 
 
 COMMENT ON TYPE "public"."workup_status" IS 'E6.4.4: Workup status for assessments - indicates if more data is needed or if ready for clinician review';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."anamnesis_entry_audit_log"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO public.audit_log (
+            actor_user_id,
+            entity_type,
+            entity_id,
+            action,
+            org_id,
+            source,
+            metadata
+        ) VALUES (
+            COALESCE(NEW.created_by, auth.uid()),
+            'anamnesis_entry',
+            NEW.id,
+            'created',
+            NEW.organization_id,
+            'api',
+            jsonb_build_object(
+                'patient_id', NEW.patient_id,
+                'entry_type', NEW.entry_type,
+                'title', NEW.title
+            )
+        );
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO public.audit_log (
+            actor_user_id,
+            entity_type,
+            entity_id,
+            action,
+            diff,
+            org_id,
+            source,
+            metadata
+        ) VALUES (
+            COALESCE(NEW.updated_by, auth.uid()),
+            'anamnesis_entry',
+            NEW.id,
+            'updated',
+            jsonb_build_object(
+                'before', jsonb_build_object('title', OLD.title, 'content', OLD.content),
+                'after', jsonb_build_object('title', NEW.title, 'content', NEW.content)
+            ),
+            NEW.organization_id,
+            'api',
+            jsonb_build_object(
+                'patient_id', NEW.patient_id,
+                'entry_type', NEW.entry_type
+            )
+        );
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO public.audit_log (
+            actor_user_id,
+            entity_type,
+            entity_id,
+            action,
+            org_id,
+            source,
+            metadata
+        ) VALUES (
+            auth.uid(),
+            'anamnesis_entry',
+            OLD.id,
+            'deleted',
+            OLD.organization_id,
+            'api',
+            jsonb_build_object(
+                'patient_id', OLD.patient_id,
+                'entry_type', OLD.entry_type,
+                'title', OLD.title
+            )
+        );
+    END IF;
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."anamnesis_entry_audit_log"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."anamnesis_entry_audit_log"() IS 'E75.1: Auto-log anamnesis_entry changes to audit_log table';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."anamnesis_entry_create_version"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    v_version_number INTEGER;
+    v_previous_content JSONB;
+BEGIN
+    -- Get next version number
+    SELECT COALESCE(MAX(version_number), 0) + 1
+    INTO v_version_number
+    FROM public.anamnesis_entry_versions
+    WHERE entry_id = NEW.id;
+
+    -- Get previous content for diff calculation
+    IF TG_OP = 'UPDATE' THEN
+        SELECT content INTO v_previous_content
+        FROM public.anamnesis_entry_versions
+        WHERE entry_id = NEW.id
+        ORDER BY version_number DESC
+        LIMIT 1;
+        
+        -- If no previous version, use OLD content
+        IF v_previous_content IS NULL THEN
+            v_previous_content := OLD.content;
+        END IF;
+    ELSE
+        v_previous_content := NULL;
+    END IF;
+
+    -- Insert version record
+    INSERT INTO public.anamnesis_entry_versions (
+        entry_id,
+        version_number,
+        title,
+        content,
+        entry_type,
+        tags,
+        changed_by,
+        changed_at,
+        diff
+    ) VALUES (
+        NEW.id,
+        v_version_number,
+        NEW.title,
+        NEW.content,
+        NEW.entry_type,
+        NEW.tags,
+        COALESCE(NEW.updated_by, NEW.created_by, auth.uid()),
+        NOW(),
+        CASE 
+            WHEN v_previous_content IS NOT NULL THEN
+                jsonb_build_object(
+                    'from', v_previous_content,
+                    'to', NEW.content
+                )
+            ELSE NULL
+        END
+    );
+
+    -- Update entry timestamp
+    NEW.updated_at := NOW();
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."anamnesis_entry_create_version"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."anamnesis_entry_create_version"() IS 'E75.1: Auto-create immutable version record on anamnesis_entry insert/update';
 
 
 
@@ -825,6 +1002,169 @@ ALTER FUNCTION "public"."current_user_role"("org_id" "uuid") OWNER TO "postgres"
 
 
 COMMENT ON FUNCTION "public"."current_user_role"("org_id" "uuid") IS 'V0.5: Returns user role in specified organization';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."diagnosis_artifacts_audit_log"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_action TEXT;
+  v_metadata JSONB := '{}'::jsonb;
+BEGIN
+  -- Determine action
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'created';
+    v_metadata := jsonb_build_object(
+      'artifact_type', NEW.artifact_type,
+      'schema_version', NEW.schema_version,
+      'risk_level', NEW.risk_level,
+      'confidence_score', NEW.confidence_score,
+      'run_id', NEW.run_id,
+      'patient_id', NEW.patient_id
+    );
+  ELSIF TG_OP = 'UPDATE' THEN
+    v_action := 'updated';
+    v_metadata := jsonb_build_object(
+      'artifact_type', NEW.artifact_type,
+      'risk_level', NEW.risk_level
+    );
+  ELSIF TG_OP = 'DELETE' THEN
+    v_action := 'deleted';
+    v_metadata := jsonb_build_object(
+      'artifact_type', OLD.artifact_type,
+      'patient_id', OLD.patient_id
+    );
+  END IF;
+
+  -- Insert audit log entry
+  INSERT INTO public.audit_log (
+    actor_user_id,
+    entity_type,
+    entity_id,
+    action,
+    source,
+    metadata,
+    org_id
+  ) VALUES (
+    COALESCE(
+      CASE WHEN TG_OP = 'DELETE' THEN OLD.created_by ELSE NEW.created_by END,
+      auth.uid()
+    ),
+    'diagnosis_artifact',
+    CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END,
+    v_action,
+    'system',  -- System-driven creation by worker
+    v_metadata,
+    NULL  -- No org_id on diagnosis_artifacts
+  );
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."diagnosis_artifacts_audit_log"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."diagnosis_artifacts_audit_log"() IS 'E76.7: Audit trigger for diagnosis_artifacts lifecycle events (created, updated, deleted)';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."diagnosis_runs_audit_log"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_action TEXT;
+  v_diff JSONB := '{}'::jsonb;
+  v_metadata JSONB := '{}'::jsonb;
+BEGIN
+  -- Determine action
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'created';
+    v_metadata := jsonb_build_object(
+      'status', NEW.status,
+      'inputs_hash', NEW.inputs_hash,
+      'patient_id', NEW.patient_id,
+      'clinician_id', NEW.clinician_id
+    );
+  ELSIF TG_OP = 'UPDATE' THEN
+    -- Log status transitions
+    IF OLD.status IS DISTINCT FROM NEW.status THEN
+      v_action := 'status_changed';
+      v_diff := jsonb_build_object(
+        'before', jsonb_build_object('status', OLD.status),
+        'after', jsonb_build_object('status', NEW.status)
+      );
+      v_metadata := jsonb_build_object(
+        'status_from', OLD.status,
+        'status_to', NEW.status,
+        'processing_time_ms', NEW.processing_time_ms,
+        'error_code', NEW.error_code
+      );
+    ELSIF OLD.error_code IS NULL AND NEW.error_code IS NOT NULL THEN
+      v_action := 'failed';
+      v_metadata := jsonb_build_object(
+        'error_code', NEW.error_code,
+        'retry_count', NEW.retry_count
+      );
+    ELSE
+      -- Generic update (started_at, completed_at changes)
+      v_action := 'updated';
+      v_metadata := jsonb_build_object(
+        'status', NEW.status,
+        'processing_time_ms', NEW.processing_time_ms
+      );
+    END IF;
+  ELSIF TG_OP = 'DELETE' THEN
+    v_action := 'deleted';
+    v_metadata := jsonb_build_object(
+      'status', OLD.status,
+      'patient_id', OLD.patient_id
+    );
+  END IF;
+
+  -- Insert audit log entry
+  INSERT INTO public.audit_log (
+    actor_user_id,
+    entity_type,
+    entity_id,
+    action,
+    source,
+    diff,
+    metadata,
+    org_id
+  ) VALUES (
+    COALESCE(
+      CASE WHEN TG_OP = 'DELETE' THEN OLD.clinician_id ELSE NEW.clinician_id END,
+      auth.uid()
+    ),
+    'diagnosis_run',
+    CASE WHEN TG_OP = 'DELETE' THEN OLD.id ELSE NEW.id END,
+    v_action,
+    'system',  -- System-driven updates by worker
+    v_diff,
+    v_metadata,
+    NULL  -- No org_id on diagnosis_runs (could be added in future)
+  );
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."diagnosis_runs_audit_log"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."diagnosis_runs_audit_log"() IS 'E76.7: Audit trigger for diagnosis_runs lifecycle events (created, status_changed, failed, deleted)';
 
 
 
@@ -1575,6 +1915,23 @@ $$;
 ALTER FUNCTION "public"."update_device_shipments_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_diagnosis_runs_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_diagnosis_runs_updated_at"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."update_diagnosis_runs_updated_at"() IS 'E76.4: Auto-updates updated_at timestamp on diagnosis_runs';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."update_medical_validation_results_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1775,6 +2132,100 @@ COMMENT ON COLUMN "public"."amy_chat_messages"."role" IS 'Message role: user (pa
 
 
 COMMENT ON COLUMN "public"."amy_chat_messages"."metadata" IS 'Optional metadata: correlationId, model version, etc.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."anamnesis_entries" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "title" "text" NOT NULL,
+    "content" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "entry_type" "text",
+    "tags" "text"[] DEFAULT ARRAY[]::"text"[],
+    "is_archived" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "anamnesis_entries_entry_type_check" CHECK (("entry_type" = ANY (ARRAY['medical_history'::"text", 'symptoms'::"text", 'medications'::"text", 'allergies'::"text", 'family_history'::"text", 'lifestyle'::"text", 'funnel_summary'::"text", 'other'::"text"])))
+);
+
+
+ALTER TABLE "public"."anamnesis_entries" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."anamnesis_entries" IS 'E75.1: Medical anamnesis (history) entries with versioning support. RLS enforced for patient/clinician/admin access.';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."patient_id" IS 'Patient this entry belongs to (references patient_profiles)';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."organization_id" IS 'Organization context for multi-tenant isolation';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."title" IS 'Brief title/summary of the anamnesis entry';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."content" IS 'JSONB: Structured entry content (fields, values, metadata)';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."entry_type" IS 'Category of anamnesis entry';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."tags" IS 'Searchable tags for categorization';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entries"."updated_at" IS 'Timestamp of latest version (auto-updated by trigger)';
+
+
+
+COMMENT ON CONSTRAINT "anamnesis_entries_entry_type_check" ON "public"."anamnesis_entries" IS 'E75.5: Valid entry types including funnel_summary for system-generated assessment summaries';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."anamnesis_entry_versions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "entry_id" "uuid" NOT NULL,
+    "version_number" integer NOT NULL,
+    "title" "text" NOT NULL,
+    "content" "jsonb" NOT NULL,
+    "entry_type" "text",
+    "tags" "text"[],
+    "changed_by" "uuid",
+    "changed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "change_reason" "text",
+    "diff" "jsonb"
+);
+
+
+ALTER TABLE "public"."anamnesis_entry_versions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."anamnesis_entry_versions" IS 'E75.1: Immutable version history for anamnesis_entries. No updates allowed after insert.';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entry_versions"."version_number" IS 'Sequential version number (1, 2, 3, ...)';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entry_versions"."changed_by" IS 'User who made this change';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entry_versions"."change_reason" IS 'Optional reason for the change';
+
+
+
+COMMENT ON COLUMN "public"."anamnesis_entry_versions"."diff" IS 'JSONB: Differences from previous version';
 
 
 
@@ -2160,6 +2611,157 @@ COMMENT ON COLUMN "public"."device_shipments"."reminder_count" IS 'Number of rem
 
 
 COMMENT ON COLUMN "public"."device_shipments"."metadata" IS 'Additional shipment data (JSONB)';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."diagnosis_artifacts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "run_id" "uuid" NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "artifact_type" "text" DEFAULT 'diagnosis_json'::"text" NOT NULL,
+    "artifact_data" "jsonb" NOT NULL,
+    "schema_version" "text" DEFAULT 'v1'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid" NOT NULL,
+    "risk_level" "text",
+    "confidence_score" real,
+    "primary_findings" "text"[],
+    "recommendations_count" integer,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    CONSTRAINT "diagnosis_artifacts_artifact_type_check" CHECK (("artifact_type" = ANY (ARRAY['diagnosis_json'::"text", 'context_pack'::"text", 'mcp_response'::"text"]))),
+    CONSTRAINT "diagnosis_artifacts_confidence_score_check" CHECK (((("confidence_score" >= (0.0)::double precision) AND ("confidence_score" <= (1.0)::double precision)) OR ("confidence_score" IS NULL))),
+    CONSTRAINT "diagnosis_artifacts_risk_level_check" CHECK ((("risk_level" = ANY (ARRAY['low'::"text", 'medium'::"text", 'high'::"text", 'critical'::"text"])) OR ("risk_level" IS NULL)))
+);
+
+
+ALTER TABLE "public"."diagnosis_artifacts" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."diagnosis_artifacts" IS 'E76.4: Stores diagnosis results and related artifacts';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."id" IS 'Unique artifact identifier';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."run_id" IS 'Diagnosis run that produced this artifact';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."patient_id" IS 'Patient associated with this diagnosis';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."artifact_type" IS 'Type of artifact (diagnosis_json, context_pack, mcp_response)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."artifact_data" IS 'Full artifact JSON payload';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."schema_version" IS 'Schema version for artifact data';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."created_by" IS 'User who created/triggered the diagnosis';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."risk_level" IS 'Extracted risk level for quick queries';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."confidence_score" IS 'Extracted confidence score (0.0 to 1.0)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."primary_findings" IS 'Extracted primary findings array for quick queries';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."recommendations_count" IS 'Count of recommendations';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."diagnosis_runs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "clinician_id" "uuid" NOT NULL,
+    "status" "public"."diagnosis_run_status" DEFAULT 'queued'::"public"."diagnosis_run_status" NOT NULL,
+    "inputs_hash" "text" NOT NULL,
+    "context_pack_id" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "started_at" timestamp with time zone,
+    "completed_at" timestamp with time zone,
+    "error_code" "text",
+    "error_message" "text",
+    "error_details" "jsonb",
+    "mcp_run_id" "text",
+    "processing_time_ms" integer,
+    "retry_count" integer DEFAULT 0 NOT NULL,
+    "max_retries" integer DEFAULT 3 NOT NULL,
+    "inputs_meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    CONSTRAINT "diagnosis_runs_inputs_meta_is_object" CHECK (("jsonb_typeof"("inputs_meta") = 'object'::"text")),
+    CONSTRAINT "diagnosis_runs_max_retries_check" CHECK ((("max_retries" >= 1) AND ("max_retries" <= 10))),
+    CONSTRAINT "diagnosis_runs_retry_count_check" CHECK ((("retry_count" >= 0) AND ("retry_count" <= 10)))
+);
+
+
+ALTER TABLE "public"."diagnosis_runs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."diagnosis_runs" IS 'E76.4: Tracks diagnosis run execution lifecycle';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."id" IS 'Unique run identifier';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."patient_id" IS 'Patient being diagnosed';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."clinician_id" IS 'Clinician who initiated the run';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."status" IS 'Current run status (queued, running, completed, failed)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."inputs_hash" IS 'SHA256 hash of context pack inputs for idempotency';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."context_pack_id" IS 'Reference to stored context pack (optional)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."error_code" IS 'Error code if failed (e.g., VALIDATION_ERROR, LLM_ERROR)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."error_message" IS 'Human-readable error message';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."error_details" IS 'Detailed error payload (PHI-redacted)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."mcp_run_id" IS 'MCP server run_id for correlation';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."processing_time_ms" IS 'Total processing time in milliseconds';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_runs"."inputs_meta" IS 'E76.8: Metadata about context pack inputs (patient_id, anamnesis_ids, funnel_run_ids, demographics, measures) - enables audit trail and idempotency verification';
 
 
 
@@ -4053,6 +4655,21 @@ ALTER TABLE ONLY "public"."amy_chat_messages"
 
 
 
+ALTER TABLE ONLY "public"."anamnesis_entries"
+    ADD CONSTRAINT "anamnesis_entries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entry_versions"
+    ADD CONSTRAINT "anamnesis_entry_versions_entry_id_version_number_key" UNIQUE ("entry_id", "version_number");
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entry_versions"
+    ADD CONSTRAINT "anamnesis_entry_versions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."assessment_answers"
     ADD CONSTRAINT "assessment_answers_assessment_question_unique" UNIQUE ("assessment_id", "question_id");
 
@@ -4129,6 +4746,16 @@ ALTER TABLE ONLY "public"."design_tokens"
 
 ALTER TABLE ONLY "public"."device_shipments"
     ADD CONSTRAINT "device_shipments_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_artifacts"
+    ADD CONSTRAINT "diagnosis_artifacts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_runs"
+    ADD CONSTRAINT "diagnosis_runs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -4520,6 +5147,46 @@ CREATE INDEX "funnels_catalog_published_idx" ON "public"."funnels_catalog" USING
 
 
 
+CREATE INDEX "idx_anamnesis_entries_entry_type" ON "public"."anamnesis_entries" USING "btree" ("entry_type") WHERE ("entry_type" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_anamnesis_entries_funnel_summary_lookup" ON "public"."anamnesis_entries" USING "btree" ("patient_id", (("content" ->> 'assessment_id'::"text"))) WHERE (("entry_type" = 'funnel_summary'::"text") AND ("is_archived" = false));
+
+
+
+COMMENT ON INDEX "public"."idx_anamnesis_entries_funnel_summary_lookup" IS 'E75.5: Optimize funnel summary lookups for idempotency checks';
+
+
+
+CREATE INDEX "idx_anamnesis_entries_org_id" ON "public"."anamnesis_entries" USING "btree" ("organization_id");
+
+
+
+CREATE INDEX "idx_anamnesis_entries_patient_updated" ON "public"."anamnesis_entries" USING "btree" ("patient_id", "updated_at" DESC);
+
+
+
+COMMENT ON INDEX "public"."idx_anamnesis_entries_patient_updated" IS 'E75.1: Optimize patient entry queries (latest first)';
+
+
+
+CREATE INDEX "idx_anamnesis_entries_tags" ON "public"."anamnesis_entries" USING "gin" ("tags");
+
+
+
+CREATE INDEX "idx_anamnesis_entry_versions_changed_at" ON "public"."anamnesis_entry_versions" USING "btree" ("changed_at" DESC);
+
+
+
+CREATE INDEX "idx_anamnesis_entry_versions_entry_version" ON "public"."anamnesis_entry_versions" USING "btree" ("entry_id", "version_number" DESC);
+
+
+
+COMMENT ON INDEX "public"."idx_anamnesis_entry_versions_entry_version" IS 'E75.1: Optimize version history queries (latest first)';
+
+
+
 CREATE INDEX "idx_assessment_answers_data" ON "public"."assessment_answers" USING "gin" ("answer_data") WHERE ("answer_data" IS NOT NULL);
 
 
@@ -4548,11 +5215,19 @@ CREATE INDEX "idx_assessment_events_event_type" ON "public"."assessment_events" 
 
 
 
+CREATE UNIQUE INDEX "idx_assessments_one_in_progress_per_patient_funnel" ON "public"."assessments" USING "btree" ("patient_id", "funnel") WHERE ("completed_at" IS NULL);
+
+
+
+COMMENT ON INDEX "public"."idx_assessments_one_in_progress_per_patient_funnel" IS 'E74.7-R-001: Enforces exactly one in-progress assessment per patient+funnel combination. Prevents duplicate runs.';
+
+
+
 CREATE INDEX "idx_assessments_patient_in_progress" ON "public"."assessments" USING "btree" ("patient_id", "completed_at", "started_at" DESC) WHERE ("completed_at" IS NULL);
 
 
 
-COMMENT ON INDEX "public"."idx_assessments_patient_in_progress" IS 'E6.4.2: Optimizes query for finding in-progress assessments by patient';
+COMMENT ON INDEX "public"."idx_assessments_patient_in_progress" IS 'E6.4.2 + E74.7-R-002: Optimizes query for finding in-progress assessments by patient. Used for resume/create logic.';
 
 
 
@@ -4697,6 +5372,46 @@ CREATE INDEX "idx_device_shipments_task_id" ON "public"."device_shipments" USING
 
 
 CREATE INDEX "idx_device_shipments_tracking_number" ON "public"."device_shipments" USING "btree" ("tracking_number") WHERE ("tracking_number" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_diagnosis_artifacts_created_at" ON "public"."diagnosis_artifacts" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_diagnosis_artifacts_patient_id" ON "public"."diagnosis_artifacts" USING "btree" ("patient_id");
+
+
+
+CREATE INDEX "idx_diagnosis_artifacts_risk_level" ON "public"."diagnosis_artifacts" USING "btree" ("risk_level");
+
+
+
+CREATE INDEX "idx_diagnosis_artifacts_run_id" ON "public"."diagnosis_artifacts" USING "btree" ("run_id");
+
+
+
+CREATE INDEX "idx_diagnosis_runs_clinician_id" ON "public"."diagnosis_runs" USING "btree" ("clinician_id");
+
+
+
+CREATE INDEX "idx_diagnosis_runs_created_at" ON "public"."diagnosis_runs" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_diagnosis_runs_inputs_hash" ON "public"."diagnosis_runs" USING "btree" ("inputs_hash");
+
+
+
+CREATE INDEX "idx_diagnosis_runs_inputs_meta" ON "public"."diagnosis_runs" USING "gin" ("inputs_meta");
+
+
+
+CREATE INDEX "idx_diagnosis_runs_patient_id" ON "public"."diagnosis_runs" USING "btree" ("patient_id");
+
+
+
+CREATE INDEX "idx_diagnosis_runs_status" ON "public"."diagnosis_runs" USING "btree" ("status");
 
 
 
@@ -5404,7 +6119,35 @@ CREATE OR REPLACE TRIGGER "trg_notifications_updated_at" BEFORE UPDATE ON "publi
 
 
 
+CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_audit_log"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_versioning" BEFORE INSERT OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_create_version"();
+
+
+
 CREATE OR REPLACE TRIGGER "trigger_device_shipments_updated_at" BEFORE UPDATE ON "public"."device_shipments" FOR EACH ROW EXECUTE FUNCTION "public"."update_device_shipments_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_diagnosis_artifacts_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."diagnosis_artifacts" FOR EACH ROW EXECUTE FUNCTION "public"."diagnosis_artifacts_audit_log"();
+
+
+
+COMMENT ON TRIGGER "trigger_diagnosis_artifacts_audit" ON "public"."diagnosis_artifacts" IS 'E76.7: Auto-logs all diagnosis artifact lifecycle events to audit_log';
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_diagnosis_runs_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."diagnosis_runs" FOR EACH ROW EXECUTE FUNCTION "public"."diagnosis_runs_audit_log"();
+
+
+
+COMMENT ON TRIGGER "trigger_diagnosis_runs_audit" ON "public"."diagnosis_runs" IS 'E76.7: Auto-logs all diagnosis run lifecycle events to audit_log';
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_diagnosis_runs_updated_at" BEFORE UPDATE ON "public"."diagnosis_runs" FOR EACH ROW EXECUTE FUNCTION "public"."update_diagnosis_runs_updated_at"();
 
 
 
@@ -5458,6 +6201,36 @@ CREATE OR REPLACE TRIGGER "update_safety_check_results_updated_at" BEFORE UPDATE
 
 ALTER TABLE ONLY "public"."amy_chat_messages"
     ADD CONSTRAINT "amy_chat_messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entries"
+    ADD CONSTRAINT "anamnesis_entries_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entries"
+    ADD CONSTRAINT "anamnesis_entries_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entries"
+    ADD CONSTRAINT "anamnesis_entries_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entries"
+    ADD CONSTRAINT "anamnesis_entries_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entry_versions"
+    ADD CONSTRAINT "anamnesis_entry_versions_changed_by_fkey" FOREIGN KEY ("changed_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."anamnesis_entry_versions"
+    ADD CONSTRAINT "anamnesis_entry_versions_entry_id_fkey" FOREIGN KEY ("entry_id") REFERENCES "public"."anamnesis_entries"("id") ON DELETE CASCADE;
 
 
 
@@ -5563,6 +6336,31 @@ ALTER TABLE ONLY "public"."device_shipments"
 
 ALTER TABLE ONLY "public"."device_shipments"
     ADD CONSTRAINT "device_shipments_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_artifacts"
+    ADD CONSTRAINT "diagnosis_artifacts_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_artifacts"
+    ADD CONSTRAINT "diagnosis_artifacts_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_artifacts"
+    ADD CONSTRAINT "diagnosis_artifacts_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "public"."diagnosis_runs"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_runs"
+    ADD CONSTRAINT "diagnosis_runs_clinician_id_fkey" FOREIGN KEY ("clinician_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."diagnosis_runs"
+    ADD CONSTRAINT "diagnosis_runs_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -5853,6 +6651,10 @@ CREATE POLICY "Admins can manage funnels" ON "public"."funnels_catalog" USING ("
 
 
 
+CREATE POLICY "Admins can manage org anamnesis entries" ON "public"."anamnesis_entries" USING (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role")) WITH CHECK (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
+
+
+
 CREATE POLICY "Admins can manage org assignments" ON "public"."clinician_patient_assignments" USING (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role")) WITH CHECK (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
 
 
@@ -5865,11 +6667,21 @@ CREATE POLICY "Admins can update own org settings" ON "public"."organizations" F
 
 
 
+CREATE POLICY "Admins can view org anamnesis entries" ON "public"."anamnesis_entries" FOR SELECT USING (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
+
+
+
 CREATE POLICY "Admins can view org assignments" ON "public"."clinician_patient_assignments" FOR SELECT USING (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
 
 
 
 CREATE POLICY "Admins can view org audit logs" ON "public"."audit_log" FOR SELECT USING ("public"."has_any_role"('admin'::"public"."user_role"));
+
+
+
+CREATE POLICY "Admins can view org entry versions" ON "public"."anamnesis_entry_versions" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."anamnesis_entries" "ae"
+  WHERE (("ae"."id" = "anamnesis_entry_versions"."entry_id") AND ("public"."current_user_role"("ae"."organization_id") = 'admin'::"public"."user_role")))));
 
 
 
@@ -5963,6 +6775,23 @@ CREATE POLICY "Clinicians and admins can view all funnels_catalog (app role)" ON
 
 
 
+CREATE POLICY "Clinicians can insert anamnesis entries for assigned patients" ON "public"."anamnesis_entries" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."clinician_patient_assignments" "cpa"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "anamnesis_entries"."patient_id") AND ("cpa"."organization_id" = "anamnesis_entries"."organization_id")))));
+
+
+
+CREATE POLICY "Clinicians can update anamnesis entries for assigned patients" ON "public"."anamnesis_entries" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM ("public"."clinician_patient_assignments" "cpa"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "anamnesis_entries"."patient_id") AND ("cpa"."organization_id" = "anamnesis_entries"."organization_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("public"."clinician_patient_assignments" "cpa"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "anamnesis_entries"."patient_id") AND ("cpa"."organization_id" = "anamnesis_entries"."organization_id")))));
+
+
+
 CREATE POLICY "Clinicians can view all assessment answers" ON "public"."assessment_answers" FOR SELECT USING ("public"."is_clinician"());
 
 
@@ -5987,7 +6816,28 @@ CREATE POLICY "Clinicians can view all reports" ON "public"."reports" FOR SELECT
 
 
 
+CREATE POLICY "Clinicians can view assigned patient anamnesis entries" ON "public"."anamnesis_entries" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."clinician_patient_assignments" "cpa"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "anamnesis_entries"."patient_id") AND ("cpa"."organization_id" = "anamnesis_entries"."organization_id")))));
+
+
+
 CREATE POLICY "Clinicians can view own assignments" ON "public"."clinician_patient_assignments" FOR SELECT USING (("clinician_user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Clinicians can view versions for assigned patients" ON "public"."anamnesis_entry_versions" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM (("public"."anamnesis_entries" "ae"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."id" = "ae"."patient_id")))
+     JOIN "public"."clinician_patient_assignments" "cpa" ON ((("cpa"."patient_user_id" = "pp"."user_id") AND ("cpa"."organization_id" = "ae"."organization_id"))))
+  WHERE (("ae"."id" = "anamnesis_entry_versions"."entry_id") AND ("cpa"."clinician_user_id" = "auth"."uid"())))));
+
+
+
+CREATE POLICY "Patients can insert own anamnesis entries" ON "public"."anamnesis_entries" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
 
 
 
@@ -6010,6 +6860,14 @@ CREATE POLICY "Patients can insert own profile" ON "public"."patient_profiles" F
 
 
 CREATE POLICY "Patients can insert own state" ON "public"."patient_state" FOR INSERT WITH CHECK (("user_id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Patients can update own anamnesis entries" ON "public"."anamnesis_entries" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"()))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
 
 
 
@@ -6038,6 +6896,19 @@ CREATE POLICY "Patients can update own state" ON "public"."patient_state" FOR UP
 CREATE POLICY "Patients can upload own documents" ON "public"."documents" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."assessments"
   WHERE (("assessments"."id" = "documents"."assessment_id") AND ("assessments"."patient_id" = "public"."get_my_patient_profile_id"())))));
+
+
+
+CREATE POLICY "Patients can view own anamnesis entries" ON "public"."anamnesis_entries" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
+
+
+
+CREATE POLICY "Patients can view own anamnesis entry versions" ON "public"."anamnesis_entry_versions" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."anamnesis_entries" "ae"
+     JOIN "public"."patient_profiles" "pp" ON (("pp"."id" = "ae"."patient_id")))
+  WHERE (("ae"."id" = "anamnesis_entry_versions"."entry_id") AND ("pp"."user_id" = "auth"."uid"())))));
 
 
 
@@ -6329,6 +7200,12 @@ CREATE POLICY "amy_chat_messages_patient_select" ON "public"."amy_chat_messages"
 
 
 
+ALTER TABLE "public"."anamnesis_entries" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."anamnesis_entry_versions" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."assessment_answers" ENABLE ROW LEVEL SECURITY;
 
 
@@ -6405,6 +7282,66 @@ CREATE POLICY "device_shipments_select_staff_org" ON "public"."device_shipments"
 CREATE POLICY "device_shipments_update_staff_org" ON "public"."device_shipments" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."user_org_membership" "uom"
   WHERE (("uom"."user_id" = "auth"."uid"()) AND ("uom"."is_active" = true) AND ("uom"."organization_id" = "device_shipments"."organization_id") AND ("uom"."role" = ANY (ARRAY['clinician'::"public"."user_role", 'nurse'::"public"."user_role", 'admin'::"public"."user_role"]))))));
+
+
+
+ALTER TABLE "public"."diagnosis_artifacts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "diagnosis_artifacts_clinician_assigned_read" ON "public"."diagnosis_artifacts" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text") OR (EXISTS ( SELECT 1
+           FROM "public"."clinician_patient_assignments" "cpa"
+          WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "diagnosis_artifacts"."patient_id")))))))));
+
+
+
+COMMENT ON POLICY "diagnosis_artifacts_clinician_assigned_read" ON "public"."diagnosis_artifacts" IS 'E76.7: Clinicians can only read diagnosis artifacts for assigned patients. Admins can read all.';
+
+
+
+CREATE POLICY "diagnosis_artifacts_patient_read" ON "public"."diagnosis_artifacts" FOR SELECT USING (("patient_id" = "auth"."uid"()));
+
+
+
+COMMENT ON POLICY "diagnosis_artifacts_patient_read" ON "public"."diagnosis_artifacts" IS 'E76.6: Patients can read their own diagnosis artifacts';
+
+
+
+CREATE POLICY "diagnosis_artifacts_system_insert" ON "public"."diagnosis_artifacts" FOR INSERT WITH CHECK (true);
+
+
+
+ALTER TABLE "public"."diagnosis_runs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "diagnosis_runs_clinician_assigned_read" ON "public"."diagnosis_runs" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text") OR (EXISTS ( SELECT 1
+           FROM "public"."clinician_patient_assignments" "cpa"
+          WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "diagnosis_runs"."patient_id")))))))));
+
+
+
+COMMENT ON POLICY "diagnosis_runs_clinician_assigned_read" ON "public"."diagnosis_runs" IS 'E76.7: Clinicians can only read diagnosis runs for assigned patients. Admins can read all.';
+
+
+
+CREATE POLICY "diagnosis_runs_clinician_insert" ON "public"."diagnosis_runs" FOR INSERT WITH CHECK ((("clinician_id" = "auth"."uid"()) AND (EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")))))));
+
+
+
+CREATE POLICY "diagnosis_runs_patient_read" ON "public"."diagnosis_runs" FOR SELECT USING (("patient_id" = "auth"."uid"()));
+
+
+
+COMMENT ON POLICY "diagnosis_runs_patient_read" ON "public"."diagnosis_runs" IS 'E76.6: Patients can read their own diagnosis runs';
+
+
+
+CREATE POLICY "diagnosis_runs_system_update" ON "public"."diagnosis_runs" FOR UPDATE USING (true) WITH CHECK (true);
 
 
 
@@ -7083,6 +8020,18 @@ GRANT ALL ON TYPE "public"."review_status" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_audit_log"() TO "anon";
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_audit_log"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_audit_log"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "anon";
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "anon";
 GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "service_role";
@@ -7153,6 +8102,18 @@ GRANT ALL ON FUNCTION "public"."create_shipment_status_event"() TO "service_role
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."current_user_role"("org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diagnosis_artifacts_audit_log"() TO "anon";
+GRANT ALL ON FUNCTION "public"."diagnosis_artifacts_audit_log"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diagnosis_artifacts_audit_log"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."diagnosis_runs_audit_log"() TO "anon";
+GRANT ALL ON FUNCTION "public"."diagnosis_runs_audit_log"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."diagnosis_runs_audit_log"() TO "service_role";
 
 
 
@@ -7284,6 +8245,12 @@ GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "servic
 
 
 
+GRANT ALL ON FUNCTION "public"."update_diagnosis_runs_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_diagnosis_runs_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_diagnosis_runs_updated_at"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_medical_validation_results_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_medical_validation_results_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_medical_validation_results_updated_at"() TO "service_role";
@@ -7383,6 +8350,18 @@ GRANT ALL ON TABLE "public"."amy_chat_messages" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."anamnesis_entries" TO "anon";
+GRANT ALL ON TABLE "public"."anamnesis_entries" TO "authenticated";
+GRANT ALL ON TABLE "public"."anamnesis_entries" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."anamnesis_entry_versions" TO "anon";
+GRANT ALL ON TABLE "public"."anamnesis_entry_versions" TO "authenticated";
+GRANT ALL ON TABLE "public"."anamnesis_entry_versions" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."assessment_answers" TO "anon";
 GRANT ALL ON TABLE "public"."assessment_answers" TO "authenticated";
 GRANT ALL ON TABLE "public"."assessment_answers" TO "service_role";
@@ -7440,6 +8419,18 @@ GRANT ALL ON TABLE "public"."design_tokens" TO "service_role";
 GRANT ALL ON TABLE "public"."device_shipments" TO "anon";
 GRANT ALL ON TABLE "public"."device_shipments" TO "authenticated";
 GRANT ALL ON TABLE "public"."device_shipments" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."diagnosis_artifacts" TO "anon";
+GRANT ALL ON TABLE "public"."diagnosis_artifacts" TO "authenticated";
+GRANT ALL ON TABLE "public"."diagnosis_artifacts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."diagnosis_runs" TO "anon";
+GRANT ALL ON TABLE "public"."diagnosis_runs" TO "authenticated";
+GRANT ALL ON TABLE "public"."diagnosis_runs" TO "service_role";
 
 
 
