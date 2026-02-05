@@ -3376,6 +3376,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_staff_see_patient_profile: {
+        Args: { patient_profile_id: string; staff_user_id: string }
+        Returns: boolean
+      }
       cancel_account_deletion: {
         Args: { target_user_id: string }
         Returns: Json
