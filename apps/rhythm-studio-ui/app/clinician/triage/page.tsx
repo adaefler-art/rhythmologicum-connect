@@ -159,7 +159,7 @@ export default function InboxPage() {
       case 'in_progress':
         return { variant: 'info' as const, label: 'In Bearbeitung' }
       case 'ready_for_review':
-        return { variant: 'primary' as const, label: 'Bereit zur Prüfung' }
+        return { variant: 'default' as const, label: 'Bereit zur Prüfung' }
       case 'resolved':
         return { variant: 'success' as const, label: 'Abgeschlossen' }
       case 'snoozed':
