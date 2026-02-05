@@ -10,11 +10,11 @@
  * - Archive entries
  * - Access only via assignment (enforced by RLS)
  * 
- * Data source: /api/studio/patients/[patientId]/anamnesis
+ * Data source: /api/clinician/patient/[patientId]/anamnesis
  * Access control: Requires clinician role + patient assignment
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select, Alert } from '@/lib/ui'
 import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
 import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
@@ -32,6 +32,26 @@ export interface AnamnesisEntry {
   created_by: string
   updated_by: string
   version_count: number
+}
+
+export interface AnamnesisVersion {
+  id: string
+  version_number: number
+  title: string
+  content: Record<string, unknown>
+  entry_type: string | null
+  tags: string[] | null
+  changed_at: string
+  change_reason: string | null
+}
+
+export interface SuggestedFact {
+  id: string
+  label: string
+  value: string
+  sourceType: string
+  sourceId: string
+  occurredAt: string | null
 }
 
 export interface AnamnesisSectionProps {
@@ -53,6 +73,15 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<AnamnesisEntry | null>(null)
+  const [latestEntry, setLatestEntry] = useState<AnamnesisEntry | null>(null)
+  const [versions, setVersions] = useState<AnamnesisVersion[]>([])
+  const [suggestedFacts, setSuggestedFacts] = useState<SuggestedFact[]>([])
+  const [selectedFactIds, setSelectedFactIds] = useState<string[]>([])
+  const [isCreatingVersion, setIsCreatingVersion] = useState(false)
+  const [suggestedError, setSuggestedError] = useState<string | null>(null)
+  const [isSuggestedPreviewOpen, setIsSuggestedPreviewOpen] = useState(false)
+  const [previewText, setPreviewText] = useState('')
+  const [previewFacts, setPreviewFacts] = useState<SuggestedFact[]>([])
 
   // Form state for add/edit
   const [formTitle, setFormTitle] = useState('')
@@ -70,9 +99,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const fetchEntries = async () => {
     setIsLoading(true)
     setError(null)
+    setSuggestedError(null)
 
     try {
-      const response = await fetch(`/api/studio/patients/${patientId}/anamnesis`)
+      const response = await fetch(`/api/clinician/patient/${patientId}/anamnesis`)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -86,14 +116,65 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       }
 
       const data = await response.json()
-      if (data.success && data.data?.entries) {
-        setEntries(data.data.entries)
+      if (data.success && data.data) {
+        setEntries(data.data.entries || [])
+        setLatestEntry(data.data.latestEntry || data.data.entries?.[0] || null)
+        setVersions(data.data.versions || [])
+        setSuggestedFacts(data.data.suggestedFacts || [])
+        setSelectedFactIds([])
       }
     } catch (err) {
       console.error('[AnamnesisSection] Fetch error:', err)
       setError('Fehler beim Laden der Anamnese-Einträge')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const buildSuggestedText = (facts: SuggestedFact[]) => {
+    if (facts.length === 0) return ''
+    const lines = facts.map((fact) => `- ${fact.label}: ${fact.value}`)
+    return ['Anamnese (Vorschlag)', ...lines].join('\n')
+  }
+
+  const openSuggestedPreview = () => {
+    if (selectedFactIds.length === 0) {
+      setSuggestedError('Bitte wählen Sie mindestens einen Vorschlag aus.')
+      return
+    }
+
+    const selectedFacts = suggestedFacts.filter((fact) => selectedFactIds.includes(fact.id))
+    setPreviewFacts(selectedFacts)
+    setPreviewText(buildSuggestedText(selectedFacts))
+    setIsSuggestedPreviewOpen(true)
+  }
+
+  const submitSuggestedFacts = async (facts: SuggestedFact[]) => {
+    setIsCreatingVersion(true)
+    setSuggestedError(null)
+
+    try {
+      const text = buildSuggestedText(facts)
+      const title = `Anamnese Vorschlag ${new Date().toLocaleDateString('de-DE')}`
+
+      const response = await fetch(`/api/clinician/patient/${patientId}/anamnesis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, sources: facts, title }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || 'Fehler beim Erstellen der Version')
+      }
+
+      await fetchEntries()
+      setIsSuggestedPreviewOpen(false)
+    } catch (err) {
+      console.error('[AnamnesisSection] Suggested version error:', err)
+      setSuggestedError(err instanceof Error ? err.message : 'Fehler beim Speichern der Version')
+    } finally {
+      setIsCreatingVersion(false)
     }
   }
 
@@ -106,7 +187,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setFormError(null)
 
     try {
-      const response = await fetch(`/api/studio/patients/${patientId}/anamnesis`, {
+      const response = await fetch(`/api/clinician/patient/${patientId}/anamnesis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -145,7 +226,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setFormError(null)
 
     try {
-      const response = await fetch(`/api/studio/anamnesis/${selectedEntry.id}/versions`, {
+      const response = await fetch(`/api/clinician/anamnesis/${selectedEntry.id}/versions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +264,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
 
     try {
-      const response = await fetch(`/api/studio/anamnesis/${entryId}/archive`, {
+      const response = await fetch(`/api/clinician/anamnesis/${entryId}/archive`, {
         method: 'POST',
       })
 
@@ -258,6 +339,26 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return null
   }
 
+  const getContentSources = (content: Record<string, unknown>): SuggestedFact[] => {
+    const sourcesValue = (content as { sources?: unknown }).sources
+    if (!Array.isArray(sourcesValue)) return []
+
+    return sourcesValue
+      .filter((item) => typeof item === 'object' && item !== null)
+      .map((item) => {
+        const source = item as Partial<SuggestedFact>
+        return {
+          id: source.id || `${source.sourceType || 'source'}:${source.sourceId || ''}:${source.label || ''}`,
+          label: source.label ? String(source.label) : 'Quelle',
+          value: source.value ? String(source.value) : '',
+          sourceType: source.sourceType ? String(source.sourceType) : 'source',
+          sourceId: source.sourceId ? String(source.sourceId) : '',
+          occurredAt: source.occurredAt ? String(source.occurredAt) : null,
+        }
+      })
+      .filter((source) => source.value.trim().length > 0)
+  }
+
   if (isLoading) {
     return (
       <Card padding="lg" shadow="md">
@@ -300,6 +401,129 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
   return (
     <>
+      <Card padding="lg" shadow="md" className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Aktuelle Anamnese
+          </h2>
+        </div>
+
+        {latestEntry ? (
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                  {latestEntry.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Aktualisiert: {formatDate(latestEntry.updated_at)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" size="sm">
+                  v{versions[0]?.version_number ?? 1}
+                </Badge>
+                <Badge variant="secondary" size="sm">
+                  {getContentSources(latestEntry.content).length} Quellen
+                </Badge>
+              </div>
+            </div>
+            {getContentText(latestEntry.content) ? (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {getContentText(latestEntry.content)}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Keine Anamnese-Inhalte vorhanden.
+              </p>
+            )}
+            {getContentSources(latestEntry.content).length > 0 && (
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
+                  Quellen (aus Vorschlaegen)
+                </p>
+                <div className="space-y-1">
+                  {getContentSources(latestEntry.content).map((source) => (
+                    <div key={source.id} className="text-xs text-slate-600 dark:text-slate-300">
+                      <span className="font-medium">{source.label}:</span> {source.value}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Noch keine Anamnese-Version vorhanden
+            </p>
+          </div>
+        )}
+      </Card>
+
+      <Card padding="lg" shadow="md" className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+            Vorschläge
+          </h2>
+        </div>
+
+        {suggestedFacts.length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Keine Vorschläge aus Assessments oder Ergebnissen verfügbar.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {suggestedFacts.map((fact) => (
+              <label key={fact.id} className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={selectedFactIds.includes(fact.id)}
+                  onChange={(event) => {
+                    setSelectedFactIds((prev) =>
+                      event.target.checked
+                        ? [...prev, fact.id]
+                        : prev.filter((id) => id !== fact.id),
+                    )
+                  }}
+                />
+                <div>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
+                    {fact.label}: {fact.value}
+                  </p>
+                  {fact.occurredAt && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {formatDate(fact.occurredAt)}
+                    </p>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {suggestedError && (
+          <div className="mt-4">
+            <Alert variant="error">{suggestedError}</Alert>
+          </div>
+        )}
+
+        <div className="mt-4">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={openSuggestedPreview}
+            disabled={suggestedFacts.length === 0 || isCreatingVersion}
+          >
+            {isCreatingVersion ? 'Wird gespeichert…' : 'Vorschau & speichern'}
+          </Button>
+        </div>
+      </Card>
+
       <Card padding="lg" shadow="md">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -395,6 +619,64 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       </Card>
 
       {/* Add Entry Dialog */}
+      <Modal
+        isOpen={isSuggestedPreviewOpen}
+        onClose={() => setIsSuggestedPreviewOpen(false)}
+        title="Vorschau: neue Anamnese-Version"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setIsSuggestedPreviewOpen(false)}
+              disabled={isCreatingVersion}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!previewText) return
+                navigator.clipboard?.writeText(previewText)
+              }}
+              disabled={!previewText}
+            >
+              Text kopieren
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => submitSuggestedFacts(previewFacts)}
+              disabled={previewFacts.length === 0 || isCreatingVersion}
+            >
+              {isCreatingVersion ? 'Wird gespeichert…' : 'Als neue Version speichern'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {previewText ? (
+            <pre className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              {previewText}
+            </pre>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">Keine Vorschlaege ausgewaehlt.</p>
+          )}
+
+          {previewFacts.length > 0 && (
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Quellen</p>
+              <div className="space-y-1">
+                {previewFacts.map((source) => (
+                  <div key={source.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    <span className="font-medium">{source.label}:</span> {source.value}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
       <Modal
         isOpen={isAddDialogOpen}
         onClose={() => {
