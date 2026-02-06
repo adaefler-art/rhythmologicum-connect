@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
+import { env } from '@/lib/env'
 import { DesktopLayout } from '@rhythm/ui'
 import {
   hasAnyRole,
@@ -59,6 +60,19 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [navItems, setNavItems] = useState<RoleNavItem[]>([])
+  const hasSupabaseConfig = Boolean(
+    env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  )
+
+  if (!hasSupabaseConfig) {
+    return (
+      <div data-admin-shell="1">
+        <DesktopLayout appTitle="Rhythmologicum Connect" navItems={[]} contentMaxWidth={null}>
+          {children}
+        </DesktopLayout>
+      </div>
+    )
+  }
 
   useEffect(() => {
     // Check authentication on mount

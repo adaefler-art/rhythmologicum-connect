@@ -7,6 +7,7 @@
  */
 
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { env } from '@/lib/env'
 import designTokens from './design/tokens'
 
 /**
@@ -33,6 +34,10 @@ function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>)
   return result
 }
 
+function hasSupabaseConfig(): boolean {
+  return Boolean(env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
 /**
  * Load design tokens with organization-specific overrides
  * 
@@ -51,7 +56,7 @@ export async function loadDesignTokens(organizationId?: string | null) {
   let tokens = { ...designTokens }
   
   // If no organizationId provided, return defaults
-  if (!organizationId) {
+  if (!organizationId || !hasSupabaseConfig()) {
     return tokens
   }
   
@@ -114,6 +119,9 @@ export async function loadDesignTokens(organizationId?: string | null) {
  */
 export async function getUserOrganizationId(): Promise<string | null> {
   try {
+    if (!hasSupabaseConfig()) {
+      return null
+    }
     const supabase = await createServerSupabaseClient()
     
     // Get current user
