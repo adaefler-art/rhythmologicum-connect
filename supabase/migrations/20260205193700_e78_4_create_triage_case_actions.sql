@@ -115,15 +115,11 @@ BEGIN
             OR raw_app_meta_data->>'role' = 'admin'
           )
         )
-        -- Patient must be in the same org (via org_memberships)
+        -- Patient must be assigned to the clinician (org-scoped via assignments)
         AND EXISTS (
-          SELECT 1 FROM org_memberships om1
-          WHERE om1.user_id = patient_id
-          AND EXISTS (
-            SELECT 1 FROM org_memberships om2
-            WHERE om2.user_id = auth.uid()
-            AND om2.org_id = om1.org_id
-          )
+          SELECT 1 FROM public.clinician_patient_assignments cpa
+          WHERE cpa.patient_user_id = patient_id
+          AND cpa.clinician_user_id = auth.uid()
         )
       );
   END IF;
@@ -153,15 +149,11 @@ BEGIN
         )
         -- created_by must match auth.uid()
         AND created_by = auth.uid()
-        -- Patient must be in the same org
+        -- Patient must be assigned to the clinician
         AND EXISTS (
-          SELECT 1 FROM org_memberships om1
-          WHERE om1.user_id = patient_id
-          AND EXISTS (
-            SELECT 1 FROM org_memberships om2
-            WHERE om2.user_id = auth.uid()
-            AND om2.org_id = om1.org_id
-          )
+          SELECT 1 FROM public.clinician_patient_assignments cpa
+          WHERE cpa.patient_user_id = patient_id
+          AND cpa.clinician_user_id = auth.uid()
         )
       );
   END IF;
