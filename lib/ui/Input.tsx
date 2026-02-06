@@ -70,15 +70,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const baseClasses = `
       w-full
       border-2
-      rounded-lg
+      rounded-xl
       transition-all duration-200
-      focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1
-      disabled:bg-slate-100 dark:disabled:bg-slate-700 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60
+      focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1
+      disabled:bg-neutral-100 dark:disabled:bg-neutral-700 disabled:text-neutral-500 dark:disabled:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-60
     `
 
     const stateClasses = error
-      ? 'border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 placeholder-red-400 dark:placeholder-red-300'
-      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:border-sky-500'
+      ? 'border-error bg-error/10 text-foreground placeholder-error/60'
+      : 'border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 text-foreground placeholder-neutral-500 dark:placeholder-neutral-400 focus:border-primary-500'
 
     const generatedId = useId()
     const inputId = props.id || generatedId
@@ -94,7 +94,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             padding: config.padding,
             fontSize: config.fontSize,
             minHeight: config.minHeight,
-            borderRadius: radii.lg,
+            borderRadius: radii.xl,
           }}
           aria-invalid={error}
           aria-describedby={
@@ -105,7 +105,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {errorMessage && error && (
           <p
             id={`${inputId}-error`}
-            className="text-sm text-red-600 dark:text-red-400 mt-1.5"
+            className="text-sm text-error mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {errorMessage}
@@ -114,7 +114,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {helperText && !error && (
           <p
             id={`${inputId}-helper`}
-            className="text-sm text-slate-500 dark:text-slate-400 mt-1.5"
+            className="text-sm text-neutral-600 dark:text-neutral-400 mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {helperText}
