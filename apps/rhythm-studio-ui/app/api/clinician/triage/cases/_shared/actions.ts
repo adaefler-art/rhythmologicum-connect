@@ -22,7 +22,13 @@ import {
 	databaseErrorResponse,
 	internalErrorResponse,
 } from '@/lib/api/responses'
-import { classifySupabaseError, getRequestId, logError, withRequestId } from '@/lib/db/errors'
+import {
+	classifySupabaseError,
+	getRequestId,
+	isNotFoundPostgrestError,
+	logError,
+	withRequestId,
+} from '@/lib/db/errors'
 import type { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -65,9 +71,7 @@ async function verifyCaseAccess(
 		.single()
 
 	if (assessmentError || !assessment) {
-		const classified = classifySupabaseError(assessmentError)
-
-		if (classified.kind === 'NOT_FOUND') {
+		if (isNotFoundPostgrestError(assessmentError)) {
 			return {
 				success: false,
 				response: withRequestId(
@@ -76,6 +80,8 @@ async function verifyCaseAccess(
 				),
 			}
 		}
+
+		const classified = classifySupabaseError(assessmentError)
 
 		if (classified.kind === 'AUTH_OR_RLS') {
 			return {

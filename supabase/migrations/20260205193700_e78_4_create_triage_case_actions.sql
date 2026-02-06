@@ -7,16 +7,24 @@
 -- Purpose: HITL can intervene in v1 without auto-jobs overwriting their actions.
 -- Manual flags, snooze states, and other interventions are recorded here.
 
--- Create enum for action types
-CREATE TYPE public.triage_action_type AS ENUM (
-  'acknowledge',
-  'snooze',
-  'close',
-  'reopen',
-  'manual_flag',
-  'clear_manual_flag',
-  'add_note'
-);
+-- Create enum for action types (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type
+    WHERE typname = 'triage_action_type'
+  ) THEN
+    CREATE TYPE public.triage_action_type AS ENUM (
+      'acknowledge',
+      'snooze',
+      'close',
+      'reopen',
+      'manual_flag',
+      'clear_manual_flag',
+      'add_note'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.triage_action_type IS 'E78.4: Types of HITL actions that can be taken on triage cases';
 
@@ -62,23 +70,23 @@ COMMENT ON COLUMN public.triage_case_actions.payload IS 'Action-specific metadat
 
 -- Indexes for performance
 -- R-E78.4-001: Index on assessment_id for fast case lookup
-CREATE INDEX idx_triage_case_actions_assessment_id 
+CREATE INDEX IF NOT EXISTS idx_triage_case_actions_assessment_id 
   ON public.triage_case_actions(assessment_id);
 
 -- R-E78.4-002: Index on patient_id for patient-scoped queries
-CREATE INDEX idx_triage_case_actions_patient_id 
+CREATE INDEX IF NOT EXISTS idx_triage_case_actions_patient_id 
   ON public.triage_case_actions(patient_id);
 
 -- R-E78.4-003: Index on created_at for chronological ordering
-CREATE INDEX idx_triage_case_actions_created_at 
+CREATE INDEX IF NOT EXISTS idx_triage_case_actions_created_at 
   ON public.triage_case_actions(created_at DESC);
 
 -- R-E78.4-004: Composite index for assessment + action_type queries
-CREATE INDEX idx_triage_case_actions_assessment_action 
+CREATE INDEX IF NOT EXISTS idx_triage_case_actions_assessment_action 
   ON public.triage_case_actions(assessment_id, action_type, created_at DESC);
 
 -- R-E78.4-005: Index on created_by for clinician activity tracking
-CREATE INDEX idx_triage_case_actions_created_by 
+CREATE INDEX IF NOT EXISTS idx_triage_case_actions_created_by 
   ON public.triage_case_actions(created_by, created_at DESC);
 
 -- RLS Policies
@@ -86,58 +94,78 @@ CREATE INDEX idx_triage_case_actions_created_by
 ALTER TABLE public.triage_case_actions ENABLE ROW LEVEL SECURITY;
 
 -- R-E78.4-006: Clinicians can read actions for patients in their org
-CREATE POLICY triage_case_actions_read_clinician
-  ON public.triage_case_actions
-  FOR SELECT
-  USING (
-    -- User must be clinician or admin
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (
-        raw_app_meta_data->>'role' = 'clinician' 
-        OR raw_app_meta_data->>'role' = 'admin'
-      )
-    )
-    -- Patient must be in the same org (via org_memberships)
-    AND EXISTS (
-      SELECT 1 FROM org_memberships om1
-      WHERE om1.user_id = patient_id
-      AND EXISTS (
-        SELECT 1 FROM org_memberships om2
-        WHERE om2.user_id = auth.uid()
-        AND om2.org_id = om1.org_id
-      )
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'triage_case_actions'
+      AND policyname = 'triage_case_actions_read_clinician'
+  ) THEN
+    CREATE POLICY triage_case_actions_read_clinician
+      ON public.triage_case_actions
+      FOR SELECT
+      USING (
+        -- User must be clinician or admin
+        EXISTS (
+          SELECT 1 FROM auth.users
+          WHERE id = auth.uid()
+          AND (
+            raw_app_meta_data->>'role' = 'clinician' 
+            OR raw_app_meta_data->>'role' = 'admin'
+          )
+        )
+        -- Patient must be in the same org (via org_memberships)
+        AND EXISTS (
+          SELECT 1 FROM org_memberships om1
+          WHERE om1.user_id = patient_id
+          AND EXISTS (
+            SELECT 1 FROM org_memberships om2
+            WHERE om2.user_id = auth.uid()
+            AND om2.org_id = om1.org_id
+          )
+        )
+      );
+  END IF;
+END $$;
 
 -- R-E78.4-007: Clinicians can insert actions for patients in their org
-CREATE POLICY triage_case_actions_insert_clinician
-  ON public.triage_case_actions
-  FOR INSERT
-  WITH CHECK (
-    -- User must be clinician or admin
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (
-        raw_app_meta_data->>'role' = 'clinician' 
-        OR raw_app_meta_data->>'role' = 'admin'
-      )
-    )
-    -- created_by must match auth.uid()
-    AND created_by = auth.uid()
-    -- Patient must be in the same org
-    AND EXISTS (
-      SELECT 1 FROM org_memberships om1
-      WHERE om1.user_id = patient_id
-      AND EXISTS (
-        SELECT 1 FROM org_memberships om2
-        WHERE om2.user_id = auth.uid()
-        AND om2.org_id = om1.org_id
-      )
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'triage_case_actions'
+      AND policyname = 'triage_case_actions_insert_clinician'
+  ) THEN
+    CREATE POLICY triage_case_actions_insert_clinician
+      ON public.triage_case_actions
+      FOR INSERT
+      WITH CHECK (
+        -- User must be clinician or admin
+        EXISTS (
+          SELECT 1 FROM auth.users
+          WHERE id = auth.uid()
+          AND (
+            raw_app_meta_data->>'role' = 'clinician' 
+            OR raw_app_meta_data->>'role' = 'admin'
+          )
+        )
+        -- created_by must match auth.uid()
+        AND created_by = auth.uid()
+        -- Patient must be in the same org
+        AND EXISTS (
+          SELECT 1 FROM org_memberships om1
+          WHERE om1.user_id = patient_id
+          AND EXISTS (
+            SELECT 1 FROM org_memberships om2
+            WHERE om2.user_id = auth.uid()
+            AND om2.org_id = om1.org_id
+          )
+        )
+      );
+  END IF;
+END $$;
 
 -- R-E78.4-008: No updates or deletes allowed (append-only log)
 -- This is enforced by not creating UPDATE or DELETE policies
