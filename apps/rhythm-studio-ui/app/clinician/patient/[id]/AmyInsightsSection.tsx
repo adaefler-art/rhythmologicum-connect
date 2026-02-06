@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card, Badge } from '@/lib/ui'
 import { Brain, MessageCircle } from 'lucide-react'
 import { patientAmyInsightsUrl } from '@/lib/clinicianApi'
+import { fetchClinicianJson } from '@/lib/fetchClinician'
 
 type AmyMessage = {
   id: string
@@ -50,6 +51,7 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [debugHint, setDebugHint] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -64,9 +66,15 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
 
       setIsLoading(true)
       setError(null)
+      setDebugHint(null)
 
       try {
-        const response = await fetch(patientAmyInsightsUrl(patientId))
+        const { response, data, debugHint } = await fetchClinicianJson<{
+          success?: boolean
+          data?: { conversations?: Conversation[] }
+        }>(patientAmyInsightsUrl(patientId))
+
+        setDebugHint(debugHint ?? null)
         if (!response.ok) {
           if (!isMounted) return
           setError('AMY-Konversationen konnten nicht geladen werden.')
@@ -75,7 +83,6 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
           return
         }
 
-        const data = await response.json()
         if (!isMounted) return
 
         const loaded = (data?.data?.conversations || []) as Conversation[]
@@ -131,6 +138,9 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
               ? 'AMY-Chat ist derzeit deaktiviert.'
               : error || 'Für diese:n Patient:in liegen noch keine AMY-Konversationen vor.'}
           </p>
+          {debugHint && (
+            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">{debugHint}</p>
+          )}
         </div>
       </Card>
     )

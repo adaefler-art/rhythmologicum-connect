@@ -19,6 +19,7 @@ import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
 import { patientResultsUrl } from '@/lib/clinicianApi'
 import { AmyInsightsSection } from './AmyInsightsSection'
+import { fetchClinicianJson } from '@/lib/fetchClinician'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus } from '@/lib/types/workupStatus'
@@ -153,6 +154,7 @@ export default function PatientDetailPage() {
   const [safetyState, setSafetyState] = useState<SectionState<ReportWithSafety>>({ state: 'empty' })
   const [scoresState, setScoresState] = useState<SectionState<CalculatedResult>>({ state: 'empty' })
   const [interventionsState, setInterventionsState] = useState<SectionState<RankedIntervention>>({ state: 'empty' })
+  const [resultsDebugHint, setResultsDebugHint] = useState<string | null>(null)
   
   // V05-I07.3: Review records for QA Panel
   const [reviewRecords, setReviewRecords] = useState<string[]>([])
@@ -362,20 +364,31 @@ export default function PatientDetailPage() {
           }
 
           try {
-            const resultsResponse = await fetch(patientResultsUrl(profileId))
-            const resultsJson = await resultsResponse.json().catch(() => ({}))
+            setResultsDebugHint(null)
+            const { response, data, debugHint } = await fetchClinicianJson<{
+              success?: boolean
+              data?: {
+                reports?: ReportWithSafety[]
+                calculatedResults?: CalculatedResult[]
+                priorityRankings?: PriorityRanking[]
+                reviewRecords?: { id: string }[]
+              }
+              error?: unknown
+            }>(patientResultsUrl(profileId))
 
-            if (!resultsResponse.ok || !resultsJson.success) {
-              const evidenceCode = mapSupabaseErrorToEvidenceCode(resultsJson.error, 'RESULTS')
+            setResultsDebugHint(debugHint ?? null)
+
+            if (!response.ok || !data?.success) {
+              const evidenceCode = mapSupabaseErrorToEvidenceCode(data?.error, 'RESULTS')
               setSafetyState({ state: 'error', evidenceCode })
               setScoresState({ state: 'error', evidenceCode })
               setInterventionsState({ state: 'error', evidenceCode })
               setReviewRecords([])
             } else {
-              const reports = resultsJson.data?.reports ?? []
-              const calculatedResults = resultsJson.data?.calculatedResults ?? []
-              const priorityRankings = resultsJson.data?.priorityRankings ?? []
-              const reviewRecordsData = resultsJson.data?.reviewRecords ?? []
+              const reports = data.data?.reports ?? []
+              const calculatedResults = data.data?.calculatedResults ?? []
+              const priorityRankings = data.data?.priorityRankings ?? []
+              const reviewRecordsData = data.data?.reviewRecords ?? []
 
               setSafetyState(
                 reports.length > 0
@@ -699,6 +712,11 @@ export default function PatientDetailPage() {
                   undefined
                 }
               />
+              {resultsDebugHint && (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  {resultsDebugHint}
+                </div>
+              )}
 
               {/* Interventions Section */}
               <InterventionsSection

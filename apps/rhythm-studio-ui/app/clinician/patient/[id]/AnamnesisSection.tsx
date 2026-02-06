@@ -20,6 +20,7 @@ import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
 import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
 import type { EntryType } from '@/lib/api/anamnesis/validation'
 import { patientAnamnesisUrl } from '@/lib/clinicianApi'
+import { fetchClinicianJson } from '@/lib/fetchClinician'
 
 export interface AnamnesisEntry {
   id: string
@@ -83,6 +84,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [isSuggestedPreviewOpen, setIsSuggestedPreviewOpen] = useState(false)
   const [previewText, setPreviewText] = useState('')
   const [previewFacts, setPreviewFacts] = useState<SuggestedFact[]>([])
+  const [debugHint, setDebugHint] = useState<string | null>(null)
 
   // Form state for add/edit
   const [formTitle, setFormTitle] = useState('')
@@ -101,9 +103,20 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setIsLoading(true)
     setError(null)
     setSuggestedError(null)
+    setDebugHint(null)
 
     try {
-      const response = await fetch(patientAnamnesisUrl(patientId))
+      const { response, data, debugHint } = await fetchClinicianJson<{
+        success?: boolean
+        data?: {
+          entries?: AnamnesisEntry[]
+          latestEntry?: AnamnesisEntry | null
+          versions?: AnamnesisVersion[]
+          suggestedFacts?: SuggestedFact[]
+        }
+      }>(patientAnamnesisUrl(patientId))
+
+      setDebugHint(debugHint ?? null)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -116,8 +129,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         return
       }
 
-      const data = await response.json()
-      if (data.success && data.data) {
+      if (data?.success && data.data) {
         setEntries(data.data.entries || [])
         setLatestEntry(data.data.latestEntry || data.data.entries?.[0] || null)
         setVersions(data.data.versions || [])
@@ -394,6 +406,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <p className="text-xs text-slate-500 dark:text-slate-400">
               EVIDENCE: {errorEvidenceCode}
             </p>
+          )}
+          {debugHint && (
+            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">{debugHint}</p>
           )}
         </div>
       </Card>

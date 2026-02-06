@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
 import { patientDiagnosisRunsUrl } from '@/lib/clinicianApi'
+import { fetchClinicianJson } from '@/lib/fetchClinician'
 
 type DiagnosisRun = {
   id: string
@@ -39,6 +40,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [artifactStates, setArtifactStates] = useState<Record<string, ArtifactState>>({})
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
+  const [debugHint, setDebugHint] = useState<string | null>(null)
 
   useEffect(() => {
     fetchRuns()
@@ -47,9 +49,14 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const fetchRuns = async () => {
     setIsLoading(true)
     setError(null)
+    setDebugHint(null)
 
     try {
-      const response = await fetch(patientDiagnosisRunsUrl(patientId))
+      const { response, data, debugHint } = await fetchClinicianJson<{ success?: boolean; data?: DiagnosisRun[] }>(
+        patientDiagnosisRunsUrl(patientId),
+      )
+
+      setDebugHint(debugHint ?? null)
       if (!response.ok) {
         if (response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
@@ -61,9 +68,8 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         return
       }
 
-      const result = await response.json()
-      if (result.success) {
-        setRuns(result.data || [])
+      if (data?.success) {
+        setRuns(data.data || [])
       } else {
         setError('Fehler beim Laden der Diagnose-Runs')
       }
@@ -258,6 +264,9 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         {error && (
           <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+            {debugHint && (
+              <div className="mt-2 text-xs text-amber-600">{debugHint}</div>
+            )}
           </div>
         )}
       </Card>
