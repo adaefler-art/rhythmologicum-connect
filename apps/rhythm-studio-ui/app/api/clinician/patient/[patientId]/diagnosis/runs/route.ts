@@ -1,10 +1,7 @@
 /**
- * Studio Diagnosis Runs API - List Patient Runs
- * 
- * GET /api/studio/patients/[patientId]/diagnosis/runs
- * 
- * Returns diagnosis runs for a specific patient.
- * Accessible by clinicians assigned to the patient.
+ * Clinician Diagnosis Runs API - List Patient Runs
+ *
+ * GET /api/clinician/patient/[patientId]/diagnosis/runs
  */
 
 import { NextResponse } from 'next/server'
@@ -78,7 +75,7 @@ export async function GET(_request: Request, context: RouteContext) {
       .order('created_at', { ascending: false })
 
     if (runsError) {
-      console.error('[studio/patients/diagnosis/runs GET] Query error:', runsError)
+      console.error('[clinician/patient/diagnosis/runs GET] Query error:', runsError)
 
       if (runsError.code === 'PGRST116') {
         return NextResponse.json(
@@ -110,7 +107,7 @@ export async function GET(_request: Request, context: RouteContext) {
       data: runs || [],
     })
   } catch (err) {
-    console.error('[studio/patients/diagnosis/runs GET] Unexpected error:', err)
+    console.error('[clinician/patient/diagnosis/runs GET] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,

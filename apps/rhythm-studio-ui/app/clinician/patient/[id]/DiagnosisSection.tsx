@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
+import { getClinicianApiUrl } from './clinicianApi'
 
 type DiagnosisRun = {
   id: string
@@ -48,7 +49,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/studio/patients/${patientId}/diagnosis/runs`)
+      const response = await fetch(getClinicianApiUrl(patientId, 'diagnosis/runs'))
       if (!response.ok) {
         if (response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')

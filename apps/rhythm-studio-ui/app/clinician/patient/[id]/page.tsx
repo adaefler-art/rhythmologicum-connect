@@ -17,6 +17,7 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
+import { getClinicianApiUrl } from './clinicianApi'
 import { AmyInsightsSection } from './AmyInsightsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
@@ -360,96 +361,55 @@ export default function PatientDetailPage() {
             setMedsState({ state: 'empty' })
           }
 
-          // Load latest report with safety data
-          const { data: reportsData, error: reportsError } = await supabase
-            .from('reports')
-            .select('id, assessment_id, safety_score, safety_findings, created_at')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
+          try {
+            const resultsResponse = await fetch(getClinicianApiUrl(profileId, 'results'))
+            const resultsJson = await resultsResponse.json().catch(() => ({}))
 
-          if (reportsError && reportsError.code !== 'PGRST116') {
-            // PGRST116 is "no rows returned", which is expected/ok (empty state)
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(reportsError, 'SAFETY')
-            console.warn('[I07.2]', evidenceCode, 'reports')
-            setSafetyState({ state: 'error', evidenceCode })
-          } else if (reportsData) {
-            setSafetyState({ state: 'ok', items: [reportsData as ReportWithSafety] })
-          } else {
-            setSafetyState({ state: 'empty' })
-          }
-
-          // Load latest calculated results
-          const { data: calcData, error: calcError } = await supabase
-            .from('calculated_results')
-            .select('id, assessment_id, scores, risk_models, created_at')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-
-          if (calcError && calcError.code !== 'PGRST116') {
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(calcError, 'SCORES')
-            console.warn('[I07.2]', evidenceCode, 'calculated_results')
-            setScoresState({ state: 'error', evidenceCode })
-          } else if (calcData) {
-            setScoresState({ state: 'ok', items: [calcData as CalculatedResult] })
-          } else {
-            setScoresState({ state: 'empty' })
-          }
-
-          // Load latest priority ranking
-          // First get processing jobs for these assessments
-          const { data: jobsData, error: jobsError } = await supabase
-            .from('processing_jobs')
-            .select('id')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(10)
-
-          if (jobsError) {
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(jobsError, 'JOBS')
-            console.warn('[I07.2]', evidenceCode, 'processing_jobs')
-            setInterventionsState({ state: 'error', evidenceCode })
-          } else if (jobsData && jobsData.length > 0) {
-            const jobIds = jobsData.map((j) => j.id)
-
-            const { data: rankingData, error: rankingError } = await supabase
-              .from('priority_rankings')
-              .select('id, ranking_data')
-              .in('job_id', jobIds)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single()
-
-            if (rankingError && rankingError.code !== 'PGRST116') {
-              const evidenceCode = mapSupabaseErrorToEvidenceCode(rankingError, 'INTERVENTIONS')
-              console.warn('[I07.2]', evidenceCode, 'priority_rankings')
+            if (!resultsResponse.ok || !resultsJson.success) {
+              const evidenceCode = mapSupabaseErrorToEvidenceCode(resultsJson.error, 'RESULTS')
+              setSafetyState({ state: 'error', evidenceCode })
+              setScoresState({ state: 'error', evidenceCode })
               setInterventionsState({ state: 'error', evidenceCode })
-            } else if (rankingData) {
-              const ranking = rankingData as PriorityRanking
-              const interventions = ranking.ranking_data?.topInterventions ?? 
-                                   ranking.ranking_data?.rankedInterventions?.slice(0, 5) ?? []
-              setInterventionsState(interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' })
-            } else {
-              setInterventionsState({ state: 'empty' })
-            }
-
-            // V05-I07.3: Load review records for QA Panel
-            const { data: reviewData, error: reviewError } = await supabase
-              .from('review_records')
-              .select('id')
-              .in('job_id', jobIds)
-              .order('created_at', { ascending: false })
-
-            if (!reviewError && reviewData && reviewData.length > 0) {
-              setReviewRecords(reviewData.map((r) => r.id))
-            } else {
               setReviewRecords([])
+            } else {
+              const reports = resultsJson.data?.reports ?? []
+              const calculatedResults = resultsJson.data?.calculatedResults ?? []
+              const priorityRankings = resultsJson.data?.priorityRankings ?? []
+              const reviewRecordsData = resultsJson.data?.reviewRecords ?? []
+
+              setSafetyState(
+                reports.length > 0
+                  ? { state: 'ok', items: [reports[0] as ReportWithSafety] }
+                  : { state: 'empty' },
+              )
+
+              setScoresState(
+                calculatedResults.length > 0
+                  ? { state: 'ok', items: [calculatedResults[0] as CalculatedResult] }
+                  : { state: 'empty' },
+              )
+
+              if (priorityRankings.length > 0) {
+                const ranking = priorityRankings[0] as PriorityRanking
+                const interventions =
+                  ranking.ranking_data?.topInterventions ??
+                  ranking.ranking_data?.rankedInterventions?.slice(0, 5) ??
+                  []
+                setInterventionsState(
+                  interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' },
+                )
+              } else {
+                setInterventionsState({ state: 'empty' })
+              }
+
+              setReviewRecords(reviewRecordsData.map((record: { id: string }) => record.id))
             }
-          } else {
-            setInterventionsState({ state: 'empty' })
+          } catch (resultsError) {
+            console.warn('[I07.2]', 'E_QUERY_RESULTS', resultsError)
+            setSafetyState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setScoresState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setInterventionsState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setReviewRecords([])
           }
         } else {
           setAssessmentSummaries([])
@@ -575,7 +535,7 @@ export default function PatientDetailPage() {
       {/* Back Button */}
       <button
         onClick={() => router.push('/clinician')}
-        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline transition touch-manipulation inline-flex items-center gap-2"
+        className="mb-4 px-4 py-2.5 min-h-11 text-sm md:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline transition touch-manipulation inline-flex items-center gap-2"
       >
         ← Zurück zur Übersicht
       </button>
@@ -788,6 +748,7 @@ export default function PatientDetailPage() {
             <div className="mb-6">
               <AssessmentRunDetails
                 assessmentId={selectedAssessmentId}
+                patientId={patientProfileId}
                 onClose={() => setSelectedAssessmentId(null)}
               />
             </div>

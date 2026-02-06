@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react'
 import { Badge, Card, Button } from '@/lib/ui'
 import { Calendar, Activity, FileText, ChevronDown, ChevronUp, CheckCircle2, Clock } from 'lucide-react'
+import { getClinicianApiUrl } from './clinicianApi'
 
 export interface AssessmentAnswer {
   id: string
@@ -51,6 +52,7 @@ export interface AssessmentDetails {
 
 interface AssessmentRunDetailsProps {
   assessmentId: string
+  patientId: string
   onClose?: () => void
 }
 
@@ -137,7 +139,7 @@ function formatAnswerValue(answer: AssessmentAnswer): string {
   return String(answer.answerValue)
 }
 
-export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDetailsProps) {
+export function AssessmentRunDetails({ assessmentId, patientId, onClose }: AssessmentRunDetailsProps) {
   const [details, setDetails] = useState<AssessmentDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -149,7 +151,9 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/clinician/assessments/${assessmentId}/details`)
+        const response = await fetch(
+          getClinicianApiUrl(patientId, `assessments/${assessmentId}/details`),
+        )
         const data = await response.json()
 
         if (!data.success) {
@@ -287,7 +291,7 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
             {report?.reportTextShort && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-start gap-2">
-                  <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-0.5" />
+                  <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-slate-600 dark:text-slate-300">
                     {report.reportTextShort}
                   </p>
@@ -336,7 +340,7 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
                         Antwort: <span className="font-semibold">{formatAnswerValue(answer)}</span>
                       </p>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
                       #{index + 1}
                     </span>
                   </div>
