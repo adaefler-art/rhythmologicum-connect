@@ -203,7 +203,7 @@ const requestClinicianJson = async <T>(params: {
     patientId: patientId ?? null,
   })
 
-  if (endpoint.startsWith('/api/clinician/patient/')) {
+  if (endpoint.startsWith('/api') && endpoint.includes('/clinician/patient/')) {
     logPatientEndpointCall({
       kind: 'PATIENT_ENDPOINT_CALL',
       endpoint,
@@ -248,6 +248,79 @@ export const triageFixMembership = (payload: { assessmentId: string }) =>
     method: 'POST',
     body: payload,
     routeContext: 'triage',
+  })
+
+export const triageCaseAck = (caseId: string, patientId?: string | null) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/ack`,
+    method: 'POST',
+    routeContext: 'triage',
+    patientId: patientId ?? null,
+  })
+
+export const triageCaseSnooze = (
+  caseId: string,
+  payload: { snoozedUntil: string; reason?: string },
+  patientId?: string | null,
+) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/snooze`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'triage',
+    patientId: patientId ?? null,
+  })
+
+export const triageCaseClose = (
+  caseId: string,
+  payload: { reason?: string },
+  patientId?: string | null,
+) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/close`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'triage',
+    patientId: patientId ?? null,
+  })
+
+export const triageCaseReopen = (
+  caseId: string,
+  payload: { reason?: string },
+  patientId?: string | null,
+) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/reopen`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'triage',
+    patientId: patientId ?? null,
+  })
+
+export const triageCaseFlag = (
+  caseId: string,
+  payload: { action: 'set' | 'clear'; severity?: 'critical' | 'warning' | 'info'; reason?: string },
+  patientId?: string | null,
+) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/flag`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'triage',
+    patientId: patientId ?? null,
+  })
+
+export const triageCaseNote = (
+  caseId: string,
+  payload: { note: string },
+  patientId?: string | null,
+) =>
+  requestClinicianJson<{ success?: boolean; data?: Record<string, unknown> }>({
+    endpoint: `/api/clinician/triage/cases/${caseId}/note`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'triage',
+    patientId: patientId ?? null,
   })
 
 export const getAmyInsights = (patientId: string) =>

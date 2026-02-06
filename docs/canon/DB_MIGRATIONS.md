@@ -80,6 +80,7 @@ When introducing a new canonical table or enum:
 - `funnel_publish_history` (E74.3)
 - `funnel_version_status` (E74.3)
 - `diagnosis_runs`, `diagnosis_artifacts`, `diagnosis_run_status` (E76.4)
+- `triage_case_actions`, `triage_action_type` (E78.4)
 
 **Example manifest entry:**
 ```json
