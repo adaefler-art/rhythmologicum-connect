@@ -77,24 +77,24 @@ export function Table<T = unknown>({
   className = '',
   ...props
 }: TableProps<T>) {
-  const containerClasses = `overflow-x-auto bg-neutral-50 dark:bg-neutral-800 text-foreground transition-colors duration-150 ${bordered ? 'border border-neutral-200 dark:border-neutral-700 rounded-2xl' : ''}`
+  const containerClasses = `overflow-x-auto bg-card text-foreground transition-colors duration-150 ${bordered ? 'border border-border rounded-xl' : ''}`
 
   return (
     <div
       className={`${containerClasses} ${className}`}
       style={{
-        borderRadius: bordered ? radii['2xl'] : undefined,
+        borderRadius: bordered ? radii.xl : undefined,
         boxShadow: bordered ? shadows.sm : undefined,
       }}
       {...props}
     >
       <table className="w-full text-sm text-foreground">
-        <thead className="bg-neutral-100 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-neutral-700">
+        <thead className="bg-muted/30 border-b border-border">
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`px-4 py-4 font-semibold text-neutral-700 dark:text-neutral-300 ${
+                className={`px-4 py-4 font-semibold text-muted-foreground ${
                   column.align === 'center'
                     ? 'text-center'
                     : column.align === 'right'
@@ -107,7 +107,7 @@ export function Table<T = unknown>({
                   <span>{column.header}</span>
                   {column.sortable && (
                     <svg
-                      className="w-4 h-4 text-neutral-500 dark:text-neutral-400"
+                      className="w-4 h-4 text-muted-foreground"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -129,10 +129,10 @@ export function Table<T = unknown>({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-neutral-600 dark:text-neutral-400">
+              <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <svg
-                    className="animate-spin h-5 w-5 text-primary-500"
+                    className="animate-spin h-5 w-5 text-primary"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ export function Table<T = unknown>({
             </tr>
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-neutral-600 dark:text-neutral-400">
+              <td colSpan={columns.length} className="px-4 py-12 text-center text-muted-foreground">
                 {emptyMessage}
               </td>
             </tr>
@@ -166,10 +166,10 @@ export function Table<T = unknown>({
               <tr
                 key={keyExtractor(row, rowIndex)}
                 className={`
-                  ${striped && rowIndex % 2 === 1 ? 'bg-neutral-100/50 dark:bg-neutral-900/30' : ''}
-                  ${hoverable ? 'hover:bg-neutral-200/70 dark:hover:bg-neutral-700/50 transition' : ''}
+                  ${striped && rowIndex % 2 === 1 ? 'bg-muted/10' : ''}
+                  ${hoverable ? 'hover:bg-muted/20 transition' : ''}
                   ${onRowClick ? 'cursor-pointer' : ''}
-                  ${rowIndex !== data.length - 1 ? 'border-b border-neutral-200 dark:border-neutral-700' : ''}
+                  ${rowIndex !== data.length - 1 ? 'border-b border-border' : ''}
                 `}
                 onClick={() => onRowClick?.(row, rowIndex)}
                 role={onRowClick ? 'button' : undefined}
