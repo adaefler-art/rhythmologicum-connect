@@ -4710,6 +4710,58 @@ COMMENT ON COLUMN "public"."tasks"."assigned_to_user_id" IS 'V05-I08.1: User-lev
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."triage_case_actions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid" NOT NULL,
+    "patient_id" "uuid" NOT NULL,
+    "assessment_id" "uuid" NOT NULL,
+    "funnel_id" "uuid",
+    "action_type" "public"."triage_action_type" NOT NULL,
+    "payload" "jsonb" DEFAULT '{}'::"jsonb",
+    CONSTRAINT "triage_case_actions_payload_not_null" CHECK (("payload" IS NOT NULL))
+);
+
+
+ALTER TABLE "public"."triage_case_actions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."triage_case_actions" IS 'E78.4: Records HITL interventions on triage cases. Actions are append-only and never deleted by auto-jobs.';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."id" IS 'Unique identifier for the action';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."created_at" IS 'Timestamp when the action was performed';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."created_by" IS 'Clinician/admin who performed the action';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."patient_id" IS 'Patient ID associated with the case';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."assessment_id" IS 'Assessment ID (case_id) being acted upon';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."funnel_id" IS 'Funnel ID associated with the case (denormalized for performance)';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."action_type" IS 'Type of action: acknowledge | snooze | close | reopen | manual_flag | clear_manual_flag | add_note';
+
+
+
+COMMENT ON COLUMN "public"."triage_case_actions"."payload" IS 'Action-specific metadata (e.g., snoozed_until, note, severity)';
+
+
+
 CREATE OR REPLACE VIEW "public"."triage_cases_v1" AS
  WITH "latest_jobs" AS (
          SELECT DISTINCT ON ("processing_jobs"."assessment_id") "processing_jobs"."assessment_id",
@@ -4940,58 +4992,6 @@ COMMENT ON COLUMN "public"."triage_sessions"."rules_version" IS 'Version of tria
 
 
 COMMENT ON COLUMN "public"."triage_sessions"."rationale" IS 'Optional bounded routing rationale (max 280 chars, no PHI)';
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."triage_case_actions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "created_by" "uuid" NOT NULL,
-    "patient_id" "uuid" NOT NULL,
-    "assessment_id" "uuid" NOT NULL,
-    "funnel_id" "uuid",
-    "action_type" "public"."triage_action_type" NOT NULL,
-    "payload" "jsonb" DEFAULT '{}'::"jsonb",
-    CONSTRAINT "triage_case_actions_payload_not_null" CHECK (("payload" IS NOT NULL))
-);
-
-
-ALTER TABLE "public"."triage_case_actions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."triage_case_actions" IS 'E78.4: Records HITL interventions on triage cases. Actions are append-only and never deleted by auto-jobs.';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."id" IS 'Unique identifier for the action';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."created_at" IS 'Timestamp when the action was performed';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."created_by" IS 'Clinician/admin who performed the action';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."patient_id" IS 'Patient ID associated with the case';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."assessment_id" IS 'Assessment ID (case_id) being acted upon';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."funnel_id" IS 'Funnel ID associated with the case (denormalized for performance)';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."action_type" IS 'Type of action: acknowledge | snooze | close | reopen | manual_flag | clear_manual_flag | add_note';
-
-
-
-COMMENT ON COLUMN "public"."triage_case_actions"."payload" IS 'Action-specific metadata (e.g., snoozed_until, note, severity)';
 
 
 
@@ -5465,13 +5465,13 @@ ALTER TABLE ONLY "public"."tasks"
 
 
 
-ALTER TABLE ONLY "public"."triage_sessions"
-    ADD CONSTRAINT "triage_sessions_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."triage_sessions"
+    ADD CONSTRAINT "triage_sessions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -6426,6 +6426,26 @@ CREATE INDEX "idx_tasks_status" ON "public"."tasks" USING "btree" ("status");
 
 
 
+CREATE INDEX "idx_triage_case_actions_assessment_action" ON "public"."triage_case_actions" USING "btree" ("assessment_id", "action_type", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_triage_case_actions_assessment_id" ON "public"."triage_case_actions" USING "btree" ("assessment_id");
+
+
+
+CREATE INDEX "idx_triage_case_actions_created_at" ON "public"."triage_case_actions" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_triage_case_actions_created_by" ON "public"."triage_case_actions" USING "btree" ("created_by", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_triage_case_actions_patient_id" ON "public"."triage_case_actions" USING "btree" ("patient_id");
+
+
+
 CREATE INDEX "idx_triage_sessions_correlation_id" ON "public"."triage_sessions" USING "btree" ("correlation_id");
 
 
@@ -6439,26 +6459,6 @@ CREATE INDEX "idx_triage_sessions_input_hash" ON "public"."triage_sessions" USIN
 
 
 CREATE INDEX "idx_triage_sessions_patient_id_created_at" ON "public"."triage_sessions" USING "btree" ("patient_id", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_triage_case_actions_assessment_id" ON "public"."triage_case_actions" USING "btree" ("assessment_id");
-
-
-
-CREATE INDEX "idx_triage_case_actions_patient_id" ON "public"."triage_case_actions" USING "btree" ("patient_id");
-
-
-
-CREATE INDEX "idx_triage_case_actions_created_at" ON "public"."triage_case_actions" USING "btree" ("created_at" DESC);
-
-
-
-CREATE INDEX "idx_triage_case_actions_assessment_action" ON "public"."triage_case_actions" USING "btree" ("assessment_id", "action_type", "created_at" DESC);
-
-
-
-CREATE INDEX "idx_triage_case_actions_created_by" ON "public"."triage_case_actions" USING "btree" ("created_by", "created_at" DESC);
 
 
 
@@ -7052,8 +7052,8 @@ ALTER TABLE ONLY "public"."tasks"
 
 
 
-ALTER TABLE ONLY "public"."triage_sessions"
-    ADD CONSTRAINT "triage_sessions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."triage_case_actions"
+    ADD CONSTRAINT "triage_case_actions_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
 
 
 
@@ -7063,17 +7063,17 @@ ALTER TABLE ONLY "public"."triage_case_actions"
 
 
 ALTER TABLE ONLY "public"."triage_case_actions"
+    ADD CONSTRAINT "triage_case_actions_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."triage_case_actions"
-    ADD CONSTRAINT "triage_case_actions_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "public"."assessments"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."triage_case_actions"
-    ADD CONSTRAINT "triage_case_actions_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE SET NULL;
+ALTER TABLE ONLY "public"."triage_sessions"
+    ADD CONSTRAINT "triage_sessions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -8279,6 +8279,25 @@ CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "a
 
 
 
+ALTER TABLE "public"."triage_case_actions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "triage_case_actions_insert_clinician" ON "public"."triage_case_actions" FOR INSERT WITH CHECK (((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND ("created_by" = "auth"."uid"()) AND (EXISTS ( SELECT 1
+   FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."patient_user_id" = "triage_case_actions"."patient_id") AND ("cpa"."clinician_user_id" = "auth"."uid"()))))));
+
+
+
+CREATE POLICY "triage_case_actions_read_clinician" ON "public"."triage_case_actions" FOR SELECT USING (((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND (EXISTS ( SELECT 1
+   FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."patient_user_id" = "triage_case_actions"."patient_id") AND ("cpa"."clinician_user_id" = "auth"."uid"()))))));
+
+
+
 ALTER TABLE "public"."triage_sessions" ENABLE ROW LEVEL SECURITY;
 
 
@@ -8303,37 +8322,6 @@ CREATE POLICY "triage_sessions_patient_read_own" ON "public"."triage_sessions" F
 
 
 COMMENT ON POLICY "triage_sessions_patient_read_own" ON "public"."triage_sessions" IS 'E6.6.6 AC2: Patients can only read their own triage sessions';
-
-
-
-ALTER TABLE "public"."triage_case_actions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "triage_case_actions_read_clinician" ON "public"."triage_case_actions" FOR SELECT TO "authenticated" USING (((EXISTS ( SELECT 1
-   FROM "auth"."users"
-  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND (EXISTS ( SELECT 1
-   FROM "public"."org_memberships" "om1"
-  WHERE (("om1"."user_id" = "triage_case_actions"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."org_memberships" "om2"
-          WHERE (("om2"."user_id" = "auth"."uid"()) AND ("om2"."org_id" = "om1"."org_id")))))))));
-
-
-
-COMMENT ON POLICY "triage_case_actions_read_clinician" ON "public"."triage_case_actions" IS 'E78.4 RLS: Clinicians can read actions for patients in their org';
-
-
-
-CREATE POLICY "triage_case_actions_insert_clinician" ON "public"."triage_case_actions" FOR INSERT TO "authenticated" WITH CHECK (((EXISTS ( SELECT 1
-   FROM "auth"."users"
-  WHERE (("users"."id" = "auth"."uid"()) AND ((("users"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("users"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))) AND ("created_by" = "auth"."uid"()) AND (EXISTS ( SELECT 1
-   FROM "public"."org_memberships" "om1"
-  WHERE (("om1"."user_id" = "triage_case_actions"."patient_id") AND (EXISTS ( SELECT 1
-           FROM "public"."org_memberships" "om2"
-          WHERE (("om2"."user_id" = "auth"."uid"()) AND ("om2"."org_id" = "om1"."org_id")))))))));
-
-
-
-COMMENT ON POLICY "triage_case_actions_insert_clinician" ON "public"."triage_case_actions" IS 'E78.4 RLS: Clinicians can insert actions for patients in their org';
 
 
 
@@ -9182,6 +9170,12 @@ GRANT ALL ON TABLE "public"."support_cases" TO "service_role";
 GRANT ALL ON TABLE "public"."tasks" TO "anon";
 GRANT ALL ON TABLE "public"."tasks" TO "authenticated";
 GRANT ALL ON TABLE "public"."tasks" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."triage_case_actions" TO "anon";
+GRANT ALL ON TABLE "public"."triage_case_actions" TO "authenticated";
+GRANT ALL ON TABLE "public"."triage_case_actions" TO "service_role";
 
 
 
