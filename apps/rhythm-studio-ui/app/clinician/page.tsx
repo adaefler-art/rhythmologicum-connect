@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { Badge, Button, Card, Table, LoadingSpinner, ErrorState, PageHeader, SectionHeader } from '@/lib/ui'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   Users,
@@ -43,6 +44,7 @@ type PatientOverview = {
 
 export default function ClinicianOverviewPage() {
   const router = useRouter()
+  const navLabel = useActiveNavLabel('Dashboard')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
@@ -281,7 +283,7 @@ export default function ClinicianOverviewPage() {
     <div className="w-full">
       {/* Page Header with Actions */}
       <PageHeader
-        title="Dashboard"
+        title={navLabel ?? 'Dashboard'}
         description="Übersicht aller Patientinnen und Patienten mit aktuellen Assessments"
         actions={
           <>

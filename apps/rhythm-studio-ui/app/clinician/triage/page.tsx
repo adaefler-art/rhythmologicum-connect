@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select } from '@/lib/ui'
 import { resolvePatientDisplayName } from '@/lib/utils/patientDisplayName'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 import type { TableColumn } from '@/lib/ui/Table'
 import type { ApiError, TriageHealthResponse } from '@/lib/fetchClinician'
 import {
@@ -73,6 +74,7 @@ type TriageCase = {
 
 export default function InboxPage() {
   const router = useRouter()
+  const navLabel = useActiveNavLabel('Inbox')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cases, setCases] = useState<TriageCase[]>([])
@@ -687,7 +689,7 @@ export default function InboxPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <LoadingSpinner size="md" text="Inbox wird geladen…" />
+        <LoadingSpinner size="md" text={`${navLabel ?? 'Inbox'} wird geladen…`} />
       </div>
     )
   }
@@ -710,7 +712,7 @@ export default function InboxPage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-          Inbox
+          {navLabel ?? 'Inbox'}
         </h1>
         <p className="text-slate-600 dark:text-slate-300">
           Handlungsbedarf und Aufmerksamkeitselemente

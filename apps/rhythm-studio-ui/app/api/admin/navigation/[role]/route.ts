@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
+import { createServerSupabaseClient, hasAdminRole } from '@/lib/db/supabase.server'
 import { successResponse } from '@/lib/api/responses'
 import { getRequestId, logError, withRequestId } from '@/lib/db/errors'
 import { ErrorCode } from '@/lib/api/responseTypes'
@@ -25,6 +25,12 @@ type UpdateNavigationRequest = {
 
 const VALID_ROLES = ['patient', 'clinician', 'admin', 'nurse'] as const
 type UserRole = (typeof VALID_ROLES)[number]
+const MAX_LABEL_LENGTH = 48
+
+function normalizeLabel(value: string | null | undefined) {
+	const trimmed = value?.trim() ?? ''
+	return trimmed.length > 0 ? trimmed : null
+}
 
 function jsonError(status: number, code: ErrorCode, message: string, requestId: string) {
 	return withRequestId(
@@ -69,7 +75,7 @@ export async function PUT(
 			return jsonError(401, ErrorCode.UNAUTHORIZED, 'Nicht authentifiziert', requestId)
 		}
 
-		const hasPermission = await hasAdminOrClinicianRole()
+		const hasPermission = await hasAdminRole()
 		if (!hasPermission) {
 			return jsonError(
 				403,
@@ -89,6 +95,20 @@ export async function PUT(
 
 		if (!body.configs || !Array.isArray(body.configs)) {
 			return jsonError(400, ErrorCode.VALIDATION_FAILED, 'configs muss ein Array sein', requestId)
+		}
+
+		const invalidLabel = body.configs.find((config) => {
+			const normalized = normalizeLabel(config.custom_label)
+			return normalized !== null && normalized.length > MAX_LABEL_LENGTH
+		})
+
+		if (invalidLabel) {
+			return jsonError(
+				400,
+				ErrorCode.VALIDATION_FAILED,
+				`Label darf maximal ${MAX_LABEL_LENGTH} Zeichen lang sein.`,
+				requestId,
+			)
 		}
 
 		// Delete existing configs for this role
@@ -118,7 +138,7 @@ export async function PUT(
 			role,
 			navigation_item_id: config.navigation_item_id,
 			is_enabled: config.is_enabled,
-			custom_label: config.custom_label || null,
+			custom_label: normalizeLabel(config.custom_label),
 			custom_icon: config.custom_icon || null,
 			order_index: config.order_index,
 		}))

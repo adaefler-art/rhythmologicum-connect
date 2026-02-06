@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { Button, Card, Badge, LoadingSpinner, ErrorState, PageHeader } from '@/lib/ui'
 import { spacing } from '@/lib/design-tokens'
 import { isFunnelPatientReachable } from '@/lib/config/funnelAllowlist'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 
 export const dynamic = 'force-dynamic'
-
 type Funnel = {
   id: string
   slug: string
@@ -31,6 +31,7 @@ type PillarGroup = {
 }
 
 export default function FunnelListPage() {
+  const navLabel = useActiveNavLabel('Fragebögen')
   const [funnels, setFunnels] = useState<Funnel[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

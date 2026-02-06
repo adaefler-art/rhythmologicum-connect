@@ -184,6 +184,19 @@ export async function hasClinicianRole(): Promise<boolean> {
 }
 
 /**
+ * Checks if the current user has admin role
+ * 
+ * @returns Promise<boolean> - true if user is an admin
+ */
+export async function hasAdminRole(): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) return false
+
+  const role = user.app_metadata?.role || user.user_metadata?.role
+  return role === 'admin'
+}
+
+/**
  * Checks if the current user has admin or clinician role
  * Alias for hasClinicianRole (in this system, clinicians have admin access)
  * 

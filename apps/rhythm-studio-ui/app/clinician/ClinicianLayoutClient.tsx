@@ -11,6 +11,7 @@ import {
   fetchNavItemsForRole,
   type RoleNavItem,
 } from '@/lib/utils/roleBasedRouting'
+import { NavigationProvider } from '@/lib/contexts/NavigationContext'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 
@@ -203,12 +204,14 @@ export default function ClinicianLayoutClient({ children }: { children: ReactNod
       onSignOut={handleSignOut}
       navItems={resolvedNavItems}
     >
-      {/* Role indicator */}
-      <div className="mb-4 text-xs text-muted-foreground">
-        Angemeldet als:{' '}
-        <span className="font-medium text-foreground">{roleDisplay}</span>
-      </div>
-      {children}
+      <NavigationProvider navItems={resolvedNavItems}>
+        {/* Role indicator */}
+        <div className="mb-4 text-xs text-muted-foreground">
+          Angemeldet als:{' '}
+          <span className="font-medium text-foreground">{roleDisplay}</span>
+        </div>
+        {children}
+      </NavigationProvider>
     </DesktopLayout>
   )
 }
