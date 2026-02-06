@@ -1,19 +1,185 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Alert,
   Button,
-  Card,
-  Input,
   Modal,
   Textarea,
-  Select,
   FormField,
-  Table,
   PageHeader,
   SectionHeader,
 } from '@/lib/ui'
+
+type DemoCardProps = {
+  header?: ReactNode
+  footer?: ReactNode
+  interactive?: boolean
+  onClick?: () => void
+  className?: string
+  children: ReactNode
+}
+
+type DemoInputProps = React.ComponentProps<'input'> & {
+  error?: boolean
+  errorMessage?: string
+  helperText?: string
+}
+
+type DemoSelectProps = React.ComponentProps<'select'> & {
+  error?: boolean
+  helperText?: string
+}
+
+const joinClasses = (...classes: Array<string | null | undefined | false>) =>
+  classes.filter(Boolean).join(' ')
+
+function DemoCard({
+  header,
+  footer,
+  interactive = false,
+  onClick,
+  className,
+  children,
+}: DemoCardProps) {
+  const interactiveClasses = interactive
+    ? 'cursor-pointer hover:shadow-lg transition-shadow'
+    : ''
+
+  const Component = onClick ? 'button' : 'div'
+
+  return (
+    <Component
+      type={onClick ? 'button' : undefined}
+      data-slot="card"
+      onClick={onClick}
+      className={joinClasses(
+        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border text-left',
+        interactiveClasses,
+        className,
+      )}
+    >
+      {header && (
+        <div
+          data-slot="card-header"
+          className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6"
+        >
+          {header}
+        </div>
+      )}
+      <div data-slot="card-content" className="px-6 last:pb-6">
+        {children}
+      </div>
+      {footer && (
+        <div data-slot="card-footer" className="flex items-center px-6 pb-6">
+          {footer}
+        </div>
+      )}
+    </Component>
+  )
+}
+
+function DemoInput({
+  className,
+  type,
+  error,
+  errorMessage,
+  helperText,
+  ...props
+}: DemoInputProps) {
+  return (
+    <div className="w-full">
+      <input
+        type={type}
+        data-slot="input"
+        aria-invalid={error ? 'true' : undefined}
+        className={joinClasses(
+          'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base bg-input-background transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+          'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+          'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+          className,
+        )}
+        {...props}
+      />
+      {error && errorMessage && (
+        <p className="text-sm text-destructive mt-2">{errorMessage}</p>
+      )}
+      {helperText && !error && (
+        <p className="text-sm text-muted-foreground mt-2">{helperText}</p>
+      )}
+    </div>
+  )
+}
+
+function DemoSelect({ className, error, helperText, children, ...props }: DemoSelectProps) {
+  return (
+    <div className="w-full">
+      <select
+        data-slot="select-trigger"
+        aria-invalid={error ? 'true' : undefined}
+        className={joinClasses(
+          'border-input data-placeholder:text-muted-foreground [&_svg:not([class*="text-"])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-full items-center justify-between gap-2 rounded-md border bg-input-background px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      {helperText && !error && (
+        <p className="text-sm text-muted-foreground mt-2">{helperText}</p>
+      )}
+    </div>
+  )
+}
+
+type DemoTableColumn<T> = { header: string; accessor: (row: T) => ReactNode }
+
+function DemoTable<T extends { id: number }>({
+  columns,
+  data,
+}: {
+  columns: Array<DemoTableColumn<T>>
+  data: T[]
+}) {
+  return (
+    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+      <table data-slot="table" className="w-full caption-bottom text-sm">
+        <thead data-slot="table-header" className="[&_tr]:border-b">
+          <tr data-slot="table-row">
+            {columns.map((column) => (
+              <th
+                key={column.header}
+                data-slot="table-head"
+                className="text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap"
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody data-slot="table-body" className="[&_tr:last-child]:border-0">
+          {data.map((row) => (
+            <tr
+              key={row.id}
+              data-slot="table-row"
+              className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
+            >
+              {columns.map((column) => (
+                <td
+                  key={`${row.id}-${column.header}`}
+                  data-slot="table-cell"
+                  className="p-2 align-middle whitespace-nowrap"
+                >
+                  {column.accessor(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 /**
  * Design System Showcase Page
@@ -79,7 +245,7 @@ export default function DesignSystemPage() {
 
         {/* Buttons Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Buttons" />
 
             <div className="space-y-6">
@@ -152,33 +318,30 @@ export default function DesignSystemPage() {
                 </Button>
               </div>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Cards Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Cards" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Card */}
-              <Card shadow="md">
+              <DemoCard>
                 <h3 className="text-lg font-semibold mb-2">Basic Card</h3>
                 <p className="text-slate-600 dark:text-slate-300">
                   This is a basic card with medium shadow and default padding.
                 </p>
-              </Card>
+              </DemoCard>
 
               {/* Card with Header */}
-              <Card
-                header={<h3 className="text-lg font-semibold">Card with Header</h3>}
-                shadow="md"
-              >
+              <DemoCard header={<h3 className="text-lg font-semibold">Card with Header</h3>}>
                 <p className="text-slate-600 dark:text-slate-300">Card content with a header section.</p>
-              </Card>
+              </DemoCard>
 
               {/* Card with Footer */}
-              <Card
+              <DemoCard
                 header={<h3 className="text-lg font-semibold">Card with Footer</h3>}
                 footer={
                   <div className="flex justify-end gap-2">
@@ -190,29 +353,28 @@ export default function DesignSystemPage() {
                     </Button>
                   </div>
                 }
-                shadow="md"
               >
                 <p className="text-slate-600 dark:text-slate-300">Card with both header and footer sections.</p>
-              </Card>
+              </DemoCard>
 
               {/* Interactive Card */}
-              <Card interactive onClick={() => alert('Card clicked!')} shadow="lg">
+              <DemoCard interactive onClick={() => alert('Card clicked!')}>
                 <h3 className="text-lg font-semibold mb-2">Interactive Card</h3>
                 <p className="text-slate-600 dark:text-slate-300">Click me! I have hover effects.</p>
-              </Card>
+              </DemoCard>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Form Components Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Form Components" />
 
             <div className="space-y-6">
               {/* Input */}
               <FormField label="Text Input" required htmlFor="text-input">
-                <Input
+                <DemoInput
                   id="text-input"
                   type="text"
                   placeholder="Enter text..."
@@ -225,7 +387,7 @@ export default function DesignSystemPage() {
               {/* Input with Error */}
               <div>
                 <FormField label="Input with Error" htmlFor="error-input">
-                  <Input
+                  <DemoInput
                     id="error-input"
                     type="email"
                     placeholder="email@example.com"
@@ -258,7 +420,7 @@ export default function DesignSystemPage() {
 
               {/* Select */}
               <FormField label="Select Dropdown" required htmlFor="select">
-                <Select
+                <DemoSelect
                   id="select"
                   value={selectValue}
                   onChange={(e) => setSelectValue(e.target.value)}
@@ -267,7 +429,7 @@ export default function DesignSystemPage() {
                   <option value="1">Option 1</option>
                   <option value="2">Option 2</option>
                   <option value="3">Option 3</option>
-                </Select>
+                </DemoSelect>
               </FormField>
 
               {/* Form Actions */}
@@ -278,26 +440,21 @@ export default function DesignSystemPage() {
                 </Button>
               </div>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Table Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Table" />
 
-            <Table
-              columns={columns}
-              data={sampleData}
-              hoverable
-              onRowClick={(row) => alert(`Clicked: ${row.name}`)}
-            />
-          </Card>
+            <DemoTable columns={columns} data={sampleData} />
+          </DemoCard>
         </section>
 
         {/* Alert Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Alerts" />
 
             <div className="space-y-4">
@@ -346,12 +503,12 @@ export default function DesignSystemPage() {
                 Simple alert without a title - just a message.
               </Alert>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Modal Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Modal / Dialog" />
 
             <div className="space-y-4">
@@ -368,6 +525,7 @@ export default function DesignSystemPage() {
                 onClose={() => setIsModalOpen(false)}
                 title="Example Modal"
                 size="md"
+                className="bg-background rounded-lg border shadow-lg"
                 footer={
                   <>
                     <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
@@ -400,12 +558,12 @@ export default function DesignSystemPage() {
                 </div>
               </Modal>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Color Palette Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Color Palette" />
 
             <div className="space-y-6">
@@ -476,12 +634,12 @@ export default function DesignSystemPage() {
                 </div>
               </div>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Typography Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Typography" />
 
             <div className="space-y-4">
@@ -514,12 +672,12 @@ export default function DesignSystemPage() {
                 <p className="text-sm text-slate-500 dark:text-slate-400">font-size: 0.75rem (12px)</p>
               </div>
             </div>
-          </Card>
+          </DemoCard>
         </section>
 
         {/* Spacing Section */}
         <section>
-          <Card>
+          <DemoCard>
             <SectionHeader title="Spacing Scale" />
 
             <div className="space-y-4">
@@ -543,7 +701,7 @@ export default function DesignSystemPage() {
                 </div>
               ))}
             </div>
-          </Card>
+          </DemoCard>
         </section>
       </div>
     </main>
