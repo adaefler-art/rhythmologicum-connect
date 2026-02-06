@@ -8,6 +8,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ENTRY_TYPES, validateContentSize, validateCreateEntry } from '@/lib/api/anamnesis/validation'
@@ -153,6 +155,7 @@ async function computeAnamnesisFacts(supabase: Awaited<ReturnType<typeof createS
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { patientId } = await context.params
+    const endpoint = `/api/clinician/patient/${patientId}/anamnesis`
     const supabase = await createServerSupabaseClient()
 
     const {
@@ -185,23 +188,42 @@ export async function GET(_request: Request, context: RouteContext) {
       .from('patient_profiles')
       .select('id')
       .eq('id', patientId)
-      .maybeSingle()
+        const { data: patient, error: patientError } = await supabase
 
     if (patientError || !patient) {
       return NextResponse.json({
         success: true,
         data: {
-          entries: [],
-          latestEntry: null,
-          versions: [],
-          suggestedFacts: [],
-        },
-      })
-    }
+        if (patientError || !patient) {
+          const admin = createAdminSupabaseClient()
+          const { data: adminPatient, error: adminError } = await admin
+            .from('patient_profiles')
+            .select('id')
+            .eq('id', patientId)
+            .maybeSingle()
 
-    const { data: entries, error: entryError } = await supabase
-      .from('anamnesis_entries')
-      .select(
+          if (adminError) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
+              },
+              { status: 500 },
+            )
+          }
+
+          if (adminPatient) {
+            return NextResponse.json(
+              { error: 'FORBIDDEN', endpoint, patientId },
+              { status: 403 },
+            )
+          }
+
+          return NextResponse.json(
+            { error: 'NOT_FOUND', endpoint, patientId },
+            { status: 404 },
+          )
+        }
         `
         id,
         title,
@@ -277,6 +299,7 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { patientId } = await context.params
+    const endpoint = `/api/clinician/patient/${patientId}/anamnesis`
     const supabase = await createServerSupabaseClient()
 
     const {
@@ -317,15 +340,36 @@ export async function POST(request: Request, context: RouteContext) {
       const validated = createFromFactsSchema.parse(body)
       title = validated.title || 'Anamnese (Vorschlag)'
       content = { text: validated.text, sources: validated.sources ?? [] }
-      entryType = 'funnel_summary'
-      tags = []
-      validateContentSize(content)
-    } else {
-      const validated = validateCreateEntry(body)
-      title = validated.title
-      content = validated.content
-      entryType = validated.entry_type || null
-      tags = validated.tags || []
+        if (patientError || !patient) {
+          const admin = createAdminSupabaseClient()
+          const { data: adminPatient, error: adminError } = await admin
+            .from('patient_profiles')
+            .select('id')
+            .eq('id', patientId)
+            .maybeSingle()
+
+          if (adminError) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
+              },
+              { status: 500 },
+            )
+          }
+
+          if (adminPatient) {
+            return NextResponse.json(
+              { error: 'FORBIDDEN', endpoint, patientId },
+              { status: 403 },
+            )
+          }
+
+          return NextResponse.json(
+            { error: 'NOT_FOUND', endpoint, patientId },
+            { status: 404 },
+          )
+        }
     }
 
     const { data: latestEntry } = await supabase

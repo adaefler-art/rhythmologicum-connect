@@ -345,9 +345,14 @@ export default function InboxPage() {
   // Handle row click
   const handleRowClick = useCallback(
     (triageCase: TriageCase) => {
+      if (!triageCase.patient_id) return
+      if (healthData?.membershipStatus === 'needs_fix') {
+        setHealthMessage('Membership-Block erkannt. Bitte zuerst den Healthcheck beheben.')
+        return
+      }
       router.push(`/clinician/patient/${triageCase.patient_id}`)
     },
-    [router]
+    [healthData?.membershipStatus, router]
   )
 
   // Toggle dropdown

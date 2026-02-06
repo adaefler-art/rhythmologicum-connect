@@ -35,6 +35,18 @@ const nextConfig: NextConfig = {
         destination: '/api/auth/:path*',
       },
       {
+        source: '/api/clinician/:path*',
+        destination: '/api/clinician/:path*',
+      },
+      {
+        source: '/api/triage/:path*',
+        destination: '/api/triage/:path*',
+      },
+      {
+        source: '/api/_meta/:path*',
+        destination: '/api/_meta/:path*',
+      },
+      {
         source: '/api/admin/funnels/:path*',
         destination: '/api/admin/funnels/:path*',
       },

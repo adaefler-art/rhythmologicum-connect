@@ -22,6 +22,7 @@ type LatestRisk = {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { patientId } = await context.params
+    const endpoint = `/api/clinician/patient/${patientId}/results`
     const supabase = await createServerSupabaseClient()
 
     const {
@@ -57,17 +58,34 @@ export async function GET(_request: Request, context: RouteContext) {
       .maybeSingle()
 
     if (patientError || !patient) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          reports: [],
-          calculatedResults: [],
-          processingJobs: [],
-          latestRisk: null,
-          priorityRankings: [],
-          reviewRecords: [],
-        },
-      })
+      const admin = createAdminSupabaseClient()
+      const { data: adminPatient, error: adminError } = await admin
+        .from('patient_profiles')
+        .select('id')
+        .eq('id', patientId)
+        .maybeSingle()
+
+      if (adminError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
+          },
+          { status: 500 },
+        )
+      }
+
+      if (adminPatient) {
+        return NextResponse.json(
+          { error: 'FORBIDDEN', endpoint, patientId },
+          { status: 403 },
+        )
+      }
+
+      return NextResponse.json(
+        { error: 'NOT_FOUND', endpoint, patientId },
+        { status: 404 },
+      )
     }
 
     const admin = createAdminSupabaseClient()

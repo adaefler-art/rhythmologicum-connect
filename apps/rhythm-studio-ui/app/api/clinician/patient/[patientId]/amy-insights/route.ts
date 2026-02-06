@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 type RouteContext = {
@@ -78,6 +79,7 @@ const buildConversations = (messages: AmyMessage[]): Conversation[] => {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { patientId } = await context.params
+    const endpoint = `/api/clinician/patient/${patientId}/amy-insights`
     const supabase = await createServerSupabaseClient()
 
     const {
@@ -113,12 +115,34 @@ export async function GET(_request: Request, context: RouteContext) {
       .maybeSingle()
 
     if (patientError || !patient) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          conversations: [],
-        },
-      })
+      const admin = createAdminSupabaseClient()
+      const { data: adminPatient, error: adminError } = await admin
+        .from('patient_profiles')
+        .select('id')
+        .eq('id', patientId)
+        .maybeSingle()
+
+      if (adminError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
+          },
+          { status: 500 },
+        )
+      }
+
+      if (adminPatient) {
+        return NextResponse.json(
+          { error: 'FORBIDDEN', endpoint, patientId },
+          { status: 403 },
+        )
+      }
+
+      return NextResponse.json(
+        { error: 'NOT_FOUND', endpoint, patientId },
+        { status: 404 },
+      )
     }
 
     const { data: messages, error: messageError } = await supabase

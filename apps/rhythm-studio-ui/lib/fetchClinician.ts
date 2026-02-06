@@ -78,6 +78,17 @@ const logApiCall = (payload: {
   console.info(JSON.stringify(payload))
 }
 
+const logPatientEndpointCall = (payload: {
+  kind: 'PATIENT_ENDPOINT_CALL'
+  endpoint: string
+  status: number
+  patientId: string | null
+  routeContext: 'triage'
+}) => {
+  if (typeof window === 'undefined') return
+  console.info(JSON.stringify(payload))
+}
+
 const buildApiError = (params: {
   response: Response
   endpoint: string
@@ -86,14 +97,15 @@ const buildApiError = (params: {
 }) => {
   const { response, endpoint, method, data } = params
   const dataError = data && typeof data === 'object' ? (data as { error?: unknown }).error : null
+  const legacyError = dataError && typeof dataError === 'string' ? dataError : null
   const code =
     dataError && typeof dataError === 'object' && dataError !== null
       ? (dataError as { code?: string }).code
-      : undefined
+      : legacyError || undefined
   const message =
     (dataError && typeof dataError === 'object' && dataError !== null
       ? (dataError as { message?: string }).message
-      : response.statusText) || `HTTP ${response.status}`
+      : legacyError || response.statusText) || `HTTP ${response.status}`
 
   return {
     status: response.status,
@@ -190,6 +202,16 @@ const requestClinicianJson = async <T>(params: {
     routeContext,
     patientId: patientId ?? null,
   })
+
+  if (endpoint.startsWith('/api/clinician/patient/')) {
+    logPatientEndpointCall({
+      kind: 'PATIENT_ENDPOINT_CALL',
+      endpoint,
+      status: response.status,
+      patientId: patientId ?? null,
+      routeContext: 'triage',
+    })
+  }
 
   let error: ApiError | null = null
   if (!response.ok || (data && typeof data === 'object' && (data as { success?: boolean }).success === false)) {
