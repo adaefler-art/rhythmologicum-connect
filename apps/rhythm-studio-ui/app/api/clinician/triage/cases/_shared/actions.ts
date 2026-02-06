@@ -29,6 +29,7 @@ import {
 	logError,
 	withRequestId,
 } from '@/lib/db/errors'
+import type { Json, TablesInsert } from '@/lib/types/supabase'
 import type { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -122,16 +123,18 @@ async function recordAction(
 	payload: Record<string, unknown>,
 	requestId: string,
 ): Promise<{ success: true; action: any } | { success: false; response: NextResponse }> {
+	const insertPayload: TablesInsert<'triage_case_actions'> = {
+		created_by: userId,
+		patient_id: assessment.patient_id,
+		assessment_id: assessment.id,
+		funnel_id: assessment.funnel_id,
+		action_type: actionType,
+		payload: payload as Json,
+	}
+
 	const { data: action, error: insertError } = await supabase
 		.from('triage_case_actions')
-		.insert({
-			created_by: userId,
-			patient_id: assessment.patient_id,
-			assessment_id: assessment.id,
-			funnel_id: assessment.funnel_id,
-			action_type: actionType,
-			payload,
-		})
+		.insert(insertPayload)
 		.select('id, created_at, created_by, assessment_id, action_type, payload')
 		.single()
 
@@ -297,7 +300,10 @@ export async function executeTriageAction(
 			actionType: action.action_type,
 			createdAt: action.created_at,
 			createdBy: action.created_by,
-			payload: action.payload || {},
+			payload:
+				action.payload && typeof action.payload === 'object' && !Array.isArray(action.payload)
+					? (action.payload as Record<string, unknown>)
+					: {},
 		}
 
 		return withRequestId(
