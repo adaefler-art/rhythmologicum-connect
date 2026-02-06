@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Button, Card, Badge, LoadingSpinner, ErrorState } from '@/lib/ui'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 import {
   LayoutDashboard,
   Users,
@@ -65,7 +66,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   History: <History className="w-5 h-5" />,
 }
 
+const MAX_LABEL_LENGTH = 48
+
 export default function NavigationConfigPage() {
+  const navLabel = useActiveNavLabel('Navigation')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -178,17 +182,46 @@ export default function NavigationConfigPage() {
     setHasChanges(true)
   }
 
+  const normalizeLabel = (value: string | null) => {
+    const trimmed = value?.trim() ?? ''
+    return trimmed.length > 0 ? trimmed : null
+  }
+
+  const updateItemLabel = (navigationItemId: string, value: string) => {
+    const normalized = normalizeLabel(value)
+    setConfigs((prev) =>
+      prev.map((config) =>
+        config.role === selectedRole && config.navigation_item_id === navigationItemId
+          ? { ...config, custom_label: normalized }
+          : config,
+      ),
+    )
+    setHasChanges(true)
+  }
+
   const saveChanges = async () => {
     try {
       setSaving(true)
       setError(null)
+
+      const roleConfigsToValidate = configs.filter((c) => c.role === selectedRole)
+      const invalidLabel = roleConfigsToValidate.find((config) => {
+        const normalized = normalizeLabel(config.custom_label)
+        return normalized !== null && normalized.length > MAX_LABEL_LENGTH
+      })
+
+      if (invalidLabel) {
+        setError(`Label darf maximal ${MAX_LABEL_LENGTH} Zeichen lang sein.`)
+        setSaving(false)
+        return
+      }
 
       const roleConfigs = configs
         .filter((c) => c.role === selectedRole)
         .map((c) => ({
           navigation_item_id: c.navigation_item_id,
           is_enabled: c.is_enabled,
-          custom_label: c.custom_label,
+          custom_label: normalizeLabel(c.custom_label),
           custom_icon: c.custom_icon,
           order_index: c.order_index,
         }))
@@ -240,7 +273,7 @@ export default function NavigationConfigPage() {
       <div className="flex items-[center] justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            Navigation verwalten
+            {navLabel ?? 'Navigation'} verwalten
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             Konfigurieren Sie die Navigation für verschiedene Benutzerrollen
@@ -354,6 +387,23 @@ export default function NavigationConfigPage() {
                   <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
                     {rc.item.route}
                   </p>
+                  <div className="mt-2">
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                      Label
+                    </label>
+                    <input
+                      type="text"
+                      value={rc.config?.custom_label ?? ''}
+                      onChange={(event) => updateItemLabel(rc.item.id, event.target.value)}
+                      placeholder={rc.item.default_label}
+                      maxLength={MAX_LABEL_LENGTH}
+                      disabled={!isEnabled}
+                      className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 disabled:opacity-60"
+                    />
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                      Leer lassen = Standardlabel (max. {MAX_LABEL_LENGTH} Zeichen)
+                    </p>
+                  </div>
                   {rc.item.description && (
                     <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                       {rc.item.description}

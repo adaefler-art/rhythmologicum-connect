@@ -8,8 +8,10 @@ import { isFunnelPatientReachable } from '@/lib/config/funnelAllowlist'
 
 export const dynamic = 'force-dynamic'
 
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 type Funnel = {
   id: string
+  const navLabel = useActiveNavLabel('Fragebögen')
   slug: string
   title: string
   description: string | null
@@ -94,7 +96,7 @@ export default function FunnelListPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+        title={navLabel ?? 'Fragebögen'}
         <LoadingSpinner size="lg" text="Lade Funnels…" centered />
       </div>
     )

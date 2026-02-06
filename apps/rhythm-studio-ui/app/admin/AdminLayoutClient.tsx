@@ -12,6 +12,7 @@ import {
   type RoleNavItem,
   type UserRole,
 } from '@/lib/utils/roleBasedRouting'
+import { NavigationProvider } from '@/lib/contexts/NavigationContext'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 
@@ -200,7 +201,7 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
         contentMaxWidth={null}
         // variant removed
       >
-        {children}
+        <NavigationProvider navItems={navItems}>{children}</NavigationProvider>
       </DesktopLayout>
     </div>
   )

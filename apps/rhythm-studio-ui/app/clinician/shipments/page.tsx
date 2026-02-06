@@ -13,6 +13,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Button, Card, Table, LoadingSpinner, ErrorState, Badge } from '@/lib/ui'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 import type { TableColumn } from '@/lib/ui/Table'
 import {
   Package,
@@ -44,6 +45,7 @@ type ShipmentWithPatient = DeviceShipment & {
 export default function ShipmentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const navLabel = useActiveNavLabel('Geräteversand')
   const [shipments, setShipments] = useState<ShipmentWithPatient[]>([])
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [selectedShipment, setSelectedShipment] = useState<ShipmentWithPatient | null>(null)
@@ -179,7 +181,7 @@ export default function ShipmentsPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-              Geräteversand
+              {navLabel ?? 'Geräteversand'}
             </h1>
             <p className="text-slate-600 dark:text-slate-400 mt-1">
               Versandstatus verwalten und Erinnerungen senden

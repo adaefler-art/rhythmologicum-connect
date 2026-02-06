@@ -23,6 +23,7 @@ import {
 import {
   COMMON_RED_FLAGS,
   TIER_LABELS,
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
   TIER_DESCRIPTIONS,
   type RedFlag,
   type ProgramTier,
@@ -39,6 +40,7 @@ type PatientProfile = {
 
 export default function PreScreeningPage() {
   const router = useRouter()
+  const navLabel = useActiveNavLabel('Pre-Screening')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -175,6 +177,7 @@ export default function PreScreeningPage() {
           <div className="flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             <span className="text-green-900 dark:text-green-100 font-medium">
+          {navLabel ?? 'Pre-Screening'}
               Pre-Screening erfolgreich gespeichert
             </span>
           </div>

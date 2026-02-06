@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Badge, Input, Select } from '@/lib/ui'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,7 @@ const ITEMS_PER_PAGE = 10
 
 export default function AdminContentDashboard() {
   const router = useRouter()
+  const navLabel = useActiveNavLabel('Inhalte')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [contentPages, setContentPages] = useState<ContentPage[]>([])
@@ -290,7 +292,7 @@ export default function AdminContentDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-[center] sm:justify-between gap-4 mb-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              Content Dashboard
+              {navLabel ?? 'Inhalte'}
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Verwaltung aller Content-Pages mit Filter- und Suchfunktionen
