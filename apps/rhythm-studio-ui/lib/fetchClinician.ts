@@ -91,9 +91,9 @@ const buildApiError = (params: {
       ? (dataError as { code?: string }).code
       : undefined
   const message =
-    dataError && typeof dataError === 'object' && dataError !== null
+    (dataError && typeof dataError === 'object' && dataError !== null
       ? (dataError as { message?: string }).message
-      : response.statusText || `HTTP ${response.status}`
+      : response.statusText) || `HTTP ${response.status}`
 
   return {
     status: response.status,
