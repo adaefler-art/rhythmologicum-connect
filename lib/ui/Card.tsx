@@ -97,12 +97,12 @@ export function Card({
   const shadowValue = shadowConfig[shadowVariant]
   const radiusValue = radiusConfig[radiusVariant]
 
-  // Base styles - use semantic tokens for consistency with design system
-  const baseClasses = `bg-neutral-50 dark:bg-neutral-800 ${border ? 'border border-neutral-200 dark:border-neutral-700' : ''} transition-colors duration-150`
+  // Base styles
+  const baseClasses = `bg-card text-card-foreground ${border ? 'border border-border' : ''} transition-colors duration-150`
 
   // Interactive styles
   const interactiveClasses = interactive
-    ? 'cursor-pointer hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-lg active:scale-[0.99] transition-all duration-200'
+    ? 'cursor-pointer hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-lg active:scale-[0.99] transition-all duration-200'
     : ''
 
   if (onClick) {
@@ -124,7 +124,7 @@ export function Card({
       >
         {header && (
           <div
-            className="border-b border-neutral-200 dark:border-neutral-700"
+            className="border-b border-border"
             style={{
               padding: paddingValue,
             }}
@@ -141,7 +141,7 @@ export function Card({
         </div>
         {footer && (
           <div
-            className="border-t border-neutral-200 dark:border-neutral-700"
+            className="border-t border-border"
             style={{
               padding: paddingValue,
             }}
@@ -164,7 +164,7 @@ export function Card({
     >
       {header && (
         <div
-          className="border-b border-neutral-200 dark:border-neutral-700"
+          className="border-b border-border"
           style={{
             padding: paddingValue,
           }}
@@ -181,11 +181,11 @@ export function Card({
       </div>
       {footer && (
         <div
-          className="border-t border-neutral-200 dark:border-neutral-700"
+          className="border-t border-border"
           style={{
             padding: paddingValue,
           }}
-          >
+        >
           {footer}
         </div>
       )}
