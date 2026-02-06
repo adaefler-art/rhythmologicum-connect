@@ -63,12 +63,41 @@ export async function GET() {
       )
     }
 
+    let membershipStatus: 'ok' | 'needs_fix' | 'skipped' = 'skipped'
+    let membershipError: { code?: string; message?: string } | null = null
+
+    if (latestAssessment?.id) {
+      const { data: rlsAssessment, error: rlsError } = await supabase
+        .from('assessments')
+        .select('id')
+        .eq('id', latestAssessment.id)
+        .maybeSingle()
+
+      if (rlsError) {
+        membershipStatus = 'needs_fix'
+        membershipError = {
+          code: rlsError.code || 'RLS_BLOCKED',
+          message: rlsError.message || 'Assessment nicht sichtbar (RLS)',
+        }
+      } else if (!rlsAssessment) {
+        membershipStatus = 'needs_fix'
+        membershipError = {
+          code: 'ASSESSMENT_NOT_VISIBLE',
+          message: 'Assessment nicht sichtbar fuer Nutzer',
+        }
+      } else {
+        membershipStatus = 'ok'
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         assessmentsTotal: assessmentsTotal ?? 0,
         latestAssessmentId: latestAssessment?.id ?? null,
         projectUrl: env.NEXT_PUBLIC_SUPABASE_URL ?? null,
+        membershipStatus,
+        membershipError,
       },
       { status: 200 },
     )

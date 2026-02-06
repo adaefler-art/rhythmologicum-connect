@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Card, Badge } from '@/lib/ui'
 import { Brain, MessageCircle } from 'lucide-react'
-import { patientAmyInsightsUrl } from '@/lib/clinicianApi'
-import { fetchClinicianJson } from '@/lib/fetchClinician'
+import { getAmyInsights } from '@/lib/fetchClinician'
 
 type AmyMessage = {
   id: string
@@ -69,15 +68,12 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
       setDebugHint(null)
 
       try {
-        const { response, data, debugHint } = await fetchClinicianJson<{
-          success?: boolean
-          data?: { conversations?: Conversation[] }
-        }>(patientAmyInsightsUrl(patientId))
+        const { data, error, debugHint } = await getAmyInsights(patientId)
 
         setDebugHint(debugHint ?? null)
-        if (!response.ok) {
+        if (error) {
           if (!isMounted) return
-          setError('AMY-Konversationen konnten nicht geladen werden.')
+          setError(error.message || 'AMY-Konversationen konnten nicht geladen werden.')
           setConversations([])
           setSelectedId(null)
           return

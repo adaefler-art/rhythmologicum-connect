@@ -17,9 +17,8 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
-import { patientResultsUrl } from '@/lib/clinicianApi'
+import { getResults } from '@/lib/fetchClinician'
 import { AmyInsightsSection } from './AmyInsightsSection'
-import { fetchClinicianJson } from '@/lib/fetchClinician'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus } from '@/lib/types/workupStatus'
@@ -365,20 +364,11 @@ export default function PatientDetailPage() {
 
           try {
             setResultsDebugHint(null)
-            const { response, data, debugHint } = await fetchClinicianJson<{
-              success?: boolean
-              data?: {
-                reports?: ReportWithSafety[]
-                calculatedResults?: CalculatedResult[]
-                priorityRankings?: PriorityRanking[]
-                reviewRecords?: { id: string }[]
-              }
-              error?: unknown
-            }>(patientResultsUrl(profileId))
+            const { data, error, debugHint } = await getResults(profileId)
 
             setResultsDebugHint(debugHint ?? null)
 
-            if (!response.ok || !data?.success) {
+            if (error || !data?.success) {
               const evidenceCode = mapSupabaseErrorToEvidenceCode(data?.error, 'RESULTS')
               setSafetyState({ state: 'error', evidenceCode })
               setScoresState({ state: 'error', evidenceCode })

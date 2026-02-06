@@ -8,8 +8,7 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
-import { patientDiagnosisRunsUrl } from '@/lib/clinicianApi'
-import { fetchClinicianJson } from '@/lib/fetchClinician'
+import { getDiagnosisRuns } from '@/lib/fetchClinician'
 
 type DiagnosisRun = {
   id: string
@@ -52,24 +51,22 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     setDebugHint(null)
 
     try {
-      const { response, data, debugHint } = await fetchClinicianJson<{ success?: boolean; data?: DiagnosisRun[] }>(
-        patientDiagnosisRunsUrl(patientId),
-      )
+      const { data, error, debugHint } = await getDiagnosisRuns(patientId)
 
       setDebugHint(debugHint ?? null)
-      if (!response.ok) {
-        if (response.status === 403) {
+      if (error) {
+        if (error.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
-        } else if (response.status === 404) {
+        } else if (error.status === 404) {
           setError('Patient nicht gefunden oder nicht zugewiesen')
         } else {
-          setError('Fehler beim Laden der Diagnose-Runs')
+          setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
         }
         return
       }
 
       if (data?.success) {
-        setRuns(data.data || [])
+        setRuns((data.data || []) as DiagnosisRun[])
       } else {
         setError('Fehler beim Laden der Diagnose-Runs')
       }

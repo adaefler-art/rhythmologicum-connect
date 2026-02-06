@@ -193,8 +193,10 @@ function extractApiCallsitesFromSource(sourceText) {
   }
 
   const classifyWindow = (text) => {
-    const window = text.slice(Math.max(0, text.length - 300))
+    const window = text.slice(Math.max(0, text.length - 2000))
     if (/fetch\s*\(/.test(window)) return 'fetch'
+    if (/\brequestClinicianJson\b/.test(window)) return 'client'
+    if (/\bfetchClinicianJson\b/.test(window)) return 'client'
     if (/\buseSWR\s*\(/.test(window)) return 'swr'
     if (/\baxios\s*\./.test(window) || /\baxios\s*\(/.test(window)) return 'axios'
     if (/new\s+URL\s*\(/.test(window) || /\bURL\s*\(/.test(window)) return 'url'
@@ -203,10 +205,10 @@ function extractApiCallsitesFromSource(sourceText) {
   }
 
   const classifyAround = (lineIndex, idxInLine) => {
-    const prev2 = lineIndex >= 2 ? lines[lineIndex - 2] : ''
-    const prev1 = lineIndex >= 1 ? lines[lineIndex - 1] : ''
+    const start = Math.max(0, lineIndex - 20)
+    const prev = lines.slice(start, lineIndex).join('\n')
     const curPrefix = lines[lineIndex].slice(0, idxInLine)
-    return classifyWindow(`${prev2}\n${prev1}\n${curPrefix}`)
+    return classifyWindow(`${prev}\n${curPrefix}`)
   }
 
   function extractApiPathFromStringBody(body) {

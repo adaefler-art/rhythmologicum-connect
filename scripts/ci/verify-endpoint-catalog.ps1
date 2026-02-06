@@ -145,6 +145,49 @@ if ($generatorExitCode -ne 0) {
 }
 
 # ========================================
+# Fail on unclassified orphans
+# ========================================
+$catalogPath = Join-Path $OutDir 'endpoint-catalog.json'
+if (Test-Path $catalogPath) {
+  try {
+    $catalog = Get-Content $catalogPath -Raw | ConvertFrom-Json
+    $unclassified = @()
+
+    foreach ($endpoint in @($catalog.endpoints)) {
+      $isOrphan = $false
+      if ($null -ne $endpoint.isOrphan) { $isOrphan = [bool]$endpoint.isOrphan }
+
+      $isAllowed = $false
+      if ($null -ne $endpoint.isAllowedOrphan) { $isAllowed = [bool]$endpoint.isAllowedOrphan }
+      elseif ($null -ne $endpoint.allowlisted) { $isAllowed = [bool]$endpoint.allowlisted }
+
+      $internalUnused = $false
+      if ($null -ne $endpoint.internalUnused) { $internalUnused = [bool]$endpoint.internalUnused }
+
+      if ($isOrphan -and -not $internalUnused -and -not $isAllowed) {
+        $unclassified += $endpoint
+      }
+    }
+
+    if ($unclassified.Count -gt 0) {
+      Write-Host "`n=== ❌ VERIFICATION FAILED ===" -ForegroundColor Red
+      Write-Host "Unclassified orphan endpoints detected." -ForegroundColor Red
+      $unclassified | ForEach-Object {
+        $method = if ($_.methods -and $_.methods.Count -gt 0) { ($_.methods -join ', ') } else { '(none)' }
+        $path = $_.path
+        $provenance = if ($_.file) { $_.file } elseif ($_.source) { $_.source } else { '' }
+        [PSCustomObject]@{ method = $method; path = $path; provenance = $provenance }
+      } | Format-Table -AutoSize
+      throw "Unclassified orphan endpoints detected"
+    }
+  } catch {
+    Write-Host "Failed to validate unclassified orphans." -ForegroundColor Yellow
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor DarkGray
+    throw
+  }
+}
+
+# ========================================
 # Verify no git changes
 # ========================================
 if (-not $SkipGitDiff) {

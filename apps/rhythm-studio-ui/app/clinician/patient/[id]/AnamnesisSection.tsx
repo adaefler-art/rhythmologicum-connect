@@ -19,8 +19,7 @@ import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select, Alert }
 import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
 import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
 import type { EntryType } from '@/lib/api/anamnesis/validation'
-import { patientAnamnesisUrl } from '@/lib/clinicianApi'
-import { fetchClinicianJson } from '@/lib/fetchClinician'
+import { getAnamnesis, postAnamnesis } from '@/lib/fetchClinician'
 
 export interface AnamnesisEntry {
   id: string
@@ -106,34 +105,26 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setDebugHint(null)
 
     try {
-      const { response, data, debugHint } = await fetchClinicianJson<{
-        success?: boolean
-        data?: {
-          entries?: AnamnesisEntry[]
-          latestEntry?: AnamnesisEntry | null
-          versions?: AnamnesisVersion[]
-          suggestedFacts?: SuggestedFact[]
-        }
-      }>(patientAnamnesisUrl(patientId))
+      const { data, error, debugHint } = await getAnamnesis(patientId)
 
       setDebugHint(debugHint ?? null)
-      
-      if (!response.ok) {
-        if (response.status === 404) {
+
+      if (error) {
+        if (error.status === 404) {
           setError('Patient nicht gefunden oder nicht zugewiesen')
-        } else if (response.status === 403) {
+        } else if (error.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
         } else {
-          setError('Fehler beim Laden der Anamnese-Einträge')
+          setError(error.message || 'Fehler beim Laden der Anamnese-Einträge')
         }
         return
       }
 
       if (data?.success && data.data) {
-        setEntries(data.data.entries || [])
-        setLatestEntry(data.data.latestEntry || data.data.entries?.[0] || null)
-        setVersions(data.data.versions || [])
-        setSuggestedFacts(data.data.suggestedFacts || [])
+        setEntries((data.data.entries || []) as AnamnesisEntry[])
+        setLatestEntry((data.data.latestEntry as AnamnesisEntry | null) || data.data.entries?.[0] || null)
+        setVersions((data.data.versions || []) as AnamnesisVersion[])
+        setSuggestedFacts((data.data.suggestedFacts || []) as SuggestedFact[])
         setSelectedFactIds([])
       }
     } catch (err) {
@@ -170,15 +161,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       const text = buildSuggestedText(facts)
       const title = `Anamnese Vorschlag ${new Date().toLocaleDateString('de-DE')}`
 
-      const response = await fetch(patientAnamnesisUrl(patientId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, sources: facts, title }),
-      })
+      const { error } = await postAnamnesis(patientId, { text, sources: facts, title })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Fehler beim Erstellen der Version')
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Erstellen der Version')
       }
 
       await fetchEntries()
@@ -200,26 +186,21 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setFormError(null)
 
     try {
-      const response = await fetch(patientAnamnesisUrl(patientId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: formTitle,
-          content: { text: formContent },
-          entry_type: formEntryType || null,
-          tags: formTags ? formTags.split(',').map((t) => t.trim()) : [],
-        }),
+      const { error } = await postAnamnesis(patientId, {
+        title: formTitle,
+        content: { text: formContent },
+        entry_type: formEntryType || null,
+        tags: formTags ? formTags.split(',').map((t) => t.trim()) : [],
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Fehler beim Erstellen des Eintrags')
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Erstellen des Eintrags')
       }
 
       // Reset form and close dialog
       resetForm()
       setIsAddDialogOpen(false)
-      
+
       // Refresh entries
       await fetchEntries()
     } catch (err) {
