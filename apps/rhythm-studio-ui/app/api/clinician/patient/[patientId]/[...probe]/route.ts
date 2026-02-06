@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 
 type RouteContext = {
   params: Promise<{ patientId: string; probe: string[] }>
 }
 
-const getGitSha = () =>
-  process.env.VERCEL_GIT_COMMIT_SHA ||
-  process.env.VERCEL_GITHUB_COMMIT_SHA ||
-  process.env.GIT_SHA ||
-  process.env.COMMIT_SHA ||
-  'unknown'
-
-const getEnvValue = (name: string) => process.env[name] || 'unknown'
+const getGitSha = () => env.VERCEL_GIT_COMMIT_SHA || env.GIT_COMMIT_SHA || env.COMMIT_SHA || 'unknown'
 
 const buildProbeResponse = async (request: Request, context: RouteContext) => {
   const { patientId } = await context.params
@@ -25,7 +19,7 @@ const buildProbeResponse = async (request: Request, context: RouteContext) => {
       hint: 'This path is not implemented in this deploy.',
       build: {
         gitSha: getGitSha(),
-        vercelEnv: getEnvValue('VERCEL_ENV'),
+        vercelEnv: env.VERCEL_ENV || 'unknown',
       },
       knownCanonicals: [
         '/api/clinician/patient/[patientId]/anamnesis',

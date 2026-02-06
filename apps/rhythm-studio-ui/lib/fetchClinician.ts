@@ -1,3 +1,5 @@
+import { env } from '@/lib/env'
+
 type BuildInfo = {
   app?: string
   gitSha?: string
@@ -18,7 +20,7 @@ const loggedMisses = new Set<string>()
 
 const shouldShowDebugHint = () => {
   if (typeof window === 'undefined') return false
-  if (process.env.NODE_ENV !== 'production') return true
+  if (env.NODE_ENV !== 'production') return true
   const params = new URLSearchParams(window.location.search)
   return params.get('debug') === '1'
 }

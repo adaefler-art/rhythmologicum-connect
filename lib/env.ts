@@ -93,6 +93,7 @@ const baseEnvSchema = z.object({
 
   // Hosting provider (optional)
   VERCEL_ENV: z.string().optional(),
+  VERCEL_URL: z.string().optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().optional(),
   GIT_COMMIT_SHA: z.string().optional(),
   COMMIT_SHA: z.string().optional(),
@@ -185,6 +186,7 @@ function getRawClientEnv() {
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
+    VERCEL_URL: process.env.VERCEL_URL,
     REVIEW_SAMPLING_PERCENTAGE: process.env.REVIEW_SAMPLING_PERCENTAGE,
     REVIEW_SAMPLING_SALT: process.env.REVIEW_SAMPLING_SALT,
     NEXT_PUBLIC_FEATURE_AMY_ENABLED: process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
