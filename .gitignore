@@ -64,3 +64,5 @@ artifacts/
 .audit/v061/[0-9]*
 .audit/v06/[0-9]*
 apps/*/.next/
+test-design-system.html
+apps/rhythm-studio-ui/.env.local
