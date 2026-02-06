@@ -224,15 +224,12 @@ export default function PatientDetailPage() {
               rowCount: 1,
             })
             
-            // Debug logging for patient name data
+            // Debug logging for patient name data (privacy-safe)
             console.info('[PatientDetailPage] Patient profile loaded:', {
-              patientId: data.id,
+              patientId: data.id.slice(0, 8) + '...',
               hasFullName: !!data.full_name,
               hasFirstName: !!data.first_name,
               hasLastName: !!data.last_name,
-              fullName: data.full_name,
-              firstName: data.first_name,
-              lastName: data.last_name,
             })
             
             return data

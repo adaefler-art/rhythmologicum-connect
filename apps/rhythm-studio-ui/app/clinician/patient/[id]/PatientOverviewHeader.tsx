@@ -53,14 +53,13 @@ export function PatientOverviewHeader({
     last_name: lastName,
   })
 
-  // Debug logging for patient name resolution
+  // Debug logging for patient name resolution (privacy-safe)
   if (isFallback) {
     console.warn('[PatientOverviewHeader] Using fallback display name:', {
-      patientId,
-      fullName,
-      firstName,
-      lastName,
-      displayName,
+      patientId: patientId.slice(0, 8) + '...',
+      hasFullName: !!fullName,
+      hasFirstName: !!firstName,
+      hasLastName: !!lastName,
     })
   }
 
