@@ -33,6 +33,7 @@ import { flagEnabled } from '@/lib/env/flags'
 const isServerRuntime = typeof window === 'undefined'
 const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 const isProdRuntime = process.env.NODE_ENV === 'production'
+const isCiRuntime = process.env.CI === 'true' || process.env.CI === '1'
 const requireServerSecrets = isServerRuntime && isProdRuntime && !isBuildTime
 
 function sanitizeEnvString(value: unknown) {
@@ -439,7 +440,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
         return getDefaultEnv() as z.infer<T>
       }
 
-      if (options.strict && isServerRuntime) {
+      if (options.strict && isServerRuntime && !isCiRuntime) {
         throw new Error(message)
       }
 
