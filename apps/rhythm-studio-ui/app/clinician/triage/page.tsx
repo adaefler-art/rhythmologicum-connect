@@ -6,7 +6,16 @@ import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select }
 import { resolvePatientDisplayName } from '@/lib/utils/patientDisplayName'
 import type { TableColumn } from '@/lib/ui/Table'
 import type { ApiError, TriageHealthResponse } from '@/lib/fetchClinician'
-import { triageFixMembership, triageHealth } from '@/lib/fetchClinician'
+import {
+  triageCaseAck,
+  triageCaseClose,
+  triageCaseFlag,
+  triageCaseNote,
+  triageCaseReopen,
+  triageCaseSnooze,
+  triageFixMembership,
+  triageHealth,
+} from '@/lib/fetchClinician'
 import {
   AlertTriangle,
   Search,
@@ -375,17 +384,124 @@ export default function InboxPage() {
     }
   }, [openDropdownId])
 
-  // Row action handlers (placeholders for future backend implementation)
+  // Row action handlers
   const handleRowAction = useCallback(
-    (action: string, triageCase: TriageCase, e: React.MouseEvent) => {
+    async (action: string, triageCase: TriageCase, e: React.MouseEvent) => {
       e.stopPropagation()
       setOpenDropdownId(null)
-      
-      // TODO: Implement backend API calls for row actions
-      console.log(`Action "${action}" triggered for case ${triageCase.case_id}`)
-      alert(`Aktion "${action}" wird in einer zukünftigen Version implementiert.`)
+
+      if (healthData?.membershipStatus === 'needs_fix') {
+        setHealthMessage('Membership-Block erkannt. Bitte zuerst den Healthcheck beheben.')
+        return
+      }
+
+      try {
+        let result
+
+        switch (action) {
+          case 'ack':
+            result = await triageCaseAck(triageCase.case_id, triageCase.patient_id)
+            break
+          case 'flag': {
+            const severityInput = window.prompt(
+              'Schweregrad (critical | warning | info):',
+              'warning'
+            )
+            if (!severityInput) return
+            const severity = severityInput.trim()
+            if (!['critical', 'warning', 'info'].includes(severity)) {
+              window.alert('Schweregrad muss critical, warning oder info sein.')
+              return
+            }
+            const reason = window.prompt('Grund (optional):')?.trim()
+            result = await triageCaseFlag(
+              triageCase.case_id,
+              {
+                action: 'set',
+                severity: severity as 'critical' | 'warning' | 'info',
+                ...(reason ? { reason } : {}),
+              },
+              triageCase.patient_id
+            )
+            break
+          }
+          case 'flag-clear':
+            result = await triageCaseFlag(
+              triageCase.case_id,
+              { action: 'clear' },
+              triageCase.patient_id
+            )
+            break
+          case 'snooze': {
+            const defaultUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            const snoozedUntil = window.prompt(
+              'Snooze bis (ISO 8601):',
+              defaultUntil
+            )
+            if (!snoozedUntil) return
+            const reason = window.prompt('Grund (optional):')?.trim()
+            result = await triageCaseSnooze(
+              triageCase.case_id,
+              {
+                snoozedUntil,
+                ...(reason ? { reason } : {}),
+              },
+              triageCase.patient_id
+            )
+            break
+          }
+          case 'close': {
+            const reason = window.prompt('Grund (optional):')?.trim()
+            result = await triageCaseClose(
+              triageCase.case_id,
+              {
+                ...(reason ? { reason } : {}),
+              },
+              triageCase.patient_id
+            )
+            break
+          }
+          case 'reopen': {
+            const reason = window.prompt('Grund (optional):')?.trim()
+            result = await triageCaseReopen(
+              triageCase.case_id,
+              {
+                ...(reason ? { reason } : {}),
+              },
+              triageCase.patient_id
+            )
+            break
+          }
+          case 'note': {
+            const noteInput = window.prompt('Notiz hinzufügen:')
+            const note = noteInput?.trim()
+            if (!note) {
+              window.alert('Notiz darf nicht leer sein.')
+              return
+            }
+            result = await triageCaseNote(
+              triageCase.case_id,
+              { note },
+              triageCase.patient_id
+            )
+            break
+          }
+          default:
+            return
+        }
+
+        if (result?.error) {
+          window.alert(result.error.message || 'Aktion fehlgeschlagen.')
+          return
+        }
+
+        await loadTriageData()
+      } catch (err) {
+        console.error('Triage action failed:', err)
+        window.alert('Aktion fehlgeschlagen.')
+      }
     },
-    []
+    [healthData?.membershipStatus, loadTriageData]
   )
 
   // Define table columns
@@ -497,11 +613,25 @@ export default function InboxPage() {
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
+                    onClick={(e) => handleRowAction('ack', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <Inbox className="w-4 h-4" />
+                    Bestätigen
+                  </button>
+                  <button
                     onClick={(e) => handleRowAction('flag', row, e)}
                     className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                   >
                     <Flag className="w-4 h-4" />
                     Markieren
+                  </button>
+                  <button
+                    onClick={(e) => handleRowAction('flag-clear', row, e)}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Markierung entfernen
                   </button>
                   <button
                     onClick={(e) => handleRowAction('snooze', row, e)}

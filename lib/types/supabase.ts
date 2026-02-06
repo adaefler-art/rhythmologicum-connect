@@ -3125,6 +3125,75 @@ export type Database = {
           },
         ]
       }
+      triage_case_actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["triage_action_type"]
+          assessment_id: string
+          created_at: string
+          created_by: string
+          funnel_id: string | null
+          id: string
+          patient_id: string
+          payload: Json
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["triage_action_type"]
+          assessment_id: string
+          created_at?: string
+          created_by: string
+          funnel_id?: string | null
+          id?: string
+          patient_id: string
+          payload?: Json
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["triage_action_type"]
+          assessment_id?: string
+          created_at?: string
+          created_by?: string
+          funnel_id?: string | null
+          id?: string
+          patient_id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_case_actions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "triage_case_actions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["case_id"]
+          },
+          {
+            foreignKeyName: "triage_case_actions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "triage_case_actions_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "triage_case_actions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       triage_sessions: {
         Row: {
           correlation_id: string
@@ -3549,6 +3618,14 @@ export type Database = {
         | "resolved"
         | "closed"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
+      triage_action_type:
+        | "acknowledge"
+        | "snooze"
+        | "close"
+        | "reopen"
+        | "manual_flag"
+        | "clear_manual_flag"
+        | "add_note"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
       workup_status: "needs_more_data" | "ready_for_review"
@@ -3760,6 +3837,15 @@ export const Constants = {
         "closed",
       ],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
+      triage_action_type: [
+        "acknowledge",
+        "snooze",
+        "close",
+        "reopen",
+        "manual_flag",
+        "clear_manual_flag",
+        "add_note",
+      ],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],
       workup_status: ["needs_more_data", "ready_for_review"],

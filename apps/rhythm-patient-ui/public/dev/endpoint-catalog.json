@@ -4130,6 +4130,132 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/ack",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/ack/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/ack",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/close",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/close/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/close",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/flag",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/flag/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/flag",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/note",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/note/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/note",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/reopen",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/reopen/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/reopen",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/triage/cases/[caseId]/snooze",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/triage/cases/[caseId]/snooze/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/triage/cases/${caseId}/snooze",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/consent/record",
       "methods": [
         "POST"
