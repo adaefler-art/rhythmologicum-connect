@@ -280,6 +280,7 @@ export type Env = {
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
   VERCEL_ENV?: string
+  VERCEL_URL?: string
   VERCEL_GIT_COMMIT_SHA?: string
   GIT_COMMIT_SHA?: string
   COMMIT_SHA?: string
@@ -305,6 +306,7 @@ function getDefaultEnv(): Env {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
+    VERCEL_URL: process.env.VERCEL_URL,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
     SUPABASE_SERVICE_ROLE_KEY:
