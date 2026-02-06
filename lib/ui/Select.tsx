@@ -70,21 +70,22 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const baseClasses = `
       w-full
       border
-      rounded-xl
+      rounded-lg
       transition-all duration-200
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background
-      disabled:bg-neutral-100 dark:disabled:bg-neutral-700 disabled:text-neutral-500 dark:disabled:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-60
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background
+      disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60
       appearance-none
       bg-no-repeat
       cursor-pointer
     `
 
     const stateClasses = error
-      ? 'border-error bg-error/10 text-foreground'
-      : 'border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 text-foreground focus-visible:border-primary-500'
+      ? 'border-destructive bg-destructive/10 text-foreground'
+      : 'border-border bg-card text-foreground focus-visible:border-ring'
 
-    // Custom dropdown arrow using semantic color tokens
-    // For error state, use red; for normal state, use neutral-400 which works in both themes
+    // Custom dropdown arrow
+    // Note: SVG data URLs cannot use CSS classes, so we use a mid-tone that works in both themes
+    // For error state, use red; for normal state, use a neutral gray
     const backgroundImage = error
       ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23dc2626' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
       : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`
@@ -106,7 +107,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             padding: config.padding,
             fontSize: config.fontSize,
             minHeight: config.minHeight,
-            borderRadius: radii.xl,
+            borderRadius: radii.lg,
             backgroundImage,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 0.5rem center',
@@ -123,7 +124,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {errorMessage && error && (
           <p
             id={`${selectId}-error`}
-            className="text-sm text-error mt-1.5"
+            className="text-sm text-destructive mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {errorMessage}
@@ -132,7 +133,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {helperText && !error && (
           <p
             id={`${selectId}-helper`}
-            className="text-sm text-neutral-600 dark:text-neutral-400 mt-1.5"
+            className="text-sm text-muted-foreground mt-1.5"
             style={{ marginLeft: spacing.xs }}
           >
             {helperText}
