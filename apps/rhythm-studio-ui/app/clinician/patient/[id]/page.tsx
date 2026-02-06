@@ -189,7 +189,7 @@ export default function PatientDetailPage() {
         const resolvePatientProfile = async (): Promise<PatientProfile | null> => {
           const { data, error: profileError } = await supabase
             .from('patient_profiles')
-            .select('*')
+            .select('id, user_id, full_name, first_name, last_name, birth_year, sex')
             .eq('id', patientId)
             .maybeSingle()
 
@@ -577,35 +577,20 @@ export default function PatientDetailPage() {
 
         {/* Overview Tab */}
         <TabContent value="overview">
-          {measures.length === 0 ? (
+          {measures.length === 0 && assessmentSummaries.length === 0 ? (
             <Card padding="lg" shadow="md">
               <div className="text-center py-8">
                 <p className="text-6xl mb-4" aria-label="Beruhigendes Symbol">
                   🌿
                 </p>
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
-                  Noch keine Messungen vorhanden
+                  Noch keine Assessments vorhanden
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Für diese:n Patient:in liegen noch keine Stress- oder Schlafmessungen vor.
+                  Für diese:n Patient:in liegen noch keine Assessments vor.
                   Sobald das erste Assessment durchgeführt wurde, werden die Ergebnisse hier
                   angezeigt.
                 </p>
-                {latestAssessment && (
-                  <div className="mt-6 flex justify-center">
-                    <Card padding="md" shadow="sm" className="text-left max-w-sm w-full">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Letztes Assessment</p>
-                      <p className="text-base font-semibold text-slate-900 dark:text-slate-50">
-                        {formatDate(latestAssessment.started_at)}
-                      </p>
-                      <div className="mt-2">
-                        <Badge variant={formatAssessmentStatus(latestAssessment.status).variant} size="sm">
-                          {formatAssessmentStatus(latestAssessment.status).label}
-                        </Badge>
-                      </div>
-                    </Card>
-                  </div>
-                )}
               </div>
             </Card>
           ) : (
@@ -615,7 +600,7 @@ export default function PatientDetailPage() {
                 <Card padding="lg" shadow="md">
                   <div className="text-center">
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Assessments</p>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{measures.length}</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">{assessmentSummaries.length + measures.length}</p>
                   </div>
                 </Card>
                 <Card padding="lg" shadow="md">
@@ -636,7 +621,13 @@ export default function PatientDetailPage() {
                 </Card>
               </div>
               {latestAssessment && (
-                <Card padding="lg" shadow="md">
+                <Card 
+                  padding="lg" 
+                  shadow="md" 
+                  interactive
+                  onClick={() => setSelectedAssessmentId(latestAssessment.id)}
+                  className="cursor-pointer"
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">Letztes Assessment</p>
@@ -647,9 +638,12 @@ export default function PatientDetailPage() {
                         {latestAssessment.funnel || latestAssessment.funnel_id?.slice(0, 8) || '—'}
                       </p>
                     </div>
-                    <Badge variant={formatAssessmentStatus(latestAssessment.status).variant}>
-                      {formatAssessmentStatus(latestAssessment.status).label}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={formatAssessmentStatus(latestAssessment.status).variant}>
+                        {formatAssessmentStatus(latestAssessment.status).label}
+                      </Badge>
+                      <span className="text-sky-600 dark:text-sky-400 text-sm font-medium">Details →</span>
+                    </div>
                   </div>
                 </Card>
               )}

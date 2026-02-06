@@ -73,7 +73,7 @@ export interface TabsListProps {
 export function TabsList({ children, className = '' }: TabsListProps) {
   return (
     <div
-      className={`flex border-b border-slate-200 gap-1 overflow-x-auto ${className}`}
+      className={`flex border-b border-slate-200 dark:border-slate-700 gap-1 overflow-x-auto ${className}`}
       role="tablist"
     >
       {children}
@@ -109,8 +109,8 @@ export function TabTrigger({ value, children, className = '' }: TabTriggerProps)
         whitespace-nowrap touch-manipulation min-h-[44px]
         ${
           isActive
-            ? 'border-sky-600 text-sky-600'
-            : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+            ? 'border-sky-600 dark:border-sky-400 text-sky-600 dark:text-sky-400'
+            : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50 hover:border-slate-300 dark:hover:border-slate-600'
         }
         focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2
         ${className}
