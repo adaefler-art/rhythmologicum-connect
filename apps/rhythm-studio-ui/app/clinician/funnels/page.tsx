@@ -95,7 +95,7 @@ export default function FunnelListPage() {
 
   if (loading) {
     return (
-        title={navLabel ?? 'Fragebögen'}
+      <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" text="Lade Funnels…" centered />
       </div>
     )
