@@ -24,6 +24,9 @@ async function logUnauthorizedAccess(path: string, userId?: string, reason?: str
 }
 
 export async function proxy(request: NextRequest) {
+  const hasSupabaseConfig = Boolean(
+    env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  )
   const engineEnv = getEngineEnv()
   const { pathname } = request.nextUrl
 
@@ -33,6 +36,11 @@ export async function proxy(request: NextRequest) {
 
   // Only protect /clinician and /admin routes
   if (!pathname.startsWith('/clinician') && !pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+
+  if (!hasSupabaseConfig) {
+    console.warn('[AUTH] Supabase config missing; skipping auth checks')
     return NextResponse.next()
   }
 
