@@ -57,21 +57,34 @@ export async function getPatientOrganizationId(
   }
 
   if (!patient?.user_id) {
+    console.error('[anamnesis-helpers] Patient has no user_id:', {
+      patientId: patientId.slice(0, 8) + '...'
+    })
     return null
   }
 
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user_profiles')
+  // V0.5: Organization is accessed via user_org_membership table, not user_profiles
+  const { data: membership, error: membershipError } = await supabase
+    .from('user_org_membership')
     .select('organization_id')
     .eq('user_id', patient.user_id)
+    .eq('is_active', true)
     .maybeSingle()
 
-  if (profileError) {
-    console.error('[anamnesis-helpers] Error fetching patient organization:', profileError)
+  if (membershipError) {
+    console.error('[anamnesis-helpers] Error fetching patient organization:', membershipError)
     return null
   }
 
-  return userProfile?.organization_id || null
+  if (!membership?.organization_id) {
+    console.error('[anamnesis-helpers] No active organization membership for patient:', {
+      patientId: patientId.slice(0, 8) + '...',
+      userId: patient.user_id.slice(0, 8) + '...'
+    })
+    return null
+  }
+
+  return membership.organization_id
 }
 
 /**

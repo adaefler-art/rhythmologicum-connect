@@ -46,12 +46,23 @@ export function PatientOverviewHeader({
   hrvStatus,
   hasPendingAssessment,
 }: PatientOverviewHeaderProps) {
-  const { displayName } = resolvePatientDisplayName({
+  const { displayName, isFallback } = resolvePatientDisplayName({
     id: patientId,
     full_name: fullName,
     first_name: firstName,
     last_name: lastName,
   })
+
+  // Debug logging for patient name resolution (privacy-safe)
+  if (isFallback) {
+    console.warn('[PatientOverviewHeader] Using fallback display name:', {
+      patientId: patientId.slice(0, 8) + '...',
+      hasFullName: !!fullName,
+      hasFirstName: !!firstName,
+      hasLastName: !!lastName,
+    })
+  }
+
   const currentYear = new Date().getFullYear()
   const age = birthYear ? currentYear - birthYear : null
 

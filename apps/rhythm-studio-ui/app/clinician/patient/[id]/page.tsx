@@ -223,6 +223,15 @@ export default function PatientDetailPage() {
               outcome: 'match',
               rowCount: 1,
             })
+            
+            // Debug logging for patient name data (privacy-safe)
+            console.info('[PatientDetailPage] Patient profile loaded:', {
+              patientId: data.id.slice(0, 8) + '...',
+              hasFullName: !!data.full_name,
+              hasFirstName: !!data.first_name,
+              hasLastName: !!data.last_name,
+            })
+            
             return data
           }
 

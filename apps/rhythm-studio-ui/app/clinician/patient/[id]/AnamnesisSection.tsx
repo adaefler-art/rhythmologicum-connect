@@ -624,7 +624,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         isOpen={isSuggestedPreviewOpen}
         onClose={() => setIsSuggestedPreviewOpen(false)}
         title="Vorschau: neue Anamnese-Version"
-        size="lg"
+        size="xl"
         footer={
           <>
             <Button
@@ -685,7 +685,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           resetForm()
         }}
         title="Neuer Anamnese-Eintrag"
-        size="lg"
+        size="xl"
         footer={
           <>
             <Button
@@ -768,7 +768,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           resetForm()
         }}
         title="Anamnese-Eintrag bearbeiten"
-        size="lg"
+        size="xl"
         footer={
           <>
             <Button
