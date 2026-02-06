@@ -13,6 +13,7 @@ type FetchClinicianResult<T> = {
   data: T | null
   debugHint?: string
   responseJson?: unknown
+  responseTextPreview?: string | null
 }
 
 let buildInfoPromise: Promise<BuildInfo | null> | null = null
@@ -34,11 +35,18 @@ const getBuildInfo = async (): Promise<BuildInfo | null> => {
   return buildInfoPromise
 }
 
+const getBuildStampSha = (): string | null => {
+  if (typeof document === 'undefined') return null
+  const meta = document.head?.querySelector('meta[name="x-studio-build-sha"]')
+  return meta?.getAttribute('content') || null
+}
+
 const logPatientApiMiss = (payload: {
   requestedUrl: string
   status: number
   buildSha: string
   responseJsonIfAny: unknown
+  responseTextPreview: string | null
 }) => {
   if (loggedMisses.has(payload.requestedUrl)) return
   loggedMisses.add(payload.requestedUrl)
@@ -50,22 +58,31 @@ export const fetchClinicianJson = async <T>(
   options?: RequestInit,
 ): Promise<FetchClinicianResult<T>> => {
   const response = await fetch(url, options)
+  const contentType = response.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json') || contentType.includes('+json')
   let responseJson: unknown = null
+  let responseTextPreview: string | null = null
 
   if (response.status !== 204) {
-    responseJson = await response.json().catch(() => null)
+    if (isJson) {
+      responseJson = await response.json().catch(() => null)
+    } else {
+      const text = await response.text().catch(() => '')
+      responseTextPreview = text ? text.slice(0, 120) : null
+    }
   }
 
   let debugHint: string | undefined
   if (response.status === 404 || response.status === 501) {
     const buildInfo = await getBuildInfo()
-    const buildSha = buildInfo?.gitSha || 'unknown'
+    const buildSha = buildInfo?.gitSha || getBuildStampSha() || 'unknown'
 
     logPatientApiMiss({
       requestedUrl: url,
       status: response.status,
       buildSha,
       responseJsonIfAny: responseJson,
+      responseTextPreview,
     })
 
     if (shouldShowDebugHint()) {
@@ -78,5 +95,6 @@ export const fetchClinicianJson = async <T>(
     data: (responseJson as T | null) ?? null,
     debugHint,
     responseJson,
+    responseTextPreview,
   }
 }

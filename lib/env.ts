@@ -62,6 +62,7 @@ const baseEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(sanitizeEnvString, z.string().optional()),
   NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: z.string().optional(),
   NEXT_PUBLIC_BUILD_TIME: z.string().optional(),
+  STUDIO_BUILD_TIME: z.string().optional(),
   AUTH_CALLBACK_DEBUG: z.string().optional(),
   AUTH_CALLBACK_TIMEOUT_MS: z.string().optional(),
 
@@ -184,6 +185,7 @@ function getRawClientEnv() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
+    STUDIO_BUILD_TIME: process.env.STUDIO_BUILD_TIME,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
     VERCEL_URL: process.env.VERCEL_URL,
@@ -251,6 +253,7 @@ export type Env = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
   NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID?: string
   NEXT_PUBLIC_BUILD_TIME?: string
+  STUDIO_BUILD_TIME?: string
   AUTH_CALLBACK_DEBUG?: string
   AUTH_CALLBACK_TIMEOUT_MS?: string
   SUPABASE_SERVICE_ROLE_KEY: string
@@ -306,6 +309,7 @@ function getDefaultEnv(): Env {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
+    STUDIO_BUILD_TIME: process.env.STUDIO_BUILD_TIME,
     VERCEL_URL: process.env.VERCEL_URL,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
