@@ -23,12 +23,12 @@ import {
 import {
   COMMON_RED_FLAGS,
   TIER_LABELS,
-import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
   TIER_DESCRIPTIONS,
   type RedFlag,
   type ProgramTier,
   type PreScreeningCallInput,
 } from '@/lib/contracts/preScreening'
+import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 import { supabase } from '@/lib/supabaseClient'
 import { CheckCircle, AlertTriangle, FileText, User } from 'lucide-react'
 
