@@ -57,13 +57,17 @@ export async function GET(_request: Request, context: RouteContext) {
       .maybeSingle()
 
     if (patientError || !patient) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: ErrorCode.NOT_FOUND, message: 'Patient not found' },
+      return NextResponse.json({
+        success: true,
+        data: {
+          reports: [],
+          calculatedResults: [],
+          processingJobs: [],
+          latestRisk: null,
+          priorityRankings: [],
+          reviewRecords: [],
         },
-        { status: 404 },
-      )
+      })
     }
 
     const admin = createAdminSupabaseClient()

@@ -17,7 +17,7 @@ import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
 import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
-import { getClinicianApiUrl } from './clinicianApi'
+import { patientResultsUrl } from '@/lib/clinicianApi'
 import { AmyInsightsSection } from './AmyInsightsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
@@ -362,7 +362,7 @@ export default function PatientDetailPage() {
           }
 
           try {
-            const resultsResponse = await fetch(getClinicianApiUrl(profileId, 'results'))
+            const resultsResponse = await fetch(patientResultsUrl(profileId))
             const resultsJson = await resultsResponse.json().catch(() => ({}))
 
             if (!resultsResponse.ok || !resultsJson.success) {
@@ -748,7 +748,6 @@ export default function PatientDetailPage() {
             <div className="mb-6">
               <AssessmentRunDetails
                 assessmentId={selectedAssessmentId}
-                patientId={patientProfileId}
                 onClose={() => setSelectedAssessmentId(null)}
               />
             </div>

@@ -56,16 +56,10 @@ export async function GET(_request: Request, context: RouteContext) {
       .maybeSingle()
 
     if (patientError || !patient) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: ErrorCode.NOT_FOUND,
-            message: 'Patient not found',
-          },
-        },
-        { status: 404 },
-      )
+      return NextResponse.json({
+        success: true,
+        data: [],
+      })
     }
 
     const { data: runs, error: runsError } = await supabase

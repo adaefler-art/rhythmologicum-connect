@@ -141,10 +141,10 @@ export async function GET(
       console.error('[clinician/assessments/details] Assessment query error:', assessmentError)
       return NextResponse.json(
         {
-          success: false,
-          error: { code: 'NOT_FOUND', message: 'Assessment nicht gefunden.' },
+          success: true,
+          data: null,
         },
-        { status: 404 },
+        { status: 200 },
       )
     }
 

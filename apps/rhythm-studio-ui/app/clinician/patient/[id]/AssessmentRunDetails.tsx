@@ -13,7 +13,7 @@
 import { useState, useEffect } from 'react'
 import { Badge, Card, Button } from '@/lib/ui'
 import { Calendar, Activity, FileText, ChevronDown, ChevronUp, CheckCircle2, Clock } from 'lucide-react'
-import { getClinicianApiUrl } from './clinicianApi'
+import { assessmentDetailsUrl } from '@/lib/clinicianApi'
 
 export interface AssessmentAnswer {
   id: string
@@ -52,7 +52,6 @@ export interface AssessmentDetails {
 
 interface AssessmentRunDetailsProps {
   assessmentId: string
-  patientId: string
   onClose?: () => void
 }
 
@@ -139,7 +138,7 @@ function formatAnswerValue(answer: AssessmentAnswer): string {
   return String(answer.answerValue)
 }
 
-export function AssessmentRunDetails({ assessmentId, patientId, onClose }: AssessmentRunDetailsProps) {
+export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDetailsProps) {
   const [details, setDetails] = useState<AssessmentDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -151,9 +150,7 @@ export function AssessmentRunDetails({ assessmentId, patientId, onClose }: Asses
         setLoading(true)
         setError(null)
 
-        const response = await fetch(
-          getClinicianApiUrl(patientId, `assessments/${assessmentId}/details`),
-        )
+        const response = await fetch(assessmentDetailsUrl(assessmentId))
         const data = await response.json()
 
         if (!data.success) {
@@ -207,7 +204,28 @@ export function AssessmentRunDetails({ assessmentId, patientId, onClose }: Asses
   }
 
   if (!details) {
-    return null
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="text-center py-8">
+          <p className="text-6xl mb-4" aria-label="Hinweis">
+            📭
+          </p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
+            Keine Details verfügbar
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Für dieses Assessment liegen aktuell keine Detaildaten vor.
+          </p>
+          {onClose && (
+            <div className="mt-4">
+              <Button onClick={onClose} variant="secondary">
+                Schließen
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    )
   }
 
   const { assessment, answers, result, report } = details

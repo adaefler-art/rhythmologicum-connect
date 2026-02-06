@@ -19,7 +19,7 @@ import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select, Alert }
 import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
 import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
 import type { EntryType } from '@/lib/api/anamnesis/validation'
-import { getClinicianApiUrl } from './clinicianApi'
+import { patientAnamnesisUrl } from '@/lib/clinicianApi'
 
 export interface AnamnesisEntry {
   id: string
@@ -103,7 +103,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setSuggestedError(null)
 
     try {
-      const response = await fetch(getClinicianApiUrl(patientId, 'anamnesis'))
+      const response = await fetch(patientAnamnesisUrl(patientId))
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -158,7 +158,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       const text = buildSuggestedText(facts)
       const title = `Anamnese Vorschlag ${new Date().toLocaleDateString('de-DE')}`
 
-      const response = await fetch(getClinicianApiUrl(patientId, 'anamnesis'), {
+      const response = await fetch(patientAnamnesisUrl(patientId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, sources: facts, title }),
@@ -188,7 +188,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setFormError(null)
 
     try {
-      const response = await fetch(getClinicianApiUrl(patientId, 'anamnesis'), {
+      const response = await fetch(patientAnamnesisUrl(patientId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
