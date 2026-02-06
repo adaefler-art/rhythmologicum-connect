@@ -57,7 +57,9 @@ export async function getPatientOrganizationId(
   }
 
   if (!patient?.user_id) {
-    console.error('[anamnesis-helpers] Patient has no user_id:', patientId)
+    console.error('[anamnesis-helpers] Patient has no user_id:', {
+      patientId: patientId.slice(0, 8) + '...'
+    })
     return null
   }
 
@@ -76,8 +78,8 @@ export async function getPatientOrganizationId(
 
   if (!membership?.organization_id) {
     console.error('[anamnesis-helpers] No active organization membership for patient:', {
-      patientId,
-      userId: patient.user_id
+      patientId: patientId.slice(0, 8) + '...',
+      userId: patient.user_id.slice(0, 8) + '...'
     })
     return null
   }
