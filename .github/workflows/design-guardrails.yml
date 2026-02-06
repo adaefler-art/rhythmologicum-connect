@@ -1,0 +1,200 @@
+name: Design Guardrails
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'lib/ui/**'
+      - 'apps/rhythm-studio-ui/app/globals.css'
+      - 'apps/rhythm-studio-ui/app/admin/design-system/**'
+      - 'docs/mobile/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  component-drift:
+    name: Component Drift Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run component drift check
+        id: drift-check
+        run: |
+          chmod +x tools/design-guardrails/component-drift-check.sh
+          ./tools/design-guardrails/component-drift-check.sh 2>&1 | tee drift-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Comment on PR with drift results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('drift-output.txt', 'utf8');
+            const exitCode = '${{ steps.drift-check.outputs.exit_code }}';
+            
+            const status = exitCode === '0' ? '✅ PASSED' : '❌ FAILED';
+            const emoji = exitCode === '0' ? '✅' : '❌';
+            
+            const body = `## ${emoji} Design Guardrails: Component Drift Check
+
+\`\`\`
+${output}
+\`\`\`
+
+**Status:** ${status}
+
+See [docs/design/recovery.md](https://github.com/${{ github.repository }}/blob/main/docs/design/recovery.md) for recovery plan.
+`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Fail if blocking violations found
+        if: steps.drift-check.outputs.exit_code != '0'
+        run: |
+          echo "::error::Component drift check failed with blocking violations"
+          exit 1
+
+  globals-checks:
+    name: Globals CSS Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run globals size check
+        id: size-check
+        run: |
+          chmod +x tools/design-guardrails/globals-size-check.sh
+          ./tools/design-guardrails/globals-size-check.sh 2>&1 | tee size-output.txt
+        continue-on-error: true
+
+      - name: Run globals var check
+        id: var-check
+        run: |
+          chmod +x tools/design-guardrails/globals-var-check.sh
+          ./tools/design-guardrails/globals-var-check.sh 2>&1 | tee var-output.txt
+        continue-on-error: true
+
+      - name: Comment on PR with globals results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const sizeOutput = fs.readFileSync('size-output.txt', 'utf8');
+            const varOutput = fs.readFileSync('var-output.txt', 'utf8');
+            
+            const body = `## ⚠️ Design Guardrails: Globals CSS Checks
+
+### Size Check
+\`\`\`
+${sizeOutput}
+\`\`\`
+
+### Variable Count Check
+\`\`\`
+${varOutput}
+\`\`\`
+
+**Note:** These are warnings only (non-blocking)
+
+See [RULES_VS_CHECKS_MATRIX.md](https://github.com/${{ github.repository }}/blob/main/RULES_VS_CHECKS_MATRIX.md) for rule details.
+`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  pr-size:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get PR labels
+        id: pr-labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(l => l.name).join(',');
+            core.setOutput('labels', labels);
+
+      - name: Run PR size check
+        id: size-check
+        env:
+          PR_FILES: ${{ steps.changed-files.outputs.files }}
+          PR_LABELS: ${{ steps.pr-labels.outputs.labels }}
+        run: |
+          chmod +x tools/design-guardrails/pr-size-check.sh
+          ./tools/design-guardrails/pr-size-check.sh 2>&1 | tee pr-size-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Comment on PR with size results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('pr-size-output.txt', 'utf8');
+            const exitCode = '${{ steps.size-check.outputs.exit_code }}';
+            
+            const status = exitCode === '0' ? '✅ PASSED' : '❌ FAILED';
+            const emoji = exitCode === '0' ? '✅' : '❌';
+            
+            const body = `## ${emoji} Design Guardrails: PR Size Check
+
+\`\`\`
+${output}
+\`\`\`
+
+**Status:** ${status}
+
+${exitCode !== '0' ? '**Action Required:** Add \`size-override\` label and justify in PR description, OR break into smaller PRs.' : ''}
+
+See [RULES_VS_CHECKS_MATRIX.md](https://github.com/${{ github.repository }}/blob/main/RULES_VS_CHECKS_MATRIX.md#pr-size-rules-r-size) for details.
+`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Fail if size limits exceeded without override
+        if: steps.size-check.outputs.exit_code != '0'
+        run: |
+          echo "::error::PR size check failed - too many files changed without override"
+          exit 1
