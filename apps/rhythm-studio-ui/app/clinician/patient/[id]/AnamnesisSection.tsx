@@ -121,10 +121,14 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       }
 
       if (data?.success && data.data) {
-        setEntries((data.data.entries || []) as AnamnesisEntry[])
-        setLatestEntry((data.data.latestEntry as AnamnesisEntry | null) || data.data.entries?.[0] || null)
-        setVersions((data.data.versions || []) as AnamnesisVersion[])
-        setSuggestedFacts((data.data.suggestedFacts || []) as SuggestedFact[])
+        setEntries((data.data.entries || []) as unknown as AnamnesisEntry[])
+        setLatestEntry(
+          ((data.data.latestEntry as unknown) as AnamnesisEntry | null) ||
+            ((data.data.entries?.[0] as unknown) as AnamnesisEntry | undefined) ||
+            null,
+        )
+        setVersions((data.data.versions || []) as unknown as AnamnesisVersion[])
+        setSuggestedFacts((data.data.suggestedFacts || []) as unknown as SuggestedFact[])
         setSelectedFactIds([])
       }
     } catch (err) {
