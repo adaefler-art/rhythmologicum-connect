@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -3134,7 +3129,7 @@ export type Database = {
           funnel_id: string | null
           id: string
           patient_id: string
-          payload: Json
+          payload: Json | null
         }
         Insert: {
           action_type: Database["public"]["Enums"]["triage_action_type"]
@@ -3144,7 +3139,7 @@ export type Database = {
           funnel_id?: string | null
           id?: string
           patient_id: string
-          payload?: Json
+          payload?: Json | null
         }
         Update: {
           action_type?: Database["public"]["Enums"]["triage_action_type"]
@@ -3154,7 +3149,7 @@ export type Database = {
           funnel_id?: string | null
           id?: string
           patient_id?: string
-          payload?: Json
+          payload?: Json | null
         }
         Relationships: [
           {
@@ -3852,3 +3847,4 @@ export const Constants = {
     },
   },
 } as const
+
