@@ -38,6 +38,7 @@ const EXCLUDED_SCAN_DIRS = [
 
 function isExcludedPath(relPath) {
   const normalized = toGitPath(relPath)
+  if (normalized.includes('/app/api/')) return false
   return EXCLUDED_SCAN_DIRS.some((dir) => normalized.includes(dir))
 }
 

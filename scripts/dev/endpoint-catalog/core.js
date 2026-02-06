@@ -35,8 +35,12 @@ function extractRouteMethods(sourceText) {
   const normalizedSource = normalizeLineEndings(sourceText)
   const methods = new Set()
   const re = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\b/g
+  const constRe = /export\s+const\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*=\s*/g
   let m
   while ((m = re.exec(normalizedSource))) {
+    methods.add(String(m[1]).toUpperCase())
+  }
+  while ((m = constRe.exec(normalizedSource))) {
     methods.add(String(m[1]).toUpperCase())
   }
   return Array.from(methods).sort(cmpStr)
@@ -63,6 +67,7 @@ function guessAccessRoleFromApiPath(apiPath) {
   if (apiPath.startsWith('/api/amy/')) return 'system'
   if (apiPath.startsWith('/api/mcp')) return 'system'
   if (apiPath.startsWith('/api/_debug/')) return 'system'
+  if (apiPath.startsWith('/api/_meta/')) return 'system'
   if (apiPath.startsWith('/api/assessment-answers/')) return 'patient'
   if (apiPath.startsWith('/api/assessment-validation/')) return 'patient'
   if (apiPath.startsWith('/api/assessments/')) return 'patient'
