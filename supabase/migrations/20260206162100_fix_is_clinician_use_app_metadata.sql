@@ -1,5 +1,5 @@
 -- Migration: fix_is_clinician_use_app_metadata
--- Description: Fix is_clinician() to query app_metadata from auth.users instead of JWT claims
+-- Description: Fix is_clinician() to query raw_app_meta_data from auth.users instead of JWT claims
 -- 
 -- Root Cause: The original is_clinician() function uses auth.jwt()->>'role', but there is no
 -- custom access token hook configured in Supabase to inject the role into the JWT.

@@ -51,8 +51,8 @@ On the clinician patient detail page, when viewing an assessment:
    - RLS blocks all assessment_answers queries for clinicians
 
 5. **Why API Auth Passed But RLS Failed**:
-   - API checks: `user.app_metadata?.role === 'clinician'` ✅ (works because Supabase SDK surfaces raw_app_meta_data as app_metadata)
-   - RLS checks: `auth.jwt()->>'role' IN ('clinician', 'admin')` ❌ (fails because JWT doesn't contain role)
+   - API checks: `user.app_metadata?.role === 'clinician'` ✅ (works because Supabase JavaScript SDK exposes the database column `raw_app_meta_data` as the property `app_metadata`)
+   - RLS checks: `auth.jwt()->>'role' IN ('clinician', 'admin')` ❌ (fails because JWT doesn't contain the custom role claim)
 
 ## The Solution
 
