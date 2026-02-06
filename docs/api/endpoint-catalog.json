@@ -2,6 +2,8 @@
   "version": "v0.6",
   "endpoints": [
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/_debug/env",
       "methods": [
         "GET"
@@ -15,6 +17,44 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/_meta/build",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/_meta/build/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/_meta/build",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "system liveness probe / deployment checks",
+      "path": "/api/_meta/ping",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/_meta/ping/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/account/deletion-request",
       "methods": [
         "POST"
@@ -28,6 +68,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/account/deletion-request",
       "methods": [
         "POST"
@@ -41,6 +83,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages",
       "methods": [
         "GET",
@@ -61,6 +105,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages",
       "methods": [
         "GET",
@@ -81,6 +127,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages",
       "methods": [
         "GET",
@@ -101,6 +149,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]",
       "methods": [
         "DELETE",
@@ -122,6 +172,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]",
       "methods": [
         "DELETE",
@@ -143,6 +195,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]",
       "methods": [
         "DELETE",
@@ -164,6 +218,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections",
       "methods": [
         "GET",
@@ -189,6 +245,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections",
       "methods": [
         "GET",
@@ -214,6 +272,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections",
       "methods": [
         "GET",
@@ -239,6 +299,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
       "methods": [
         "DELETE",
@@ -284,6 +346,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
       "methods": [
         "DELETE",
@@ -329,6 +393,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/content-pages/[id]/sections/[sectionId]",
       "methods": [
         "DELETE",
@@ -374,6 +440,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/design-tokens",
       "methods": [
         "GET",
@@ -394,6 +462,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/design-tokens",
       "methods": [
         "GET",
@@ -414,6 +484,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/design-tokens",
       "methods": [
         "GET",
@@ -434,6 +506,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/dev/endpoint-catalog",
       "methods": [
         "GET"
@@ -447,6 +521,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/dev/endpoint-catalog",
       "methods": [
         "GET"
@@ -460,6 +536,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/dev/endpoint-catalog",
       "methods": [
         "GET"
@@ -473,6 +551,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"
@@ -486,6 +566,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"
@@ -499,6 +581,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-step-questions/[id]",
       "methods": [
         "PATCH"
@@ -518,6 +602,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-step-questions/[id]",
       "methods": [
         "PATCH"
@@ -537,6 +623,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-step-questions/[id]",
       "methods": [
         "PATCH"
@@ -556,6 +644,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps",
       "methods": [
         "POST"
@@ -569,6 +659,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps",
       "methods": [
         "POST"
@@ -582,6 +674,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps/[id]",
       "methods": [
         "PATCH"
@@ -611,6 +705,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps/[id]",
       "methods": [
         "PATCH"
@@ -640,6 +736,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps/[id]",
       "methods": [
         "PATCH"
@@ -669,6 +767,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps/[id]/questions",
       "methods": [
         "POST"
@@ -688,6 +788,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-steps/[id]/questions/[questionId]",
       "methods": [
         "DELETE"
@@ -707,6 +809,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]",
       "methods": [
         "PATCH"
@@ -786,6 +890,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]",
       "methods": [
         "PATCH"
@@ -865,6 +971,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]",
       "methods": [
         "PATCH"
@@ -944,6 +1052,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]/manifest",
       "methods": [
         "GET",
@@ -969,6 +1079,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]/manifest",
       "methods": [
         "GET",
@@ -994,6 +1106,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnel-versions/[id]/manifest",
       "methods": [
         "GET",
@@ -1019,6 +1133,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels",
       "methods": [
         "GET"
@@ -1153,6 +1269,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels",
       "methods": [
         "GET"
@@ -1287,6 +1405,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels",
       "methods": [
         "GET"
@@ -1421,6 +1541,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels/[id]",
       "methods": [
         "GET",
@@ -1526,6 +1648,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels/[id]",
       "methods": [
         "GET",
@@ -1631,6 +1755,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/funnels/[id]",
       "methods": [
         "GET",
@@ -1736,6 +1862,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds",
       "methods": [
         "GET",
@@ -1756,6 +1884,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds",
       "methods": [
         "GET",
@@ -1776,6 +1906,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds",
       "methods": [
         "GET",
@@ -1796,6 +1928,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds/[id]",
       "methods": [
         "DELETE",
@@ -1816,6 +1950,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds/[id]",
       "methods": [
         "DELETE",
@@ -1836,6 +1972,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/kpi-thresholds/[id]",
       "methods": [
         "DELETE",
@@ -1856,6 +1994,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation",
       "methods": [
         "GET"
@@ -1880,6 +2020,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation",
       "methods": [
         "GET"
@@ -1904,6 +2046,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation",
       "methods": [
         "GET"
@@ -1928,6 +2072,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation",
       "methods": [
         "GET"
@@ -1952,6 +2098,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation/[role]",
       "methods": [
         "PUT"
@@ -1971,6 +2119,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation/[role]",
       "methods": [
         "PUT"
@@ -1990,6 +2140,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/navigation/[role]",
       "methods": [
         "PUT"
@@ -2009,6 +2161,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates",
       "methods": [
         "GET",
@@ -2029,6 +2183,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates",
       "methods": [
         "GET",
@@ -2049,6 +2205,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates",
       "methods": [
         "GET",
@@ -2069,6 +2227,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates/[id]",
       "methods": [
         "DELETE",
@@ -2089,6 +2249,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates/[id]",
       "methods": [
         "DELETE",
@@ -2109,6 +2271,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/notification-templates/[id]",
       "methods": [
         "DELETE",
@@ -2129,6 +2293,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/operational-settings-audit",
       "methods": [
         "GET"
@@ -2148,6 +2314,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/operational-settings-audit",
       "methods": [
         "GET"
@@ -2167,6 +2335,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/operational-settings-audit",
       "methods": [
         "GET"
@@ -2186,6 +2356,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/pilot/flow-events",
       "methods": [
         "GET"
@@ -2199,6 +2371,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/pilot/flow-events",
       "methods": [
         "GET"
@@ -2212,6 +2386,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/pilot/kpis",
       "methods": [
         "GET"
@@ -2225,6 +2401,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/pilot/kpis",
       "methods": [
         "GET"
@@ -2238,6 +2416,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules",
       "methods": [
         "GET",
@@ -2258,6 +2438,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules",
       "methods": [
         "GET",
@@ -2278,6 +2460,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules",
       "methods": [
         "GET",
@@ -2298,6 +2482,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules/[id]",
       "methods": [
         "DELETE",
@@ -2318,6 +2504,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules/[id]",
       "methods": [
         "DELETE",
@@ -2338,6 +2526,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/reassessment-rules/[id]",
       "methods": [
         "DELETE",
@@ -2358,6 +2548,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/studio/funnels/[slug]/drafts",
       "methods": [
         "GET",
@@ -2372,6 +2564,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]",
       "methods": [
         "DELETE",
@@ -2387,6 +2581,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]/publish",
       "methods": [
         "POST"
@@ -2400,6 +2596,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/studio/funnels/[slug]/drafts/[draftId]/validate",
       "methods": [
         "POST"
@@ -2413,6 +2611,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/studio/funnels/[slug]/history",
       "methods": [
         "GET"
@@ -2426,6 +2626,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/usage",
       "methods": [
         "GET"
@@ -2439,6 +2641,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/usage",
       "methods": [
         "GET"
@@ -2452,6 +2656,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/chat",
       "methods": [
         "GET",
@@ -2482,6 +2688,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/stress-report",
       "methods": [
         "POST"
@@ -2495,6 +2703,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/stress-report",
       "methods": [
         "POST"
@@ -2508,6 +2718,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/stress-summary",
       "methods": [
         "POST"
@@ -2521,6 +2733,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/stress-summary",
       "methods": [
         "POST"
@@ -2534,6 +2748,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/triage",
       "methods": [
         "POST"
@@ -2553,6 +2769,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/triage",
       "methods": [
         "POST"
@@ -2572,6 +2790,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/amy/triage",
       "methods": [
         "POST"
@@ -2591,6 +2811,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-answers/save",
       "methods": [
         "POST"
@@ -2610,6 +2832,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-answers/save",
       "methods": [
         "POST"
@@ -2629,6 +2853,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-answers/save",
       "methods": [
         "POST"
@@ -2648,6 +2874,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-validation/validate-step",
       "methods": [
         "POST"
@@ -2667,6 +2895,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-validation/validate-step",
       "methods": [
         "POST"
@@ -2686,6 +2916,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessment-validation/validate-step",
       "methods": [
         "POST"
@@ -2705,6 +2937,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/current-step",
       "methods": [
         "GET"
@@ -2718,6 +2952,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/current-step",
       "methods": [
         "GET"
@@ -2731,6 +2967,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/current-step",
       "methods": [
         "GET"
@@ -2744,6 +2982,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/navigation",
       "methods": [
         "GET"
@@ -2757,6 +2997,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/navigation",
       "methods": [
         "GET"
@@ -2770,6 +3012,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/navigation",
       "methods": [
         "GET"
@@ -2783,6 +3027,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/resume",
       "methods": [
         "GET"
@@ -2802,6 +3048,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/resume",
       "methods": [
         "GET"
@@ -2821,6 +3069,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/resume",
       "methods": [
         "GET"
@@ -2840,6 +3090,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/state",
       "methods": [
         "GET"
@@ -2859,6 +3111,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/state",
       "methods": [
         "GET"
@@ -2878,6 +3132,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/[id]/state",
       "methods": [
         "GET"
@@ -2897,6 +3153,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/in-progress",
       "methods": [
         "GET"
@@ -2910,6 +3168,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/in-progress",
       "methods": [
         "GET"
@@ -2923,6 +3183,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/assessments/in-progress",
       "methods": [
         "GET"
@@ -2936,6 +3198,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/callback",
       "methods": [
         "POST"
@@ -3005,6 +3269,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/callback",
       "methods": [
         "POST"
@@ -3074,6 +3340,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/callback",
       "methods": [
         "POST"
@@ -3143,6 +3411,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/callback",
       "methods": [
         "POST"
@@ -3212,6 +3482,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/debug",
       "methods": [
         "GET"
@@ -3225,6 +3497,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/debug-cookie",
       "methods": [
         "GET"
@@ -3238,6 +3512,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/resolve-role",
       "methods": [
         "GET"
@@ -3287,6 +3563,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/resolve-role",
       "methods": [
         "GET"
@@ -3336,6 +3614,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/resolve-role",
       "methods": [
         "GET"
@@ -3385,6 +3665,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/resolve-role",
       "methods": [
         "GET"
@@ -3434,6 +3716,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/signout",
       "methods": [
         "GET",
@@ -3469,6 +3753,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/signout",
       "methods": [
         "GET",
@@ -3504,6 +3790,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/signout",
       "methods": [
         "GET",
@@ -3539,6 +3827,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/auth/signout",
       "methods": [
         "GET",
@@ -3574,18 +3864,20 @@
       "isAllowedOrphan": false
     },
     {
-      "path": "/api/clinician/assessments/[assessmentId]/details",
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/anamnesis/[entryId]/archive",
       "methods": [
-        "GET"
+        "POST"
       ],
-      "file": "apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts",
+      "file": "apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/archive/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AssessmentRunDetails.tsx",
-          "apiPath": "/api/clinician/assessments/${assessmentId}/details",
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/clinician/anamnesis/${entryId}/archive",
           "kind": "fetch"
         }
       ],
@@ -3593,6 +3885,44 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/anamnesis/[entryId]/versions",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/versions/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
+          "apiPath": "/api/clinician/anamnesis/${selectedEntry.id}/versions",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/assessments/[assessmentId]/details",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/clinician/patient-funnels",
       "methods": [
         "POST"
@@ -3606,6 +3936,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/clinician/patient-funnels/[id]",
       "methods": [
         "PATCH"
@@ -3625,6 +3957,137 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": true,
+      "internalUnusedReason": "internal proxy/debug probe; not a product UI callsite",
+      "path": "/api/clinician/patient/[patientId]/[...probe]",
+      "methods": [
+        "DELETE",
+        "GET",
+        "PATCH",
+        "POST",
+        "PUT"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/patient/[patientId]/amy-insights",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/amy-insights/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts",
+          "apiPath": "/api/clinician/patient/[patientId]/amy-insights",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/patient/${patientId}/amy-insights",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/patient/[patientId]/anamnesis",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/anamnesis/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 3,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts",
+          "apiPath": "/api/clinician/patient/[patientId]/anamnesis",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/patient/${patientId}/anamnesis",
+          "kind": "client"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/patient/${patientId}/anamnesis",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/patient/[patientId]/diagnosis/runs",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/diagnosis/runs/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts",
+          "apiPath": "/api/clinician/patient/[patientId]/diagnosis/runs",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/patient/${patientId}/diagnosis/runs",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/clinician/patient/[patientId]/results",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/results/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts",
+          "apiPath": "/api/clinician/patient/[patientId]/results",
+          "kind": "url"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/patient/${patientId}/results",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/clinician/patients/[patientId]/funnels",
       "methods": [
         "GET"
@@ -3644,6 +4107,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/clinician/triage",
       "methods": [
         "GET"
@@ -3651,12 +4116,20 @@
       "file": "apps/rhythm-studio-ui/app/api/clinician/triage/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "apiPath": "/api/clinician/triage",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/consent/record",
       "methods": [
         "POST"
@@ -3670,6 +4143,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/consent/record",
       "methods": [
         "POST"
@@ -3683,6 +4158,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/consent/status",
       "methods": [
         "GET"
@@ -3696,6 +4173,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/consent/status",
       "methods": [
         "GET"
@@ -3709,6 +4188,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content-pages/[slug]",
       "methods": [
         "GET"
@@ -3733,6 +4214,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content-pages/[slug]",
       "methods": [
         "GET"
@@ -3757,6 +4240,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content-resolver",
       "methods": [
         "GET"
@@ -3770,6 +4255,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content-resolver",
       "methods": [
         "GET"
@@ -3783,6 +4270,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content/[slug]",
       "methods": [
         "GET"
@@ -3857,6 +4346,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content/resolve",
       "methods": [
         "GET"
@@ -3870,6 +4361,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/content/resolve",
       "methods": [
         "GET"
@@ -3883,6 +4376,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/[id]/extract",
       "methods": [
         "POST"
@@ -3896,6 +4391,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/[id]/extract",
       "methods": [
         "POST"
@@ -3909,6 +4406,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/[id]/status",
       "methods": [
         "PATCH"
@@ -3922,6 +4421,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/[id]/status",
       "methods": [
         "PATCH"
@@ -3935,6 +4436,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/upload",
       "methods": [
         "POST"
@@ -3948,6 +4451,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/documents/upload",
       "methods": [
         "POST"
@@ -3961,6 +4466,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/escalation/log-click",
       "methods": [
         "POST"
@@ -3974,6 +4481,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/escalation/log-click",
       "methods": [
         "POST"
@@ -3987,6 +4496,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments",
       "methods": [
         "POST"
@@ -4131,6 +4642,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments",
       "methods": [
         "POST"
@@ -4275,6 +4788,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments",
       "methods": [
         "POST"
@@ -4419,6 +4934,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]",
       "methods": [
         "GET"
@@ -4513,6 +5030,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]",
       "methods": [
         "GET"
@@ -4607,6 +5126,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]",
       "methods": [
         "GET"
@@ -4701,6 +5222,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
       "methods": [
         "POST"
@@ -4785,6 +5308,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
       "methods": [
         "POST"
@@ -4869,6 +5394,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/answers/save",
       "methods": [
         "POST"
@@ -4953,6 +5480,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
       "methods": [
         "POST"
@@ -5037,6 +5566,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
       "methods": [
         "POST"
@@ -5121,6 +5652,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/complete",
       "methods": [
         "POST"
@@ -5205,6 +5738,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
       "methods": [
         "GET"
@@ -5254,6 +5789,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
       "methods": [
         "GET"
@@ -5303,6 +5840,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/result",
       "methods": [
         "GET"
@@ -5352,6 +5891,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
       "methods": [
         "POST"
@@ -5406,6 +5947,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
       "methods": [
         "POST"
@@ -5460,6 +6003,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/steps/[stepId]",
       "methods": [
         "POST"
@@ -5514,6 +6059,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
       "methods": [
         "POST"
@@ -5527,6 +6074,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
       "methods": [
         "POST"
@@ -5540,6 +6089,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/assessments/[assessmentId]/workup",
       "methods": [
         "POST"
@@ -5553,6 +6104,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/content-pages",
       "methods": [
         "GET"
@@ -5566,6 +6119,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/content-pages",
       "methods": [
         "GET"
@@ -5579,6 +6134,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/content-pages",
       "methods": [
         "GET"
@@ -5592,6 +6149,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/definition",
       "methods": [
         "GET"
@@ -5641,6 +6200,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/definition",
       "methods": [
         "GET"
@@ -5690,6 +6251,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/[slug]/definition",
       "methods": [
         "GET"
@@ -5739,6 +6302,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/active",
       "methods": [
         "GET"
@@ -5752,6 +6317,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/active",
       "methods": [
         "GET"
@@ -5765,6 +6332,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/active",
       "methods": [
         "GET"
@@ -5778,6 +6347,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog",
       "methods": [
         "GET"
@@ -5967,6 +6538,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog",
       "methods": [
         "GET"
@@ -6156,6 +6729,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog",
       "methods": [
         "GET"
@@ -6345,6 +6920,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog/[slug]",
       "methods": [
         "GET"
@@ -6419,6 +6996,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog/[slug]",
       "methods": [
         "GET"
@@ -6493,6 +7072,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/funnels/catalog/[slug]",
       "methods": [
         "GET"
@@ -6567,6 +7148,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/health/env",
       "methods": [
         "GET"
@@ -6580,6 +7163,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/health/env",
       "methods": [
         "GET"
@@ -6593,6 +7178,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/mcp",
       "methods": [
         "GET",
@@ -6623,6 +7210,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/mcp/context-pack",
       "methods": [
         "POST"
@@ -6642,6 +7231,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/me",
       "methods": [
         "GET"
@@ -6655,6 +7246,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/notifications",
       "methods": [
         "GET"
@@ -6668,6 +7261,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/notifications",
       "methods": [
         "GET"
@@ -6681,6 +7276,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/notifications/[id]",
       "methods": [
         "PATCH"
@@ -6694,6 +7291,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/notifications/[id]",
       "methods": [
         "PATCH"
@@ -6707,6 +7306,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/export",
       "methods": [
         "GET"
@@ -6726,6 +7327,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/export",
       "methods": [
         "GET"
@@ -6745,6 +7348,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/export",
       "methods": [
         "GET"
@@ -6764,6 +7369,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/history",
       "methods": [
         "GET"
@@ -6783,6 +7390,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/history",
       "methods": [
         "GET"
@@ -6802,6 +7411,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-measures/history",
       "methods": [
         "GET"
@@ -6821,6 +7432,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-profiles",
       "methods": [
         "GET"
@@ -6845,6 +7458,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-profiles",
       "methods": [
         "GET"
@@ -6869,6 +7484,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient-profiles",
       "methods": [
         "GET"
@@ -6893,6 +7510,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis",
       "methods": [
         "GET",
@@ -6918,6 +7537,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis/[entryId]",
       "methods": [
         "GET",
@@ -6943,6 +7564,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis/[entryId]/archive",
       "methods": [
         "POST"
@@ -6962,6 +7585,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis/[entryId]/versions",
       "methods": [
         "POST"
@@ -6975,6 +7600,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis/export.json",
       "methods": [
         "GET"
@@ -6994,6 +7621,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/assessments",
       "methods": [
         "GET"
@@ -7013,6 +7642,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/assessments-with-results",
       "methods": [
         "GET"
@@ -7042,6 +7673,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/assessments-with-results",
       "methods": [
         "GET"
@@ -7071,6 +7704,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/dashboard",
       "methods": [
         "GET"
@@ -7084,6 +7719,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/dashboard",
       "methods": [
         "GET"
@@ -7097,6 +7734,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/dashboard",
       "methods": [
         "GET"
@@ -7110,6 +7749,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/design",
       "methods": [
         "GET"
@@ -7129,6 +7770,23 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/patient/diagnosis/artifacts/[id]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/diagnosis/artifacts/[id]/route.ts",
+      "intent": "diagnosis:patient:artifact",
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/diagnosis/runs",
       "methods": [
         "GET"
@@ -7153,6 +7811,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/diagnosis/runs/[runId]/artifact",
       "methods": [
         "GET"
@@ -7172,6 +7832,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"
@@ -7206,6 +7868,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"
@@ -7240,6 +7904,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/onboarding-status",
       "methods": [
         "GET"
@@ -7274,6 +7940,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/reports/latest",
       "methods": [
         "GET"
@@ -7287,6 +7955,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/state",
       "methods": [
         "GET",
@@ -7317,6 +7987,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/triage",
       "methods": [
         "POST"
@@ -7330,6 +8002,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/triage",
       "methods": [
         "POST"
@@ -7343,6 +8017,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/pre-screening-calls",
       "methods": [
         "GET",
@@ -7363,6 +8039,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/pre-screening-calls",
       "methods": [
         "GET",
@@ -7383,6 +8061,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/pre-screening-calls",
       "methods": [
         "GET",
@@ -7403,6 +8083,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/content",
       "methods": [
         "POST"
@@ -7416,6 +8098,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/content",
       "methods": [
         "POST"
@@ -7429,6 +8113,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/delivery",
       "methods": [
         "POST"
@@ -7442,6 +8128,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/delivery",
       "methods": [
         "POST"
@@ -7455,6 +8143,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/jobs/[jobId]",
       "methods": [
         "GET"
@@ -7468,6 +8158,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/jobs/[jobId]",
       "methods": [
         "GET"
@@ -7481,6 +8173,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/jobs/[jobId]/download",
       "methods": [
         "GET"
@@ -7500,6 +8194,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/jobs/[jobId]/download",
       "methods": [
         "GET"
@@ -7519,6 +8215,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/jobs/[jobId]/download",
       "methods": [
         "GET"
@@ -7538,6 +8236,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/pdf",
       "methods": [
         "POST"
@@ -7551,6 +8251,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/pdf",
       "methods": [
         "POST"
@@ -7564,6 +8266,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/ranking",
       "methods": [
         "POST"
@@ -7577,6 +8281,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/ranking",
       "methods": [
         "POST"
@@ -7590,6 +8296,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/results",
       "methods": [
         "POST"
@@ -7609,6 +8317,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/results",
       "methods": [
         "POST"
@@ -7628,6 +8338,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/risk",
       "methods": [
         "POST"
@@ -7641,6 +8353,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/risk",
       "methods": [
         "POST"
@@ -7654,6 +8368,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/safety",
       "methods": [
         "POST"
@@ -7667,6 +8383,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/safety",
       "methods": [
         "POST"
@@ -7680,6 +8398,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/start",
       "methods": [
         "POST"
@@ -7693,6 +8413,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/start",
       "methods": [
         "POST"
@@ -7706,6 +8428,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/validation",
       "methods": [
         "POST"
@@ -7719,6 +8443,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/processing/validation",
       "methods": [
         "POST"
@@ -7732,6 +8458,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/reports/[reportId]/pdf",
       "methods": [
         "GET"
@@ -7745,6 +8473,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/reports/[reportId]/pdf",
       "methods": [
         "GET"
@@ -7758,6 +8488,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]",
       "methods": [
         "GET"
@@ -7771,6 +8503,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]",
       "methods": [
         "GET"
@@ -7784,6 +8518,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/decide",
       "methods": [
         "POST"
@@ -7808,6 +8544,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/decide",
       "methods": [
         "POST"
@@ -7832,6 +8570,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/decide",
       "methods": [
         "POST"
@@ -7856,6 +8596,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/details",
       "methods": [
         "GET"
@@ -7875,6 +8617,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/details",
       "methods": [
         "GET"
@@ -7894,6 +8638,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/[id]/details",
       "methods": [
         "GET"
@@ -7913,6 +8659,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/queue",
       "methods": [
         "GET"
@@ -7932,6 +8680,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/queue",
       "methods": [
         "GET"
@@ -7951,6 +8701,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/review/queue",
       "methods": [
         "GET"
@@ -7970,6 +8722,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments",
       "methods": [
         "GET",
@@ -7995,6 +8749,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments",
       "methods": [
         "GET",
@@ -8020,6 +8776,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments",
       "methods": [
         "GET",
@@ -8045,6 +8803,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments/[id]",
       "methods": [
         "GET",
@@ -8065,6 +8825,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments/[id]",
       "methods": [
         "GET",
@@ -8085,6 +8847,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments/[id]",
       "methods": [
         "GET",
@@ -8105,6 +8869,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments/[id]/events",
       "methods": [
         "GET",
@@ -8119,6 +8885,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/shipments/[id]/events",
       "methods": [
         "GET",
@@ -8133,6 +8901,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/anamnesis/[entryId]/archive",
       "methods": [
         "POST"
@@ -8140,18 +8910,14 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/studio/anamnesis/${entryId}/archive",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/anamnesis/[entryId]/versions",
       "methods": [
         "POST"
@@ -8159,18 +8925,14 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/studio/anamnesis/${selectedEntry.id}/versions",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/execute",
       "methods": [
         "POST"
@@ -8190,6 +8952,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/prompt",
       "methods": [
         "GET",
@@ -8215,6 +8979,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/queue",
       "methods": [
         "POST"
@@ -8239,6 +9005,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/runs/[runId]/artifact",
       "methods": [
         "GET"
@@ -8258,31 +9026,8 @@
       "isAllowedOrphan": false
     },
     {
-      "path": "/api/studio/patients/[patientId]/anamnesis",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/route.ts",
-      "intent": null,
-      "accessRole": "clinician",
-      "usedByCount": 2,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/studio/patients/${patientId}/anamnesis",
-          "kind": "fetch"
-        },
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/studio/patients/${patientId}/anamnesis",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
-    },
-    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/patients/[patientId]/anamnesis/export.json",
       "methods": [
         "GET"
@@ -8302,25 +9047,8 @@
       "isAllowedOrphan": false
     },
     {
-      "path": "/api/studio/patients/[patientId]/diagnosis/runs",
-      "methods": [
-        "GET"
-      ],
-      "file": "apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/diagnosis/runs/route.ts",
-      "intent": null,
-      "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
-          "apiPath": "/api/studio/patients/${patientId}/diagnosis/runs",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
-    },
-    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases",
       "methods": [
         "GET",
@@ -8341,6 +9069,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases",
       "methods": [
         "GET",
@@ -8361,6 +9091,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases",
       "methods": [
         "GET",
@@ -8381,6 +9113,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]",
       "methods": [
         "DELETE",
@@ -8402,6 +9136,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]",
       "methods": [
         "DELETE",
@@ -8423,6 +9159,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]",
       "methods": [
         "DELETE",
@@ -8444,6 +9182,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]/escalate",
       "methods": [
         "POST"
@@ -8463,6 +9203,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]/escalate",
       "methods": [
         "POST"
@@ -8482,6 +9224,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/support-cases/[id]/escalate",
       "methods": [
         "POST"
@@ -8501,6 +9245,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks",
       "methods": [
         "GET",
@@ -8576,6 +9322,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks",
       "methods": [
         "GET",
@@ -8651,6 +9399,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks",
       "methods": [
         "GET",
@@ -8726,6 +9476,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks/[id]",
       "methods": [
         "PATCH"
@@ -8805,6 +9557,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks/[id]",
       "methods": [
         "PATCH"
@@ -8884,6 +9638,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/tasks/[id]",
       "methods": [
         "PATCH"
@@ -8963,6 +9719,8 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/test/correlation-id",
       "methods": [
         "GET"
@@ -8976,6 +9734,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/test/correlation-id",
       "methods": [
         "GET"
@@ -8989,6 +9749,8 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/triage/fix-membership",
       "methods": [
         "POST"
@@ -8999,15 +9761,17 @@
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
           "apiPath": "/api/triage/fix-membership",
-          "kind": "fetch"
+          "kind": "client"
         }
       ],
       "isOrphan": false,
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/triage/health",
       "methods": [
         "GET"
@@ -9018,9 +9782,9 @@
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
           "apiPath": "/api/triage/health",
-          "kind": "fetch"
+          "kind": "client"
         }
       ],
       "isOrphan": false,

@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react'
 import { Badge, Card, Button } from '@/lib/ui'
 import { Calendar, Activity, FileText, ChevronDown, ChevronUp, CheckCircle2, Clock } from 'lucide-react'
+import { assessmentDetailsUrl } from '@/lib/clinicianApi'
 
 export interface AssessmentAnswer {
   id: string
@@ -149,7 +150,7 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/clinician/assessments/${assessmentId}/details`)
+        const response = await fetch(assessmentDetailsUrl(assessmentId))
         const data = await response.json()
 
         if (!data.success) {
@@ -203,7 +204,28 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
   }
 
   if (!details) {
-    return null
+    return (
+      <Card padding="lg" shadow="md">
+        <div className="text-center py-8">
+          <p className="text-6xl mb-4" aria-label="Hinweis">
+            📭
+          </p>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
+            Keine Details verfügbar
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Für dieses Assessment liegen aktuell keine Detaildaten vor.
+          </p>
+          {onClose && (
+            <div className="mt-4">
+              <Button onClick={onClose} variant="secondary">
+                Schließen
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    )
   }
 
   const { assessment, answers, result, report } = details
@@ -287,7 +309,7 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
             {report?.reportTextShort && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-start gap-2">
-                  <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0 mt-0.5" />
+                  <FileText className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-slate-600 dark:text-slate-300">
                     {report.reportTextShort}
                   </p>
@@ -336,7 +358,7 @@ export function AssessmentRunDetails({ assessmentId, onClose }: AssessmentRunDet
                         Antwort: <span className="font-semibold">{formatAnswerValue(answer)}</span>
                       </p>
                     </div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 flex-shrink-0">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
                       #{index + 1}
                     </span>
                   </div>

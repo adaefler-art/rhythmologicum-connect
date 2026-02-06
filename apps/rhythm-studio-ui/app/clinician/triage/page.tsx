@@ -3,7 +3,10 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge, Card, Table, LoadingSpinner, ErrorState, Input, Button, Select } from '@/lib/ui'
+import { resolvePatientDisplayName } from '@/lib/utils/patientDisplayName'
 import type { TableColumn } from '@/lib/ui/Table'
+import type { ApiError, TriageHealthResponse } from '@/lib/fetchClinician'
+import { triageFixMembership, triageHealth } from '@/lib/fetchClinician'
 import {
   AlertTriangle,
   Search,
@@ -76,6 +79,13 @@ export default function InboxPage() {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const [healthData, setHealthData] = useState<TriageHealthResponse | null>(null)
+  const [healthError, setHealthError] = useState<ApiError | null>(null)
+  const [healthMessage, setHealthMessage] = useState<string | null>(null)
+  const [isHealthLoading, setIsHealthLoading] = useState(false)
+  const [isFixingMembership, setIsFixingMembership] = useState(false)
+  const hasLoadedHealth = useRef(false)
+
   // Load triage data from API
   const loadTriageData = useCallback(async () => {
     setLoading(true)
@@ -121,10 +131,68 @@ export default function InboxPage() {
     }
   }, [showActive, searchQuery, statusFilter, attentionFilter])
 
+  const loadTriageHealth = useCallback(async () => {
+    setIsHealthLoading(true)
+    setHealthError(null)
+    setHealthMessage(null)
+
+    try {
+      const { data, error } = await triageHealth()
+      setHealthData(data ?? null)
+
+      if (error) {
+        setHealthError(error)
+      }
+    } catch (err) {
+      console.error('[TriageHealth] Fetch error:', err)
+      setHealthError({
+        status: 0,
+        message: 'Healthcheck fehlgeschlagen',
+        endpoint: '/api/triage/health',
+        method: 'GET',
+      })
+    } finally {
+      setIsHealthLoading(false)
+    }
+  }, [])
+
+  const handleFixMembership = useCallback(async () => {
+    const assessmentId = healthData?.latestAssessmentId
+    if (!assessmentId) {
+      setHealthMessage('Kein Assessment gefunden, um die Membership zu reparieren.')
+      return
+    }
+
+    setIsFixingMembership(true)
+    setHealthMessage(null)
+
+    try {
+      const { error } = await triageFixMembership({ assessmentId })
+      if (error) {
+        setHealthMessage(error.message || 'Membership-Reparatur fehlgeschlagen')
+        return
+      }
+
+      setHealthMessage('Membership aktualisiert. Healthcheck wird neu geladen...')
+      await loadTriageHealth()
+    } catch (err) {
+      console.error('[TriageFixMembership] Error:', err)
+      setHealthMessage('Membership-Reparatur fehlgeschlagen')
+    } finally {
+      setIsFixingMembership(false)
+    }
+  }, [healthData?.latestAssessmentId, loadTriageHealth])
+
   // Load data on mount and when filters change
   useEffect(() => {
     loadTriageData()
   }, [loadTriageData])
+
+  useEffect(() => {
+    if (hasLoadedHealth.current) return
+    hasLoadedHealth.current = true
+    loadTriageHealth()
+  }, [loadTriageHealth])
 
   // Handle search submit
   const handleSearch = useCallback(() => {
@@ -150,6 +218,19 @@ export default function InboxPage() {
 
     return { critical, warn, readyForReview, needsInput, total: cases.length }
   }, [cases])
+
+  const shouldShowFixMembership = useMemo(() => {
+    if (healthData?.membershipStatus === 'needs_fix') return true
+    if (healthError && [401, 403, 412].includes(healthError.status)) return true
+    return false
+  }, [healthData?.membershipStatus, healthError])
+
+  const healthBadge = useMemo(() => {
+    if (isHealthLoading) return { label: 'Prueft...', variant: 'secondary' as const }
+    if (healthError) return { label: 'Fehler', variant: 'danger' as const }
+    if (healthData?.membershipStatus === 'needs_fix') return { label: 'Aktion noetig', variant: 'warning' as const }
+    return { label: 'OK', variant: 'success' as const }
+  }, [healthData?.membershipStatus, healthError, isHealthLoading])
 
   // Get badge for case state
   const getCaseStateBadge = useCallback((state: CaseState) => {
@@ -201,6 +282,50 @@ export default function InboxPage() {
     }
   }, [])
 
+  // PatientKey SSOT: /clinician/patient/[id] expects patient_profiles.id
+  const getPatientDisplay = useCallback((row: TriageCase) => {
+    const hasProfileName = Boolean(
+      row.patient_display?.trim() || row.first_name?.trim() || row.last_name?.trim(),
+    )
+
+    if (hasProfileName) {
+      return resolvePatientDisplayName({
+        id: row.patient_id,
+        full_name: row.patient_display,
+        first_name: row.first_name,
+        last_name: row.last_name,
+      }).displayName
+    }
+
+    if (row.patient_id) return 'Patient:in'
+    return 'Patient:in'
+  }, [])
+
+  const getPatientSecondaryLabel = useCallback((row: TriageCase) => {
+    if (row.patient_display?.trim() || row.first_name?.trim() || row.last_name?.trim()) {
+      return undefined
+    }
+
+    if (row.patient_id) {
+      return `ID: ${row.patient_id.slice(0, 8)}`
+    }
+
+    return undefined
+  }, [])
+
+  const getPatientResolutionStatus = useCallback((row: TriageCase) => {
+    if (row.patient_display?.trim()) return 'FOUND'
+    if (row.patient_id) return 'RLS_BLOCKED'
+    return 'NOT_FOUND'
+  }, [])
+
+  const getFunnelDisplay = useCallback((row: TriageCase) => {
+    const display = row.funnel_slug?.trim()
+    if (display) return display
+    if (row.funnel_id) return `Funnel ${row.funnel_id.slice(0, 8)}`
+    return '—'
+  }, [])
+
   // Format datetime
   const formatDateTime = useCallback((isoString: string | null): string => {
     if (!isoString) return '—'
@@ -220,9 +345,14 @@ export default function InboxPage() {
   // Handle row click
   const handleRowClick = useCallback(
     (triageCase: TriageCase) => {
+      if (!triageCase.patient_id) return
+      if (healthData?.membershipStatus === 'needs_fix') {
+        setHealthMessage('Membership-Block erkannt. Bitte zuerst den Healthcheck beheben.')
+        return
+      }
       router.push(`/clinician/patient/${triageCase.patient_id}`)
     },
-    [router]
+    [healthData?.membershipStatus, router]
   )
 
   // Toggle dropdown
@@ -264,9 +394,23 @@ export default function InboxPage() {
       {
         header: 'Patient:in',
         accessor: (row) => (
-          <span className="font-medium text-slate-900 dark:text-slate-50">
-            {row.patient_display}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className="font-medium text-slate-900 dark:text-slate-50">
+              {getPatientDisplay(row)}
+            </span>
+            {getPatientResolutionStatus(row) !== 'FOUND' && (
+              <span className="text-xs text-amber-600 dark:text-amber-300">
+                {getPatientResolutionStatus(row) === 'RLS_BLOCKED'
+                  ? 'Kein Zugriff auf Profil'
+                  : 'Profil nicht gefunden'}
+              </span>
+            )}
+            {getPatientSecondaryLabel(row) && (
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {getPatientSecondaryLabel(row)}
+              </span>
+            )}
+          </div>
         ),
         sortable: true,
       },
@@ -274,7 +418,7 @@ export default function InboxPage() {
         header: 'Funnel / Episode',
         accessor: (row) => (
           <span className="text-slate-700 dark:text-slate-300">
-            {row.funnel_slug}
+            {getFunnelDisplay(row)}
           </span>
         ),
         sortable: true,
@@ -394,7 +538,20 @@ export default function InboxPage() {
         ),
       },
     ],
-    [getCaseStateBadge, getAttentionBadge, getNextActionLabel, formatDateTime, handleRowClick, toggleDropdown, openDropdownId, handleRowAction]
+    [
+      getCaseStateBadge,
+      getAttentionBadge,
+      getNextActionLabel,
+      getPatientDisplay,
+      getPatientResolutionStatus,
+      getPatientSecondaryLabel,
+      getFunnelDisplay,
+      formatDateTime,
+      handleRowClick,
+      toggleDropdown,
+      openDropdownId,
+      handleRowAction,
+    ]
   )
 
   if (loading) {
@@ -429,6 +586,73 @@ export default function InboxPage() {
           Handlungsbedarf und Aufmerksamkeitselemente
         </p>
       </div>
+
+      <Card padding="lg" shadow="md" radius="lg" className="mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
+              System Healthcheck
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Quick-Check fuer Membership und Triage-Basics.
+            </p>
+          </div>
+          <Badge variant={healthBadge.variant} size="sm">
+            {healthBadge.label}
+          </Badge>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <div className="flex items-center justify-between">
+            <span>Assessments gesamt</span>
+            <span>{healthData?.assessmentsTotal ?? '—'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Letztes Assessment</span>
+            <span className="font-mono">
+              {healthData?.latestAssessmentId ? healthData.latestAssessmentId.slice(0, 8) : '—'}
+            </span>
+          </div>
+        </div>
+
+        {healthError && (
+          <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">
+            {healthError.message || 'Healthcheck konnte nicht geladen werden.'}
+          </p>
+        )}
+
+        {healthData?.membershipError && (
+          <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <span className="font-medium text-slate-700 dark:text-slate-200">
+              Membership-Details:
+            </span>{' '}
+            <span>
+              {healthData.membershipError.code ? `${healthData.membershipError.code} - ` : ''}
+              {healthData.membershipError.message || 'Unbekannter Fehler'}
+            </span>
+          </div>
+        )}
+
+        {shouldShowFixMembership && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <p className="mb-2">
+              Membership-Check hat ein Problem erkannt. Bitte neu verknuepfen.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleFixMembership}
+              disabled={isFixingMembership}
+            >
+              {isFixingMembership ? 'Repariert…' : 'Fix membership'}
+            </Button>
+          </div>
+        )}
+
+        {healthMessage && (
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{healthMessage}</p>
+        )}
+      </Card>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

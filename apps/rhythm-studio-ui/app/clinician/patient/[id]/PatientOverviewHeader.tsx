@@ -6,12 +6,17 @@
  */
 
 import { Badge } from '@/lib/ui'
+import { resolvePatientDisplayName } from '@/lib/utils/patientDisplayName'
 import { User, Calendar, Activity } from 'lucide-react'
 import { PATIENT_SEX } from '@/lib/contracts/registry'
 
 export interface PatientOverviewHeaderProps {
   /** Patient's full name */
   fullName: string | null
+  /** Patient's first name */
+  firstName?: string | null
+  /** Patient's last name */
+  lastName?: string | null
   /** Patient's birth year */
   birthYear: number | null
   /** Patient's sex/gender */
@@ -32,6 +37,8 @@ export interface PatientOverviewHeaderProps {
  */
 export function PatientOverviewHeader({
   fullName,
+  firstName,
+  lastName,
   birthYear,
   sex,
   patientId,
@@ -39,7 +46,12 @@ export function PatientOverviewHeader({
   hrvStatus,
   hasPendingAssessment,
 }: PatientOverviewHeaderProps) {
-  const displayName = fullName || 'Patient:in'
+  const { displayName } = resolvePatientDisplayName({
+    id: patientId,
+    full_name: fullName,
+    first_name: firstName,
+    last_name: lastName,
+  })
   const currentYear = new Date().getFullYear()
   const age = birthYear ? currentYear - birthYear : null
 

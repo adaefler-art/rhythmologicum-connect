@@ -1,0 +1,24 @@
+name: Studio Prod Guardrail
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  push:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prod-guardrail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check Studio production routes
+        run: node scripts/check-prod-studio-routes.mjs

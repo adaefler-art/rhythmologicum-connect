@@ -62,6 +62,7 @@ const baseEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.preprocess(sanitizeEnvString, z.string().optional()),
   NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: z.string().optional(),
   NEXT_PUBLIC_BUILD_TIME: z.string().optional(),
+  STUDIO_BUILD_TIME: z.string().optional(),
   AUTH_CALLBACK_DEBUG: z.string().optional(),
   AUTH_CALLBACK_TIMEOUT_MS: z.string().optional(),
 
@@ -93,6 +94,7 @@ const baseEnvSchema = z.object({
 
   // Hosting provider (optional)
   VERCEL_ENV: z.string().optional(),
+  VERCEL_URL: z.string().optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().optional(),
   GIT_COMMIT_SHA: z.string().optional(),
   COMMIT_SHA: z.string().optional(),
@@ -183,8 +185,10 @@ function getRawClientEnv() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
+    STUDIO_BUILD_TIME: process.env.STUDIO_BUILD_TIME,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
+    VERCEL_URL: process.env.VERCEL_URL,
     REVIEW_SAMPLING_PERCENTAGE: process.env.REVIEW_SAMPLING_PERCENTAGE,
     REVIEW_SAMPLING_SALT: process.env.REVIEW_SAMPLING_SALT,
     NEXT_PUBLIC_FEATURE_AMY_ENABLED: process.env.NEXT_PUBLIC_FEATURE_AMY_ENABLED,
@@ -249,6 +253,7 @@ export type Env = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string
   NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID?: string
   NEXT_PUBLIC_BUILD_TIME?: string
+  STUDIO_BUILD_TIME?: string
   AUTH_CALLBACK_DEBUG?: string
   AUTH_CALLBACK_TIMEOUT_MS?: string
   SUPABASE_SERVICE_ROLE_KEY: string
@@ -278,6 +283,7 @@ export type Env = {
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
   VERCEL_ENV?: string
+  VERCEL_URL?: string
   VERCEL_GIT_COMMIT_SHA?: string
   GIT_COMMIT_SHA?: string
   COMMIT_SHA?: string
@@ -303,6 +309,8 @@ function getDefaultEnv(): Env {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID,
     NEXT_PUBLIC_BUILD_TIME: process.env.NEXT_PUBLIC_BUILD_TIME,
+    STUDIO_BUILD_TIME: process.env.STUDIO_BUILD_TIME,
+    VERCEL_URL: process.env.VERCEL_URL,
     AUTH_CALLBACK_DEBUG: process.env.AUTH_CALLBACK_DEBUG,
     AUTH_CALLBACK_TIMEOUT_MS: process.env.AUTH_CALLBACK_TIMEOUT_MS,
     SUPABASE_SERVICE_ROLE_KEY:

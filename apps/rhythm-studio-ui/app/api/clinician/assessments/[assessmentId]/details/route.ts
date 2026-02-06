@@ -1,32 +1,17 @@
-import { NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-
-// Type definitions for Supabase joined query responses
-type FunnelData = {
-  slug?: string
-  title?: string
-} | null
-
-type QuestionData = {
-  id?: string
-  question_text?: string
-  question_type?: string
-} | null
-
 /**
- * E74.8 — Clinician Assessment Run Timeline Details
- * 
  * GET /api/clinician/assessments/[assessmentId]/details
+ *
+ * E74.8 — Clinician Assessment Run Timeline Details
  *
  * Returns comprehensive assessment details including:
  * - Assessment metadata (funnel, status, timestamps)
  * - All answers with their associated questions
  * - Calculated results (if available)
  * - Reports (if available)
- * 
+ *
  * RBAC: Requires clinician role
  * RLS: Patients are automatically filtered by organization via RLS
- * 
+ *
  * Response Format:
  * {
  *   success: true,
@@ -63,6 +48,21 @@ type QuestionData = {
  *   }
  * }
  */
+
+import { NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+
+// Type definitions for Supabase joined query responses
+type FunnelData = {
+  slug?: string
+  title?: string
+} | null
+
+type QuestionData = {
+  id?: string
+  question_text?: string
+  question_type?: string
+} | null
 export async function GET(
   request: Request,
   context: { params: Promise<{ assessmentId: string }> },
@@ -141,10 +141,10 @@ export async function GET(
       console.error('[clinician/assessments/details] Assessment query error:', assessmentError)
       return NextResponse.json(
         {
-          success: false,
-          error: { code: 'NOT_FOUND', message: 'Assessment nicht gefunden.' },
+          success: true,
+          data: null,
         },
-        { status: 404 },
+        { status: 200 },
       )
     }
 

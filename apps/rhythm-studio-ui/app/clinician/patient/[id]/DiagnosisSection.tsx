@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
+import { getDiagnosisRuns } from '@/lib/fetchClinician'
 
 type DiagnosisRun = {
   id: string
@@ -38,6 +39,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [artifactStates, setArtifactStates] = useState<Record<string, ArtifactState>>({})
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
+  const [debugHint, setDebugHint] = useState<string | null>(null)
 
   useEffect(() => {
     fetchRuns()
@@ -46,23 +48,25 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const fetchRuns = async () => {
     setIsLoading(true)
     setError(null)
+    setDebugHint(null)
 
     try {
-      const response = await fetch(`/api/studio/patients/${patientId}/diagnosis/runs`)
-      if (!response.ok) {
-        if (response.status === 403) {
+      const { data, error, debugHint } = await getDiagnosisRuns(patientId)
+
+      setDebugHint(debugHint ?? null)
+      if (error) {
+        if (error.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
-        } else if (response.status === 404) {
+        } else if (error.status === 404) {
           setError('Patient nicht gefunden oder nicht zugewiesen')
         } else {
-          setError('Fehler beim Laden der Diagnose-Runs')
+          setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
         }
         return
       }
 
-      const result = await response.json()
-      if (result.success) {
-        setRuns(result.data || [])
+      if (data?.success) {
+        setRuns((data.data || []) as DiagnosisRun[])
       } else {
         setError('Fehler beim Laden der Diagnose-Runs')
       }
@@ -257,6 +261,9 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         {error && (
           <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+            {debugHint && (
+              <div className="mt-2 text-xs text-amber-600">{debugHint}</div>
+            )}
           </div>
         )}
       </Card>

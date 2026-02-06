@@ -770,6 +770,52 @@ $$;
 ALTER FUNCTION "public"."audit_reassessment_rules"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  patient_user_id uuid;
+BEGIN
+  IF staff_user_id IS NULL OR patient_profile_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  SELECT user_id
+    INTO patient_user_id
+    FROM public.patient_profiles
+   WHERE id = patient_profile_id;
+
+  IF patient_user_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+      FROM public.user_org_membership uom_patient
+      JOIN public.user_org_membership uom_staff
+        ON uom_staff.organization_id = uom_patient.organization_id
+       AND uom_staff.user_id = staff_user_id
+       AND uom_staff.is_active = true
+       AND uom_staff.role IN (
+         'admin'::public.user_role,
+         'clinician'::public.user_role,
+         'nurse'::public.user_role
+       )
+     WHERE uom_patient.user_id = patient_user_id
+       AND uom_patient.is_active = true
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") IS 'V0.5: Returns true if staff shares an active organization membership with the patient profile owner';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."cancel_account_deletion"("target_user_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -7225,6 +7271,12 @@ CREATE POLICY "Clinicians can view all reports" ON "public"."reports" FOR SELECT
 
 
 
+CREATE POLICY "Clinicians can view assigned patient AMY chat messages" ON "public"."amy_chat_messages" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "amy_chat_messages"."user_id")))));
+
+
+
 CREATE POLICY "Clinicians can view assigned patient anamnesis entries" ON "public"."anamnesis_entries" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM ("public"."clinician_patient_assignments" "cpa"
      JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
@@ -7544,6 +7596,10 @@ CREATE POLICY "Staff can view org results" ON "public"."calculated_results" FOR 
   WHERE (("a"."id" = "calculated_results"."assessment_id") AND (EXISTS ( SELECT 1
            FROM "public"."user_org_membership" "uom2"
           WHERE (("uom2"."user_id" = "auth"."uid"()) AND ("uom2"."organization_id" = "uom1"."organization_id") AND ("uom2"."is_active" = true) AND (("uom2"."role" = 'clinician'::"public"."user_role") OR ("uom2"."role" = 'nurse'::"public"."user_role")))))))));
+
+
+
+CREATE POLICY "Staff can view patient profiles by org" ON "public"."patient_profiles" FOR SELECT TO "authenticated" USING ("public"."can_staff_see_patient_profile"("auth"."uid"(), "id"));
 
 
 
@@ -8490,6 +8546,12 @@ GRANT ALL ON FUNCTION "public"."audit_patient_funnels_changes"() TO "service_rol
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "anon";
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."audit_reassessment_rules"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."can_staff_see_patient_profile"("staff_user_id" "uuid", "patient_profile_id" "uuid") TO "service_role";
 
 
 

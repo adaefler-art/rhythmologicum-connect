@@ -15,12 +15,13 @@ import { FindingsScoresSection } from './FindingsScoresSection'
 import { InterventionsSection, type RankedIntervention } from './InterventionsSection'
 import { QAReviewPanel } from './QAReviewPanel'
 import { WorkupStatusSection } from './WorkupStatusSection'
-import { FunnelsSection } from './FunnelsSection'
 import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
+import { getResults } from '@/lib/fetchClinician'
+import { AmyInsightsSection } from './AmyInsightsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
-import type { WorkupStatus, AssessmentListItemWithWorkup } from '@/lib/types/workupStatus'
+import type { WorkupStatus } from '@/lib/types/workupStatus'
 
 type PatientMeasure = {
   id: string
@@ -40,9 +41,22 @@ type PatientMeasure = {
 type PatientProfile = {
   id: string
   full_name: string | null
+  first_name?: string | null
+  last_name?: string | null
   birth_year: number | null
   sex: string | null
   user_id: string
+}
+
+type AssessmentSummary = {
+  id: string
+  status: string
+  workup_status?: WorkupStatus
+  missing_data_fields?: string[] | null
+  started_at: string
+  completed_at: string | null
+  funnel: string | null
+  funnel_id: string | null
 }
 
 type ExtractedDocument = {
@@ -116,11 +130,13 @@ function mapSupabaseErrorToEvidenceCode(error: unknown, source: string): string 
 export default function PatientDetailPage() {
   const params = useParams()
   const router = useRouter()
+  // PatientKey SSOT: /clinician/patient/[id] expects patient_profiles.id
   const patientId = params.id as string
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [patient, setPatient] = useState<PatientProfile | null>(null)
+  const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(null)
   const [measures, setMeasures] = useState<PatientMeasure[]>([])
   
   // E73.5: Assessments with calculated results (SSOT)
@@ -137,9 +153,12 @@ export default function PatientDetailPage() {
   const [safetyState, setSafetyState] = useState<SectionState<ReportWithSafety>>({ state: 'empty' })
   const [scoresState, setScoresState] = useState<SectionState<CalculatedResult>>({ state: 'empty' })
   const [interventionsState, setInterventionsState] = useState<SectionState<RankedIntervention>>({ state: 'empty' })
+  const [resultsDebugHint, setResultsDebugHint] = useState<string | null>(null)
   
   // V05-I07.3: Review records for QA Panel
   const [reviewRecords, setReviewRecords] = useState<string[]>([])
+
+  const [assessmentSummaries, setAssessmentSummaries] = useState<AssessmentSummary[]>([])
   
   // E74.8: Selected assessment for detailed view
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null)
@@ -152,13 +171,106 @@ export default function PatientDetailPage() {
         setLoading(true)
         setError(null)
 
+        const logProfileResolution = (details: {
+          lookupBy: 'id'
+          outcome: 'match' | 'not_found' | 'multiple' | 'rls_blocked' | 'error'
+          rowCount: number | null
+        }) => {
+          console.info(
+            JSON.stringify({
+              event: 'PATIENT_PROFILE_RESOLUTION',
+              route: '/clinician/patient/[id]',
+              paramId: patientId,
+              ...details,
+            })
+          )
+        }
+
+        const resolvePatientProfile = async (): Promise<PatientProfile | null> => {
+          const { data, error: profileError } = await supabase
+            .from('patient_profiles')
+            .select('*')
+            .eq('id', patientId)
+            .maybeSingle()
+
+          if (profileError) {
+            if ((profileError as { code?: string }).code === 'PGRST116') {
+              const { data: diagnosticRows } = await supabase
+                .from('patient_profiles')
+                .select('id')
+                .eq('id', patientId)
+                .limit(2)
+
+              logProfileResolution({
+                lookupBy: 'id',
+                outcome: 'multiple',
+                rowCount: diagnosticRows?.length ?? 0,
+              })
+              return null
+            }
+
+            logProfileResolution({
+              lookupBy: 'id',
+              outcome: 'error',
+              rowCount: null,
+            })
+            throw profileError
+          }
+
+          if (data) {
+            logProfileResolution({
+              lookupBy: 'id',
+              outcome: 'match',
+              rowCount: 1,
+            })
+            return data
+          }
+
+          logProfileResolution({
+            lookupBy: 'id',
+            outcome: 'not_found',
+            rowCount: 0,
+          })
+
+          return null
+        }
+
+        const resolvedProfile = await resolvePatientProfile()
+        if (!resolvedProfile) {
+          const { data: assessmentProbe, error: assessmentError } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('patient_id', patientId)
+            .limit(1)
+
+          const hasAssessment = !assessmentError && (assessmentProbe?.length ?? 0) > 0
+          const errorMessage = hasAssessment
+            ? 'Kein Zugriff auf patient_profiles (RLS).' 
+            : 'Patientenprofil nicht gefunden.'
+
+          if (hasAssessment) {
+            logProfileResolution({
+              lookupBy: 'id',
+              outcome: 'rls_blocked',
+              rowCount: 0,
+            })
+          }
+
+          setPatient(null)
+          setResolvedPatientId(null)
+          setError(errorMessage)
+          return
+        }
+
+        const profileId = resolvedProfile.id
+        setPatient(resolvedProfile)
+        setResolvedPatientId(profileId)
+
         // Load patient profile and measures in parallel for better performance
-        const [profileResult, measuresResult] = await Promise.all([
-          supabase.from('patient_profiles').select('*').eq('id', patientId).single(),
-          supabase
-            .from('patient_measures')
-            .select(
-              `
+        const measuresResult = await supabase
+          .from('patient_measures')
+          .select(
+            `
             id,
             patient_id,
             stress_score,
@@ -172,15 +284,11 @@ export default function PatientDetailPage() {
               created_at
             )
           `
-            )
-            .eq('patient_id', patientId)
-            .order('created_at', { ascending: false }),
-        ])
+          )
+          .eq('patient_id', profileId)
+          .order('created_at', { ascending: false })
 
-        if (profileResult.error) throw profileResult.error
         if (measuresResult.error) throw measuresResult.error
-
-        setPatient(profileResult.data)
         // Type assertion for Supabase joined query (one-to-one relationship)
         setMeasures((measuresResult.data ?? []) as unknown as PatientMeasure[])
 
@@ -195,15 +303,16 @@ export default function PatientDetailPage() {
         // Type assertion needed as schema types not yet regenerated from migration
         const { data: assessmentsData, error: assessmentsError } = (await supabase
           .from('assessments')
-          .select('id, status, workup_status, missing_data_fields')
-          .eq('patient_id', patientId)
-          .order('created_at', { ascending: false })) as {
-          data: AssessmentListItemWithWorkup[] | null
+          .select('id, status, workup_status, missing_data_fields, started_at, completed_at, funnel, funnel_id')
+          .eq('patient_id', profileId)
+          .order('started_at', { ascending: false })) as {
+          data: AssessmentSummary[] | null
           error: unknown
         }
 
         if (assessmentsError) {
           console.warn('[I07.2]', 'E_QUERY_ASSESSMENTS', 'assessments')
+          setAssessmentSummaries([])
           // Cannot proceed without assessments - set all sections to empty
           setLabsState({ state: 'empty' })
           setMedsState({ state: 'empty' })
@@ -211,6 +320,7 @@ export default function PatientDetailPage() {
           setScoresState({ state: 'empty' })
           setInterventionsState({ state: 'empty' })
         } else if (assessmentsData && assessmentsData.length > 0) {
+          setAssessmentSummaries(assessmentsData)
           const assessmentIds = assessmentsData.map((a) => a.id)
 
           // E6.4.4: Get latest completed assessment's workup status
@@ -252,98 +362,60 @@ export default function PatientDetailPage() {
             setMedsState({ state: 'empty' })
           }
 
-          // Load latest report with safety data
-          const { data: reportsData, error: reportsError } = await supabase
-            .from('reports')
-            .select('id, assessment_id, safety_score, safety_findings, created_at')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
+          try {
+            setResultsDebugHint(null)
+            const { data, error, debugHint } = await getResults(profileId)
 
-          if (reportsError && reportsError.code !== 'PGRST116') {
-            // PGRST116 is "no rows returned", which is expected/ok (empty state)
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(reportsError, 'SAFETY')
-            console.warn('[I07.2]', evidenceCode, 'reports')
-            setSafetyState({ state: 'error', evidenceCode })
-          } else if (reportsData) {
-            setSafetyState({ state: 'ok', items: [reportsData as ReportWithSafety] })
-          } else {
-            setSafetyState({ state: 'empty' })
-          }
+            setResultsDebugHint(debugHint ?? null)
 
-          // Load latest calculated results
-          const { data: calcData, error: calcError } = await supabase
-            .from('calculated_results')
-            .select('id, assessment_id, scores, risk_models, created_at')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-
-          if (calcError && calcError.code !== 'PGRST116') {
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(calcError, 'SCORES')
-            console.warn('[I07.2]', evidenceCode, 'calculated_results')
-            setScoresState({ state: 'error', evidenceCode })
-          } else if (calcData) {
-            setScoresState({ state: 'ok', items: [calcData as CalculatedResult] })
-          } else {
-            setScoresState({ state: 'empty' })
-          }
-
-          // Load latest priority ranking
-          // First get processing jobs for these assessments
-          const { data: jobsData, error: jobsError } = await supabase
-            .from('processing_jobs')
-            .select('id')
-            .in('assessment_id', assessmentIds)
-            .order('created_at', { ascending: false })
-            .limit(10)
-
-          if (jobsError) {
-            const evidenceCode = mapSupabaseErrorToEvidenceCode(jobsError, 'JOBS')
-            console.warn('[I07.2]', evidenceCode, 'processing_jobs')
-            setInterventionsState({ state: 'error', evidenceCode })
-          } else if (jobsData && jobsData.length > 0) {
-            const jobIds = jobsData.map((j) => j.id)
-
-            const { data: rankingData, error: rankingError } = await supabase
-              .from('priority_rankings')
-              .select('id, ranking_data')
-              .in('job_id', jobIds)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single()
-
-            if (rankingError && rankingError.code !== 'PGRST116') {
-              const evidenceCode = mapSupabaseErrorToEvidenceCode(rankingError, 'INTERVENTIONS')
-              console.warn('[I07.2]', evidenceCode, 'priority_rankings')
+            if (error || !data?.success) {
+              const evidenceCode = mapSupabaseErrorToEvidenceCode(data?.error, 'RESULTS')
+              setSafetyState({ state: 'error', evidenceCode })
+              setScoresState({ state: 'error', evidenceCode })
               setInterventionsState({ state: 'error', evidenceCode })
-            } else if (rankingData) {
-              const ranking = rankingData as PriorityRanking
-              const interventions = ranking.ranking_data?.topInterventions ?? 
-                                   ranking.ranking_data?.rankedInterventions?.slice(0, 5) ?? []
-              setInterventionsState(interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' })
-            } else {
-              setInterventionsState({ state: 'empty' })
-            }
-
-            // V05-I07.3: Load review records for QA Panel
-            const { data: reviewData, error: reviewError } = await supabase
-              .from('review_records')
-              .select('id')
-              .in('job_id', jobIds)
-              .order('created_at', { ascending: false })
-
-            if (!reviewError && reviewData && reviewData.length > 0) {
-              setReviewRecords(reviewData.map((r) => r.id))
-            } else {
               setReviewRecords([])
+            } else {
+              const reports = data.data?.reports ?? []
+              const calculatedResults = data.data?.calculatedResults ?? []
+              const priorityRankings = data.data?.priorityRankings ?? []
+              const reviewRecordsData = data.data?.reviewRecords ?? []
+
+              setSafetyState(
+                reports.length > 0
+                  ? { state: 'ok', items: [reports[0] as ReportWithSafety] }
+                  : { state: 'empty' },
+              )
+
+              setScoresState(
+                calculatedResults.length > 0
+                  ? { state: 'ok', items: [calculatedResults[0] as CalculatedResult] }
+                  : { state: 'empty' },
+              )
+
+              if (priorityRankings.length > 0) {
+                const ranking = priorityRankings[0] as PriorityRanking
+                const interventions =
+                  ranking.ranking_data?.topInterventions ??
+                  ranking.ranking_data?.rankedInterventions?.slice(0, 5) ??
+                  []
+                setInterventionsState(
+                  interventions.length > 0 ? { state: 'ok', items: interventions } : { state: 'empty' },
+                )
+              } else {
+                setInterventionsState({ state: 'empty' })
+              }
+
+              setReviewRecords(reviewRecordsData.map((record: { id: string }) => record.id))
             }
-          } else {
-            setInterventionsState({ state: 'empty' })
+          } catch (resultsError) {
+            console.warn('[I07.2]', 'E_QUERY_RESULTS', resultsError)
+            setSafetyState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setScoresState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setInterventionsState({ state: 'error', evidenceCode: 'E_QUERY_RESULTS' })
+            setReviewRecords([])
           }
         } else {
+          setAssessmentSummaries([])
           // No assessments found for this patient (not an error, just no data yet)
           setLabsState({ state: 'empty' })
           setMedsState({ state: 'empty' })
@@ -355,7 +427,9 @@ export default function PatientDetailPage() {
         // E73.5: Fetch assessments with results from SSOT endpoint
         // IMPORTANT: Literal string callsite for endpoint wiring
         try {
-          const response = await fetch(`/api/patient/assessments-with-results?patientId=${patientId}`)
+          const response = await fetch(
+            `/api/patient/assessments-with-results?patientId=${profileId}`
+          )
           if (response.ok) {
             const json = await response.json()
             if (json.success && json.data?.assessments) {
@@ -446,13 +520,25 @@ export default function PatientDetailPage() {
 
   // Get latest measure for status badges
   const latestMeasure = measures.length > 0 ? measures[0] : null
+  const patientProfileId = patient?.id ?? resolvedPatientId ?? patientId
+  const latestAssessment = assessmentSummaries.length > 0 ? assessmentSummaries[0] : null
+  const formatAssessmentStatus = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return { label: 'Abgeschlossen', variant: 'success' as const }
+      case 'in_progress':
+        return { label: 'In Bearbeitung', variant: 'warning' as const }
+      default:
+        return { label: 'Unbekannt', variant: 'secondary' as const }
+    }
+  }
 
   return (
     <div className="w-full">
       {/* Back Button */}
       <button
         onClick={() => router.push('/clinician')}
-        className="mb-4 px-4 py-2.5 min-h-[44px] text-sm md:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline transition touch-manipulation inline-flex items-center gap-2"
+        className="mb-4 px-4 py-2.5 min-h-11 text-sm md:text-base text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline transition touch-manipulation inline-flex items-center gap-2"
       >
         ← Zurück zur Übersicht
       </button>
@@ -460,9 +546,11 @@ export default function PatientDetailPage() {
       {/* Patient Overview Header */}
       <PatientOverviewHeader
         fullName={patient.full_name}
+        firstName={patient.first_name ?? null}
+        lastName={patient.last_name ?? null}
         birthYear={patient.birth_year}
         sex={patient.sex}
-        patientId={patientId}
+        patientId={patientProfileId}
         latestRiskLevel={latestMeasure?.risk_level}
         hasPendingAssessment={latestMeasure?.risk_level === 'pending'}
       />
@@ -473,7 +561,6 @@ export default function PatientDetailPage() {
           <TabTrigger value="overview">Overview</TabTrigger>
           <TabTrigger value="assessments">Assessments</TabTrigger>
           <TabTrigger value="anamnese">Anamnese</TabTrigger>
-          <TabTrigger value="funnels">Funnels</TabTrigger>
           <TabTrigger value="diagnosis">Diagnosis</TabTrigger>
           <TabTrigger value="insights">AMY Insights</TabTrigger>
           <TabTrigger value="actions">Actions</TabTrigger>
@@ -495,6 +582,21 @@ export default function PatientDetailPage() {
                   Sobald das erste Assessment durchgeführt wurde, werden die Ergebnisse hier
                   angezeigt.
                 </p>
+                {latestAssessment && (
+                  <div className="mt-6 flex justify-center">
+                    <Card padding="md" shadow="sm" className="text-left max-w-sm w-full">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Letztes Assessment</p>
+                      <p className="text-base font-semibold text-slate-900 dark:text-slate-50">
+                        {formatDate(latestAssessment.started_at)}
+                      </p>
+                      <div className="mt-2">
+                        <Badge variant={formatAssessmentStatus(latestAssessment.status).variant} size="sm">
+                          {formatAssessmentStatus(latestAssessment.status).label}
+                        </Badge>
+                      </div>
+                    </Card>
+                  </div>
+                )}
               </div>
             </Card>
           ) : (
@@ -524,6 +626,24 @@ export default function PatientDetailPage() {
                   </div>
                 </Card>
               </div>
+              {latestAssessment && (
+                <Card padding="lg" shadow="md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Letztes Assessment</p>
+                      <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                        {formatDate(latestAssessment.started_at)}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {latestAssessment.funnel || latestAssessment.funnel_id?.slice(0, 8) || '—'}
+                      </p>
+                    </div>
+                    <Badge variant={formatAssessmentStatus(latestAssessment.status).variant}>
+                      {formatAssessmentStatus(latestAssessment.status).label}
+                    </Badge>
+                  </div>
+                </Card>
+              )}
 
               {/* Charts Section */}
               {featureFlags.CHARTS_ENABLED && (
@@ -582,6 +702,11 @@ export default function PatientDetailPage() {
                   undefined
                 }
               />
+              {resultsDebugHint && (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  {resultsDebugHint}
+                </div>
+              )}
 
               {/* Interventions Section */}
               <InterventionsSection
@@ -636,6 +761,59 @@ export default function PatientDetailPage() {
             </div>
           ) : (
             <>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-4">
+                  Assessment-Historie
+                </h3>
+                {assessmentSummaries.length === 0 ? (
+                  <Card padding="lg" shadow="sm">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                      Keine Assessments vorhanden.
+                    </p>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {assessmentSummaries.map((assessment) => {
+                      const statusBadge = formatAssessmentStatus(assessment.status)
+                      const funnelLabel = assessment.funnel || assessment.funnel_id?.slice(0, 8) || '—'
+
+                      return (
+                        <Card
+                          key={assessment.id}
+                          padding="lg"
+                          shadow="sm"
+                          interactive
+                          onClick={() => setSelectedAssessmentId(assessment.id)}
+                        >
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                                  {funnelLabel}
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Gestartet: {formatDate(assessment.started_at)}
+                                </p>
+                                {assessment.completed_at && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Abgeschlossen: {formatDate(assessment.completed_at)}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={statusBadge.variant} size="sm">
+                                  {statusBadge.label}
+                                </Badge>
+                                <span className="text-sky-600 text-xs font-medium">Öffnen →</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
               {/* E73.5: New assessments with calculated results (SSOT) */}
               {assessmentsWithResults.length > 0 && (
                 <div className="mb-6">
@@ -723,79 +901,17 @@ export default function PatientDetailPage() {
 
         {/* Anamnese Tab - E75.4 */}
         <TabContent value="anamnese">
-          <AnamnesisSection patientId={patientId} />
-        </TabContent>
-
-        {/* Funnels Tab - E74.6 */}
-        <TabContent value="funnels">
-          <FunnelsSection patientId={patientId} />
+          <AnamnesisSection patientId={patientProfileId} />
         </TabContent>
 
         {/* Diagnosis Tab */}
         <TabContent value="diagnosis">
-          <DiagnosisSection patientId={patientId} />
+          <DiagnosisSection patientId={patientProfileId} />
         </TabContent>
 
         {/* AMY Insights Tab */}
         <TabContent value="insights">
-          {featureFlags.AMY_ENABLED && measures.some((m) => m.reports?.report_text_short) ? (
-            <div className="space-y-4">
-              <Card padding="lg" shadow="md">
-                <div className="flex items-center gap-2 mb-4">
-                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">AMY-Berichte (Chronologisch)</h2>
-                </div>
-                <div className="space-y-4">
-                  {measures
-                    .filter((m) => m.reports?.report_text_short)
-                    .map((measure) => (
-                      <div
-                        key={measure.id}
-                        className={`border-l-4 pl-4 py-3 ${
-                          measure.risk_level === 'high'
-                            ? 'border-red-400'
-                            : measure.risk_level === 'moderate'
-                            ? 'border-amber-400'
-                            : 'border-emerald-400'
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                              {formatDate(measure.created_at)}
-                            </span>
-                            <Badge variant={getRiskBadgeVariant(measure.risk_level)} size="sm">
-                              {getRiskLabel(measure.risk_level)}
-                            </Badge>
-                          </div>
-                          <div className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
-                            Stress: {measure.stress_score ?? '—'} | Schlaf:{' '}
-                            {measure.sleep_score ?? '—'}
-                          </div>
-                        </div>
-                        <p className="text-sm md:text-base text-slate-700 dark:text-slate-300 whitespace-pre-line">
-                          {measure.reports!.report_text_short}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-            </div>
-          ) : (
-            <Card padding="lg" shadow="md">
-              <div className="text-center py-8">
-                <Brain className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
-                  Keine AMY Insights verfügbar
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  {!featureFlags.AMY_ENABLED
-                    ? 'AMY-Integration ist derzeit deaktiviert.'
-                    : 'Für diese:n Patient:in liegen noch keine AMY-generierten Berichte vor.'}
-                </p>
-              </div>
-            </Card>
-          )}
+          <AmyInsightsSection patientId={patientProfileId} isEnabled={featureFlags.AMY_CHAT_ENABLED} />
         </TabContent>
 
         {/* Actions Tab */}

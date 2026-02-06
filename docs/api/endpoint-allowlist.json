@@ -1,7 +1,7 @@
 {
   "_comment": "Allowlist for R-API-002: Endpoint Catalog Verification",
   "_format": "This file contains exceptions for endpoints that don't fit the standard catalog verification rules",
-  "_usage": "allowedOrphans: endpoints that exist but aren't in the catalog (e.g., legacy, admin, webhook endpoints)",
+  "_usage": "allowedOrphans: endpoints that exist but aren't in the catalog (strings or objects with internal_unused + reason)",
   "_removal_guidance": "Remove an entry when the endpoint is removed from code or properly integrated into the catalog",
   "_example_entry": {
     "allowedOrphans": "/api/example/legacy - For endpoints that bypass catalog checks",
@@ -129,7 +129,17 @@
     "/api/_debug/env",
     "/api/test/correlation-id",
     "/api/tasks/[id]",
-    "/api/patient/reports/latest"
+    "/api/patient/reports/latest",
+    {
+      "path": "/api/_meta/ping",
+      "internal_unused": true,
+      "reason": "system liveness probe / deployment checks"
+    },
+    {
+      "path": "/api/clinician/patient/[patientId]/[...probe]",
+      "internal_unused": true,
+      "reason": "internal proxy/debug probe; not a product UI callsite"
+    }
   ],
   "allowedIntents": [
     "manual:webhook",

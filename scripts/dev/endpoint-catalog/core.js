@@ -35,8 +35,12 @@ function extractRouteMethods(sourceText) {
   const normalizedSource = normalizeLineEndings(sourceText)
   const methods = new Set()
   const re = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\b/g
+  const constRe = /export\s+const\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\s*=\s*/g
   let m
   while ((m = re.exec(normalizedSource))) {
+    methods.add(String(m[1]).toUpperCase())
+  }
+  while ((m = constRe.exec(normalizedSource))) {
     methods.add(String(m[1]).toUpperCase())
   }
   return Array.from(methods).sort(cmpStr)
@@ -63,6 +67,7 @@ function guessAccessRoleFromApiPath(apiPath) {
   if (apiPath.startsWith('/api/amy/')) return 'system'
   if (apiPath.startsWith('/api/mcp')) return 'system'
   if (apiPath.startsWith('/api/_debug/')) return 'system'
+  if (apiPath.startsWith('/api/_meta/')) return 'system'
   if (apiPath.startsWith('/api/assessment-answers/')) return 'patient'
   if (apiPath.startsWith('/api/assessment-validation/')) return 'patient'
   if (apiPath.startsWith('/api/assessments/')) return 'patient'
@@ -188,8 +193,10 @@ function extractApiCallsitesFromSource(sourceText) {
   }
 
   const classifyWindow = (text) => {
-    const window = text.slice(Math.max(0, text.length - 300))
+    const window = text.slice(Math.max(0, text.length - 2000))
     if (/fetch\s*\(/.test(window)) return 'fetch'
+    if (/\brequestClinicianJson\b/.test(window)) return 'client'
+    if (/\bfetchClinicianJson\b/.test(window)) return 'client'
     if (/\buseSWR\s*\(/.test(window)) return 'swr'
     if (/\baxios\s*\./.test(window) || /\baxios\s*\(/.test(window)) return 'axios'
     if (/new\s+URL\s*\(/.test(window) || /\bURL\s*\(/.test(window)) return 'url'
@@ -198,10 +205,10 @@ function extractApiCallsitesFromSource(sourceText) {
   }
 
   const classifyAround = (lineIndex, idxInLine) => {
-    const prev2 = lineIndex >= 2 ? lines[lineIndex - 2] : ''
-    const prev1 = lineIndex >= 1 ? lines[lineIndex - 1] : ''
+    const start = Math.max(0, lineIndex - 20)
+    const prev = lines.slice(start, lineIndex).join('\n')
     const curPrefix = lines[lineIndex].slice(0, idxInLine)
-    return classifyWindow(`${prev2}\n${prev1}\n${curPrefix}`)
+    return classifyWindow(`${prev}\n${curPrefix}`)
   }
 
   function extractApiPathFromStringBody(body) {

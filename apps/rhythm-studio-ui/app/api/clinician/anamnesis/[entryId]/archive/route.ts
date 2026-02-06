@@ -1,23 +1,21 @@
 /**
- * Studio Diagnosis Runs API - List Patient Runs
- * 
- * GET /api/studio/patients/[patientId]/diagnosis/runs
- * 
- * Returns diagnosis runs for a specific patient.
- * Accessible by clinicians assigned to the patient.
+ * Clinician Anamnesis API - Archive Entry
+ *
+ * POST /api/clinician/anamnesis/[entryId]/archive
  */
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
+import { getAnamnesisEntry } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 type RouteContext = {
-  params: Promise<{ patientId: string }>
+  params: Promise<{ entryId: string }>
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function POST(_request: Request, context: RouteContext) {
   try {
-    const { patientId } = await context.params
+    const { entryId } = await context.params
     const supabase = await createServerSupabaseClient()
 
     const {
@@ -39,6 +37,7 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const isClinician = await hasClinicianRole()
+
     if (!isClinician) {
       return NextResponse.json(
         {
@@ -52,41 +51,41 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
-    const { data: patient, error: patientError } = await supabase
-      .from('patient_profiles')
-      .select('id')
-      .eq('id', patientId)
-      .maybeSingle()
+    const entry = await getAnamnesisEntry(supabase, entryId)
 
-    if (patientError || !patient) {
+    if (!entry) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: ErrorCode.NOT_FOUND,
-            message: 'Patient not found',
+            message: 'Anamnesis entry not found or not accessible',
           },
         },
         { status: 404 },
       )
     }
 
-    const { data: runs, error: runsError } = await supabase
-      .from('diagnosis_runs')
-      .select('id, status, created_at, inputs_hash, started_at, completed_at, error_code, error_message')
-      .eq('patient_id', patientId)
-      .order('created_at', { ascending: false })
+    const { data: archivedEntry, error: archiveError } = await supabase
+      .from('anamnesis_entries')
+      .update({
+        is_archived: true,
+        updated_by: user.id,
+      })
+      .eq('id', entryId)
+      .select()
+      .single()
 
-    if (runsError) {
-      console.error('[studio/patients/diagnosis/runs GET] Query error:', runsError)
+    if (archiveError) {
+      console.error('[clinician/anamnesis/archive POST] Archive error:', archiveError)
 
-      if (runsError.code === 'PGRST116') {
+      if (archiveError.code === '42501' || archiveError.code === 'PGRST301') {
         return NextResponse.json(
           {
             success: false,
             error: {
               code: ErrorCode.NOT_FOUND,
-              message: 'Patient not accessible or not assigned',
+              message: 'Anamnesis entry not accessible',
             },
           },
           { status: 404 },
@@ -98,7 +97,7 @@ export async function GET(_request: Request, context: RouteContext) {
           success: false,
           error: {
             code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to fetch diagnosis runs',
+            message: 'Failed to archive entry',
           },
         },
         { status: 500 },
@@ -107,10 +106,12 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      data: runs || [],
+      data: {
+        entry: archivedEntry,
+      },
     })
   } catch (err) {
-    console.error('[studio/patients/diagnosis/runs GET] Unexpected error:', err)
+    console.error('[clinician/anamnesis/archive POST] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,

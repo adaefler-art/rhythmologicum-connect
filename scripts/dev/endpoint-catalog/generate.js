@@ -38,18 +38,30 @@ const EXCLUDED_SCAN_DIRS = [
 
 function isExcludedPath(relPath) {
   const normalized = toGitPath(relPath)
+  if (normalized.includes('/app/api/')) return false
   return EXCLUDED_SCAN_DIRS.some((dir) => normalized.includes(dir))
 }
 
 async function readSourceFile(repoRoot, absPath) {
   const relPath = toGitPath(path.relative(repoRoot, absPath))
+  let diskContent = null
+  try {
+    diskContent = await fsp.readFile(absPath, 'utf8')
+  } catch {
+    diskContent = null
+  }
   try {
     const out = childProcess.execSync(`git show HEAD:${relPath}`, {
       cwd: repoRoot,
       stdio: ['ignore', 'pipe', 'ignore'],
     })
-    return out.toString('utf8')
+    const headContent = out.toString('utf8')
+    if (diskContent !== null && diskContent !== headContent) {
+      return diskContent
+    }
+    return headContent
   } catch {
+    if (diskContent !== null) return diskContent
     return fsp.readFile(absPath, 'utf8')
   }
 }
@@ -148,17 +160,35 @@ function findRouteFiles(repoRoot) {
 
 async function readAllowlist(allowlistPath) {
   if (!allowlistPath) {
-    return { allowedOrphans: new Set(), allowedIntents: new Set() }
+    return { allowedOrphans: new Set(), allowedIntents: new Set(), orphanMeta: new Map() }
   }
 
   try {
     const raw = await fsp.readFile(allowlistPath, 'utf8')
     const json = JSON.parse(raw)
-    const allowedOrphans = Array.isArray(json.allowedOrphans) ? json.allowedOrphans : []
+    const allowedOrphansRaw = Array.isArray(json.allowedOrphans) ? json.allowedOrphans : []
     const allowedIntents = Array.isArray(json.allowedIntents) ? json.allowedIntents : []
+    const allowedOrphans = new Set()
+    const orphanMeta = new Map()
+
+    for (const entry of allowedOrphansRaw) {
+      if (typeof entry === 'string') {
+        allowedOrphans.add(entry)
+        continue
+      }
+
+      if (entry && typeof entry === 'object' && typeof entry.path === 'string') {
+        allowedOrphans.add(entry.path)
+        orphanMeta.set(entry.path, {
+          internalUnused: Boolean(entry.internal_unused),
+          reason: entry.reason ? String(entry.reason) : null,
+        })
+      }
+    }
     return {
-      allowedOrphans: new Set(allowedOrphans.map(String)),
+      allowedOrphans,
       allowedIntents: new Set(allowedIntents.map(String)),
+      orphanMeta,
     }
   } catch (e) {
     if (e && e.code === 'ENOENT') {
@@ -172,10 +202,15 @@ async function readAllowlist(allowlistPath) {
       } catch {
         // If we can't create it (permissions, etc), still treat as empty.
       }
-      return { allowedOrphans: new Set(), allowedIntents: new Set() }
+      return { allowedOrphans: new Set(), allowedIntents: new Set(), orphanMeta: new Map() }
     }
     throw e
   }
+}
+
+function getAllowlistMeta(endpoint, allowlist) {
+  if (!allowlist.orphanMeta) return null
+  return allowlist.orphanMeta.get(endpoint.path) || null
 }
 
 function isAllowedOrphan(endpoint, allowlist) {
@@ -284,6 +319,8 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
       .slice()
       .sort((a, b) => cmpStr(a.path, b.path))
       .map((e) => ({
+        internalUnused: getAllowlistMeta(e, allowlist)?.internalUnused || false,
+        internalUnusedReason: getAllowlistMeta(e, allowlist)?.reason || null,
         path: e.path,
         methods: e.methods,
         file: e.file,
@@ -323,15 +360,18 @@ async function generateCatalog({ repoRoot, outDir, allowlistPath, failOnUnknown,
   mdLines.push('')
   mdLines.push('Deterministic inventory of Next API routes and in-repo callsites.')
   mdLines.push('')
-  mdLines.push('| Path | Methods | Access | Intent | Used by | Route file |')
-  mdLines.push('| --- | --- | --- | --- | ---: | --- |')
+  mdLines.push('| Path | Methods | Access | Intent | Used by | Internal unused | Route file |')
+  mdLines.push('| --- | --- | --- | --- | ---: | --- | --- |')
 
   for (const e of catalogJson.endpoints) {
     const methods = e.methods.length ? e.methods.join(', ') : '(none)'
     const intent = e.intent ? e.intent : ''
     const used = String(e.usedByCount)
+    const internalUnused = e.internalUnused
+      ? `yes${e.internalUnusedReason ? ` - ${e.internalUnusedReason}` : ''}`
+      : ''
     mdLines.push(
-      `| ${mdEscape(e.path)} | ${mdEscape(methods)} | ${mdEscape(e.accessRole)} | ${mdEscape(intent)} | ${used} | ${mdEscape(e.file)} |`,
+      `| ${mdEscape(e.path)} | ${mdEscape(methods)} | ${mdEscape(e.accessRole)} | ${mdEscape(intent)} | ${used} | ${mdEscape(internalUnused)} | ${mdEscape(e.file)} |`,
     )
   }
 
