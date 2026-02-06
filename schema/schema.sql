@@ -1631,9 +1631,11 @@ CREATE OR REPLACE FUNCTION "public"."is_clinician"() RETURNS boolean
 BEGIN
   RETURN (
     SELECT COALESCE(
-      (auth.jwt()->>'role' IN ('clinician', 'admin')),
+      (raw_app_meta_data->>'role' IN ('clinician', 'admin', 'nurse')),
       false
     )
+    FROM auth.users
+    WHERE id = auth.uid()
   );
 END;
 $$;
@@ -1642,7 +1644,7 @@ $$;
 ALTER FUNCTION "public"."is_clinician"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."is_clinician"() IS 'Returns true if the current authenticated user has the clinician or admin role';
+COMMENT ON FUNCTION "public"."is_clinician"() IS 'Returns true if the current authenticated user has the clinician, admin, or nurse role. Queries app_metadata directly instead of relying on JWT claims.';
 
 
 
