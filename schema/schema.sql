@@ -1766,33 +1766,16 @@ COMMENT ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation
 
 
 
-CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) RETURNS TABLE("missing_count" integer, "missing_sample" "text"[])
+CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) RETURNS TABLE("missing_count" integer)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare
-  missing_total int;
-  missing_sample_local text[];
 begin
-  perform set_config('statement_timeout', '1500', true);
-
+  perform set_config('statement_timeout', '1500ms', true);
+  return query
   select count(*)::int
-  into missing_total
   from unnest(required_objects) v(x)
   where to_regclass(v.x) is null;
-
-  select array_agg(x)
-  into missing_sample_local
-  from (
-    select v.x
-    from unnest(required_objects) v(x)
-    where to_regclass(v.x) is null
-    limit 3
-  ) as sample;
-
-  missing_count := coalesce(missing_total, 0);
-  missing_sample := coalesce(missing_sample_local, '{}'::text[]);
-  return next;
 end;
 $$;
 
