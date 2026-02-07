@@ -252,6 +252,13 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       }
 
       await fetchRuns()
+
+      const followUpDelays = [1000, 3000, 5000]
+      followUpDelays.forEach((delayMs) => {
+        setTimeout(() => {
+          fetchRuns()
+        }, delayMs)
+      })
     } catch (err) {
       console.error('[DiagnosisSection] Queue error:', err)
       if (err instanceof DOMException && err.name === 'AbortError') {
