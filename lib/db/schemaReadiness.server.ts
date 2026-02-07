@@ -46,7 +46,7 @@ const REQUIRED_RELATIONS: RelationCheck[] = [
 ]
 
 const MAX_ATTEMPTS = 3
-const CHECK_TIMEOUT_MS = 10000
+const CHECK_TIMEOUT_MS = 15000
 const CACHE_TTL_MS = 30000
 const RETRY_DELAYS_MS = [1000, 2000, 4000]
 
@@ -60,6 +60,7 @@ let readinessState: SchemaReadiness = {
 }
 
 let inFlight: Promise<SchemaReadiness> | null = null
+let pendingRebuildReason: string | null = null
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -274,9 +275,10 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
     buildAttempts: 0,
     lastBuildMs: undefined,
     lastBuildReason: reason,
-    retryAfterMs: undefined,
+    retryAfterMs: getRetryDelayMs(1),
     requestId,
   }
+  const activeBuildId = readinessState.buildId
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -307,6 +309,10 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
 
         await new Promise((resolve) => setTimeout(resolve, getRetryDelayMs(attempt)))
         continue
+      }
+
+      if (readinessState.buildId !== activeBuildId) {
+        return readinessState
       }
 
       readinessState = {
@@ -340,6 +346,10 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         lastBuildMs: Date.now() - buildStartedAt,
         lastBuildReason: readinessState.lastBuildReason,
         retryAfterMs: attempt < MAX_ATTEMPTS ? getRetryDelayMs(attempt) : undefined,
+      }
+
+      if (readinessState.buildId !== activeBuildId) {
+        return readinessState
       }
 
       readinessState = {
@@ -386,6 +396,11 @@ async function ensureReadyInternal(options?: EnsureReadyOptions): Promise<Schema
 
   inFlight = performCheckWithRetries(requestId, reason).finally(() => {
     inFlight = null
+    if (pendingRebuildReason) {
+      const nextReason = pendingRebuildReason
+      pendingRebuildReason = null
+      void ensureReadyInternal({ reason: nextReason, nonBlocking: true })
+    }
   })
 
   return options?.nonBlocking ? readinessState : inFlight
@@ -396,6 +411,9 @@ function getStatus(): SchemaReadiness {
 }
 
 function invalidate(reason?: string): SchemaReadiness {
+  const nextReason = reason ?? 'invalidate'
+  pendingRebuildReason = nextReason
+
   readinessState = {
     ...readinessState,
     ready: false,
@@ -408,8 +426,15 @@ function invalidate(reason?: string): SchemaReadiness {
     lastErrorAt: undefined,
     retryAfterMs: undefined,
     lastInvalidatedAt: nowIso(),
-    lastInvalidationReason: reason,
+    lastInvalidationReason: nextReason,
+    buildId: `${getCommitSha()}-${Date.now()}`,
   }
+
+  console.warn('[schema-manager] SCHEMA_INVALIDATED', {
+    reason: nextReason,
+    buildId: readinessState.buildId,
+    at: readinessState.lastInvalidatedAt,
+  })
 
   return readinessState
 }

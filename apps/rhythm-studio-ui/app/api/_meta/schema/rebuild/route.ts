@@ -39,6 +39,8 @@ export async function POST(request: Request) {
     data: {
       ready: status.ready,
       stage: status.stage,
+      build_id: status.buildId ?? null,
+      retry_after_ms: status.retryAfterMs ?? null,
       last_error_code: status.lastErrorCode ?? null,
       last_error_message: status.lastErrorMessage ?? null,
     },
