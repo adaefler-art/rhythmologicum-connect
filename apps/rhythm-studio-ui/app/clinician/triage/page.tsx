@@ -35,12 +35,16 @@ import {
 
 type SchemaDiagnostics = {
   ready: boolean
-  stage: 'boot' | 'migrations' | 'introspection' | 'cache' | 'ready' | 'error'
+  stage: 'boot' | 'building' | 'ready' | 'error'
   last_error_code: string | null
   last_error_message: string | null
   last_error_details: Record<string, unknown> | null
+  deps?: {
+    db?: 'ok' | 'fail' | 'unknown'
+    migrations?: 'ok' | 'missing' | 'unknown'
+  } | null
   db_migration_status: {
-    status: 'unknown' | 'ok' | 'missing' | 'error'
+    status: 'ok' | 'missing' | 'error'
     latestVersion?: string
     appliedCount?: number
   } | null
@@ -52,8 +56,12 @@ type SchemaDiagnostics = {
 
 const SCHEMA_ERROR_CODES = new Set([
   'SCHEMA_NOT_READY',
+  'SCHEMA_ERROR',
   'SCHEMA_BLOCKED_BY_MIGRATIONS',
   'SCHEMA_BUILD_TIMEOUT',
+  'SCHEMA_INTROSPECTION_FAILED',
+  'SCHEMA_CACHE_CORRUPT',
+  'SCHEMA_THRASHING',
   'SCHEMA_BUILD_FAILED',
 ])
 
@@ -806,6 +814,9 @@ export default function InboxPage() {
   if (schemaHasError) {
     const diagnostics = schemaStatus
     const requestId = schemaRequestId || diagnostics?.requestId
+    const migrationsMissing =
+      diagnostics?.db_migration_status?.status === 'missing' ||
+      diagnostics?.deps?.migrations === 'missing'
 
     return (
       <div className="flex items-center justify-center py-12">
@@ -820,12 +831,20 @@ export default function InboxPage() {
                   Schema startet noch
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  {schemaRetryExhausted || diagnostics?.stage === 'error'
-                    ? 'Deployment oder Migrationen pruefen.'
-                    : 'Wir versuchen automatisch erneut, sobald das Schema bereit ist.'}
+                  {migrationsMissing
+                    ? 'Deployment unvollstaendig – Migrationen fehlen.'
+                    : schemaRetryExhausted || diagnostics?.stage === 'error'
+                      ? 'Deployment oder Migrationen pruefen.'
+                      : 'Wir versuchen automatisch erneut, sobald das Schema bereit ist.'}
                 </p>
                 <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
                   <div>Stage: {diagnostics?.stage ?? 'unknown'}</div>
+                  {(diagnostics?.deps?.migrations || diagnostics?.db_migration_status?.status) && (
+                    <div>
+                      Migrations:{' '}
+                      {diagnostics?.deps?.migrations || diagnostics?.db_migration_status?.status}
+                    </div>
+                  )}
                   {diagnostics?.last_error_code && (
                     <div>Code: {diagnostics.last_error_code}</div>
                   )}

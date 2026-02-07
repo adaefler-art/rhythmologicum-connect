@@ -65,6 +65,7 @@ const REQUIRED_RELATIONS: RelationCheck[] = [
 const MAX_ATTEMPTS = 3
 const ATTEMPT_TIMEOUT_MS = 15000
 const STAGE_TIMEOUT_MS = 7000
+const MIGRATION_TIMEOUT_MS = 2000
 const CACHE_TTL_MS = 30000
 const RETRY_DELAYS_MS = [1000, 2000, 4000]
 const THRASH_WINDOW_MS = 60000
@@ -146,12 +147,13 @@ async function runStage<T>(
   name: SchemaStageName,
   fn: () => Promise<T>,
   errorCode: ErrorCode,
+  timeoutMs = STAGE_TIMEOUT_MS,
 ): Promise<T> {
   const startedAt = nowIso()
   const startedMs = Date.now()
 
   try {
-    const result = await withTimeout(fn(), STAGE_TIMEOUT_MS, errorCode)
+    const result = await withTimeout(fn(), timeoutMs, errorCode)
     stages.push({
       name,
       startedAt,
@@ -180,7 +182,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   const stages: SchemaStageResult[] = []
   let client: Awaited<ReturnType<typeof createServerSupabaseClient>> | null = null
   let usingAdminClient = false
-  let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'unknown' }
+  let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'ok' }
 
   try {
     await runStage(
@@ -264,6 +266,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
         return false
       },
       ErrorCode.SCHEMA_BUILD_TIMEOUT,
+      MIGRATION_TIMEOUT_MS,
     )
   } catch (error) {
     const safeError = sanitizeSupabaseError(error)
