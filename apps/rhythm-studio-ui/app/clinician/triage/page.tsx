@@ -809,7 +809,7 @@ export default function InboxPage() {
 
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="max-w-xl w-full">
+        <div className="w-full max-w-3xl md:max-w-4xl">
           <Card padding="lg" shadow="md" radius="lg">
             <div className="flex items-start gap-3">
               <div className="mt-1 text-amber-600 dark:text-amber-400">
@@ -839,7 +839,7 @@ export default function InboxPage() {
                     <div className="font-medium text-slate-700 dark:text-slate-200">
                       Diagnose (inline)
                     </div>
-                    <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-slate-700 dark:text-slate-200">
+                    <pre className="mt-2 w-full max-h-[60vh] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-slate-700 dark:text-slate-200">
                       {JSON.stringify(diagnostics, null, 2)}
                     </pre>
                   </div>

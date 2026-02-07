@@ -49,6 +49,7 @@ export async function GET(request: Request) {
           details_sanitized: readiness.lastErrorDetails ?? null,
         }
       : null,
+    stages: readiness.stages ?? null,
     build: {
       build_id: readiness.buildId ?? null,
       attempts: readiness.buildAttempts,

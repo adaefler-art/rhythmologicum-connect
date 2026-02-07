@@ -12,6 +12,7 @@ export type SchemaReadiness = {
   ready: boolean
   stage: SchemaStage
   stageSince: string
+  stages?: SchemaStageResult[]
   lastErrorCode?: string
   lastErrorMessage?: string
   lastErrorDetails?: Record<string, unknown>
@@ -39,6 +40,22 @@ type RelationCheck = {
   select: string
 }
 
+type SchemaStageName =
+  | 'connect_db'
+  | 'check_migrations'
+  | 'introspect'
+  | 'compile_rules'
+  | 'warm_queries'
+
+type SchemaStageResult = {
+  name: SchemaStageName
+  startedAt: string
+  elapsedMs: number
+  status: 'ok' | 'fail'
+  errorCode?: string
+  errorMessage?: string
+}
+
 const REQUIRED_RELATIONS: RelationCheck[] = [
   { name: 'funnels_catalog', select: 'id' },
   { name: 'funnel_versions', select: 'id' },
@@ -46,7 +63,8 @@ const REQUIRED_RELATIONS: RelationCheck[] = [
 ]
 
 const MAX_ATTEMPTS = 3
-const CHECK_TIMEOUT_MS = 15000
+const ATTEMPT_TIMEOUT_MS = 15000
+const STAGE_TIMEOUT_MS = 7000
 const CACHE_TTL_MS = 30000
 const RETRY_DELAYS_MS = [1000, 2000, 4000]
 const THRASH_WINDOW_MS = 60000
@@ -103,11 +121,11 @@ function extractRelationDetails(message: string): { relation?: string; column?: 
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorCode: string): Promise<T> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       const error = new Error('Schema readiness check timed out')
-      ;(error as { code?: string }).code = 'SCHEMA_BUILD_TIMEOUT'
+      ;(error as { code?: string }).code = errorCode
       reject(error)
     }, timeoutMs)
 
@@ -123,25 +141,81 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   })
 }
 
-async function getMigrationStatus(
-  client: Awaited<ReturnType<typeof createServerSupabaseClient>>,
-): Promise<SchemaReadiness['dbMigrationStatus']> {
-  void client
-  return { status: 'unknown' as const }
+async function runStage<T>(
+  stages: SchemaStageResult[],
+  name: SchemaStageName,
+  fn: () => Promise<T>,
+  errorCode: ErrorCode,
+): Promise<T> {
+  const startedAt = nowIso()
+  const startedMs = Date.now()
+
+  try {
+    const result = await withTimeout(fn(), STAGE_TIMEOUT_MS, errorCode)
+    stages.push({
+      name,
+      startedAt,
+      elapsedMs: Date.now() - startedMs,
+      status: 'ok',
+    })
+    return result
+  } catch (error) {
+    const safeError = sanitizeSupabaseError(error)
+    if (!(error as { code?: string }).code) {
+      ;(error as { code?: string }).code = errorCode
+    }
+    stages.push({
+      name,
+      startedAt,
+      elapsedMs: Date.now() - startedMs,
+      status: 'fail',
+      errorCode: (error as { code?: string }).code ?? errorCode,
+      errorMessage: safeError.message,
+    })
+    throw error
+  }
 }
 
 async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
+  const stages: SchemaStageResult[] = []
   let client: Awaited<ReturnType<typeof createServerSupabaseClient>>
   let usingAdminClient = false
+  let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'unknown' }
 
   try {
-    client = createAdminSupabaseClient()
-    usingAdminClient = true
-  } catch {
-    client = await createServerSupabaseClient()
+    await runStage(
+      stages,
+      'connect_db',
+      async () => {
+        try {
+          client = createAdminSupabaseClient()
+          usingAdminClient = true
+        } catch {
+          client = await createServerSupabaseClient()
+        }
+      },
+      ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+    )
+  } catch (error) {
+    const safeError = sanitizeSupabaseError(error)
+    return {
+      ready: false,
+      stage: 'error',
+      stageSince: readinessState.stageSince,
+      stages,
+      lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+      lastErrorMessage: safeError.message,
+      lastErrorDetails: { stage: 'connect_db' },
+      lastErrorAt: nowIso(),
+      dbMigrationStatus,
+      schemaVersion: dbMigrationStatus?.latestVersion,
+      checkedAt: nowIso(),
+      attempts: readinessState.attempts,
+      buildAttempts: readinessState.buildAttempts,
+      requestId,
+    }
   }
 
-  const dbMigrationStatus = await getMigrationStatus(client)
   const relationQuery = client as unknown as {
     from: (relation: string) => {
       select: (columns: string) => {
@@ -150,49 +224,103 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     }
   }
 
-  for (const relation of REQUIRED_RELATIONS) {
-    const { error } = await relationQuery.from(relation.name).select(relation.select).limit(1)
-
-    if (!error) {
-      continue
+  let migrationMissing = false
+  try {
+    migrationMissing = await runStage(
+      stages,
+      'check_migrations',
+      async () => {
+        for (const relation of REQUIRED_RELATIONS) {
+          const { error } = await relationQuery.from(relation.name).select('id').limit(1)
+          if (!error) {
+            continue
+          }
+          const safeError = sanitizeSupabaseError(error)
+          const message = safeError.message || 'Schema check failed'
+          const code = safeError.code
+          if (code === '42P01' || code === '42703' || message.includes('does not exist')) {
+            return true
+          }
+        }
+        return false
+      },
+      ErrorCode.SCHEMA_BUILD_TIMEOUT,
+    )
+  } catch (error) {
+    const safeError = sanitizeSupabaseError(error)
+    return {
+      ready: false,
+      stage: 'error',
+      stageSince: readinessState.stageSince,
+      stages,
+      lastErrorCode: (error as { code?: string }).code || ErrorCode.SCHEMA_BUILD_TIMEOUT,
+      lastErrorMessage: safeError.message,
+      lastErrorDetails: { stage: 'check_migrations' },
+      lastErrorAt: nowIso(),
+      dbMigrationStatus,
+      schemaVersion: dbMigrationStatus?.latestVersion,
+      checkedAt: nowIso(),
+      attempts: readinessState.attempts,
+      buildAttempts: readinessState.buildAttempts,
+      requestId,
     }
+  }
 
+  if (migrationMissing) {
+    dbMigrationStatus = { status: 'missing' }
+    return {
+      ready: false,
+      stage: 'error',
+      stageSince: readinessState.stageSince,
+      stages,
+      lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
+      lastErrorMessage: 'Required relations missing',
+      lastErrorDetails: { stage: 'check_migrations' },
+      lastErrorAt: nowIso(),
+      dbMigrationStatus,
+      schemaVersion: dbMigrationStatus?.latestVersion,
+      checkedAt: nowIso(),
+      attempts: readinessState.attempts,
+      buildAttempts: readinessState.buildAttempts,
+      requestId,
+    }
+  }
+
+  dbMigrationStatus = { status: 'ok' }
+
+  try {
+    await runStage(
+      stages,
+      'introspect',
+      async () => {
+        for (const relation of REQUIRED_RELATIONS) {
+          const { error } = await relationQuery.from(relation.name).select(relation.select).limit(1)
+          if (error) {
+            ;(error as { relationName?: string }).relationName = relation.name
+            throw error
+          }
+        }
+      },
+      ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+    )
+  } catch (error) {
     const safeError = sanitizeSupabaseError(error)
     const errorMessage = safeError.message || 'Schema check failed'
     const relationDetails = extractRelationDetails(errorMessage)
+    const relationName = (error as { relationName?: string }).relationName
     const errorCode = safeError.code
-
-    if (errorCode === '42P01' || errorCode === '42703' || errorMessage.includes('does not exist')) {
-      return {
-        ready: false,
-        stage: 'error',
-        stageSince: readinessState.stageSince,
-        lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
-        lastErrorMessage: errorMessage,
-        lastErrorDetails: {
-          relation: relationDetails.relation ?? relation.name,
-          column: relationDetails.column,
-          usingAdminClient,
-        },
-        lastErrorAt: nowIso(),
-        dbMigrationStatus,
-        schemaVersion: dbMigrationStatus?.latestVersion,
-        checkedAt: nowIso(),
-        attempts: readinessState.attempts,
-        buildAttempts: readinessState.buildAttempts,
-        requestId,
-      }
-    }
 
     if (errorCode === 'PGRST205' || errorMessage.toLowerCase().includes('schema cache')) {
       return {
         ready: false,
         stage: 'error',
         stageSince: readinessState.stageSince,
+        stages,
         lastErrorCode: ErrorCode.SCHEMA_CACHE_CORRUPT,
         lastErrorMessage: errorMessage,
         lastErrorDetails: {
-          relation: relationDetails.relation ?? relation.name,
+          stage: 'introspect',
+          relation: relationDetails.relation ?? relationName,
           usingAdminClient,
         },
         lastErrorAt: nowIso(),
@@ -209,10 +337,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      stages,
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: errorMessage,
       lastErrorDetails: {
-        relation: relationDetails.relation ?? relation.name,
+        stage: 'introspect',
+        relation: relationDetails.relation ?? relationName,
         usingAdminClient,
       },
       lastErrorAt: nowIso(),
@@ -225,10 +355,29 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     }
   }
 
+  await runStage(
+    stages,
+    'compile_rules',
+    async () => {
+      return
+    },
+    ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+  )
+
+  await runStage(
+    stages,
+    'warm_queries',
+    async () => {
+      return
+    },
+    ErrorCode.SCHEMA_BUILD_TIMEOUT,
+  )
+
   return {
     ready: true,
     stage: 'ready',
     stageSince: readinessState.stageSince,
+    stages,
     lastErrorCode: undefined,
     lastErrorMessage: undefined,
     lastErrorDetails: undefined,
@@ -268,7 +417,11 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         requestId,
       }
 
-      const result = await withTimeout(runSchemaCheck(requestId), CHECK_TIMEOUT_MS)
+      const result = await withTimeout(
+        runSchemaCheck(requestId),
+        ATTEMPT_TIMEOUT_MS,
+        ErrorCode.SCHEMA_BUILD_TIMEOUT,
+      )
       const shouldRetry =
         !result.ready && result.lastErrorCode !== ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS
 
@@ -312,7 +465,9 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         stageSince: readinessState.stageSince,
         lastErrorCode: errorCode,
         lastErrorMessage: safeError.message,
-        lastErrorDetails: {},
+        lastErrorDetails: {
+          reason: errorCode === ErrorCode.SCHEMA_BUILD_TIMEOUT ? 'attempt_timeout' : 'attempt_error',
+        },
         lastErrorAt: nowIso(),
         dbMigrationStatus: readinessState.dbMigrationStatus,
         schemaVersion: readinessState.schemaVersion,
