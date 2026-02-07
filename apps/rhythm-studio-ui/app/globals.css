@@ -28,6 +28,7 @@
   /* Base theme colors - compatible with Next.js */
   --background: #ffffff;
   --foreground: #171717;
+  --studio-sidebar-bg: #ffffff;
   
   /* ========================================
    * SPACING TOKENS
@@ -169,6 +170,7 @@
 [data-theme="dark"] {
   --background: #0a0a0a;
   --foreground: #ededed;
+  --studio-sidebar-bg: #1e293b;
   
   /* Primary Colors - Inverted for dark mode (brighter) */
   --color-primary-50: #0c4a6e;
@@ -309,6 +311,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Align card-like surfaces with sidebar tone and remove neutral frames. */
+.bg-card {
+  background-color: var(--studio-sidebar-bg);
+}
+
+[data-slot="card"],
+.bg-card.border,
+.bg-card.border-border {
+  border-color: transparent;
 }
 
 /* 
