@@ -721,7 +721,6 @@ async function ensureReadyInternal(options?: EnsureReadyOptions): Promise<Schema
   }
 
   inFlight = performCheckWithRetries(requestId, reason).finally(() => {
-        dbStatus,
     inFlight = null
     if (pendingRebuildReason) {
       const nextReason = pendingRebuildReason
