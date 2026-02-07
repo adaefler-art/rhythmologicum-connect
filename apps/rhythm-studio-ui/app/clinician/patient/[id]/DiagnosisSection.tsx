@@ -183,7 +183,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       }
 
       if (data?.success) {
-        setRuns((data.data || []) as DiagnosisRun[])
+        const payload = data.data
+        const resolvedRuns = Array.isArray(payload)
+          ? payload
+          : payload?.runs || []
+        setRuns(resolvedRuns as DiagnosisRun[])
       } else {
         setError('Fehler beim Laden der Diagnose-Runs')
       }
