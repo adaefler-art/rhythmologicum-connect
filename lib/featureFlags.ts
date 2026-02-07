@@ -13,6 +13,7 @@
  * - NEXT_PUBLIC_FEATURE_MCP_ENABLED: Enable/disable MCP server integration (E76.1) (default: false)
  * - NEXT_PUBLIC_FEATURE_ANAMNESIS_EXPORT_ENABLED: Enable/disable anamnesis export endpoints (E75.6) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED: Enable/disable diagnosis execution worker (E76.4) (default: false)
+ * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED: Enable/disable diagnosis MCP flow (E76.x) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PROMPT_ENABLED: Enable/disable diagnosis prompt API (E76.5) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PATIENT_ENABLED: Enable/disable diagnosis patient UI (E76.6) (default: false)
  */
@@ -29,6 +30,7 @@ export type FeatureFlags = {
   MCP_ENABLED: boolean
   ANAMNESIS_EXPORT_ENABLED: boolean
   DIAGNOSIS_ENABLED: boolean
+  DIAGNOSIS_V1_ENABLED: boolean
   DIAGNOSIS_PROMPT_ENABLED: boolean
   DIAGNOSIS_PATIENT_ENABLED: boolean
 }
@@ -62,6 +64,7 @@ export const featureFlags: FeatureFlags = {
     false,
   ),
   DIAGNOSIS_ENABLED: resolveFlag(env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED, false),
+  DIAGNOSIS_V1_ENABLED: resolveFlag(env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED, false),
   DIAGNOSIS_PROMPT_ENABLED: resolveFlag(
     env.NEXT_PUBLIC_FEATURE_DIAGNOSIS_PROMPT_ENABLED,
     false,

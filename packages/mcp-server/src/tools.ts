@@ -29,7 +29,7 @@ export const GetPatientContextOutputSchema = z.object({
       z.object({
         id: z.string(),
         title: z.string(),
-        content: z.record(z.unknown()),
+        content: z.record(z.string(), z.unknown()),
         entry_type: z.string().nullable(),
         tags: z.array(z.string()),
         created_at: z.string(),
@@ -57,8 +57,8 @@ export const GetPatientContextOutputSchema = z.object({
         ),
         result: z
           .object({
-            scores: z.record(z.unknown()),
-            risk_models: z.record(z.unknown()),
+            scores: z.record(z.string(), z.unknown()),
+            risk_models: z.record(z.string(), z.unknown()),
             algorithm_version: z.string(),
           })
           .nullable(),

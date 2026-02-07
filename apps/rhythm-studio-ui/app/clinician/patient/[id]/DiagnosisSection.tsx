@@ -5,7 +5,8 @@
  * and view latest artifacts.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
 import { getDiagnosisRuns } from '@/lib/fetchClinician'
@@ -15,11 +16,20 @@ type DiagnosisRun = {
   id: string
   status: string
   created_at: string
+  updated_at?: string
   inputs_hash: string
   started_at: string | null
   completed_at: string | null
   error_code: string | null
   error_message: string | null
+  processing_time_ms?: number | null
+  summary?: {
+    risk_level?: string | null
+    confidence_score?: number | null
+    primary_findings?: string[] | null
+    result_json?: Record<string, unknown> | null
+  } | null
+  is_optimistic?: boolean
 }
 
 type ArtifactState = {
@@ -32,12 +42,14 @@ type DiagnosisGateStatus = 'checking' | 'available' | 'unavailable' | 'forbidden
 
 const DIAGNOSIS_HEALTH_ENDPOINT = '/api/studio/diagnosis/health'
 const GATE_TIMEOUT_MS = 8000
+const QUEUE_TIMEOUT_MS = 60000
 
 export interface DiagnosisSectionProps {
   patientId: string
 }
 
 export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
+  const router = useRouter()
   const [runs, setRuns] = useState<DiagnosisRun[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isQueueing, setIsQueueing] = useState(false)
@@ -49,10 +61,27 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [gateStatus, setGateStatus] = useState<DiagnosisGateStatus>('checking')
   const [gateMessage, setGateMessage] = useState<string | null>(null)
   const [isGateChecking, setIsGateChecking] = useState(false)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const pollAttemptsRef = useRef<Record<string, number>>({})
+
+  const orderedRuns = useMemo(() => {
+    return [...runs].sort((a, b) => {
+      if (a.is_optimistic && !b.is_optimistic) return -1
+      if (!a.is_optimistic && b.is_optimistic) return 1
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [runs])
 
   useEffect(() => {
     checkDiagnosisGate()
     fetchRuns()
+    return () => {
+      if (pollingRef.current) {
+        clearTimeout(pollingRef.current)
+        pollingRef.current = null
+      }
+      pollAttemptsRef.current = {}
+    }
   }, [patientId])
 
   const logGateEvent = (payload: Record<string, unknown>) => {
@@ -60,7 +89,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   }
 
   const checkDiagnosisGate = async (): Promise<DiagnosisGateStatus> => {
-    if (!featureFlags.DIAGNOSIS_ENABLED) {
+    if (!featureFlags.DIAGNOSIS_V1_ENABLED) {
       const nextStatus: DiagnosisGateStatus = 'disabled'
       setGateStatus(nextStatus)
       setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
@@ -85,6 +114,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         headers: { Accept: 'application/json' },
         signal: controller.signal,
       })
+
+      const payload = await response.json().catch(() => null)
+      const errorCode = payload && typeof payload === 'object'
+        ? (payload as { error?: { code?: string } }).error?.code
+        : undefined
 
       const requestId = response.headers.get('x-request-id')
 
@@ -113,10 +147,15 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
 
       if (response.status === 503) {
         setGateStatus('unavailable')
-        setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+        if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE'].includes(errorCode)) {
+          setGateMessage('MCP nicht erreichbar.')
+        } else {
+          setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+        }
         logGateEvent({
           endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
           status: response.status,
+          errorCode,
           requestId,
           ts: new Date().toISOString(),
         })
@@ -128,6 +167,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       logGateEvent({
         endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
         status: response.status,
+        errorCode,
         requestId,
         ts: new Date().toISOString(),
       })
@@ -150,37 +190,73 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     }
   }
 
-  const fetchRuns = async () => {
-    setIsLoading(true)
-    setError(null)
-    setDebugHint(null)
+  const fetchRuns = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setIsLoading(true)
+      setError(null)
+      setDebugHint(null)
+    }
 
     try {
       const { data, error, debugHint } = await getDiagnosisRuns(patientId)
 
-      setDebugHint(debugHint ?? null)
-      if (error) {
-        if (error.status === 403) {
-          setError('Keine Berechtigung für diesen Patienten')
-        } else if (error.status === 404) {
-          setError('Patient nicht gefunden oder nicht zugewiesen')
-        } else {
-          setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
+      if (!options?.silent) {
+        setDebugHint(debugHint ?? null)
+        if (error) {
+          if (error.status === 403) {
+            setError('Keine Berechtigung für diesen Patienten')
+          } else if (error.status === 404) {
+            setError('Patient nicht gefunden oder nicht zugewiesen')
+          } else {
+            setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
+          }
+          return []
         }
-        return
       }
 
       if (data?.success) {
-        setRuns((data.data || []) as DiagnosisRun[])
+        const payload = data.data
+        const resolvedRuns = Array.isArray(payload)
+          ? payload
+          : payload?.runs || []
+        setRuns(resolvedRuns as DiagnosisRun[])
+        return resolvedRuns as DiagnosisRun[]
       } else {
-        setError('Fehler beim Laden der Diagnose-Runs')
+        if (!options?.silent) {
+          setError('Fehler beim Laden der Diagnose-Runs')
+        }
+        return []
       }
     } catch (err) {
-      console.error('[DiagnosisSection] Fetch error:', err)
-      setError('Fehler beim Laden der Diagnose-Runs')
+      if (!options?.silent) {
+        console.error('[DiagnosisSection] Fetch error:', err)
+        setError('Fehler beim Laden der Diagnose-Runs')
+      }
+      return []
     } finally {
-      setIsLoading(false)
+      if (!options?.silent) {
+        setIsLoading(false)
+      }
     }
+  }
+
+  const pollRunStatus = async (runId: string) => {
+    const attempts = pollAttemptsRef.current[runId] ?? 0
+    if (attempts >= 6) {
+      return
+    }
+    pollAttemptsRef.current[runId] = attempts + 1
+
+    const latestRuns = await fetchRuns({ silent: true })
+    const foundRun = latestRuns.find((run) => run.id === runId)
+    const status = foundRun?.status?.toLowerCase()
+    if (status === 'completed' || status === 'failed') {
+      return
+    }
+
+    pollingRef.current = setTimeout(() => {
+      pollRunStatus(runId)
+    }, 5000)
   }
 
   const handleQueueRun = async () => {
@@ -193,10 +269,14 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     setStatusMessage(null)
     setError(null)
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), QUEUE_TIMEOUT_MS)
+
     try {
       const response = await fetch('/api/studio/diagnosis/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({ patient_id: patientId }),
       })
 
@@ -206,13 +286,47 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         if (response.status === 401 || response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
           setGateStatus('forbidden')
+        } else if (response.status === 404 || response.status === 422) {
+          setError('Patient nicht gefunden oder ungültige ID')
         } else if (response.status === 503) {
-          setGateStatus('disabled')
-          setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
+          const errorCode = result?.error?.code
+          if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE', 'MCP_ERROR'].includes(errorCode)) {
+            setGateStatus('unavailable')
+            setGateMessage('MCP nicht erreichbar.')
+          } else if (errorCode === 'FEATURE_DISABLED') {
+            setGateStatus('disabled')
+            setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
+          } else if (errorCode === 'LLM_NOT_CONFIGURED') {
+            setGateStatus('unavailable')
+            setGateMessage('LLM nicht konfiguriert.')
+          } else {
+            setGateStatus('unavailable')
+            setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+          }
         } else {
           setError(result.error?.message || 'Fehler beim Starten der Diagnose')
         }
         return
+      }
+
+      const runId = result.data?.run_id || result.data?.runId
+
+      if (runId) {
+        const optimisticRun: DiagnosisRun = {
+          id: runId,
+          status: 'running',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          inputs_hash: result.data?.inputs_hash || 'pending',
+          started_at: new Date().toISOString(),
+          completed_at: null,
+          error_code: null,
+          error_message: null,
+          processing_time_ms: null,
+          summary: null,
+          is_optimistic: true,
+        }
+        setRuns((prev) => [optimisticRun, ...prev.filter((run) => run.id !== runId)])
       }
 
       if (result.data?.is_duplicate) {
@@ -221,11 +335,23 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         setStatusMessage('Diagnose gestartet')
       }
 
-      await fetchRuns()
+      router.refresh()
+      await fetchRuns({ silent: true })
+
+      if (runId && !result.data?.is_duplicate) {
+        pollRunStatus(runId)
+      }
     } catch (err) {
       console.error('[DiagnosisSection] Queue error:', err)
-      setError('Fehler beim Starten der Diagnose')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setGateStatus('unavailable')
+        setGateMessage('MCP Timeout.')
+        setError('Diagnose-Anfrage dauerte zu lange (Timeout)')
+      } else {
+        setError('Fehler beim Starten der Diagnose')
+      }
     } finally {
+      clearTimeout(timeout)
       setIsQueueing(false)
     }
   }
@@ -347,7 +473,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchRuns}
+              onClick={() => fetchRuns()}
               icon={<RefreshCcw className="h-4 w-4" />}
             >
               Aktualisieren
@@ -416,9 +542,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           <div className="py-6 text-sm text-slate-500">Keine Diagnose-Runs vorhanden.</div>
         ) : (
           <div className="space-y-4">
-            {runs.map((run) => {
+            {orderedRuns.map((run) => {
               const artifactState = artifactStates[run.id] || { status: 'idle' }
               const isExpanded = expandedRunId === run.id
+              const summary = run.summary
+              const riskLevel = summary?.risk_level
+              const findings = summary?.primary_findings || []
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
@@ -428,12 +557,35 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                         <Badge variant={getStatusVariant(run.status)} size="sm">
                           {run.status}
                         </Badge>
+                        {run.is_optimistic && (
+                          <span className="text-xs text-amber-600">Optimistisch</span>
+                        )}
                         <span className="text-xs text-slate-500">Run ID: {run.id}</span>
                       </div>
                       <div className="text-sm text-slate-600 dark:text-slate-300">
                         Erstellt: {formatDate(run.created_at)}
                       </div>
+                      {run.completed_at && (
+                        <div className="text-xs text-slate-500">
+                          Abgeschlossen: {formatDate(run.completed_at)}
+                        </div>
+                      )}
+                      {typeof run.processing_time_ms === 'number' && (
+                        <div className="text-xs text-slate-500">
+                          Laufzeit: {Math.round(run.processing_time_ms / 1000)}s
+                        </div>
+                      )}
                       <div className="text-xs text-slate-500">Inputs Hash: {shortHash(run.inputs_hash)}</div>
+                      {riskLevel && (
+                        <div className="text-xs text-slate-600">
+                          Risiko: {riskLevel}
+                        </div>
+                      )}
+                      {findings.length > 0 && (
+                        <div className="text-xs text-slate-600">
+                          Findings: {findings.slice(0, 2).join(', ')}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2 md:items-end">
                       <Button

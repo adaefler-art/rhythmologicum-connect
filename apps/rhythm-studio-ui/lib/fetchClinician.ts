@@ -375,7 +375,11 @@ export const postAnamnesis = (patientId: string, body: Record<string, unknown>) 
 export const getDiagnosisRuns = (patientId: string) =>
   requestClinicianJson<{
     success?: boolean
-    data?: Array<Record<string, unknown>>
+    data?:
+      | {
+          runs?: Array<Record<string, unknown>>
+        }
+      | Array<Record<string, unknown>>
   }>({
     endpoint: `/api/clinician/patient/${patientId}/diagnosis/runs`,
     method: 'GET',

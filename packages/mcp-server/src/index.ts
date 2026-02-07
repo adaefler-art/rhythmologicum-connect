@@ -9,4 +9,11 @@ export { getVersionMetadata, generateRunVersion } from './version.js'
 export { logger } from './logger.js'
 export { MCP_TOOLS } from './tools.js'
 export type { GetPatientContextInput, GetPatientContextOutput, RunDiagnosisInput, RunDiagnosisOutput } from './tools.js'
-export { handleGetPatientContext, handleRunDiagnosis } from './handlers.js'
+export {
+	handleGetPatientContext,
+	handleRunDiagnosis,
+	type TraceTimelineEntry,
+	type TraceTimelineSummary,
+	type TraceTelemetry,
+	type ToolResult,
+} from './handlers.js'

@@ -17,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/lib/types/supabase'
 import { env } from '@/lib/env'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
+import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import {
   DIAGNOSIS_RUN_STATUS,
   DIAGNOSIS_ERROR_CODE,
@@ -27,6 +28,19 @@ import {
   type DiagnosisArtifact,
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
+
+const MCP_TIMEOUT_MS = 60000
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
 
 /**
  * Result of diagnosis execution
@@ -140,7 +154,13 @@ export async function executeDiagnosisRun(
     
     let contextPack
     try {
-      contextPack = await buildPatientContextPack(adminClient, run.patient_id)
+      const resolution = await resolvePatientIds(adminClient, run.patient_id)
+
+      if (!resolution.patientProfileId) {
+        throw new Error('Patient profile not found for diagnosis run')
+      }
+
+      contextPack = await buildPatientContextPack(adminClient, resolution.patientProfileId)
     } catch (contextError) {
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.CONTEXT_PACK_ERROR,
@@ -173,7 +193,7 @@ export async function executeDiagnosisRun(
         throw new Error('MCP_SERVER_URL must be configured in production environment')
       }
       
-      const response = await fetch(`${mcpUrl}/tools`, {
+      const response = await fetchWithTimeout(`${mcpUrl}/tools`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -185,10 +205,26 @@ export async function executeDiagnosisRun(
             },
           },
         }),
-      })
+      }, MCP_TIMEOUT_MS)
 
       if (!response.ok) {
-        throw new Error(`MCP server returned ${response.status}`)
+        const errorPayload = await response.json().catch(() => null)
+        const errorCode =
+          errorPayload && typeof errorPayload === 'object'
+            ? (errorPayload as { error?: { code?: string } }).error?.code
+            : undefined
+        const errorMessage =
+          errorPayload && typeof errorPayload === 'object'
+            ? (errorPayload as { error?: { message?: string } }).error?.message
+            : undefined
+        const message = errorMessage || `MCP server returned ${response.status}`
+        throw new Error(
+          JSON.stringify({
+            message,
+            status: response.status,
+            code: errorCode,
+          }),
+        )
       }
 
       mcpResponse = await response.json()
@@ -197,18 +233,60 @@ export async function executeDiagnosisRun(
         throw new Error('MCP response missing data')
       }
     } catch (mcpError) {
+      const isTimeout = mcpError instanceof DOMException && mcpError.name === 'AbortError'
+      const parsedDetails = (() => {
+        if (mcpError instanceof Error) {
+          try {
+            return JSON.parse(mcpError.message)
+          } catch {
+            return { message: mcpError.message }
+          }
+        }
+        return { message: String(mcpError) }
+      })()
+
+      const mcpErrorCode =
+        parsedDetails && typeof parsedDetails === 'object'
+          ? (parsedDetails as { code?: string }).code
+          : undefined
+      const timeoutCodes = new Set([
+        'MCP_TIMEOUT',
+        'MCP_TIMEOUT_CLIENT',
+        'MCP_TIMEOUT_PROVIDER',
+        'MCP_TIMEOUT_UPSTREAM',
+      ])
+      const errorCode = isTimeout
+        ? DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
+        : mcpErrorCode && timeoutCodes.has(mcpErrorCode)
+          ? DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
+          : DIAGNOSIS_ERROR_CODE.MCP_ERROR
+
       await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.MCP_ERROR,
-        message: 'Failed to call MCP server',
-        details: { mcpError: serializeErrorDetails(mcpError) },
+        code: errorCode,
+        message:
+          errorCode === DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
+            ? 'MCP request timed out'
+            : 'Failed to call MCP server',
+        details: {
+          mcpError: serializeErrorDetails(mcpError),
+          mcpErrorCode,
+          mcpStatus: (parsedDetails as { status?: number } | null)?.status ?? null,
+        },
       })
       return {
         success: false,
         run_id: runId,
         error: {
-          code: DIAGNOSIS_ERROR_CODE.MCP_ERROR,
-          message: 'Failed to call MCP server',
-          details: { mcpError: serializeErrorDetails(mcpError) },
+          code: errorCode,
+          message:
+            errorCode === DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
+              ? 'MCP request timed out'
+              : 'Failed to call MCP server',
+          details: {
+            mcpError: serializeErrorDetails(mcpError),
+            mcpErrorCode,
+            mcpStatus: (parsedDetails as { status?: number } | null)?.status ?? null,
+          },
         },
       }
     }

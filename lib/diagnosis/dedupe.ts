@@ -69,6 +69,7 @@ export async function checkDuplicateRun(
     .select('id, created_at, status')
     .eq('inputs_hash', inputs_hash)
     .eq('patient_id', patient_id)
+    .neq('status', 'failed')
     .gte('created_at', timeThresholdISO)
     .order('created_at', { ascending: false })
     .limit(1)

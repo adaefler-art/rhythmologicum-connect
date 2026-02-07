@@ -21,6 +21,12 @@ export default function MCPTestPage() {
   const [diagnosisPromptResult, setDiagnosisPromptResult] = useState<string>('')
   const [diagnosisQueueResult, setDiagnosisQueueResult] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [runDiagnosisStatus, setRunDiagnosisStatus] = useState<string>('idle')
+  const [runDiagnosisTraceId, setRunDiagnosisTraceId] = useState<string>('')
+  const [runDiagnosisError, setRunDiagnosisError] = useState<string>('')
+  const [queuePatientId, setQueuePatientId] = useState<string>('')
+
+  const runDiagnosisTimeoutMs = 60000
 
   async function testHealth() {
     setLoading(true)
@@ -59,11 +65,19 @@ export default function MCPTestPage() {
 
   async function testRunDiagnosis() {
     setLoading(true)
+    setRunDiagnosisError('')
+    const traceId = crypto.randomUUID()
+    setRunDiagnosisTraceId(traceId)
+    setRunDiagnosisStatus('started')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), runDiagnosisTimeoutMs)
     try {
       // Literal callsite: /api/mcp
+      setRunDiagnosisStatus('request_sent')
       const response = await fetch('/api/mcp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-trace-id': traceId },
+        signal: controller.signal,
         body: JSON.stringify({
           tool: 'run_diagnosis',
           input: {
@@ -73,10 +87,18 @@ export default function MCPTestPage() {
         }),
       })
       const data = await response.json()
+      setRunDiagnosisStatus('response_received')
       setToolResult(JSON.stringify(data, null, 2))
     } catch (error) {
-      setToolResult(`Error: ${error}`)
+      const message =
+        error instanceof DOMException && error.name === 'AbortError'
+          ? 'MCP_TIMEOUT'
+          : String(error)
+      setRunDiagnosisStatus('error')
+      setRunDiagnosisError(message)
+      setToolResult(`Error: ${message}`)
     } finally {
+      clearTimeout(timeout)
       setLoading(false)
     }
   }
@@ -188,12 +210,25 @@ export default function MCPTestPage() {
   async function testDiagnosisQueue() {
     setLoading(true)
     try {
+      if (!queuePatientId.trim()) {
+        setDiagnosisQueueResult(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'DIAG_PATIENT_ID_REQUIRED',
+              message: 'patient_id is required',
+            },
+          }, null, 2),
+        )
+        return
+      }
+
       // Literal callsite: /api/studio/diagnosis/queue (E76.8)
       const response = await fetch('/api/studio/diagnosis/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patient_id: '123e4567-e89b-12d3-a456-426614174000',
+          patient_id: queuePatientId.trim(),
         }),
       })
       const data = await response.json()
@@ -222,7 +257,9 @@ export default function MCPTestPage() {
             Test Health Endpoint
           </button>
           {healthStatus && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto">{healthStatus}</pre>
+            <pre className="mt-4 p-4 rounded overflow-auto bg-slate-900/70 text-slate-100 border border-slate-700">
+              {healthStatus}
+            </pre>
           )}
         </div>
 
@@ -245,8 +282,15 @@ export default function MCPTestPage() {
             </button>
           </div>
           {toolResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto">{toolResult}</pre>
+            <pre className="mt-4 p-4 rounded overflow-auto bg-slate-900/70 text-slate-100 border border-slate-700">
+              {toolResult}
+            </pre>
           )}
+          <div className="mt-3 rounded border border-slate-700/60 bg-slate-900/60 p-3 text-xs text-slate-100">
+            <div>Status: {runDiagnosisStatus}</div>
+            <div>Trace ID: {runDiagnosisTraceId || '—'}</div>
+            {runDiagnosisError && <div>Error: {runDiagnosisError}</div>}
+          </div>
         </div>
 
         <div className="border p-4 rounded">
@@ -259,7 +303,7 @@ export default function MCPTestPage() {
             Test Context Pack Endpoint
           </button>
           {contextPackResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {contextPackResult}
             </pre>
           )}
@@ -275,7 +319,7 @@ export default function MCPTestPage() {
             Test Diagnosis Execution Endpoint
           </button>
           {diagnosisExecutionResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisExecutionResult}
             </pre>
           )}
@@ -300,7 +344,7 @@ export default function MCPTestPage() {
             </button>
           </div>
           {diagnosisPromptResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisPromptResult}
             </pre>
           )}
@@ -308,6 +352,17 @@ export default function MCPTestPage() {
 
         <div className="border p-4 rounded">
           <h2 className="text-xl font-semibold mb-2">Diagnosis Queue with Dedupe (E76.8)</h2>
+          <label className="block text-sm text-slate-600 mb-2" htmlFor="queue-patient-id">
+            Patient ID (UUID)
+          </label>
+          <input
+            id="queue-patient-id"
+            type="text"
+            value={queuePatientId}
+            onChange={(event) => setQueuePatientId(event.target.value)}
+            placeholder="e.g. 3f1d4e2a-..."
+            className="mb-3 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+          />
           <button
             onClick={testDiagnosisQueue}
             disabled={loading}
@@ -316,7 +371,7 @@ export default function MCPTestPage() {
             Test Queue Endpoint (with inputs_hash & dedupe)
           </button>
           {diagnosisQueueResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisQueueResult}
             </pre>
           )}
