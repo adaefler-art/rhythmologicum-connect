@@ -71,7 +71,7 @@ export async function GET(_request: Request, context: RouteContext) {
             success: false,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
           },
-          { status: 500 },
+          { status: 503 },
         )
       }
 
@@ -118,7 +118,7 @@ export async function GET(_request: Request, context: RouteContext) {
             message: 'Failed to fetch diagnosis runs',
           },
         },
-        { status: 500 },
+        { status: 503 },
       )
     }
 
@@ -136,7 +136,7 @@ export async function GET(_request: Request, context: RouteContext) {
           message: 'An unexpected error occurred',
         },
       },
-      { status: 500 },
+      { status: 503 },
     )
   }
 }

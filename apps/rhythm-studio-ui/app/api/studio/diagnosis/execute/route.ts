@@ -2,7 +2,7 @@
  * E76.4: Diagnosis Execution API Route
  * 
  * Executes queued diagnosis runs by calling the diagnosis worker.
- * Feature-gated behind NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED.
+ * Feature-gated behind NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED.
  * 
  * @endpoint-intent diagnosis:execute Worker endpoint for processing diagnosis runs
  */
@@ -38,7 +38,7 @@ import { isValidUUID } from '@/lib/validators/uuid'
 export async function POST(request: NextRequest) {
   try {
     // Feature flag check
-    const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_ENABLED')
+    const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_V1_ENABLED')
     if (!diagnosisEnabled) {
       return NextResponse.json(
         {
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
           details: String(error),
         },
       },
-      { status: 500 },
+      { status: 503 },
     )
   }
 }

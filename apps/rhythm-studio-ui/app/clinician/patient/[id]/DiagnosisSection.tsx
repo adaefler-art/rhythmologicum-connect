@@ -60,7 +60,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   }
 
   const checkDiagnosisGate = async (): Promise<DiagnosisGateStatus> => {
-    if (!featureFlags.DIAGNOSIS_ENABLED) {
+    if (!featureFlags.DIAGNOSIS_V1_ENABLED) {
       const nextStatus: DiagnosisGateStatus = 'disabled'
       setGateStatus(nextStatus)
       setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
@@ -85,6 +85,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         headers: { Accept: 'application/json' },
         signal: controller.signal,
       })
+
+      const payload = await response.json().catch(() => null)
+      const errorCode = payload && typeof payload === 'object'
+        ? (payload as { error?: { code?: string } }).error?.code
+        : undefined
 
       const requestId = response.headers.get('x-request-id')
 
@@ -113,10 +118,15 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
 
       if (response.status === 503) {
         setGateStatus('unavailable')
-        setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+        if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE'].includes(errorCode)) {
+          setGateMessage('MCP nicht erreichbar.')
+        } else {
+          setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+        }
         logGateEvent({
           endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
           status: response.status,
+          errorCode,
           requestId,
           ts: new Date().toISOString(),
         })
@@ -128,6 +138,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       logGateEvent({
         endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
         status: response.status,
+        errorCode,
         requestId,
         ts: new Date().toISOString(),
       })
@@ -207,8 +218,20 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           setError('Keine Berechtigung für diesen Patienten')
           setGateStatus('forbidden')
         } else if (response.status === 503) {
-          setGateStatus('disabled')
-          setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
+          const errorCode = result?.error?.code
+          if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE', 'MCP_ERROR'].includes(errorCode)) {
+            setGateStatus('unavailable')
+            setGateMessage('MCP nicht erreichbar.')
+          } else if (errorCode === 'FEATURE_DISABLED') {
+            setGateStatus('disabled')
+            setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
+          } else if (errorCode === 'LLM_NOT_CONFIGURED') {
+            setGateStatus('unavailable')
+            setGateMessage('LLM nicht konfiguriert.')
+          } else {
+            setGateStatus('unavailable')
+            setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+          }
         } else {
           setError(result.error?.message || 'Fehler beim Starten der Diagnose')
         }

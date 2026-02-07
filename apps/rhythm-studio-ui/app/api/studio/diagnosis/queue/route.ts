@@ -2,7 +2,7 @@
  * E76.8: Diagnosis Run Queue API Route
  * 
  * Queues a new diagnosis run with deduplication and inputs_meta persistence.
- * Feature-gated behind NEXT_PUBLIC_FEATURE_DIAGNOSIS_ENABLED.
+ * Feature-gated behind NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED.
  * 
  * @endpoint-intent diagnosis:queue Queue a new diagnosis run with dedupe check
  */
@@ -11,10 +11,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
+import { executeDiagnosisRun } from '@/lib/diagnosis/worker'
 import { checkDuplicateRun, extractInputsMeta } from '@/lib/diagnosis/dedupe'
 import { isFeatureEnabled } from '@/lib/featureFlags'
 import { isValidUUID } from '@/lib/validators/uuid'
-import { DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
+import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { env } from '@/lib/env'
 import type { Database, Json } from '@/lib/types/supabase'
 
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Feature flag check
-    const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_ENABLED')
+    const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_V1_ENABLED')
     if (!diagnosisEnabled) {
       return NextResponse.json(
         {
@@ -188,7 +189,7 @@ export async function POST(request: NextRequest) {
             details: String(contextPackError),
           },
         },
-        { status: 500 },
+        { status: 503 },
       )
     }
 
@@ -252,7 +253,31 @@ export async function POST(request: NextRequest) {
             details: insertError?.message,
           },
         },
-        { status: 500 },
+        { status: 503 },
+      )
+    }
+
+    const executionResult = await executeDiagnosisRun(adminClient, newRun.id)
+
+    if (!executionResult.success) {
+      const errorCode = executionResult.error?.code ?? DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR
+      const errorMessage = executionResult.error?.message || 'Diagnosis execution failed'
+      const status =
+        errorCode === DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR ? 422 : 503
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: errorCode,
+            message: errorMessage,
+          },
+          data: {
+            run_id: newRun.id,
+            status: 'FAILED',
+          },
+        },
+        { status },
       )
     }
 
@@ -260,11 +285,12 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         runId: newRun.id,
-        status: 'QUEUED',
+        status: 'COMPLETED',
         run_id: newRun.id,
-        status_raw: newRun.status,
+        status_raw: DIAGNOSIS_RUN_STATUS.COMPLETED,
         created_at: newRun.created_at,
         is_duplicate: false,
+        artifact_id: executionResult.artifact_id,
       },
     })
   } catch (error) {
@@ -317,7 +343,7 @@ export async function POST(request: NextRequest) {
           details: String(error),
         },
       },
-      { status: 500 },
+      { status: 503 },
     )
   }
 }
