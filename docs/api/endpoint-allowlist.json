@@ -151,6 +151,11 @@
       "reason": "schema readiness diagnostics"
     },
     {
+      "path": "/api/_meta/schema/probe-migrations",
+      "internal_unused": true,
+      "reason": "schema readiness RPC probe (no UI callsite)"
+    },
+    {
       "path": "/api/meta/schema",
       "internal_unused": true,
       "reason": "internal target for /api/_meta/schema rewrite"

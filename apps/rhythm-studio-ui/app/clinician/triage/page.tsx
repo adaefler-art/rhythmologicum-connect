@@ -162,7 +162,7 @@ export default function InboxPage() {
 
   const fetchSchemaDiagnostics = useCallback(async () => {
     try {
-      const response = await fetch('/api/_meta/schema', { cache: 'no-store' })
+      const response = await fetch('/api/meta/schema', { cache: 'no-store' })
       if (!response.ok) return null
       const payload = (await response.json()) as SchemaDiagnostics
       return payload
@@ -452,6 +452,8 @@ export default function InboxPage() {
     if (isSchemaRetrying) return { label: 'Schema retry', variant: 'warning' as const }
     return { label: 'Schema startet', variant: 'warning' as const }
   }, [isSchemaRetrying, schemaRetryCount, schemaStatus])
+
+  const schemaHasWarning = (schemaStatus && !schemaStatus.ready) || schemaGateInfo.bypassed
 
   const schemaBannerDetails = useMemo(() => {
     if (!schemaHasWarning) return null
@@ -913,8 +915,6 @@ export default function InboxPage() {
     ]
   )
 
-  const schemaHasWarning = (schemaStatus && !schemaStatus.ready) || schemaGateInfo.bypassed
-
   if (loading && cases.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -970,7 +970,7 @@ export default function InboxPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open('/api/_meta/schema', '_blank')}
+                    onClick={() => window.open('/api/meta/schema', '_blank')}
                   >
                     Diagnose oeffnen
                   </Button>
@@ -1059,7 +1059,7 @@ export default function InboxPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open('/api/_meta/schema', '_blank')}
+                onClick={() => window.open('/api/meta/schema', '_blank')}
               >
                 Diagnose anzeigen
               </Button>

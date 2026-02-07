@@ -68,6 +68,7 @@ function guessAccessRoleFromApiPath(apiPath) {
   if (apiPath.startsWith('/api/mcp')) return 'system'
   if (apiPath.startsWith('/api/_debug/')) return 'system'
   if (apiPath.startsWith('/api/_meta/')) return 'system'
+  if (apiPath.startsWith('/api/meta/')) return 'system'
   if (apiPath.startsWith('/api/assessment-answers/')) return 'patient'
   if (apiPath.startsWith('/api/assessment-validation/')) return 'patient'
   if (apiPath.startsWith('/api/assessments/')) return 'patient'
