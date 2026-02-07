@@ -12,6 +12,8 @@ export type SchemaReadiness = {
   ready: boolean
   stage: SchemaStage
   stageSince: string
+  currentStage?: SchemaStageName
+  currentStageSince?: string
   stages?: SchemaStageResult[]
   lastErrorCode?: string
   lastErrorMessage?: string
@@ -46,6 +48,7 @@ type SchemaStageName =
   | 'introspect'
   | 'compile_rules'
   | 'warm_queries'
+  | 'mark_ready'
 
 type SchemaStageResult = {
   name: SchemaStageName
@@ -152,6 +155,13 @@ async function runStage<T>(
   const startedAt = nowIso()
   const startedMs = Date.now()
 
+  readinessState = {
+    ...readinessState,
+    currentStage: name,
+    currentStageSince: startedAt,
+    stages: [...stages],
+  }
+
   try {
     const result = await withTimeout(fn(), timeoutMs, errorCode)
     stages.push({
@@ -160,6 +170,10 @@ async function runStage<T>(
       elapsedMs: Date.now() - startedMs,
       status: 'ok',
     })
+    readinessState = {
+      ...readinessState,
+      stages: [...stages],
+    }
     return result
   } catch (error) {
     const safeError = sanitizeSupabaseError(error)
@@ -174,6 +188,10 @@ async function runStage<T>(
       errorCode: (error as { code?: string }).code ?? errorCode,
       errorMessage: safeError.message,
     })
+    readinessState = {
+      ...readinessState,
+      stages: [...stages],
+    }
     throw error
   }
 }
@@ -183,6 +201,11 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   let client: Awaited<ReturnType<typeof createServerSupabaseClient>> | null = null
   let usingAdminClient = false
   let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'ok' }
+
+  readinessState = {
+    ...readinessState,
+    stages: [...stages],
+  }
 
   try {
     await runStage(
@@ -204,6 +227,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      currentStage: readinessState.currentStage,
+      currentStageSince: readinessState.currentStageSince,
       stages,
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: safeError.message,
@@ -223,6 +248,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      currentStage: readinessState.currentStage,
+      currentStageSince: readinessState.currentStageSince,
       stages,
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: 'No database client available',
@@ -274,6 +301,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      currentStage: readinessState.currentStage,
+      currentStageSince: readinessState.currentStageSince,
       stages,
       lastErrorCode: (error as { code?: string }).code || ErrorCode.SCHEMA_BUILD_TIMEOUT,
       lastErrorMessage: safeError.message,
@@ -294,6 +323,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      currentStage: readinessState.currentStage,
+      currentStageSince: readinessState.currentStageSince,
       stages,
       lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
       lastErrorMessage: 'Required relations missing',
@@ -337,6 +368,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
         ready: false,
         stage: 'error',
         stageSince: readinessState.stageSince,
+        currentStage: readinessState.currentStage,
+        currentStageSince: readinessState.currentStageSince,
         stages,
         lastErrorCode: ErrorCode.SCHEMA_CACHE_CORRUPT,
         lastErrorMessage: errorMessage,
@@ -359,6 +392,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       ready: false,
       stage: 'error',
       stageSince: readinessState.stageSince,
+      currentStage: readinessState.currentStage,
+      currentStageSince: readinessState.currentStageSince,
       stages,
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: errorMessage,
@@ -395,17 +430,28 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     ErrorCode.SCHEMA_BUILD_TIMEOUT,
   )
 
+  await runStage(
+    stages,
+    'mark_ready',
+    async () => {
+      return
+    },
+    ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+  )
+
   return {
     ready: true,
     stage: 'ready',
     stageSince: readinessState.stageSince,
+    currentStage: undefined,
+    currentStageSince: undefined,
     stages,
     lastErrorCode: undefined,
     lastErrorMessage: undefined,
     lastErrorDetails: undefined,
     lastErrorAt: undefined,
     dbMigrationStatus,
-    schemaVersion: dbMigrationStatus?.latestVersion,
+    schemaVersion: readinessState.buildId ?? getCommitSha(),
     checkedAt: nowIso(),
     attempts: readinessState.attempts,
     buildAttempts: readinessState.buildAttempts,
@@ -422,6 +468,7 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
     ...readinessState,
     buildId: `${getCommitSha()}-${Date.now()}`,
     buildAttempts: 0,
+    attempts: 0,
     lastBuildMs: undefined,
     lastBuildReason: reason,
     retryAfterMs: getRetryDelayMs(1),
@@ -433,7 +480,7 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
     try {
       readinessState = {
         ...readinessState,
-        attempts: readinessState.attempts + 1,
+        attempts: attempt,
         buildAttempts: attempt,
         checkedAt: nowIso(),
         requestId,
@@ -471,6 +518,8 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
       readinessState = {
         ...readinessState,
         ...result,
+        attempts: readinessState.attempts,
+        buildAttempts: readinessState.buildAttempts,
         lastBuildMs: Date.now() - buildStartedAt,
         retryAfterMs: undefined,
       }
@@ -485,10 +534,13 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         ready: false,
         stage: 'error',
         stageSince: readinessState.stageSince,
+        stages: readinessState.stages,
         lastErrorCode: errorCode,
         lastErrorMessage: safeError.message,
         lastErrorDetails: {
           reason: errorCode === ErrorCode.SCHEMA_BUILD_TIMEOUT ? 'attempt_timeout' : 'attempt_error',
+          stage: readinessState.currentStage ?? 'unknown',
+          stageSince: readinessState.currentStageSince ?? null,
         },
         lastErrorAt: nowIso(),
         dbMigrationStatus: readinessState.dbMigrationStatus,
