@@ -98,7 +98,7 @@ const ErrorResponseSchema = z.object({
   error: z.object({
     code: z.string(),
     message: z.string(),
-    details: z.any().optional(), // Use z.any() for compatibility with Zod v4
+    details: z.any().optional(), // Flexible details type for various error contexts
   }),
   requestId: z.string().optional(),
 })

@@ -40,11 +40,20 @@ const colors = {
   cyan: '\x1b[36m',
 }
 
+// Check result interface
+interface CheckResult {
+  checkId: string
+  ruleId: string
+  description: string
+  passed: boolean
+  details: string | null
+}
+
 // Results tracker
 const results = {
   passed: 0,
   failed: 0,
-  checks: [] as any[],
+  checks: [] as CheckResult[],
 }
 
 // ============================================================
