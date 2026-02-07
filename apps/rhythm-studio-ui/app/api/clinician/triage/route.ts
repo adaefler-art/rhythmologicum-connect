@@ -31,7 +31,7 @@ import {
 	validationErrorResponse,
 } from '@/lib/api/responses'
 import { classifySupabaseError, getRequestId, logError, withRequestId } from '@/lib/db/errors'
-import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness'
+import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 /**

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness'
+import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness.server'
 import { getRequestId } from '@/lib/db/errors'
 
 /**
