@@ -245,8 +245,6 @@ function getRawServerEnv() {
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
     SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
     DATABASE_URL: process.env.DATABASE_URL,
-    SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
-    DATABASE_URL: process.env.DATABASE_URL,
     MCP_SERVER_URL: process.env.MCP_SERVER_URL,
     MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
