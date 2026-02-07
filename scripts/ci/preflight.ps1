@@ -170,6 +170,10 @@ Invoke-Step -Label 'Verify Flag Contract' -Fix "Run 'node scripts/ci/verify-flag
   node scripts/ci/verify-flag-contract.js
 }
 
+Invoke-Step -Label 'Required funnel definitions' -Fix "Run 'node scripts/ci/verify-required-funnel-definitions.mjs' and seed required funnel definitions in migrations." -Action {
+  node scripts/ci/verify-required-funnel-definitions.mjs
+}
+
 Invoke-Step -Label 'Supabase start' -Fix "Ensure Docker is running and run 'supabase start', then rerun 'npm run preflight'." -Action {
   Ensure-SupabaseRunning
 }

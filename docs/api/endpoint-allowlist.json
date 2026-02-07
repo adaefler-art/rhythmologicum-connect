@@ -14,6 +14,7 @@
     "/api/admin/content-pages/[id]/sections",
     "/api/admin/content-pages/[id]/sections/[sectionId]",
     "/api/admin/diagnostics/pillars-sot",
+    "/api/admin/diagnostics/required-funnel-definitions",
     "/api/admin/design-tokens",
     "/api/admin/funnel-steps",
     "/api/admin/funnel-step-questions/[id]",
