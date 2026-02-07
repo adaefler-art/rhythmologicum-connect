@@ -128,14 +128,16 @@ function checkDiagnosisMigrationExists() {
     const migrationPath = join(migrationsDir, migrationFile)
     const content = readFileSync(migrationPath, 'utf8')
 
-    if (!content.includes('CREATE TABLE IF NOT EXISTS "public"."diagnosis_runs"')) {
+    const runsTableRegex = /CREATE TABLE IF NOT EXISTS\s+(("public"|public)\.)?"?diagnosis_runs"?/i
+    if (!runsTableRegex.test(content)) {
       reportViolation(
         'DIAGNOSIS_MIGRATION_MISSING',
         'Migration does not create diagnosis_runs table',
       )
     }
 
-    if (!content.includes('CREATE TABLE IF NOT EXISTS "public"."diagnosis_artifacts"')) {
+    const artifactsTableRegex = /CREATE TABLE IF NOT EXISTS\s+(("public"|public)\.)?"?diagnosis_artifacts"?/i
+    if (!artifactsTableRegex.test(content)) {
       reportViolation(
         'DIAGNOSIS_MIGRATION_MISSING',
         'Migration does not create diagnosis_artifacts table',
