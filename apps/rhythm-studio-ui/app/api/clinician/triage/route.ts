@@ -155,8 +155,13 @@ export async function GET(request: NextRequest) {
 			.select('*')
 
 		// Apply activeOnly filter
+		// R-E78.5-007: Closed cases filtered out when activeOnly=true
+		// R-E78.5-008: Snoozed cases (snoozed_until > now) filtered out when activeOnly=true
 		if (activeOnly) {
 			query = query.eq('is_active', true)
+			// Also filter out currently snoozed cases
+			// Cases where snoozed_until is NULL OR snoozed_until <= now are visible
+			query = query.or('snoozed_until.is.null,snoozed_until.lte.' + new Date().toISOString())
 		}
 
 		// Apply status filter
