@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -1232,6 +1227,55 @@ export type Database = {
           },
         ]
       }
+      funnel_triage_settings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          funnel_id: string
+          overdue_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          funnel_id: string
+          overdue_days: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          funnel_id?: string
+          overdue_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_triage_settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "funnel_triage_settings_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: true
+            referencedRelation: "funnels_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_triage_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       funnel_versions: {
         Row: {
           algorithm_bundle_version: string
@@ -2288,13 +2332,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "priority_rankings_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "triage_cases_v1"
-            referencedColumns: ["job_id"]
-          },
-          {
             foreignKeyName: "priority_rankings_risk_bundle_id_fkey"
             columns: ["risk_bundle_id"]
             isOneToOne: false
@@ -2776,13 +2813,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "risk_bundles_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: true
-            referencedRelation: "triage_cases_v1"
-            referencedColumns: ["job_id"]
           },
         ]
       }
@@ -3407,30 +3437,29 @@ export type Database = {
           case_id: string | null
           case_state: string | null
           completed_at: string | null
-          delivery_status: string | null
-          first_name: string | null
+          due_at: string | null
           funnel_id: string | null
-          funnel_slug: string | null
+          funnel_id_enrichment: string | null
+          has_manual_flag: boolean | null
           is_active: boolean | null
           is_manually_closed: boolean | null
-          job_id: string | null
-          job_stage: Database["public"]["Enums"]["processing_stage"] | null
-          job_status: Database["public"]["Enums"]["processing_status"] | null
           last_activity_at: string | null
-          last_name: string | null
           manual_flag_reason: string | null
           manual_flag_severity: string | null
           next_action: string | null
-          patient_display: string | null
           patient_id: string | null
-          preferred_name: string | null
-          priority_score: number | null
-          review_decided_at: string | null
-          review_status: Database["public"]["Enums"]["review_status"] | null
+          sla_days: number | null
           snoozed_until: string | null
           updated_at: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "assessments_funnel_id_fkey"
+            columns: ["funnel_id_enrichment"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "assessments_funnel_id_fkey"
             columns: ["funnel_id"]
@@ -3495,6 +3524,7 @@ export type Database = {
       }
       get_design_tokens: { Args: { org_id?: string }; Returns: Json }
       get_my_patient_profile_id: { Args: never; Returns: string }
+      get_triage_sla_days: { Args: { p_funnel_id: string }; Returns: number }
       get_user_org_ids: { Args: never; Returns: string[] }
       has_any_role: {
         Args: { check_role: Database["public"]["Enums"]["user_role"] }
@@ -3856,3 +3886,4 @@ export const Constants = {
     },
   },
 } as const
+
