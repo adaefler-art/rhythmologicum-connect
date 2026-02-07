@@ -1766,6 +1766,23 @@ COMMENT ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation
 
 
 
+CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) RETURNS TABLE("missing_count" integer)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  perform set_config('statement_timeout', '1500ms', true);
+  return query
+  select count(*)::int
+  from unnest(required_objects) v(x)
+  where to_regclass(v.x) is null;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."prevent_published_version_delete"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -8814,6 +8831,12 @@ GRANT ALL ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operati
 
 
 
+GRANT ALL ON FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "anon";
 GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."prevent_published_version_delete"() TO "service_role";
@@ -9364,26 +9387,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
-CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" text[])
-RETURNS TABLE("missing_count" integer)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = "public"
-AS $$
-BEGIN
-  PERFORM set_config('statement_timeout', '1500ms', true);
-  RETURN QUERY
-  SELECT count(*)::int
-  FROM unnest(required_objects) v(x)
-  WHERE to_regclass(v.x) IS NULL;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "anon";
-GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "service_role";
 
 
 
