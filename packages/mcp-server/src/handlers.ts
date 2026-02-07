@@ -26,6 +26,18 @@ import {
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
+const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
+
+export class McpToolError extends Error {
+  readonly code: string
+  readonly status: number
+
+  constructor(code: string, message: string, status = 400) {
+    super(message)
+    this.code = code
+    this.status = status
+  }
+}
 
 function isStubEnabled(): boolean {
   return (env.FEATURE_MCP_STUB || '').toLowerCase() === 'true'
@@ -45,8 +57,20 @@ async function callAnthropicDiagnosis(
   userPrompt: string,
   modelConfig: { model: string; temperature: number; maxTokens: number },
 ): Promise<string> {
+  if (llmProvider !== 'anthropic') {
+    throw new McpToolError(
+      'LLM_PROVIDER_UNSUPPORTED',
+      `Unsupported LLM provider: ${llmProvider}`,
+      400,
+    )
+  }
+
   if (!anthropic) {
-    throw new Error('Anthropic API client not initialized (missing API key)')
+    throw new McpToolError(
+      'LLM_NOT_CONFIGURED',
+      'Anthropic API client not initialized (missing API key)',
+      503,
+    )
   }
 
   const response = await anthropic.messages.create({

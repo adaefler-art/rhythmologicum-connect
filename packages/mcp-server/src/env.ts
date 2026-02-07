@@ -8,6 +8,7 @@ type MCPEnv = {
   ANTHROPIC_API_KEY?: string
   ANTHROPIC_API_TOKEN?: string
   ANTHROPIC_MODEL?: string
+  LLM_PROVIDER?: string
 }
 
 const rawEnv: MCPEnv = {
@@ -19,6 +20,7 @@ const rawEnv: MCPEnv = {
   ANTHROPIC_API_KEY: process.env.LLM_API_KEY || process.env.ANTHROPIC_API_KEY,
   ANTHROPIC_API_TOKEN: process.env.ANTHROPIC_API_TOKEN,
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
+  LLM_PROVIDER: process.env.LLM_PROVIDER,
 }
 
 export const env = rawEnv

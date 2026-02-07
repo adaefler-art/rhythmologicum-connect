@@ -8,7 +8,7 @@
 import http from 'node:http'
 import { getVersionMetadata, generateRunVersion } from './version.js'
 import { logger } from './logger.js'
-import { handleGetPatientContext, handleRunDiagnosis } from './handlers.js'
+import { handleGetPatientContext, handleRunDiagnosis, McpToolError } from './handlers.js'
 import type { GetPatientContextInput, RunDiagnosisInput } from './tools.js'
 import { env } from './env.js'
 
@@ -97,18 +97,21 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         log.info('Tool request completed', { tool: request.tool })
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-        logger.error('Tool request failed', { error: errorMessage })
+        const errorCode = error instanceof McpToolError ? error.code : 'TOOL_EXECUTION_ERROR'
+        const status = error instanceof McpToolError ? error.status : 400
+
+        logger.error('Tool request failed', { error: errorMessage, code: errorCode })
 
         const response: ToolResponse = {
           success: false,
           error: {
-            code: 'TOOL_EXECUTION_ERROR',
+            code: errorCode,
             message: errorMessage,
           },
           version: getVersionMetadata(),
         }
 
-        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.writeHead(status, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(response))
       }
     })
