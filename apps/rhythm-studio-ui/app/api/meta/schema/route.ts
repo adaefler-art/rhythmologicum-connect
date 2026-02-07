@@ -28,7 +28,11 @@ export async function GET(request: Request) {
           ? 'unknown'
           : 'ok',
     migrations:
-      readiness.dbMigrationStatus?.status === 'missing' ? 'missing' : 'ok',
+      readiness.dbMigrationStatus?.status === 'missing'
+        ? 'missing'
+        : readiness.dbMigrationStatus?.status === 'ok'
+          ? 'ok'
+          : 'unknown',
   }
 
   return NextResponse.json({

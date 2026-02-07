@@ -57,6 +57,7 @@ type SchemaStageResult = {
   status: 'ok' | 'fail'
   errorCode?: string
   errorMessage?: string
+  details?: Record<string, unknown>
 }
 
 const REQUIRED_RELATIONS: RelationCheck[] = [
@@ -273,6 +274,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   }
 
   let migrationMissing = false
+  let missingCount = 0
+  const migrationMethod = 'required_objects'
   try {
     migrationMissing = await runStage(
       stages,
@@ -287,16 +290,30 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
           const message = safeError.message || 'Schema check failed'
           const code = safeError.code
           if (code === '42P01' || code === '42703' || message.includes('does not exist')) {
-            return true
+            missingCount += 1
+            continue
           }
+          throw error
         }
-        return false
+        return missingCount > 0
       },
-      ErrorCode.SCHEMA_BUILD_TIMEOUT,
+      ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT,
       MIGRATION_TIMEOUT_MS,
     )
   } catch (error) {
     const safeError = sanitizeSupabaseError(error)
+    const errorCode =
+      (error as { code?: string }).code === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
+        ? ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
+        : ErrorCode.SCHEMA_INTROSPECTION_FAILED
+    if (stages.length > 0) {
+      stages[stages.length - 1] = {
+        ...stages[stages.length - 1],
+        errorCode,
+        details: { method: migrationMethod },
+      }
+    }
+    dbMigrationStatus = { status: 'error' }
     return {
       ready: false,
       stage: 'error',
@@ -304,9 +321,9 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
-      lastErrorCode: (error as { code?: string }).code || ErrorCode.SCHEMA_BUILD_TIMEOUT,
+      lastErrorCode: errorCode,
       lastErrorMessage: safeError.message,
-      lastErrorDetails: { stage: 'check_migrations' },
+      lastErrorDetails: { stage: 'check_migrations', method: migrationMethod },
       lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus?.latestVersion,
@@ -314,6 +331,13 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       attempts: readinessState.attempts,
       buildAttempts: readinessState.buildAttempts,
       requestId,
+    }
+  }
+
+  if (stages.length > 0) {
+    stages[stages.length - 1] = {
+      ...stages[stages.length - 1],
+      details: { method: migrationMethod, missingCount },
     }
   }
 
@@ -328,7 +352,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       stages,
       lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
       lastErrorMessage: 'Required relations missing',
-      lastErrorDetails: { stage: 'check_migrations' },
+      lastErrorDetails: { stage: 'check_migrations', method: migrationMethod, missingCount },
       lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus?.latestVersion,
