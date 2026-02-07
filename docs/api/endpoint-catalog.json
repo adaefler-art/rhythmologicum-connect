@@ -83,6 +83,21 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": true,
+      "internalUnusedReason": "schema readiness RPC probe (no UI callsite)",
+      "path": "/api/_meta/schema/probe-migrations",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/_meta/schema/probe-migrations/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "internalUnused": false,
       "internalUnusedReason": null,
       "path": "/api/account/deletion-request",
@@ -603,6 +618,21 @@
         "GET"
       ],
       "file": "legacy/code/app/api/admin/diagnostics/pillars-sot/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/admin/diagnostics/required-funnel-definitions",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/diagnostics/required-funnel-definitions/route.ts",
       "intent": null,
       "accessRole": "admin",
       "usedByCount": 0,
@@ -7402,6 +7432,57 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": true,
+      "internalUnusedReason": "internal target for /api/_meta/health rewrite",
+      "path": "/api/meta/health",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/meta/health/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "internal target for /api/_meta/schema rewrite",
+      "path": "/api/meta/schema",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/meta/schema/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "apiPath": "/api/meta/schema",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "internal target for /api/_meta/schema/rebuild rewrite",
+      "path": "/api/meta/schema/rebuild",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/meta/schema/rebuild/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "internalUnused": false,
       "internalUnusedReason": null,
       "path": "/api/notifications",
@@ -9117,21 +9198,6 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
-    },
-    {
-      "internalUnused": false,
-      "internalUnusedReason": null,
-      "path": "/api/studio/diagnosis/health",
-      "methods": [
-        "GET"
-      ],
-      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts",
-      "intent": null,
-      "accessRole": "clinician",
       "usedByCount": 1,
       "usedBy": [
         {
@@ -9939,6 +10005,27 @@
       "usedBy": [],
       "isOrphan": true,
       "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/triage/basic",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/triage/basic/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/triage/page.tsx",
+          "apiPath": "/api/triage/basic",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "internalUnused": false,

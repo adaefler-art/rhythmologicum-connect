@@ -9,6 +9,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/_meta/mcp/smoke-run | POST | system |  | 0 | yes - MCP smoke-run verification (no UI callsite) | apps/rhythm-studio-ui/app/api/_meta/mcp/smoke-run/route.ts |
 | /api/_meta/mcp/status | GET | system |  | 0 | yes - MCP connectivity verification (no UI callsite) | apps/rhythm-studio-ui/app/api/_meta/mcp/status/route.ts |
 | /api/_meta/ping | GET | system |  | 0 | yes - system liveness probe / deployment checks | apps/rhythm-studio-ui/app/api/_meta/ping/route.ts |
+| /api/_meta/schema/probe-migrations | GET | system |  | 0 | yes - schema readiness RPC probe (no UI callsite) | apps/rhythm-studio-ui/app/api/_meta/schema/probe-migrations/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 |  | apps/rhythm-legacy/app/api/account/deletion-request/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 |  | legacy/code/app/api/account/deletion-request/route.ts |
 | /api/admin/content-pages | GET, POST | admin |  | 1 |  | apps/rhythm-legacy/app/api/admin/content-pages/route.ts |
@@ -31,6 +32,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/dev/endpoint-catalog | GET | admin |  | 0 |  | legacy/code/app/api/admin/dev/endpoint-catalog/route.ts |
 | /api/admin/diagnostics/pillars-sot | GET | admin |  | 0 |  | apps/rhythm-legacy/app/api/admin/diagnostics/pillars-sot/route.ts |
 | /api/admin/diagnostics/pillars-sot | GET | admin |  | 0 |  | legacy/code/app/api/admin/diagnostics/pillars-sot/route.ts |
+| /api/admin/diagnostics/required-funnel-definitions | GET | admin |  | 0 |  | apps/rhythm-studio-ui/app/api/admin/diagnostics/required-funnel-definitions/route.ts |
 | /api/admin/funnel-step-questions/[id] | PATCH | admin |  | 1 |  | apps/rhythm-legacy/app/api/admin/funnel-step-questions/[id]/route.ts |
 | /api/admin/funnel-step-questions/[id] | PATCH | admin |  | 1 |  | apps/rhythm-studio-ui/app/api/admin/funnel-step-questions/[id]/route.ts |
 | /api/admin/funnel-step-questions/[id] | PATCH | admin |  | 1 |  | legacy/code/app/api/admin/funnel-step-questions/[id]/route.ts |
@@ -213,6 +215,9 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/mcp | GET, POST | system |  | 3 |  | apps/rhythm-studio-ui/app/api/mcp/route.ts |
 | /api/mcp/context-pack | POST | system | mcp:context-pack | 1 |  | apps/rhythm-studio-ui/app/api/mcp/context-pack/route.ts |
 | /api/me | GET | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/me/route.ts |
+| /api/meta/health | GET | system |  | 0 | yes - internal target for /api/_meta/health rewrite | apps/rhythm-studio-ui/app/api/meta/health/route.ts |
+| /api/meta/schema | GET | system |  | 1 | yes - internal target for /api/_meta/schema rewrite | apps/rhythm-studio-ui/app/api/meta/schema/route.ts |
+| /api/meta/schema/rebuild | POST | system |  | 0 | yes - internal target for /api/_meta/schema/rebuild rewrite | apps/rhythm-studio-ui/app/api/meta/schema/rebuild/route.ts |
 | /api/notifications | GET | patient |  | 0 |  | apps/rhythm-legacy/app/api/notifications/route.ts |
 | /api/notifications | GET | patient |  | 0 |  | legacy/code/app/api/notifications/route.ts |
 | /api/notifications/[id] | PATCH | patient |  | 0 |  | apps/rhythm-legacy/app/api/notifications/[id]/route.ts |
@@ -298,7 +303,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/studio/anamnesis/[entryId]/archive | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts |
 | /api/studio/anamnesis/[entryId]/versions | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts |
 | /api/studio/diagnosis/execute | POST | clinician | diagnosis:execute | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts |
-| /api/studio/diagnosis/health | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
+| /api/studio/diagnosis/health | GET | clinician |  | 1 | yes - Diagnosis health probe (no callsite in this branch) | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
 | /api/studio/diagnosis/prompt | GET, POST | clinician | diagnosis:prompt | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/prompt/route.ts |
 | /api/studio/diagnosis/queue | POST | clinician | diagnosis:queue | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts |
 | /api/studio/diagnosis/runs/[runId]/artifact | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts |
@@ -320,5 +325,6 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/tasks/[id] | PATCH | clinician |  | 13 |  | legacy/code/app/api/tasks/[id]/route.ts |
 | /api/test/correlation-id | GET | system |  | 0 |  | apps/rhythm-legacy/app/api/test/correlation-id/route.ts |
 | /api/test/correlation-id | GET | system |  | 0 |  | legacy/code/app/api/test/correlation-id/route.ts |
+| /api/triage/basic | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/triage/basic/route.ts |
 | /api/triage/fix-membership | POST | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/triage/fix-membership/route.ts |
 | /api/triage/health | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/triage/health/route.ts |

@@ -75,6 +75,7 @@
     "/api/clinician/triage/cases/[caseId]/reopen",
     "/api/clinician/triage/cases/[caseId]/snooze",
     "/api/clinician/triage",
+    "/api/triage/basic",
     "/api/documents/[id]/extract",
     "/api/documents/[id]/status",
     "/api/documents/upload",
@@ -148,6 +149,11 @@
       "path": "/api/_meta/schema",
       "internal_unused": true,
       "reason": "schema readiness diagnostics"
+    },
+    {
+      "path": "/api/_meta/schema/probe-migrations",
+      "internal_unused": true,
+      "reason": "schema readiness RPC probe (no UI callsite)"
     },
     {
       "path": "/api/meta/schema",

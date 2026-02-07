@@ -144,6 +144,7 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
 
   // OPTIONAL: E78.6 Triage SLA Configuration
   TRIAGE_SLA_DAYS_DEFAULT: z.string().optional(),
+  TRIAGE_SCHEMA_GATE: z.string().optional(),
 })
 
 const patientEnvSchema = baseEnvSchema.extend({
@@ -246,6 +247,7 @@ function getRawServerEnv() {
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
     FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
     TRIAGE_SLA_DAYS_DEFAULT: process.env.TRIAGE_SLA_DAYS_DEFAULT,
+    TRIAGE_SCHEMA_GATE: process.env.TRIAGE_SCHEMA_GATE,
   }
 }
 
@@ -309,6 +311,7 @@ export type Env = {
   MCP_SERVER_PORT?: string
   FEATURE_MCP_STUB?: string
   TRIAGE_SLA_DAYS_DEFAULT?: string
+  TRIAGE_SCHEMA_GATE?: string
 }
 
 /**
@@ -370,6 +373,7 @@ function getDefaultEnv(): Env {
     MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
     FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
+    TRIAGE_SCHEMA_GATE: process.env.TRIAGE_SCHEMA_GATE,
   }
 }
 
@@ -450,6 +454,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       MCP_SERVER_PORT: parsed.MCP_SERVER_PORT,
       FEATURE_MCP_STUB: parsed.FEATURE_MCP_STUB,
       TRIAGE_SLA_DAYS_DEFAULT: parsed.TRIAGE_SLA_DAYS_DEFAULT,
+      TRIAGE_SCHEMA_GATE: parsed.TRIAGE_SCHEMA_GATE,
     } as z.infer<T>
   } catch (error) {
     if (error instanceof z.ZodError) {
