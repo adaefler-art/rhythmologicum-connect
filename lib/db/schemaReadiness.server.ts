@@ -1,17 +1,21 @@
 import 'server-only'
 
+import { ErrorCode } from '@/lib/api/responseTypes'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { sanitizeSupabaseError } from '@/lib/db/errors'
+import { env } from '@/lib/env'
 
-export type SchemaStage = 'boot' | 'migrations' | 'introspection' | 'cache' | 'ready' | 'error'
+export type SchemaStage = 'boot' | 'building' | 'ready' | 'error'
 
 export type SchemaReadiness = {
   ready: boolean
   stage: SchemaStage
+  stageSince: string
   lastErrorCode?: string
   lastErrorMessage?: string
   lastErrorDetails?: Record<string, unknown>
+  lastErrorAt?: string
   dbMigrationStatus?: {
     status: 'unknown' | 'ok' | 'missing' | 'error'
     latestVersion?: string
@@ -20,6 +24,13 @@ export type SchemaReadiness = {
   schemaVersion?: string
   checkedAt: string
   attempts: number
+  buildId?: string
+  buildAttempts: number
+  lastBuildMs?: number
+  lastBuildReason?: string
+  lastInvalidatedAt?: string
+  lastInvalidationReason?: string
+  retryAfterMs?: number
   requestId?: string
 }
 
@@ -35,20 +46,42 @@ const REQUIRED_RELATIONS: RelationCheck[] = [
 ]
 
 const MAX_ATTEMPTS = 3
-const CHECK_TIMEOUT_MS = 2500
+const CHECK_TIMEOUT_MS = 10000
 const CACHE_TTL_MS = 30000
+const RETRY_DELAYS_MS = [1000, 2000, 4000]
 
 let readinessState: SchemaReadiness = {
   ready: false,
   stage: 'boot',
+  stageSince: new Date(0).toISOString(),
   checkedAt: new Date(0).toISOString(),
   attempts: 0,
+  buildAttempts: 0,
 }
 
 let inFlight: Promise<SchemaReadiness> | null = null
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+function getCommitSha(): string {
+  return env.VERCEL_GIT_COMMIT_SHA || env.GIT_COMMIT_SHA || env.COMMIT_SHA || 'unknown'
+}
+
+function getRetryDelayMs(attempt: number): number {
+  const index = Math.max(0, Math.min(RETRY_DELAYS_MS.length - 1, attempt - 1))
+  return RETRY_DELAYS_MS[index]
+}
+
+function applyStage(nextStage: SchemaStage) {
+  if (readinessState.stage !== nextStage) {
+    readinessState = {
+      ...readinessState,
+      stage: nextStage,
+      stageSince: nowIso(),
+    }
+  }
 }
 
 function isStale(lastCheckedAt: string): boolean {
@@ -153,18 +186,21 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     if (errorCode === '42P01' || errorCode === '42703' || errorMessage.includes('does not exist')) {
       return {
         ready: false,
-        stage: 'migrations',
-        lastErrorCode: 'SCHEMA_BLOCKED_BY_MIGRATIONS',
+        stage: 'error',
+        stageSince: readinessState.stageSince,
+        lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
         lastErrorMessage: errorMessage,
         lastErrorDetails: {
           relation: relationDetails.relation ?? relation.name,
           column: relationDetails.column,
           usingAdminClient,
         },
+        lastErrorAt: nowIso(),
         dbMigrationStatus,
         schemaVersion: dbMigrationStatus.latestVersion,
         checkedAt: nowIso(),
-        attempts: readinessState.attempts + 1,
+        attempts: readinessState.attempts,
+        buildAttempts: readinessState.buildAttempts,
         requestId,
       }
     }
@@ -172,17 +208,20 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     if (errorCode === 'PGRST205' || errorMessage.toLowerCase().includes('schema cache')) {
       return {
         ready: false,
-        stage: 'cache',
-        lastErrorCode: 'SCHEMA_BUILD_FAILED',
+        stage: 'error',
+        stageSince: readinessState.stageSince,
+        lastErrorCode: ErrorCode.SCHEMA_CACHE_CORRUPT,
         lastErrorMessage: errorMessage,
         lastErrorDetails: {
           relation: relationDetails.relation ?? relation.name,
           usingAdminClient,
         },
+        lastErrorAt: nowIso(),
         dbMigrationStatus,
         schemaVersion: dbMigrationStatus.latestVersion,
         checkedAt: nowIso(),
-        attempts: readinessState.attempts + 1,
+        attempts: readinessState.attempts,
+        buildAttempts: readinessState.buildAttempts,
         requestId,
       }
     }
@@ -190,16 +229,19 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     return {
       ready: false,
       stage: 'error',
-      lastErrorCode: 'SCHEMA_BUILD_FAILED',
+      stageSince: readinessState.stageSince,
+      lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: errorMessage,
       lastErrorDetails: {
         relation: relationDetails.relation ?? relation.name,
         usingAdminClient,
       },
+      lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus.latestVersion,
       checkedAt: nowIso(),
-      attempts: readinessState.attempts + 1,
+      attempts: readinessState.attempts,
+      buildAttempts: readinessState.buildAttempts,
       requestId,
     }
   }
@@ -207,76 +249,184 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   return {
     ready: true,
     stage: 'ready',
+    stageSince: readinessState.stageSince,
     lastErrorCode: undefined,
     lastErrorMessage: undefined,
     lastErrorDetails: undefined,
+    lastErrorAt: undefined,
     dbMigrationStatus,
     schemaVersion: dbMigrationStatus.latestVersion,
     checkedAt: nowIso(),
-    attempts: readinessState.attempts + 1,
+    attempts: readinessState.attempts,
+    buildAttempts: readinessState.buildAttempts,
     requestId,
   }
 }
 
-async function performCheckWithRetries(requestId?: string): Promise<SchemaReadiness> {
+async function performCheckWithRetries(requestId?: string, reason?: string): Promise<SchemaReadiness> {
   let lastError: SchemaReadiness | null = null
+  const buildStartedAt = Date.now()
+
+  applyStage('building')
+  readinessState = {
+    ...readinessState,
+    buildId: `${getCommitSha()}-${Date.now()}`,
+    buildAttempts: 0,
+    lastBuildMs: undefined,
+    lastBuildReason: reason,
+    retryAfterMs: undefined,
+    requestId,
+  }
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
       readinessState = {
         ...readinessState,
-        stage: attempt === 1 ? 'introspection' : readinessState.stage,
         attempts: readinessState.attempts + 1,
+        buildAttempts: attempt,
         checkedAt: nowIso(),
         requestId,
       }
 
       const result = await withTimeout(runSchemaCheck(requestId), CHECK_TIMEOUT_MS)
+      const shouldRetry =
+        !result.ready && result.lastErrorCode !== ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS
 
-      readinessState = result
-      return result
+      if (!result.ready && shouldRetry && attempt < MAX_ATTEMPTS) {
+        readinessState = {
+          ...readinessState,
+          lastErrorCode: result.lastErrorCode,
+          lastErrorMessage: result.lastErrorMessage,
+          lastErrorDetails: result.lastErrorDetails,
+          lastErrorAt: result.lastErrorAt,
+          dbMigrationStatus: result.dbMigrationStatus,
+          schemaVersion: result.schemaVersion,
+          checkedAt: nowIso(),
+          retryAfterMs: getRetryDelayMs(attempt),
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, getRetryDelayMs(attempt)))
+        continue
+      }
+
+      readinessState = {
+        ...readinessState,
+        ...result,
+        lastBuildMs: Date.now() - buildStartedAt,
+        retryAfterMs: undefined,
+      }
+
+      applyStage(result.stage)
+      return readinessState
     } catch (error) {
       const safeError = sanitizeSupabaseError(error)
+      const errorCode =
+        (error as { code?: string }).code || ErrorCode.SCHEMA_BUILD_TIMEOUT
       lastError = {
         ready: false,
         stage: 'error',
-        lastErrorCode: (error as { code?: string }).code || 'SCHEMA_BUILD_TIMEOUT',
+        stageSince: readinessState.stageSince,
+        lastErrorCode: errorCode,
         lastErrorMessage: safeError.message,
         lastErrorDetails: {},
+        lastErrorAt: nowIso(),
         dbMigrationStatus: readinessState.dbMigrationStatus,
         schemaVersion: readinessState.schemaVersion,
         checkedAt: nowIso(),
-        attempts: readinessState.attempts + 1,
+        attempts: readinessState.attempts,
+        buildAttempts: readinessState.buildAttempts,
         requestId,
+        buildId: readinessState.buildId,
+        lastBuildMs: Date.now() - buildStartedAt,
+        lastBuildReason: readinessState.lastBuildReason,
+        retryAfterMs: attempt < MAX_ATTEMPTS ? getRetryDelayMs(attempt) : undefined,
+        stageSince: readinessState.stageSince,
       }
 
-      readinessState = lastError
+      readinessState = {
+        ...readinessState,
+        ...lastError,
+      }
 
       if (attempt < MAX_ATTEMPTS) {
-        await new Promise((resolve) => setTimeout(resolve, 250))
+        await new Promise((resolve) => setTimeout(resolve, getRetryDelayMs(attempt)))
+        continue
       }
+
+      applyStage('error')
+      return readinessState
     }
   }
 
   return lastError ?? readinessState
 }
 
-export async function ensureSchemaReadiness(requestId?: string): Promise<SchemaReadiness> {
+type EnsureReadyOptions = {
+  reason?: string
+  requestId?: string
+  nonBlocking?: boolean
+}
+
+async function ensureReadyInternal(options?: EnsureReadyOptions): Promise<SchemaReadiness> {
+  const reason = options?.reason
+  const requestId = options?.requestId
+
+  readinessState = {
+    ...readinessState,
+    lastBuildReason: reason ?? readinessState.lastBuildReason,
+    requestId: requestId ?? readinessState.requestId,
+  }
+
   if (readinessState.ready && !isStale(readinessState.checkedAt)) {
     return readinessState
   }
 
   if (inFlight) {
-    return inFlight
+    return options?.nonBlocking ? readinessState : inFlight
   }
 
-  inFlight = performCheckWithRetries(requestId).finally(() => {
+  inFlight = performCheckWithRetries(requestId, reason).finally(() => {
     inFlight = null
   })
 
-  return inFlight
+  return options?.nonBlocking ? readinessState : inFlight
+}
+
+function getStatus(): SchemaReadiness {
+  return readinessState
+}
+
+function invalidate(reason?: string): SchemaReadiness {
+  readinessState = {
+    ...readinessState,
+    ready: false,
+    stage: 'boot',
+    stageSince: nowIso(),
+    checkedAt: nowIso(),
+    lastErrorCode: undefined,
+    lastErrorMessage: undefined,
+    lastErrorDetails: undefined,
+    lastErrorAt: undefined,
+    retryAfterMs: undefined,
+    lastInvalidatedAt: nowIso(),
+    lastInvalidationReason: reason,
+  }
+
+  return readinessState
+}
+
+export const schemaManager = {
+  ensureReady: ensureReadyInternal,
+  getStatus,
+  invalidate,
+}
+
+export async function ensureSchemaReadiness(requestId?: string): Promise<SchemaReadiness> {
+  return schemaManager.ensureReady({ requestId })
 }
 
 export function getSchemaReadinessSnapshot(): SchemaReadiness {
-  return readinessState
+  return schemaManager.getStatus()
 }
+
+void schemaManager.ensureReady({ reason: 'boot', nonBlocking: true })

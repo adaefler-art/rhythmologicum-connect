@@ -150,6 +150,16 @@
       "reason": "schema readiness diagnostics"
     },
     {
+      "path": "/api/_meta/schema/rebuild",
+      "internal_unused": true,
+      "reason": "schema rebuild trigger (admin only)"
+    },
+    {
+      "path": "/api/_meta/health",
+      "internal_unused": true,
+      "reason": "schema health diagnostics"
+    },
+    {
       "path": "/api/_meta/mcp/status",
       "internal_unused": true,
       "reason": "MCP connectivity verification (no UI callsite)"

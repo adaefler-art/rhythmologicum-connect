@@ -31,7 +31,7 @@ import {
 	validationErrorResponse,
 } from '@/lib/api/responses'
 import { classifySupabaseError, getRequestId, logError, withRequestId } from '@/lib/db/errors'
-import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness.server'
+import { schemaManager } from '@/lib/db/schemaReadiness.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 /**
@@ -152,9 +152,33 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Build query from triage_cases_v1 view
-		const schemaReadiness = await ensureSchemaReadiness(requestId)
+		const schemaStatus = schemaManager.getStatus()
+		if (!schemaStatus.ready && schemaStatus.stage === 'building') {
+			return withRequestId(
+				NextResponse.json(
+					{
+						success: false,
+						error: {
+							code: ErrorCode.SCHEMA_NOT_READY,
+							message: 'Server-Schema wird aufgebaut. Bitte erneut versuchen.',
+							details: {
+								stage: schemaStatus.stage,
+								retryAfterMs: schemaStatus.retryAfterMs ?? null,
+								requestId,
+							},
+						},
+						requestId,
+					},
+					{ status: 503 },
+				),
+				requestId,
+			)
+		}
+
+		const schemaReadiness = await schemaManager.ensureReady({ reason: 'triage', requestId })
 		if (!schemaReadiness.ready) {
-			const errorCode = schemaReadiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
+			const errorCode =
+				schemaReadiness.stage === 'error' ? ErrorCode.SCHEMA_ERROR : ErrorCode.SCHEMA_NOT_READY
 			return withRequestId(
 				NextResponse.json(
 					{
@@ -167,8 +191,10 @@ export async function GET(request: NextRequest) {
 							details: {
 								stage: schemaReadiness.stage,
 								requestId,
+								retryAfterMs: schemaReadiness.retryAfterMs ?? null,
 								schemaVersion: schemaReadiness.schemaVersion,
 								dbMigrationStatus: schemaReadiness.dbMigrationStatus,
+								lastErrorCode: schemaReadiness.lastErrorCode,
 								lastErrorDetails: schemaReadiness.lastErrorDetails,
 							},
 						},
