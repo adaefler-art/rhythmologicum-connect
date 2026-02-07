@@ -261,7 +261,7 @@ export async function GET(request: NextRequest) {
 			})
 
 			if (classified.kind === 'SCHEMA_NOT_READY') {
-				const readiness = await ensureSchemaReadiness(requestId)
+				const readiness = await schemaManager.ensureReady({ reason: 'triage_query', requestId })
 				const errorCode = readiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
 				return withRequestId(
 					NextResponse.json(
