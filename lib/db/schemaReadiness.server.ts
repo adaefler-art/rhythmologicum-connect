@@ -261,7 +261,8 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     }
   }
 
-  if (!client) {
+  const supabase = client
+  if (!supabase) {
     return {
       ready: false,
       stage: 'error',
@@ -283,7 +284,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     }
   }
 
-  const relationQuery = client as unknown as {
+  const relationQuery = supabase as unknown as {
     from: (relation: string) => {
       select: (columns: string) => {
         limit: (count: number) => Promise<{ error: unknown }>
@@ -300,7 +301,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       'check_migrations',
       async () => {
         const requiredObjects = REQUIRED_RELATIONS.map((relation) => `public.${relation.name}`)
-        const { data, error } = await client.rpc('meta_check_required_objects', {
+        const { data, error } = await supabase.rpc('meta_check_required_objects', {
           required_objects: requiredObjects,
         })
 
