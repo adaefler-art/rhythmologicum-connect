@@ -8,6 +8,8 @@ import { env } from '@/lib/env'
 import type { ResolvedUserRole } from '@/lib/utils/roleLanding'
 import { getPostLoginRedirect } from '@/lib/utils/authRedirect'
 
+const DEFAULT_CLINICIAN_LANDING = '/clinician/triage'
+
 type SyncSessionResult = { ok: true } | { ok: false; message: string }
 
 async function syncServerSession(event: 'SIGNED_IN' | 'TOKEN_REFRESHED' = 'SIGNED_IN')
@@ -110,13 +112,35 @@ async function getPatientRedirectFromOnboardingStatus(): Promise<
   }
 }
 
-async function resolvePostLoginRedirect(role: ResolvedUserRole): Promise<string | null> {
+function getSafeRedirectTarget(raw: string | null): string | null {
+  if (!raw) return null
+  let decoded = raw
+  try {
+    decoded = decodeURIComponent(raw)
+  } catch {
+    decoded = raw
+  }
+
+  if (!decoded.startsWith('/') || decoded.startsWith('//')) return null
+  return decoded
+}
+
+async function resolvePostLoginRedirect(
+  role: ResolvedUserRole,
+  explicitRedirect: string | null,
+): Promise<string | null> {
   if (role === 'patient') {
     const onboarding = await getPatientRedirectFromOnboardingStatus()
     if (onboarding.kind === 'unauthenticated') return null
     if (onboarding.kind === 'ok') {
       return getPostLoginRedirect({ role, patientOnboardingPath: onboarding.path })
     }
+  }
+
+  if (explicitRedirect) return explicitRedirect
+
+  if (role === 'clinician' || role === 'admin' || role === 'nurse') {
+    return DEFAULT_CLINICIAN_LANDING
   }
 
   return getPostLoginRedirect({ role })
@@ -138,6 +162,7 @@ function formatUtc(value?: string | null) {
 
 export default function LoginPage() {
   const router = useRouter()
+  const [explicitRedirect, setExplicitRedirect] = useState<string | null>(null)
   const fallbackDeployId = env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID || 'n/a'
   const fallbackBuildTime = env.NEXT_PUBLIC_BUILD_TIME || 'n/a'
   const [email, setEmail] = useState('')
@@ -150,6 +175,13 @@ export default function LoginPage() {
     deployId: fallbackDeployId,
     buildTime: fallbackBuildTime,
   })
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const redirectParam =
+      params.get('redirectTo') || params.get('redirect') || params.get('next')
+    setExplicitRedirect(getSafeRedirectTarget(redirectParam))
+  }, [])
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
@@ -172,7 +204,7 @@ export default function LoginPage() {
 
         const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-        const target = await resolvePostLoginRedirect(role)
+        const target = await resolvePostLoginRedirect(role, explicitRedirect)
         if (target) {
           router.replace(target)
         }
@@ -180,7 +212,7 @@ export default function LoginPage() {
     }
 
     checkAuthAndRedirect()
-  }, [router])
+  }, [explicitRedirect, router])
 
   useEffect(() => {
     const {
@@ -300,7 +332,7 @@ export default function LoginPage() {
 
       const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
 
-      const target = await resolvePostLoginRedirect(role)
+      const target = await resolvePostLoginRedirect(role, explicitRedirect)
       if (!target) {
         setError('Bitte einloggen.')
         return

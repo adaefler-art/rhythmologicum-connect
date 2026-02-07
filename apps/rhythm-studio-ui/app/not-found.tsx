@@ -12,26 +12,29 @@ export default function NotFound() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 transition-colors duration-150">
-      <div className="bg-card text-foreground rounded-2xl shadow-xl p-8 max-w-md w-full text-center transition-colors duration-150">
-        <div className="text-6xl mb-4">🔍</div>
-        <h1 className="text-3xl font-bold text-foreground mb-3">404</h1>
-        <h2 className="text-xl font-semibold text-muted-foreground mb-3">
-          Seite nicht gefunden
-        </h2>
-        <p className="text-muted-foreground mb-6">
+    <div className="min-h-screen bg-background transition-colors duration-150">
+      <div className="w-full px-6 py-10">
+        <div className="flex items-center gap-4">
+          <div className="text-5xl">🔍</div>
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground">Fehler</p>
+            <h1 className="text-3xl font-bold text-foreground">404</h1>
+          </div>
+        </div>
+        <h2 className="mt-6 text-2xl font-semibold text-foreground">Seite nicht gefunden</h2>
+        <p className="mt-2 text-muted-foreground">
           Die angeforderte Seite existiert nicht oder wurde entfernt.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="mt-6 flex flex-wrap gap-3">
           <button
             onClick={() => router.back()}
-            className="bg-muted/40 hover:bg-muted/60 text-foreground font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-muted/40 hover:bg-muted/60 text-foreground font-medium px-5 py-2.5 rounded-lg transition-colors"
           >
             Zurück
           </button>
           <button
             onClick={() => router.push('/')}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-3 rounded-lg transition-colors"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-5 py-2.5 rounded-lg transition-colors"
           >
             Zur Startseite
           </button>
