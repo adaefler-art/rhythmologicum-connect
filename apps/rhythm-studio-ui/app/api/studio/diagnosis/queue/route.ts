@@ -265,40 +265,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const executionResult = await executeDiagnosisRun(adminClient, newRun.id)
-
-    if (!executionResult.success) {
-      const errorCode = executionResult.error?.code ?? DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR
-      const errorMessage = executionResult.error?.message || 'Diagnosis execution failed'
-      const status =
-        errorCode === DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR ? 422 : 503
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: errorCode,
-            message: errorMessage,
-          },
-          data: {
-            run_id: newRun.id,
-            status: 'FAILED',
-          },
-        },
-        { status, headers: diagHeaders },
-      )
-    }
+    void executeDiagnosisRun(adminClient, newRun.id).catch((executionError) => {
+      console.error('Background diagnosis execution failed:', executionError)
+    })
 
     return NextResponse.json({
       success: true,
       data: {
         runId: newRun.id,
-        status: 'COMPLETED',
+        status: 'QUEUED',
         run_id: newRun.id,
-        status_raw: DIAGNOSIS_RUN_STATUS.COMPLETED,
+        status_raw: DIAGNOSIS_RUN_STATUS.QUEUED,
         created_at: newRun.created_at,
         is_duplicate: false,
-        artifact_id: executionResult.artifact_id,
       },
     }, { headers: diagHeaders })
   } catch (error) {
