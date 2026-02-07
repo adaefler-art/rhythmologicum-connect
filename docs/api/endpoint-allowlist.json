@@ -135,6 +135,11 @@
     "/api/studio/patients/[patientId]/anamnesis",
     "/api/studio/patients/[patientId]/anamnesis/export.json",
     "/api/studio/diagnosis/execute",
+    {
+      "path": "/api/studio/diagnosis/health",
+      "internal_unused": true,
+      "reason": "Diagnosis health probe (no callsite in this branch)"
+    },
     "/api/studio/diagnosis/queue",
     "/api/studio/diagnosis/runs/[runId]/artifact",
     "/api/_debug/env",

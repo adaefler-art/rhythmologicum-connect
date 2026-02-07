@@ -60,33 +60,57 @@ COMMENT ON COLUMN public.funnel_triage_settings.updated_by IS
 ALTER TABLE public.funnel_triage_settings ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Allow clinicians and admins to read all settings
-CREATE POLICY "funnel_triage_settings_read_staff"
-  ON public.funnel_triage_settings
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM auth.users u
-      WHERE u.id = auth.uid()
-        AND (
-          u.raw_app_meta_data->>'role' = 'clinician'
-          OR u.raw_app_meta_data->>'role' = 'admin'
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'funnel_triage_settings'
+      AND policyname = 'funnel_triage_settings_read_staff'
+  ) THEN
+    CREATE POLICY "funnel_triage_settings_read_staff"
+      ON public.funnel_triage_settings
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM auth.users u
+          WHERE u.id = auth.uid()
+            AND (
+              u.raw_app_meta_data->>'role' = 'clinician'
+              OR u.raw_app_meta_data->>'role' = 'admin'
+            )
         )
-    )
-  );
+      );
+  END IF;
+END;
+$$;
 
 -- Policy: Allow admins to insert/update/delete settings
-CREATE POLICY "funnel_triage_settings_write_admin"
-  ON public.funnel_triage_settings
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM auth.users u
-      WHERE u.id = auth.uid()
-        AND u.raw_app_meta_data->>'role' = 'admin'
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'funnel_triage_settings'
+      AND policyname = 'funnel_triage_settings_write_admin'
+  ) THEN
+    CREATE POLICY "funnel_triage_settings_write_admin"
+      ON public.funnel_triage_settings
+      FOR ALL
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM auth.users u
+          WHERE u.id = auth.uid()
+            AND u.raw_app_meta_data->>'role' = 'admin'
+        )
+      );
+  END IF;
+END;
+$$;
 
 -- ===================================================================
 -- Helper Function: Get SLA Days for Funnel
