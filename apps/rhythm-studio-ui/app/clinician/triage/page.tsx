@@ -610,7 +610,7 @@ export default function InboxPage() {
             </Button>
             
             {openDropdownId === row.case_id && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg z-50">
                 <div className="py-1">
                   <button
                     onClick={(e) => handleRowAction('ack', row, e)}
@@ -764,7 +764,7 @@ export default function InboxPage() {
         )}
 
         {shouldShowFixMembership && (
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="mt-4 rounded-lg bg-white dark:bg-slate-800 p-3 text-sm text-amber-800 dark:text-amber-300">
             <p className="mb-2">
               Membership-Check hat ein Problem erkannt. Bitte neu verknuepfen.
             </p>
@@ -970,7 +970,7 @@ export default function InboxPage() {
               {searchQuery && (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
+                  className="inline-flex items-center justify-center rounded-full font-medium whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-xs"
                   onClick={() => {
                     setSearchQuery('')
                     setSearchInput('')
@@ -982,7 +982,7 @@ export default function InboxPage() {
               {statusFilter && (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
+                  className="inline-flex items-center justify-center rounded-full font-medium whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-xs"
                   onClick={() => setStatusFilter('')}
                 >
                   Status: {getCaseStateBadge(statusFilter).label} ×
@@ -991,7 +991,7 @@ export default function InboxPage() {
               {attentionFilter && (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center rounded-full border font-medium whitespace-nowrap bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 px-2 py-0.5 text-xs"
+                  className="inline-flex items-center justify-center rounded-full font-medium whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 text-xs"
                   onClick={() => setAttentionFilter('')}
                 >
                   Priorität: {getAttentionBadge(attentionFilter)?.label} ×
@@ -1021,7 +1021,6 @@ export default function InboxPage() {
         data={cases}
         keyExtractor={(row) => row.case_id}
         hoverable
-        bordered
         onRowClick={handleRowClick}
         emptyMessage="Keine Fälle gefunden"
       />
