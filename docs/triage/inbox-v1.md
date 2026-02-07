@@ -552,18 +552,35 @@ SLA deadlines are computed based on configurable time windows:
 | Review Completion | 2 days | Yes (ENV) | `ready_for_review` assessments |
 | Critical Review | 4 hours | Yes (ENV) | `ready_for_review` + `critical_flag` |
 
-### 6.2 SLA Configuration Source (v1)
+### 6.2 SLA Configuration Source
 
-For v1, SLA configuration is **environment variable only**:
+#### v1 (Current - E78.6)
 
+SLA configuration uses a hybrid approach:
+
+**Environment Variable (Default):**
 ```bash
 # .env or deployment config
-INBOX_SLA_ASSESSMENT_DAYS=7
-INBOX_SLA_REVIEW_DAYS=2
-INBOX_SLA_CRITICAL_HOURS=4
+TRIAGE_SLA_DAYS_DEFAULT=7  # Default overdue threshold for all funnels
 ```
 
-**Future Enhancement (v2):** Move to database table `inbox_config` for per-organization SLA settings.
+**Database Table (Per-Funnel Override - v1.1):**
+```sql
+-- Table: funnel_triage_settings
+SELECT funnel_id, overdue_days FROM funnel_triage_settings;
+```
+
+**Precedence:**
+1. `funnel_triage_settings.overdue_days` (if exists for funnel) - **highest priority**
+2. `TRIAGE_SLA_DAYS_DEFAULT` environment variable
+3. Hardcoded default (7 days) - **lowest priority**
+
+**Implementation:**
+- SQL function: `get_triage_sla_days(funnel_id)` returns the effective SLA
+- TypeScript helper: `getTriageSLADaysForFunnel(funnelId)` for application code
+- View integration: `triage_cases_v1` includes `sla_days` and `due_at` columns
+
+**Future Enhancement (v2+):** Additional SLA types for review and critical review.
 
 ### 6.3 SLA Status Enum
 
@@ -584,16 +601,21 @@ case_state IN ('in_progress', 'needs_input')
 
 **Deadline:**
 ```sql
-assessments.started_at + INTERVAL '{INBOX_SLA_ASSESSMENT_DAYS} days'
+-- E78.6: Uses configurable SLA from funnel_triage_settings or TRIAGE_SLA_DAYS_DEFAULT
+assessments.started_at + (sla_days || ' days')::INTERVAL
+
+-- Where sla_days comes from:
+-- COALESCE(funnel_triage_settings.overdue_days, 7)
 ```
 
 **Status:**
 ```sql
+-- E78.6: Uses configurable SLA
 CASE
-  WHEN NOW() < (started_at + INTERVAL '{INBOX_SLA_ASSESSMENT_DAYS} days')
+  WHEN NOW() < (started_at + (sla_days || ' days')::INTERVAL)
     THEN 'on_time'
-  WHEN NOW() >= (started_at + INTERVAL '{INBOX_SLA_ASSESSMENT_DAYS} days' * 0.8)
-    AND NOW() < (started_at + INTERVAL '{INBOX_SLA_ASSESSMENT_DAYS} days')
+  WHEN NOW() >= (started_at + (sla_days || ' days')::INTERVAL * 0.8)
+    AND NOW() < (started_at + (sla_days || ' days')::INTERVAL)
     THEN 'approaching'
   ELSE 'breached'
 END

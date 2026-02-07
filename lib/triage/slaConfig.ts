@@ -49,15 +49,37 @@ export function getDefaultTriageSLADays(): number {
 /**
  * Get the triage SLA in days for a specific funnel
  * 
- * v1: Returns default SLA (no funnel-specific overrides)
- * v1.1: Will query funnel_triage_settings table for funnel-specific value
+ * v1.1: Queries funnel_triage_settings table for funnel-specific value
+ * Falls back to env var, then hardcoded default
  * 
  * @param {string} funnelId - The funnel ID to get SLA for
  * @returns {Promise<number>} Number of days before a case is marked as overdue
  */
 export async function getTriageSLADaysForFunnel(funnelId: string): Promise<number> {
-  // v1: Return default only
-  // TODO v1.1: Query funnel_triage_settings table for funnel-specific override
+  try {
+    // Try server-side Supabase client
+    const { createServerSupabaseClient } = await import('@/lib/db/supabase.server')
+    const supabase = await createServerSupabaseClient()
+    
+    const { data, error } = await supabase
+      .from('funnel_triage_settings')
+      .select('overdue_days')
+      .eq('funnel_id', funnelId)
+      .single()
+    
+    if (!error && data?.overdue_days) {
+      return data.overdue_days
+    }
+  } catch (err) {
+    // If server client is not available (e.g., client-side code),
+    // or query fails, fall back to default
+    console.warn(
+      `[SLA Config] Failed to query funnel-specific SLA for funnel ${funnelId}:`,
+      err,
+    )
+  }
+  
+  // Fall back to default
   return getDefaultTriageSLADays()
 }
 
