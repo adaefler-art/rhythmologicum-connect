@@ -6,6 +6,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | --- | --- | --- | --- | ---: | --- | --- |
 | /api/_debug/env | GET | system |  | 0 |  | apps/rhythm-patient-ui/app/api/_debug/env/route.ts |
 | /api/_meta/build | GET | system |  | 1 |  | apps/rhythm-studio-ui/app/api/_meta/build/route.ts |
+| /api/_meta/mcp/smoke-run | POST | system |  | 0 | yes - MCP smoke-run verification (no UI callsite) | apps/rhythm-studio-ui/app/api/_meta/mcp/smoke-run/route.ts |
+| /api/_meta/mcp/status | GET | system |  | 0 | yes - MCP connectivity verification (no UI callsite) | apps/rhythm-studio-ui/app/api/_meta/mcp/status/route.ts |
 | /api/_meta/ping | GET | system |  | 0 | yes - system liveness probe / deployment checks | apps/rhythm-studio-ui/app/api/_meta/ping/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 |  | apps/rhythm-legacy/app/api/account/deletion-request/route.ts |
 | /api/account/deletion-request | POST | patient |  | 0 |  | legacy/code/app/api/account/deletion-request/route.ts |
@@ -296,6 +298,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/studio/anamnesis/[entryId]/archive | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts |
 | /api/studio/anamnesis/[entryId]/versions | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts |
 | /api/studio/diagnosis/execute | POST | clinician | diagnosis:execute | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts |
+| /api/studio/diagnosis/health | GET | clinician |  | 0 | yes - Diagnosis health probe (no callsite in this branch) | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
 | /api/studio/diagnosis/prompt | GET, POST | clinician | diagnosis:prompt | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/prompt/route.ts |
 | /api/studio/diagnosis/queue | POST | clinician | diagnosis:queue | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts |
 | /api/studio/diagnosis/runs/[runId]/artifact | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts |
