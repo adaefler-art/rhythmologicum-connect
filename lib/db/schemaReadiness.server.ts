@@ -218,7 +218,10 @@ async function runStage<T>(
 
 async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   const stages: SchemaStageResult[] = []
-  let client: Awaited<ReturnType<typeof createServerSupabaseClient>> | null = null
+  let client:
+    | Awaited<ReturnType<typeof createServerSupabaseClient>>
+    | ReturnType<typeof createAdminSupabaseClient>
+    | null = null
   let usingAdminClient = false
   let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'ok' }
 
@@ -291,6 +294,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       }
     }
   }
+  const rpcQuery = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  }
 
   let migrationMissing = false
   let missingCount = 0
@@ -301,7 +310,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       'check_migrations',
       async () => {
         const requiredObjects = REQUIRED_RELATIONS.map((relation) => `public.${relation.name}`)
-        const { data, error } = await supabase.rpc('meta_check_required_objects', {
+        const { data, error } = await rpcQuery.rpc('meta_check_required_objects', {
           required_objects: requiredObjects,
         })
 
