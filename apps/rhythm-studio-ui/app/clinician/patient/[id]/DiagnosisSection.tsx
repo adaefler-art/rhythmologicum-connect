@@ -5,7 +5,8 @@
  * and view latest artifacts.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
 import { getDiagnosisRuns } from '@/lib/fetchClinician'
@@ -15,11 +16,20 @@ type DiagnosisRun = {
   id: string
   status: string
   created_at: string
+  updated_at?: string
   inputs_hash: string
   started_at: string | null
   completed_at: string | null
   error_code: string | null
   error_message: string | null
+  processing_time_ms?: number | null
+  summary?: {
+    risk_level?: string | null
+    confidence_score?: number | null
+    primary_findings?: string[] | null
+    result_json?: Record<string, unknown> | null
+  } | null
+  is_optimistic?: boolean
 }
 
 type ArtifactState = {
@@ -39,6 +49,7 @@ export interface DiagnosisSectionProps {
 }
 
 export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
+  const router = useRouter()
   const [runs, setRuns] = useState<DiagnosisRun[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isQueueing, setIsQueueing] = useState(false)
@@ -50,10 +61,27 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [gateStatus, setGateStatus] = useState<DiagnosisGateStatus>('checking')
   const [gateMessage, setGateMessage] = useState<string | null>(null)
   const [isGateChecking, setIsGateChecking] = useState(false)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const pollAttemptsRef = useRef<Record<string, number>>({})
+
+  const orderedRuns = useMemo(() => {
+    return [...runs].sort((a, b) => {
+      if (a.is_optimistic && !b.is_optimistic) return -1
+      if (!a.is_optimistic && b.is_optimistic) return 1
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [runs])
 
   useEffect(() => {
     checkDiagnosisGate()
     fetchRuns()
+    return () => {
+      if (pollingRef.current) {
+        clearTimeout(pollingRef.current)
+        pollingRef.current = null
+      }
+      pollAttemptsRef.current = {}
+    }
   }, [patientId])
 
   const logGateEvent = (payload: Record<string, unknown>) => {
@@ -162,24 +190,28 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     }
   }
 
-  const fetchRuns = async () => {
-    setIsLoading(true)
-    setError(null)
-    setDebugHint(null)
+  const fetchRuns = async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setIsLoading(true)
+      setError(null)
+      setDebugHint(null)
+    }
 
     try {
       const { data, error, debugHint } = await getDiagnosisRuns(patientId)
 
-      setDebugHint(debugHint ?? null)
-      if (error) {
-        if (error.status === 403) {
-          setError('Keine Berechtigung für diesen Patienten')
-        } else if (error.status === 404) {
-          setError('Patient nicht gefunden oder nicht zugewiesen')
-        } else {
-          setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
+      if (!options?.silent) {
+        setDebugHint(debugHint ?? null)
+        if (error) {
+          if (error.status === 403) {
+            setError('Keine Berechtigung für diesen Patienten')
+          } else if (error.status === 404) {
+            setError('Patient nicht gefunden oder nicht zugewiesen')
+          } else {
+            setError(error.message || 'Fehler beim Laden der Diagnose-Runs')
+          }
+          return []
         }
-        return
       }
 
       if (data?.success) {
@@ -188,15 +220,43 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           ? payload
           : payload?.runs || []
         setRuns(resolvedRuns as DiagnosisRun[])
+        return resolvedRuns as DiagnosisRun[]
       } else {
-        setError('Fehler beim Laden der Diagnose-Runs')
+        if (!options?.silent) {
+          setError('Fehler beim Laden der Diagnose-Runs')
+        }
+        return []
       }
     } catch (err) {
-      console.error('[DiagnosisSection] Fetch error:', err)
-      setError('Fehler beim Laden der Diagnose-Runs')
+      if (!options?.silent) {
+        console.error('[DiagnosisSection] Fetch error:', err)
+        setError('Fehler beim Laden der Diagnose-Runs')
+      }
+      return []
     } finally {
-      setIsLoading(false)
+      if (!options?.silent) {
+        setIsLoading(false)
+      }
     }
+  }
+
+  const pollRunStatus = async (runId: string) => {
+    const attempts = pollAttemptsRef.current[runId] ?? 0
+    if (attempts >= 6) {
+      return
+    }
+    pollAttemptsRef.current[runId] = attempts + 1
+
+    const latestRuns = await fetchRuns({ silent: true })
+    const foundRun = latestRuns.find((run) => run.id === runId)
+    const status = foundRun?.status?.toLowerCase()
+    if (status === 'completed' || status === 'failed') {
+      return
+    }
+
+    pollingRef.current = setTimeout(() => {
+      pollRunStatus(runId)
+    }, 5000)
   }
 
   const handleQueueRun = async () => {
@@ -249,20 +309,38 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         return
       }
 
+      const runId = result.data?.run_id || result.data?.runId
+
+      if (runId) {
+        const optimisticRun: DiagnosisRun = {
+          id: runId,
+          status: 'running',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          inputs_hash: result.data?.inputs_hash || 'pending',
+          started_at: new Date().toISOString(),
+          completed_at: null,
+          error_code: null,
+          error_message: null,
+          processing_time_ms: null,
+          summary: null,
+          is_optimistic: true,
+        }
+        setRuns((prev) => [optimisticRun, ...prev.filter((run) => run.id !== runId)])
+      }
+
       if (result.data?.is_duplicate) {
         setStatusMessage('Diagnose bereits kürzlich gestartet (Duplikat erkannt)')
       } else {
         setStatusMessage('Diagnose gestartet')
       }
 
-      await fetchRuns()
+      router.refresh()
+      await fetchRuns({ silent: true })
 
-      const followUpDelays = [1000, 3000, 5000]
-      followUpDelays.forEach((delayMs) => {
-        setTimeout(() => {
-          fetchRuns()
-        }, delayMs)
-      })
+      if (runId && !result.data?.is_duplicate) {
+        pollRunStatus(runId)
+      }
     } catch (err) {
       console.error('[DiagnosisSection] Queue error:', err)
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -464,9 +542,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           <div className="py-6 text-sm text-slate-500">Keine Diagnose-Runs vorhanden.</div>
         ) : (
           <div className="space-y-4">
-            {runs.map((run) => {
+            {orderedRuns.map((run) => {
               const artifactState = artifactStates[run.id] || { status: 'idle' }
               const isExpanded = expandedRunId === run.id
+              const summary = run.summary
+              const riskLevel = summary?.risk_level
+              const findings = summary?.primary_findings || []
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
@@ -476,12 +557,35 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                         <Badge variant={getStatusVariant(run.status)} size="sm">
                           {run.status}
                         </Badge>
+                        {run.is_optimistic && (
+                          <span className="text-xs text-amber-600">Optimistisch</span>
+                        )}
                         <span className="text-xs text-slate-500">Run ID: {run.id}</span>
                       </div>
                       <div className="text-sm text-slate-600 dark:text-slate-300">
                         Erstellt: {formatDate(run.created_at)}
                       </div>
+                      {run.completed_at && (
+                        <div className="text-xs text-slate-500">
+                          Abgeschlossen: {formatDate(run.completed_at)}
+                        </div>
+                      )}
+                      {typeof run.processing_time_ms === 'number' && (
+                        <div className="text-xs text-slate-500">
+                          Laufzeit: {Math.round(run.processing_time_ms / 1000)}s
+                        </div>
+                      )}
                       <div className="text-xs text-slate-500">Inputs Hash: {shortHash(run.inputs_hash)}</div>
+                      {riskLevel && (
+                        <div className="text-xs text-slate-600">
+                          Risiko: {riskLevel}
+                        </div>
+                      )}
+                      {findings.length > 0 && (
+                        <div className="text-xs text-slate-600">
+                          Findings: {findings.slice(0, 2).join(', ')}
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2 md:items-end">
                       <Button
