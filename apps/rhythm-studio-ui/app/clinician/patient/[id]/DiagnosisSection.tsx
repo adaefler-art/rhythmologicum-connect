@@ -32,6 +32,7 @@ type DiagnosisGateStatus = 'checking' | 'available' | 'unavailable' | 'forbidden
 
 const DIAGNOSIS_HEALTH_ENDPOINT = '/api/studio/diagnosis/health'
 const GATE_TIMEOUT_MS = 8000
+const QUEUE_TIMEOUT_MS = 30000
 
 export interface DiagnosisSectionProps {
   patientId: string
@@ -204,10 +205,14 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     setStatusMessage(null)
     setError(null)
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), QUEUE_TIMEOUT_MS)
+
     try {
       const response = await fetch('/api/studio/diagnosis/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({ patient_id: patientId }),
       })
 
@@ -249,8 +254,15 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       await fetchRuns()
     } catch (err) {
       console.error('[DiagnosisSection] Queue error:', err)
-      setError('Fehler beim Starten der Diagnose')
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setGateStatus('unavailable')
+        setGateMessage('MCP Timeout.')
+        setError('Diagnose-Anfrage dauerte zu lange (Timeout)')
+      } else {
+        setError('Fehler beim Starten der Diagnose')
+      }
     } finally {
+      clearTimeout(timeout)
       setIsQueueing(false)
     }
   }

@@ -26,6 +26,8 @@ export default function MCPTestPage() {
   const [runDiagnosisError, setRunDiagnosisError] = useState<string>('')
   const [queuePatientId, setQueuePatientId] = useState<string>('')
 
+  const runDiagnosisTimeoutMs = 30000
+
   async function testHealth() {
     setLoading(true)
     try {
@@ -68,7 +70,7 @@ export default function MCPTestPage() {
     setRunDiagnosisTraceId(traceId)
     setRunDiagnosisStatus('started')
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 3000)
+    const timeout = setTimeout(() => controller.abort(), runDiagnosisTimeoutMs)
     try {
       // Literal callsite: /api/mcp
       setRunDiagnosisStatus('request_sent')
