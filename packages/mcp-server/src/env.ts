@@ -1,4 +1,6 @@
+/* eslint-disable no-restricted-syntax */
 type MCPEnv = {
+  PORT?: string
   MCP_SERVER_PORT?: string
   MCP_SERVER_HOST?: string
   MCP_SERVER_URL?: string
@@ -9,6 +11,7 @@ type MCPEnv = {
 }
 
 const rawEnv: MCPEnv = {
+  PORT: process.env.PORT,
   MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
   MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
   MCP_SERVER_URL: process.env.MCP_SERVER_URL,

@@ -12,7 +12,7 @@ import { handleGetPatientContext, handleRunDiagnosis } from './handlers.js'
 import type { GetPatientContextInput, RunDiagnosisInput } from './tools.js'
 import { env } from './env.js'
 
-const PORT = Number(process.env.PORT || env.MCP_SERVER_PORT || 3001)
+const PORT = Number(env.PORT || env.MCP_SERVER_PORT || 3001)
 const HOST = '0.0.0.0'
 
 interface HealthResponse {
