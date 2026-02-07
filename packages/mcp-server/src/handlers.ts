@@ -727,17 +727,15 @@ export async function handleRunDiagnosis(
   const log = logger.withRunId(runId)
   const resolvedTraceId = traceId || crypto.randomUUID()
   const startTime = Date.now()
-  const stageTimes = new Map<TraceStage, number>()
   const timeline: TraceTimelineEntry[] = []
   const markStage = (stage: TraceStage) => {
     const tMs = Date.now() - startTime
     timeline.push({ stage, t_ms_since_start: tMs })
-    stageTimes.set(stage, tMs)
   }
   const buildSummary = (): TraceTimelineSummary => {
     const stagesMs = {} as Record<TraceStage, number>
-    for (const [stage, tMs] of stageTimes.entries()) {
-      stagesMs[stage] = tMs
+    for (const entry of timeline) {
+      stagesMs[entry.stage] = entry.t_ms_since_start
     }
     return {
       total_ms: Date.now() - startTime,
