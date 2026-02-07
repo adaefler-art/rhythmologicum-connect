@@ -4,6 +4,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { sanitizeSupabaseError } from '@/lib/db/errors'
+import { runRequiredObjectsRpc } from '@/lib/db/requiredObjectsRpc.server'
 import { env } from '@/lib/env'
 
 export type SchemaStage = 'boot' | 'building' | 'ready' | 'error'
@@ -218,6 +219,7 @@ async function runStage<T>(
 
 async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   const stages: SchemaStageResult[] = []
+  const activeBuildId = readinessState.buildId
   let client:
     | Awaited<ReturnType<typeof createServerSupabaseClient>>
     | ReturnType<typeof createAdminSupabaseClient>
@@ -294,65 +296,115 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       }
     }
   }
-  const rpcQuery = supabase as unknown as {
-    rpc: (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: unknown }>
-  }
-
   let migrationMissing = false
   let missingCount = 0
+  let missingSample: string[] = []
   const migrationMethod = 'rpc_required_objects'
+
+  const migrationStageStartedAt = nowIso()
+  const migrationStageStartedMs = Date.now()
+  const migrationStageId = `${activeBuildId ?? 'unknown'}:check_migrations:${migrationStageStartedMs}`
+  stages.push({
+    name: 'check_migrations',
+    startedAt: migrationStageStartedAt,
+    elapsedMs: 0,
+    status: 'ok',
+  })
+  setState(
+    {
+      currentStage: 'check_migrations',
+      currentStageSince: migrationStageStartedAt,
+      currentStageId: migrationStageId,
+      stages: [...stages],
+    },
+    activeBuildId,
+  )
+
+  let migrationError: {
+    code: ErrorCode
+    message: string
+    details: Record<string, unknown>
+  } | null = null
+  let migrationStageStatus: 'ok' | 'fail' = 'ok'
+  let migrationStageErrorCode: string | undefined
+  let migrationStageErrorMessage: string | undefined
+  let migrationStageDetails: Record<string, unknown> | undefined
+
   try {
-    migrationMissing = await runStage(
-      stages,
-      'check_migrations',
-      async () => {
-        const requiredObjects = REQUIRED_RELATIONS.map((relation) => `public.${relation.name}`)
-        const { data, error } = await rpcQuery.rpc('meta_check_required_objects', {
-          required_objects: requiredObjects,
-        })
+    const requiredObjects = REQUIRED_RELATIONS.map((relation) => `public.${relation.name}`)
+    const rpcResult = await runRequiredObjectsRpc(requiredObjects, MIGRATION_TIMEOUT_MS)
 
-        if (error) {
-          const safeError = sanitizeSupabaseError(error)
-          if (
-            safeError.code === '57014' ||
-            safeError.message.toLowerCase().includes('statement timeout')
-          ) {
-            const timeoutError = new Error('Migration check timed out')
-            ;(timeoutError as { code?: string }).code =
-              ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-            throw timeoutError
-          }
+    if (!rpcResult.ok) {
+      const rpcError = new Error(rpcResult.errorMessage ?? 'Migration check failed')
+      ;(rpcError as { code?: string }).code =
+        rpcResult.errorCode ?? ErrorCode.SCHEMA_RPC_ERROR
+      ;(rpcError as { where?: string }).where = rpcResult.where
+      ;(rpcError as { supabaseStatus?: number | null }).supabaseStatus =
+        rpcResult.supabaseStatus
+      throw rpcError
+    }
 
-          const queryError = new Error(safeError.message)
-          ;(queryError as { code?: string }).code = ErrorCode.SCHEMA_DB_QUERY_FAILED
-          throw queryError
-        }
-
-        const firstRow = Array.isArray(data) ? data[0] : null
-        missingCount = Number((firstRow as { missing_count?: number })?.missing_count ?? 0)
-        return missingCount > 0
-      },
-      ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT,
-      MIGRATION_TIMEOUT_MS,
-    )
+    const firstRow = Array.isArray(rpcResult.data) ? rpcResult.data[0] : null
+    missingCount = Number((firstRow as { missing_count?: number })?.missing_count ?? 0)
+    missingSample = (firstRow as { missing_sample?: string[] })?.missing_sample ?? []
+    migrationMissing = missingCount > 0
+    migrationStageDetails = {
+      method: migrationMethod,
+      missingCount,
+      missingSample,
+    }
   } catch (error) {
     const safeError = sanitizeSupabaseError(error)
-    const rawCode = (error as { code?: string }).code
+    const rawCode = (error as { code?: ErrorCode }).code
     const errorCode =
-      rawCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-        ? ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-        : ErrorCode.SCHEMA_DB_QUERY_FAILED
-    const dbStatus = errorCode === ErrorCode.SCHEMA_DB_QUERY_FAILED ? 'fail' : 'ok'
-    if (stages.length > 0) {
-      stages[stages.length - 1] = {
-        ...stages[stages.length - 1],
-        errorCode,
-        details: { method: migrationMethod, timeoutHit: errorCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT },
+      rawCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT ||
+      rawCode === ErrorCode.SCHEMA_RPC_TIMEOUT ||
+      rawCode === ErrorCode.SCHEMA_RPC_ERROR
+        ? rawCode
+        : ErrorCode.SCHEMA_RPC_ERROR
+    const where = (error as { where?: string }).where
+    const supabaseStatus = (error as { supabaseStatus?: number | null }).supabaseStatus
+    const timeoutHit =
+      errorCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT ||
+      errorCode === ErrorCode.SCHEMA_RPC_TIMEOUT
+
+    migrationStageStatus = 'fail'
+    migrationStageErrorCode = errorCode
+    migrationStageErrorMessage = safeError.message
+    migrationStageDetails = {
+      method: migrationMethod,
+      timeoutHit,
+      where: where ?? null,
+      supabaseStatus: supabaseStatus ?? null,
+    }
+    migrationError = {
+      code: errorCode,
+      message: safeError.message,
+      details: {
+        stage: 'check_migrations',
+        method: migrationMethod,
+        timeoutHit,
+        where: where ?? null,
+        supabaseStatus: supabaseStatus ?? null,
+      },
+    }
+  } finally {
+    const elapsedMs = Date.now() - migrationStageStartedMs
+    const stageIndex = stages.length - 1
+    if (stages[stageIndex]?.name === 'check_migrations') {
+      stages[stageIndex] = {
+        ...stages[stageIndex],
+        elapsedMs,
+        status: migrationStageStatus,
+        errorCode: migrationStageErrorCode,
+        errorMessage: migrationStageErrorMessage,
+        details: migrationStageDetails,
       }
     }
+    setState({ stages: [...stages] }, activeBuildId)
+  }
+
+  if (migrationError) {
     dbMigrationStatus = { status: 'error' }
     return {
       ready: false,
@@ -362,13 +414,9 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStageSince: readinessState.currentStageSince,
       stages,
       dbStatus: 'fail',
-      lastErrorCode: errorCode,
-      lastErrorMessage: safeError.message,
-      lastErrorDetails: {
-        stage: 'check_migrations',
-        method: migrationMethod,
-        timeoutHit: errorCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT,
-      },
+      lastErrorCode: migrationError.code,
+      lastErrorMessage: migrationError.message,
+      lastErrorDetails: migrationError.details,
       lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus?.latestVersion,
@@ -376,13 +424,6 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       attempts: readinessState.attempts,
       buildAttempts: readinessState.buildAttempts,
       requestId,
-    }
-  }
-
-  if (stages.length > 0) {
-    stages[stages.length - 1] = {
-      ...stages[stages.length - 1],
-      details: { method: migrationMethod, missingCount },
     }
   }
 
@@ -398,7 +439,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       dbStatus: 'ok',
       lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
       lastErrorMessage: 'Required relations missing',
-      lastErrorDetails: { stage: 'check_migrations', method: migrationMethod, missingCount },
+      lastErrorDetails: {
+        stage: 'check_migrations',
+        method: migrationMethod,
+        missingCount,
+        missingSample,
+      },
       lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus?.latestVersion,

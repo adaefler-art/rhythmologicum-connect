@@ -3555,6 +3555,7 @@ export type Database = {
         Args: { required_objects: string[] }
         Returns: {
           missing_count: number
+          missing_sample: string[] | null
         }[]
       }
       publish_draft_version: {
