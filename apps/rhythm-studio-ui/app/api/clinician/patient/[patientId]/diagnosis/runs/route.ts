@@ -66,7 +66,7 @@ export async function GET(_request: Request, context: RouteContext) {
             patientIdParam: patientId,
           },
         },
-        { status: 422, headers: diagHeaders },
+        { status: 404, headers: diagHeaders },
       )
     }
 

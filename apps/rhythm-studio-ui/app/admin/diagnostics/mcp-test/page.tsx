@@ -21,6 +21,9 @@ export default function MCPTestPage() {
   const [diagnosisPromptResult, setDiagnosisPromptResult] = useState<string>('')
   const [diagnosisQueueResult, setDiagnosisQueueResult] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [runDiagnosisStatus, setRunDiagnosisStatus] = useState<string>('idle')
+  const [runDiagnosisTraceId, setRunDiagnosisTraceId] = useState<string>('')
+  const [runDiagnosisError, setRunDiagnosisError] = useState<string>('')
 
   async function testHealth() {
     setLoading(true)
@@ -59,11 +62,19 @@ export default function MCPTestPage() {
 
   async function testRunDiagnosis() {
     setLoading(true)
+    setRunDiagnosisError('')
+    const traceId = crypto.randomUUID()
+    setRunDiagnosisTraceId(traceId)
+    setRunDiagnosisStatus('started')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3000)
     try {
       // Literal callsite: /api/mcp
+      setRunDiagnosisStatus('request_sent')
       const response = await fetch('/api/mcp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-trace-id': traceId },
+        signal: controller.signal,
         body: JSON.stringify({
           tool: 'run_diagnosis',
           input: {
@@ -73,10 +84,18 @@ export default function MCPTestPage() {
         }),
       })
       const data = await response.json()
+      setRunDiagnosisStatus('response_received')
       setToolResult(JSON.stringify(data, null, 2))
     } catch (error) {
-      setToolResult(`Error: ${error}`)
+      const message =
+        error instanceof DOMException && error.name === 'AbortError'
+          ? 'MCP_TIMEOUT'
+          : String(error)
+      setRunDiagnosisStatus('error')
+      setRunDiagnosisError(message)
+      setToolResult(`Error: ${message}`)
     } finally {
+      clearTimeout(timeout)
       setLoading(false)
     }
   }
@@ -193,7 +212,7 @@ export default function MCPTestPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patient_id: '123e4567-e89b-12d3-a456-426614174000',
+          dry_run: true,
         }),
       })
       const data = await response.json()
@@ -251,6 +270,11 @@ export default function MCPTestPage() {
               {toolResult}
             </pre>
           )}
+          <div className="mt-3 rounded border border-slate-700/60 bg-slate-900/60 p-3 text-xs text-slate-100">
+            <div>Status: {runDiagnosisStatus}</div>
+            <div>Trace ID: {runDiagnosisTraceId || '—'}</div>
+            {runDiagnosisError && <div>Error: {runDiagnosisError}</div>}
+          </div>
         </div>
 
         <div className="border p-4 rounded">
