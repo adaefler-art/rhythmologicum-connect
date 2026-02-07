@@ -4,7 +4,7 @@ import { schemaManager } from '@/lib/db/schemaReadiness.server'
 import { getRequestId } from '@/lib/db/errors'
 
 /**
- * POST /api/_meta/schema/rebuild
+ * POST /api/meta/schema/rebuild
  *
  * Triggers a schema rebuild (admin only). Always returns 200 with current status.
  */

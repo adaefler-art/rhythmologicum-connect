@@ -3,11 +3,10 @@ import { schemaManager } from '@/lib/db/schemaReadiness.server'
 import { getRequestId } from '@/lib/db/errors'
 
 /**
- * GET /api/_meta/schema
+ * GET /api/meta/schema
  *
  * Always returns 200 with schema readiness diagnostics.
  */
-
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
   const status = schemaManager.getStatus()
@@ -40,6 +39,8 @@ export async function GET(request: Request) {
     ready: readiness.ready,
     stage: readiness.stage,
     since_ms: stageSinceMs,
+    build_id: readiness.buildId ?? null,
+    retryAfterMs: readiness.retryAfterMs ?? null,
     last_error: readiness.lastErrorCode
       ? {
           code: readiness.lastErrorCode,

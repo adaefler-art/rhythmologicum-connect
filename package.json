@@ -56,6 +56,7 @@
     "verify:e78-5": "node scripts/ci/verify-e78-5-effective-state.mjs",
     "verify:e78-6": "node scripts/ci/verify-e78-6-sla-config.mjs",
     "verify:e78-7": "node scripts/ci/verify-e78-7-inbox-ui.mjs",
+      "verify:meta-schema": "node scripts/ci/check-meta-schema.mjs",
     "verify:endpoint-wiring": "node scripts/ci/verify-endpoint-wiring.mjs",
     "verify:ui-v2": "node scripts/verify-ui-v2.mjs",
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",

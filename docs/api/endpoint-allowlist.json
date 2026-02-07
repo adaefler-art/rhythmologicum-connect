@@ -150,14 +150,29 @@
       "reason": "schema readiness diagnostics"
     },
     {
+      "path": "/api/meta/schema",
+      "internal_unused": true,
+      "reason": "internal target for /api/_meta/schema rewrite"
+    },
+    {
       "path": "/api/_meta/schema/rebuild",
       "internal_unused": true,
       "reason": "schema rebuild trigger (admin only)"
     },
     {
+      "path": "/api/meta/schema/rebuild",
+      "internal_unused": true,
+      "reason": "internal target for /api/_meta/schema/rebuild rewrite"
+    },
+    {
       "path": "/api/_meta/health",
       "internal_unused": true,
       "reason": "schema health diagnostics"
+    },
+    {
+      "path": "/api/meta/health",
+      "internal_unused": true,
+      "reason": "internal target for /api/_meta/health rewrite"
     },
     {
       "path": "/api/_meta/mcp/status",

@@ -3,7 +3,7 @@ import { schemaManager } from '@/lib/db/schemaReadiness.server'
 import { getRequestId } from '@/lib/db/errors'
 
 /**
- * GET /api/_meta/health
+ * GET /api/meta/health
  *
  * Always returns 200 with minimal health diagnostics.
  */

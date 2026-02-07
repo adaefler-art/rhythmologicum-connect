@@ -49,6 +49,8 @@ const MAX_ATTEMPTS = 3
 const CHECK_TIMEOUT_MS = 15000
 const CACHE_TTL_MS = 30000
 const RETRY_DELAYS_MS = [1000, 2000, 4000]
+const THRASH_WINDOW_MS = 60000
+const THRASH_LIMIT = 3
 
 let readinessState: SchemaReadiness = {
   ready: false,
@@ -61,6 +63,7 @@ let readinessState: SchemaReadiness = {
 
 let inFlight: Promise<SchemaReadiness> | null = null
 let pendingRebuildReason: string | null = null
+let invalidationHistory: number[] = []
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -388,6 +391,11 @@ function getStatus(): SchemaReadiness {
 function invalidate(reason?: string): SchemaReadiness {
   const nextReason = reason ?? 'invalidate'
   pendingRebuildReason = nextReason
+  const now = Date.now()
+  invalidationHistory = [...invalidationHistory, now].filter(
+    (timestamp) => now - timestamp <= THRASH_WINDOW_MS,
+  )
+  const isThrashing = invalidationHistory.length > THRASH_LIMIT
 
   readinessState = {
     ...readinessState,
@@ -395,14 +403,22 @@ function invalidate(reason?: string): SchemaReadiness {
     stage: 'boot',
     stageSince: nowIso(),
     checkedAt: nowIso(),
-    lastErrorCode: undefined,
-    lastErrorMessage: undefined,
-    lastErrorDetails: undefined,
-    lastErrorAt: undefined,
+    lastErrorCode: isThrashing ? ErrorCode.SCHEMA_THRASHING : undefined,
+    lastErrorMessage: isThrashing
+      ? 'Schema wurde wiederholt invalidiert. Bitte Ursache beheben.'
+      : undefined,
+    lastErrorDetails: isThrashing
+      ? { windowMs: THRASH_WINDOW_MS, invalidations: invalidationHistory.length }
+      : undefined,
+    lastErrorAt: isThrashing ? nowIso() : undefined,
     retryAfterMs: undefined,
     lastInvalidatedAt: nowIso(),
     lastInvalidationReason: nextReason,
     buildId: `${getCommitSha()}-${Date.now()}`,
+  }
+
+  if (isThrashing) {
+    applyStage('error')
   }
 
   console.warn('[schema-manager] SCHEMA_INVALIDATED', {

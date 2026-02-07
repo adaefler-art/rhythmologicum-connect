@@ -26,10 +26,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['rhythm-core', '@rhythm/ui'],
   async rewrites() {
-    if (!engineBaseUrl) {
-      return []
-    }
-    return [
+    const baseRules = [
       {
         source: '/api/auth/:path*',
         destination: '/api/auth/:path*',
@@ -44,7 +41,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/api/_meta/:path*',
-        destination: '/api/_meta/:path*',
+        destination: '/api/meta/:path*',
       },
       {
         source: '/api/admin/funnels/:path*',
@@ -78,6 +75,12 @@ const nextConfig: NextConfig = {
         source: '/api/admin/navigation',
         destination: '/api/admin/navigation',
       },
+    ]
+    if (!engineBaseUrl) {
+      return baseRules
+    }
+    return [
+      ...baseRules,
       {
         source: '/api/:path*',
         destination: `${engineBaseUrl}/api/:path*`,
