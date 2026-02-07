@@ -473,7 +473,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchRuns}
+              onClick={() => fetchRuns()}
               icon={<RefreshCcw className="h-4 w-4" />}
             >
               Aktualisieren
