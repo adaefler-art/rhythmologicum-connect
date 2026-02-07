@@ -62,12 +62,23 @@ type SchemaDiagnostics = {
   requestId?: string
 }
 
+type SchemaGateMode = 'off' | 'soft' | 'hard'
+
+type SchemaGateInfo = {
+  mode: SchemaGateMode
+  bypassed?: boolean
+  lastErrorCode?: string | null
+  requestId?: string | null
+}
+
 const SCHEMA_ERROR_CODES = new Set([
   'SCHEMA_NOT_READY',
   'SCHEMA_ERROR',
   'SCHEMA_BLOCKED_BY_MIGRATIONS',
   'SCHEMA_BUILD_TIMEOUT',
   'SCHEMA_MIGRATION_CHECK_TIMEOUT',
+  'SCHEMA_RPC_TIMEOUT',
+  'SCHEMA_RPC_ERROR',
   'SCHEMA_DB_CONNECT_FAILED',
   'SCHEMA_DB_QUERY_FAILED',
   'SCHEMA_INTROSPECTION_FAILED',
@@ -127,6 +138,8 @@ export default function InboxPage() {
   const [schemaRequestId, setSchemaRequestId] = useState<string | null>(null)
   const [schemaRetryCount, setSchemaRetryCount] = useState(0)
   const [isSchemaRetrying, setIsSchemaRetrying] = useState(false)
+  const [schemaGateInfo, setSchemaGateInfo] = useState<SchemaGateInfo>({ mode: 'soft' })
+  const [basicMode, setBasicMode] = useState(false)
   const schemaRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   // Filter states
@@ -156,6 +169,27 @@ export default function InboxPage() {
     } catch {
       return null
     }
+  }, [])
+
+  const loadBasicTriageData = useCallback(async () => {
+    const response = await fetch('/api/triage/basic?limit=50')
+    if (!response.ok) {
+      return false
+    }
+    const data = await response.json()
+    if (!data.success) {
+      return false
+    }
+
+    setCases(data.data?.cases || [])
+    setBasicMode(Boolean(data.data?.basicMode))
+    setSchemaGateInfo((prev) => ({
+      mode: prev.mode ?? 'soft',
+      bypassed: true,
+      lastErrorCode: prev.lastErrorCode ?? null,
+      requestId: prev.requestId ?? null,
+    }))
+    return true
   }, [])
 
   // Load triage data from API
@@ -189,6 +223,15 @@ export default function InboxPage() {
 
         if (errorCode && SCHEMA_ERROR_CODES.has(errorCode)) {
           setSchemaRequestId(requestId)
+          const gateMode = errorData?.error?.details?.schemaGate?.mode as SchemaGateMode | undefined
+          if (gateMode) {
+            setSchemaGateInfo((prev) => ({
+              ...prev,
+              mode: gateMode,
+              lastErrorCode: errorCode,
+              requestId,
+            }))
+          }
           const diagnostics = await fetchSchemaDiagnostics()
           if (diagnostics?.ready) {
             setSchemaStatus(null)
@@ -197,7 +240,13 @@ export default function InboxPage() {
             setSchemaStatus(diagnostics)
             setSchemaRetryCount(0)
           }
-          return
+          const fallbackOk = await loadBasicTriageData()
+          if (fallbackOk) {
+            setError(null)
+            setLoading(false)
+            return
+          }
+          throw new Error('Schema-Check fehlgeschlagen')
         }
 
         throw new Error(errorData?.error?.message || `HTTP ${response.status}`)
@@ -210,16 +259,31 @@ export default function InboxPage() {
       }
 
       setCases(data.data?.cases || [])
-      setSchemaStatus(null)
-      setSchemaRetryCount(0)
+      setBasicMode(Boolean(data.data?.basicMode))
+      setSchemaGateInfo(data.data?.schemaGate || { mode: 'soft' })
+      setSchemaRequestId(null)
+
+      if (data.data?.schemaGate?.bypassed) {
+        const diagnostics = await fetchSchemaDiagnostics()
+        setSchemaStatus(diagnostics)
+      } else {
+        setSchemaStatus(null)
+        setSchemaRetryCount(0)
+      }
     } catch (err) {
       console.error('Failed to load triage cases:', err)
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Inbox-Daten')
-      setCases([])
+      const fallbackOk = await loadBasicTriageData()
+      if (!fallbackOk) {
+        setError(err instanceof Error ? err.message : 'Fehler beim Laden der Inbox-Daten')
+        setCases([])
+        setBasicMode(false)
+      } else {
+        setError(null)
+      }
     } finally {
       setLoading(false)
     }
-  }, [showActive, searchQuery, statusFilter, attentionFilter, fetchSchemaDiagnostics])
+  }, [showActive, searchQuery, statusFilter, attentionFilter, fetchSchemaDiagnostics, loadBasicTriageData])
 
   const loadTriageHealth = useCallback(async () => {
     setIsHealthLoading(true)
@@ -279,6 +343,7 @@ export default function InboxPage() {
   }, [loadTriageData])
 
   useEffect(() => {
+    if (schemaGateInfo.mode !== 'hard') return
     if (!schemaStatus || schemaStatus.ready) return
     if (schemaStatus.stage === 'error') return
     if (schemaRetryCount >= MAX_SCHEMA_RETRIES) return
@@ -312,13 +377,32 @@ export default function InboxPage() {
         clearTimeout(schemaRetryTimeoutRef.current)
       }
     }
-  }, [schemaRetryCount, schemaStatus, fetchSchemaDiagnostics, loadTriageData])
+  }, [schemaRetryCount, schemaStatus, fetchSchemaDiagnostics, loadTriageData, schemaGateInfo.mode])
 
   useEffect(() => {
     if (hasLoadedHealth.current) return
     hasLoadedHealth.current = true
     loadTriageHealth()
   }, [loadTriageHealth])
+
+  useEffect(() => {
+    if (!schemaStatus || schemaStatus.ready) return
+    if (schemaGateInfo.mode === 'hard') return
+    if (typeof window === 'undefined') return
+
+    const storageKey = 'triage_schema_bypass_logged'
+    if (window.sessionStorage.getItem(storageKey)) return
+    window.sessionStorage.setItem(storageKey, '1')
+
+    const lastErrorCode =
+      schemaStatus.lastError?.code || schemaGateInfo.lastErrorCode || 'SCHEMA_NOT_READY'
+    const requestId = schemaRequestId || schemaStatus.requestId || schemaGateInfo.requestId || null
+
+    console.warn('[triage] TRIAGE_SCHEMA_BYPASS', {
+      last_error_code: lastErrorCode,
+      request_id: requestId,
+    })
+  }, [schemaGateInfo.lastErrorCode, schemaGateInfo.mode, schemaGateInfo.requestId, schemaRequestId, schemaStatus])
 
   // Handle search submit
   const handleSearch = useCallback(() => {
@@ -367,6 +451,23 @@ export default function InboxPage() {
     if (isSchemaRetrying) return { label: 'Schema retry', variant: 'warning' as const }
     return { label: 'Schema startet', variant: 'warning' as const }
   }, [isSchemaRetrying, schemaRetryCount, schemaStatus])
+
+  const schemaBannerDetails = useMemo(() => {
+    if (!schemaHasWarning) return null
+    const requestId = schemaRequestId || schemaStatus?.requestId || schemaGateInfo.requestId || null
+    const code =
+      schemaStatus?.lastError?.code || schemaGateInfo.lastErrorCode || 'SCHEMA_NOT_READY'
+    const migrationsMissing =
+      schemaStatus?.dbMigrationStatus?.status === 'missing' ||
+      schemaStatus?.deps?.migrations === 'missing'
+
+    return {
+      requestId,
+      code,
+      migrationsMissing,
+      stage: schemaStatus?.stage ?? 'unknown',
+    }
+  }, [schemaGateInfo.lastErrorCode, schemaGateInfo.requestId, schemaHasWarning, schemaRequestId, schemaStatus])
 
   // Get badge for case state
   const getCaseStateBadge = useCallback((state: CaseState) => {
@@ -811,10 +912,9 @@ export default function InboxPage() {
     ]
   )
 
-  const schemaRetryExhausted = schemaRetryCount >= MAX_SCHEMA_RETRIES
-  const schemaHasError = schemaStatus && !schemaStatus.ready
+  const schemaHasWarning = (schemaStatus && !schemaStatus.ready) || schemaGateInfo.bypassed
 
-  if (loading && !schemaHasError) {
+  if (loading && cases.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="md" text={`${navLabel ?? 'Inbox'} wird geladen…`} />
@@ -822,9 +922,10 @@ export default function InboxPage() {
     )
   }
 
-  if (schemaHasError) {
+  if (schemaHasWarning && schemaGateInfo.mode === 'hard') {
     const diagnostics = schemaStatus
     const requestId = schemaRequestId || diagnostics?.requestId
+    const schemaRetryExhausted = schemaRetryCount >= MAX_SCHEMA_RETRIES
     const migrationsMissing =
       diagnostics?.dbMigrationStatus?.status === 'missing' ||
       diagnostics?.deps?.migrations === 'missing'
@@ -864,16 +965,6 @@ export default function InboxPage() {
                   )}
                   {requestId && <div>Request ID: {requestId}</div>}
                 </div>
-                {diagnostics && (
-                  <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
-                    <div className="font-medium text-slate-700 dark:text-slate-200">
-                      Diagnose (inline)
-                    </div>
-                    <pre className="mt-2 w-full max-h-[60vh] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-slate-700 dark:text-slate-200">
-                      {JSON.stringify(diagnostics, null, 2)}
-                    </pre>
-                  </div>
-                )}
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button
                     variant="outline"
@@ -934,7 +1025,50 @@ export default function InboxPage() {
             {schemaHeaderBadge.label}
           </Badge>
         )}
+        {basicMode && (
+          <Badge variant="secondary" size="sm">
+            Basic mode
+          </Badge>
+        )}
       </div>
+
+      {schemaBannerDetails && schemaGateInfo.mode !== 'hard' && (
+        <Card padding="md" shadow="sm" radius="lg" className="mb-6 border border-amber-200 bg-amber-50">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 text-amber-700">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-amber-900">
+                  Schema-Optimierungen nicht verfuegbar
+                </p>
+                <p className="text-xs text-amber-800">
+                  {schemaBannerDetails.migrationsMissing
+                    ? 'Migrationen fehlen oder wurden noch nicht angewendet.'
+                    : 'Die Inbox laeuft im Basismodus ohne Schema-Optimierungen.'}
+                </p>
+                <p className="text-xs text-amber-800">
+                  Code: {schemaBannerDetails.code}
+                  {schemaBannerDetails.requestId ? ` · Request ID: ${schemaBannerDetails.requestId}` : ''}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('/api/_meta/schema', '_blank')}
+              >
+                Diagnose anzeigen
+              </Button>
+              <Button variant="primary" size="sm" onClick={loadTriageData}>
+                Neu laden
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <Card padding="lg" shadow="md" radius="lg" className="mb-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

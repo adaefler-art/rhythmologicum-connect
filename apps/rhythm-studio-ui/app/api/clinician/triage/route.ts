@@ -30,9 +30,17 @@ import {
 	databaseErrorResponse,
 	validationErrorResponse,
 } from '@/lib/api/responses'
-import { classifySupabaseError, getRequestId, logError, withRequestId } from '@/lib/db/errors'
+import {
+	classifySupabaseError,
+	getRequestId,
+	logError,
+	withRequestId,
+	sanitizeSupabaseError,
+} from '@/lib/db/errors'
 import { schemaManager } from '@/lib/db/schemaReadiness.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { getTriageSchemaGateMode } from '@/lib/config/triageSchemaGate'
+import { fetchBasicTriageCases } from '@/lib/db/triageBasic.server'
 
 /**
  * Valid case states from triage_cases_v1 view
@@ -152,58 +160,67 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Build query from triage_cases_v1 view
+		const schemaGateMode = getTriageSchemaGateMode()
 		const schemaStatus = schemaManager.getStatus()
-		if (!schemaStatus.ready && schemaStatus.stage === 'building') {
-			return withRequestId(
-				NextResponse.json(
-					{
-						success: false,
-						error: {
-							code: ErrorCode.SCHEMA_NOT_READY,
-							message: 'Server-Schema wird aufgebaut. Bitte erneut versuchen.',
-							details: {
-								stage: schemaStatus.stage,
-								retryAfterMs: schemaStatus.retryAfterMs ?? null,
-								requestId,
-							},
-						},
-						requestId,
-					},
-					{ status: 503 },
-				),
-				requestId,
-			)
-		}
+		const schemaBypassed = schemaGateMode !== 'hard' && !schemaStatus.ready
 
-		const schemaReadiness = await schemaManager.ensureReady({ reason: 'triage', requestId })
-		if (!schemaReadiness.ready) {
-			const errorCode =
-				schemaReadiness.stage === 'error' ? ErrorCode.SCHEMA_ERROR : ErrorCode.SCHEMA_NOT_READY
-			return withRequestId(
-				NextResponse.json(
-					{
-						success: false,
-						error: {
-							code: errorCode,
-							message:
-								schemaReadiness.lastErrorMessage ||
-								'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
-							details: {
-								stage: schemaReadiness.stage,
-								requestId,
-								retryAfterMs: schemaReadiness.retryAfterMs ?? null,
-								schemaVersion: schemaReadiness.schemaVersion,
-								dbMigrationStatus: schemaReadiness.dbMigrationStatus,
-								lastErrorCode: schemaReadiness.lastErrorCode,
-								lastErrorDetails: schemaReadiness.lastErrorDetails,
+		if (schemaGateMode === 'hard') {
+			if (!schemaStatus.ready && schemaStatus.stage === 'building') {
+				return withRequestId(
+					NextResponse.json(
+						{
+							success: false,
+							error: {
+								code: ErrorCode.SCHEMA_NOT_READY,
+								message: 'Server-Schema wird aufgebaut. Bitte erneut versuchen.',
+								details: {
+									stage: schemaStatus.stage,
+									retryAfterMs: schemaStatus.retryAfterMs ?? null,
+									requestId,
+									schemaGate: { mode: schemaGateMode },
+								},
 							},
+							requestId,
 						},
-						requestId,
-					},
-					{ status: 503 },
-				),
-				requestId,
-			)
+						{ status: 503 },
+					),
+					requestId,
+				)
+			}
+
+			const schemaReadiness = await schemaManager.ensureReady({ reason: 'triage', requestId })
+			if (!schemaReadiness.ready) {
+				const errorCode =
+					schemaReadiness.stage === 'error' ? ErrorCode.SCHEMA_ERROR : ErrorCode.SCHEMA_NOT_READY
+				return withRequestId(
+					NextResponse.json(
+						{
+							success: false,
+							error: {
+								code: errorCode,
+								message:
+									schemaReadiness.lastErrorMessage ||
+									'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
+								details: {
+									stage: schemaReadiness.stage,
+									requestId,
+									retryAfterMs: schemaReadiness.retryAfterMs ?? null,
+									schemaVersion: schemaReadiness.schemaVersion,
+									dbMigrationStatus: schemaReadiness.dbMigrationStatus,
+									lastErrorCode: schemaReadiness.lastErrorCode,
+									lastErrorDetails: schemaReadiness.lastErrorDetails,
+									schemaGate: { mode: schemaGateMode },
+								},
+							},
+							requestId,
+						},
+						{ status: 503 },
+					),
+					requestId,
+				)
+			}
+		} else if (!schemaStatus.ready) {
+			void schemaManager.ensureReady({ reason: 'triage', requestId, nonBlocking: true })
 		}
 
 		let query = supabase
@@ -252,6 +269,7 @@ export async function GET(request: NextRequest) {
 
 		if (queryError) {
 			const classified = classifySupabaseError(queryError)
+			const safeError = sanitizeSupabaseError(queryError)
 			
 			logError({
 				requestId,
@@ -261,28 +279,57 @@ export async function GET(request: NextRequest) {
 			})
 
 			if (classified.kind === 'SCHEMA_NOT_READY') {
-				const readiness = await schemaManager.ensureReady({ reason: 'triage_query', requestId })
-				const errorCode = readiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
-				return withRequestId(
-					NextResponse.json(
-						{
-							success: false,
-							error: {
-								code: errorCode,
-								message:
-									readiness.lastErrorMessage ||
-									'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
-								details: {
-									stage: readiness.stage,
-									requestId,
-									schemaVersion: readiness.schemaVersion,
-									dbMigrationStatus: readiness.dbMigrationStatus,
-									lastErrorDetails: readiness.lastErrorDetails,
+				if (schemaGateMode === 'hard') {
+					const readiness = await schemaManager.ensureReady({ reason: 'triage_query', requestId })
+					const errorCode = readiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
+					return withRequestId(
+						NextResponse.json(
+							{
+								success: false,
+								error: {
+									code: errorCode,
+									message:
+										readiness.lastErrorMessage ||
+										'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
+									details: {
+										stage: readiness.stage,
+										requestId,
+										schemaVersion: readiness.schemaVersion,
+										dbMigrationStatus: readiness.dbMigrationStatus,
+										lastErrorDetails: readiness.lastErrorDetails,
+										schemaGate: { mode: schemaGateMode },
+									},
 								},
+								requestId,
 							},
-							requestId,
+							{ status: 503 },
+						),
+						requestId,
+					)
+				}
+
+				const basicCases = await fetchBasicTriageCases(supabase, 50)
+				return withRequestId(
+					successResponse(
+						{
+							cases: basicCases,
+							filters: {
+								activeOnly,
+								status: statusFilter,
+								attention: attentionFilter,
+								search: searchQuery || null,
+							},
+							count: basicCases.length,
+							basicMode: true,
+							schemaGate: {
+								mode: schemaGateMode,
+								bypassed: true,
+								lastErrorCode: safeError.code ?? ErrorCode.SCHEMA_ERROR,
+								requestId,
+							},
 						},
-						{ status: 503 },
+						200,
+						requestId,
 					),
 					requestId,
 				)
@@ -313,6 +360,13 @@ export async function GET(request: NextRequest) {
 						search: searchQuery || null,
 					},
 					count: cases?.length || 0,
+					basicMode: false,
+					schemaGate: {
+						mode: schemaGateMode,
+						bypassed: schemaBypassed,
+						lastErrorCode: schemaBypassed ? schemaStatus.lastErrorCode ?? null : null,
+						requestId,
+					},
 				},
 				200,
 				requestId,
