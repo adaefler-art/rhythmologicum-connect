@@ -14,7 +14,7 @@ export default function AdminIndexRedirect() {
       } = await supabase.auth.getSession()
 
       if (session) {
-        router.replace('/admin/content')
+        router.replace('/clinician/triage')
       } else {
         router.replace('/')
       }

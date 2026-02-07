@@ -10,7 +10,7 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 type PageProps = {
-  params: { id: string }
+  params: { slug: string }
 }
 
 async function loadContentPage(key: string) {
@@ -48,9 +48,9 @@ async function loadContentPage(key: string) {
 }
 
 export default async function EditContentPage({ params }: PageProps) {
-  const { id } = params
+  const { slug } = params
 
-  if (!id) {
+  if (!slug) {
     notFound()
   }
 
@@ -72,7 +72,7 @@ export default async function EditContentPage({ params }: PageProps) {
   let loadError: string | null = null
 
   try {
-    contentPage = await loadContentPage(id)
+    contentPage = await loadContentPage(slug)
   } catch (error) {
     loadError = error instanceof Error ? error.message : 'Fehler beim Laden'
   }
@@ -86,7 +86,7 @@ export default async function EditContentPage({ params }: PageProps) {
             href="/admin/content"
             className="inline-flex px-6 py-3 min-h-11 rounded-lg bg-sky-600 text-white text-sm md:text-base font-medium hover:bg-sky-700 transition touch-manipulation"
           >
-            Zurück zur Übersicht
+            Zurueck zur Uebersicht
           </Link>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default async function EditContentPage({ params }: PageProps) {
     notFound()
   }
 
-  if (UUID_REGEX.test(id) && contentPage.slug && contentPage.slug !== id) {
+  if (UUID_REGEX.test(slug) && contentPage.slug && contentPage.slug !== slug) {
     redirect(`/admin/content/${contentPage.slug}`)
   }
 
