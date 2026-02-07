@@ -10,12 +10,13 @@ import { getVersionMetadata, generateRunVersion } from './version.js'
 import { logger } from './logger.js'
 import { handleGetPatientContext, handleRunDiagnosis } from './handlers.js'
 import type { GetPatientContextInput, RunDiagnosisInput } from './tools.js'
-import { env } from '../../../lib/env.js'
+import { env } from './env.js'
 
-const PORT = env.MCP_SERVER_PORT || 3001
-const HOST = env.MCP_SERVER_HOST || '0.0.0.0'
+const PORT = Number(process.env.PORT || env.MCP_SERVER_PORT || 3001)
+const HOST = '0.0.0.0'
 
 interface HealthResponse {
+  ok: true
   status: 'ok'
   version: ReturnType<typeof getVersionMetadata>
   uptime_seconds: number
@@ -43,6 +44,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
   // Health endpoint
   if (url.pathname === '/health' && req.method === 'GET') {
     const response: HealthResponse = {
+      ok: true,
       status: 'ok',
       version: getVersionMetadata(),
       uptime_seconds: process.uptime(),
@@ -125,7 +127,7 @@ export function createServer() {
 export function startServer() {
   const server = createServer()
 
-  server.listen(Number(PORT), HOST, () => {
+  server.listen(PORT, HOST, () => {
     logger.info('MCP Server started', {
       host: HOST,
       port: PORT,

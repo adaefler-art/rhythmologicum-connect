@@ -15,14 +15,14 @@ import type {
 import { MCP_TOOLS } from './tools.js'
 import { generateRunVersion, getVersionMetadata } from './version.js'
 import { logger } from './logger.js'
-import { env } from '../../../lib/env.js'
-import { getPrompt } from '../../../lib/prompts/registry.js'
+import { env } from './env.js'
+import { getPrompt } from './prompts/registry.js'
 import {
   DiagnosisPromptOutputV1Schema,
   CONFIDENCE_LEVEL,
   URGENCY_LEVEL,
   type DiagnosisPromptOutputV1,
-} from '../../../lib/contracts/diagnosis-prompt.js'
+} from './contracts/diagnosis-prompt.js'
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
@@ -70,9 +70,12 @@ async function callAnthropicDiagnosis(
   return contentBlock.text
 }
 
-function mapConfidenceScore(differentials: DiagnosisPromptOutputV1['differential_diagnoses']): number {
+function mapConfidenceScore(
+  differentials: DiagnosisPromptOutputV1['differential_diagnoses'],
+): number {
   if (!differentials.length) return 0.5
-  const scores = differentials.map((item) => {
+  const scores = differentials.map(
+    (item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) => {
     switch (item.confidence) {
       case CONFIDENCE_LEVEL.VERY_HIGH:
         return 0.9
@@ -88,19 +91,23 @@ function mapConfidenceScore(differentials: DiagnosisPromptOutputV1['differential
     }
   })
 
-  const average = scores.reduce((sum, value) => sum + value, 0) / scores.length
+  const average = scores.reduce((sum: number, value: number) => sum + value, 0) / scores.length
   return Math.min(1, Math.max(0, Number(average.toFixed(2))))
 }
 
 function mapRiskLevel(output: DiagnosisPromptOutputV1): 'low' | 'medium' | 'high' | 'critical' {
-  const urgencies = output.urgent_red_flags.map((flag) => flag.urgency)
+  const urgencies = output.urgent_red_flags.map(
+    (flag: DiagnosisPromptOutputV1['urgent_red_flags'][number]) => flag.urgency,
+  )
 
   if (urgencies.includes(URGENCY_LEVEL.EMERGENT)) return 'critical'
   if (urgencies.includes(URGENCY_LEVEL.URGENT)) return 'high'
   if (urgencies.includes(URGENCY_LEVEL.PROMPT)) return 'medium'
   if (urgencies.includes(URGENCY_LEVEL.ROUTINE)) return 'low'
 
-  const confidenceLevels = output.differential_diagnoses.map((item) => item.confidence)
+  const confidenceLevels = output.differential_diagnoses.map(
+    (item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) => item.confidence,
+  )
   if (confidenceLevels.includes(CONFIDENCE_LEVEL.VERY_HIGH)) return 'high'
   if (confidenceLevels.includes(CONFIDENCE_LEVEL.HIGH)) return 'high'
   if (confidenceLevels.includes(CONFIDENCE_LEVEL.MODERATE)) return 'medium'
@@ -111,18 +118,25 @@ function mapRiskLevel(output: DiagnosisPromptOutputV1): 'low' | 'medium' | 'high
 }
 
 function buildDiagnosisResult(output: DiagnosisPromptOutputV1) {
-  const primaryFindings = output.differential_diagnoses.map((item) => item.condition).filter(Boolean)
-  const recommendations = output.recommended_next_steps.map((item) => item.step).filter(Boolean)
+  const primaryFindings = output.differential_diagnoses
+    .map((item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) => item.condition)
+    .filter(Boolean)
+  const recommendations = output.recommended_next_steps
+    .map((item: DiagnosisPromptOutputV1['recommended_next_steps'][number]) => item.step)
+    .filter(Boolean)
 
   const fallbackFinding = output.summary ? [output.summary.slice(0, 120)] : ['Diagnosis summary']
   const fallbackRecommendation = ['Clinician review required']
 
   const supportingEvidence = output.differential_diagnoses
-    .flatMap((item) => item.supporting_factors || [])
+    .flatMap(
+      (item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) =>
+        item.supporting_factors || [],
+    )
     .filter(Boolean)
 
   const differentialConsiderations = output.differential_diagnoses
-    .map((item) => item.condition)
+    .map((item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) => item.condition)
     .filter(Boolean)
 
   return {
