@@ -27,6 +27,7 @@ import {
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
 const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
+const LLM_TIMEOUT_MS = 30000
 
 export class McpToolError extends Error {
   readonly code: string
@@ -73,25 +74,39 @@ async function callAnthropicDiagnosis(
     )
   }
 
-  const response = await anthropic.messages.create({
-    model: modelConfig.model,
-    max_tokens: modelConfig.maxTokens,
-    temperature: modelConfig.temperature,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: userPrompt,
-      },
-    ],
-  })
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+  try {
+    const response = await Promise.race([
+      anthropic.messages.create({
+        model: modelConfig.model,
+        max_tokens: modelConfig.maxTokens,
+        temperature: modelConfig.temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ],
+      }),
+      new Promise<never>((_resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new McpToolError('MCP_TIMEOUT', 'LLM request timed out', 504))
+        }, LLM_TIMEOUT_MS)
+      }),
+    ])
 
-  const contentBlock = response.content[0]
-  if (contentBlock.type !== 'text') {
-    throw new Error('Expected text response from Anthropic API')
+    const contentBlock = response.content[0]
+    if (contentBlock.type !== 'text') {
+      throw new Error('Expected text response from Anthropic API')
+    }
+
+    return contentBlock.text
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
   }
-
-  return contentBlock.text
 }
 
 function mapConfidenceScore(

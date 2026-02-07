@@ -24,6 +24,7 @@ export default function MCPTestPage() {
   const [runDiagnosisStatus, setRunDiagnosisStatus] = useState<string>('idle')
   const [runDiagnosisTraceId, setRunDiagnosisTraceId] = useState<string>('')
   const [runDiagnosisError, setRunDiagnosisError] = useState<string>('')
+  const [queuePatientId, setQueuePatientId] = useState<string>('')
 
   async function testHealth() {
     setLoading(true)
@@ -207,12 +208,25 @@ export default function MCPTestPage() {
   async function testDiagnosisQueue() {
     setLoading(true)
     try {
+      if (!queuePatientId.trim()) {
+        setDiagnosisQueueResult(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'DIAG_PATIENT_ID_REQUIRED',
+              message: 'patient_id is required',
+            },
+          }, null, 2),
+        )
+        return
+      }
+
       // Literal callsite: /api/studio/diagnosis/queue (E76.8)
       const response = await fetch('/api/studio/diagnosis/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dry_run: true,
+          patient_id: queuePatientId.trim(),
         }),
       })
       const data = await response.json()
@@ -336,6 +350,17 @@ export default function MCPTestPage() {
 
         <div className="border p-4 rounded">
           <h2 className="text-xl font-semibold mb-2">Diagnosis Queue with Dedupe (E76.8)</h2>
+          <label className="block text-sm text-slate-600 mb-2" htmlFor="queue-patient-id">
+            Patient ID (UUID)
+          </label>
+          <input
+            id="queue-patient-id"
+            type="text"
+            value={queuePatientId}
+            onChange={(event) => setQueuePatientId(event.target.value)}
+            placeholder="e.g. 3f1d4e2a-..."
+            className="mb-3 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+          />
           <button
             onClick={testDiagnosisQueue}
             disabled={loading}

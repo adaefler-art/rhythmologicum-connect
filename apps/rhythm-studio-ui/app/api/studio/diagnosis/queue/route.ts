@@ -19,8 +19,6 @@ import { env } from '@/lib/env'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import type { Database, Json } from '@/lib/types/supabase'
 
-const DUMMY_PATIENT_ID = '123e4567-e89b-12d3-a456-426614174000'
-
 /**
  * Admin client usage - DOCUMENTED JUSTIFICATION
  * Purpose: Queue diagnosis run with RLS bypass for context pack building
@@ -81,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { patient_id: patientIdParam, dry_run: dryRun } = body
+    const { patient_id: patientIdParam } = body
 
     // Check authentication and authorization
     const supabase = await createServerSupabaseClient()
@@ -136,19 +134,6 @@ export async function POST(request: NextRequest) {
 
     const adminClient = createAdminSupabaseClient()
 
-    if (dryRun === true) {
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            mode: 'DRY_RUN_NO_PERSIST',
-            patient_id: patientIdParam ?? null,
-          },
-        },
-        { headers: { 'x-diag-patient-id-source': 'dry_run' } },
-      )
-    }
-
     // Validate input
     if (!patientIdParam || typeof patientIdParam !== 'string') {
       return NextResponse.json(
@@ -160,20 +145,6 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: 422 },
-      )
-    }
-
-    if (patientIdParam === DUMMY_PATIENT_ID) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'DIAG_PATIENT_NOT_FOUND',
-            message: 'Patient not found for provided identifier',
-            patientIdParam,
-          },
-        },
-        { status: 404, headers: { 'x-diag-patient-id-source': 'lookup_failed' } },
       )
     }
 

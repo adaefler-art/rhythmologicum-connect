@@ -217,6 +217,8 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         if (response.status === 401 || response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
           setGateStatus('forbidden')
+        } else if (response.status === 404 || response.status === 422) {
+          setError('Patient nicht gefunden oder ungültige ID')
         } else if (response.status === 503) {
           const errorCode = result?.error?.code
           if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE', 'MCP_ERROR'].includes(errorCode)) {
