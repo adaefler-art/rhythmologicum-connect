@@ -345,11 +345,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       rawCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
         ? ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
         : ErrorCode.SCHEMA_DB_QUERY_FAILED
-    const dbStatus =
-      errorCode === ErrorCode.SCHEMA_DB_QUERY_FAILED ||
-      errorCode === ErrorCode.SCHEMA_DB_CONNECT_FAILED
-        ? 'fail'
-        : 'ok'
+    const dbStatus = errorCode === ErrorCode.SCHEMA_DB_QUERY_FAILED ? 'fail' : 'ok'
     if (stages.length > 0) {
       stages[stages.length - 1] = {
         ...stages[stages.length - 1],
