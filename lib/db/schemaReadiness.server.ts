@@ -1,7 +1,5 @@
 import 'server-only'
 
-import { Pool } from 'pg'
-
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
@@ -93,7 +91,6 @@ let inFlight: Promise<SchemaReadiness> | null = null
 let pendingRebuildReason: string | null = null
 let invalidationHistory: number[] = []
 let currentBuildId: string | null = null
-let requiredObjectsPool: Pool | null = null
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -101,22 +98,6 @@ function nowIso(): string {
 
 function getCommitSha(): string {
   return env.VERCEL_GIT_COMMIT_SHA || env.GIT_COMMIT_SHA || env.COMMIT_SHA || 'unknown'
-}
-
-function getRequiredObjectsPool(): Pool | null {
-  const dbUrl = env.SUPABASE_DB_URL || env.DATABASE_URL
-  if (!dbUrl) return null
-
-  if (!requiredObjectsPool) {
-    requiredObjectsPool = new Pool({
-      connectionString: dbUrl,
-      max: 1,
-      idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 2000,
-    })
-  }
-
-  return requiredObjectsPool
 }
 
 function getRetryDelayMs(attempt: number): number {
@@ -312,56 +293,37 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
 
   let migrationMissing = false
   let missingCount = 0
-  const migrationMethod = 'to_regclass'
+  const migrationMethod = 'rpc_required_objects'
   try {
     migrationMissing = await runStage(
       stages,
       'check_migrations',
       async () => {
-        const pool = getRequiredObjectsPool()
-        if (!pool) {
-          const error = new Error('Database URL missing for migration check')
-          ;(error as { code?: string }).code = ErrorCode.SCHEMA_DB_CONNECT_FAILED
-          throw error
-        }
+        const requiredObjects = REQUIRED_RELATIONS.map((relation) => `public.${relation.name}`)
+        const { data, error } = await client.rpc('meta_check_required_objects', {
+          required_objects: requiredObjects,
+        })
 
-        const client = await pool.connect()
-        try {
-          await client.query('BEGIN')
-          await client.query("SET LOCAL statement_timeout = '1500ms'")
-
-          const requiredObjects = REQUIRED_RELATIONS.map(
-            (relation) => `public.${relation.name}`,
-          )
-          const valuesClause = requiredObjects
-            .map((_, index) => `($${index + 1})`)
-            .join(', ')
-          const sql = `select count(*) filter (where to_regclass(x) is null) as missing_count from (values ${valuesClause}) v(x)`
-
-          const queryPromise = client.query(sql, requiredObjects)
-          const timeoutPromise = new Promise<never>((_resolve, reject) => {
-            setTimeout(() => {
-              const timeoutError = new Error('Migration check timed out')
-              ;(timeoutError as { code?: string }).code =
-                ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-              reject(timeoutError)
-            }, MIGRATION_TIMEOUT_MS)
-          })
-
-          const result = await Promise.race([queryPromise, timeoutPromise])
-          await client.query('COMMIT')
-
-          missingCount = Number(result.rows?.[0]?.missing_count ?? 0)
-          return missingCount > 0
-        } catch (error) {
-          await client.query('ROLLBACK').catch(() => undefined)
-          if (!(error as { code?: string }).code) {
-            ;(error as { code?: string }).code = ErrorCode.SCHEMA_DB_QUERY_FAILED
+        if (error) {
+          const safeError = sanitizeSupabaseError(error)
+          if (
+            safeError.code === '57014' ||
+            safeError.message.toLowerCase().includes('statement timeout')
+          ) {
+            const timeoutError = new Error('Migration check timed out')
+            ;(timeoutError as { code?: string }).code =
+              ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
+            throw timeoutError
           }
-          throw error
-        } finally {
-          client.release()
+
+          const queryError = new Error(safeError.message)
+          ;(queryError as { code?: string }).code = ErrorCode.SCHEMA_DB_QUERY_FAILED
+          throw queryError
         }
+
+        const firstRow = Array.isArray(data) ? data[0] : null
+        missingCount = Number((firstRow as { missing_count?: number })?.missing_count ?? 0)
+        return missingCount > 0
       },
       ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT,
       MIGRATION_TIMEOUT_MS,
@@ -372,9 +334,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     const errorCode =
       rawCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
         ? ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-        : rawCode === ErrorCode.SCHEMA_DB_CONNECT_FAILED
-          ? ErrorCode.SCHEMA_DB_CONNECT_FAILED
-          : ErrorCode.SCHEMA_DB_QUERY_FAILED
+        : ErrorCode.SCHEMA_DB_QUERY_FAILED
     const dbStatus =
       errorCode === ErrorCode.SCHEMA_DB_QUERY_FAILED ||
       errorCode === ErrorCode.SCHEMA_DB_CONNECT_FAILED

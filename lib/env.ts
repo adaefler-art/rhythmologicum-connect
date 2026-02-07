@@ -135,8 +135,6 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   // OPTIONAL: Legacy/Alternative Variable Names
   SUPABASE_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()), // Alternative to NEXT_PUBLIC_SUPABASE_URL
   SUPABASE_SERVICE_KEY: z.preprocess(sanitizeEnvString, z.string().optional()), // Alternative to SUPABASE_SERVICE_ROLE_KEY
-  SUPABASE_DB_URL: z.preprocess(sanitizeEnvString, z.string().optional()),
-  DATABASE_URL: z.preprocess(sanitizeEnvString, z.string().optional()),
 
   // OPTIONAL: MCP Server configuration (server-only)
   MCP_SERVER_URL: z.preprocess(sanitizeEnvString, z.string().url().optional()),
@@ -243,8 +241,6 @@ function getRawServerEnv() {
     ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-    SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
-    DATABASE_URL: process.env.DATABASE_URL,
     MCP_SERVER_URL: process.env.MCP_SERVER_URL,
     MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
@@ -294,8 +290,6 @@ export type Env = {
   PILOT_USER_ALLOWLIST?: string
   SUPABASE_URL?: string
   SUPABASE_SERVICE_KEY?: string
-  SUPABASE_DB_URL?: string
-  DATABASE_URL?: string
   NODE_ENV?: 'development' | 'production' | 'test'
   NEXT_PHASE?: string
   VERCEL_ENV?: string
@@ -440,8 +434,6 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       PILOT_USER_ALLOWLIST: parsed.PILOT_USER_ALLOWLIST,
       SUPABASE_URL: parsed.SUPABASE_URL,
       SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
-      SUPABASE_DB_URL: parsed.SUPABASE_DB_URL,
-      DATABASE_URL: parsed.DATABASE_URL,
       NODE_ENV: parsed.NODE_ENV,
       NEXT_PHASE: parsed.NEXT_PHASE,
       VERCEL_ENV: parsed.VERCEL_ENV,

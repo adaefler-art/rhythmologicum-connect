@@ -9366,6 +9366,26 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
 
 
+CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" text[])
+RETURNS TABLE("missing_count" integer)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = "public"
+AS $$
+BEGIN
+  PERFORM set_config('statement_timeout', '1500ms', true);
+  RETURN QUERY
+  SELECT count(*)::int
+  FROM unnest(required_objects) v(x)
+  WHERE to_regclass(v.x) IS NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "anon";
+GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."meta_check_required_objects"(text[]) TO "service_role";
+
+
 
 
 
