@@ -21,12 +21,7 @@ export async function GET(request: Request) {
     return Number.isNaN(since) ? null : Date.now() - since
   })()
   const deps = {
-    db:
-      readiness.dbMigrationStatus?.status === 'error'
-        ? 'fail'
-        : readiness.dbMigrationStatus?.status === 'unknown'
-          ? 'unknown'
-          : 'ok',
+    db: readiness.dbStatus === 'fail' ? 'fail' : readiness.dbStatus === 'ok' ? 'ok' : 'unknown',
     migrations:
       readiness.dbMigrationStatus?.status === 'missing'
         ? 'missing'
@@ -38,33 +33,29 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ready: readiness.ready,
     stage: readiness.stage,
-    since_ms: stageSinceMs,
-    build_id: readiness.buildId ?? null,
+    sinceMs: stageSinceMs,
+    buildId: readiness.buildId ?? null,
     retryAfterMs: readiness.retryAfterMs ?? null,
-    last_error: readiness.lastErrorCode
+    lastError: readiness.lastErrorCode
       ? {
           code: readiness.lastErrorCode,
           message: readiness.lastErrorMessage ?? null,
           at: readiness.lastErrorAt ?? null,
-          details_sanitized: readiness.lastErrorDetails ?? null,
+          detailsSanitized: readiness.lastErrorDetails ?? null,
         }
       : null,
     stages: readiness.stages ?? null,
     build: {
-      build_id: readiness.buildId ?? null,
+      buildId: readiness.buildId ?? null,
       attempts: readiness.buildAttempts,
-      last_build_ms: readiness.lastBuildMs ?? null,
+      lastBuildMs: readiness.lastBuildMs ?? null,
     },
     deps,
-    last_error_code: readiness.lastErrorCode ?? null,
-    last_error_message: readiness.lastErrorMessage ?? null,
-    last_error_details: readiness.lastErrorDetails ?? null,
-    db_migration_status: readiness.dbMigrationStatus ?? null,
-    schema_version: readiness.schemaVersion ?? null,
-    checked_at: readiness.checkedAt,
-    stage_since: readiness.stageSince,
+    dbMigrationStatus: readiness.dbMigrationStatus ?? null,
+    schemaVersion: readiness.schemaVersion ?? null,
+    checkedAt: readiness.checkedAt,
+    stageSince: readiness.stageSince,
     attempts: readiness.attempts,
-    retry_after_ms: readiness.retryAfterMs ?? null,
     requestId,
   })
 }

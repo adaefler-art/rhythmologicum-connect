@@ -36,21 +36,29 @@ import {
 type SchemaDiagnostics = {
   ready: boolean
   stage: 'boot' | 'building' | 'ready' | 'error'
-  last_error_code: string | null
-  last_error_message: string | null
-  last_error_details: Record<string, unknown> | null
+  lastErrorCode?: string | null
+  lastErrorMessage?: string | null
+  lastErrorDetails?: Record<string, unknown> | null
+  lastError?: {
+    code: string
+    message: string | null
+    at: string | null
+    detailsSanitized: Record<string, unknown> | null
+  } | null
   deps?: {
     db?: 'ok' | 'fail' | 'unknown'
     migrations?: 'ok' | 'missing' | 'unknown'
   } | null
-  db_migration_status: {
+  dbMigrationStatus: {
     status: 'ok' | 'missing' | 'error'
     latestVersion?: string
     appliedCount?: number
   } | null
-  schema_version: string | null
-  checked_at: string
+  schemaVersion: string | null
+  checkedAt: string
   attempts: number
+  retryAfterMs?: number | null
+  buildId?: string | null
   requestId?: string
 }
 
@@ -60,6 +68,8 @@ const SCHEMA_ERROR_CODES = new Set([
   'SCHEMA_BLOCKED_BY_MIGRATIONS',
   'SCHEMA_BUILD_TIMEOUT',
   'SCHEMA_MIGRATION_CHECK_TIMEOUT',
+  'SCHEMA_DB_CONNECT_FAILED',
+  'SCHEMA_DB_QUERY_FAILED',
   'SCHEMA_INTROSPECTION_FAILED',
   'SCHEMA_CACHE_CORRUPT',
   'SCHEMA_THRASHING',
@@ -816,7 +826,7 @@ export default function InboxPage() {
     const diagnostics = schemaStatus
     const requestId = schemaRequestId || diagnostics?.requestId
     const migrationsMissing =
-      diagnostics?.db_migration_status?.status === 'missing' ||
+      diagnostics?.dbMigrationStatus?.status === 'missing' ||
       diagnostics?.deps?.migrations === 'missing'
 
     return (
@@ -840,17 +850,17 @@ export default function InboxPage() {
                 </p>
                 <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
                   <div>Stage: {diagnostics?.stage ?? 'unknown'}</div>
-                  {(diagnostics?.deps?.migrations || diagnostics?.db_migration_status?.status) && (
+                  {(diagnostics?.deps?.migrations || diagnostics?.dbMigrationStatus?.status) && (
                     <div>
                       Migrations:{' '}
-                      {diagnostics?.deps?.migrations || diagnostics?.db_migration_status?.status}
+                      {diagnostics?.deps?.migrations || diagnostics?.dbMigrationStatus?.status}
                     </div>
                   )}
-                  {diagnostics?.last_error_code && (
-                    <div>Code: {diagnostics.last_error_code}</div>
+                  {diagnostics?.lastError?.code && (
+                    <div>Code: {diagnostics.lastError.code}</div>
                   )}
-                  {diagnostics?.last_error_message && (
-                    <div>Message: {diagnostics.last_error_message}</div>
+                  {diagnostics?.lastError?.message && (
+                    <div>Message: {diagnostics.lastError.message}</div>
                   )}
                   {requestId && <div>Request ID: {requestId}</div>}
                 </div>

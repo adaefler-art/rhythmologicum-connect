@@ -15,6 +15,7 @@ export type SchemaReadiness = {
   currentStage?: SchemaStageName
   currentStageSince?: string
   stages?: SchemaStageResult[]
+  dbStatus?: 'ok' | 'fail'
   lastErrorCode?: string
   lastErrorMessage?: string
   lastErrorDetails?: Record<string, unknown>
@@ -156,6 +157,13 @@ async function runStage<T>(
   const startedAt = nowIso()
   const startedMs = Date.now()
 
+  stages.push({
+    name,
+    startedAt,
+    elapsedMs: 0,
+    status: 'ok',
+  })
+
   readinessState = {
     ...readinessState,
     currentStage: name,
@@ -165,12 +173,11 @@ async function runStage<T>(
 
   try {
     const result = await withTimeout(fn(), timeoutMs, errorCode)
-    stages.push({
-      name,
-      startedAt,
+    stages[stages.length - 1] = {
+      ...stages[stages.length - 1],
       elapsedMs: Date.now() - startedMs,
       status: 'ok',
-    })
+    }
     readinessState = {
       ...readinessState,
       stages: [...stages],
@@ -181,14 +188,13 @@ async function runStage<T>(
     if (!(error as { code?: string }).code) {
       ;(error as { code?: string }).code = errorCode
     }
-    stages.push({
-      name,
-      startedAt,
+    stages[stages.length - 1] = {
+      ...stages[stages.length - 1],
       elapsedMs: Date.now() - startedMs,
       status: 'fail',
       errorCode: (error as { code?: string }).code ?? errorCode,
       errorMessage: safeError.message,
-    })
+    }
     readinessState = {
       ...readinessState,
       stages: [...stages],
@@ -206,6 +212,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   readinessState = {
     ...readinessState,
     stages: [...stages],
+    dbStatus: 'ok',
   }
 
   try {
@@ -231,11 +238,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
-      lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+      dbStatus: 'fail',
+      lastErrorCode: ErrorCode.SCHEMA_DB_CONNECT_FAILED,
       lastErrorMessage: safeError.message,
       lastErrorDetails: { stage: 'connect_db' },
       lastErrorAt: nowIso(),
-      dbMigrationStatus,
+      dbMigrationStatus: { status: 'error' },
       schemaVersion: dbMigrationStatus?.latestVersion,
       checkedAt: nowIso(),
       attempts: readinessState.attempts,
@@ -252,11 +260,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
-      lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+      dbStatus: 'fail',
+      lastErrorCode: ErrorCode.SCHEMA_DB_CONNECT_FAILED,
       lastErrorMessage: 'No database client available',
       lastErrorDetails: { stage: 'connect_db' },
       lastErrorAt: nowIso(),
-      dbMigrationStatus,
+      dbMigrationStatus: { status: 'error' },
       schemaVersion: dbMigrationStatus?.latestVersion,
       checkedAt: nowIso(),
       attempts: readinessState.attempts,
@@ -305,12 +314,12 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     const errorCode =
       (error as { code?: string }).code === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
         ? ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT
-        : ErrorCode.SCHEMA_INTROSPECTION_FAILED
+        : ErrorCode.SCHEMA_DB_QUERY_FAILED
     if (stages.length > 0) {
       stages[stages.length - 1] = {
         ...stages[stages.length - 1],
         errorCode,
-        details: { method: migrationMethod },
+        details: { method: migrationMethod, timeoutHit: errorCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT },
       }
     }
     dbMigrationStatus = { status: 'error' }
@@ -321,9 +330,14 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
+      dbStatus: 'fail',
       lastErrorCode: errorCode,
       lastErrorMessage: safeError.message,
-      lastErrorDetails: { stage: 'check_migrations', method: migrationMethod },
+      lastErrorDetails: {
+        stage: 'check_migrations',
+        method: migrationMethod,
+        timeoutHit: errorCode === ErrorCode.SCHEMA_MIGRATION_CHECK_TIMEOUT,
+      },
       lastErrorAt: nowIso(),
       dbMigrationStatus,
       schemaVersion: dbMigrationStatus?.latestVersion,
@@ -350,6 +364,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
+      dbStatus: 'ok',
       lastErrorCode: ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS,
       lastErrorMessage: 'Required relations missing',
       lastErrorDetails: { stage: 'check_migrations', method: migrationMethod, missingCount },
@@ -395,6 +410,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
         currentStage: readinessState.currentStage,
         currentStageSince: readinessState.currentStageSince,
         stages,
+        dbStatus: 'ok',
         lastErrorCode: ErrorCode.SCHEMA_CACHE_CORRUPT,
         lastErrorMessage: errorMessage,
         lastErrorDetails: {
@@ -419,6 +435,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       currentStage: readinessState.currentStage,
       currentStageSince: readinessState.currentStageSince,
       stages,
+      dbStatus: 'ok',
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: errorMessage,
       lastErrorDetails: {
@@ -470,6 +487,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
     currentStage: undefined,
     currentStageSince: undefined,
     stages,
+    dbStatus: 'ok',
     lastErrorCode: undefined,
     lastErrorMessage: undefined,
     lastErrorDetails: undefined,
@@ -493,6 +511,9 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
     buildId: `${getCommitSha()}-${Date.now()}`,
     buildAttempts: 0,
     attempts: 0,
+    stages: [],
+    currentStage: undefined,
+    currentStageSince: undefined,
     lastBuildMs: undefined,
     lastBuildReason: reason,
     retryAfterMs: getRetryDelayMs(1),
