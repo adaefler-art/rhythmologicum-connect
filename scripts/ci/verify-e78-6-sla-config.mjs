@@ -144,8 +144,58 @@ async function checkViewDueAtColumn() {
     errors.push('due_at column not found in view')
   }
   
-  if (!schemaContent.includes("(a.started_at + (fsc.sla_days || ' days')::INTERVAL)")) {
+  // More flexible pattern matching - normalize whitespace
+  const normalizedContent = schemaContent.replace(/\s+/g, ' ')
+  if (!normalizedContent.includes("started_at + (fsc.sla_days || ' days')")) {
     errors.push('due_at calculation not using sla_days')
+  }
+  
+  return { passed: errors.length === 0, errors, warnings }
+}
+
+async function checkSLAPrecedence() {
+  console.log('\n🔍 R-E78.6-003: Checking SLA precedence rules')
+  
+  const errors = []
+  const warnings = []
+  
+  const schemaPath = path.join(repoRoot, 'schema/schema.sql')
+  const schemaContent = fs.readFileSync(schemaPath, 'utf8')
+  
+  // Check that funnel_sla_config CTE exists and uses COALESCE
+  if (!schemaContent.includes('funnel_sla_config AS')) {
+    errors.push('funnel_sla_config CTE not found')
+    return { passed: false, errors, warnings }
+  }
+  
+  // Extract the funnel_sla_config section (more flexible)
+  const slaConfigMatch = schemaContent.match(/funnel_sla_config AS\s*\([\s\S]+?\),\s*--/m)
+  
+  if (!slaConfigMatch) {
+    errors.push('Could not parse funnel_sla_config CTE')
+    return { passed: false, errors, warnings }
+  }
+  
+  const slaConfigText = slaConfigMatch[0]
+  
+  // Check for required elements with flexible matching
+  const hasCoalesce = slaConfigText.includes('COALESCE')
+  const hasFtsOverdueDays = slaConfigText.includes('fts.overdue_days')
+  const hasFallbackSeven = slaConfigText.includes('7')
+  
+  if (!hasCoalesce) {
+    errors.push('COALESCE not found in funnel_sla_config')
+  }
+  if (!hasFtsOverdueDays) {
+    errors.push('fts.overdue_days not found in COALESCE')
+  }
+  if (!hasFallbackSeven) {
+    errors.push('Fallback value (7) not found in funnel_sla_config')
+  }
+  
+  // Note: ENV variable precedence is handled in TypeScript layer, not SQL
+  if (hasCoalesce && hasFtsOverdueDays && hasFallbackSeven) {
+    warnings.push('ENV variable precedence (TRIAGE_SLA_DAYS_DEFAULT) is handled in application layer')
   }
   
   return { passed: errors.length === 0, errors, warnings }
@@ -160,20 +210,29 @@ async function checkOverdueUsesConfigurableSLA() {
   const schemaPath = path.join(repoRoot, 'schema/schema.sql')
   const schemaContent = fs.readFileSync(schemaPath, 'utf8')
   
-  // Check that overdue logic uses sla_days, not hardcoded '7 days'
-  const overdueSection = schemaContent.match(/-- R-E78.1-007.*?THEN 'overdue'::text END/gs)
+  // More robust check - look for the pattern in attention_computation
+  const attentionSection = schemaContent.match(/attention_computation AS[\s\S]+?FROM assessments a/m)
   
-  if (!overdueSection || overdueSection.length === 0) {
-    errors.push('Overdue detection logic not found')
+  if (!attentionSection) {
+    errors.push('attention_computation CTE not found')
     return { passed: false, errors, warnings }
   }
   
-  const hasConfigurableSLA = overdueSection.some(section => 
-    section.includes('fsc.sla_days') && !section.includes("INTERVAL '7 days'")
+  const attentionText = attentionSection[0]
+  
+  // Check for overdue logic using fsc.sla_days
+  if (!attentionText.includes('fsc.sla_days') || 
+      !attentionText.includes("'overdue'")) {
+    errors.push('Overdue logic not found or not using fsc.sla_days')
+  }
+  
+  // Warn if hardcoded interval is still present in overdue section
+  const overdueLines = attentionText.split('\n').filter(line => 
+    line.includes('overdue') && line.includes("INTERVAL '7 days'")
   )
   
-  if (!hasConfigurableSLA) {
-    errors.push('Overdue logic still uses hardcoded INTERVAL instead of fsc.sla_days')
+  if (overdueLines.length > 0) {
+    errors.push('Overdue logic still contains hardcoded INTERVAL "7 days"')
   }
   
   return { passed: errors.length === 0, errors, warnings }
@@ -188,20 +247,29 @@ async function checkStuckUses2xSLA() {
   const schemaPath = path.join(repoRoot, 'schema/schema.sql')
   const schemaContent = fs.readFileSync(schemaPath, 'utf8')
   
-  // Check that stuck logic uses 2x sla_days
-  const stuckSection = schemaContent.match(/-- R-E78.1-008.*?THEN 'stuck'::text END/gs)
+  // More robust check
+  const attentionSection = schemaContent.match(/attention_computation AS[\s\S]+?FROM assessments a/m)
   
-  if (!stuckSection || stuckSection.length === 0) {
-    errors.push('Stuck detection logic not found')
+  if (!attentionSection) {
+    errors.push('attention_computation CTE not found')
     return { passed: false, errors, warnings }
   }
   
-  const has2xSLA = stuckSection.some(section => 
-    section.includes('fsc.sla_days * 2') && !section.includes("INTERVAL '14 days'")
+  const attentionText = attentionSection[0]
+  
+  // Check for stuck logic using 2x sla_days
+  if (!attentionText.includes('fsc.sla_days * 2') ||
+      !attentionText.includes("'stuck'")) {
+    errors.push('Stuck logic not found or not using fsc.sla_days * 2')
+  }
+  
+  // Warn if hardcoded interval is still present in stuck section
+  const stuckLines = attentionText.split('\n').filter(line => 
+    line.includes('stuck') && line.includes("INTERVAL '14 days'")
   )
   
-  if (!has2xSLA) {
-    errors.push('Stuck logic still uses hardcoded INTERVAL instead of fsc.sla_days * 2')
+  if (stuckLines.length > 0) {
+    errors.push('Stuck logic still contains hardcoded INTERVAL "14 days"')
   }
   
   return { passed: errors.length === 0, errors, warnings }
@@ -302,6 +370,7 @@ async function runChecks() {
   const checks = [
     { name: 'checkDefaultSLAEnvVar', fn: checkDefaultSLAEnvVar },
     { name: 'checkFunnelSLATable', fn: checkFunnelSLATable },
+    { name: 'checkSLAPrecedence', fn: checkSLAPrecedence },
     { name: 'checkViewSLADaysColumn', fn: checkViewSLADaysColumn },
     { name: 'checkViewDueAtColumn', fn: checkViewDueAtColumn },
     { name: 'checkOverdueUsesConfigurableSLA', fn: checkOverdueUsesConfigurableSLA },

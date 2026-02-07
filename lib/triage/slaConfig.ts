@@ -70,13 +70,29 @@ export async function getTriageSLADaysForFunnel(funnelId: string): Promise<numbe
     if (!error && data?.overdue_days) {
       return data.overdue_days
     }
+    
+    // No setting found or query returned null - fall through to default
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = no rows returned, which is expected
+      // Other errors should be logged
+      console.warn(
+        `[SLA Config] Failed to query funnel-specific SLA for funnel ${funnelId}:`,
+        error.message,
+      )
+    }
   } catch (err) {
-    // If server client is not available (e.g., client-side code),
-    // or query fails, fall back to default
-    console.warn(
-      `[SLA Config] Failed to query funnel-specific SLA for funnel ${funnelId}:`,
-      err,
-    )
+    // Distinguish between import failure and query failure
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    if (errorMessage.includes('import') || errorMessage.includes('module')) {
+      console.warn(
+        `[SLA Config] Server-side client not available (client-side context). Using default SLA.`,
+      )
+    } else {
+      console.warn(
+        `[SLA Config] Failed to query database for funnel ${funnelId}:`,
+        errorMessage,
+      )
+    }
   }
   
   // Fall back to default
