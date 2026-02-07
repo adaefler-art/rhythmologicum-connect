@@ -355,6 +355,9 @@ function getDefaultEnv(): Env {
     STUDIO_BASE_URL: process.env.STUDIO_BASE_URL,
     PATIENT_BASE_URL: process.env.PATIENT_BASE_URL,
     ENGINE_BASE_URL: process.env.ENGINE_BASE_URL,
+    MCP_SERVER_URL: process.env.MCP_SERVER_URL,
+    MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
+    MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
     FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
   }
 }
@@ -429,6 +432,9 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       STUDIO_BASE_URL: parsed.STUDIO_BASE_URL,
       PATIENT_BASE_URL: parsed.PATIENT_BASE_URL,
       ENGINE_BASE_URL: parsed.ENGINE_BASE_URL,
+      MCP_SERVER_URL: parsed.MCP_SERVER_URL,
+      MCP_SERVER_HOST: parsed.MCP_SERVER_HOST,
+      MCP_SERVER_PORT: parsed.MCP_SERVER_PORT,
       FEATURE_MCP_STUB: parsed.FEATURE_MCP_STUB,
     } as z.infer<T>
   } catch (error) {
