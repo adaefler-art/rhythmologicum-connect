@@ -140,6 +140,9 @@ const serverOnlyEnvSchema = baseEnvSchema.extend({
   MCP_SERVER_HOST: z.preprocess(sanitizeEnvString, z.string().optional()),
   MCP_SERVER_PORT: z.preprocess(sanitizeEnvString, z.string().optional()),
   FEATURE_MCP_STUB: z.string().optional(),
+
+  // OPTIONAL: E78.6 Triage SLA Configuration
+  TRIAGE_SLA_DAYS_DEFAULT: z.string().optional(),
 })
 
 const patientEnvSchema = baseEnvSchema.extend({
@@ -239,6 +242,7 @@ function getRawServerEnv() {
     MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
     MCP_SERVER_PORT: process.env.MCP_SERVER_PORT,
     FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
+    TRIAGE_SLA_DAYS_DEFAULT: process.env.TRIAGE_SLA_DAYS_DEFAULT,
   }
 }
 
@@ -300,6 +304,7 @@ export type Env = {
   MCP_SERVER_HOST?: string
   MCP_SERVER_PORT?: string
   FEATURE_MCP_STUB?: string
+  TRIAGE_SLA_DAYS_DEFAULT?: string
 }
 
 /**
@@ -424,6 +429,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       PATIENT_BASE_URL: parsed.PATIENT_BASE_URL,
       ENGINE_BASE_URL: parsed.ENGINE_BASE_URL,
       FEATURE_MCP_STUB: parsed.FEATURE_MCP_STUB,
+      TRIAGE_SLA_DAYS_DEFAULT: parsed.TRIAGE_SLA_DAYS_DEFAULT,
     } as z.infer<T>
   } catch (error) {
     if (error instanceof z.ZodError) {

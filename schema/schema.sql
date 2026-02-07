@@ -2278,6 +2278,38 @@ $$;
 
 ALTER FUNCTION "public"."update_support_cases_updated_at"() OWNER TO "postgres";
 
+
+CREATE OR REPLACE FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") RETURNS integer
+    LANGUAGE "plpgsql" STABLE
+    AS $$
+DECLARE
+  v_overdue_days INTEGER;
+  v_default_days INTEGER := 7; -- Hardcoded fallback
+BEGIN
+  -- Try to get funnel-specific setting
+  SELECT overdue_days
+  INTO v_overdue_days
+  FROM public.funnel_triage_settings
+  WHERE funnel_id = p_funnel_id;
+  
+  -- If found, return it
+  IF FOUND THEN
+    RETURN v_overdue_days;
+  END IF;
+  
+  -- Fall back to default
+  -- Note: Environment variable fallback is handled in application layer
+  -- This function returns the hardcoded default if no DB setting exists
+  RETURN v_default_days;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") IS 'E78.6: Get SLA days for a funnel. Returns funnel-specific value from funnel_triage_settings if exists, otherwise returns default (7 days). Application layer should handle TRIAGE_SLA_DAYS_DEFAULT env var.';
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -4731,6 +4763,35 @@ ALTER TABLE "public"."triage_case_actions" OWNER TO "postgres";
 COMMENT ON TABLE "public"."triage_case_actions" IS 'E78.4: Records HITL interventions on triage cases. Actions are append-only and never deleted by auto-jobs.';
 
 
+CREATE TABLE IF NOT EXISTS "public"."funnel_triage_settings" (
+    "funnel_id" "uuid" NOT NULL,
+    "overdue_days" integer NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "funnel_triage_settings_overdue_days_positive" CHECK (("overdue_days" > 0))
+);
+
+
+ALTER TABLE "public"."funnel_triage_settings" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."funnel_triage_settings" IS 'E78.6: Per-funnel triage SLA configuration. Defines custom overdue_days threshold for specific funnels. Falls back to TRIAGE_SLA_DAYS_DEFAULT env var or 7 days default.';
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."funnel_id" IS 'Foreign key to funnels_catalog. One setting per funnel.';
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."overdue_days" IS 'Number of days before a triage case for this funnel is marked as overdue. Must be positive.';
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."created_by" IS 'User who created this configuration (typically a clinician or admin).';
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."updated_by" IS 'User who last updated this configuration.';
+
+
 
 COMMENT ON COLUMN "public"."triage_case_actions"."id" IS 'Unique identifier for the action';
 
@@ -4837,6 +4898,19 @@ WITH
     ORDER BY assessment_id, created_at DESC
   ),
   
+  -- E78.6: Get SLA configuration per funnel (v1.1)
+  funnel_sla_config AS (
+    SELECT
+      a.id AS assessment_id,
+      a.funnel_id,
+      COALESCE(
+        fts.overdue_days,  -- Funnel-specific setting (highest priority)
+        7                   -- Default fallback (7 days)
+      ) AS sla_days
+    FROM assessments a
+    LEFT JOIN funnel_triage_settings fts ON fts.funnel_id = a.funnel_id
+  ),
+  
   -- Compute attention items for each assessment (with manual_flag integration)
   attention_computation AS (
     SELECT
@@ -4865,10 +4939,10 @@ WITH
           )
         ) THEN 'critical_flag'::text END,
         
-        -- R-E78.1-007: overdue (in-progress)
+        -- R-E78.1-007 + E78.6: overdue (in-progress) - using configurable SLA
         CASE WHEN (
           a.status = 'in_progress'
-          AND a.started_at < (NOW() - INTERVAL '7 days')
+          AND a.started_at < (NOW() - (fsc.sla_days || ' days')::INTERVAL)
           AND a.completed_at IS NULL
         ) THEN 'overdue'::text END,
         
@@ -4883,7 +4957,7 @@ WITH
           )
         ) THEN 'overdue'::text END,
         
-        -- R-E78.1-008: stuck
+        -- R-E78.1-008 + E78.6: stuck - using 2x SLA for stuck threshold
         CASE WHEN (
           EXISTS (
             SELECT 1 FROM latest_jobs lj
@@ -4893,7 +4967,7 @@ WITH
           )
           OR (
             a.status = 'in_progress'
-            AND a.started_at < (NOW() - INTERVAL '14 days')
+            AND a.started_at < (NOW() - (fsc.sla_days * 2 || ' days')::INTERVAL)
             AND a.completed_at IS NULL
           )
         ) THEN 'stuck'::text END,
@@ -4928,7 +5002,9 @@ WITH
       ], NULL) AS attention_items_array
       
     FROM assessments a
+    LEFT JOIN funnel_sla_config fsc ON fsc.assessment_id = a.id
     LEFT JOIN latest_jobs lj ON lj.assessment_id = a.id
+    LEFT JOIN latest_manual_flag lmf ON lmf.assessment_id = a.id
   )
   
 SELECT
@@ -5153,6 +5229,10 @@ SELECT
   -- R-E78.5-004: Acknowledged timestamp
   la.acknowledged_at,
   
+  -- E78.6: SLA configuration and due date
+  fsc.sla_days,
+  (a.started_at + (fsc.sla_days || ' days')::INTERVAL) AS due_at,
+  
   -- Priority score computation (Section 5.1)
   -- R-E78.5-009: Manual flag adds to priority score
   (
@@ -5203,6 +5283,7 @@ LEFT JOIN latest_snooze ls ON ls.assessment_id = a.id
 LEFT JOIN latest_close_reopen lcr ON lcr.assessment_id = a.id
 LEFT JOIN latest_manual_flag lmf ON lmf.assessment_id = a.id
 LEFT JOIN latest_acknowledge la ON la.assessment_id = a.id
+LEFT JOIN funnel_sla_config fsc ON fsc.assessment_id = a.id
 LEFT JOIN attention_computation ac ON ac.assessment_id = a.id
 LEFT JOIN patient_profiles pp ON pp.id = a.patient_id
 LEFT JOIN funnels_catalog f ON f.id = a.funnel_id
@@ -5211,7 +5292,7 @@ LEFT JOIN funnels_catalog f ON f.id = a.funnel_id
 WHERE a.status IN ('in_progress', 'completed');
 
 -- Add comment
-COMMENT ON VIEW public.triage_cases_v1 IS 'E78.5: Enhanced SSOT aggregation view for triage inbox with HITL action integration. Provides deterministic case states with effective state computation from manual interventions. Includes snoozed_until, is_manually_closed, manual_flag details, and acknowledged_at from triage_case_actions.';
+COMMENT ON VIEW public.triage_cases_v1 IS 'E78.5: Enhanced SSOT aggregation view for triage inbox with HITL action integration and E78.6 configurable SLA. Provides deterministic case states with effective state computation from manual interventions. Includes snoozed_until, is_manually_closed, manual_flag details, acknowledged_at, and configurable SLA (due_at, sla_days).';
 
 
 ALTER VIEW "public"."triage_cases_v1" OWNER TO "postgres";
@@ -5752,6 +5833,10 @@ ALTER TABLE ONLY "public"."tasks"
 
 ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_pkey" PRIMARY KEY ("id");
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_pkey" PRIMARY KEY ("funnel_id");
 
 
 
@@ -7356,6 +7441,17 @@ ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
 
 ALTER TABLE ONLY "public"."triage_sessions"
     ADD CONSTRAINT "triage_sessions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
@@ -8566,6 +8662,8 @@ CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "a
 
 ALTER TABLE "public"."triage_case_actions" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."funnel_triage_settings" ENABLE ROW LEVEL SECURITY;
+
 
 CREATE POLICY "triage_case_actions_insert_clinician" ON "public"."triage_case_actions" FOR INSERT WITH CHECK (((EXISTS ( SELECT 1
    FROM "auth"."users"
@@ -8581,6 +8679,15 @@ CREATE POLICY "triage_case_actions_read_clinician" ON "public"."triage_case_acti
    FROM "public"."clinician_patient_assignments" "cpa"
   WHERE (("cpa"."patient_user_id" = "triage_case_actions"."patient_id") AND ("cpa"."clinician_user_id" = "auth"."uid"()))))));
 
+
+CREATE POLICY "funnel_triage_settings_read_staff" ON "public"."funnel_triage_settings" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
+
+
+CREATE POLICY "funnel_triage_settings_write_admin" ON "public"."funnel_triage_settings" FOR ALL USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")))));
 
 
 ALTER TABLE "public"."triage_sessions" ENABLE ROW LEVEL SECURITY;
@@ -9461,6 +9568,9 @@ GRANT ALL ON TABLE "public"."tasks" TO "service_role";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "anon";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "authenticated";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "service_role";
+
+GRANT SELECT ON TABLE "public"."funnel_triage_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."funnel_triage_settings" TO "service_role";
 
 
 
