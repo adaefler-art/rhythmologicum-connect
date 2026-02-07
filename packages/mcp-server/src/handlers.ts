@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import crypto from 'node:crypto'
 import type {
   GetPatientContextInput,
   GetPatientContextOutput,
@@ -28,15 +29,74 @@ const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
 const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
 const LLM_TIMEOUT_MS = 30000
+const MCP_HTTP_TIMEOUT_MS = Number(env.MCP_HTTP_TIMEOUT_MS || 0)
+
+type TraceStage =
+  | 'request_received'
+  | 'context_fetch_start'
+  | 'context_fetch_end'
+  | 'prompt_build_start'
+  | 'prompt_build_end'
+  | 'llm_request_start'
+  | 'llm_response_headers'
+  | 'llm_complete'
+  | 'response_sent'
+
+export type TraceTimelineEntry = {
+  stage: TraceStage
+  t_ms_since_start: number
+}
+
+export type TraceTimelineSummary = {
+  total_ms: number
+  stages_ms: Record<TraceStage, number>
+}
+
+export type TraceTelemetry = {
+  trace_id: string
+  timeline: TraceTimelineEntry[]
+  timeline_summary: TraceTimelineSummary
+  metrics: {
+    prompt_chars: number
+    prompt_tokens_est: number
+    prompt_sha256: string
+    context_chars: number
+    context_items_count: number
+    model: string
+    temperature: number
+    max_tokens: number
+    mcp_http_timeout_ms: number
+    llm_client_timeout_ms: number
+  }
+}
+
+export type ToolResult<T> = {
+  data: T
+  telemetry?: TraceTelemetry
+}
+
+type ToolErrorDetails = {
+  trace_id?: string
+  timeline?: TraceTimelineEntry[]
+  timeline_summary?: TraceTimelineSummary
+  where?:
+    | 'LLM_CLIENT_TIMEOUT'
+    | 'LLM_PROVIDER_TIMEOUT'
+    | 'MCP_ROUTE_TIMEOUT'
+    | 'MCP_UPSTREAM_RESET'
+    | 'MCP_ROUTE_ERROR'
+}
 
 export class McpToolError extends Error {
   readonly code: string
   readonly status: number
+  readonly details?: ToolErrorDetails
 
-  constructor(code: string, message: string, status = 400) {
+  constructor(code: string, message: string, status = 400, details?: ToolErrorDetails) {
     super(message)
     this.code = code
     this.status = status
+    this.details = details
   }
 }
 
@@ -57,6 +117,8 @@ async function callAnthropicDiagnosis(
   systemPrompt: string,
   userPrompt: string,
   modelConfig: { model: string; temperature: number; maxTokens: number },
+  traceId?: string,
+  markStage?: (stage: TraceStage) => void,
 ): Promise<string> {
   if (llmProvider !== 'anthropic') {
     throw new McpToolError(
@@ -76,37 +138,100 @@ async function callAnthropicDiagnosis(
 
   let timeoutId: ReturnType<typeof setTimeout> | null = null
   try {
+    markStage?.('llm_request_start')
     const response = await Promise.race([
-      anthropic.messages.create({
-        model: modelConfig.model,
-        max_tokens: modelConfig.maxTokens,
-        temperature: modelConfig.temperature,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: userPrompt,
-          },
-        ],
-      }),
+      anthropic.messages.create(
+        {
+          model: modelConfig.model,
+          max_tokens: modelConfig.maxTokens,
+          temperature: modelConfig.temperature,
+          system: systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: userPrompt,
+            },
+          ],
+        },
+        traceId ? { headers: { 'x-trace-id': traceId } } : undefined,
+      ),
       new Promise<never>((_resolve, reject) => {
         timeoutId = setTimeout(() => {
-          reject(new McpToolError('MCP_TIMEOUT', 'LLM request timed out', 504))
+          reject(
+            new McpToolError('MCP_TIMEOUT_CLIENT', 'LLM request timed out', 504, {
+              where: 'LLM_CLIENT_TIMEOUT',
+            }),
+          )
         }, LLM_TIMEOUT_MS)
       }),
     ])
 
+    markStage?.('llm_response_headers')
     const contentBlock = response.content[0]
     if (contentBlock.type !== 'text') {
       throw new Error('Expected text response from Anthropic API')
     }
 
+    markStage?.('llm_complete')
     return contentBlock.text
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId)
     }
   }
+}
+
+function estimateTokens(chars: number): number {
+  return Math.max(1, Math.ceil(chars / 4))
+}
+
+function hashPrompt(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex')
+}
+
+function classifyLlmError(error: unknown): {
+  code: 'MCP_TIMEOUT_CLIENT' | 'MCP_TIMEOUT_PROVIDER' | 'MCP_TIMEOUT_UPSTREAM'
+  where: ToolErrorDetails['where']
+  status: number
+} | null {
+  if (error instanceof McpToolError) {
+    if (error.code === 'MCP_TIMEOUT_CLIENT') {
+      return {
+        code: 'MCP_TIMEOUT_CLIENT',
+        where: 'LLM_CLIENT_TIMEOUT',
+        status: error.status,
+      }
+    }
+  }
+
+  const anyError = error as { status?: number; code?: string; message?: string }
+  const status = typeof anyError?.status === 'number' ? anyError.status : undefined
+  if (status && (status === 408 || status === 504 || status === 529 || status >= 500)) {
+    return {
+      code: 'MCP_TIMEOUT_PROVIDER',
+      where: 'LLM_PROVIDER_TIMEOUT',
+      status,
+    }
+  }
+
+  const errorCode = anyError?.code || ''
+  const message = (anyError?.message || '').toLowerCase()
+  if (
+    errorCode === 'ECONNRESET' ||
+    errorCode === 'ETIMEDOUT' ||
+    errorCode === 'EPIPE' ||
+    errorCode === 'UND_ERR_CONNECT_TIMEOUT' ||
+    message.includes('socket hang up') ||
+    message.includes('connection reset')
+  ) {
+    return {
+      code: 'MCP_TIMEOUT_UPSTREAM',
+      where: 'MCP_UPSTREAM_RESET',
+      status: 504,
+    }
+  }
+
+  return null
 }
 
 function mapConfidenceScore(
@@ -401,13 +526,22 @@ function normalizeDiagnosisPromptOutput(raw: unknown): DiagnosisPromptOutputV1 {
 export async function handleGetPatientContext(
   input: GetPatientContextInput,
   runId: string,
-): Promise<GetPatientContextOutput> {
+  traceId?: string,
+): Promise<ToolResult<GetPatientContextOutput>> {
   const log = logger.withRunId(runId)
+  const resolvedTraceId = traceId || crypto.randomUUID()
+  const startTime = Date.now()
+  const timeline: TraceTimelineEntry[] = [
+    { stage: 'request_received', t_ms_since_start: 0 },
+  ]
 
   // Validate input
   MCP_TOOLS.get_patient_context.inputSchema.parse(input)
 
-  log.info('Executing get_patient_context', { patient_id: input.patient_id })
+  log.info('Executing get_patient_context', {
+    patient_id: input.patient_id,
+    trace_id: traceId,
+  })
 
   // Stubbed response
   const output: GetPatientContextOutput = {
@@ -472,91 +606,227 @@ export async function handleGetPatientContext(
   // Validate output
   MCP_TOOLS.get_patient_context.outputSchema.parse(output)
 
-  log.info('get_patient_context completed', { patient_id: input.patient_id })
+  log.info('get_patient_context completed', {
+    patient_id: input.patient_id,
+    trace_id: resolvedTraceId,
+  })
 
-  return output
+  timeline.push({ stage: 'response_sent', t_ms_since_start: Date.now() - startTime })
+  const telemetry: TraceTelemetry = {
+    trace_id: resolvedTraceId,
+    timeline,
+    timeline_summary: {
+      total_ms: Date.now() - startTime,
+      stages_ms: {
+        request_received: 0,
+        response_sent: Date.now() - startTime,
+      } as Record<TraceStage, number>,
+    },
+    metrics: {
+      prompt_chars: 0,
+      prompt_tokens_est: 0,
+      prompt_sha256: '',
+      context_chars: 0,
+      context_items_count: 0,
+      model: '',
+      temperature: 0,
+      max_tokens: 0,
+      mcp_http_timeout_ms: MCP_HTTP_TIMEOUT_MS,
+      llm_client_timeout_ms: LLM_TIMEOUT_MS,
+    },
+  }
+
+  return { data: output, telemetry }
 }
 
 export async function handleRunDiagnosis(
   input: RunDiagnosisInput,
   runId: string,
-): Promise<RunDiagnosisOutput> {
+  traceId?: string,
+): Promise<ToolResult<RunDiagnosisOutput>> {
   const log = logger.withRunId(runId)
+  const resolvedTraceId = traceId || crypto.randomUUID()
+  const startTime = Date.now()
+  const stageTimes = new Map<TraceStage, number>()
+  const timeline: TraceTimelineEntry[] = []
+  const markStage = (stage: TraceStage) => {
+    const tMs = Date.now() - startTime
+    timeline.push({ stage, t_ms_since_start: tMs })
+    stageTimes.set(stage, tMs)
+  }
+  const buildSummary = (): TraceTimelineSummary => {
+    const stagesMs = {} as Record<TraceStage, number>
+    for (const [stage, tMs] of stageTimes.entries()) {
+      stagesMs[stage] = tMs
+    }
+    return {
+      total_ms: Date.now() - startTime,
+      stages_ms: stagesMs,
+    }
+  }
+  const metrics = {
+    prompt_chars: 0,
+    prompt_tokens_est: 0,
+    prompt_sha256: '',
+    context_chars: 0,
+    context_items_count: 0,
+    model: '',
+    temperature: 0,
+    max_tokens: 0,
+    mcp_http_timeout_ms: MCP_HTTP_TIMEOUT_MS,
+    llm_client_timeout_ms: LLM_TIMEOUT_MS,
+  }
 
   // Validate input
   MCP_TOOLS.run_diagnosis.inputSchema.parse(input)
 
+  markStage('request_received')
+
   log.info('Executing run_diagnosis', {
     patient_id: input.patient_id,
     options: input.options,
+    trace_id: resolvedTraceId,
   })
-
-  const startTime = Date.now()
   const versionMetadata = getVersionMetadata(runId)
 
-  if (isStubEnabled()) {
-    const output: RunDiagnosisOutput = {
-      run_id: runId,
-      patient_id: input.patient_id,
-      diagnosis_result: {
-        primary_findings: [
-          'Moderate stress levels detected',
-          'Sleep quality concerns identified',
-          'Cardiovascular risk markers present',
-        ],
-        risk_level: 'medium',
-        recommendations: [
-          'Consider stress management techniques',
-          'Schedule follow-up assessment in 2 weeks',
-          'Review sleep hygiene practices',
-        ],
-        confidence_score: 0.78,
-      },
-      metadata: {
-        run_version: versionMetadata.run_version,
-        prompt_version: versionMetadata.prompt_version,
-        executed_at: new Date().toISOString(),
-        processing_time_ms: Date.now() - startTime,
-      },
+  try {
+    if (isStubEnabled()) {
+      const output: RunDiagnosisOutput = {
+        run_id: runId,
+        patient_id: input.patient_id,
+        diagnosis_result: {
+          primary_findings: [
+            'Moderate stress levels detected',
+            'Sleep quality concerns identified',
+            'Cardiovascular risk markers present',
+          ],
+          risk_level: 'medium',
+          recommendations: [
+            'Consider stress management techniques',
+            'Schedule follow-up assessment in 2 weeks',
+            'Review sleep hygiene practices',
+          ],
+          confidence_score: 0.78,
+        },
+        metadata: {
+          run_version: versionMetadata.run_version,
+          prompt_version: versionMetadata.prompt_version,
+          executed_at: new Date().toISOString(),
+          processing_time_ms: Date.now() - startTime,
+        },
+      }
+
+      MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
+      log.info('run_diagnosis completed (stub)', {
+        patient_id: input.patient_id,
+        risk_level: output.diagnosis_result.risk_level,
+        trace_id: resolvedTraceId,
+        timeline,
+        metrics,
+      })
+      markStage('response_sent')
+      const telemetry: TraceTelemetry = {
+        trace_id: resolvedTraceId,
+        timeline,
+        timeline_summary: buildSummary(),
+        metrics,
+      }
+      return { data: output, telemetry }
     }
 
-    MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
-    log.info('run_diagnosis completed (stub)', {
-      patient_id: input.patient_id,
-      risk_level: output.diagnosis_result.risk_level,
-    })
-    return output
-  }
+    const promptVersion = 'v1.0.0'
+    const promptTemplate = getPrompt('diagnosis', promptVersion)
 
-  const promptVersion = 'v1.0.0'
-  const promptTemplate = getPrompt('diagnosis', promptVersion)
+    if (!promptTemplate) {
+      throw new Error(`Diagnosis prompt not found: diagnosis-${promptVersion}`)
+    }
 
-  if (!promptTemplate) {
-    throw new Error(`Diagnosis prompt not found: diagnosis-${promptVersion}`)
-  }
+    markStage('context_fetch_start')
+    const contextResult = await handleGetPatientContext(
+      { patient_id: input.patient_id },
+      runId,
+      resolvedTraceId,
+    )
+    markStage('context_fetch_end')
+    const contextPayload = {
+      ...contextResult.data,
+      options: input.options ?? null,
+    }
 
-  const contextPack = await handleGetPatientContext({ patient_id: input.patient_id }, runId)
-  const contextPayload = {
-    ...contextPack,
-    options: input.options ?? null,
-  }
+    markStage('prompt_build_start')
+    const systemPrompt = promptTemplate.systemPrompt || ''
+    const userPrompt = promptTemplate.userPromptTemplate.replace(
+      '{{contextPack}}',
+      JSON.stringify(contextPayload, null, 2),
+    )
+    markStage('prompt_build_end')
 
-  const systemPrompt = promptTemplate.systemPrompt || ''
-  const userPrompt = promptTemplate.userPromptTemplate.replace(
-    '{{contextPack}}',
-    JSON.stringify(contextPayload, null, 2),
-  )
+    const promptCombined = `${systemPrompt}\n\n${userPrompt}`
+    metrics.context_chars = JSON.stringify(contextPayload).length
+    metrics.context_items_count =
+      (contextResult.data.anamnesis?.entries?.length || 0) +
+      (contextResult.data.funnel_runs?.runs?.length || 0)
+    metrics.prompt_chars = promptCombined.length
+    metrics.prompt_tokens_est = estimateTokens(promptCombined.length)
+    metrics.prompt_sha256 = hashPrompt(promptCombined)
 
-  const modelConfig = {
-    model:
-      promptTemplate.metadata.modelConfig?.model ||
-      env.ANTHROPIC_MODEL ||
-      'claude-sonnet-4-5-20250929',
-    temperature: 0,
-    maxTokens: Math.min(promptTemplate.metadata.modelConfig?.maxTokens ?? 2048, 2048),
-  }
+    const modelConfig = {
+      model:
+        promptTemplate.metadata.modelConfig?.model ||
+        env.ANTHROPIC_MODEL ||
+        'claude-sonnet-4-5-20250929',
+      temperature: 0,
+      maxTokens: Math.min(promptTemplate.metadata.modelConfig?.maxTokens ?? 2048, 2048),
+    }
 
-  const llmText = await callAnthropicDiagnosis(systemPrompt, userPrompt, modelConfig)
+    metrics.model = modelConfig.model
+    metrics.temperature = modelConfig.temperature
+    metrics.max_tokens = modelConfig.maxTokens
+
+    let llmText = ''
+    try {
+      llmText = await callAnthropicDiagnosis(
+        systemPrompt,
+        userPrompt,
+        modelConfig,
+        resolvedTraceId,
+        markStage,
+      )
+    } catch (error) {
+      const classification = classifyLlmError(error)
+      const summary = buildSummary()
+      const details: ToolErrorDetails = {
+        trace_id: resolvedTraceId,
+        timeline,
+        timeline_summary: summary,
+        where: classification?.where,
+      }
+      if (classification) {
+        log.error('run_diagnosis failed (llm)', {
+          trace_id: resolvedTraceId,
+          error: error instanceof Error ? error.message : String(error),
+          code: classification.code,
+          where: classification.where,
+          timeline,
+          metrics,
+        })
+        throw new McpToolError(classification.code, 'LLM request timed out', classification.status, details)
+      }
+
+      log.error('run_diagnosis failed (llm)', {
+        trace_id: resolvedTraceId,
+        error: error instanceof Error ? error.message : String(error),
+        code: error instanceof McpToolError ? error.code : 'TOOL_EXECUTION_ERROR',
+        timeline,
+        metrics,
+      })
+      throw new McpToolError(
+        'TOOL_EXECUTION_ERROR',
+        error instanceof Error ? error.message : 'Unknown error',
+        500,
+        details,
+      )
+    }
   const jsonContent = extractJson(llmText)
   let parsedOutput: DiagnosisPromptOutputV1
   try {
@@ -583,13 +853,47 @@ export async function handleRunDiagnosis(
     },
   }
 
-  // Validate output
-  MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
+    // Validate output
+    MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
 
-  log.info('run_diagnosis completed', {
-    patient_id: input.patient_id,
-    risk_level: output.diagnosis_result.risk_level,
-  })
-
-  return output
+    log.info('run_diagnosis completed', {
+      patient_id: input.patient_id,
+      risk_level: output.diagnosis_result.risk_level,
+      trace_id: resolvedTraceId,
+      timeline,
+      metrics,
+    })
+    markStage('response_sent')
+    const telemetry: TraceTelemetry = {
+      trace_id: resolvedTraceId,
+      timeline,
+      timeline_summary: buildSummary(),
+      metrics,
+    }
+    return { data: output, telemetry }
+  } catch (error) {
+    if (error instanceof McpToolError) {
+      throw error
+    }
+    const summary = buildSummary()
+    const details: ToolErrorDetails = {
+      trace_id: resolvedTraceId,
+      timeline,
+      timeline_summary: summary,
+      where: 'MCP_ROUTE_ERROR',
+    }
+    log.error('run_diagnosis failed', {
+      trace_id: resolvedTraceId,
+      error: error instanceof Error ? error.message : String(error),
+      code: 'TOOL_EXECUTION_ERROR',
+      timeline,
+      metrics,
+    })
+    throw new McpToolError(
+      'TOOL_EXECUTION_ERROR',
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      details,
+    )
+  }
 }
