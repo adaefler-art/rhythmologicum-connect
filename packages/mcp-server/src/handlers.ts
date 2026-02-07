@@ -28,7 +28,10 @@ import {
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
 const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
-const LLM_TIMEOUT_MS = 30000
+const LLM_TIMEOUT_MS = Number(env.LLM_TIMEOUT_MS || 60000)
+const LLM_TIMEOUT_SAFE_MS = Number.isFinite(LLM_TIMEOUT_MS) && LLM_TIMEOUT_MS > 0
+  ? LLM_TIMEOUT_MS
+  : 60000
 const MCP_HTTP_TIMEOUT_MS = Number(env.MCP_HTTP_TIMEOUT_MS || 0)
 
 type TraceStage =
@@ -67,6 +70,9 @@ export type TraceTelemetry = {
     max_tokens: number
     mcp_http_timeout_ms: number
     llm_client_timeout_ms: number
+    llm_response_id?: string
+    llm_usage_input_tokens?: number
+    llm_usage_output_tokens?: number
   }
 }
 
@@ -113,13 +119,22 @@ function extractJson(content: string): string {
   return jsonContent
 }
 
+type LlmResponseMeta = {
+  id?: string
+  model?: string
+  usage?: {
+    input_tokens?: number
+    output_tokens?: number
+  }
+}
+
 async function callAnthropicDiagnosis(
   systemPrompt: string,
   userPrompt: string,
   modelConfig: { model: string; temperature: number; maxTokens: number },
   traceId?: string,
   markStage?: (stage: TraceStage) => void,
-): Promise<string> {
+): Promise<{ text: string; meta: LlmResponseMeta }> {
   if (llmProvider !== 'anthropic') {
     throw new McpToolError(
       'LLM_PROVIDER_UNSUPPORTED',
@@ -162,7 +177,7 @@ async function callAnthropicDiagnosis(
               where: 'LLM_CLIENT_TIMEOUT',
             }),
           )
-        }, LLM_TIMEOUT_MS)
+        }, LLM_TIMEOUT_SAFE_MS)
       }),
     ])
 
@@ -173,7 +188,17 @@ async function callAnthropicDiagnosis(
     }
 
     markStage?.('llm_complete')
-    return contentBlock.text
+    const meta: LlmResponseMeta = {
+      id: typeof response.id === 'string' ? response.id : undefined,
+      model: typeof response.model === 'string' ? response.model : undefined,
+      usage: response.usage
+        ? {
+            input_tokens: response.usage.input_tokens,
+            output_tokens: response.usage.output_tokens,
+          }
+        : undefined,
+    }
+    return { text: contentBlock.text, meta }
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId)
@@ -523,6 +548,61 @@ function normalizeDiagnosisPromptOutput(raw: unknown): DiagnosisPromptOutputV1 {
   }
 }
 
+function compactAnswerValue(value: unknown): unknown {
+  if (typeof value === 'string') return value.slice(0, 200)
+  if (typeof value === 'number' || typeof value === 'boolean' || value === null) return value
+  try {
+    return JSON.stringify(value).slice(0, 200)
+  } catch {
+    return String(value).slice(0, 200)
+  }
+}
+
+function compactContextPack(pack: GetPatientContextOutput): GetPatientContextOutput {
+  const trimmedAnamnesis = pack.anamnesis.entries.slice(0, 5).map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    content: {},
+    entry_type: entry.entry_type,
+    tags: entry.tags.slice(0, 5),
+    created_at: entry.created_at,
+    updated_at: entry.updated_at,
+  }))
+
+  const trimmedRuns = pack.funnel_runs.runs.slice(0, 3).map((run) => ({
+    assessment_id: run.assessment_id,
+    funnel_slug: run.funnel_slug,
+    funnel_name: run.funnel_name,
+    started_at: run.started_at,
+    completed_at: run.completed_at,
+    status: run.status,
+    answers: run.answers.slice(0, 5).map((answer) => ({
+      question_id: answer.question_id,
+      question_label: answer.question_label,
+      answer_value: compactAnswerValue(answer.answer_value),
+    })),
+    result: run.result
+      ? {
+          scores: run.result.scores,
+          risk_models: run.result.risk_models,
+          algorithm_version: run.result.algorithm_version,
+        }
+      : null,
+  }))
+
+  return {
+    ...pack,
+    anamnesis: {
+      ...pack.anamnesis,
+      entries: trimmedAnamnesis,
+    },
+    funnel_runs: {
+      ...pack.funnel_runs,
+      runs: trimmedRuns,
+    },
+  }
+}
+
 export async function handleGetPatientContext(
   input: GetPatientContextInput,
   runId: string,
@@ -632,7 +712,7 @@ export async function handleGetPatientContext(
       temperature: 0,
       max_tokens: 0,
       mcp_http_timeout_ms: MCP_HTTP_TIMEOUT_MS,
-      llm_client_timeout_ms: LLM_TIMEOUT_MS,
+      llm_client_timeout_ms: LLM_TIMEOUT_SAFE_MS,
     },
   }
 
@@ -674,7 +754,7 @@ export async function handleRunDiagnosis(
     temperature: 0,
     max_tokens: 0,
     mcp_http_timeout_ms: MCP_HTTP_TIMEOUT_MS,
-    llm_client_timeout_ms: LLM_TIMEOUT_MS,
+    llm_client_timeout_ms: LLM_TIMEOUT_SAFE_MS,
   }
 
   // Validate input
@@ -748,8 +828,9 @@ export async function handleRunDiagnosis(
       resolvedTraceId,
     )
     markStage('context_fetch_end')
+    const compactContext = compactContextPack(contextResult.data)
     const contextPayload = {
-      ...contextResult.data,
+      ...compactContext,
       options: input.options ?? null,
     }
 
@@ -764,8 +845,8 @@ export async function handleRunDiagnosis(
     const promptCombined = `${systemPrompt}\n\n${userPrompt}`
     metrics.context_chars = JSON.stringify(contextPayload).length
     metrics.context_items_count =
-      (contextResult.data.anamnesis?.entries?.length || 0) +
-      (contextResult.data.funnel_runs?.runs?.length || 0)
+      (compactContext.anamnesis?.entries?.length || 0) +
+      (compactContext.funnel_runs?.runs?.length || 0)
     metrics.prompt_chars = promptCombined.length
     metrics.prompt_tokens_est = estimateTokens(promptCombined.length)
     metrics.prompt_sha256 = hashPrompt(promptCombined)
@@ -785,13 +866,17 @@ export async function handleRunDiagnosis(
 
     let llmText = ''
     try {
-      llmText = await callAnthropicDiagnosis(
+      const llmResponse = await callAnthropicDiagnosis(
         systemPrompt,
         userPrompt,
         modelConfig,
         resolvedTraceId,
         markStage,
       )
+      llmText = llmResponse.text
+      metrics.llm_response_id = llmResponse.meta.id
+      metrics.llm_usage_input_tokens = llmResponse.meta.usage?.input_tokens
+      metrics.llm_usage_output_tokens = llmResponse.meta.usage?.output_tokens
     } catch (error) {
       const classification = classifyLlmError(error)
       const summary = buildSummary()

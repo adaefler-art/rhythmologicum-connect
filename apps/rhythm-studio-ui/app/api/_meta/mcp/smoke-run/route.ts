@@ -13,7 +13,7 @@ type McpSmokeResponse = {
   }
 }
 
-const DEFAULT_TIMEOUT_MS = 3000
+const DEFAULT_TIMEOUT_MS = 60000
 
 function redactUrl(rawUrl: string): string | null {
   try {

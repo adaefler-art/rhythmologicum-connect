@@ -26,7 +26,7 @@ export default function MCPTestPage() {
   const [runDiagnosisError, setRunDiagnosisError] = useState<string>('')
   const [queuePatientId, setQueuePatientId] = useState<string>('')
 
-  const runDiagnosisTimeoutMs = 30000
+  const runDiagnosisTimeoutMs = 60000
 
   async function testHealth() {
     setLoading(true)

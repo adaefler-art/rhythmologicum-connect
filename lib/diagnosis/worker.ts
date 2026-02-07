@@ -29,7 +29,7 @@ import {
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
 
-const MCP_TIMEOUT_MS = 30000
+const MCP_TIMEOUT_MS = 60000
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number) {
   const controller = new AbortController()
@@ -249,9 +249,15 @@ export async function executeDiagnosisRun(
         parsedDetails && typeof parsedDetails === 'object'
           ? (parsedDetails as { code?: string }).code
           : undefined
+      const timeoutCodes = new Set([
+        'MCP_TIMEOUT',
+        'MCP_TIMEOUT_CLIENT',
+        'MCP_TIMEOUT_PROVIDER',
+        'MCP_TIMEOUT_UPSTREAM',
+      ])
       const errorCode = isTimeout
         ? DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
-        : mcpErrorCode === 'MCP_TIMEOUT'
+        : mcpErrorCode && timeoutCodes.has(mcpErrorCode)
           ? DIAGNOSIS_ERROR_CODE.TIMEOUT_ERROR
           : DIAGNOSIS_ERROR_CODE.MCP_ERROR
 

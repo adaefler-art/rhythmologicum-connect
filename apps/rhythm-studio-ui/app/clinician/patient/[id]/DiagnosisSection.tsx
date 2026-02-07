@@ -32,7 +32,7 @@ type DiagnosisGateStatus = 'checking' | 'available' | 'unavailable' | 'forbidden
 
 const DIAGNOSIS_HEALTH_ENDPOINT = '/api/studio/diagnosis/health'
 const GATE_TIMEOUT_MS = 8000
-const QUEUE_TIMEOUT_MS = 30000
+const QUEUE_TIMEOUT_MS = 60000
 
 export interface DiagnosisSectionProps {
   patientId: string
