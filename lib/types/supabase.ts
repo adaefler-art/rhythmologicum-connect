@@ -3551,6 +3551,12 @@ export type Database = {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
       }
+      meta_check_required_objects: {
+        Args: { required_objects: string[] }
+        Returns: {
+          missing_count: number
+        }[]
+      }
       publish_draft_version: {
         Args: {
           p_change_summary?: string
