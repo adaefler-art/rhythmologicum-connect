@@ -386,8 +386,9 @@ export default function InboxPage() {
   }, [loadTriageHealth])
 
   useEffect(() => {
-    if (!schemaStatus || schemaStatus.ready) return
     if (schemaGateInfo.mode === 'hard') return
+    if (!schemaStatus && !schemaGateInfo.bypassed) return
+    if (schemaStatus?.ready) return
     if (typeof window === 'undefined') return
 
     const storageKey = 'triage_schema_bypass_logged'
@@ -395,14 +396,14 @@ export default function InboxPage() {
     window.sessionStorage.setItem(storageKey, '1')
 
     const lastErrorCode =
-      schemaStatus.lastError?.code || schemaGateInfo.lastErrorCode || 'SCHEMA_NOT_READY'
-    const requestId = schemaRequestId || schemaStatus.requestId || schemaGateInfo.requestId || null
+      schemaStatus?.lastError?.code || schemaGateInfo.lastErrorCode || 'SCHEMA_NOT_READY'
+    const requestId = schemaRequestId || schemaStatus?.requestId || schemaGateInfo.requestId || null
 
     console.warn('[triage] TRIAGE_SCHEMA_BYPASS', {
       last_error_code: lastErrorCode,
       request_id: requestId,
     })
-  }, [schemaGateInfo.lastErrorCode, schemaGateInfo.mode, schemaGateInfo.requestId, schemaRequestId, schemaStatus])
+  }, [schemaGateInfo.bypassed, schemaGateInfo.lastErrorCode, schemaGateInfo.mode, schemaGateInfo.requestId, schemaRequestId, schemaStatus])
 
   // Handle search submit
   const handleSearch = useCallback(() => {

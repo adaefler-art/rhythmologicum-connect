@@ -75,6 +75,7 @@
     "/api/clinician/triage/cases/[caseId]/reopen",
     "/api/clinician/triage/cases/[caseId]/snooze",
     "/api/clinician/triage",
+    "/api/triage/basic",
     "/api/documents/[id]/extract",
     "/api/documents/[id]/status",
     "/api/documents/upload",
