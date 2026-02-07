@@ -130,9 +130,16 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   }
 
   const dbMigrationStatus = await getMigrationStatus(client)
+  const relationQuery = client as unknown as {
+    from: (relation: string) => {
+      select: (columns: string) => {
+        limit: (count: number) => Promise<{ error: unknown }>
+      }
+    }
+  }
 
   for (const relation of REQUIRED_RELATIONS) {
-    const { error } = await client.from(relation.name).select(relation.select).limit(1)
+    const { error } = await relationQuery.from(relation.name).select(relation.select).limit(1)
 
     if (!error) {
       continue
