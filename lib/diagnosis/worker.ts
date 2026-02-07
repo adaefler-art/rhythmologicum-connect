@@ -17,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/lib/types/supabase'
 import { env } from '@/lib/env'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
+import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import {
   DIAGNOSIS_RUN_STATUS,
   DIAGNOSIS_ERROR_CODE,
@@ -140,7 +141,13 @@ export async function executeDiagnosisRun(
     
     let contextPack
     try {
-      contextPack = await buildPatientContextPack(adminClient, run.patient_id)
+      const resolution = await resolvePatientIds(adminClient, run.patient_id)
+
+      if (!resolution.patientProfileId) {
+        throw new Error('Patient profile not found for diagnosis run')
+      }
+
+      contextPack = await buildPatientContextPack(adminClient, resolution.patientProfileId)
     } catch (contextError) {
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.CONTEXT_PACK_ERROR,

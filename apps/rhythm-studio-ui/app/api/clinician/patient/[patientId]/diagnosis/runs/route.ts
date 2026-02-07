@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 
 type RouteContext = {
   params: Promise<{ patientId: string }>
@@ -18,6 +19,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const { patientId } = await context.params
     const endpoint = `/api/clinician/patient/${patientId}/diagnosis/runs`
     const supabase = await createServerSupabaseClient()
+    const admin = createAdminSupabaseClient()
 
     const {
       data: { user },
@@ -51,18 +53,34 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    const resolution = await resolvePatientIds(admin, patientId)
+    const diagHeaders = { 'x-diag-patient-id-source': resolution.source }
+
+    if (!resolution.patientProfileId || !resolution.patientUserId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DIAG_PATIENT_NOT_FOUND',
+            message: 'Patient not found for provided identifier',
+            patientIdParam: patientId,
+          },
+        },
+        { status: 422, headers: diagHeaders },
+      )
+    }
+
     const { data: patient, error: patientError } = await supabase
       .from('patient_profiles')
       .select('id')
-      .eq('id', patientId)
+      .eq('id', resolution.patientProfileId)
       .maybeSingle()
 
     if (patientError || !patient) {
-      const admin = createAdminSupabaseClient()
       const { data: adminPatient, error: adminError } = await admin
         .from('patient_profiles')
         .select('id')
-        .eq('id', patientId)
+        .eq('id', resolution.patientProfileId)
         .maybeSingle()
 
       if (adminError) {
@@ -71,27 +89,27 @@ export async function GET(_request: Request, context: RouteContext) {
             success: false,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to verify patient' },
           },
-          { status: 503 },
+          { status: 503, headers: diagHeaders },
         )
       }
 
       if (adminPatient) {
         return NextResponse.json(
           { error: 'FORBIDDEN', endpoint, patientId },
-          { status: 403 },
+          { status: 403, headers: diagHeaders },
         )
       }
 
       return NextResponse.json(
         { error: 'NOT_FOUND', endpoint, patientId },
-        { status: 404 },
+        { status: 404, headers: diagHeaders },
       )
     }
 
     const { data: runs, error: runsError } = await supabase
       .from('diagnosis_runs')
       .select('id, status, created_at, inputs_hash, started_at, completed_at, error_code, error_message')
-      .eq('patient_id', patientId)
+      .eq('patient_id', resolution.patientUserId)
       .order('created_at', { ascending: false })
 
     if (runsError) {
@@ -106,7 +124,7 @@ export async function GET(_request: Request, context: RouteContext) {
               message: 'Patient not accessible or not assigned',
             },
           },
-          { status: 404 },
+          { status: 404, headers: diagHeaders },
         )
       }
 
@@ -118,14 +136,14 @@ export async function GET(_request: Request, context: RouteContext) {
             message: 'Failed to fetch diagnosis runs',
           },
         },
-        { status: 503 },
+        { status: 503, headers: diagHeaders },
       )
     }
 
     return NextResponse.json({
       success: true,
       data: runs || [],
-    })
+    }, { headers: diagHeaders })
   } catch (err) {
     console.error('[clinician/patient/diagnosis/runs GET] Unexpected error:', err)
     return NextResponse.json(

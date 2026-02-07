@@ -14,9 +14,9 @@ import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import { executeDiagnosisRun } from '@/lib/diagnosis/worker'
 import { checkDuplicateRun, extractInputsMeta } from '@/lib/diagnosis/dedupe'
 import { isFeatureEnabled } from '@/lib/featureFlags'
-import { isValidUUID } from '@/lib/validators/uuid'
 import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { env } from '@/lib/env'
+import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import type { Database, Json } from '@/lib/types/supabase'
 
 /**
@@ -79,29 +79,16 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { patient_id } = body
+    const { patient_id: patientIdParam } = body
 
     // Validate input
-    if (!patient_id || typeof patient_id !== 'string') {
+    if (!patientIdParam || typeof patientIdParam !== 'string') {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'INVALID_INPUT',
             message: 'patient_id is required and must be a string',
-          },
-        },
-        { status: 400 },
-      )
-    }
-
-    if (!isValidUUID(patient_id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'INVALID_UUID',
-            message: 'patient_id must be a valid UUID',
           },
         },
         { status: 400 },
@@ -159,11 +146,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build context pack to get inputs_hash and inputs_meta
     const adminClient = createAdminSupabaseClient()
+    const resolution = await resolvePatientIds(adminClient, patientIdParam)
+    const diagHeaders = { 'x-diag-patient-id-source': resolution.source }
+
+    if (!resolution.patientProfileId || !resolution.patientUserId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DIAG_PATIENT_NOT_FOUND',
+            message: 'Patient not found for provided identifier',
+            patientIdParam,
+          },
+        },
+        { status: 422, headers: diagHeaders },
+      )
+    }
+
+    const patientProfileId = resolution.patientProfileId
+    const patientUserId = resolution.patientUserId
+
+    // Build context pack to get inputs_hash and inputs_meta
     let contextPack
     try {
-      contextPack = await buildPatientContextPack(adminClient, patient_id)
+      contextPack = await buildPatientContextPack(adminClient, patientProfileId)
     } catch (contextPackError) {
       console.error('Failed to build context pack:', contextPackError)
 
@@ -176,7 +183,7 @@ export async function POST(request: NextRequest) {
               message: 'Diagnosis service is unavailable',
             },
           },
-          { status: 503 },
+          { status: 503, headers: diagHeaders },
         )
       }
 
@@ -189,7 +196,7 @@ export async function POST(request: NextRequest) {
             details: String(contextPackError),
           },
         },
-        { status: 503 },
+        { status: 503, headers: diagHeaders },
       )
     }
 
@@ -197,7 +204,7 @@ export async function POST(request: NextRequest) {
     const inputs_meta = extractInputsMeta(contextPack) as Json
 
     // E76.8: Check for duplicate runs (Policy B: time-window-based)
-    const dedupeResult = await checkDuplicateRun(adminClient, inputs_hash, patient_id)
+    const dedupeResult = await checkDuplicateRun(adminClient, inputs_hash, patientUserId)
 
     if (dedupeResult.isDuplicate && dedupeResult.existingRunId) {
       // Return existing run information with warning
@@ -212,14 +219,14 @@ export async function POST(request: NextRequest) {
           message: dedupeResult.message,
           time_window_hours: dedupeResult.timeWindowHours,
         },
-      })
+      }, { headers: diagHeaders })
     }
 
     // Create new diagnosis run
     const { data: newRun, error: insertError } = await adminClient
       .from('diagnosis_runs')
       .insert({
-        patient_id,
+        patient_id: patientUserId,
         clinician_id: user.id,
         status: DIAGNOSIS_RUN_STATUS.QUEUED,
         inputs_hash,
@@ -240,7 +247,7 @@ export async function POST(request: NextRequest) {
               message: 'Diagnosis service is unavailable',
             },
           },
-          { status: 503 },
+          { status: 503, headers: diagHeaders },
         )
       }
 
@@ -253,7 +260,7 @@ export async function POST(request: NextRequest) {
             details: insertError?.message,
           },
         },
-        { status: 503 },
+        { status: 503, headers: diagHeaders },
       )
     }
 
@@ -277,7 +284,7 @@ export async function POST(request: NextRequest) {
             status: 'FAILED',
           },
         },
-        { status },
+        { status, headers: diagHeaders },
       )
     }
 
@@ -292,7 +299,7 @@ export async function POST(request: NextRequest) {
         is_duplicate: false,
         artifact_id: executionResult.artifact_id,
       },
-    })
+    }, { headers: diagHeaders })
   } catch (error) {
     console.error('Diagnosis queue error:', error)
 
