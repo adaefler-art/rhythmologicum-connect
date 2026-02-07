@@ -88,7 +88,17 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 
 async function getMigrationStatus(client: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
   try {
-    const { data, error } = await client
+    const adminQuery = client as unknown as {
+      from: (relation: string) => {
+        select: (columns: string) => {
+          order: (column: string, options: { ascending: boolean }) => {
+            limit: (count: number) => Promise<{ data: { version: string }[] | null; error: unknown }>
+          }
+        }
+      }
+    }
+
+    const { data, error } = await adminQuery
       .from('supabase_migrations.schema_migrations')
       .select('version')
       .order('version', { ascending: false })
