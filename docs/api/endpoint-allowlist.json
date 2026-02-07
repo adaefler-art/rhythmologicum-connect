@@ -145,6 +145,11 @@
     "/api/studio/diagnosis/runs/[runId]/artifact",
     "/api/_debug/env",
     {
+      "path": "/api/_meta/schema",
+      "internal_unused": true,
+      "reason": "schema readiness diagnostics"
+    },
+    {
       "path": "/api/_meta/mcp/status",
       "internal_unused": true,
       "reason": "MCP connectivity verification (no UI callsite)"

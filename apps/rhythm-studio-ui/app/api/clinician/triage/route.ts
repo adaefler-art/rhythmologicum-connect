@@ -31,6 +31,8 @@ import {
 	validationErrorResponse,
 } from '@/lib/api/responses'
 import { classifySupabaseError, getRequestId, logError, withRequestId } from '@/lib/db/errors'
+import { ensureSchemaReadiness } from '@/lib/db/schemaReadiness'
+import { ErrorCode } from '@/lib/api/responseTypes'
 
 /**
  * Valid case states from triage_cases_v1 view
@@ -150,6 +152,34 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Build query from triage_cases_v1 view
+		const schemaReadiness = await ensureSchemaReadiness(requestId)
+		if (!schemaReadiness.ready) {
+			const errorCode = schemaReadiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
+			return withRequestId(
+				NextResponse.json(
+					{
+						success: false,
+						error: {
+							code: errorCode,
+							message:
+								schemaReadiness.lastErrorMessage ||
+								'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
+							details: {
+								stage: schemaReadiness.stage,
+								requestId,
+								schemaVersion: schemaReadiness.schemaVersion,
+								dbMigrationStatus: schemaReadiness.dbMigrationStatus,
+								lastErrorDetails: schemaReadiness.lastErrorDetails,
+							},
+						},
+						requestId,
+					},
+					{ status: 503 },
+				),
+				requestId,
+			)
+		}
+
 		let query = supabase
 			.from('triage_cases_v1')
 			.select('*')
@@ -205,13 +235,24 @@ export async function GET(request: NextRequest) {
 			})
 
 			if (classified.kind === 'SCHEMA_NOT_READY') {
+				const readiness = await ensureSchemaReadiness(requestId)
+				const errorCode = readiness.lastErrorCode || ErrorCode.SCHEMA_BUILD_FAILED
 				return withRequestId(
 					NextResponse.json(
 						{
 							success: false,
 							error: {
-								code: 'SCHEMA_NOT_READY',
-								message: 'Server-Schema ist noch nicht bereit. Bitte versuchen Sie es später erneut.',
+								code: errorCode,
+								message:
+									readiness.lastErrorMessage ||
+									'Server-Schema ist nicht bereit. Bitte Administrator kontaktieren.',
+								details: {
+									stage: readiness.stage,
+									requestId,
+									schemaVersion: readiness.schemaVersion,
+									dbMigrationStatus: readiness.dbMigrationStatus,
+									lastErrorDetails: readiness.lastErrorDetails,
+								},
 							},
 							requestId,
 						},
