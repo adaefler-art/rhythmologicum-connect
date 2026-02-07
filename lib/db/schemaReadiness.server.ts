@@ -14,6 +14,7 @@ export type SchemaReadiness = {
   stageSince: string
   currentStage?: SchemaStageName
   currentStageSince?: string
+  currentStageId?: string
   stages?: SchemaStageResult[]
   dbStatus?: 'ok' | 'fail'
   lastErrorCode?: string
@@ -36,6 +37,7 @@ export type SchemaReadiness = {
   lastInvalidationReason?: string
   retryAfterMs?: number
   requestId?: string
+  updatedAt?: string
 }
 
 type RelationCheck = {
@@ -88,6 +90,7 @@ let readinessState: SchemaReadiness = {
 let inFlight: Promise<SchemaReadiness> | null = null
 let pendingRebuildReason: string | null = null
 let invalidationHistory: number[] = []
+let currentBuildId: string | null = null
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -102,13 +105,25 @@ function getRetryDelayMs(attempt: number): number {
   return RETRY_DELAYS_MS[index]
 }
 
+function setState(patch: Partial<SchemaReadiness>, buildId?: string) {
+  if (buildId && readinessState.buildId && buildId !== readinessState.buildId) {
+    console.warn('[schema-manager] SCHEMA_STATE_STALE_WRITE_IGNORED', {
+      buildId,
+      currentBuildId: readinessState.buildId,
+    })
+    return
+  }
+
+  readinessState = {
+    ...readinessState,
+    ...patch,
+    updatedAt: nowIso(),
+  }
+}
+
 function applyStage(nextStage: SchemaStage) {
   if (readinessState.stage !== nextStage) {
-    readinessState = {
-      ...readinessState,
-      stage: nextStage,
-      stageSince: nowIso(),
-    }
+    setState({ stage: nextStage, stageSince: nowIso() })
   }
 }
 
@@ -156,6 +171,7 @@ async function runStage<T>(
 ): Promise<T> {
   const startedAt = nowIso()
   const startedMs = Date.now()
+  const stageId = `${readinessState.buildId ?? 'unknown'}:${name}:${startedMs}`
 
   stages.push({
     name,
@@ -164,12 +180,15 @@ async function runStage<T>(
     status: 'ok',
   })
 
-  readinessState = {
-    ...readinessState,
-    currentStage: name,
-    currentStageSince: startedAt,
-    stages: [...stages],
-  }
+  setState(
+    {
+      currentStage: name,
+      currentStageSince: startedAt,
+      currentStageId: stageId,
+      stages: [...stages],
+    },
+    readinessState.buildId,
+  )
 
   try {
     const result = await withTimeout(fn(), timeoutMs, errorCode)
@@ -178,10 +197,7 @@ async function runStage<T>(
       elapsedMs: Date.now() - startedMs,
       status: 'ok',
     }
-    readinessState = {
-      ...readinessState,
-      stages: [...stages],
-    }
+    setState({ stages: [...stages] }, readinessState.buildId)
     return result
   } catch (error) {
     const safeError = sanitizeSupabaseError(error)
@@ -195,10 +211,7 @@ async function runStage<T>(
       errorCode: (error as { code?: string }).code ?? errorCode,
       errorMessage: safeError.message,
     }
-    readinessState = {
-      ...readinessState,
-      stages: [...stages],
-    }
+    setState({ stages: [...stages] }, readinessState.buildId)
     throw error
   }
 }
@@ -209,11 +222,7 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   let usingAdminClient = false
   let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'ok' }
 
-  readinessState = {
-    ...readinessState,
-    stages: [...stages],
-    dbStatus: 'ok',
-  }
+  setState({ stages: [...stages], dbStatus: 'ok' }, readinessState.buildId)
 
   try {
     await runStage(
@@ -506,30 +515,34 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
   const buildStartedAt = Date.now()
 
   applyStage('building')
-  readinessState = {
-    ...readinessState,
-    buildId: `${getCommitSha()}-${Date.now()}`,
+  const buildId = `${getCommitSha()}-${Date.now()}`
+  currentBuildId = buildId
+  setState({
+    buildId,
     buildAttempts: 0,
     attempts: 0,
     stages: [],
     currentStage: undefined,
     currentStageSince: undefined,
+    currentStageId: undefined,
     lastBuildMs: undefined,
     lastBuildReason: reason,
     retryAfterMs: getRetryDelayMs(1),
     requestId,
-  }
-  const activeBuildId = readinessState.buildId
+  })
+  const activeBuildId = buildId
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {
-      readinessState = {
-        ...readinessState,
-        attempts: attempt,
-        buildAttempts: attempt,
-        checkedAt: nowIso(),
-        requestId,
-      }
+      setState(
+        {
+          attempts: attempt,
+          buildAttempts: attempt,
+          checkedAt: nowIso(),
+          requestId,
+        },
+        activeBuildId,
+      )
 
       const result = await withTimeout(
         runSchemaCheck(requestId),
@@ -540,17 +553,19 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         !result.ready && result.lastErrorCode !== ErrorCode.SCHEMA_BLOCKED_BY_MIGRATIONS
 
       if (!result.ready && shouldRetry && attempt < MAX_ATTEMPTS) {
-        readinessState = {
-          ...readinessState,
-          lastErrorCode: result.lastErrorCode,
-          lastErrorMessage: result.lastErrorMessage,
-          lastErrorDetails: result.lastErrorDetails,
-          lastErrorAt: result.lastErrorAt,
-          dbMigrationStatus: result.dbMigrationStatus,
-          schemaVersion: result.schemaVersion,
-          checkedAt: nowIso(),
-          retryAfterMs: getRetryDelayMs(attempt),
-        }
+        setState(
+          {
+            lastErrorCode: result.lastErrorCode,
+            lastErrorMessage: result.lastErrorMessage,
+            lastErrorDetails: result.lastErrorDetails,
+            lastErrorAt: result.lastErrorAt,
+            dbMigrationStatus: result.dbMigrationStatus,
+            schemaVersion: result.schemaVersion,
+            checkedAt: nowIso(),
+            retryAfterMs: getRetryDelayMs(attempt),
+          },
+          activeBuildId,
+        )
 
         await new Promise((resolve) => setTimeout(resolve, getRetryDelayMs(attempt)))
         continue
@@ -560,14 +575,16 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         return readinessState
       }
 
-      readinessState = {
-        ...readinessState,
-        ...result,
-        attempts: readinessState.attempts,
-        buildAttempts: readinessState.buildAttempts,
-        lastBuildMs: Date.now() - buildStartedAt,
-        retryAfterMs: undefined,
-      }
+      setState(
+        {
+          ...result,
+          attempts: readinessState.attempts,
+          buildAttempts: readinessState.buildAttempts,
+          lastBuildMs: Date.now() - buildStartedAt,
+          retryAfterMs: undefined,
+        },
+        activeBuildId,
+      )
 
       applyStage(result.stage)
       return readinessState
@@ -604,10 +621,7 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         return readinessState
       }
 
-      readinessState = {
-        ...readinessState,
-        ...lastError,
-      }
+      setState({ ...lastError }, activeBuildId)
 
       if (attempt < MAX_ATTEMPTS) {
         await new Promise((resolve) => setTimeout(resolve, getRetryDelayMs(attempt)))
@@ -632,17 +646,21 @@ async function ensureReadyInternal(options?: EnsureReadyOptions): Promise<Schema
   const reason = options?.reason
   const requestId = options?.requestId
 
-  readinessState = {
-    ...readinessState,
+  setState({
     lastBuildReason: reason ?? readinessState.lastBuildReason,
     requestId: requestId ?? readinessState.requestId,
-  }
+  })
 
   if (readinessState.ready && !isStale(readinessState.checkedAt)) {
     return readinessState
   }
 
   if (inFlight) {
+    console.info('[schema-manager] SCHEMA_BUILD_JOINED', {
+      buildId: currentBuildId,
+      reason,
+      requestId,
+    })
     return options?.nonBlocking ? readinessState : inFlight
   }
 

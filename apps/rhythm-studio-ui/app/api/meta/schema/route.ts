@@ -30,6 +30,10 @@ export async function GET(request: Request) {
           : 'unknown',
   }
 
+  if (deps.db === 'fail') {
+    deps.migrations = 'unknown'
+  }
+
   return NextResponse.json({
     ready: readiness.ready,
     stage: readiness.stage,
