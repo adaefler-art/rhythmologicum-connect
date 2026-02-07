@@ -81,8 +81,10 @@
     "test:core": "npm run --workspace packages/rhythm-core --if-present test",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:inbox": "jest test/e78-9-inbox-contracts.test.ts",
     "test:studio:layout": "playwright test tests/studio-admin-layout.spec.ts",
-    "test:studio:e2e": "playwright test"
+    "test:studio:e2e": "playwright test",
+    "smoke:inbox": "node --loader ts-node/esm scripts/ci/smoke-e78-9-inbox.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
