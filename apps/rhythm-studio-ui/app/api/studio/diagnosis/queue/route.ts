@@ -15,6 +15,7 @@ import { checkDuplicateRun, extractInputsMeta } from '@/lib/diagnosis/dedupe'
 import { isFeatureEnabled } from '@/lib/featureFlags'
 import { isValidUUID } from '@/lib/validators/uuid'
 import { DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
+import { env } from '@/lib/env'
 import type { Database, Json } from '@/lib/types/supabase'
 
 /**
@@ -39,6 +40,27 @@ import type { Database, Json } from '@/lib/types/supabase'
  */
 export async function POST(request: NextRequest) {
   try {
+    const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_KEY
+    const missingConfig = [
+      !env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' : null,
+      !env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'NEXT_PUBLIC_SUPABASE_ANON_KEY' : null,
+      !serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+    ].filter(Boolean) as string[]
+
+    if (missingConfig.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DIAG_SERVICE_UNCONFIGURED',
+            message: 'Diagnosis service is not configured',
+            missing: missingConfig,
+          },
+        },
+        { status: 503 },
+      )
+    }
+
     // Feature flag check
     const diagnosisEnabled = isFeatureEnabled('DIAGNOSIS_ENABLED')
     if (!diagnosisEnabled) {
@@ -122,6 +144,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const isServiceUnavailableError = (error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      const lower = message.toLowerCase()
+      return (
+        lower.includes('failed to fetch') ||
+        lower.includes('fetch failed') ||
+        lower.includes('econnrefused') ||
+        lower.includes('etimedout') ||
+        lower.includes('enotfound') ||
+        lower.includes('timeout') ||
+        lower.includes('networkerror')
+      )
+    }
+
     // Build context pack to get inputs_hash and inputs_meta
     const adminClient = createAdminSupabaseClient()
     let contextPack
@@ -129,6 +165,20 @@ export async function POST(request: NextRequest) {
       contextPack = await buildPatientContextPack(adminClient, patient_id)
     } catch (contextPackError) {
       console.error('Failed to build context pack:', contextPackError)
+
+      if (isServiceUnavailableError(contextPackError)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'DIAG_SERVICE_UNAVAILABLE',
+              message: 'Diagnosis service is unavailable',
+            },
+          },
+          { status: 503 },
+        )
+      }
+
       return NextResponse.json(
         {
           success: false,
@@ -153,8 +203,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
+          runId: dedupeResult.existingRunId,
+          status: 'DUPLICATE',
           run_id: dedupeResult.existingRunId,
-          status: 'duplicate',
+          status_raw: 'duplicate',
           is_duplicate: true,
           message: dedupeResult.message,
           time_window_hours: dedupeResult.timeWindowHours,
@@ -177,6 +229,20 @@ export async function POST(request: NextRequest) {
 
     if (insertError || !newRun) {
       console.error('Failed to create diagnosis run:', insertError)
+
+      if (isServiceUnavailableError(insertError)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'DIAG_SERVICE_UNAVAILABLE',
+              message: 'Diagnosis service is unavailable',
+            },
+          },
+          { status: 503 },
+        )
+      }
+
       return NextResponse.json(
         {
           success: false,
@@ -193,14 +259,54 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        runId: newRun.id,
+        status: 'QUEUED',
         run_id: newRun.id,
-        status: newRun.status,
+        status_raw: newRun.status,
         created_at: newRun.created_at,
         is_duplicate: false,
       },
     })
   } catch (error) {
     console.error('Diagnosis queue error:', error)
+
+    if (error instanceof Error && error.message.includes('Supabase configuration missing')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'DIAG_SERVICE_UNCONFIGURED',
+            message: 'Diagnosis service is not configured',
+          },
+        },
+        { status: 503 },
+      )
+    }
+
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage) {
+      const lower = errorMessage.toLowerCase()
+      if (
+        lower.includes('failed to fetch') ||
+        lower.includes('fetch failed') ||
+        lower.includes('econnrefused') ||
+        lower.includes('etimedout') ||
+        lower.includes('enotfound') ||
+        lower.includes('timeout') ||
+        lower.includes('networkerror')
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'DIAG_SERVICE_UNAVAILABLE',
+              message: 'Diagnosis service is unavailable',
+            },
+          },
+          { status: 503 },
+        )
+      }
+    }
 
     return NextResponse.json(
       {

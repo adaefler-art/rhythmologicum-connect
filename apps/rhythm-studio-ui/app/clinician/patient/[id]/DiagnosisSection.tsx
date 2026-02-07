@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { Badge, Button, Card } from '@/lib/ui'
 import { Brain, RefreshCcw } from 'lucide-react'
 import { getDiagnosisRuns } from '@/lib/fetchClinician'
+import { featureFlags } from '@/lib/featureFlags'
 
 type DiagnosisRun = {
   id: string
@@ -27,6 +28,11 @@ type ArtifactState = {
   message?: string
 }
 
+type DiagnosisGateStatus = 'checking' | 'available' | 'unavailable' | 'forbidden' | 'disabled'
+
+const DIAGNOSIS_HEALTH_ENDPOINT = '/api/studio/diagnosis/health'
+const GATE_TIMEOUT_MS = 8000
+
 export interface DiagnosisSectionProps {
   patientId: string
 }
@@ -40,10 +46,109 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [artifactStates, setArtifactStates] = useState<Record<string, ArtifactState>>({})
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
   const [debugHint, setDebugHint] = useState<string | null>(null)
+  const [gateStatus, setGateStatus] = useState<DiagnosisGateStatus>('checking')
+  const [gateMessage, setGateMessage] = useState<string | null>(null)
+  const [isGateChecking, setIsGateChecking] = useState(false)
 
   useEffect(() => {
+    checkDiagnosisGate()
     fetchRuns()
   }, [patientId])
+
+  const logGateEvent = (payload: Record<string, unknown>) => {
+    console.info('[DiagnosisGate]', payload)
+  }
+
+  const checkDiagnosisGate = async (): Promise<DiagnosisGateStatus> => {
+    if (!featureFlags.DIAGNOSIS_ENABLED) {
+      const nextStatus: DiagnosisGateStatus = 'disabled'
+      setGateStatus(nextStatus)
+      setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
+      logGateEvent({
+        endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+        status: 'disabled',
+        ts: new Date().toISOString(),
+      })
+      return nextStatus
+    }
+
+    setIsGateChecking(true)
+    setGateStatus('checking')
+    setGateMessage(null)
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), GATE_TIMEOUT_MS)
+
+    try {
+      const response = await fetch(DIAGNOSIS_HEALTH_ENDPOINT, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      })
+
+      const requestId = response.headers.get('x-request-id')
+
+      if (response.ok) {
+        setGateStatus('available')
+        logGateEvent({
+          endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+          status: response.status,
+          requestId,
+          ts: new Date().toISOString(),
+        })
+        return 'available'
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        setGateStatus('forbidden')
+        setGateMessage('Keine Berechtigung für Diagnose-Start.')
+        logGateEvent({
+          endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+          status: response.status,
+          requestId,
+          ts: new Date().toISOString(),
+        })
+        return 'forbidden'
+      }
+
+      if (response.status === 503) {
+        setGateStatus('unavailable')
+        setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+        logGateEvent({
+          endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+          status: response.status,
+          requestId,
+          ts: new Date().toISOString(),
+        })
+        return 'unavailable'
+      }
+
+      setGateStatus('unavailable')
+      setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+      logGateEvent({
+        endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+        status: response.status,
+        requestId,
+        ts: new Date().toISOString(),
+      })
+      return 'unavailable'
+    } catch (err) {
+      const status = err instanceof DOMException && err.name === 'AbortError'
+        ? 'timeout'
+        : 'network_error'
+      setGateStatus('unavailable')
+      setGateMessage('Diagnose-Service derzeit nicht verfuegbar.')
+      logGateEvent({
+        endpoint: DIAGNOSIS_HEALTH_ENDPOINT,
+        status,
+        ts: new Date().toISOString(),
+      })
+      return 'unavailable'
+    } finally {
+      clearTimeout(timeout)
+      setIsGateChecking(false)
+    }
+  }
 
   const fetchRuns = async () => {
     setIsLoading(true)
@@ -79,6 +184,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   }
 
   const handleQueueRun = async () => {
+    const gate = await checkDiagnosisGate()
+    if (gate !== 'available') {
+      return
+    }
+
     setIsQueueing(true)
     setStatusMessage(null)
     setError(null)
@@ -93,10 +203,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       const result = await response.json().catch(() => ({}))
 
       if (!response.ok || !result.success) {
-        if (response.status === 403) {
+        if (response.status === 401 || response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
+          setGateStatus('forbidden')
         } else if (response.status === 503) {
-          setError('Diagnose-Funktion ist derzeit deaktiviert')
+          setGateStatus('disabled')
+          setGateMessage('Diagnose-Funktion ist derzeit deaktiviert.')
         } else {
           setError(result.error?.message || 'Fehler beim Starten der Diagnose')
         }
@@ -245,12 +357,39 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
               size="sm"
               icon={<Brain className="h-4 w-4" />}
               onClick={handleQueueRun}
-              disabled={isQueueing}
+              disabled={isQueueing || isGateChecking || gateStatus !== 'available'}
             >
               {isQueueing ? 'Diagnose startet…' : 'Diagnose starten'}
             </Button>
           </div>
         </div>
+
+        {gateStatus === 'checking' && (
+          <div className="mt-4 rounded-lg bg-slate-100 px-4 py-3 text-sm text-slate-700">
+            Diagnose-Status wird geprueft…
+          </div>
+        )}
+
+        {gateStatus === 'disabled' && (
+          <div className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Diagnose-Funktion ist derzeit deaktiviert.
+          </div>
+        )}
+
+        {gateStatus === 'forbidden' && (
+          <div className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            Keine Berechtigung fuer Diagnose-Start.
+          </div>
+        )}
+
+        {gateStatus === 'unavailable' && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span>{gateMessage || 'Diagnose-Service derzeit nicht verfuegbar.'}</span>
+            <Button variant="outline" size="sm" onClick={checkDiagnosisGate} disabled={isGateChecking}>
+              Retry
+            </Button>
+          </div>
+        )}
 
         {statusMessage && (
           <div className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">

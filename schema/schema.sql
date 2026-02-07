@@ -5302,7 +5302,6 @@ COMMENT ON VIEW "public"."triage_cases_v1" IS 'E78.5: Enhanced SSOT aggregation 
 
 
 
-
 CREATE TABLE IF NOT EXISTS "public"."triage_sessions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
