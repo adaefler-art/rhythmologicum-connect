@@ -744,7 +744,7 @@ export async function handleRunDiagnosis(
       stages_ms: stagesMs,
     }
   }
-  const metrics = {
+  const metrics: TraceTelemetry['metrics'] = {
     prompt_chars: 0,
     prompt_tokens_est: 0,
     prompt_sha256: '',
