@@ -109,7 +109,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     const timeout = setTimeout(() => controller.abort(), GATE_TIMEOUT_MS)
 
     try {
-      const response = await fetch(DIAGNOSIS_HEALTH_ENDPOINT, {
+      const response = await fetch('/api/studio/diagnosis/health', {
         method: 'GET',
         headers: { Accept: 'application/json' },
         signal: controller.signal,

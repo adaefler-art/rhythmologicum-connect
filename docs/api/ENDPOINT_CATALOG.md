@@ -298,7 +298,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/studio/anamnesis/[entryId]/archive | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/archive/route.ts |
 | /api/studio/anamnesis/[entryId]/versions | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/anamnesis/[entryId]/versions/route.ts |
 | /api/studio/diagnosis/execute | POST | clinician | diagnosis:execute | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/execute/route.ts |
-| /api/studio/diagnosis/health | GET | clinician |  | 0 | yes - Diagnosis health probe (no callsite in this branch) | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
+| /api/studio/diagnosis/health | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
 | /api/studio/diagnosis/prompt | GET, POST | clinician | diagnosis:prompt | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/prompt/route.ts |
 | /api/studio/diagnosis/queue | POST | clinician | diagnosis:queue | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts |
 | /api/studio/diagnosis/runs/[runId]/artifact | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts |

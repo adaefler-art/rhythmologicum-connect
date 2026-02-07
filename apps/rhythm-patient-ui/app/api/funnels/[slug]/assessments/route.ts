@@ -1,8 +1,16 @@
 import { NextRequest } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getCurrentStep } from '@/lib/navigation/assessmentNavigation'
-import { loadFunnelWithClient, loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
 import {
+  FunnelNotFoundError,
+  FunnelVersionNotFoundError,
+  ManifestValidationError,
+  loadFunnelWithClient,
+  loadFunnelVersionWithClient,
+} from '@/lib/funnels/loadFunnelVersion'
+import {
+  errorResponse,
+  ErrorCode,
   versionedSuccessResponse,
   missingFieldsResponse,
   unauthorizedResponse,
@@ -22,7 +30,11 @@ import {
 import { withIdempotency } from '@/lib/api/idempotency'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { emitFunnelStarted } from '@/lib/telemetry/events'
-import { ASSESSMENT_STATUS, isValidAssessmentStatus } from '@/lib/contracts/registry'
+import {
+  ASSESSMENT_STATUS,
+  getCanonicalFunnelSlug,
+  isValidAssessmentStatus,
+} from '@/lib/contracts/registry'
 import type { Database } from '@/lib/types/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -32,6 +44,21 @@ type ResumeAssessment = {
   id: string
   funnel_id: string | null
   status: string
+}
+
+type FkViolationDetails = {
+  constraint: string | null
+  table: string | null
+}
+
+function extractFkViolationDetails(message: string): FkViolationDetails {
+  const constraintMatch = message.match(/constraint\s+"([^"]+)"/i)
+  const tableMatch = message.match(/table\s+"([^"]+)"/i)
+
+  return {
+    constraint: constraintMatch ? constraintMatch[1] : null,
+    table: tableMatch ? tableMatch[1] : null,
+  }
 }
 
 /**
@@ -138,8 +165,14 @@ async function buildResumeResponse(
 
 async function handleStartAssessment(request: NextRequest, slug: string) {
   const correlationId = getCorrelationId(request)
+  const canonicalSlug = getCanonicalFunnelSlug(slug)
+  const funnelSlugs = canonicalSlug === slug ? [canonicalSlug] : [canonicalSlug, slug]
 
-  console.log('[assessments] POST start:', { requestId: correlationId, slug })
+  console.log('[assessments] POST start:', {
+    requestId: correlationId,
+    slug,
+    canonicalSlug,
+  })
 
   try {
     if (!slug) {
@@ -216,7 +249,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       .from('assessments')
       .select('id, patient_id, funnel, funnel_id, status, started_at')
       .eq('patient_id', patientProfile.id)
-      .eq('funnel', slug)
+      .in('funnel', funnelSlugs)
       .is('completed_at', null)
       .order('started_at', { ascending: false })
       .limit(1)
@@ -241,7 +274,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         patientId: patientProfile.id,
       })
 
-      return buildResumeResponse(supabase, slug, existingAssessment, correlationId)
+      return buildResumeResponse(supabase, canonicalSlug, existingAssessment, correlationId)
     }
 
     // If forceNew=true and existing assessment found, complete it first
@@ -277,18 +310,19 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
     // CREATE: No existing in-progress assessment (or forceNew=true), create new one
     console.log('[assessments] CREATE: Creating new assessment:', {
       requestId: correlationId,
-      slug,
+      slug: canonicalSlug,
       patientId: patientProfile.id,
       forceNew,
     })
 
     let funnelId: string
     let isLegacyFunnel = false
+    let loadedVersion: Awaited<ReturnType<typeof loadFunnelVersionWithClient>> | null = null
 
     const { data: legacyFunnel, error: legacyError } = await supabase
       .from('funnels')
       .select('id, title, is_active')
-      .eq('slug', slug)
+      .eq('slug', canonicalSlug)
       .maybeSingle()
 
     if (legacyError) {
@@ -302,18 +336,18 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
 
     if (legacyFunnel) {
       if (!legacyFunnel.is_active) {
-        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug }, correlationId)
+        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug: canonicalSlug }, correlationId)
       }
       funnelId = legacyFunnel.id
       isLegacyFunnel = true
     } else {
       let catalogFunnel: Awaited<ReturnType<typeof loadFunnelWithClient>> = null
       try {
-        catalogFunnel = await loadFunnelWithClient(supabase, slug)
+        catalogFunnel = await loadFunnelWithClient(supabase, canonicalSlug)
       } catch (err) {
         console.error('[assessments] Error loading funnel from catalog:', {
           requestId: correlationId,
-          slug,
+          slug: canonicalSlug,
           error: err instanceof Error ? err.message : String(err),
         })
       }
@@ -321,35 +355,76 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       if (!catalogFunnel) {
         console.warn('[assessments] Funnel not found:', {
           requestId: correlationId,
-          slug,
+          slug: canonicalSlug,
           userId: user.id,
           checkedLegacy: true,
           checkedCatalog: true,
         })
-        return notFoundResponse('Funnel', undefined, correlationId)
+        return errorResponse(
+          ErrorCode.ASSESSMENT_DEFINITION_NOT_FOUND,
+          'Assessment-Definition fehlt.',
+          404,
+          { slug: canonicalSlug },
+          correlationId,
+        )
       }
 
       if (!catalogFunnel.isActive) {
-        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug }, correlationId)
+        return invalidInputResponse('Dieser Funnel ist nicht aktiv.', { slug: canonicalSlug }, correlationId)
       }
 
       funnelId = catalogFunnel.id
+
+      try {
+        loadedVersion = await loadFunnelVersionWithClient(supabase, canonicalSlug)
+      } catch (err) {
+        if (err instanceof FunnelNotFoundError) {
+          return errorResponse(
+            ErrorCode.ASSESSMENT_DEFINITION_NOT_FOUND,
+            'Assessment-Definition fehlt.',
+            404,
+            { slug: canonicalSlug },
+            correlationId,
+          )
+        }
+
+        if (err instanceof FunnelVersionNotFoundError) {
+          return errorResponse(
+            ErrorCode.ASSESSMENT_DEFINITION_NOT_FOUND,
+            'Assessment-Definition fehlt.',
+            422,
+            { slug: canonicalSlug },
+            correlationId,
+          )
+        }
+
+        if (err instanceof ManifestValidationError) {
+          return invalidInputResponse(
+            'Assessment-Definition ist ungueltig.',
+            { slug: canonicalSlug },
+            correlationId,
+          )
+        }
+
+        throw err
+      }
     }
 
     console.log('[createAssessment] Insert parameters:', {
       correlationId,
-      slug,
+      slug: canonicalSlug,
       userId: user.id,
       patientProfileId: patientProfile.id,
       isLegacyFunnel,
+      funnelId,
     })
 
     const { data: assessment, error: assessmentError } = await supabase
       .from('assessments')
       .insert({
         patient_id: patientProfile.id,
-        funnel: slug,
-        funnel_id: funnelId,
+        funnel: canonicalSlug,
+        funnel_id: isLegacyFunnel ? funnelId : null,
         status: 'in_progress',
         state: 'in_progress',
       })
@@ -359,7 +434,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
     if (assessmentError || !assessment) {
       console.error('[assessments] Failed to create assessment:', {
         requestId: correlationId,
-        slug,
+        slug: canonicalSlug,
         userId: user.id,
         patientId: patientProfile.id,
         funnelId,
@@ -385,7 +460,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
           .from('assessments')
           .select('id, patient_id, funnel, funnel_id, status, started_at')
           .eq('patient_id', patientProfile.id)
-          .eq('funnel', slug)
+          .in('funnel', funnelSlugs)
           .is('completed_at', null)
           .order('started_at', { ascending: false })
           .limit(1)
@@ -402,13 +477,41 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         }
 
         if (resumedAssessment) {
-          return buildResumeResponse(supabase, slug, resumedAssessment, correlationId)
+          return buildResumeResponse(supabase, canonicalSlug, resumedAssessment, correlationId)
         }
       }
-      if (pgCode === '23502' || pgCode === '23503' || pgCode === '23505') {
+      if (pgCode === '23503') {
+        const fkDetails = extractFkViolationDetails(
+          `${assessmentError?.message ?? ''} ${assessmentError?.details ?? ''}`,
+        )
+
+        console.error('ASSESSMENT_CREATE_FAILED', {
+          requestId: correlationId,
+          slug: canonicalSlug,
+          resolvedIds: {
+            legacyFunnelId: isLegacyFunnel ? funnelId : null,
+            catalogFunnelId: isLegacyFunnel ? null : funnelId,
+          },
+          constraint: fkDetails.constraint,
+          table: fkDetails.table,
+        })
+
+        return errorResponse(
+          ErrorCode.ASSESSMENT_FK_VIOLATION,
+          'Assessment konnte nicht erstellt werden: Referenzfehler.',
+          500,
+          {
+            slug: canonicalSlug,
+            constraint: fkDetails.constraint,
+            table: fkDetails.table,
+          },
+          correlationId,
+        )
+      }
+      if (pgCode === '23502' || pgCode === '23505') {
         return invalidInputResponse(
-          'Assessment konnte nicht erstellt werden: Datenintegritätsfehler.',
-          { errorCode: pgCode, slug },
+          'Assessment konnte nicht erstellt werden: Datenintegritaetsfehler.',
+          { errorCode: pgCode, slug: canonicalSlug },
           correlationId,
         )
       }
@@ -436,8 +539,8 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       currentStep = await getCurrentStep(supabase, assessment.id, funnelId)
     } else {
       try {
-        const loadedVersion = await loadFunnelVersionWithClient(supabase, slug)
-        const steps = loadedVersion.manifest.questionnaire_config?.steps
+        const effectiveVersion = loadedVersion ?? await loadFunnelVersionWithClient(supabase, canonicalSlug)
+        const steps = effectiveVersion.manifest.questionnaire_config?.steps
 
         if (!steps || steps.length === 0) {
           stepLoadError = new Error('Funnel has no questionnaire_config steps')
@@ -455,7 +558,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
         stepLoadError = err instanceof Error ? err : new Error(String(err))
         console.error('[assessments] Failed to load V0.5 funnel version:', {
           requestId: correlationId,
-          slug,
+          slug: canonicalSlug,
           error: stepLoadError.message,
         })
       }
@@ -464,7 +567,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
     if (!currentStep) {
       console.error('[assessments] Cannot determine first step:', {
         requestId: correlationId,
-        slug,
+        slug: canonicalSlug,
         userId: user.id,
         assessmentId: assessment.id,
         isLegacyFunnel,
@@ -473,7 +576,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
 
       return funnelNotSupportedResponse(
         'Dieser Funnel ist derzeit nicht für Assessments konfiguriert.',
-        { slug, assessmentId: assessment.id },
+        { slug: canonicalSlug, assessmentId: assessment.id },
         correlationId,
       )
     }
@@ -482,13 +585,13 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
       userId: user.id,
       assessmentId: assessment.id,
       endpoint: `/api/funnels/${slug}/assessments`,
-      funnel: slug,
+      funnel: canonicalSlug,
     })
 
     await emitFunnelStarted({
       correlationId,
       assessmentId: assessment.id,
-      funnelSlug: slug,
+      funnelSlug: canonicalSlug,
       patientId: patientProfile.id,
       stepId: currentStep.stepId,
     }).catch((err) => {
@@ -498,7 +601,7 @@ async function handleStartAssessment(request: NextRequest, slug: string) {
     await trackAssessmentStarted({
       actor_user_id: user.id,
       assessment_id: assessment.id,
-      funnel_slug: slug,
+      funnel_slug: canonicalSlug,
       funnel_id: isLegacyFunnel ? funnelId : undefined,
     }).catch((err) => {
       console.error('[assessments] Failed to track KPI event', err)

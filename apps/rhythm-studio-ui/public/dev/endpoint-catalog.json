@@ -39,6 +39,36 @@
     },
     {
       "internalUnused": true,
+      "internalUnusedReason": "MCP smoke-run verification (no UI callsite)",
+      "path": "/api/_meta/mcp/smoke-run",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/_meta/mcp/smoke-run/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "MCP connectivity verification (no UI callsite)",
+      "path": "/api/_meta/mcp/status",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/_meta/mcp/status/route.ts",
+      "intent": null,
+      "accessRole": "system",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
       "internalUnusedReason": "system liveness probe / deployment checks",
       "path": "/api/_meta/ping",
       "methods": [
@@ -163,7 +193,7 @@
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+          "file": "apps/rhythm-studio-ui/app/admin/content/[slug]/page.tsx",
           "apiPath": "/api/admin/content-pages/${key}",
           "kind": "url"
         }
@@ -186,7 +216,7 @@
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+          "file": "apps/rhythm-studio-ui/app/admin/content/[slug]/page.tsx",
           "apiPath": "/api/admin/content-pages/${key}",
           "kind": "url"
         }
@@ -209,7 +239,7 @@
       "usedByCount": 1,
       "usedBy": [
         {
-          "file": "apps/rhythm-studio-ui/app/admin/content/[id]/page.tsx",
+          "file": "apps/rhythm-studio-ui/app/admin/content/[slug]/page.tsx",
           "apiPath": "/api/admin/content-pages/${key}",
           "kind": "url"
         }
@@ -9071,6 +9101,27 @@
         {
           "file": "apps/rhythm-studio-ui/app/admin/diagnostics/mcp-test/page.tsx",
           "apiPath": "/api/studio/diagnosis/execute",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/studio/diagnosis/health",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/diagnosis/health",
           "kind": "fetch"
         }
       ],

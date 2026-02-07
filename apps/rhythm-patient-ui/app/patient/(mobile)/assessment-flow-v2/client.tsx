@@ -193,6 +193,15 @@ interface AssessmentFlowV2ClientProps {
   questions?: AssessmentQuestion[]
 }
 
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = await response.json()
+    return payload?.error?.message ?? payload?.message ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
 // ==========================================
 // CUSTOM RADIO OPTION COMPONENT
 // ==========================================
@@ -504,7 +513,11 @@ export default function AssessmentFlowV2Client({
         })
 
         if (!definitionResponse.ok) {
-          throw new Error('Assessment konnte nicht geladen werden.')
+          const message = await readErrorMessage(
+            definitionResponse,
+            'Assessment konnte nicht geladen werden.',
+          )
+          throw new Error(message)
         }
 
         const definition = (await definitionResponse.json()) as FunnelDefinition
@@ -519,14 +532,18 @@ export default function AssessmentFlowV2Client({
           })
 
           if (!resumeResponse.ok) {
-            throw new Error('Assessment konnte nicht geladen werden.')
+            const message = await readErrorMessage(
+              resumeResponse,
+              'Assessment konnte nicht geladen werden.',
+            )
+            throw new Error(message)
           }
 
           const resumePayload = await resumeResponse.json()
           const resumeData = resumePayload?.data ?? resumePayload
 
           if (!resumePayload?.success || !resumeData?.assessmentId) {
-            throw new Error('Assessment konnte nicht geladen werden.')
+            throw new Error(resumePayload?.error?.message ?? 'Assessment konnte nicht geladen werden.')
           }
 
           if (!isMounted) return
@@ -561,13 +578,17 @@ export default function AssessmentFlowV2Client({
         })
 
         if (!startResponse.ok) {
-          throw new Error('Assessment konnte nicht gestartet werden.')
+          const message = await readErrorMessage(
+            startResponse,
+            'Assessment konnte nicht gestartet werden.',
+          )
+          throw new Error(message)
         }
 
         const startPayload = await startResponse.json()
         const id = startPayload?.data?.assessmentId ?? startPayload?.assessmentId
         if (!id) {
-          throw new Error('Assessment konnte nicht gestartet werden.')
+          throw new Error(startPayload?.error?.message ?? 'Assessment konnte nicht gestartet werden.')
         }
 
         if (!isMounted) return

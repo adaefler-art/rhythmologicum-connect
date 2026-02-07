@@ -9125,6 +9125,27 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/studio/diagnosis/health",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/diagnosis/health",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/prompt",
       "methods": [
         "GET",
