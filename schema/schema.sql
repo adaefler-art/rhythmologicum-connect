@@ -1508,6 +1508,39 @@ COMMENT ON FUNCTION "public"."get_my_patient_profile_id"() IS 'Returns the patie
 
 
 
+CREATE OR REPLACE FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") RETURNS integer
+    LANGUAGE "plpgsql" STABLE
+    AS $$
+DECLARE
+  v_overdue_days INTEGER;
+  v_default_days INTEGER := 7; -- Hardcoded fallback
+BEGIN
+  -- Try to get funnel-specific setting
+  SELECT overdue_days
+  INTO v_overdue_days
+  FROM public.funnel_triage_settings
+  WHERE funnel_id = p_funnel_id;
+  
+  -- If found, return it
+  IF FOUND THEN
+    RETURN v_overdue_days;
+  END IF;
+  
+  -- Fall back to default
+  -- Note: Environment variable fallback is handled in application layer
+  -- This function returns the hardcoded default if no DB setting exists
+  RETURN v_default_days;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") IS 'E78.6: Get SLA days for a funnel. Returns funnel-specific value from funnel_triage_settings if exists, otherwise returns default (7 days). Application layer should handle TRIAGE_SLA_DAYS_DEFAULT env var.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."get_user_org_ids"() RETURNS "uuid"[]
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     AS $$
@@ -2277,38 +2310,6 @@ $$;
 
 
 ALTER FUNCTION "public"."update_support_cases_updated_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") RETURNS integer
-    LANGUAGE "plpgsql" STABLE
-    AS $$
-DECLARE
-  v_overdue_days INTEGER;
-  v_default_days INTEGER := 7; -- Hardcoded fallback
-BEGIN
-  -- Try to get funnel-specific setting
-  SELECT overdue_days
-  INTO v_overdue_days
-  FROM public.funnel_triage_settings
-  WHERE funnel_id = p_funnel_id;
-  
-  -- If found, return it
-  IF FOUND THEN
-    RETURN v_overdue_days;
-  END IF;
-  
-  -- Fall back to default
-  -- Note: Environment variable fallback is handled in application layer
-  -- This function returns the hardcoded default if no DB setting exists
-  RETURN v_default_days;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") OWNER TO "postgres";
-
-COMMENT ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") IS 'E78.6: Get SLA days for a funnel. Returns funnel-specific value from funnel_triage_settings if exists, otherwise returns default (7 days). Application layer should handle TRIAGE_SLA_DAYS_DEFAULT env var.';
-
 
 SET default_tablespace = '';
 
@@ -3135,6 +3136,40 @@ ALTER TABLE "public"."funnel_steps" OWNER TO "postgres";
 
 
 COMMENT ON COLUMN "public"."funnel_steps"."content_page_id" IS 'References a content page when step type is "content_page". Must be NULL for other step types.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."funnel_triage_settings" (
+    "funnel_id" "uuid" NOT NULL,
+    "overdue_days" integer NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_by" "uuid",
+    "updated_by" "uuid",
+    CONSTRAINT "funnel_triage_settings_overdue_days_check" CHECK (("overdue_days" > 0))
+);
+
+
+ALTER TABLE "public"."funnel_triage_settings" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."funnel_triage_settings" IS 'E78.6: Per-funnel triage SLA configuration. Defines custom overdue_days threshold for specific funnels. Falls back to TRIAGE_SLA_DAYS_DEFAULT env var or 7 days default.';
+
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."funnel_id" IS 'Foreign key to funnels_catalog. One setting per funnel.';
+
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."overdue_days" IS 'Number of days before a triage case for this funnel is marked as overdue. Must be positive.';
+
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."created_by" IS 'User who created this configuration (typically a clinician or admin).';
+
+
+
+COMMENT ON COLUMN "public"."funnel_triage_settings"."updated_by" IS 'User who last updated this configuration.';
 
 
 
@@ -4763,35 +4798,6 @@ ALTER TABLE "public"."triage_case_actions" OWNER TO "postgres";
 COMMENT ON TABLE "public"."triage_case_actions" IS 'E78.4: Records HITL interventions on triage cases. Actions are append-only and never deleted by auto-jobs.';
 
 
-CREATE TABLE IF NOT EXISTS "public"."funnel_triage_settings" (
-    "funnel_id" "uuid" NOT NULL,
-    "overdue_days" integer NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "created_by" "uuid",
-    "updated_by" "uuid",
-    CONSTRAINT "funnel_triage_settings_overdue_days_positive" CHECK (("overdue_days" > 0))
-);
-
-
-ALTER TABLE "public"."funnel_triage_settings" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."funnel_triage_settings" IS 'E78.6: Per-funnel triage SLA configuration. Defines custom overdue_days threshold for specific funnels. Falls back to TRIAGE_SLA_DAYS_DEFAULT env var or 7 days default.';
-
-
-COMMENT ON COLUMN "public"."funnel_triage_settings"."funnel_id" IS 'Foreign key to funnels_catalog. One setting per funnel.';
-
-
-COMMENT ON COLUMN "public"."funnel_triage_settings"."overdue_days" IS 'Number of days before a triage case for this funnel is marked as overdue. Must be positive.';
-
-
-COMMENT ON COLUMN "public"."funnel_triage_settings"."created_by" IS 'User who created this configuration (typically a clinician or admin).';
-
-
-COMMENT ON COLUMN "public"."funnel_triage_settings"."updated_by" IS 'User who last updated this configuration.';
-
-
 
 COMMENT ON COLUMN "public"."triage_case_actions"."id" IS 'Unique identifier for the action';
 
@@ -4825,480 +4831,187 @@ COMMENT ON COLUMN "public"."triage_case_actions"."payload" IS 'Action-specific m
 
 
 
-CREATE OR REPLACE VIEW public.triage_cases_v1 AS
-WITH 
-  -- Get the most recent processing job per assessment
-  latest_jobs AS (
-    SELECT DISTINCT ON (assessment_id)
-      assessment_id,
-      id AS job_id,
-      status AS job_status,
-      stage AS job_stage,
-      attempt,
-      max_attempts,
-      delivery_status,
-      created_at AS job_created_at
-    FROM processing_jobs
-    ORDER BY assessment_id, created_at DESC
-  ),
-  
-  -- Get the most recent review record per assessment
-  latest_reviews AS (
-    SELECT DISTINCT ON (pj.assessment_id)
-      pj.assessment_id,
-      rr.status AS review_status,
-      rr.decided_at
-    FROM review_records rr
-    JOIN processing_jobs pj ON pj.id = rr.job_id
-    ORDER BY pj.assessment_id, rr.created_at DESC
-  ),
-  
-  -- R-E78.5-001: Get latest snooze action per assessment
-  latest_snooze AS (
-    SELECT DISTINCT ON (assessment_id)
-      assessment_id,
-      payload->>'snoozed_until' AS snoozed_until_str,
-      created_at AS snooze_created_at
-    FROM triage_case_actions
-    WHERE action_type = 'snooze'
-    ORDER BY assessment_id, created_at DESC
-  ),
-  
-  -- R-E78.5-002: Get latest close/reopen action per assessment
-  latest_close_reopen AS (
-    SELECT DISTINCT ON (assessment_id)
-      assessment_id,
-      action_type,
-      created_at AS close_reopen_at
-    FROM triage_case_actions
-    WHERE action_type IN ('close', 'reopen')
-    ORDER BY assessment_id, created_at DESC
-  ),
-  
-  -- R-E78.5-003: Get latest manual_flag/clear action per assessment
-  latest_manual_flag AS (
-    SELECT DISTINCT ON (assessment_id)
-      assessment_id,
-      action_type,
-      payload->>'severity' AS flag_severity,
-      payload->>'reason' AS flag_reason,
-      created_at AS flag_created_at
-    FROM triage_case_actions
-    WHERE action_type IN ('manual_flag', 'clear_manual_flag')
-    ORDER BY assessment_id, created_at DESC
-  ),
-  
-  -- R-E78.5-004: Get latest acknowledge action per assessment
-  latest_acknowledge AS (
-    SELECT DISTINCT ON (assessment_id)
-      assessment_id,
-      created_at AS acknowledged_at
-    FROM triage_case_actions
-    WHERE action_type = 'acknowledge'
-    ORDER BY assessment_id, created_at DESC
-  ),
-  
-  -- E78.6: Get SLA configuration per funnel (v1.1)
-  funnel_sla_config AS (
-    SELECT
-      a.id AS assessment_id,
-      a.funnel_id,
-      COALESCE(
-        fts.overdue_days,  -- Funnel-specific setting (highest priority)
-        7                   -- Default fallback (7 days)
-      ) AS sla_days
-    FROM assessments a
-    LEFT JOIN funnel_triage_settings fts ON fts.funnel_id = a.funnel_id
-  ),
-  
-  -- Compute attention items for each assessment (with manual_flag integration)
-  attention_computation AS (
-    SELECT
-      a.id AS assessment_id,
-      
-      -- Build attention items array (Rule R-E78.1-006 to R-E78.1-011 + R-E78.5-009)
-      ARRAY_REMOVE(ARRAY[
-        -- R-E78.1-006: critical_flag
-        CASE WHEN (
-          EXISTS (
-            SELECT 1 FROM reports r 
-            WHERE r.assessment_id = a.id 
-            AND r.risk_level = 'high'
-          )
-          OR EXISTS (
-            SELECT 1 FROM risk_bundles rb 
-            JOIN latest_jobs lj ON lj.job_id = rb.job_id 
-            WHERE lj.assessment_id = a.id 
-            AND rb.bundle_data->>'overall_risk_level' = 'critical'
-          )
-          OR EXISTS (
-            SELECT 1 FROM safety_check_results scr 
-            JOIN latest_jobs lj ON lj.job_id = scr.job_id 
-            WHERE lj.assessment_id = a.id 
-            AND scr.overall_action = 'BLOCK'
-          )
-        ) THEN 'critical_flag'::text END,
-        
-        -- R-E78.1-007 + E78.6: overdue (in-progress) - using configurable SLA
-        CASE WHEN (
-          a.status = 'in_progress'
-          AND a.started_at < (NOW() - (fsc.sla_days || ' days')::INTERVAL)
-          AND a.completed_at IS NULL
-        ) THEN 'overdue'::text END,
-        
-        -- R-E78.1-007: overdue (completed but not reviewed)
-        CASE WHEN (
-          a.status = 'completed'
-          AND a.completed_at < (NOW() - INTERVAL '2 days')
-          AND NOT EXISTS (
-            SELECT 1 FROM latest_reviews lr
-            WHERE lr.assessment_id = a.id
-            AND lr.review_status IN ('APPROVED', 'REJECTED')
-          )
-        ) THEN 'overdue'::text END,
-        
-        -- R-E78.1-008 + E78.6: stuck - using 2x SLA for stuck threshold
-        CASE WHEN (
-          EXISTS (
-            SELECT 1 FROM latest_jobs lj
-            WHERE lj.assessment_id = a.id
-            AND lj.job_status = 'failed'
-            AND lj.attempt >= lj.max_attempts
-          )
-          OR (
-            a.status = 'in_progress'
-            AND a.started_at < (NOW() - (fsc.sla_days * 2 || ' days')::INTERVAL)
-            AND a.completed_at IS NULL
-          )
-        ) THEN 'stuck'::text END,
-        
-        -- R-E78.1-009: review_ready
-        CASE WHEN (
-          a.status = 'completed'
-          AND a.workup_status = 'ready_for_review'
-          AND NOT EXISTS (
-            SELECT 1 FROM latest_reviews lr
-            WHERE lr.assessment_id = a.id
-            AND lr.review_status != 'PENDING'
-          )
-        ) THEN 'review_ready'::text END,
-        
-        -- R-E78.5-009: manual_flag (from HITL actions)
-        CASE WHEN (
-          EXISTS (
-            SELECT 1 FROM latest_manual_flag lmf
-            WHERE lmf.assessment_id = a.id
-            AND lmf.action_type = 'manual_flag'
-          )
-        ) THEN 'manual_flag'::text END,
-        
-        -- R-E78.1-011: missing_data
-        CASE WHEN (
-          a.status = 'in_progress'
-          AND a.missing_data_fields IS NOT NULL
-          AND jsonb_array_length(a.missing_data_fields) > 0
-        ) THEN 'missing_data'::text END
-        
-      ], NULL) AS attention_items_array
-      
-    FROM assessments a
-    LEFT JOIN funnel_sla_config fsc ON fsc.assessment_id = a.id
-    LEFT JOIN latest_jobs lj ON lj.assessment_id = a.id
-    LEFT JOIN latest_manual_flag lmf ON lmf.assessment_id = a.id
-  )
-  
-SELECT
-  -- Core identity fields
-  a.id AS case_id,
-  a.patient_id,
-  a.funnel_id,
-  f.slug AS funnel_slug,
-  
-  -- Patient display information (enrichment)
-  pp.first_name,
-  pp.last_name,
-  pp.preferred_name,
-  COALESCE(
-    pp.preferred_name,
-    CONCAT(pp.first_name, ' ', pp.last_name)
-  ) AS patient_display,
-  
-  -- Case state computation (Rules R-E78.1-001 to R-E78.1-005)
-  -- R-E78.5-005: Manual close overrides auto state
-  CASE
-    -- Manual close state (HITL override)
-    WHEN lcr.action_type = 'close' THEN 'resolved'::text
-    
-    -- R-E78.1-004: resolved (highest priority - terminal state)
-    WHEN (
-      a.status = 'completed'
-      AND (
-        EXISTS (
-          SELECT 1 FROM latest_reviews lr
-          WHERE lr.assessment_id = a.id
-          AND lr.review_status = 'APPROVED'
+CREATE OR REPLACE VIEW "public"."triage_cases_v1" AS
+ WITH "latest_jobs" AS (
+         SELECT DISTINCT ON ("processing_jobs"."assessment_id") "processing_jobs"."assessment_id",
+            "processing_jobs"."id" AS "job_id",
+            "processing_jobs"."status" AS "job_status",
+            "processing_jobs"."stage" AS "job_stage",
+            "processing_jobs"."attempt",
+            "processing_jobs"."max_attempts",
+            "processing_jobs"."delivery_status",
+            "processing_jobs"."created_at" AS "job_created_at"
+           FROM "public"."processing_jobs"
+          ORDER BY "processing_jobs"."assessment_id", "processing_jobs"."created_at" DESC
+        ), "latest_reviews" AS (
+         SELECT DISTINCT ON ("pj"."assessment_id") "pj"."assessment_id",
+            "rr"."status" AS "review_status",
+            "rr"."decided_at"
+           FROM ("public"."review_records" "rr"
+             JOIN "public"."processing_jobs" "pj" ON (("pj"."id" = "rr"."job_id")))
+          ORDER BY "pj"."assessment_id", "rr"."created_at" DESC
+        ), "latest_snooze" AS (
+         SELECT DISTINCT ON ("triage_case_actions"."assessment_id") "triage_case_actions"."assessment_id",
+            ("triage_case_actions"."payload" ->> 'snoozed_until'::"text") AS "snoozed_until_str",
+            "triage_case_actions"."created_at" AS "snooze_created_at"
+           FROM "public"."triage_case_actions"
+          WHERE ("triage_case_actions"."action_type" = 'snooze'::"public"."triage_action_type")
+          ORDER BY "triage_case_actions"."assessment_id", "triage_case_actions"."created_at" DESC
+        ), "latest_close_reopen" AS (
+         SELECT DISTINCT ON ("triage_case_actions"."assessment_id") "triage_case_actions"."assessment_id",
+            "triage_case_actions"."action_type",
+            "triage_case_actions"."created_at" AS "close_reopen_at"
+           FROM "public"."triage_case_actions"
+          WHERE ("triage_case_actions"."action_type" = ANY (ARRAY['close'::"public"."triage_action_type", 'reopen'::"public"."triage_action_type"]))
+          ORDER BY "triage_case_actions"."assessment_id", "triage_case_actions"."created_at" DESC
+        ), "latest_manual_flag" AS (
+         SELECT DISTINCT ON ("triage_case_actions"."assessment_id") "triage_case_actions"."assessment_id",
+            "triage_case_actions"."action_type",
+            ("triage_case_actions"."payload" ->> 'severity'::"text") AS "flag_severity",
+            ("triage_case_actions"."payload" ->> 'reason'::"text") AS "flag_reason",
+            "triage_case_actions"."created_at" AS "flag_created_at"
+           FROM "public"."triage_case_actions"
+          WHERE ("triage_case_actions"."action_type" = ANY (ARRAY['manual_flag'::"public"."triage_action_type", 'clear_manual_flag'::"public"."triage_action_type"]))
+          ORDER BY "triage_case_actions"."assessment_id", "triage_case_actions"."created_at" DESC
+        ), "latest_acknowledge" AS (
+         SELECT DISTINCT ON ("triage_case_actions"."assessment_id") "triage_case_actions"."assessment_id",
+            "triage_case_actions"."created_at" AS "acknowledged_at"
+           FROM "public"."triage_case_actions"
+          WHERE ("triage_case_actions"."action_type" = 'acknowledge'::"public"."triage_action_type")
+          ORDER BY "triage_case_actions"."assessment_id", "triage_case_actions"."created_at" DESC
+        ), "funnel_sla_config" AS (
+         SELECT "a_1"."id" AS "assessment_id",
+            "a_1"."funnel_id",
+            COALESCE("fts"."overdue_days", 7) AS "sla_days"
+           FROM ("public"."assessments" "a_1"
+             LEFT JOIN "public"."funnel_triage_settings" "fts" ON (("fts"."funnel_id" = "a_1"."funnel_id")))
+        ), "attention_computation" AS (
+         SELECT "a_1"."id" AS "assessment_id",
+            "array_remove"(ARRAY[
+                CASE
+                    WHEN ((EXISTS ( SELECT 1
+                       FROM "public"."reports" "r"
+                      WHERE (("r"."assessment_id" = "a_1"."id") AND ("r"."risk_level" = 'high'::"text")))) OR (EXISTS ( SELECT 1
+                       FROM ("public"."risk_bundles" "rb"
+                         JOIN "latest_jobs" "lj_1" ON (("lj_1"."job_id" = "rb"."job_id")))
+                      WHERE (("lj_1"."assessment_id" = "a_1"."id") AND (("rb"."bundle_data" ->> 'overall_risk_level'::"text") = 'critical'::"text")))) OR (EXISTS ( SELECT 1
+                       FROM ("public"."safety_check_results" "scr"
+                         JOIN "latest_jobs" "lj_1" ON (("lj_1"."job_id" = "scr"."job_id")))
+                      WHERE (("lj_1"."assessment_id" = "a_1"."id") AND ("scr"."overall_action" = 'BLOCK'::"public"."safety_action"))))) THEN 'critical_flag'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN (("a_1"."status" = 'in_progress'::"public"."assessment_status") AND ("a_1"."started_at" < ("now"() - (("fsc_1"."sla_days" || ' days'::"text"))::interval)) AND ("a_1"."completed_at" IS NULL)) THEN 'overdue'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN (("a_1"."status" = 'completed'::"public"."assessment_status") AND ("a_1"."completed_at" < ("now"() - '2 days'::interval)) AND (NOT (EXISTS ( SELECT 1
+                       FROM "latest_reviews" "lr_1"
+                      WHERE (("lr_1"."assessment_id" = "a_1"."id") AND ("lr_1"."review_status" = ANY (ARRAY['APPROVED'::"public"."review_status", 'REJECTED'::"public"."review_status"]))))))) THEN 'overdue'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN ((EXISTS ( SELECT 1
+                       FROM "latest_jobs" "lj_1"
+                      WHERE (("lj_1"."assessment_id" = "a_1"."id") AND ("lj_1"."job_status" = 'failed'::"public"."processing_status") AND ("lj_1"."attempt" >= "lj_1"."max_attempts")))) OR (("a_1"."status" = 'in_progress'::"public"."assessment_status") AND ("a_1"."started_at" < ("now"() - ((("fsc_1"."sla_days" * 2) || ' days'::"text"))::interval)) AND ("a_1"."completed_at" IS NULL))) THEN 'stuck'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN (("a_1"."status" = 'completed'::"public"."assessment_status") AND ("a_1"."workup_status" = 'ready_for_review'::"public"."workup_status") AND (NOT (EXISTS ( SELECT 1
+                       FROM "latest_reviews" "lr_1"
+                      WHERE (("lr_1"."assessment_id" = "a_1"."id") AND ("lr_1"."review_status" = ANY (ARRAY['APPROVED'::"public"."review_status", 'REJECTED'::"public"."review_status"]))))))) THEN 'review_ready'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN ("lmf_1"."action_type" = 'manual_flag'::"public"."triage_action_type") THEN 'manual_flag'::"text"
+                    ELSE NULL::"text"
+                END,
+                CASE
+                    WHEN (("a_1"."workup_status" = 'needs_more_data'::"public"."workup_status") AND ("a_1"."status" = 'in_progress'::"public"."assessment_status")) THEN 'missing_data'::"text"
+                    ELSE NULL::"text"
+                END], NULL::"text") AS "attention_items_array"
+           FROM (("public"."assessments" "a_1"
+             LEFT JOIN "funnel_sla_config" "fsc_1" ON (("fsc_1"."assessment_id" = "a_1"."id")))
+             LEFT JOIN "latest_manual_flag" "lmf_1" ON (("lmf_1"."assessment_id" = "a_1"."id")))
         )
-        OR EXISTS (
-          SELECT 1 FROM latest_jobs lj
-          WHERE lj.assessment_id = a.id
-          AND lj.delivery_status = 'DELIVERED'
-        )
-      )
-    ) THEN 'resolved'::text
-    
-    -- R-E78.1-003: ready_for_review
-    WHEN (
-      a.status = 'completed'
-      AND a.workup_status = 'ready_for_review'
-      AND NOT EXISTS (
-        SELECT 1 FROM latest_reviews lr
-        WHERE lr.assessment_id = a.id
-        AND lr.review_status IN ('APPROVED', 'REJECTED')
-      )
-    ) THEN 'ready_for_review'::text
-    
-    -- Alternative ready_for_review (no workup_status)
-    WHEN (
-      a.status = 'completed'
-      AND EXISTS (
-        SELECT 1 FROM latest_jobs lj
-        WHERE lj.assessment_id = a.id
-        AND lj.job_status = 'completed'
-        AND lj.job_stage = 'report_generated'
-      )
-      AND NOT EXISTS (
-        SELECT 1 FROM latest_reviews lr
-        WHERE lr.assessment_id = a.id
-        AND lr.review_status IN ('APPROVED', 'REJECTED')
-      )
-    ) THEN 'ready_for_review'::text
-    
-    -- R-E78.1-001: needs_input
-    WHEN (
-      a.status = 'in_progress'
-      AND a.workup_status = 'needs_more_data'
-      AND a.completed_at IS NULL
-    ) THEN 'needs_input'::text
-    
-    -- R-E78.1-002: in_progress (default for in_progress status)
-    WHEN (
-      a.status = 'in_progress'
-      AND a.completed_at IS NULL
-    ) THEN 'in_progress'::text
-    
-    ELSE 'in_progress'::text
-  END AS case_state,
-  
-  -- Attention items and level
-  ac.attention_items_array AS attention_items,
-  
-  -- Attention level computation (Section 3.4)
-  -- R-E78.5-009: Manual flag contributes to attention level
-  CASE
-    WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 'critical'::text
-    WHEN 'overdue' = ANY(ac.attention_items_array) OR 'stuck' = ANY(ac.attention_items_array) THEN 'warn'::text
-    WHEN 'manual_flag' = ANY(ac.attention_items_array) THEN 'warn'::text
-    WHEN array_length(ac.attention_items_array, 1) > 0 THEN 'info'::text
-    ELSE 'none'::text
-  END AS attention_level,
-  
-  -- Next action computation (Rules R-E78.1-012 to R-E78.1-019)
-  CASE
-    -- R-E78.1-016: clinician_review with critical priority
-    WHEN (
-      a.status = 'completed'
-      AND a.workup_status = 'ready_for_review'
-      AND 'critical_flag' = ANY(ac.attention_items_array)
-    ) THEN 'clinician_review'::text
-    
-    -- R-E78.1-019: admin_investigate
-    WHEN (
-      'stuck' = ANY(ac.attention_items_array)
-      AND EXISTS (
-        SELECT 1 FROM latest_jobs lj
-        WHERE lj.assessment_id = a.id
-        AND lj.job_status = 'failed'
-        AND lj.attempt >= lj.max_attempts
-      )
-    ) THEN 'admin_investigate'::text
-    
-    -- R-E78.1-015: clinician_review
-    WHEN (
-      a.status = 'completed'
-      AND a.workup_status = 'ready_for_review'
-    ) THEN 'clinician_review'::text
-    
-    -- R-E78.1-014: clinician_contact
-    WHEN (
-      a.status = 'in_progress'
-      AND 'stuck' = ANY(ac.attention_items_array)
-    ) THEN 'clinician_contact'::text
-    
-    -- R-E78.1-018: system_retry
-    WHEN (
-      EXISTS (
-        SELECT 1 FROM latest_jobs lj
-        WHERE lj.assessment_id = a.id
-        AND lj.job_status = 'failed'
-        AND lj.attempt < lj.max_attempts
-      )
-    ) THEN 'system_retry'::text
-    
-    -- R-E78.1-012: patient_provide_data
-    WHEN (
-      a.status = 'in_progress'
-      AND a.workup_status = 'needs_more_data'
-    ) THEN 'patient_provide_data'::text
-    
-    -- R-E78.1-013: patient_continue
-    WHEN (
-      a.status = 'in_progress'
-      AND NOT ('stuck' = ANY(ac.attention_items_array))
-    ) THEN 'patient_continue'::text
-    
-    -- R-E78.1-017: none (resolved)
-    WHEN (
-      a.status = 'completed'
-      AND (
-        EXISTS (
-          SELECT 1 FROM latest_reviews lr
-          WHERE lr.assessment_id = a.id
-          AND lr.review_status = 'APPROVED'
-        )
-        OR EXISTS (
-          SELECT 1 FROM latest_jobs lj
-          WHERE lj.assessment_id = a.id
-          AND lj.delivery_status = 'DELIVERED'
-        )
-      )
-    ) THEN 'none'::text
-    
-    ELSE 'patient_continue'::text
-  END AS next_action,
-  
-  -- Timestamps
-  a.started_at AS assigned_at,
-  GREATEST(
-    a.started_at,
-    COALESCE(lj.job_created_at, a.started_at),
-    COALESCE(lr.decided_at, a.started_at)
-  ) AS last_activity_at,
-  a.started_at AS updated_at,
-  a.completed_at,
-  
-  -- R-E78.5-007: Active status (excludes resolved and manually closed)
-  CASE
-    -- Manually closed cases are not active
-    WHEN lcr.action_type = 'close' THEN false
-    -- Auto-resolved cases are not active
-    WHEN (
-      a.status = 'completed'
-      AND (
-        EXISTS (
-          SELECT 1 FROM latest_reviews lr
-          WHERE lr.assessment_id = a.id
-          AND lr.review_status = 'APPROVED'
-        )
-        OR EXISTS (
-          SELECT 1 FROM latest_jobs lj
-          WHERE lj.assessment_id = a.id
-          AND lj.delivery_status = 'DELIVERED'
-        )
-      )
-    ) THEN false
-    ELSE true
-  END AS is_active,
-  
-  -- R-E78.5-001: Snoozed until (from HITL snooze action)
-  CASE
-    WHEN ls.snoozed_until_str IS NOT NULL THEN
-      (ls.snoozed_until_str)::timestamptz
-    ELSE NULL
-  END AS snoozed_until,
-  
-  -- R-E78.5-002: Manual close flag (boolean for easy filtering)
-  CASE
-    WHEN lcr.action_type = 'close' THEN true
-    ELSE false
-  END AS is_manually_closed,
-  
-  -- R-E78.5-003: Manual flag details (for badge display)
-  lmf.flag_severity AS manual_flag_severity,
-  lmf.flag_reason AS manual_flag_reason,
-  
-  -- R-E78.5-004: Acknowledged timestamp
-  la.acknowledged_at,
-  
-  -- E78.6: SLA configuration and due date
-  fsc.sla_days,
-  (a.started_at + (fsc.sla_days || ' days')::INTERVAL) AS due_at,
-  
-  -- Priority score computation (Section 5.1)
-  -- R-E78.5-009: Manual flag adds to priority score
-  (
-    -- Attention level contribution (0-500 points)
-    CASE
-      WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 500
-      WHEN 'overdue' = ANY(ac.attention_items_array) OR 'stuck' = ANY(ac.attention_items_array) THEN 300
-      WHEN 'manual_flag' = ANY(ac.attention_items_array) THEN 250
-      WHEN array_length(ac.attention_items_array, 1) > 0 THEN 100
-      ELSE 0
-    END +
-    
-    -- Case state priority (0-200 points)
-    CASE
-      WHEN a.status = 'completed' AND a.workup_status = 'ready_for_review' THEN 200
-      WHEN a.status = 'in_progress' AND a.workup_status = 'needs_more_data' THEN 150
-      WHEN a.status = 'in_progress' THEN 50
-      ELSE 0
-    END +
-    
-    -- Age-based urgency (0-100 points, 2 points per day)
-    LEAST(
-      EXTRACT(EPOCH FROM (NOW() - a.started_at))::INTEGER / 86400 * 2,
-      100
-    ) +
-    
-    -- Specific attention items (0-200 points)
-    CASE WHEN 'critical_flag' = ANY(ac.attention_items_array) THEN 200 ELSE 0 END +
-    CASE WHEN 'stuck' = ANY(ac.attention_items_array) THEN 150 ELSE 0 END +
-    CASE WHEN 'overdue' = ANY(ac.attention_items_array) THEN 100 ELSE 0 END +
-    CASE WHEN 'manual_flag' = ANY(ac.attention_items_array) THEN 75 ELSE 0 END
-  )::INTEGER AS priority_score,
-  
-  -- Processing job summary (for enrichment)
-  lj.job_id,
-  lj.job_status,
-  lj.job_stage,
-  lj.delivery_status,
-  
-  -- Review summary (for enrichment)
-  lr.review_status,
-  lr.decided_at AS review_decided_at
-
-FROM assessments a
-LEFT JOIN latest_jobs lj ON lj.assessment_id = a.id
-LEFT JOIN latest_reviews lr ON lr.assessment_id = a.id
-LEFT JOIN latest_snooze ls ON ls.assessment_id = a.id
-LEFT JOIN latest_close_reopen lcr ON lcr.assessment_id = a.id
-LEFT JOIN latest_manual_flag lmf ON lmf.assessment_id = a.id
-LEFT JOIN latest_acknowledge la ON la.assessment_id = a.id
-LEFT JOIN funnel_sla_config fsc ON fsc.assessment_id = a.id
-LEFT JOIN attention_computation ac ON ac.assessment_id = a.id
-LEFT JOIN patient_profiles pp ON pp.id = a.patient_id
-LEFT JOIN funnels_catalog f ON f.id = a.funnel_id
-
--- Filter to assessments that are trackable (in_progress or completed)
-WHERE a.status IN ('in_progress', 'completed');
-
--- Add comment
-COMMENT ON VIEW public.triage_cases_v1 IS 'E78.5: Enhanced SSOT aggregation view for triage inbox with HITL action integration and E78.6 configurable SLA. Provides deterministic case states with effective state computation from manual interventions. Includes snoozed_until, is_manually_closed, manual_flag details, acknowledged_at, and configurable SLA (due_at, sla_days).';
+ SELECT "a"."id" AS "case_id",
+    "a"."patient_id",
+    "a"."funnel_id",
+        CASE
+            WHEN ("lcr"."action_type" = 'close'::"public"."triage_action_type") THEN 'resolved'::"text"
+            WHEN (("ls"."snoozed_until_str" IS NOT NULL) AND (("ls"."snoozed_until_str")::timestamp with time zone > "now"())) THEN 'snoozed'::"text"
+            WHEN (("a"."status" = 'in_progress'::"public"."assessment_status") AND ("a"."workup_status" = 'needs_more_data'::"public"."workup_status") AND ("a"."completed_at" IS NULL)) THEN 'needs_input'::"text"
+            WHEN (("a"."status" = 'in_progress'::"public"."assessment_status") AND ("a"."workup_status" IS NULL) AND ("a"."completed_at" IS NULL) AND (NOT (EXISTS ( SELECT 1
+               FROM "latest_jobs" "lj_1"
+              WHERE (("lj_1"."assessment_id" = "a"."id") AND ("lj_1"."job_status" = 'failed'::"public"."processing_status")))))) THEN 'in_progress'::"text"
+            WHEN (("a"."status" = 'completed'::"public"."assessment_status") AND ("a"."workup_status" = 'ready_for_review'::"public"."workup_status") AND (NOT (EXISTS ( SELECT 1
+               FROM "latest_reviews" "lr_1"
+              WHERE (("lr_1"."assessment_id" = "a"."id") AND ("lr_1"."review_status" = ANY (ARRAY['APPROVED'::"public"."review_status", 'REJECTED'::"public"."review_status"]))))))) THEN 'ready_for_review'::"text"
+            WHEN (("a"."status" = 'completed'::"public"."assessment_status") AND ((EXISTS ( SELECT 1
+               FROM "latest_reviews" "lr_1"
+              WHERE (("lr_1"."assessment_id" = "a"."id") AND ("lr_1"."review_status" = 'APPROVED'::"public"."review_status")))) OR (EXISTS ( SELECT 1
+               FROM "latest_jobs" "lj_1"
+              WHERE (("lj_1"."assessment_id" = "a"."id") AND ("lj_1"."delivery_status" = 'DELIVERED'::"text")))))) THEN 'resolved'::"text"
+            ELSE 'in_progress'::"text"
+        END AS "case_state",
+    "ac"."attention_items_array" AS "attention_items",
+        CASE
+            WHEN ('critical_flag'::"text" = ANY ("ac"."attention_items_array")) THEN 'critical'::"text"
+            WHEN (('overdue'::"text" = ANY ("ac"."attention_items_array")) OR ('stuck'::"text" = ANY ("ac"."attention_items_array"))) THEN 'warn'::"text"
+            WHEN ('manual_flag'::"text" = ANY ("ac"."attention_items_array")) THEN 'warn'::"text"
+            WHEN ("array_length"("ac"."attention_items_array", 1) > 0) THEN 'info'::"text"
+            ELSE 'none'::"text"
+        END AS "attention_level",
+        CASE
+            WHEN (("a"."status" = 'in_progress'::"public"."assessment_status") AND ("a"."workup_status" = 'needs_more_data'::"public"."workup_status")) THEN 'patient_provide_data'::"text"
+            WHEN (("a"."status" = 'completed'::"public"."assessment_status") AND ("a"."workup_status" = 'ready_for_review'::"public"."workup_status")) THEN 'clinician_review'::"text"
+            WHEN ("a"."status" = 'completed'::"public"."assessment_status") THEN 'none'::"text"
+            ELSE 'patient_continue'::"text"
+        END AS "next_action",
+    "a"."started_at" AS "assigned_at",
+    GREATEST("a"."started_at", COALESCE("lj"."job_created_at", "a"."started_at"), COALESCE("lr"."decided_at", "a"."started_at")) AS "last_activity_at",
+    "a"."started_at" AS "updated_at",
+    "a"."completed_at",
+        CASE
+            WHEN ("lcr"."action_type" = 'close'::"public"."triage_action_type") THEN false
+            WHEN (("a"."status" = 'completed'::"public"."assessment_status") AND ((EXISTS ( SELECT 1
+               FROM "latest_reviews" "lr2"
+              WHERE (("lr2"."assessment_id" = "a"."id") AND ("lr2"."review_status" = 'APPROVED'::"public"."review_status")))) OR (EXISTS ( SELECT 1
+               FROM "latest_jobs" "lj2"
+              WHERE (("lj2"."assessment_id" = "a"."id") AND ("lj2"."delivery_status" = 'DELIVERED'::"text")))))) THEN false
+            WHEN (("ls"."snoozed_until_str" IS NOT NULL) AND (("ls"."snoozed_until_str")::timestamp with time zone > "now"())) THEN false
+            ELSE true
+        END AS "is_active",
+    ("ls"."snoozed_until_str")::timestamp with time zone AS "snoozed_until",
+        CASE
+            WHEN ("lcr"."action_type" = 'close'::"public"."triage_action_type") THEN true
+            ELSE false
+        END AS "is_manually_closed",
+        CASE
+            WHEN ("lmf"."action_type" = 'manual_flag'::"public"."triage_action_type") THEN true
+            ELSE false
+        END AS "has_manual_flag",
+    "lmf"."flag_severity" AS "manual_flag_severity",
+    "lmf"."flag_reason" AS "manual_flag_reason",
+    "la"."acknowledged_at",
+    "fsc"."sla_days",
+    ("a"."started_at" + (("fsc"."sla_days" || ' days'::"text"))::interval) AS "due_at",
+    "a"."funnel_id" AS "funnel_id_enrichment"
+   FROM (((((((("public"."assessments" "a"
+     LEFT JOIN "latest_jobs" "lj" ON (("lj"."assessment_id" = "a"."id")))
+     LEFT JOIN "latest_reviews" "lr" ON (("lr"."assessment_id" = "a"."id")))
+     LEFT JOIN "latest_snooze" "ls" ON (("ls"."assessment_id" = "a"."id")))
+     LEFT JOIN "latest_close_reopen" "lcr" ON (("lcr"."assessment_id" = "a"."id")))
+     LEFT JOIN "latest_manual_flag" "lmf" ON (("lmf"."assessment_id" = "a"."id")))
+     LEFT JOIN "latest_acknowledge" "la" ON (("la"."assessment_id" = "a"."id")))
+     LEFT JOIN "funnel_sla_config" "fsc" ON (("fsc"."assessment_id" = "a"."id")))
+     JOIN "attention_computation" "ac" ON (("ac"."assessment_id" = "a"."id")));
 
 
 ALTER VIEW "public"."triage_cases_v1" OWNER TO "postgres";
 
 
-COMMENT ON VIEW "public"."triage_cases_v1" IS 'E78.5: Enhanced SSOT aggregation view for triage inbox with HITL action integration. Provides deterministic case states with effective state computation from manual interventions. Includes snoozed_until, is_manually_closed, manual_flag details, and acknowledged_at from triage_case_actions.';
+COMMENT ON VIEW "public"."triage_cases_v1" IS 'E78.5: Enhanced SSOT aggregation view for triage inbox with HITL action integration and E78.6 configurable SLA. Provides deterministic case states with effective state computation from manual interventions. Includes snoozed_until, is_manually_closed, manual_flag details, acknowledged_at, and configurable SLA (due_at, sla_days).';
 
 
 
@@ -5548,6 +5261,11 @@ ALTER TABLE ONLY "public"."funnel_step_questions"
 
 ALTER TABLE ONLY "public"."funnel_steps"
     ADD CONSTRAINT "funnel_steps_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_pkey" PRIMARY KEY ("funnel_id");
 
 
 
@@ -5832,10 +5550,6 @@ ALTER TABLE ONLY "public"."tasks"
 
 ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_pkey" PRIMARY KEY ("id");
-
-
-ALTER TABLE ONLY "public"."funnel_triage_settings"
-    ADD CONSTRAINT "funnel_triage_settings_pkey" PRIMARY KEY ("funnel_id");
 
 
 
@@ -7241,6 +6955,21 @@ ALTER TABLE ONLY "public"."funnel_steps"
 
 
 
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."funnel_triage_settings"
+    ADD CONSTRAINT "funnel_triage_settings_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+
 ALTER TABLE ONLY "public"."funnel_versions"
     ADD CONSTRAINT "funnel_versions_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
 
@@ -7439,17 +7168,6 @@ ALTER TABLE ONLY "public"."triage_case_actions"
 ALTER TABLE ONLY "public"."triage_case_actions"
     ADD CONSTRAINT "triage_case_actions_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
-
-ALTER TABLE ONLY "public"."funnel_triage_settings"
-    ADD CONSTRAINT "funnel_triage_settings_funnel_id_fkey" FOREIGN KEY ("funnel_id") REFERENCES "public"."funnels_catalog"("id") ON DELETE CASCADE;
-
-
-ALTER TABLE ONLY "public"."funnel_triage_settings"
-    ADD CONSTRAINT "funnel_triage_settings_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
-
-
-ALTER TABLE ONLY "public"."funnel_triage_settings"
-    ADD CONSTRAINT "funnel_triage_settings_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 ALTER TABLE ONLY "public"."triage_sessions"
@@ -8211,6 +7929,21 @@ ALTER TABLE "public"."funnel_step_questions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."funnel_steps" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."funnel_triage_settings" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "funnel_triage_settings_read_staff" ON "public"."funnel_triage_settings" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
+
+
+
+CREATE POLICY "funnel_triage_settings_write_admin" ON "public"."funnel_triage_settings" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "u"
+  WHERE (("u"."id" = "auth"."uid"()) AND (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")))));
+
+
+
 ALTER TABLE "public"."funnel_versions" ENABLE ROW LEVEL SECURITY;
 
 
@@ -8661,8 +8394,6 @@ CREATE POLICY "tasks_update_assigned_staff" ON "public"."tasks" FOR UPDATE TO "a
 
 ALTER TABLE "public"."triage_case_actions" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE "public"."funnel_triage_settings" ENABLE ROW LEVEL SECURITY;
-
 
 CREATE POLICY "triage_case_actions_insert_clinician" ON "public"."triage_case_actions" FOR INSERT WITH CHECK (((EXISTS ( SELECT 1
    FROM "auth"."users"
@@ -8678,15 +8409,6 @@ CREATE POLICY "triage_case_actions_read_clinician" ON "public"."triage_case_acti
    FROM "public"."clinician_patient_assignments" "cpa"
   WHERE (("cpa"."patient_user_id" = "triage_case_actions"."patient_id") AND ("cpa"."clinician_user_id" = "auth"."uid"()))))));
 
-
-CREATE POLICY "funnel_triage_settings_read_staff" ON "public"."funnel_triage_settings" FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM "auth"."users" "u"
-  WHERE (("u"."id" = "auth"."uid"()) AND ((("u"."raw_app_meta_data" ->> 'role'::"text") = 'clinician'::"text") OR (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text"))))));
-
-
-CREATE POLICY "funnel_triage_settings_write_admin" ON "public"."funnel_triage_settings" FOR ALL USING ((EXISTS ( SELECT 1
-   FROM "auth"."users" "u"
-  WHERE (("u"."id" = "auth"."uid"()) AND (("u"."raw_app_meta_data" ->> 'role'::"text") = 'admin'::"text")))));
 
 
 ALTER TABLE "public"."triage_sessions" ENABLE ROW LEVEL SECURITY;
@@ -9032,6 +8754,12 @@ GRANT ALL ON FUNCTION "public"."get_my_patient_profile_id"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_triage_sla_days"("p_funnel_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."get_user_org_ids"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_org_ids"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_org_ids"() TO "service_role";
@@ -9348,6 +9076,12 @@ GRANT ALL ON TABLE "public"."funnel_steps" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."funnel_triage_settings" TO "anon";
+GRANT ALL ON TABLE "public"."funnel_triage_settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."funnel_triage_settings" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."funnel_versions" TO "anon";
 GRANT ALL ON TABLE "public"."funnel_versions" TO "authenticated";
 GRANT ALL ON TABLE "public"."funnel_versions" TO "service_role";
@@ -9567,9 +9301,6 @@ GRANT ALL ON TABLE "public"."tasks" TO "service_role";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "anon";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "authenticated";
 GRANT ALL ON TABLE "public"."triage_case_actions" TO "service_role";
-
-GRANT SELECT ON TABLE "public"."funnel_triage_settings" TO "authenticated";
-GRANT ALL ON TABLE "public"."funnel_triage_settings" TO "service_role";
 
 
 
