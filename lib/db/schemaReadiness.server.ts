@@ -120,7 +120,9 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   })
 }
 
-async function getMigrationStatus(client: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
+async function getMigrationStatus(
+  client: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+): Promise<SchemaReadiness['dbMigrationStatus']> {
   void client
   return { status: 'unknown' as const }
 }
