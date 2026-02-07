@@ -340,7 +340,6 @@ async function performCheckWithRetries(requestId?: string, reason?: string): Pro
         lastBuildMs: Date.now() - buildStartedAt,
         lastBuildReason: readinessState.lastBuildReason,
         retryAfterMs: attempt < MAX_ATTEMPTS ? getRetryDelayMs(attempt) : undefined,
-        stageSince: readinessState.stageSince,
       }
 
       readinessState = {
