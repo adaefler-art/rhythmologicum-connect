@@ -178,37 +178,6 @@ function buildDiagnosisResult(output: DiagnosisPromptOutputV1) {
     .map((item: DiagnosisPromptOutputV1['differential_diagnoses'][number]) => item.condition)
     .filter(Boolean)
 
-  const normalizedDifferential = differential
-    .slice(0, 5)
-    .map((item) => {
-      const entry = item as Record<string, unknown>
-      return {
-        condition: String(entry.condition || 'Condition'),
-        rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 2000),
-        confidence: normalizeConfidence(String(entry.confidence || 'moderate')),
-        supporting_factors: Array.isArray(entry.supporting_factors)
-          ? entry.supporting_factors.map((factor) => String(factor)).slice(0, 10)
-          : ['Context pack available'],
-        contradicting_factors: Array.isArray(entry.contradicting_factors)
-          ? entry.contradicting_factors.map((factor) => String(factor)).slice(0, 10)
-          : undefined,
-      }
-    })
-    .filter((entry) => entry.condition && entry.rationale)
-
-  const normalizedRecommended = recommended
-    .slice(0, 10)
-    .map((item) => {
-      const entry = item as Record<string, unknown>
-      return {
-        step: String(entry.step || 'Clinician follow-up'),
-        rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 1000),
-        priority: normalizePriority(String(entry.priority || 'medium')),
-        timeframe: entry.timeframe ? String(entry.timeframe).slice(0, 200) : undefined,
-      }
-    })
-    .filter((entry) => entry.step && entry.rationale)
-
   return {
     primary_findings: primaryFindings.length ? primaryFindings.slice(0, 5) : fallbackFinding,
     risk_level: mapRiskLevel(output),
@@ -337,12 +306,14 @@ function normalizeDiagnosisPromptOutput(raw: unknown): DiagnosisPromptOutputV1 {
 
   const record = raw as Record<string, unknown>
   const differential = Array.isArray(record.differential_diagnoses)
-    ? record.differential_diagnoses
+    ? (record.differential_diagnoses as Record<string, unknown>[])
     : []
   const recommended = Array.isArray(record.recommended_next_steps)
-    ? record.recommended_next_steps
+    ? (record.recommended_next_steps as Record<string, unknown>[])
     : []
-  const redFlags = Array.isArray(record.urgent_red_flags) ? record.urgent_red_flags : []
+  const redFlags = Array.isArray(record.urgent_red_flags)
+    ? (record.urgent_red_flags as Record<string, unknown>[])
+    : []
 
   const patientContext = record.patient_context_used as
     | Record<string, unknown>
@@ -360,6 +331,31 @@ function normalizeDiagnosisPromptOutput(raw: unknown): DiagnosisPromptOutputV1 {
     typeof patientContext?.date_range === 'object' && patientContext?.date_range
       ? String((patientContext.date_range as Record<string, unknown>).latest || '')
       : ''
+
+  const normalizedDifferential = differential
+    .slice(0, 5)
+    .map((entry) => ({
+      condition: String(entry.condition || 'Condition'),
+      rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 2000),
+      confidence: normalizeConfidence(String(entry.confidence || 'moderate')),
+      supporting_factors: Array.isArray(entry.supporting_factors)
+        ? entry.supporting_factors.map((factor) => String(factor)).slice(0, 10)
+        : ['Context pack available'],
+      contradicting_factors: Array.isArray(entry.contradicting_factors)
+        ? entry.contradicting_factors.map((factor) => String(factor)).slice(0, 10)
+        : undefined,
+    }))
+    .filter((entry) => entry.condition && entry.rationale)
+
+  const normalizedRecommended = recommended
+    .slice(0, 10)
+    .map((entry) => ({
+      step: String(entry.step || 'Clinician follow-up'),
+      rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 1000),
+      priority: normalizePriority(String(entry.priority || 'medium')),
+      timeframe: entry.timeframe ? String(entry.timeframe).slice(0, 200) : undefined,
+    }))
+    .filter((entry) => entry.step && entry.rationale)
 
   return {
     summary:
@@ -389,15 +385,12 @@ function normalizeDiagnosisPromptOutput(raw: unknown): DiagnosisPromptOutputV1 {
       : fallback.recommended_next_steps,
     urgent_red_flags: redFlags
       .slice(0, 10)
-      .map((item) => {
-        const entry = item as Record<string, unknown>
-        return {
-          flag: String(entry.flag || 'No urgent flags'),
-          urgency: normalizeUrgency(String(entry.urgency || URGENCY_LEVEL.ROUTINE)),
-          rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 1000),
-          recommended_action: String(entry.recommended_action || 'Clinician review').slice(0, 500),
-        }
-      }),
+      .map((entry) => ({
+        flag: String(entry.flag || 'No urgent flags'),
+        urgency: normalizeUrgency(String(entry.urgency || URGENCY_LEVEL.ROUTINE)),
+        rationale: String(entry.rationale || 'Rationale unavailable').slice(0, 1000),
+        recommended_action: String(entry.recommended_action || 'Clinician review').slice(0, 500),
+      })),
     disclaimer: normalizeDisclaimer(
       typeof record.disclaimer === 'string' ? record.disclaimer : undefined,
     ),
