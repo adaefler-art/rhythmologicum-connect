@@ -1,5 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, hasAdminOrClinicianRole } from '@/lib/db/supabase.server'
+import { NextRequest } from 'next/server'
+import {
+  createServerSupabaseClient,
+  getCurrentUser,
+  hasAdminOrClinicianRole,
+} from '@/lib/db/supabase.server'
 import {
   successResponse,
   unauthorizedResponse,
@@ -23,13 +27,10 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient()
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
 
-    if (authError || !user) {
-      logError({ requestId, operation: 'auth_check', error: authError || new Error('No user') })
+    if (!user) {
+      logError({ requestId, operation: 'auth_check', error: new Error('No user') })
       return withRequestId(
         unauthorizedResponse('Authentifizierung fehlgeschlagen. Bitte melden Sie sich an.', requestId),
         requestId,
