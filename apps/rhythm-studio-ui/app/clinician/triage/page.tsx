@@ -33,6 +33,32 @@ import {
   RotateCcw,
 } from 'lucide-react'
 
+type SchemaDiagnostics = {
+  ready: boolean
+  stage: 'boot' | 'migrations' | 'introspection' | 'cache' | 'ready' | 'error'
+  last_error_code: string | null
+  last_error_message: string | null
+  last_error_details: Record<string, unknown> | null
+  db_migration_status: {
+    status: 'unknown' | 'ok' | 'missing' | 'error'
+    latestVersion?: string
+    appliedCount?: number
+  } | null
+  schema_version: string | null
+  checked_at: string
+  attempts: number
+  requestId?: string
+}
+
+const SCHEMA_ERROR_CODES = new Set([
+  'SCHEMA_NOT_READY',
+  'SCHEMA_BLOCKED_BY_MIGRATIONS',
+  'SCHEMA_BUILD_TIMEOUT',
+  'SCHEMA_BUILD_FAILED',
+])
+
+const MAX_SCHEMA_RETRIES = 5
+
 // Case state types from triage_cases_v1 view
 type CaseState = 'needs_input' | 'in_progress' | 'ready_for_review' | 'resolved' | 'snoozed'
 
@@ -78,6 +104,11 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cases, setCases] = useState<TriageCase[]>([])
+  const [schemaStatus, setSchemaStatus] = useState<SchemaDiagnostics | null>(null)
+  const [schemaRequestId, setSchemaRequestId] = useState<string | null>(null)
+  const [schemaRetryCount, setSchemaRetryCount] = useState(0)
+  const [isSchemaRetrying, setIsSchemaRetrying] = useState(false)
+  const schemaRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   // Filter states
   const [showActive, setShowActive] = useState(true)
@@ -96,6 +127,17 @@ export default function InboxPage() {
   const [isHealthLoading, setIsHealthLoading] = useState(false)
   const [isFixingMembership, setIsFixingMembership] = useState(false)
   const hasLoadedHealth = useRef(false)
+
+  const fetchSchemaDiagnostics = useCallback(async () => {
+    try {
+      const response = await fetch('/api/_meta/schema', { cache: 'no-store' })
+      if (!response.ok) return null
+      const payload = (await response.json()) as SchemaDiagnostics
+      return payload
+    } catch {
+      return null
+    }
+  }, [])
 
   // Load triage data from API
   const loadTriageData = useCallback(async () => {
@@ -123,6 +165,22 @@ export default function InboxPage() {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
+        const errorCode = errorData?.error?.code
+        const requestId = errorData?.requestId || errorData?.error?.requestId || null
+
+        if (errorCode && SCHEMA_ERROR_CODES.has(errorCode)) {
+          setSchemaRequestId(requestId)
+          const diagnostics = await fetchSchemaDiagnostics()
+          if (diagnostics?.ready) {
+            setSchemaStatus(null)
+            setSchemaRetryCount(0)
+          } else {
+            setSchemaStatus(diagnostics)
+            setSchemaRetryCount(0)
+          }
+          return
+        }
+
         throw new Error(errorData?.error?.message || `HTTP ${response.status}`)
       }
 
@@ -133,6 +191,8 @@ export default function InboxPage() {
       }
 
       setCases(data.data?.cases || [])
+      setSchemaStatus(null)
+      setSchemaRetryCount(0)
     } catch (err) {
       console.error('Failed to load triage cases:', err)
       setError(err instanceof Error ? err.message : 'Fehler beim Laden der Inbox-Daten')
@@ -140,7 +200,7 @@ export default function InboxPage() {
     } finally {
       setLoading(false)
     }
-  }, [showActive, searchQuery, statusFilter, attentionFilter])
+  }, [showActive, searchQuery, statusFilter, attentionFilter, fetchSchemaDiagnostics])
 
   const loadTriageHealth = useCallback(async () => {
     setIsHealthLoading(true)
@@ -200,6 +260,42 @@ export default function InboxPage() {
   }, [loadTriageData])
 
   useEffect(() => {
+    if (!schemaStatus || schemaStatus.ready) return
+    if (schemaStatus.stage === 'error') return
+    if (schemaRetryCount >= MAX_SCHEMA_RETRIES) return
+
+    const delay = Math.min(16000, 1000 * 2 ** schemaRetryCount)
+    setIsSchemaRetrying(true)
+
+    schemaRetryTimeoutRef.current = setTimeout(async () => {
+      const diagnostics = await fetchSchemaDiagnostics()
+      if (!diagnostics) {
+        setSchemaRetryCount((prev) => prev + 1)
+        setIsSchemaRetrying(false)
+        return
+      }
+
+      if (diagnostics.ready) {
+        setSchemaStatus(null)
+        setSchemaRetryCount(0)
+        setIsSchemaRetrying(false)
+        loadTriageData()
+        return
+      }
+
+      setSchemaStatus(diagnostics)
+      setSchemaRetryCount((prev) => prev + 1)
+      setIsSchemaRetrying(false)
+    }, delay)
+
+    return () => {
+      if (schemaRetryTimeoutRef.current) {
+        clearTimeout(schemaRetryTimeoutRef.current)
+      }
+    }
+  }, [schemaRetryCount, schemaStatus, fetchSchemaDiagnostics, loadTriageData])
+
+  useEffect(() => {
     if (hasLoadedHealth.current) return
     hasLoadedHealth.current = true
     loadTriageHealth()
@@ -242,6 +338,16 @@ export default function InboxPage() {
     if (healthData?.membershipStatus === 'needs_fix') return { label: 'Aktion noetig', variant: 'warning' as const }
     return { label: 'OK', variant: 'success' as const }
   }, [healthData?.membershipStatus, healthError, isHealthLoading])
+
+  const schemaHeaderBadge = useMemo(() => {
+    if (!schemaStatus || schemaStatus.ready) return null
+    if (schemaStatus.stage === 'error') return { label: 'Schema Fehler', variant: 'danger' as const }
+    if (schemaRetryCount >= MAX_SCHEMA_RETRIES) {
+      return { label: 'Schema wartet', variant: 'warning' as const }
+    }
+    if (isSchemaRetrying) return { label: 'Schema retry', variant: 'warning' as const }
+    return { label: 'Schema startet', variant: 'warning' as const }
+  }, [isSchemaRetrying, schemaRetryCount, schemaStatus])
 
   // Get badge for case state
   const getCaseStateBadge = useCallback((state: CaseState) => {
@@ -686,10 +792,84 @@ export default function InboxPage() {
     ]
   )
 
-  if (loading) {
+  const schemaRetryExhausted = schemaRetryCount >= MAX_SCHEMA_RETRIES
+  const schemaHasError = schemaStatus && !schemaStatus.ready
+
+  if (loading && !schemaHasError) {
     return (
       <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="md" text={`${navLabel ?? 'Inbox'} wird geladen…`} />
+      </div>
+    )
+  }
+
+  if (schemaHasError) {
+    const diagnostics = schemaStatus
+    const requestId = schemaRequestId || diagnostics?.requestId
+
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="max-w-xl w-full">
+          <Card padding="lg" shadow="md" radius="lg">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  Schema startet noch
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  {schemaRetryExhausted || diagnostics?.stage === 'error'
+                    ? 'Deployment oder Migrationen pruefen.'
+                    : 'Wir versuchen automatisch erneut, sobald das Schema bereit ist.'}
+                </p>
+                <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                  <div>Stage: {diagnostics?.stage ?? 'unknown'}</div>
+                  {diagnostics?.last_error_code && (
+                    <div>Code: {diagnostics.last_error_code}</div>
+                  )}
+                  {diagnostics?.last_error_message && (
+                    <div>Message: {diagnostics.last_error_message}</div>
+                  )}
+                  {requestId && <div>Request ID: {requestId}</div>}
+                </div>
+                {diagnostics && (
+                  <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+                    <div className="font-medium text-slate-700 dark:text-slate-200">
+                      Diagnose (inline)
+                    </div>
+                    <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-slate-700 dark:text-slate-200">
+                      {JSON.stringify(diagnostics, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open('/api/_meta/schema', '_blank')}
+                  >
+                    Diagnose oeffnen
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={loadTriageData}
+                    disabled={isSchemaRetrying}
+                  >
+                    {isSchemaRetrying ? 'Retry laeuft…' : 'Jetzt erneut versuchen'}
+                  </Button>
+                </div>
+                {!schemaRetryExhausted && diagnostics?.stage !== 'error' && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Naechster Auto-Retry in {Math.min(16, 2 ** schemaRetryCount)}s
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -710,13 +890,20 @@ export default function InboxPage() {
   return (
     <div className="w-full">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-          {navLabel ?? 'Inbox'}
-        </h1>
-        <p className="text-slate-600 dark:text-slate-300">
-          Handlungsbedarf und Aufmerksamkeitselemente
-        </p>
+      <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+            {navLabel ?? 'Inbox'}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300">
+            Handlungsbedarf und Aufmerksamkeitselemente
+          </p>
+        </div>
+        {schemaHeaderBadge && (
+          <Badge variant={schemaHeaderBadge.variant} size="sm">
+            {schemaHeaderBadge.label}
+          </Badge>
+        )}
       </div>
 
       <Card padding="lg" shadow="md" radius="lg" className="mb-6">
