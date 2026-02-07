@@ -222,7 +222,9 @@ export default function MCPTestPage() {
             Test Health Endpoint
           </button>
           {healthStatus && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto">{healthStatus}</pre>
+            <pre className="mt-4 p-4 rounded overflow-auto bg-slate-900/70 text-slate-100 border border-slate-700">
+              {healthStatus}
+            </pre>
           )}
         </div>
 
@@ -245,7 +247,9 @@ export default function MCPTestPage() {
             </button>
           </div>
           {toolResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto">{toolResult}</pre>
+            <pre className="mt-4 p-4 rounded overflow-auto bg-slate-900/70 text-slate-100 border border-slate-700">
+              {toolResult}
+            </pre>
           )}
         </div>
 
@@ -259,7 +263,7 @@ export default function MCPTestPage() {
             Test Context Pack Endpoint
           </button>
           {contextPackResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {contextPackResult}
             </pre>
           )}
@@ -275,7 +279,7 @@ export default function MCPTestPage() {
             Test Diagnosis Execution Endpoint
           </button>
           {diagnosisExecutionResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisExecutionResult}
             </pre>
           )}
@@ -300,7 +304,7 @@ export default function MCPTestPage() {
             </button>
           </div>
           {diagnosisPromptResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisPromptResult}
             </pre>
           )}
@@ -316,7 +320,7 @@ export default function MCPTestPage() {
             Test Queue Endpoint (with inputs_hash & dedupe)
           </button>
           {diagnosisQueueResult && (
-            <pre className="mt-4 p-4 bg-gray-100 rounded overflow-auto max-h-96">
+            <pre className="mt-4 p-4 rounded overflow-auto max-h-96 bg-slate-900/70 text-slate-100 border border-slate-700">
               {diagnosisQueueResult}
             </pre>
           )}
