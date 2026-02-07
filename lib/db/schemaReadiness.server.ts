@@ -178,7 +178,7 @@ async function runStage<T>(
 
 async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
   const stages: SchemaStageResult[] = []
-  let client: Awaited<ReturnType<typeof createServerSupabaseClient>>
+  let client: Awaited<ReturnType<typeof createServerSupabaseClient>> | null = null
   let usingAdminClient = false
   let dbMigrationStatus: SchemaReadiness['dbMigrationStatus'] = { status: 'unknown' }
 
@@ -205,6 +205,25 @@ async function runSchemaCheck(requestId?: string): Promise<SchemaReadiness> {
       stages,
       lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
       lastErrorMessage: safeError.message,
+      lastErrorDetails: { stage: 'connect_db' },
+      lastErrorAt: nowIso(),
+      dbMigrationStatus,
+      schemaVersion: dbMigrationStatus?.latestVersion,
+      checkedAt: nowIso(),
+      attempts: readinessState.attempts,
+      buildAttempts: readinessState.buildAttempts,
+      requestId,
+    }
+  }
+
+  if (!client) {
+    return {
+      ready: false,
+      stage: 'error',
+      stageSince: readinessState.stageSince,
+      stages,
+      lastErrorCode: ErrorCode.SCHEMA_INTROSPECTION_FAILED,
+      lastErrorMessage: 'No database client available',
       lastErrorDetails: { stage: 'connect_db' },
       lastErrorAt: nowIso(),
       dbMigrationStatus,
