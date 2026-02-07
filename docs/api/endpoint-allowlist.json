@@ -138,6 +138,16 @@
     "/api/studio/diagnosis/queue",
     "/api/studio/diagnosis/runs/[runId]/artifact",
     "/api/_debug/env",
+    {
+      "path": "/api/_meta/mcp/status",
+      "internal_unused": true,
+      "reason": "MCP connectivity verification (no UI callsite)"
+    },
+    {
+      "path": "/api/_meta/mcp/smoke-run",
+      "internal_unused": true,
+      "reason": "MCP smoke-run verification (no UI callsite)"
+    },
     "/api/test/correlation-id",
     "/api/tasks/[id]",
     "/api/patient/reports/latest",
