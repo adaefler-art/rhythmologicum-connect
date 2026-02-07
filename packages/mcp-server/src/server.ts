@@ -20,6 +20,8 @@ interface HealthResponse {
   status: 'ok'
   version: ReturnType<typeof getVersionMetadata>
   uptime_seconds: number
+  llm_configured: boolean
+  llm_provider: 'anthropic' | 'none'
 }
 
 interface ToolRequest {
@@ -41,6 +43,12 @@ interface ToolResponse<T = unknown> {
 async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
   const url = new URL(req.url || '/', `http://${req.headers.host}`)
 
+  const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
+  const hasAnthropicKey = Boolean(env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY)
+  const llmProviderLabel: HealthResponse['llm_provider'] =
+    llmProvider === 'anthropic' ? 'anthropic' : 'none'
+  const isAnthropicConfigured = llmProviderLabel === 'anthropic' && hasAnthropicKey
+
   // Health endpoint
   if (url.pathname === '/health' && req.method === 'GET') {
     const response: HealthResponse = {
@@ -48,6 +56,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       status: 'ok',
       version: getVersionMetadata(),
       uptime_seconds: process.uptime(),
+      llm_configured: isAnthropicConfigured,
+      llm_provider: llmProviderLabel,
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -130,11 +140,19 @@ export function createServer() {
 export function startServer() {
   const server = createServer()
 
+  const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
+  const hasAnthropicKey = Boolean(env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY)
+  const llmProviderLabel: HealthResponse['llm_provider'] =
+    llmProvider === 'anthropic' ? 'anthropic' : 'none'
+  const llmConfigured = llmProviderLabel === 'anthropic' && hasAnthropicKey
+
   server.listen(PORT, HOST, () => {
     logger.info('MCP Server started', {
       host: HOST,
       port: PORT,
       version: getVersionMetadata(),
+      llm_configured: llmConfigured,
+      llm_provider: llmProviderLabel,
     })
   })
 

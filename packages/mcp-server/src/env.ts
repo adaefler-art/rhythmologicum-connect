@@ -6,7 +6,7 @@ type MCPEnv = {
   MCP_SERVER_URL?: string
   FEATURE_MCP_STUB?: string
   ANTHROPIC_API_KEY?: string
-  ANTHROPIC_API_TOKEN?: string
+  ANTHROPIC_KEY?: string
   ANTHROPIC_MODEL?: string
   LLM_PROVIDER?: string
 }
@@ -17,8 +17,8 @@ const rawEnv: MCPEnv = {
   MCP_SERVER_HOST: process.env.MCP_SERVER_HOST,
   MCP_SERVER_URL: process.env.MCP_SERVER_URL,
   FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
-  ANTHROPIC_API_KEY: process.env.LLM_API_KEY || process.env.ANTHROPIC_API_KEY,
-  ANTHROPIC_API_TOKEN: process.env.ANTHROPIC_API_TOKEN,
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  ANTHROPIC_KEY: process.env.ANTHROPIC_KEY,
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,
   LLM_PROVIDER: process.env.LLM_PROVIDER,
 }

@@ -24,7 +24,7 @@ import {
   type DiagnosisPromptOutputV1,
 } from './contracts/diagnosis-prompt.js'
 
-const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_API_TOKEN
+const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
 const llmProvider = (env.LLM_PROVIDER || 'anthropic').toLowerCase()
 
@@ -68,7 +68,7 @@ async function callAnthropicDiagnosis(
   if (!anthropic) {
     throw new McpToolError(
       'LLM_NOT_CONFIGURED',
-      'Anthropic API client not initialized (missing API key)',
+      'Anthropic API key not configured',
       503,
     )
   }
