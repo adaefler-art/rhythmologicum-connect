@@ -611,7 +611,7 @@ export async function executeDiagnosisRun(
         }
       }
 
-      diagnosisArtifact = diagnosisArtifactResult.artifact
+      diagnosisArtifact = diagnosisArtifactResult.artifact as DiagnosisArtifact | null
       logInfo('DIAG_ARTIFACT_PERSIST', {
         run_id: runId,
         trace_id: traceId,
