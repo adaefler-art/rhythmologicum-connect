@@ -1,5 +1,7 @@
 export type LlmConversationMode = 'patient_consult' | 'clinician_colleague'
 
+export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-08'
+
 export const CONVERSATION_OUTPUT_KEYS = [
   'kind',
   'summary',

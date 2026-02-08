@@ -79,7 +79,14 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
     ]
   }
 
-  return []
+  return [
+    {
+      id: '1',
+      sender: 'amy',
+      text: 'Hallo! Was fuehrt Sie heute her und seit wann bestehen die Beschwerden?',
+      timestamp: timestamp(2),
+    },
+  ]
 }
 
 export function DialogScreenV2() {

@@ -6,7 +6,7 @@ import { logError } from '@/lib/logging/logger'
 import { getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { getPatientConsultPrompt } from '@/lib/llm/prompts'
+import { getPatientConsultPrompt, PATIENT_CONSULT_PROMPT_VERSION } from '@/lib/llm/prompts'
 
 /**
  * E73.8 — AMY Frontdesk Chat (LLM), ohne Steuerung
@@ -35,15 +35,21 @@ import { getPatientConsultPrompt } from '@/lib/llm/prompts'
 const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 const MAX_MESSAGE_LENGTH = 2000
 const MAX_HISTORY_MESSAGES = 20
+const EMOJI_REGEX = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu
 
 type ChatMessage = {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
   created_at: string
+  metadata?: Record<string, unknown> | null
 }
 
 const SYSTEM_PROMPT = getPatientConsultPrompt()
+
+function sanitizeAssistantReply(text: string): string {
+  return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(EMOJI_REGEX, '').trim()
+}
 
 /**
  * Fetch recent chat history for context
@@ -52,7 +58,7 @@ async function getChatHistory(userId: string, supabase: any): Promise<ChatMessag
   try {
     const { data, error } = await supabase
       .from('amy_chat_messages')
-      .select('id, role, content, created_at')
+      .select('id, role, content, created_at, metadata')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(MAX_HISTORY_MESSAGES)
@@ -62,8 +68,17 @@ async function getChatHistory(userId: string, supabase: any): Promise<ChatMessag
       return []
     }
 
+    const rawMessages = (data || []) as ChatMessage[]
+    const filteredMessages = rawMessages.filter((message) => {
+      if (message.role !== 'assistant') {
+        return true
+      }
+      const promptVersion = message.metadata?.promptVersion
+      return promptVersion === PATIENT_CONSULT_PROMPT_VERSION
+    })
+
     // Reverse to get chronological order for LLM context
-    return (data || []).reverse()
+    return filteredMessages.reverse()
   } catch (err) {
     console.error('[amy/chat] Error fetching chat history', { error: String(err) })
     return []
@@ -300,12 +315,13 @@ export async function POST(req: Request) {
     })
 
     // Get LLM response
-    const reply = await getChatResponse(message, history)
+    const reply = sanitizeAssistantReply(await getChatResponse(message, history))
 
     // Save assistant message
     const assistantMessageId = await saveMessage(user.id, 'assistant', reply, supabase, {
       correlationId,
       model: getEngineEnv().ANTHROPIC_MODEL ?? MODEL_FALLBACK,
+      promptVersion: PATIENT_CONSULT_PROMPT_VERSION,
     })
 
     const totalDuration = Date.now() - requestStartTime
