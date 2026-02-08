@@ -33,6 +33,19 @@ interface StubbedMessage {
   timestamp: string
 }
 
+type SpeechRecognitionInstance = {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((event: { results?: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null
+  onerror: ((event: unknown) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
+
 // Helper to check if context is valid
 function isValidContext(context: string | null, assessmentId: string | null): boolean {
   return context === 'dashboard' || (context === 'results' && !!assessmentId)
@@ -102,7 +115,7 @@ export function DialogScreenV2() {
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -113,9 +126,9 @@ export function DialogScreenV2() {
     if (typeof window === 'undefined') return
 
     const SpeechRecognitionCtor =
-      (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition }).
+      (window as typeof window & { SpeechRecognition?: SpeechRecognitionConstructor }).
         SpeechRecognition ||
-      (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).
+      (window as typeof window & { webkitSpeechRecognition?: SpeechRecognitionConstructor }).
         webkitSpeechRecognition
 
     if (!SpeechRecognitionCtor) {
