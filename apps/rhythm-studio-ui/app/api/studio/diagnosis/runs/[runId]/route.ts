@@ -9,7 +9,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { isValidUUID } from '@/lib/validators/uuid'
 
 type RouteContext = {
@@ -93,7 +92,7 @@ export async function GET(_request: Request, context: RouteContext) {
         {
           success: false,
           error: {
-            code: ErrorCode.NOT_FOUND,
+            code: ErrorCode.RUN_NOT_FOUND,
             message: 'Diagnosis run not found',
           },
         },
@@ -101,18 +100,22 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
-    const { data: artifact, error: artifactError } = await supabase
+    const { data: diagnosisArtifact, error: diagnosisArtifactError } = await supabase
       .from('diagnosis_artifacts')
       .select(
-        'id, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
+        'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
       )
       .eq('run_id', runId)
+      .eq('artifact_type', 'diagnosis_json')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    if (artifactError) {
-      console.error('[studio/diagnosis/runs/[runId] GET] Artifact query error:', artifactError)
+    if (diagnosisArtifactError) {
+      console.error(
+        '[studio/diagnosis/runs/[runId] GET] Artifact query error:',
+        diagnosisArtifactError,
+      )
       return NextResponse.json(
         {
           success: false,
@@ -125,6 +128,49 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    let artifact = diagnosisArtifact
+    if (!artifact) {
+      const { data: mcpArtifact, error: mcpArtifactError } = await supabase
+        .from('diagnosis_artifacts')
+        .select(
+          'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
+        )
+        .eq('run_id', runId)
+        .eq('artifact_type', 'mcp_response')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (mcpArtifactError) {
+        console.error('[studio/diagnosis/runs/[runId] GET] Artifact query error:', mcpArtifactError)
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: ErrorCode.DATABASE_ERROR,
+              message: 'Failed to fetch diagnosis result',
+            },
+          },
+          { status: 503 },
+        )
+      }
+
+      artifact = mcpArtifact
+    }
+
+    if (!artifact) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.ARTIFACT_NOT_FOUND,
+            message: 'Diagnosis artifact not found',
+          },
+        },
+        { status: 404 },
+      )
+    }
+
     const resultPayload = artifact?.artifact_data
     const diagnosisResult =
       resultPayload && typeof resultPayload === 'object'
@@ -132,45 +178,21 @@ export async function GET(_request: Request, context: RouteContext) {
           resultPayload
         : null
 
-    if (run.status === DIAGNOSIS_RUN_STATUS.COMPLETED && !artifact) {
-      const { error: demoteError } = await supabase
-        .from('diagnosis_runs')
-        .update({
-          status: DIAGNOSIS_RUN_STATUS.FAILED,
-          completed_at: run.completed_at ?? new Date().toISOString(),
-          error_code: DIAGNOSIS_ERROR_CODE.COMPLETED_NO_RESULT,
-          error_message: 'Diagnosis completed without persisted result',
-          error_details: {
-            reason: 'artifact_missing',
-          },
-        })
-        .eq('id', runId)
-
-      if (demoteError) {
-        console.error('[studio/diagnosis/runs/[runId] GET] Demote error:', demoteError)
-      } else {
-        run.status = DIAGNOSIS_RUN_STATUS.FAILED
-        run.error_code = DIAGNOSIS_ERROR_CODE.COMPLETED_NO_RESULT
-        run.error_message = 'Diagnosis completed without persisted result'
-      }
-    }
-
     return NextResponse.json({
       success: true,
       data: {
         run,
         result: diagnosisResult ?? null,
-        artifact: artifact
-          ? {
-              id: artifact.id,
-              created_at: artifact.created_at,
-              artifact_data: artifact.artifact_data,
-              risk_level: artifact.risk_level,
-              confidence_score: artifact.confidence_score,
-              primary_findings: artifact.primary_findings,
-              recommendations_count: artifact.recommendations_count,
-            }
-          : null,
+        artifact: {
+          id: artifact.id,
+          artifact_type: artifact.artifact_type,
+          created_at: artifact.created_at,
+          artifact_data: artifact.artifact_data,
+          risk_level: artifact.risk_level,
+          confidence_score: artifact.confidence_score,
+          primary_findings: artifact.primary_findings,
+          recommendations_count: artifact.recommendations_count,
+        },
       },
     })
   } catch (err) {

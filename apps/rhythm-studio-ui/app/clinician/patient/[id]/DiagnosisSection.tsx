@@ -398,6 +398,23 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
 
       const result = await response.json()
       if (!result.success) {
+        const errorCode =
+          result && typeof result === 'object'
+            ? (result as { error?: { code?: string } }).error?.code
+            : undefined
+        if (response.status === 404 && errorCode === 'ARTIFACT_NOT_FOUND') {
+          setArtifactStates((prev) => ({
+            ...prev,
+            [runId]: {
+              status: 'empty',
+              message: 'Abgeschlossen, aber kein Artifact vorhanden.',
+              meta: {
+                requestId,
+              },
+            },
+          }))
+          return
+        }
         setArtifactStates((prev) => ({
           ...prev,
           [runId]: {
@@ -641,8 +658,8 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
               const isInconsistent = isCompleted && !hasArtifact
               const riskLevel = summary?.risk_level
               const findings = summary?.primary_findings || []
-              const actionLabel = isFailed || isInconsistent ? 'Diagnose oeffnen' : 'View Result'
-              const actionDisabled = !(isFailed || isInconsistent || hasArtifact)
+              const actionLabel = 'View Result'
+              const actionDisabled = run.status !== 'completed'
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
