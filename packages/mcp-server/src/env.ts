@@ -7,6 +7,7 @@ type MCPEnv = {
   MCP_HTTP_TIMEOUT_MS?: string
   LLM_TIMEOUT_MS?: string
   FEATURE_MCP_STUB?: string
+  MCP_USE_FAKE_LLM?: string
   ANTHROPIC_API_KEY?: string
   ANTHROPIC_KEY?: string
   ANTHROPIC_MODEL?: string
@@ -21,6 +22,7 @@ const rawEnv: MCPEnv = {
   MCP_HTTP_TIMEOUT_MS: process.env.MCP_HTTP_TIMEOUT_MS,
   LLM_TIMEOUT_MS: process.env.LLM_TIMEOUT_MS,
   FEATURE_MCP_STUB: process.env.FEATURE_MCP_STUB,
+  MCP_USE_FAKE_LLM: process.env.MCP_USE_FAKE_LLM,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   ANTHROPIC_KEY: process.env.ANTHROPIC_KEY,
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL,

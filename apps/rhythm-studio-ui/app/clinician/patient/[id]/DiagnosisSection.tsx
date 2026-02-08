@@ -92,6 +92,8 @@ type DiagnosisProvenance = {
   llm_raw_response?: string | null
 }
 
+const CANARY_MARKER = 'CANARY_LLM_WAS_USED'
+
 type ArtifactState = {
   status: 'idle' | 'loading' | 'success' | 'empty' | 'error'
   data?: Record<string, unknown>
@@ -699,11 +701,32 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     return null
   }
 
+  const renderCanarySummary = (summary: string) => {
+    if (process.env.NODE_ENV === 'production') {
+      return summary
+    }
+    const markerIndex = summary.indexOf(CANARY_MARKER)
+    if (markerIndex === -1) {
+      return summary
+    }
+    const before = summary.slice(0, markerIndex)
+    const after = summary.slice(markerIndex + CANARY_MARKER.length)
+    return (
+      <>
+        {before}
+        <mark className="rounded bg-amber-200 px-1 text-amber-900">
+          {CANARY_MARKER}
+        </mark>
+        {after}
+      </>
+    )
+  }
+
   const renderV2Result = (result: DiagnosisV2Result, rawLlmText?: string | null) => (
     <div className="space-y-4">
       <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
         <div className="text-xs uppercase tracking-wide text-slate-500">Zusammenfassung</div>
-        <p className="mt-2 whitespace-pre-wrap">{result.summary_for_clinician}</p>
+        <p className="mt-2 whitespace-pre-wrap">{renderCanarySummary(result.summary_for_clinician)}</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
             <div className="font-semibold text-slate-800 dark:text-slate-200">Triage</div>

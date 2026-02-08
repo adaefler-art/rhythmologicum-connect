@@ -300,6 +300,10 @@ export async function executeDiagnosisRun(
             patient_id: run.patient_id,
             options: {
               include_history: true,
+              canary:
+                typeof run.inputs_meta === 'object' && run.inputs_meta
+                  ? Boolean((run.inputs_meta as Record<string, unknown>).canary)
+                  : false,
             },
           },
         }),

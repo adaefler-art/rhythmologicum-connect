@@ -108,6 +108,7 @@ export const RunDiagnosisInputSchema = z.object({
       assessment_id: z.string().optional(),
       include_history: z.boolean().optional(),
       max_history_depth: z.number().int().positive().optional(),
+      canary: z.boolean().optional(),
     })
     .optional(),
 })

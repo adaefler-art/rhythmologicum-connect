@@ -36,6 +36,7 @@ import type { Database, Json } from '@/lib/types/supabase'
  * - patient_id: UUID of patient to diagnose
  * - force (optional): bypass active run guard
  * - block_parallel (optional): enable active run guard for this request
+ * - canary (optional): enable canary marker (admin-only, non-production)
  * 
  * Response:
  * - success: boolean
@@ -81,7 +82,12 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { patient_id: patientIdParam, force, block_parallel: blockParallel } = body
+    const {
+      patient_id: patientIdParam,
+      force,
+      block_parallel: blockParallel,
+      canary,
+    } = body
 
     // Check authentication and authorization
     const supabase = await createServerSupabaseClient()
@@ -135,6 +141,22 @@ export async function POST(request: NextRequest) {
     }
 
     const adminClient = createAdminSupabaseClient()
+    const canaryEnabled = canary === true
+    if (canaryEnabled) {
+      const isProduction = process.env.NODE_ENV === 'production'
+      if (isProduction || userRole !== 'admin') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'FORBIDDEN_CANARY',
+              message: 'Canary mode is restricted to admin users in non-production environments',
+            },
+          },
+          { status: 403 },
+        )
+      }
+    }
 
     // Validate input
     if (!patientIdParam || typeof patientIdParam !== 'string') {
@@ -204,7 +226,10 @@ export async function POST(request: NextRequest) {
     }
 
     const inputs_hash = contextPack.metadata.inputs_hash
-    const inputs_meta = extractInputsMeta(contextPack) as Json
+    const inputs_meta = {
+      ...extractInputsMeta(contextPack),
+      canary: canaryEnabled,
+    } as Json
 
     const shouldForce = typeof force === 'boolean' ? force : false
     const shouldBlockParallel = blockParallel === true

@@ -35,6 +35,7 @@ const LLM_TIMEOUT_SAFE_MS = Number.isFinite(LLM_TIMEOUT_MS) && LLM_TIMEOUT_MS > 
   ? LLM_TIMEOUT_MS
   : 60000
 const MCP_HTTP_TIMEOUT_MS = Number(env.MCP_HTTP_TIMEOUT_MS || 0)
+const CANARY_MARKER = 'CANARY_LLM_WAS_USED'
 
 type TraceStage =
   | 'request_received'
@@ -185,6 +186,29 @@ function buildDiagnosisFallbackV2(promptVersion: string, model: string): Diagnos
     },
     output_version: 'v2',
   }
+}
+
+function buildCanaryPromptInstruction(): string {
+  return `\n\nCANARY MODE: Prefix summary_for_clinician with "${CANARY_MARKER}" and keep the marker visible.`
+}
+
+function applyCanaryMarker(output: DiagnosisPromptOutputV2): DiagnosisPromptOutputV2 {
+  if (output.summary_for_clinician.startsWith(CANARY_MARKER)) {
+    return output
+  }
+  return {
+    ...output,
+    summary_for_clinician: `${CANARY_MARKER} ${output.summary_for_clinician}`.slice(0, 2000),
+  }
+}
+
+function buildFakeCanaryResponse(promptVersion: string, model: string): DiagnosisPromptOutputV2 {
+  const base = buildDiagnosisFallbackV2(promptVersion, model)
+  return applyCanaryMarker({
+    ...base,
+    confidence: 0.77,
+    confidence_rationale: 'Canary fake LLM client used for integration testing.',
+  })
 }
 
 function parseDiagnosisOutputV2(rawText: string):
@@ -853,6 +877,8 @@ export async function handleRunDiagnosis(
 
   try {
     const promptVersion = DIAGNOSIS_PROMPT_VERSION
+    const canaryEnabled = Boolean(input.options?.canary)
+    const useFakeLlm = canaryEnabled && env.MCP_USE_FAKE_LLM === 'true'
 
     if (isStubEnabled()) {
       const stubResult = buildDiagnosisFallbackV2(promptVersion, 'stub')
@@ -923,7 +949,9 @@ export async function handleRunDiagnosis(
     }
 
     markStage('prompt_build_start')
-    const systemPrompt = promptTemplate.systemPrompt || ''
+    const systemPrompt = `${promptTemplate.systemPrompt || ''}${
+      canaryEnabled ? buildCanaryPromptInstruction() : ''
+    }`
     const userPrompt = promptTemplate.userPromptTemplate.replace(
       '{{contextPack}}',
       JSON.stringify(contextPayload, null, 2),
@@ -957,6 +985,24 @@ export async function handleRunDiagnosis(
     let llmMeta: LlmResponseMeta | null = null
     let llmRawResponse: string | null = null
     try {
+      if (useFakeLlm) {
+        markStage('llm_request_start')
+        const fakeStart = Date.now()
+        const fakeOutput = buildFakeCanaryResponse(promptVersion, modelConfig.model)
+        llmText = JSON.stringify(fakeOutput, null, 2)
+        llmRawResponse = llmText
+        llmLatencyMs = Date.now() - fakeStart
+        llmMeta = {
+          id: `fake-${crypto.randomUUID()}`,
+          model: modelConfig.model,
+          usage: { input_tokens: 1200, output_tokens: 350 },
+        }
+        metrics.llm_response_id = llmMeta.id
+        metrics.llm_usage_input_tokens = llmMeta.usage?.input_tokens
+        metrics.llm_usage_output_tokens = llmMeta.usage?.output_tokens
+        markStage('llm_response_headers')
+        markStage('llm_complete')
+      } else {
       const llmStart = Date.now()
       const llmResponse = await callAnthropicDiagnosis(
         systemPrompt,
@@ -972,6 +1018,7 @@ export async function handleRunDiagnosis(
       metrics.llm_response_id = llmResponse.meta.id
       metrics.llm_usage_input_tokens = llmResponse.meta.usage?.input_tokens
       metrics.llm_usage_output_tokens = llmResponse.meta.usage?.output_tokens
+      }
     } catch (error) {
       const classification = classifyLlmError(error)
       const summary = buildSummary()
@@ -1035,7 +1082,7 @@ export async function handleRunDiagnosis(
     }
 
     if (parseResult.success) {
-      parsedOutput = parseResult.data
+      parsedOutput = canaryEnabled ? applyCanaryMarker(parseResult.data) : parseResult.data
     } else {
       log.warn('Diagnosis output invalid after retry, using fallback', {
         error: parseResult.error,
@@ -1056,7 +1103,7 @@ export async function handleRunDiagnosis(
     const provenance = {
       result_source: resultSource,
       llm_used: llmUsed,
-      llm_provider: llmProvider || null,
+      llm_provider: useFakeLlm ? 'fake' : llmProvider || null,
       llm_model: modelConfig.model || null,
       llm_prompt_version: promptVersion || null,
       llm_request_id: llmMeta?.id ?? null,
