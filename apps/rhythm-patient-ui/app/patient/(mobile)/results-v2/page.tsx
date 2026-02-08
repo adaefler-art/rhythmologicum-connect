@@ -8,14 +8,14 @@ import ResultsV2Client from './client'
  * Results & Next Steps v2 Page
  * 
  * Modern mobile-first results page using mobile-v2 design system.
- * Displays assessment results with AMY summary, current situation, recommended actions,
+ * Displays assessment results with AI assistant summary, current situation, recommended actions,
  * data protection info, and next steps timeline.
  * 
  * Features:
- * - AMY summary card with AI-generated overview and gradient background
+ * - AI assistant summary card with AI-generated overview and gradient background
  * - Overall wellness score with circular progress indicator
  * - Current situation with bullet points (stress, sleep, activity, wellbeing)
- * - 4 recommended action cards (Download PDF, Video, Book Visit, Chat with AMY)
+ * - 4 recommended action cards (Download PDF, Video, Book Visit, Chat with assistant)
  * - Data protection information card
  * - "What happens next" timeline with steps
  * - Loading, empty, and error states

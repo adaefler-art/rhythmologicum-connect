@@ -169,7 +169,7 @@ Screens (minimum):
 - Welcome / explanation screen
 - Question screens (possibly grouped by theme)
 - Optional content screens (education, explanations)
-- Result screen (summary, AMY text, next steps)
+- Result screen (summary, AI assistant text, next steps)
 
 Deliverable:
 - A simple flow description in markdown or diagram form (screens, transitions, purpose of each step).
@@ -208,7 +208,7 @@ Implement modern, mobile-friendly screens for the patient flow:
 Screens:
 - Welcome: short explanation, duration, what happens with data, start button.
 - Question: clear questions, scale controls, helper text, validation state.
-- Result: main outcome, AMY summary, short recommendations, optional content links.
+- Result: main outcome, AI assistant summary, short recommendations, optional content links.
 
 Design:
 - Use design-system components (Buttons, Cards, Typography).

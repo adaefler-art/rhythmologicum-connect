@@ -11,7 +11,7 @@ export const PATIENT_STATE_VERSION = '0.1' as const
 
 /**
  * Assessment Summary (I72.6)
- * Detailed metadata about the last assessment for AMY orchestrator handoff
+ * Detailed metadata about the last assessment for AI assistant orchestrator handoff
  */
 export const AssessmentSummarySchema = z.object({
   status: z.enum(['not_started', 'in_progress', 'completed']),
@@ -66,7 +66,7 @@ export type ResultsState = z.infer<typeof ResultsStateSchema>
 
 /**
  * Dialog Context State
- * Tracks dialog/AMY conversation context
+ * Tracks dialog/AI assistant conversation context
  */
 export const DialogStateSchema = z.object({
   lastContext: z.enum(['dashboard', 'results', 'insights', 'assessment', 'none']),
@@ -264,7 +264,7 @@ export function mergePatientState(
 
 /**
  * I72.6: Build AssessmentSummary from database assessment record
- * Helper for AMY Orchestrator handoff
+ * Helper for AI assistant orchestrator handoff
  * 
  * @param assessment - Assessment record from database with optional fields
  * @param assessment.status - Assessment status (must be 'not_started', 'in_progress', or 'completed')

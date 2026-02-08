@@ -201,6 +201,9 @@ export type PatientSex = typeof PATIENT_SEX[keyof typeof PATIENT_SEX]
 
 /**
  * Valid feature flag names (without NEXT_PUBLIC_FEATURE_ prefix)
+ * 
+ * Note: AMY_ENABLED retained for backward compatibility with existing environments.
+ * The actual assistant identity is configured in /lib/config/assistant.ts
  */
 export const FEATURE_FLAG = {
   AMY_ENABLED: 'AMY_ENABLED',

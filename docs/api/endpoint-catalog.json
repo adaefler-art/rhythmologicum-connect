@@ -9280,6 +9280,27 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/studio/diagnosis/run",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/run/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/route.ts",
+          "apiPath": "/api/studio/diagnosis/run",
+          "kind": "url"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/runs/[runId]",
       "methods": [
         "GET"

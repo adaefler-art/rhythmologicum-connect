@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 import { Badge, Card, Button, Tabs, TabsList, TabTrigger, TabContent } from '@/lib/ui'
 import { colors } from '@/lib/design-tokens'
 import { PatientOverviewHeader } from './PatientOverviewHeader'
@@ -571,7 +572,7 @@ export default function PatientDetailPage() {
           <TabTrigger value="assessments">Assessments</TabTrigger>
           <TabTrigger value="anamnese">Anamnese</TabTrigger>
           <TabTrigger value="diagnosis">Diagnosis</TabTrigger>
-          <TabTrigger value="insights">AMY Insights</TabTrigger>
+          <TabTrigger value="insights">{ASSISTANT_CONFIG.name} Insights</TabTrigger>
           <TabTrigger value="actions">Actions</TabTrigger>
         </TabsList>
 
@@ -912,7 +913,7 @@ export default function PatientDetailPage() {
           <DiagnosisSection patientId={patientProfileId} />
         </TabContent>
 
-        {/* AMY Insights Tab */}
+        {/* AI Assistant Insights Tab */}
         <TabContent value="insights">
           <AmyInsightsSection patientId={patientProfileId} isEnabled={featureFlags.AMY_CHAT_ENABLED} />
         </TabContent>

@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { featureFlags } from '@/lib/featureFlags'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 /**
- * E73.8 — AMY Chat Widget Component
+ * E73.8 — Assistant Chat Widget Component
  * 
  * Simple chat widget for patient dashboard with:
  * - LLM-powered responses
@@ -128,7 +129,7 @@ export default function AMYChatWidget() {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center z-50"
-        aria-label="Open AMY Chat"
+        aria-label={`Open ${ASSISTANT_CONFIG.name} Chat`}
       >
         <svg
           className="w-6 h-6"
@@ -153,7 +154,7 @@ export default function AMYChatWidget() {
       <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="font-semibold">AMY Chat</span>
+          <span className="font-semibold">{ASSISTANT_CONFIG.name} Chat</span>
         </div>
         <button
           onClick={() => setIsOpen(false)}
@@ -180,7 +181,7 @@ export default function AMYChatWidget() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
-            <p className="mb-2">👋 Hallo! Ich bin AMY.</p>
+            <p className="mb-2">👋 {ASSISTANT_CONFIG.greeting}</p>
             <p className="text-sm">
               Ich kann Fragen zu Stress, Schlaf und Resilienz beantworten.
             </p>

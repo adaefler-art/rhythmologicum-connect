@@ -7,11 +7,12 @@ import { getNavigationTarget, isRoutableAction } from '@/lib/triage/router'
 import { storeTriageResult } from '@/lib/triage/storage'
 import type { TriageResultV1 } from '@/lib/api/contracts/triage'
 import { NON_EMERGENCY_DISCLAIMER, STANDARD_EMERGENCY_GUIDANCE } from '@/lib/safety/disclaimers'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 /**
- * E6.6.1 + E6.6.5 + E6.6.9 — AMY Composer Component
+ * E6.6.1 + E6.6.5 + E6.6.9 — Assistant Composer Component
  * 
- * Bounded, guided mode for patient-initiated AMY interactions.
+ * Bounded, guided mode for patient-initiated assistant interactions.
  * E6.6.5: Integrates triage router for navigation after triage.
  * E6.6.9: Dev harness with quick-fill test inputs (dev-only).
  * 
@@ -170,7 +171,7 @@ export function AMYComposer() {
         throw new Error('Invalid response format')
       }
     } catch (err) {
-      console.error('[AMYComposer] Triage failed', err)
+      console.error('[AssistantComposer] Triage failed', err)
       setError(err instanceof Error ? err.message : 'Ein unerwarteter Fehler ist aufgetreten.')
       setState('error')
     }
@@ -182,7 +183,7 @@ export function AMYComposer() {
 
     // Validate nextAction is routable
     if (!isRoutableAction(result.nextAction)) {
-      console.error('[AMYComposer] Invalid nextAction', { nextAction: result.nextAction })
+      console.error('[AssistantComposer] Invalid nextAction', { nextAction: result.nextAction })
       setError('Ungültige Triage-Aktion. Bitte versuchen Sie es erneut.')
       return
     }
@@ -190,7 +191,7 @@ export function AMYComposer() {
     // Get navigation target from router
     const { url, description } = getNavigationTarget(result.nextAction, result)
 
-    console.log('[AMYComposer] Navigating to', { url, description, tier: result.tier })
+    console.log('[AssistantComposer] Navigating to', { url, description, tier: result.tier })
 
     // Navigate to target
     router.push(url)
@@ -217,16 +218,16 @@ export function AMYComposer() {
   return (
     <Card padding="lg" className="rounded-lg">
       <div className="space-y-4">
-        {/* Header with AMY branding */}
+        {/* Header with assistant branding */}
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl" role="img" aria-label="AMY Assistant">
+            <span className="text-2xl" role="img" aria-label={`${ASSISTANT_CONFIG.name} Assistant`}>
               🤖
             </span>
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-slate-900 mb-1">
-              AMY - Ihr persönlicher Assistent
+              {ASSISTANT_CONFIG.name} - {ASSISTANT_CONFIG.description}
             </h3>
             <p className="text-sm text-slate-600">
               Beschreiben Sie Ihr Anliegen in 1–2 Sätzen

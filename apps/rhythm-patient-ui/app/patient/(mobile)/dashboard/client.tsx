@@ -16,7 +16,7 @@ import DashboardHero from './DashboardHero'
  * 
  * Enhanced dashboard layout with sections:
  * - Header with greeting (AC: empty states)
- * - AMY slot (placeholder for E6.6)
+ * - AI assistant slot (placeholder for E6.6)
  * - Next Step card (AC3: always visible when available)
  * - Content tiles grid
  * - Progress summary (funnels/workup)
@@ -161,7 +161,7 @@ export default function DashboardClient({
         style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}
       >
         <div className="w-full space-y-6">
-          {/* New Greeting + AMY Card */}
+          {/* New Greeting + AI Assistant Card */}
           <DashboardHero greetingName={greetingName} onChat={handleAmyChat} />
 
           {/* E6.5.9: Loading state - show spinner only on initial load */}

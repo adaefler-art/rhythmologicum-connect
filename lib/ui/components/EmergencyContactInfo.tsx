@@ -23,7 +23,7 @@ type EmergencyContactInfoProps = {
  * EmergencyContactInfo Component
  *
  * Displays emergency contact numbers in a consistent format.
- * Used in EscalationOfferCard, escalation placeholder page, and AMY results.
+ * Used in EscalationOfferCard, escalation placeholder page, and AI assistant results.
  *
  * @example
  * // Red flag escalation (show all contacts)

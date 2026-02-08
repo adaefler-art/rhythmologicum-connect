@@ -4,7 +4,7 @@
  * Dashboard Screen
  * 
  * Reference screen showing:
- * - AMY Assistant card
+ * - AI assistant card
  * - Health metrics overview
  * - Quick actions
  * - Recent assessments
@@ -56,7 +56,7 @@ export default function DashboardScreen() {
           <p className="text-[#6b7280] mt-1">Here&apos;s your health overview today</p>
         </div>
 
-        {/* AMY Assistant */}
+        {/* AI Assistant */}
         <AIAssistant
           onChatNow={() => {}}
         />

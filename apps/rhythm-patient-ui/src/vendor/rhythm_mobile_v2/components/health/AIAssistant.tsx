@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Bot, Sparkles } from 'lucide-react';
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant';
 
 interface AIAssistantProps {
   onChatNow?: () => void;
@@ -17,7 +18,7 @@ export function AIAssistant({ onChatNow }: AIAssistantProps) {
         
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-base font-semibold text-white">AMY Assistant</h3>
+            <h3 className="text-base font-semibold text-white">{ASSISTANT_CONFIG.name} Assistant</h3>
             <Sparkles className="w-4 h-4 text-yellow-300" />
           </div>
           
@@ -31,7 +32,7 @@ export function AIAssistant({ onChatNow }: AIAssistantProps) {
             onClick={onChatNow}
             className="bg-white text-[#4a90e2] hover:bg-white/90"
           >
-            Chat with AMY
+            Chat with {ASSISTANT_CONFIG.name}
           </Button>
         </div>
       </div>
