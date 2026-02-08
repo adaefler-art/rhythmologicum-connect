@@ -2,10 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
 import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
-import { CANONICAL_ROUTES } from '../utils/navigation'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 
@@ -45,6 +43,15 @@ type SpeechRecognitionInstance = {
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
+
+type SpeechSynthesisUtteranceLike = {
+  lang: string
+  text: string
+  onend: (() => void) | null
+  onerror: ((event: unknown) => void) | null
+}
+
+type SpeechSynthesisUtteranceConstructor = new (text: string) => SpeechSynthesisUtteranceLike
 
 // Helper to check if context is valid
 function isValidContext(context: string | null, assessmentId: string | null): boolean {
@@ -86,7 +93,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
       {
         id: '1',
         sender: 'amy',
-        text: 'Hallo, was fuehrt Sie zu mir?',
+        text: 'Hallo, was führt Sie zu mir?',
         timestamp: timestamp(2),
       },
     ]
@@ -111,12 +118,16 @@ export function DialogScreenV2() {
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
   const [dictationError, setDictationError] = useState<string | null>(null)
+  const [speechError, setSpeechError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
+  const [isSpeechSupported, setIsSpeechSupported] = useState(true)
+  const [isSpeaking, setIsSpeaking] = useState(false)
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const speakRef = useRef<SpeechSynthesisUtteranceLike | null>(null)
 
   useEffect(() => {
     setChatMessages(getStubbedConversation(context, assessmentId))
@@ -166,8 +177,58 @@ export function DialogScreenV2() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const hasSynthesis =
+      typeof window.speechSynthesis !== 'undefined' &&
+      typeof (window as typeof window & { SpeechSynthesisUtterance?: SpeechSynthesisUtteranceConstructor })
+        .SpeechSynthesisUtterance !== 'undefined'
+
+    if (!hasSynthesis) {
+      setIsSpeechSupported(false)
+    }
+    return () => {
+      window.speechSynthesis?.cancel()
+    }
+  }, [])
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
+
+  const handleSpeak = (text: string) => {
+    if (!isSpeechSupported || typeof window === 'undefined') {
+      setSpeechError('Sprachausgabe wird von diesem Browser nicht unterstuetzt.')
+      return
+    }
+
+    const SpeechUtteranceCtor =
+      (window as typeof window & { SpeechSynthesisUtterance?: SpeechSynthesisUtteranceConstructor })
+        .SpeechSynthesisUtterance
+
+    if (!SpeechUtteranceCtor) {
+      setIsSpeechSupported(false)
+      setSpeechError('Sprachausgabe wird von diesem Browser nicht unterstuetzt.')
+      return
+    }
+
+    setSpeechError(null)
+    window.speechSynthesis.cancel()
+
+    const utterance = new SpeechUtteranceCtor(text)
+    utterance.lang = 'de-DE'
+    utterance.onend = () => {
+      setIsSpeaking(false)
+    }
+    utterance.onerror = () => {
+      setSpeechError('Sprachausgabe fehlgeschlagen. Bitte erneut versuchen.')
+      setIsSpeaking(false)
+    }
+
+    speakRef.current = utterance
+    setIsSpeaking(true)
+    window.speechSynthesis.speak(utterance)
+  }
 
   const hasContext = isValidContext(context, assessmentId)
 
@@ -289,6 +350,16 @@ export function DialogScreenV2() {
                           <span className="text-xs text-slate-500">{message.timestamp}</span>
                         </div>
                         <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
+                        {message.sender === 'amy' && isSpeechSupported && (
+                          <button
+                            type="button"
+                            onClick={() => handleSpeak(message.text)}
+                            className="text-xs font-semibold text-slate-600"
+                            disabled={isSpeaking}
+                          >
+                            {isSpeaking ? 'Vorlesen...' : 'Vorlesen'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -377,6 +448,7 @@ export function DialogScreenV2() {
               {dictationError && (
                 <span className="text-xs text-rose-700">{dictationError}</span>
               )}
+              {speechError && <span className="text-xs text-rose-700">{speechError}</span>}
               {sendError && <span className="text-xs text-rose-700">{sendError}</span>}
             </div>
           </div>
