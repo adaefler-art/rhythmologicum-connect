@@ -63,3 +63,13 @@ foreach ($route in $engineRoutes) {
 }
 
 Invoke-Check "$EngineBaseUrl/api/health/env" @(200, 401, 403)
+
+if ($env:DIAGNOSIS_SMOKE_ENABLED -eq '1') {
+  Write-Host "Running diagnosis post-deploy smoke..." -ForegroundColor Cyan
+  node scripts/verify/verify-diagnosis-smoke.mjs
+  if ($LASTEXITCODE -ne 0) {
+    throw "Diagnosis post-deploy smoke failed (see output above)."
+  }
+} else {
+  Write-Host "Diagnosis post-deploy smoke skipped (set DIAGNOSIS_SMOKE_ENABLED=1)." -ForegroundColor Gray
+}

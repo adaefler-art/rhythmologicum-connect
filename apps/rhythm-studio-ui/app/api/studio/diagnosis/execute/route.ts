@@ -8,9 +8,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'node:crypto'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { executeDiagnosisRun, processQueuedDiagnosisRuns } from '@/lib/diagnosis/worker'
+import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { isFeatureEnabled } from '@/lib/featureFlags'
 import { isValidUUID } from '@/lib/validators/uuid'
 
@@ -94,7 +96,57 @@ export async function POST(request: NextRequest) {
     }
 
     // Create admin client for worker (bypasses RLS)
-    const adminClient = createAdminSupabaseClient()
+    let adminClient
+    try {
+      adminClient = createAdminSupabaseClient()
+    } catch (initError) {
+      const traceId = crypto.randomUUID()
+      const requestId = request.headers.get('x-request-id') || traceId
+
+      if (run_id && isValidUUID(run_id)) {
+        const { error: updateError } = await supabase
+          .from('diagnosis_runs')
+          .update({
+            status: DIAGNOSIS_RUN_STATUS.FAILED,
+            completed_at: new Date().toISOString(),
+            error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_UNCONFIGURED,
+            error_message: 'Admin client unavailable for diagnosis persistence',
+            error_details: {
+              trace_id: traceId,
+              request_id: requestId,
+            },
+          })
+          .eq('id', run_id)
+
+        if (updateError) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: 'DATABASE_ERROR',
+                message: 'Failed to update diagnosis run after admin init failure',
+              },
+            },
+            { status: 503 },
+          )
+        }
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_UNCONFIGURED,
+            message: 'Admin client unavailable for diagnosis persistence',
+            details: {
+              trace_id: traceId,
+              request_id: requestId,
+            },
+          },
+        },
+        { status: 503 },
+      )
+    }
 
     // Execute specific run or process queue
     if (run_id) {

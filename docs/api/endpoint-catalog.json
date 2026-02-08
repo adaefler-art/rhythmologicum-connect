@@ -598,6 +598,21 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/admin/diagnosis/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/diagnosis/reconcile/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"
@@ -9265,6 +9280,27 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/studio/diagnosis/runs/[runId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
+          "apiPath": "/api/studio/diagnosis/runs/${runId}",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/studio/diagnosis/runs/[runId]/artifact",
       "methods": [
         "GET"
@@ -9272,16 +9308,10 @@
       "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
-          "apiPath": "/api/studio/diagnosis/runs/${runId}/artifact",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "internalUnused": false,

@@ -38,6 +38,7 @@
     "/api/admin/notification-templates",
     "/api/admin/notification-templates/[id]",
     "/api/admin/operational-settings-audit",
+    "/api/admin/diagnosis/reconcile",
     "/api/admin/reassessment-rules",
     "/api/admin/reassessment-rules/[id]",
     "/api/admin/usage",

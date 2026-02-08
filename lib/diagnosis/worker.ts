@@ -13,6 +13,7 @@
  */
 
 import 'server-only'
+import crypto from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/lib/types/supabase'
 import { env } from '@/lib/env'
@@ -28,6 +29,7 @@ import {
   type DiagnosisArtifact,
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
+import { logError, logInfo } from '@/lib/logging/logger'
 
 const MCP_TIMEOUT_MS = 60000
 
@@ -88,6 +90,7 @@ export async function executeDiagnosisRun(
   runId: string,
 ): Promise<DiagnosisExecutionResult> {
   const startTime = Date.now()
+  const traceId = crypto.randomUUID()
 
   try {
     // =========================================================================
@@ -334,42 +337,113 @@ export async function executeDiagnosisRun(
         prompt_version: mcpResponse.version?.prompt_version,
         executed_at: new Date().toISOString(),
         processing_time_ms: processingTimeMs,
+        trace_id: traceId,
       },
     }
 
-    const { data: artifact, error: artifactError } = await adminClient
+    const persistStart = Date.now()
+    const { data: existingArtifact, error: existingArtifactError } = await adminClient
       .from('diagnosis_artifacts')
-      .insert({
-        run_id: runId,
-        patient_id: run.patient_id,
-        artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
-        artifact_data: artifactData,
-        schema_version: DEFAULT_SCHEMA_VERSION,
-        created_by: run.clinician_id,
-        risk_level: diagnosisResult.risk_level,
-        confidence_score: diagnosisResult.confidence_score,
-        primary_findings: diagnosisResult.primary_findings,
-        recommendations_count: diagnosisResult.recommendations.length,
-      })
-      .select()
-      .single()
+      .select('id')
+      .eq('run_id', runId)
+      .eq('artifact_type', ARTIFACT_TYPE.DIAGNOSIS_JSON)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-    if (artifactError || !artifact) {
+    if (existingArtifactError) {
+      logInfo('DIAG_ARTIFACT_PERSIST', {
+        run_id: runId,
+        trace_id: traceId,
+        ok: false,
+        error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        elapsed_ms: Date.now() - persistStart,
+      })
       await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
-        message: 'Failed to persist diagnosis artifact',
-        details: { artifactError: serializeErrorDetails(artifactError) },
+        code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        message: 'Failed to check existing diagnosis artifacts',
+        details: {
+          trace_id: traceId,
+          existingArtifactError: serializeErrorDetails(existingArtifactError),
+        },
       })
       return {
         success: false,
         run_id: runId,
         error: {
-          code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
-          message: 'Failed to persist diagnosis artifact',
-          details: { artifactError: serializeErrorDetails(artifactError) },
+          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+          message: 'Failed to check existing diagnosis artifacts',
+          details: {
+            trace_id: traceId,
+            existingArtifactError: serializeErrorDetails(existingArtifactError),
+          },
         },
       }
     }
+
+    const artifactPayload = {
+      run_id: runId,
+      patient_id: run.patient_id,
+      artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
+      artifact_data: artifactData,
+      schema_version: DEFAULT_SCHEMA_VERSION,
+      created_by: run.clinician_id,
+      risk_level: diagnosisResult.risk_level,
+      confidence_score: diagnosisResult.confidence_score,
+      primary_findings: diagnosisResult.primary_findings,
+      recommendations_count: diagnosisResult.recommendations.length,
+      metadata: artifactData.metadata,
+    }
+
+    const { data: artifact, error: artifactError } = existingArtifact
+      ? await adminClient
+          .from('diagnosis_artifacts')
+          .update(artifactPayload)
+          .eq('id', existingArtifact.id)
+          .select()
+          .single()
+      : await adminClient
+          .from('diagnosis_artifacts')
+          .insert(artifactPayload)
+          .select()
+          .single()
+
+    if (artifactError || !artifact) {
+      logInfo('DIAG_ARTIFACT_PERSIST', {
+        run_id: runId,
+        trace_id: traceId,
+        ok: false,
+        error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        elapsed_ms: Date.now() - persistStart,
+      })
+      await updateRunAsFailed(adminClient, runId, {
+        code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        message: 'Failed to persist diagnosis artifact',
+        details: {
+          trace_id: traceId,
+          artifactError: serializeErrorDetails(artifactError),
+        },
+      })
+      return {
+        success: false,
+        run_id: runId,
+        error: {
+          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+          message: 'Failed to persist diagnosis artifact',
+          details: {
+            trace_id: traceId,
+            artifactError: serializeErrorDetails(artifactError),
+          },
+        },
+      }
+    }
+
+    logInfo('DIAG_ARTIFACT_PERSIST', {
+      run_id: runId,
+      trace_id: traceId,
+      ok: true,
+      elapsed_ms: Date.now() - persistStart,
+    })
 
     // =========================================================================
     // STEP 7: Update run as completed
