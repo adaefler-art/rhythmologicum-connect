@@ -100,8 +100,10 @@ export function DialogScreenV2() {
   const [dictationError, setDictationError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
+  const [isDictationSupported, setIsDictationSupported] = useState(true)
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setChatMessages(getStubbedConversation(context, assessmentId))
@@ -116,7 +118,10 @@ export function DialogScreenV2() {
       (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).
         webkitSpeechRecognition
 
-    if (!SpeechRecognitionCtor) return
+    if (!SpeechRecognitionCtor) {
+      setIsDictationSupported(false)
+      return
+    }
 
     const recognition = new SpeechRecognitionCtor()
     recognition.lang = 'de-DE'
@@ -146,6 +151,10 @@ export function DialogScreenV2() {
       recognitionRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages.length])
 
   const hasContext = isValidContext(context, assessmentId)
 
@@ -212,168 +221,180 @@ export function DialogScreenV2() {
   }
 
   return (
-    <div className="w-full px-4 pb-8 pt-5 sm:px-6">
-      <div className="w-full flex flex-col gap-6">
-        {/* Header */}
-        <header className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-sky-600" />
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
-              Dialog mit AMY
-            </p>
-          </div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Ihr persönlicher Dialog
-          </h1>
-          <p className="text-sm text-slate-600">
-            Sichere Kommunikation und Beratung zu Ihrem Assessment
-          </p>
-        </header>
-
-        {/* Context Badge (if entry point is known) */}
-        {hasContext && (
-          <Card padding="sm" shadow="none" className="bg-sky-50 border border-sky-200">
+    <div className="w-full px-4 pt-5 sm:px-6">
+      <div className="w-full flex min-h-[calc(100dvh-96px)] flex-col">
+        <div className="flex-1 space-y-6 overflow-y-auto pb-36">
+          {/* Header */}
+          <header className="space-y-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-sky-600" />
-              <span className="text-sm text-sky-900">
-                {context === 'dashboard' && 'Dialog vom Dashboard gestartet'}
-                {context === 'results' && 'Dialog zu Ihren Assessment-Ergebnissen'}
-              </span>
-            </div>
-          </Card>
-        )}
-
-        {/* Stubbed Conversation */}
-        {chatMessages.length > 0 && (
-          <Card padding="none" shadow="sm">
-            <div className="divide-y divide-slate-100">
-              {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-4 ${message.sender === 'amy' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
-                >
-                  <div className="flex items-start gap-3">
-                    {message.sender === 'amy' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900">
-                          {message.sender === 'amy' ? 'AMY' : 'Sie'}
-                        </span>
-                        <span className="text-xs text-slate-500">{message.timestamp}</span>
-                      </div>
-                      <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Feature Status */}
-        <Card padding="md" shadow="sm">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-amber-600" />
-                <h2 className="text-base font-semibold text-slate-900">
-                  {isChatEnabled ? 'Dialog-Funktion aktiv' : 'Dialog-Funktion deaktiviert'}
-                </h2>
-              </div>
-              <p className="text-sm text-slate-600">
-                {isChatEnabled
-                  ? 'Sie können AMY direkt schreiben. Ihre Nachricht wird verarbeitet.'
-                  : 'Die interaktive Dialog-Funktion ist in dieser Umgebung nicht aktiviert.'}
+              <Bot className="w-5 h-5 text-sky-600" />
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
+                Dialog mit AMY
               </p>
             </div>
-            <Badge variant={isChatEnabled ? 'success' : 'warning'} size="sm">
-              {isChatEnabled ? 'Live' : 'MVP'}
-            </Badge>
-          </div>
-        </Card>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Ihr persönlicher Dialog
+            </h1>
+            <p className="text-sm text-slate-600">
+              Sichere Kommunikation und Beratung zu Ihrem Assessment
+            </p>
+          </header>
 
-        {/* Chat Input */}
-        <Card padding="md" shadow="sm" className="border-2 border-dashed border-slate-200">
-          <div className="space-y-3">
-            <textarea
-              placeholder={
-                isChatEnabled
-                  ? 'Ihre Nachricht an AMY...'
-                  : 'Ihre Nachricht an AMY (in Kürze verfügbar)...'
-              }
-              rows={3}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={!isChatEnabled || isSending || isDictating}
-              className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 resize-none"
-            />
-            {dictationError && (
-              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                <p className="text-sm text-rose-800">{dictationError}</p>
+          {/* Context Badge (if entry point is known) */}
+          {hasContext && (
+            <Card padding="sm" shadow="none" className="bg-sky-50 border border-sky-200">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-sky-600" />
+                <span className="text-sm text-sky-900">
+                  {context === 'dashboard' && 'Dialog vom Dashboard gestartet'}
+                  {context === 'results' && 'Dialog zu Ihren Assessment-Ergebnissen'}
+                </span>
               </div>
-            )}
-            {sendError && (
-              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                <p className="text-sm text-rose-800">{sendError}</p>
-              </div>
-            )}
-            <Button
-              variant="primary"
-              size="md"
-              fullWidth
-              onClick={handleSend}
-              disabled={!isChatEnabled || isSending || input.trim().length === 0}
-            >
-              {isSending ? 'Wird gesendet...' : 'Nachricht senden'}
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={() => {
-                if (!recognitionRef.current) {
-                  setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
-                  return
-                }
-                setDictationError(null)
-                if (isDictating) {
-                  recognitionRef.current.stop()
-                } else {
-                  recognitionRef.current.start()
-                  setIsDictating(true)
-                }
-              }}
-              disabled={!isChatEnabled || isSending}
-            >
-              {isDictating ? 'Diktat stoppen' : 'Diktat starten'}
-            </Button>
-          </div>
-        </Card>
+            </Card>
+          )}
 
-        {/* Quick Actions - I2.5: Use canonical routes */}
-        <Card padding="md" shadow="sm">
-          <h2 className="text-base font-semibold text-slate-900 mb-3">
-            Schnelle Hilfe
-          </h2>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href={CANONICAL_ROUTES.DASHBOARD} className="flex-1">
-              <Button variant="secondary" size="md" fullWidth>
-                Zurück zum Dashboard
-              </Button>
-            </Link>
-            {context === 'results' && (
-              <Link href={CANONICAL_ROUTES.RESULTS} className="flex-1">
+          {/* Stubbed Conversation */}
+          {chatMessages.length > 0 && (
+            <Card padding="none" shadow="sm">
+              <div className="divide-y divide-slate-100">
+                {chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`p-4 ${message.sender === 'amy' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {message.sender === 'amy' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                          <Bot className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-900">
+                            {message.sender === 'amy' ? 'AMY' : 'Sie'}
+                          </span>
+                          <span className="text-xs text-slate-500">{message.timestamp}</span>
+                        </div>
+                        <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </Card>
+          )}
+
+          {/* Feature Status */}
+          <Card padding="md" shadow="sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-amber-600" />
+                  <h2 className="text-base font-semibold text-slate-900">
+                    {isChatEnabled ? 'Dialog-Funktion aktiv' : 'Dialog-Funktion deaktiviert'}
+                  </h2>
+                </div>
+                <p className="text-sm text-slate-600">
+                  {isChatEnabled
+                    ? 'Sie können AMY direkt schreiben. Ihre Nachricht wird verarbeitet.'
+                    : 'Die interaktive Dialog-Funktion ist in dieser Umgebung nicht aktiviert.'}
+                </p>
+              </div>
+              <Badge variant={isChatEnabled ? 'success' : 'warning'} size="sm">
+                {isChatEnabled ? 'Live' : 'MVP'}
+              </Badge>
+            </div>
+          </Card>
+
+          {/* Quick Actions - I2.5: Use canonical routes */}
+          <Card padding="md" shadow="sm">
+            <h2 className="text-base font-semibold text-slate-900 mb-3">
+              Schnelle Hilfe
+            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href={CANONICAL_ROUTES.DASHBOARD} className="flex-1">
                 <Button variant="secondary" size="md" fullWidth>
-                  Zu den Ergebnissen
+                  Zurück zum Dashboard
                 </Button>
               </Link>
-            )}
-          </div>
-        </Card>
+              {context === 'results' && (
+                <Link href={CANONICAL_ROUTES.RESULTS} className="flex-1">
+                  <Button variant="secondary" size="md" fullWidth>
+                    Zu den Ergebnissen
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Chat Input */}
+        <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 pb-6 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
+          <Card padding="md" shadow="sm" className="border-2 border-dashed border-slate-200">
+            <div className="space-y-3">
+              <textarea
+                placeholder={
+                  isChatEnabled
+                    ? 'Ihre Nachricht an AMY...'
+                    : 'Ihre Nachricht an AMY (in Kürze verfügbar)...'
+                }
+                rows={3}
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                disabled={!isChatEnabled || isSending || isDictating}
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 resize-none"
+              />
+              {dictationError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
+                  <p className="text-sm text-rose-800">{dictationError}</p>
+                </div>
+              )}
+              {sendError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
+                  <p className="text-sm text-rose-800">{sendError}</p>
+                </div>
+              )}
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
+                onClick={handleSend}
+                disabled={!isChatEnabled || isSending || input.trim().length === 0}
+              >
+                {isSending ? 'Wird gesendet...' : 'Nachricht senden'}
+              </Button>
+              {isDictationSupported ? (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onClick={() => {
+                    if (!recognitionRef.current) {
+                      setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
+                      return
+                    }
+                    setDictationError(null)
+                    if (isDictating) {
+                      recognitionRef.current.stop()
+                    } else {
+                      recognitionRef.current.start()
+                      setIsDictating(true)
+                    }
+                  }}
+                  disabled={!isChatEnabled || isSending}
+                >
+                  {isDictating ? 'Diktat stoppen' : 'Diktat starten'}
+                </Button>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Diktat ist in diesem Browser nicht verfuegbar.
+                </p>
+              )}
+            </div>
+          </Card>
+        </div>
+
       </div>
     </div>
   )
