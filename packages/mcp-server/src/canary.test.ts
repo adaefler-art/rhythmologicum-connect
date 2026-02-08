@@ -5,7 +5,7 @@ test('canary uses LLM and returns v2 output', async () => {
   process.env.LLM_PROVIDER = 'fake'
   process.env.FEATURE_MCP_STUB = 'false'
 
-  const { handleRunDiagnosis } = await import('./handlers.js')
+  const { handleRunDiagnosis } = await import('./handlers')
 
   const result = await handleRunDiagnosis(
     {
