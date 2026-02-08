@@ -313,7 +313,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     }, 5000)
   }
 
-  const handleQueueRun = async (forceRun: boolean = false) => {
+  const queueRun = async (forceRun: boolean) => {
     const gate = await checkDiagnosisGate()
     if (gate !== 'available') {
       return
@@ -414,6 +414,9 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       setIsQueueing(false)
     }
   }
+
+  const handleQueueRun = () => queueRun(false)
+  const handleForceRun = () => queueRun(true)
 
   const handleViewArtifact = async (runId: string) => {
     if (expandedRunId === runId) {
@@ -860,7 +863,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleQueueRun(true)}
+              onClick={handleForceRun}
               disabled={isQueueing}
             >
               Trotzdem neuen Run starten (force)
