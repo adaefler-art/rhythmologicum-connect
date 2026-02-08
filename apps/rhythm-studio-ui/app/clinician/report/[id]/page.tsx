@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 type AnswerRow = {
   question_id: string
@@ -175,10 +176,10 @@ export default function ClinicianReportDetailPage() {
         </div>
       </div>
 
-      {/* AMY-Text */}
+      {/* Assistant summary text */}
       {featureFlags.AMY_ENABLED && (
         <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 mb-6 bg-white dark:bg-slate-800 transition-colors">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-50 mb-3 md:mb-4">Kurzbericht (AMY)</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-50 mb-3 md:mb-4">Kurzbericht ({ASSISTANT_CONFIG.name})</h2>
           <p className="whitespace-pre-line text-gray-800 dark:text-slate-200 text-sm md:text-base">
             {report.report_text_short}
           </p>
