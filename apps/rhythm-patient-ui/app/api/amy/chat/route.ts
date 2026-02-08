@@ -6,6 +6,7 @@ import { logError } from '@/lib/logging/logger'
 import { getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { getPatientConsultPrompt } from '@/lib/llm/prompts'
 
 /**
  * E73.8 — AMY Frontdesk Chat (LLM), ohne Steuerung
@@ -42,28 +43,7 @@ type ChatMessage = {
   created_at: string
 }
 
-/**
- * System prompt that explicitly states AMY cannot perform actions
- * This ensures the LLM doesn't mislead users about capabilities
- */
-const SYSTEM_PROMPT = `Du bist AMY, eine empathische Assistenz für Stress, Resilienz und Schlaf.
-
-WICHTIG: Du bist ein reiner Chat-Assistent. Du kannst KEINE Aktionen ausführen wie:
-- Fragebögen starten
-- Assessments durchführen
-- Termine vereinbaren
-- Daten ändern oder speichern
-- Navigation oder Weiterleitung
-
-Du kannst:
-- Fragen zu Stress, Schlaf und Resilienz beantworten
-- Informationen und Erklärungen geben
-- Empathisch zuhören und unterstützen
-- Allgemeine Ratschläge geben
-
-Wenn jemand nach Aktionen fragt, erkläre freundlich, dass du ein Informations-Chat bist und verweise sie auf die entsprechenden Bereiche der Plattform für konkrete Aktionen.
-
-Antworte auf Deutsch, klar, empathisch und evidenzbasiert. Halte deine Antworten präzise (max. 150 Wörter pro Antwort).`
+const SYSTEM_PROMPT = getPatientConsultPrompt()
 
 /**
  * Fetch recent chat history for context
@@ -173,7 +153,7 @@ async function getChatResponse(
     const response = await anthropic.messages.create({
       model,
       max_tokens: 500,
-      temperature: 0.7,
+      temperature: 0,
       system: SYSTEM_PROMPT,
       messages,
     })
