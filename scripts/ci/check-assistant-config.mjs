@@ -19,6 +19,14 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const ROOT_DIR = path.resolve(__dirname, '../..')
 
+function normalizeRelativePath(filePath) {
+  return path.relative(ROOT_DIR, filePath).replace(/\\/g, '/')
+}
+
+function normalizePathFragment(fragment) {
+  return fragment.replace(/\\/g, '/').replace(/^\/+/, '')
+}
+
 // Patterns to detect hard-coded assistant names
 const ASSISTANT_NAME_PATTERNS = [
   /\bAMY\b/g,        // "AMY" as whole word
@@ -54,6 +62,16 @@ const EXEMPT_PATHS = [
   '/apps/rhythm-patient-ui/public/dev/endpoint-catalog.json', // API catalog
 ]
 
+const EXEMPT_PATH_SEGMENTS = [
+  'node_modules',
+  '.git',
+  '.next',
+  'dist',
+  'build',
+  'coverage',
+  '.audit',
+]
+
 // Exempt file patterns
 const EXEMPT_FILE_PATTERNS = [
   /\.md$/,                      // Markdown files (handled separately with warnings)
@@ -85,11 +103,20 @@ let violations = []
 let warnings = []
 
 function isExemptPath(filePath) {
-  const relativePath = path.relative(ROOT_DIR, filePath)
+  const relativePath = normalizeRelativePath(filePath)
+  const pathSegments = relativePath.split('/')
+
+  for (const segment of EXEMPT_PATH_SEGMENTS) {
+    if (pathSegments.includes(segment)) {
+      return true
+    }
+  }
   
   // Check if path starts with any exempt path
   for (const exemptPath of EXEMPT_PATHS) {
-    if (relativePath.startsWith(exemptPath)) {
+    const normalizedExemptPath = normalizePathFragment(exemptPath)
+
+    if (relativePath.startsWith(normalizedExemptPath)) {
       return true
     }
   }
@@ -105,7 +132,7 @@ function isExemptPath(filePath) {
 }
 
 function isAllowedPath(filePath) {
-  const relativePath = '/' + path.relative(ROOT_DIR, filePath).replace(/\\/g, '/')
+  const relativePath = '/' + normalizeRelativePath(filePath)
   
   for (const allowedPath of ALLOWED_PATHS) {
     if (relativePath === allowedPath || relativePath.endsWith(allowedPath)) {
@@ -117,8 +144,8 @@ function isAllowedPath(filePath) {
 }
 
 function isApiRoute(filePath) {
-  const relativePath = path.relative(ROOT_DIR, filePath)
-  return relativePath.includes('/api/amy/') || relativePath.includes('\\api\\amy\\')
+  const relativePath = normalizeRelativePath(filePath)
+  return relativePath.includes('/api/amy/')
 }
 
 function hasBackwardCompatComment(content, lineNumber) {
@@ -139,7 +166,7 @@ function hasBackwardCompatComment(content, lineNumber) {
 
 function checkFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8')
-  const relativePath = path.relative(ROOT_DIR, filePath)
+  const relativePath = normalizeRelativePath(filePath)
   const lines = content.split('\n')
   
   // Check for hard-coded assistant names
