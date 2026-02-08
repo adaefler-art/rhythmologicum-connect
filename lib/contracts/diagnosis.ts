@@ -117,7 +117,7 @@ export type DiagnosisErrorDetails = z.infer<typeof DiagnosisErrorDetailsSchema>
 /**
  * Schema for diagnosis result from LLM
  */
-export const DiagnosisResultSchema = z.object({
+export const DiagnosisResultV1Schema = z.object({
   primary_findings: z.array(z.string()).min(1),
   risk_level: z.enum([
     RISK_LEVEL.LOW,
@@ -131,6 +131,120 @@ export const DiagnosisResultSchema = z.object({
   differential_considerations: z.array(z.string()).optional(),
 })
 
+export type DiagnosisResultV1 = z.infer<typeof DiagnosisResultV1Schema>
+
+export const DIAGNOSIS_TRIAGE_LEVEL = {
+  ROUTINE: 'routine',
+  SOON: 'soon',
+  URGENT: 'urgent',
+} as const
+
+export type DiagnosisTriageLevel =
+  typeof DIAGNOSIS_TRIAGE_LEVEL[keyof typeof DIAGNOSIS_TRIAGE_LEVEL]
+
+export const DIAGNOSIS_LIKELIHOOD = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+} as const
+
+export type DiagnosisLikelihood =
+  typeof DIAGNOSIS_LIKELIHOOD[keyof typeof DIAGNOSIS_LIKELIHOOD]
+
+export const DIAGNOSIS_NEXT_STEP_CATEGORY = {
+  DIAGNOSTICS: 'diagnostics',
+  THERAPY: 'therapy',
+  REFERRAL: 'referral',
+  MONITORING: 'monitoring',
+  LIFESTYLE: 'lifestyle',
+  OTHER: 'other',
+} as const
+
+export type DiagnosisNextStepCategory =
+  typeof DIAGNOSIS_NEXT_STEP_CATEGORY[keyof typeof DIAGNOSIS_NEXT_STEP_CATEGORY]
+
+export const DiagnosisResultV2Schema = z.object({
+  summary_for_clinician: z.string().min(10),
+  triage: z.object({
+    level: z.enum([
+      DIAGNOSIS_TRIAGE_LEVEL.ROUTINE,
+      DIAGNOSIS_TRIAGE_LEVEL.SOON,
+      DIAGNOSIS_TRIAGE_LEVEL.URGENT,
+    ]),
+    rationale: z.string().min(10),
+  }),
+  primary_impression: z.string().min(3),
+  differential_diagnoses: z
+    .array(
+      z.object({
+        name: z.string().min(2),
+        rationale: z.string().min(10),
+        likelihood: z.enum([
+          DIAGNOSIS_LIKELIHOOD.LOW,
+          DIAGNOSIS_LIKELIHOOD.MEDIUM,
+          DIAGNOSIS_LIKELIHOOD.HIGH,
+        ]),
+      }),
+    )
+    .min(1),
+  red_flags: z.array(
+    z.object({
+      flag: z.string().min(2),
+      evidence: z.string().min(3),
+      recommended_action: z.string().min(3),
+    }),
+  ),
+  supporting_evidence: z.array(
+    z.object({
+      data_point: z.string().min(2),
+      interpretation: z.string().min(3),
+      source: z.string().min(2).optional(),
+    }),
+  ),
+  missing_information: z.array(
+    z.object({
+      item: z.string().min(2),
+      why_it_matters: z.string().min(5),
+      how_to_obtain: z.string().min(5),
+    }),
+  ),
+  recommended_next_steps: z
+    .array(
+      z.object({
+        step: z.string().min(2),
+        category: z.enum([
+          DIAGNOSIS_NEXT_STEP_CATEGORY.DIAGNOSTICS,
+          DIAGNOSIS_NEXT_STEP_CATEGORY.THERAPY,
+          DIAGNOSIS_NEXT_STEP_CATEGORY.REFERRAL,
+          DIAGNOSIS_NEXT_STEP_CATEGORY.MONITORING,
+          DIAGNOSIS_NEXT_STEP_CATEGORY.LIFESTYLE,
+          DIAGNOSIS_NEXT_STEP_CATEGORY.OTHER,
+        ]),
+        rationale: z.string().min(5),
+        priority: z.enum([
+          DIAGNOSIS_TRIAGE_LEVEL.ROUTINE,
+          DIAGNOSIS_TRIAGE_LEVEL.SOON,
+          DIAGNOSIS_TRIAGE_LEVEL.URGENT,
+        ]),
+      }),
+    )
+    .min(1),
+  contraindications_or_caveats: z.array(z.string()),
+  confidence: z.number().min(0).max(1),
+  confidence_rationale: z.string().min(5),
+  patient_friendly_summary: z.string().min(10).optional(),
+  model_metadata: z.object({
+    model: z.string().min(1),
+    prompt_version: z.string().min(1),
+    timestamp: z.string().datetime(),
+  }),
+  output_version: z.literal('v2'),
+})
+
+export type DiagnosisResultV2 = z.infer<typeof DiagnosisResultV2Schema>
+
+export const DiagnosisResultSchema = z.union([DiagnosisResultV2Schema, DiagnosisResultV1Schema])
+
 export type DiagnosisResult = z.infer<typeof DiagnosisResultSchema>
 
 /**
@@ -140,6 +254,9 @@ export const DiagnosisArtifactDataSchema = z.object({
   run_id: z.string().uuid(),
   patient_id: z.string().uuid(),
   diagnosis_result: DiagnosisResultSchema,
+  raw_llm_text: z.string().optional(),
+  parsed_result_v2: DiagnosisResultV2Schema.optional(),
+  output_version: z.literal('v2').optional(),
   metadata: z.object({
     mcp_run_id: z.string().optional(),
     run_version: z.string().optional(),
@@ -252,7 +369,7 @@ export type UpdateDiagnosisRun = z.infer<typeof UpdateDiagnosisRunSchema>
 /**
  * Default schema version for diagnosis artifacts
  */
-export const DEFAULT_SCHEMA_VERSION = 'v1'
+export const DEFAULT_SCHEMA_VERSION = 'v2'
 
 /**
  * Default maximum retries for failed diagnosis runs

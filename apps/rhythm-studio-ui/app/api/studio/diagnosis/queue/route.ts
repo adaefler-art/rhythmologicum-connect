@@ -1,10 +1,10 @@
 /**
  * E76.8: Diagnosis Run Queue API Route
  * 
- * Queues a new diagnosis run with deduplication and inputs_meta persistence.
+ * Queues a new diagnosis run with inputs_meta persistence.
  * Feature-gated behind NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED.
  * 
- * @endpoint-intent diagnosis:queue Queue a new diagnosis run with dedupe check
+ * @endpoint-intent diagnosis:queue Queue a new diagnosis run
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,9 +12,9 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { buildPatientContextPack } from '@/lib/mcp/contextPackBuilder'
 import { executeDiagnosisRun } from '@/lib/diagnosis/worker'
-import { checkDuplicateRun, extractInputsMeta } from '@/lib/diagnosis/dedupe'
+import { extractInputsMeta } from '@/lib/diagnosis/dedupe'
 import { isFeatureEnabled } from '@/lib/featureFlags'
-import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
+import { DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { env } from '@/lib/env'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import type { Database, Json } from '@/lib/types/supabase'
@@ -30,14 +30,16 @@ import type { Database, Json } from '@/lib/types/supabase'
  * POST /api/studio/diagnosis/queue
  * 
  * Queue a new diagnosis run for a patient.
- * Implements E76.8 deduplication policy and inputs_meta persistence.
+ * Implements inputs_meta persistence and optional parallel-run guard.
  * 
  * Body:
  * - patient_id: UUID of patient to diagnose
+ * - force (optional): bypass active run guard
+ * - block_parallel (optional): enable active run guard for this request
  * 
  * Response:
  * - success: boolean
- * - data: { run_id, status, is_duplicate?, existing_run_id? }
+ * - data: { run_id, status, created_at }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { patient_id: patientIdParam } = body
+    const { patient_id: patientIdParam, force, block_parallel: blockParallel } = body
 
     // Check authentication and authorization
     const supabase = await createServerSupabaseClient()
@@ -204,23 +206,37 @@ export async function POST(request: NextRequest) {
     const inputs_hash = contextPack.metadata.inputs_hash
     const inputs_meta = extractInputsMeta(contextPack) as Json
 
-    // E76.8: Check for duplicate runs (Policy B: time-window-based)
-    const dedupeResult = await checkDuplicateRun(adminClient, inputs_hash, patientUserId)
+    const shouldForce = typeof force === 'boolean' ? force : false
+    const shouldBlockParallel = blockParallel === true
+    if (shouldBlockParallel && !shouldForce) {
+      const { data: activeRun, error: activeRunError } = await adminClient
+        .from('diagnosis_runs')
+        .select('id, status, created_at')
+        .eq('patient_id', patientUserId)
+        .eq('inputs_hash', inputs_hash)
+        .in('status', [DIAGNOSIS_RUN_STATUS.QUEUED, DIAGNOSIS_RUN_STATUS.RUNNING])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-    if (dedupeResult.isDuplicate && dedupeResult.existingRunId) {
-      // Return existing run information with warning
-      return NextResponse.json({
-        success: true,
-        data: {
-          runId: dedupeResult.existingRunId,
-          status: 'DUPLICATE',
-          run_id: dedupeResult.existingRunId,
-          status_raw: 'duplicate',
-          is_duplicate: true,
-          message: dedupeResult.message,
-          time_window_hours: dedupeResult.timeWindowHours,
-        },
-      }, { headers: diagHeaders })
+      if (activeRunError) {
+        console.error('Failed to check active diagnosis runs:', activeRunError)
+      }
+
+      if (activeRun) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'ACTIVE_RUN_EXISTS',
+              message: 'An active diagnosis run already exists for this patient/context',
+              existing_run_id: activeRun.id,
+              existing_status: activeRun.status,
+            },
+          },
+          { status: 409, headers: diagHeaders },
+        )
+      }
     }
 
     // Create new diagnosis run

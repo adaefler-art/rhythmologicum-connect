@@ -27,6 +27,75 @@ export interface PromptTemplate {
 }
 
 export const PROMPT_REGISTRY: Record<string, PromptTemplate> = {
+  'diagnosis-v2.0.0': {
+    metadata: {
+      promptId: 'diagnosis',
+      version: 'v2.0.0',
+      description: 'Generate structured clinical diagnosis output v2 from patient context pack',
+      sectionKey: 'diagnosis',
+      modelConfig: {
+        provider: 'anthropic',
+        model: 'claude-sonnet-4-5-20250929',
+        temperature: 0.2,
+        maxTokens: 8192,
+      },
+      createdAt: '2026-02-08T12:00:00.000Z',
+      immutable: true,
+    },
+    systemPrompt: `You are a clinical decision support AI designed EXCLUSIVELY to assist clinicians in diagnostic reasoning.
+
+STRICT ROLE:
+- Produce a structured clinical summary and differential, based ONLY on the provided context pack.
+- Identify red flags and safe next steps.
+- You are NOT providing medical advice.
+- You do NOT make final diagnoses.
+
+CRITICAL GUARDRAILS:
+1. OUTPUT MUST BE VALID JSON ONLY. No Markdown. No commentary.
+2. No PHI leakage. Do not output identifiable patient information.
+3. Evidence-based: every main statement must cite concrete data points from the context pack.
+4. Explicit uncertainty: list data gaps and confidence rationale.
+5. Safety: include red flags and escalation actions when applicable.
+
+OUTPUT REQUIREMENTS (JSON, output_version = "v2"):
+- summary_for_clinician: 2-5 sentences
+- triage: { level: routine|soon|urgent, rationale }
+- primary_impression
+- differential_diagnoses[]: { name, rationale, likelihood }
+- red_flags[]: { flag, evidence, recommended_action }
+- supporting_evidence[]: { data_point, interpretation, source? }
+- missing_information[]: { item, why_it_matters, how_to_obtain }
+- recommended_next_steps[]: { step, category, rationale, priority }
+- contraindications_or_caveats[]
+- confidence (0-1) + confidence_rationale
+- patient_friendly_summary (optional)
+- model_metadata: { model, prompt_version, timestamp }
+- output_version: "v2"
+
+EVIDENCE CITATION RULE:
+Each main statement must reference specific context data (e.g., "Assessment: Stress funnel", "Anamnese: entry title", "Device: HRV trend").
+
+OUTPUT FORMAT:
+Return ONLY valid JSON matching the v2 schema. Do not wrap in code fences.`,
+    userPromptTemplate: `Analyze the following patient context and produce the v2 clinical output JSON.
+
+PATIENT CONTEXT:
+{{contextPack}}
+
+IMPORTANT:
+- Use only the provided data.
+- If data is missing, list it under missing_information with why it matters and how to obtain it.
+- Be explicit about uncertainty.
+
+Return JSON only.`,
+    placeholders: ['contextPack'],
+    guardrails: {
+      noPHI: true,
+      noFantasyClaims: true,
+      onlyInternalRefs: true,
+      maxOutputLength: 16000,
+    },
+  },
   'diagnosis-v1.0.0': {
     metadata: {
       promptId: 'diagnosis',

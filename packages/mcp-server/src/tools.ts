@@ -9,6 +9,7 @@
  */
 
 import { z } from 'zod'
+import { DiagnosisPromptOutputV2Schema } from './contracts/diagnosis-prompt.js'
 
 // ==================== get_patient_context ====================
 
@@ -101,12 +102,9 @@ export type RunDiagnosisInput = z.infer<typeof RunDiagnosisInputSchema>
 export const RunDiagnosisOutputSchema = z.object({
   run_id: z.string(),
   patient_id: z.string(),
-  diagnosis_result: z.object({
-    primary_findings: z.array(z.string()),
-    risk_level: z.enum(['low', 'medium', 'high', 'critical']),
-    recommendations: z.array(z.string()),
-    confidence_score: z.number().min(0).max(1),
-  }),
+  diagnosis_result: DiagnosisPromptOutputV2Schema,
+  parsed_result_v2: DiagnosisPromptOutputV2Schema,
+  raw_llm_text: z.string(),
   metadata: z.object({
     run_version: z.string(),
     prompt_version: z.string(),

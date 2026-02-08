@@ -19,10 +19,12 @@ import { logger } from './logger.js'
 import { env } from './env.js'
 import { getPrompt } from './prompts/registry.js'
 import {
-  DiagnosisPromptOutputV1Schema,
   CONFIDENCE_LEVEL,
   URGENCY_LEVEL,
+  DIAGNOSIS_PROMPT_VERSION,
+  validateDiagnosisPromptOutputV2,
   type DiagnosisPromptOutputV1,
+  type DiagnosisPromptOutputV2,
 } from './contracts/diagnosis-prompt.js'
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
@@ -117,6 +119,72 @@ function extractJson(content: string): string {
     jsonContent = jsonMatch[1]
   }
   return jsonContent
+}
+
+function buildDiagnosisFallbackV2(promptVersion: string, model: string): DiagnosisPromptOutputV2 {
+  const timestamp = new Date().toISOString()
+  return {
+    summary_for_clinician: 'Structured clinical summary unavailable due to parsing issues.',
+    triage: {
+      level: 'routine',
+      rationale: 'Unable to determine triage from structured output; clinician review required.',
+    },
+    primary_impression: 'Clinical impression pending clinician review.',
+    differential_diagnoses: [
+      {
+        name: 'Stress-related presentation',
+        rationale: 'Structured output could not be validated from the model response.',
+        likelihood: 'medium',
+      },
+    ],
+    red_flags: [],
+    supporting_evidence: [
+      {
+        data_point: 'Context pack available',
+        interpretation: 'Structured output failed validation; review source data directly.',
+      },
+    ],
+    missing_information: [
+      {
+        item: 'Missing structured output fields',
+        why_it_matters: 'Clinical reasoning cannot be validated without structured sections.',
+        how_to_obtain: 'Re-run diagnosis or review raw context data.',
+      },
+    ],
+    recommended_next_steps: [
+      {
+        step: 'Clinician review of patient context',
+        category: 'monitoring',
+        rationale: 'Automated output was incomplete or invalid.',
+        priority: 'soon',
+      },
+    ],
+    contraindications_or_caveats: ['Structured output validation failed; rely on clinician judgment.'],
+    confidence: 0.4,
+    confidence_rationale: 'Confidence reduced due to invalid structured output.',
+    model_metadata: {
+      model,
+      prompt_version: promptVersion,
+      timestamp,
+    },
+    output_version: 'v2',
+  }
+}
+
+function parseDiagnosisOutputV2(rawText: string):
+  | { success: true; data: DiagnosisPromptOutputV2 }
+  | { success: false; error: string } {
+  const jsonContent = extractJson(rawText)
+  try {
+    const parsed = JSON.parse(jsonContent)
+    const validation = validateDiagnosisPromptOutputV2(parsed)
+    if (validation.success) {
+      return { success: true, data: validation.data }
+    }
+    return { success: false, error: validation.error.message }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : String(error) }
+  }
 }
 
 type LlmResponseMeta = {
@@ -768,24 +836,16 @@ export async function handleRunDiagnosis(
   const versionMetadata = getVersionMetadata(runId)
 
   try {
+    const promptVersion = DIAGNOSIS_PROMPT_VERSION
+
     if (isStubEnabled()) {
+      const stubResult = buildDiagnosisFallbackV2(promptVersion, 'stub')
       const output: RunDiagnosisOutput = {
         run_id: runId,
         patient_id: input.patient_id,
-        diagnosis_result: {
-          primary_findings: [
-            'Moderate stress levels detected',
-            'Sleep quality concerns identified',
-            'Cardiovascular risk markers present',
-          ],
-          risk_level: 'medium',
-          recommendations: [
-            'Consider stress management techniques',
-            'Schedule follow-up assessment in 2 weeks',
-            'Review sleep hygiene practices',
-          ],
-          confidence_score: 0.78,
-        },
+        diagnosis_result: stubResult,
+        parsed_result_v2: stubResult,
+        raw_llm_text: JSON.stringify(stubResult, null, 2),
         metadata: {
           run_version: versionMetadata.run_version,
           prompt_version: versionMetadata.prompt_version,
@@ -797,7 +857,7 @@ export async function handleRunDiagnosis(
       MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
       log.info('run_diagnosis completed (stub)', {
         patient_id: input.patient_id,
-        risk_level: output.diagnosis_result.risk_level,
+        triage: output.diagnosis_result.triage.level,
         trace_id: resolvedTraceId,
         timeline,
         metrics,
@@ -812,7 +872,6 @@ export async function handleRunDiagnosis(
       return { data: output, telemetry }
     }
 
-    const promptVersion = 'v1.0.0'
     const promptTemplate = getPrompt('diagnosis', promptVersion)
 
     if (!promptTemplate) {
@@ -910,38 +969,57 @@ export async function handleRunDiagnosis(
         details,
       )
     }
-  const jsonContent = extractJson(llmText)
-  let parsedOutput: DiagnosisPromptOutputV1
-  try {
-    parsedOutput = DiagnosisPromptOutputV1Schema.parse(
-      normalizeDiagnosisPromptOutput(JSON.parse(jsonContent)),
-    )
-  } catch (error) {
-    log.warn('Diagnosis output normalization failed, using fallback', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-    parsedOutput = normalizeDiagnosisPromptOutput(null)
-  }
-  const diagnosisResult = buildDiagnosisResult(parsedOutput)
+    let parsedOutput: DiagnosisPromptOutputV2 | null = null
+    let parseResult = parseDiagnosisOutputV2(llmText)
+    if (!parseResult.success) {
+      log.warn('Diagnosis output invalid, retrying once', {
+        error: parseResult.error,
+        trace_id: resolvedTraceId,
+      })
+      const retryResponse = await callAnthropicDiagnosis(
+        systemPrompt,
+        userPrompt,
+        modelConfig,
+        resolvedTraceId,
+        markStage,
+      )
+      llmText = retryResponse.text
+      metrics.llm_response_id = retryResponse.meta.id
+      metrics.llm_usage_input_tokens = retryResponse.meta.usage?.input_tokens
+      metrics.llm_usage_output_tokens = retryResponse.meta.usage?.output_tokens
+      parseResult = parseDiagnosisOutputV2(llmText)
+    }
 
-  const output: RunDiagnosisOutput = {
-    run_id: runId,
-    patient_id: input.patient_id,
-    diagnosis_result: diagnosisResult,
-    metadata: {
-      run_version: versionMetadata.run_version,
-      prompt_version: promptVersion,
-      executed_at: new Date().toISOString(),
-      processing_time_ms: Date.now() - startTime,
-    },
-  }
+    if (parseResult.success) {
+      parsedOutput = parseResult.data
+    } else {
+      log.warn('Diagnosis output invalid after retry, using fallback', {
+        error: parseResult.error,
+        trace_id: resolvedTraceId,
+      })
+      parsedOutput = buildDiagnosisFallbackV2(promptVersion, modelConfig.model)
+    }
+
+    const output: RunDiagnosisOutput = {
+      run_id: runId,
+      patient_id: input.patient_id,
+      diagnosis_result: parsedOutput,
+      parsed_result_v2: parsedOutput,
+      raw_llm_text: llmText,
+      metadata: {
+        run_version: versionMetadata.run_version,
+        prompt_version: promptVersion,
+        executed_at: new Date().toISOString(),
+        processing_time_ms: Date.now() - startTime,
+      },
+    }
 
     // Validate output
     MCP_TOOLS.run_diagnosis.outputSchema.parse(output)
 
     log.info('run_diagnosis completed', {
       patient_id: input.patient_id,
-      risk_level: output.diagnosis_result.risk_level,
+      triage: output.diagnosis_result.triage.level,
       trace_id: resolvedTraceId,
       timeline,
       metrics,

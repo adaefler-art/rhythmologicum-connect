@@ -32,6 +32,51 @@ type DiagnosisRun = {
   is_optimistic?: boolean
 }
 
+type DiagnosisV2Result = {
+  summary_for_clinician: string
+  triage: {
+    level: string
+    rationale: string
+  }
+  primary_impression: string
+  differential_diagnoses: Array<{
+    name: string
+    rationale: string
+    likelihood: string
+  }>
+  red_flags: Array<{
+    flag: string
+    evidence: string
+    recommended_action: string
+  }>
+  supporting_evidence: Array<{
+    data_point: string
+    interpretation: string
+    source?: string
+  }>
+  missing_information: Array<{
+    item: string
+    why_it_matters: string
+    how_to_obtain: string
+  }>
+  recommended_next_steps: Array<{
+    step: string
+    category: string
+    rationale: string
+    priority: string
+  }>
+  contraindications_or_caveats: string[]
+  confidence: number
+  confidence_rationale: string
+  patient_friendly_summary?: string
+  model_metadata: {
+    model: string
+    prompt_version: string
+    timestamp: string
+  }
+  output_version: 'v2'
+}
+
 type ArtifactState = {
   status: 'idle' | 'loading' | 'success' | 'empty' | 'error'
   data?: Record<string, unknown>
@@ -60,6 +105,10 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
   const [isQueueing, setIsQueueing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [activeRunInfo, setActiveRunInfo] = useState<{
+    runId: string
+    status?: string | null
+  } | null>(null)
   const [artifactStates, setArtifactStates] = useState<Record<string, ArtifactState>>({})
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null)
   const [debugHint, setDebugHint] = useState<string | null>(null)
@@ -264,7 +313,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     }, 5000)
   }
 
-  const handleQueueRun = async () => {
+  const handleQueueRun = async (forceRun: boolean = false) => {
     const gate = await checkDiagnosisGate()
     if (gate !== 'available') {
       return
@@ -273,6 +322,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     setIsQueueing(true)
     setStatusMessage(null)
     setError(null)
+    setActiveRunInfo(null)
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), QUEUE_TIMEOUT_MS)
@@ -282,19 +332,27 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({ patient_id: patientId }),
+        body: JSON.stringify({ patient_id: patientId, force: forceRun }),
       })
 
       const result = await response.json().catch(() => ({}))
 
       if (!response.ok || !result.success) {
+        const errorCode = result?.error?.code
+        if (response.status === 409 && errorCode === 'ACTIVE_RUN_EXISTS') {
+          setStatusMessage('Ein aktiver Run laeuft bereits. Du kannst einen weiteren Run erzwingen.')
+          setActiveRunInfo({
+            runId: result?.error?.existing_run_id || '',
+            status: result?.error?.existing_status || null,
+          })
+          return
+        }
         if (response.status === 401 || response.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
           setGateStatus('forbidden')
         } else if (response.status === 404 || response.status === 422) {
           setError('Patient nicht gefunden oder ungültige ID')
         } else if (response.status === 503) {
-          const errorCode = result?.error?.code
           if (errorCode && ['MCP_NOT_CONFIGURED', 'MCP_UNREACHABLE', 'MCP_BAD_RESPONSE', 'MCP_ERROR'].includes(errorCode)) {
             setGateStatus('unavailable')
             setGateMessage('MCP nicht erreichbar.')
@@ -334,16 +392,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         setRuns((prev) => [optimisticRun, ...prev.filter((run) => run.id !== runId)])
       }
 
-      if (result.data?.is_duplicate) {
-        setStatusMessage('Diagnose bereits kürzlich gestartet (Duplikat erkannt)')
-      } else {
-        setStatusMessage('Diagnose gestartet')
-      }
+      setStatusMessage('Diagnose gestartet')
 
       router.refresh()
       await fetchRuns({ silent: true })
 
-      if (runId && !result.data?.is_duplicate) {
+      if (runId) {
         pollRunStatus(runId)
       }
     } catch (err) {
@@ -552,6 +606,188 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     return hash.length > 12 ? `${hash.slice(0, 12)}…` : hash
   }
 
+  const formatConfidence = (value: number | null | undefined): string => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+    return `${Math.round(value * 100)}%`
+  }
+
+  const isDiagnosisResultV2 = (value: unknown): value is DiagnosisV2Result => {
+    if (!value || typeof value !== 'object') return false
+    const record = value as Record<string, unknown>
+    return record.output_version === 'v2' && typeof record.summary_for_clinician === 'string'
+  }
+
+  const resolveDiagnosisResultV2 = (data?: Record<string, unknown>) => {
+    if (!data || typeof data !== 'object') return null
+    const rawLlmText = typeof data.raw_llm_text === 'string' ? data.raw_llm_text : null
+    const primaryCandidate = data.parsed_result_v2 ?? data.diagnosis_result
+    if (isDiagnosisResultV2(primaryCandidate)) {
+      return { result: primaryCandidate, rawLlmText }
+    }
+    if (data.artifact_data && typeof data.artifact_data === 'object') {
+      const nested = data.artifact_data as Record<string, unknown>
+      const nestedCandidate = nested.parsed_result_v2 ?? nested.diagnosis_result
+      if (isDiagnosisResultV2(nestedCandidate)) {
+        return {
+          result: nestedCandidate,
+          rawLlmText: typeof nested.raw_llm_text === 'string' ? nested.raw_llm_text : rawLlmText,
+        }
+      }
+    }
+    return null
+  }
+
+  const renderV2Result = (result: DiagnosisV2Result, rawLlmText?: string | null) => (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+        <div className="text-xs uppercase tracking-wide text-slate-500">Zusammenfassung</div>
+        <p className="mt-2 whitespace-pre-wrap">{result.summary_for_clinician}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+            <div className="font-semibold text-slate-800 dark:text-slate-200">Triage</div>
+            <div className="mt-1 flex items-center gap-2">
+              <Badge size="sm" variant="info">{result.triage.level}</Badge>
+              <span>{result.triage.rationale}</span>
+            </div>
+          </div>
+          <div className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+            <div className="font-semibold text-slate-800 dark:text-slate-200">Confidence</div>
+            <div className="mt-1">{formatConfidence(result.confidence)} - {result.confidence_rationale}</div>
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-slate-600 dark:text-slate-300">
+          <span className="font-semibold">Primaerer Eindruck:</span> {result.primary_impression}
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Differentialdiagnosen</div>
+          <div className="mt-3 space-y-3">
+            {result.differential_diagnoses.map((item, index) => (
+              <div key={`${item.name}-${index}`} className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</span>
+                  <Badge size="sm" variant="default">{item.likelihood}</Badge>
+                </div>
+                <div className="mt-1">{item.rationale}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Supporting Evidence</div>
+          <div className="mt-3 space-y-3">
+            {result.supporting_evidence.map((item, index) => (
+              <div key={`${item.data_point}-${index}`} className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+                <div className="font-semibold text-slate-800 dark:text-slate-200">{item.data_point}</div>
+                <div className="mt-1">{item.interpretation}</div>
+                {item.source && (
+                  <div className="mt-1 text-[11px] text-slate-500">Quelle: {item.source}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Red Flags</div>
+          {result.red_flags.length === 0 ? (
+            <div className="mt-3 text-xs text-slate-500">Keine Red Flags angegeben.</div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {result.red_flags.map((item, index) => (
+                <div key={`${item.flag}-${index}`} className="rounded-md bg-rose-50 p-3 text-xs text-rose-700">
+                  <div className="font-semibold">{item.flag}</div>
+                  <div className="mt-1">Evidence: {item.evidence}</div>
+                  <div className="mt-1">Aktion: {item.recommended_action}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Fehlende Informationen</div>
+          {result.missing_information.length === 0 ? (
+            <div className="mt-3 text-xs text-slate-500">Keine fehlenden Informationen angegeben.</div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {result.missing_information.map((item, index) => (
+                <div key={`${item.item}-${index}`} className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+                  <div className="font-semibold text-slate-800 dark:text-slate-200">{item.item}</div>
+                  <div className="mt-1">Warum: {item.why_it_matters}</div>
+                  <div className="mt-1">Wie: {item.how_to_obtain}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+        <div className="text-xs uppercase tracking-wide text-slate-500">Naechste Schritte</div>
+        <div className="mt-3 space-y-3">
+          {result.recommended_next_steps.map((item, index) => (
+            <div key={`${item.step}-${index}`} className="rounded-md bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{item.step}</span>
+                <Badge size="sm" variant="default">{item.category}</Badge>
+                <Badge size="sm" variant="info">{item.priority}</Badge>
+              </div>
+              <div className="mt-1">{item.rationale}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Caveats</div>
+          {result.contraindications_or_caveats.length === 0 ? (
+            <div className="mt-3 text-xs text-slate-500">Keine Caveats angegeben.</div>
+          ) : (
+            <ul className="mt-3 list-disc space-y-1 pl-4 text-xs text-slate-600 dark:text-slate-300">
+              {result.contraindications_or_caveats.map((item, index) => (
+                <li key={`${item}-${index}`}>{item}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Patient Summary</div>
+          <div className="mt-3 text-xs text-slate-600 dark:text-slate-300">
+            {result.patient_friendly_summary || 'Keine patientenfreundliche Zusammenfassung angegeben.'}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
+        <div className="text-xs uppercase tracking-wide text-slate-500">Model Metadata</div>
+        <div className="mt-2 grid gap-2 md:grid-cols-3">
+          <div><span className="font-semibold">Model:</span> {result.model_metadata.model}</div>
+          <div><span className="font-semibold">Prompt:</span> {result.model_metadata.prompt_version}</div>
+          <div><span className="font-semibold">Timestamp:</span> {formatDate(result.model_metadata.timestamp)}</div>
+        </div>
+      </div>
+
+      {rawLlmText && (
+        <details className="rounded-lg border border-slate-200 bg-white p-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-300">
+          <summary className="cursor-pointer font-semibold text-slate-700 dark:text-slate-200">
+            Raw LLM Output
+          </summary>
+          <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-[11px] text-slate-700 dark:bg-slate-900/60 dark:text-slate-200">
+            {rawLlmText}
+          </pre>
+        </details>
+      )}
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <Card padding="lg" shadow="md">
@@ -616,6 +852,22 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           </div>
         )}
 
+        {activeRunInfo && process.env.NODE_ENV !== 'production' && (
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="text-xs text-slate-600">
+              Aktiver Run: {activeRunInfo.runId}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQueueRun(true)}
+              disabled={isQueueing}
+            >
+              Trotzdem neuen Run starten (force)
+            </Button>
+          </div>
+        )}
+
         {error && (
           <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -660,6 +912,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
               const findings = summary?.primary_findings || []
               const actionLabel = 'View Result'
               const actionDisabled = !hasArtifact
+              const resolvedV2 = resolveDiagnosisResultV2(
+                artifactState.data && typeof artifactState.data === 'object'
+                  ? (artifactState.data as Record<string, unknown>)
+                  : undefined,
+              )
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
@@ -780,9 +1037,13 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                               error_code: {artifactState.meta.errorCode}
                             </div>
                           )}
-                          <pre className="max-h-96 overflow-auto rounded bg-white dark:bg-slate-900 p-4 text-xs text-slate-800 dark:text-slate-200">
-                            {JSON.stringify(artifactState.data, null, 2)}
-                          </pre>
+                          {resolvedV2 ? (
+                            renderV2Result(resolvedV2.result, resolvedV2.rawLlmText)
+                          ) : (
+                            <pre className="max-h-96 overflow-auto rounded bg-white dark:bg-slate-900 p-4 text-xs text-slate-800 dark:text-slate-200">
+                              {JSON.stringify(artifactState.data, null, 2)}
+                            </pre>
+                          )}
                         </div>
                       )}
                     </div>

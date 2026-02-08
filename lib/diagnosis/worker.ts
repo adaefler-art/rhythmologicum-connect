@@ -25,11 +25,15 @@ import {
   ARTIFACT_TYPE,
   DEFAULT_SCHEMA_VERSION,
   DiagnosisResultSchema,
+  DiagnosisResultV2Schema,
   type DiagnosisRun,
   type DiagnosisArtifact,
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
-import { validateDiagnosisPromptOutputV1 } from '@/lib/contracts/diagnosis-prompt'
+import {
+  validateDiagnosisPromptOutputV1,
+  validateDiagnosisPromptOutputV2,
+} from '@/lib/contracts/diagnosis-prompt'
 import { logInfo } from '@/lib/logging/logger'
 
 const MCP_TIMEOUT_MS = 60000
@@ -97,6 +101,10 @@ function extractDiagnosisPayload(rawResponse: unknown): unknown {
     return payloadRecord.diagnosis_result
   }
 
+  if (payloadRecord.parsed_result_v2) {
+    return payloadRecord.parsed_result_v2
+  }
+
   if (payloadRecord.data && typeof payloadRecord.data === 'object') {
     const nested = payloadRecord.data as Record<string, unknown>
     if (nested.diagnosis_result) {
@@ -156,6 +164,8 @@ function sanitizeMcpResponse(rawResponse: unknown, diagnosisPayload: unknown): J
     run_id: payloadRecord.run_id ?? responseRecord.run_id ?? null,
     patient_id: payloadRecord.patient_id ?? responseRecord.patient_id ?? null,
     diagnosis_result: diagnosisPayload ?? null,
+    raw_llm_text: payloadRecord.raw_llm_text ?? null,
+    parsed_result_v2: payloadRecord.parsed_result_v2 ?? null,
     metadata: payloadRecord.metadata ?? responseRecord.metadata ?? null,
   }
 
@@ -386,19 +396,30 @@ export async function executeDiagnosisRun(
     const diagnosisResultValidation = diagnosisPayload
       ? DiagnosisResultSchema.safeParse(diagnosisPayload)
       : null
-    const promptValidation = diagnosisPayload
+    const promptValidationV2 = diagnosisPayload
+      ? validateDiagnosisPromptOutputV2(diagnosisPayload)
+      : null
+    const promptValidationV1 = diagnosisPayload
       ? validateDiagnosisPromptOutputV1(diagnosisPayload)
       : null
 
     const validationMetadata = {
-      ok: Boolean(diagnosisResultValidation?.success || promptValidation?.success),
+      ok: Boolean(
+        diagnosisResultValidation?.success ||
+          promptValidationV2?.success ||
+          promptValidationV1?.success,
+      ),
       schema: diagnosisResultValidation?.success
         ? 'diagnosis_result'
-        : promptValidation?.success
-          ? 'prompt_output_v1'
-          : null,
+        : promptValidationV2?.success
+          ? 'prompt_output_v2'
+          : promptValidationV1?.success
+            ? 'prompt_output_v1'
+            : null,
       reason:
-        diagnosisResultValidation?.success || promptValidation?.success
+        diagnosisResultValidation?.success ||
+          promptValidationV2?.success ||
+          promptValidationV1?.success
           ? null
           : 'schema_mismatch',
     }
@@ -437,6 +458,29 @@ export async function executeDiagnosisRun(
         responseRecord.trace_id ||
         null,
     )
+
+    const rawLlmText = normalizeString(
+      (responsePayload && (responsePayload as Record<string, unknown>).raw_llm_text) ||
+        responseRecord.raw_llm_text ||
+        null,
+    )
+
+    const parsedResultV2Candidate =
+      (responsePayload && (responsePayload as Record<string, unknown>).parsed_result_v2) ||
+      responseRecord.parsed_result_v2 ||
+      null
+    const parsedResultV2Validation = parsedResultV2Candidate
+      ? validateDiagnosisPromptOutputV2(parsedResultV2Candidate)
+      : null
+    const parsedResultV2FromDiagnosis = DiagnosisResultV2Schema.safeParse(diagnosisResult)
+    const parsedResultV2 = parsedResultV2Validation?.success
+      ? parsedResultV2Validation.data
+      : promptValidationV2?.success
+        ? promptValidationV2.data
+        : parsedResultV2FromDiagnosis.success
+          ? parsedResultV2FromDiagnosis.data
+          : null
+    const outputVersion = parsedResultV2 ? 'v2' : null
 
     const rawMcpResponse = shouldSanitizeMcpResponse(mcpResponse)
       ? sanitizeMcpResponse(mcpResponse, diagnosisPayload)
@@ -561,20 +605,36 @@ export async function executeDiagnosisRun(
         run_id: runId,
         patient_id: run.patient_id,
         diagnosis_result: serializeErrorDetails(diagnosisPayload),
+        raw_llm_text: rawLlmText ?? undefined,
+        parsed_result_v2: parsedResultV2 ?? undefined,
+        output_version: outputVersion ?? undefined,
         metadata: {
           ...baseMetadata,
           validation: validationMetadata,
         },
       }
 
+      const isLegacyResult =
+        diagnosisResult && typeof diagnosisResult === 'object'
+          ? 'risk_level' in (diagnosisResult as Record<string, unknown>)
+          : false
+      const legacyResult = isLegacyResult
+        ? (diagnosisResult as {
+            risk_level?: string
+            confidence_score?: number
+            primary_findings?: string[]
+            recommendations?: string[]
+          })
+        : null
+
       const diagnosisArtifactResult = await persistArtifact({
         artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
         artifact_data: artifactData,
         metadata: (artifactData as { metadata?: Json }).metadata ?? null,
-        risk_level: diagnosisResult?.risk_level ?? null,
-        confidence_score: diagnosisResult?.confidence_score ?? null,
-        primary_findings: diagnosisResult?.primary_findings ?? null,
-        recommendations_count: diagnosisResult?.recommendations.length ?? null,
+        risk_level: legacyResult?.risk_level ?? null,
+        confidence_score: legacyResult?.confidence_score ?? null,
+        primary_findings: legacyResult?.primary_findings ?? null,
+        recommendations_count: legacyResult?.recommendations?.length ?? null,
       })
 
       if (diagnosisArtifactResult.error || !diagnosisArtifactResult.artifact) {
