@@ -16,7 +16,7 @@ export const CURRENT_ALGORITHM_VERSION = 'v1.0.0'
 /**
  * AI prompt version for report generation
  * Format: MAJOR.MINOR
- * Update when AMY prompts change
+ * Update when assistant prompts change (see /lib/llm/prompts.ts and /lib/config/assistant.ts)
  */
 export const CURRENT_PROMPT_VERSION = '1.0'
 

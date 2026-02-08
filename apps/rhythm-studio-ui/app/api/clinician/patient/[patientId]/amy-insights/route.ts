@@ -1,13 +1,17 @@
 /**
- * Clinician AMY Insights API
+ * Clinician Assistant Insights API
  *
  * GET /api/clinician/patient/[patientId]/amy-insights
+ * 
+ * Note: Route path kept as "amy-insights" for backward compatibility.
+ * The actual assistant identity is configured in /lib/config/assistant.ts
  */
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 type RouteContext = {
   params: Promise<{ patientId: string }>
@@ -24,7 +28,7 @@ type AmyMessage = {
 type Conversation = {
   id: string
   timestamp: string
-  channel: 'AMY Chat'
+  channel: string
   summary: string
   messages: AmyMessage[]
 }
@@ -67,7 +71,7 @@ const buildConversations = (messages: AmyMessage[]): Conversation[] => {
     conversations.push({
       id: key,
       timestamp: lastMessage?.created_at ?? sorted[0]?.created_at ?? new Date().toISOString(),
-      channel: 'AMY Chat',
+      channel: `${ASSISTANT_CONFIG.name} Chat`,
       summary: truncateSummary(summarySource, 140),
       messages: sorted,
     })
@@ -157,7 +161,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
-          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch AMY messages' },
+          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch chat messages' },
         },
         { status: 500 },
       )

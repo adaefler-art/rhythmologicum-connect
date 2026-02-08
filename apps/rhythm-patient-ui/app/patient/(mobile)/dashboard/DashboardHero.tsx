@@ -1,5 +1,6 @@
 'use client'
 import { Card, Button } from '@/lib/ui/mobile-v2'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 type DashboardHeroProps = {
   greetingName?: string
@@ -29,11 +30,11 @@ export default function DashboardHero({ greetingName, onChat }: DashboardHeroPro
           </div>
           <div className="flex-1 space-y-2">
             <div>
-              <h2 className="text-lg font-semibold">AMY Assistant</h2>
+              <h2 className="text-lg font-semibold">{ASSISTANT_CONFIG.name} Assistant</h2>
               <p className="text-white/90 text-sm">Your health companion</p>
             </div>
             <p className="text-white/90 text-sm">
-              Chat with AMY to check in, reflect on your day, or get gentle guidance.
+              Chat with {ASSISTANT_CONFIG.name} to check in, reflect on your day, or get gentle guidance.
             </p>
             <Button
               variant="secondary"
@@ -41,7 +42,7 @@ export default function DashboardHero({ greetingName, onChat }: DashboardHeroPro
               className="bg-white/90 text-slate-900 hover:bg-white"
               onClick={onChat}
             >
-              Chat with AMY →
+              Chat with {ASSISTANT_CONFIG.name} →
             </Button>
           </div>
         </div>

@@ -28,7 +28,7 @@ export const CANONICAL_ROUTES = {
   /** Legacy assessments list (v2) */
   ASSESSMENTS_V2: '/patient/assessments-v2',
   
-  /** Dialog/chat with AMY */
+  /** Dialog/chat with AI assistant */
   DIALOG: '/patient/dialog',
   
   /** User profile and settings */

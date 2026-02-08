@@ -1,7 +1,7 @@
 /**
  * Triage API Contracts - E6.6.2
  *
- * Versioned schemas for AMY triage endpoints.
+ * Versioned schemas for AI assistant triage endpoints.
  * Stable, testable, governance-ready contracts with strict validation.
  *
  * @module lib/api/contracts/triage

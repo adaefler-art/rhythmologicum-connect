@@ -38,6 +38,8 @@ const EXEMPT_PATHS = [
   '.audit',
   'docs/_archive',           // Archived documentation
   'docs/_archive_0_3',       // Archived documentation
+  'docs/mobile/imports',     // Design mockups
+  'docs/rhythm_mobile_v2',   // Design mockups
   'supabase/migrations',     // Database migrations (R-006)
   'apps/rhythm-legacy',      // Legacy code (R-006)
   'legacy',                  // Legacy code (R-006)
