@@ -1766,16 +1766,33 @@ COMMENT ON FUNCTION "public"."log_rls_violation"("table_name" "text", "operation
 
 
 
-CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) RETURNS TABLE("missing_count" integer)
+CREATE OR REPLACE FUNCTION "public"."meta_check_required_objects"("required_objects" "text"[]) RETURNS TABLE("missing_count" integer, "missing_sample" "text"[])
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
+declare
+  missing_total int;
+  missing_sample_local text[];
 begin
-  perform set_config('statement_timeout', '1500ms', true);
-  return query
+  perform set_config('statement_timeout', '1500', true);
+
   select count(*)::int
+  into missing_total
   from unnest(required_objects) v(x)
   where to_regclass(v.x) is null;
+
+  select array_agg(x)
+  into missing_sample_local
+  from (
+    select v.x
+    from unnest(required_objects) v(x)
+    where to_regclass(v.x) is null
+    limit 3
+  ) as sample;
+
+  missing_count := coalesce(missing_total, 0);
+  missing_sample := coalesce(missing_sample_local, '{}'::text[]);
+  return next;
 end;
 $$;
 
@@ -6611,6 +6628,10 @@ CREATE INDEX "tasks_org_status_created_idx" ON "public"."tasks" USING "btree" ("
 
 
 CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("organization_id");
+
+
+
+CREATE UNIQUE INDEX "uq_diagnosis_artifacts_run_type" ON "public"."diagnosis_artifacts" USING "btree" ("run_id", "artifact_type");
 
 
 
