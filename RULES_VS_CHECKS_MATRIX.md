@@ -12,7 +12,7 @@ This document maps each rule defined in `/docs/ASSISTANT_IDENTITY_RULES.md` to i
 |---------|------------------|--------------|----------------|--------|-------|
 | **R-001** | Single Source of Truth | `check-assistant-config.mjs` | Verifies ASSISTANT_CONFIG import usage | ✅ Implemented | Scans for hard-coded names vs config usage |
 | **R-002** | UI Components Must Use Config | `check-assistant-config.mjs` | Scans `.tsx`, `.ts` files for hard-coded names | ✅ Implemented | Reports violations with line numbers |
-| **R-003** | LLM Prompts Must Use Config | `check-assistant-config.mjs` | Checks prompt generation functions | ✅ Implemented | Validates `/lib/llm/prompts.ts` |
+| **R-003** | LLM Prompts Must Use Config | `check-assistant-config.mjs` | Global scan covers prompt files | ✅ Implemented | Includes `/lib/llm/prompts.ts` |
 | **R-004** | Documentation Must Reference Config | `check-assistant-config.mjs` | Warns about hard-coded names in `/docs` | ⚠️ Warning Only | Non-blocking, manual review recommended |
 | **R-005** | Comments May Reference Historical Names | N/A (Manual Review) | Allows "AMY" in comments with "backward compatibility" | ✅ Implemented | Check script ignores compat comments |
 | **R-006** | API Routes and DB Names Exempted | `check-assistant-config.mjs` | Exempts `/api/amy/*`, migrations, legacy code | ✅ Implemented | Explicit exemption list |

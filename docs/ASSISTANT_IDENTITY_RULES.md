@@ -153,12 +153,13 @@ The validation script (`check-assistant-config.mjs`) MUST:
 2. Detect hard-coded references to assistant names ("AMY", "Amy", "PAT", "Pat")
 3. Exclude allowed patterns (API routes, database files, comments with "backward compatibility")
 4. Report violations with:
-   - File path
-   - Line number
-   - Rule ID violated (e.g., "violates R-002")
-   - Context snippet
-5. Exit with code 1 if violations found (for CI integration)
-6. Exit with code 0 if only warnings (R-004) or no issues
+  - File path
+  - Line number
+  - Rule ID violated (e.g., "violates R-002")
+  - Context snippet
+5. Scan `/docs` markdown files (excluding archives) and emit warnings for hard-coded names (R-004)
+6. Exit with code 1 if violations found (for CI integration)
+7. Exit with code 0 if only warnings (R-004) or no issues
 
 ## Future Renaming Process
 

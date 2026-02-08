@@ -31,8 +31,12 @@ function normalizePathFragment(fragment) {
 const ASSISTANT_NAME_PATTERNS = [
   /\bAMY\b/g,        // "AMY" as whole word
   /\bAmy\b/g,        // "Amy" as whole word  
+  /\bPAT\b/g,        // "PAT" as whole word
+  /\bPat\b/g,        // "Pat" as whole word
   /["']AMY["']/g,    // "AMY" in quotes
   /["']Amy["']/g,    // "Amy" in quotes
+  /["']PAT["']/g,    // "PAT" in quotes
+  /["']Pat["']/g,    // "Pat" in quotes
 ]
 
 // Exempt paths (relative to project root)
@@ -57,9 +61,9 @@ const EXEMPT_PATHS = [
   'all-prs.json',            // PR data
   'all-issues.json',         // Issue data
   'issues.json',             // Issue data
-  '/docs/api/endpoint-catalog.json', // API catalog (contains routes)
-  '/apps/rhythm-studio-ui/public/dev/endpoint-catalog.json', // API catalog
-  '/apps/rhythm-patient-ui/public/dev/endpoint-catalog.json', // API catalog
+  'docs/api/endpoint-catalog.json', // API catalog (contains routes)
+  'apps/rhythm-studio-ui/public/dev/endpoint-catalog.json', // API catalog
+  'apps/rhythm-patient-ui/public/dev/endpoint-catalog.json', // API catalog
 ]
 
 const EXEMPT_PATH_SEGMENTS = [
@@ -74,7 +78,6 @@ const EXEMPT_PATH_SEGMENTS = [
 
 // Exempt file patterns
 const EXEMPT_FILE_PATTERNS = [
-  /\.md$/,                      // Markdown files (handled separately with warnings)
   /\.sql$/,                     // SQL files (database migrations)
   /endpoint-catalog\.json$/,    // API endpoint catalogs
   /-COMPLETE\.md$/,             // Completion docs
@@ -168,6 +171,7 @@ function checkFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8')
   const relativePath = normalizeRelativePath(filePath)
   const lines = content.split('\n')
+  let fileHasViolation = false
   
   // Check for hard-coded assistant names
   for (const pattern of ASSISTANT_NAME_PATTERNS) {
@@ -207,15 +211,46 @@ function checkFile(filePath) {
         rule: 'R-002',
         message: `Hard-coded assistant name found. Use ASSISTANT_CONFIG instead.`,
       })
+      fileHasViolation = true
     }
   }
   
   // Check if file should import ASSISTANT_CONFIG but doesn't
-  if (violations.length > 0) {
+  if (fileHasViolation) {
     if (!content.includes("from '@/lib/config/assistant'") && !content.includes('from "./config/assistant"')) {
       warnings.push({
         file: relativePath,
         message: 'File contains hard-coded assistant references but does not import ASSISTANT_CONFIG',
+      })
+    }
+  }
+}
+
+function isDocsMarkdown(filePath) {
+  const relativePath = normalizeRelativePath(filePath)
+  return relativePath.startsWith('docs/') && path.extname(relativePath) === '.md'
+}
+
+function checkDocsMarkdown(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8')
+  const relativePath = normalizeRelativePath(filePath)
+  const lines = content.split('\n')
+
+  for (const pattern of ASSISTANT_NAME_PATTERNS) {
+    let match
+    pattern.lastIndex = 0
+
+    while ((match = pattern.exec(content)) !== null) {
+      const beforeMatch = content.substring(0, match.index)
+      const lineNumber = beforeMatch.split('\n').length
+      const line = lines[lineNumber - 1]
+
+      warnings.push({
+        file: relativePath,
+        line: lineNumber,
+        message: 'Docs reference a hard-coded assistant name. Prefer generic wording or reference the config.',
+        content: line.trim(),
+        rule: 'R-004',
       })
     }
   }
@@ -234,6 +269,13 @@ function walkDirectory(dir) {
       }
     } else if (stat.isFile()) {
       const ext = path.extname(filePath)
+
+      if (ext === '.md') {
+        if (!isExemptPath(filePath) && isDocsMarkdown(filePath)) {
+          checkDocsMarkdown(filePath)
+        }
+        continue
+      }
       
       if (INCLUDE_EXTENSIONS.includes(ext)) {
         // Skip exempt paths
@@ -271,8 +313,15 @@ if (violations.length === 0 && warnings.length === 0) {
 if (warnings.length > 0) {
   console.log('⚠️  Warnings:\n')
   warnings.forEach((warning) => {
-    console.log(`  ${warning.file}`)
-    console.log(`    ${warning.message}\n`)
+    console.log(`  ${warning.file}${warning.line ? `:${warning.line}` : ''}`)
+    if (warning.rule) {
+      console.log(`    Rule: ${warning.rule}`)
+    }
+    console.log(`    ${warning.message}`)
+    if (warning.content) {
+      console.log(`    Code: ${warning.content}`)
+    }
+    console.log('')
   })
 }
 
@@ -280,7 +329,7 @@ if (violations.length > 0) {
   console.log('❌ Violations found:\n')
   violations.forEach((violation) => {
     console.log(`  ${violation.file}:${violation.line}`)
-    console.log(`    Rule: ${violation.rule}`)
+    console.log(`    Rule: violates ${violation.rule}`)
     console.log(`    ${violation.message}`)
     console.log(`    Code: ${violation.content}\n`)
   })
