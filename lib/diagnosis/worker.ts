@@ -557,10 +557,10 @@ export async function executeDiagnosisRun(
     let diagnosisArtifact: DiagnosisArtifact | null = null
 
     if (diagnosisPayload) {
-      const artifactData = {
+      const artifactData: Json = {
         run_id: runId,
         patient_id: run.patient_id,
-        diagnosis_result: diagnosisPayload,
+        diagnosis_result: serializeErrorDetails(diagnosisPayload),
         metadata: {
           ...baseMetadata,
           validation: validationMetadata,
@@ -569,8 +569,8 @@ export async function executeDiagnosisRun(
 
       const diagnosisArtifactResult = await persistArtifact({
         artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
-        artifact_data: artifactData as Json,
-        metadata: artifactData.metadata as Json,
+        artifact_data: artifactData,
+        metadata: (artifactData as { metadata?: Json }).metadata ?? null,
         risk_level: diagnosisResult?.risk_level ?? null,
         confidence_score: diagnosisResult?.confidence_score ?? null,
         primary_findings: diagnosisResult?.primary_findings ?? null,
