@@ -127,7 +127,6 @@ export function DialogScreenV2() {
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
-  const speakRef = useRef<SpeechSynthesisUtteranceLike | null>(null)
 
   useEffect(() => {
     setChatMessages(getStubbedConversation(context, assessmentId))
@@ -225,7 +224,6 @@ export function DialogScreenV2() {
       setIsSpeaking(false)
     }
 
-    speakRef.current = utterance
     setIsSpeaking(true)
     window.speechSynthesis.speak(utterance)
   }
