@@ -1,16 +1,18 @@
-# Anamnesis Rules vs. Checks Matrix — E75.7
+# Patient Record (Anamnesis) Rules vs. Checks Matrix — E75.7
 
 **Epic:** E75.7 — Contract + Docs + Check Alignment  
-**Purpose:** Comprehensive rules-to-checks traceability for the entire Anamnesis feature (E75.1–E75.6)  
+**Purpose:** Comprehensive rules-to-checks traceability for the entire Patient Record (Anamnesis) feature (E75.1–E75.6)  
 **Status:** ✅ Complete  
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-08
+
+**Note:** This feature uses "Patient Record" in UI-facing contexts and "anamnesis" in technical implementation (database, API, code). See Issue 4 for terminology update details.
 
 ---
 
 ## Overview
 
 This document provides complete bidirectional traceability between:
-- **Rules:** Requirements and constraints for the anamnesis feature
+- **Rules:** Requirements and constraints for the patient record (anamnesis) feature
 - **Checks:** Verification mechanisms (tests, scripts, CI) that validate the rules
 
 **Guardrail Principle:** Every rule must have a check, and every check must reference a rule.

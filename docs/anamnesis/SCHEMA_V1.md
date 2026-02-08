@@ -1,9 +1,11 @@
-# Anamnesis Schema V1
+# Patient Record (Anamnesis) Schema V1
 
 **Version:** 1.0  
-**Epic:** E75 — Anamnesis (Medical History) Feature  
+**Epic:** E75 — Patient Record (Anamnesis/Medical History) Feature  
 **Status:** Active  
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-02-08
+
+**UI Terminology:** In user-facing contexts, this feature is called "Patient Record". Database schema uses "anamnesis" for technical consistency. See Issue 4.
 
 ## Overview
 
