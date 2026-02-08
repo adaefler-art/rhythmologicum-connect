@@ -6,9 +6,10 @@ import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
 import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 /**
- * I2.2 — AMY Dialog MVP (I2.5 Navigation Consistency)
+ * I2.2 — Assistant Dialog MVP (I2.5 Navigation Consistency)
  * 
  * Entry Points:
  * - Dashboard Hero → /patient/dialog?context=dashboard
@@ -26,7 +27,7 @@ import { flagEnabled } from '@/lib/env/flags'
 
 interface StubbedMessage {
   id: string
-  sender: 'amy' | 'user'
+  sender: 'assistant' | 'user'
   text: string
   timestamp: string
 }
@@ -69,7 +70,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
     return [
       {
         id: '1',
-        sender: 'amy',
+        sender: 'assistant',
         text: 'Hallo! Welche Beschwerden stehen bei Ihnen aktuell im Vordergrund und seit wann bestehen sie?',
         timestamp: timestamp(5),
       },
@@ -81,7 +82,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
       },
       {
         id: '3',
-        sender: 'amy',
+        sender: 'assistant',
         text: 'Basierend auf Ihren Ergebnissen empfehle ich, mit kleinen Schritten zur Stressreduktion zu beginnen. Haben Sie bereits über die empfohlenen Ressourcen nachgedacht?',
         timestamp: timestamp(1),
       },
@@ -92,7 +93,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
     return [
       {
         id: '1',
-        sender: 'amy',
+        sender: 'assistant',
         text: 'Hallo, was führt Sie zu mir?',
         timestamp: timestamp(2),
       },
@@ -102,7 +103,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
   return [
     {
       id: '1',
-      sender: 'amy',
+      sender: 'assistant',
       text: 'Hallo, was fuehrt Sie zu mir?',
       timestamp: timestamp(2),
     },
@@ -273,8 +274,8 @@ export function DialogScreenV2() {
       }
 
       const assistantMessage: StubbedMessage = {
-        id: `amy-${Date.now()}`,
-        sender: 'amy',
+        id: `assistant-${Date.now()}`,
+        sender: 'assistant',
         text: replyText,
         timestamp: buildTimestamp(),
       }
@@ -301,7 +302,7 @@ export function DialogScreenV2() {
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-sky-600" />
               <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
-                Dialog mit AMY
+                Dialog mit {ASSISTANT_CONFIG.name}
               </p>
             </div>
             <h1 className="text-2xl font-semibold text-slate-900">
@@ -332,10 +333,10 @@ export function DialogScreenV2() {
                 {chatMessages.map((message) => (
                   <div
                     key={message.id}
-                    className={`p-4 ${message.sender === 'amy' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
+                    className={`p-4 ${message.sender === 'assistant' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
                   >
                     <div className="flex items-start gap-3">
-                      {message.sender === 'amy' && (
+                      {message.sender === 'assistant' && (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                           <Bot className="w-5 h-5 text-white" />
                         </div>
@@ -343,12 +344,12 @@ export function DialogScreenV2() {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-slate-900">
-                            {message.sender === 'amy' ? 'AMY' : 'Sie'}
+                            {message.sender === 'assistant' ? ASSISTANT_CONFIG.name : 'Sie'}
                           </span>
                           <span className="text-xs text-slate-500">{message.timestamp}</span>
                         </div>
                         <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
-                        {message.sender === 'amy' && isSpeechSupported && (
+                        {message.sender === 'assistant' && isSpeechSupported && (
                           <button
                             type="button"
                             onClick={() => handleSpeak(message.text)}
@@ -379,7 +380,7 @@ export function DialogScreenV2() {
                 </div>
                 <p className="text-sm text-slate-600">
                   {isChatEnabled
-                    ? 'Sie können AMY direkt schreiben. Ihre Nachricht wird verarbeitet.'
+                    ? `Sie können ${ASSISTANT_CONFIG.name} direkt schreiben. Ihre Nachricht wird verarbeitet.`
                     : 'Die interaktive Dialog-Funktion ist in dieser Umgebung nicht aktiviert.'}
                 </p>
               </div>
@@ -398,8 +399,8 @@ export function DialogScreenV2() {
               <textarea
                 placeholder={
                   isChatEnabled
-                    ? 'Ihre Nachricht an AMY...'
-                    : 'Ihre Nachricht an AMY (in Kürze verfügbar)...'
+                    ? `Ihre Nachricht an ${ASSISTANT_CONFIG.name}...`
+                    : `Ihre Nachricht an ${ASSISTANT_CONFIG.name} (in Kürze verfügbar)...`
                 }
                 rows={2}
                 value={input}

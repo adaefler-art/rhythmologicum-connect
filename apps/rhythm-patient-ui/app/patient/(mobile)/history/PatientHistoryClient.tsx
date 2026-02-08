@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { featureFlags } from '@/lib/featureFlags'
 import { CANONICAL_ROUTES } from '../utils/navigation'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 type RiskLevel = 'low' | 'moderate' | 'high' | 'pending' | null
 
@@ -682,12 +683,12 @@ export default function PatientHistoryClient() {
                   </div>
                 </div>
 
-                {/* AMY Text */}
+                {/* Assistant interpretation text */}
                 {featureFlags.AMY_ENABLED && amyText && (
                   <div className="rounded-lg border border-sky-100 bg-sky-50/50 px-4 py-3">
                     <div className="mb-2 flex items-center gap-2">
                       <h4 className="text-xs font-semibold text-sky-900">
-                        Einordnung von AMY
+                        Einordnung von {ASSISTANT_CONFIG.name}
                       </h4>
                       <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
                         KI-Assistenz
@@ -702,7 +703,7 @@ export default function PatientHistoryClient() {
                 {featureFlags.AMY_ENABLED && hasReport && !amyText && (
                   <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                     <p className="text-xs text-slate-600">
-                      Für diese Messung liegt noch kein AMY-Text vor.
+                      Für diese Messung liegt noch kein {ASSISTANT_CONFIG.name}-Text vor.
                     </p>
                   </div>
                 )}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card, Badge } from '@/lib/ui'
 import { Brain, MessageCircle } from 'lucide-react'
 import { getAmyInsights } from '@/lib/fetchClinician'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 type AmyMessage = {
   id: string
@@ -38,7 +39,7 @@ const formatDate = (isoString: string): string => {
 }
 
 const getRoleLabel = (role: AmyMessage['role']) => {
-  if (role === 'assistant') return 'AMY'
+  if (role === 'assistant') return ASSISTANT_CONFIG.name
   if (role === 'user') return 'Patient:in'
   return 'System'
 }
@@ -73,7 +74,7 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
         setDebugHint(debugHint ?? null)
         if (error) {
           if (!isMounted) return
-          setError(error.message || 'AMY-Konversationen konnten nicht geladen werden.')
+          setError(error.message || 'Konversationen konnten nicht geladen werden.')
           setConversations([])
           setSelectedId(null)
           return
@@ -86,8 +87,8 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
         setSelectedId(loaded[0]?.id ?? null)
       } catch (err) {
         if (!isMounted) return
-        console.error('[AmyInsightsSection] Fetch error:', err)
-        setError('AMY-Konversationen konnten nicht geladen werden.')
+        console.error('[AssistantInsightsSection] Fetch error:', err)
+        setError('Konversationen konnten nicht geladen werden.')
         setConversations([])
         setSelectedId(null)
       } finally {
@@ -113,10 +114,10 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
         <div className="flex items-center gap-2 mb-4">
           <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-            AMY Insights
+            {ASSISTANT_CONFIG.name} Insights
           </h2>
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">AMY-Konversationen werden geladen…</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Konversationen werden geladen…</p>
       </Card>
     )
   }
@@ -127,12 +128,12 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
         <div className="text-center py-8">
           <Brain className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
-            Keine AMY-Konversationen vorhanden
+            Keine Konversationen vorhanden
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {!isEnabled
-              ? 'AMY-Chat ist derzeit deaktiviert.'
-              : error || 'Für diese:n Patient:in liegen noch keine AMY-Konversationen vor.'}
+              ? 'Chat ist derzeit deaktiviert.'
+              : error || 'Für diese:n Patient:in liegen noch keine Konversationen vor.'}
           </p>
           {debugHint && (
             <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">{debugHint}</p>
@@ -146,7 +147,7 @@ export function AmyInsightsSection({ patientId, isEnabled = true }: AmyInsightsS
     <Card padding="lg" shadow="md">
       <div className="flex items-center gap-2 mb-4">
         <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">AMY Insights</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{ASSISTANT_CONFIG.name} Insights</h2>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">

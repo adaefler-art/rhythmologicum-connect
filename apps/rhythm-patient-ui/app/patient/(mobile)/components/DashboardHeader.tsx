@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { mobileTypography, Button } from '@/lib/ui/mobile-v2'
 import { MessageCircle } from '@/lib/ui/mobile-v2/icons'
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 export interface DashboardHeaderProps {
   /** Optional greeting name */
@@ -14,13 +15,13 @@ export interface DashboardHeaderProps {
  * 
  * Displays a greeting and subtitle for the dashboard.
  * Part of E6.5.4 implementation.
- * I2.2: Added "Chat with AMY" entry point
+ * I2.2: Added "Chat with assistant" entry point
  * 
  * Features:
  * - Optional personalized greeting
  * - Responsive typography
  * - Light mode only (Mobile v2)
- * - I2.2: Chat with AMY button (entry point to /patient/dialog?context=dashboard)
+ * - I2.2: Chat with assistant button (entry point to /patient/dialog?context=dashboard)
  * 
  * @example
  * <DashboardHeader greeting="Max" />
@@ -47,7 +48,7 @@ export function DashboardHeader({ greeting }: DashboardHeaderProps) {
           </p>
         </div>
         
-        {/* I2.2: Chat with AMY Entry Point */}
+        {/* I2.2: Chat with assistant entry point */}
         <Link href="/patient/dialog?context=dashboard">
           <Button 
             variant="secondary" 
@@ -55,8 +56,8 @@ export function DashboardHeader({ greeting }: DashboardHeaderProps) {
             className="flex items-center gap-2 whitespace-nowrap"
           >
             <MessageCircle className="w-4 h-4" />
-            <span className="hidden sm:inline">Chat mit AMY</span>
-            <span className="sm:hidden">AMY</span>
+            <span className="hidden sm:inline">Chat mit {ASSISTANT_CONFIG.name}</span>
+            <span className="sm:hidden">{ASSISTANT_CONFIG.name}</span>
           </Button>
         </Link>
       </div>

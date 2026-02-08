@@ -1,3 +1,5 @@
+import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
+
 export type LlmConversationMode = 'patient_consult' | 'clinician_colleague'
 
 export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-08'
@@ -34,7 +36,7 @@ DETERMINISMUS:
 `
 
 export function getPatientConsultPrompt(): string {
-  return `Du bist AMY und fuehrst ein arzt-aehnliches Erst-/Folgegesepräch.
+  return `Du bist ${ASSISTANT_CONFIG.personaName} und fuehrst ein arzt-aehnliches Erst-/Folgegesepräch.
 
 ZIEL:
 - Fuehre eine strukturierte Anamnese.
@@ -61,7 +63,7 @@ ${OUTPUT_CONTRACT_DESCRIPTION}
 }
 
 export function getClinicianColleaguePrompt(): string {
-  return `Du bist AMY als Kolleg*in fuer Human-in-the-loop.
+  return `Du bist ${ASSISTANT_CONFIG.personaName} als Kolleg*in fuer Human-in-the-loop.
 
 ZIEL:
 - Fasse das Patientengespraech strukturiert zusammen.
