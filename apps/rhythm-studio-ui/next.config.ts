@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
         destination: '/api/triage/:path*',
       },
       {
+        source: '/api/studio/:path*',
+        destination: '/api/studio/:path*',
+      },
+      {
         source: '/api/_meta/:path*',
         destination: '/api/meta/:path*',
       },
