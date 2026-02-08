@@ -385,20 +385,20 @@ export async function executeDiagnosisRun(
     const diagnosisPayload = extractDiagnosisPayload(mcpResponse)
     const diagnosisResultValidation = diagnosisPayload
       ? DiagnosisResultSchema.safeParse(diagnosisPayload)
-      : { success: false, error: null }
+      : null
     const promptValidation = diagnosisPayload
       ? validateDiagnosisPromptOutputV1(diagnosisPayload)
-      : { success: false, error: null }
+      : null
 
     const validationMetadata = {
-      ok: Boolean(diagnosisResultValidation.success || promptValidation.success),
-      schema: diagnosisResultValidation.success
+      ok: Boolean(diagnosisResultValidation?.success || promptValidation?.success),
+      schema: diagnosisResultValidation?.success
         ? 'diagnosis_result'
-        : promptValidation.success
+        : promptValidation?.success
           ? 'prompt_output_v1'
           : null,
       reason:
-        diagnosisResultValidation.success || promptValidation.success
+        diagnosisResultValidation?.success || promptValidation?.success
           ? null
           : 'schema_mismatch',
     }
@@ -412,7 +412,7 @@ export async function executeDiagnosisRun(
       })
     }
 
-    const diagnosisResult = diagnosisResultValidation.success
+    const diagnosisResult = diagnosisResultValidation?.success
       ? diagnosisResultValidation.data
       : null
 
