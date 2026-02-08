@@ -21,6 +21,7 @@ export {
   ChevronLeft,
   ChevronRight,
   Home,
+  Menu,
   
   // Actions
   Check,

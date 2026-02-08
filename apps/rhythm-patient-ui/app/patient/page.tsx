@@ -77,6 +77,6 @@ export default async function PatientIndexRedirect({
   }
 
   const query = buildQuery(searchParams)
-  // E6.4.2 AC2: Onboarding complete - redirect to dashboard (not funnels)
-  redirect(`/patient/dashboard${query}`)
+  // Issue 2: Chat-First Dashboard - redirect to dialog (PAT Chat) as primary entry point
+  redirect(`/patient/dialog${query}`)
 }

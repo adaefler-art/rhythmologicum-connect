@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { TopBarV2, type TopBarVariant } from './TopBarV2'
 import { BottomNavV2 } from '@/app/patient/(mobile)/BottomNavV2'
+import { HamburgerMenu } from './HamburgerMenu'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 interface MobileShellV2Props {
@@ -60,30 +62,36 @@ function getPageTitle(pathname: string): string {
 }
 
 /**
- * MobileShellV2 Component (I2.5 Navigation Consistency)
+ * MobileShellV2 Component (I2.5 Navigation Consistency + Issue 2 Chat-First)
  * 
  * Canonical mobile shell that wraps all v2 patient screens.
  * Handles:
  * - TopBar variant switching (tab/flow/result)
- * - BottomNav visibility (hidden on flow screens)
+ * - Hamburger menu navigation (Issue 2)
+ * - BottomNav hidden by default (Issue 2 - kept for potential re-enablement)
  * - Scroll container with fixed navigation
  * - Safe area padding for mobile devices
  * - Deterministic navigation callbacks (I2.5)
  * 
  * Route behavior:
- * - Tab screens: TopBar variant A, BottomNav visible
- * - Flow screens: TopBar variant B, BottomNav hidden, custom navigation
- * - Result screens: TopBar variant C, BottomNav visible
+ * - Tab screens: TopBar variant A with hamburger menu
+ * - Flow screens: TopBar variant B, custom navigation
+ * - Result screens: TopBar variant C
  * 
  * Navigation Semantics (I2.5):
  * - All back/close actions use canonical routes
  * - No browser history fallbacks
  * - Dialog always returns to dashboard
  * - Flows close to assessments list
+ * 
+ * Issue 2 Changes:
+ * - Hamburger menu is now primary navigation
+ * - Bottom bar is hidden (but not removed from code)
  */
 export function MobileShellV2({ children }: MobileShellV2Props) {
   const pathname = usePathname()
   const router = useRouter()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const variant = getTopBarVariant(pathname)
   const hideBottomNav = shouldHideBottomNav(pathname)
@@ -120,10 +128,14 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150">
+      {/* Hamburger Menu - Issue 2 */}
+      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+
       {/* TopBar - Always visible on mobile */}
       <TopBarV2 
         variant={variant} 
         title={title}
+        onBurgerClick={() => setIsMenuOpen(true)}
         onBackClick={variant === 'result' || pathname?.includes('/dialog') ? handleBackClick : undefined}
         onCloseClick={variant === 'flow' ? handleCloseClick : undefined}
       />
@@ -133,16 +145,18 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
         className="flex-1 overflow-y-auto"
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
-          paddingBottom: hideBottomNav
-            ? 'env(safe-area-inset-bottom, 0px)'
-            : 'calc(64px + env(safe-area-inset-bottom, 0px))',
+          // Issue 2: Bottom nav is hidden, no need for bottom padding
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
         {children}
       </main>
 
-      {/* BottomNav - Conditionally visible */}
-      {!hideBottomNav && <BottomNavV2 />}
+      {/* BottomNav - Hidden per Issue 2, but kept in code for potential re-enablement */}
+      {/* {!hideBottomNav && <BottomNavV2 />} */}
+      <div style={{ display: 'none' }}>
+        <BottomNavV2 />
+      </div>
     </div>
   )
 }
