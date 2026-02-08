@@ -152,8 +152,10 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
         {children}
       </main>
 
-      {/* BottomNav - Hidden per Issue 2, but kept in code for potential re-enablement */}
-      {/* {!hideBottomNav && <BottomNavV2 />} */}
+      {/* BottomNav - Hidden per Issue 2, but kept in code for potential re-enablement 
+          Note: Using display:none to preserve React component tree and state.
+          This allows for quick re-enablement via feature flag without code changes.
+          Requirement explicitly states: "deaktiviert, aber nicht entfernt" */}
       <div style={{ display: 'none' }}>
         <BottomNavV2 />
       </div>

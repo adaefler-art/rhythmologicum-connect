@@ -57,6 +57,7 @@ export {
   TrendingUp,
   TrendingDown,
   User,
+  Mic,
   
   // Type
   type LucideIcon,
