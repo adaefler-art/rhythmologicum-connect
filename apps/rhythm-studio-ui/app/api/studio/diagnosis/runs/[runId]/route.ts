@@ -130,19 +130,21 @@ export async function GET(_request: Request, context: RouteContext) {
 
     let artifact = diagnosisArtifact
     if (!artifact) {
-      const { data: mcpArtifact, error: mcpArtifactError } = await supabase
+      const { data: latestArtifact, error: latestArtifactError } = await supabase
         .from('diagnosis_artifacts')
         .select(
           'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
         )
         .eq('run_id', runId)
-        .eq('artifact_type', 'mcp_response')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
-      if (mcpArtifactError) {
-        console.error('[studio/diagnosis/runs/[runId] GET] Artifact query error:', mcpArtifactError)
+      if (latestArtifactError) {
+        console.error(
+          '[studio/diagnosis/runs/[runId] GET] Artifact query error:',
+          latestArtifactError,
+        )
         return NextResponse.json(
           {
             success: false,
@@ -155,7 +157,7 @@ export async function GET(_request: Request, context: RouteContext) {
         )
       }
 
-      artifact = mcpArtifact
+      artifact = latestArtifact
     }
 
     if (!artifact) {
