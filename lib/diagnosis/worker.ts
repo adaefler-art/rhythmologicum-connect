@@ -29,7 +29,8 @@ import {
   type DiagnosisArtifact,
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
-import { logError, logInfo } from '@/lib/logging/logger'
+import { validateDiagnosisPromptOutputV1 } from '@/lib/contracts/diagnosis-prompt'
+import { logInfo } from '@/lib/logging/logger'
 
 const MCP_TIMEOUT_MS = 60000
 
@@ -76,6 +77,89 @@ function serializeErrorDetails(error: unknown): Json {
   } catch {
     return String(error)
   }
+}
+
+function extractDiagnosisPayload(rawResponse: unknown): unknown {
+  if (!rawResponse || typeof rawResponse !== 'object') {
+    return null
+  }
+
+  const responseRecord = rawResponse as Record<string, unknown>
+  const responsePayload =
+    (responseRecord.data as Record<string, unknown> | undefined) ?? responseRecord
+
+  if (!responsePayload || typeof responsePayload !== 'object') {
+    return null
+  }
+
+  const payloadRecord = responsePayload as Record<string, unknown>
+  if (payloadRecord.diagnosis_result) {
+    return payloadRecord.diagnosis_result
+  }
+
+  if (payloadRecord.data && typeof payloadRecord.data === 'object') {
+    const nested = payloadRecord.data as Record<string, unknown>
+    if (nested.diagnosis_result) {
+      return nested.diagnosis_result
+    }
+  }
+
+  return null
+}
+
+function shouldSanitizeMcpResponse(rawResponse: unknown): boolean {
+  if (!rawResponse || typeof rawResponse !== 'object') {
+    return false
+  }
+
+  const responseRecord = rawResponse as Record<string, unknown>
+  const keys = Object.keys(responseRecord)
+  const sensitiveKeys = new Set([
+    'context_pack',
+    'context',
+    'patient_context',
+    'context_bundle',
+    'inputs',
+    'input',
+    'history',
+    'documents',
+    'attachments',
+    'notes',
+  ])
+
+  if (keys.some((key) => sensitiveKeys.has(key))) {
+    return true
+  }
+
+  try {
+    const size = JSON.stringify(rawResponse).length
+    return size > 50000
+  } catch {
+    return true
+  }
+}
+
+function sanitizeMcpResponse(rawResponse: unknown, diagnosisPayload: unknown): Json {
+  if (!rawResponse || typeof rawResponse !== 'object') {
+    return rawResponse as Json
+  }
+
+  const responseRecord = rawResponse as Record<string, unknown>
+  const responsePayload =
+    (responseRecord.data as Record<string, unknown> | undefined) ?? responseRecord
+  const payloadRecord =
+    responsePayload && typeof responsePayload === 'object'
+      ? (responsePayload as Record<string, unknown>)
+      : {}
+
+  const sanitized = {
+    run_id: payloadRecord.run_id ?? responseRecord.run_id ?? null,
+    patient_id: payloadRecord.patient_id ?? responseRecord.patient_id ?? null,
+    diagnosis_result: diagnosisPayload ?? null,
+    metadata: payloadRecord.metadata ?? responseRecord.metadata ?? null,
+  }
+
+  return sanitized as Json
 }
 
 /**
@@ -232,7 +316,7 @@ export async function executeDiagnosisRun(
 
       mcpResponse = await response.json()
 
-      if (!mcpResponse.success || !mcpResponse.data) {
+      if (!mcpResponse) {
         throw new Error('MCP response missing data')
       }
     } catch (mcpError) {
@@ -295,133 +379,149 @@ export async function executeDiagnosisRun(
     }
 
     // =========================================================================
-    // STEP 5: Validate diagnosis result schema
+    // STEP 5: Parse diagnosis payload + validate schema (non-fatal)
     // =========================================================================
     
-    let diagnosisResult
-    try {
-      diagnosisResult = DiagnosisResultSchema.parse(mcpResponse.data.diagnosis_result)
-    } catch (validationError) {
-      await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR,
-        message: 'Diagnosis result failed schema validation',
-        details: {
-          validationError: serializeErrorDetails(validationError),
-          receivedData: serializeErrorDetails(mcpResponse.data.diagnosis_result),
-        },
-      })
-      return {
-        success: false,
-        run_id: runId,
-        error: {
-          code: DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR,
-          message: 'Diagnosis result failed schema validation',
-          details: { validationError: serializeErrorDetails(validationError) },
-        },
-      }
+    const diagnosisPayload = extractDiagnosisPayload(mcpResponse)
+    const diagnosisResultValidation = diagnosisPayload
+      ? DiagnosisResultSchema.safeParse(diagnosisPayload)
+      : { success: false, error: null }
+    const promptValidation = diagnosisPayload
+      ? validateDiagnosisPromptOutputV1(diagnosisPayload)
+      : { success: false, error: null }
+
+    const validationMetadata = {
+      ok: Boolean(diagnosisResultValidation.success || promptValidation.success),
+      schema: diagnosisResultValidation.success
+        ? 'diagnosis_result'
+        : promptValidation.success
+          ? 'prompt_output_v1'
+          : null,
+      reason:
+        diagnosisResultValidation.success || promptValidation.success
+          ? null
+          : 'schema_mismatch',
     }
 
+    if (!validationMetadata.ok) {
+      logInfo('DIAGNOSIS_VALIDATION', {
+        run_id: runId,
+        trace_id: traceId,
+        ok: false,
+        error_code: DIAGNOSIS_ERROR_CODE.VALIDATION_ERROR,
+      })
+    }
+
+    const diagnosisResult = diagnosisResultValidation.success
+      ? diagnosisResultValidation.data
+      : null
+
     // =========================================================================
-    // STEP 6: Persist diagnosis artifact
+    // STEP 6: Persist diagnosis artifacts (mcp_response always)
     // =========================================================================
     
     const processingTimeMs = Date.now() - startTime
+    const responseRecord = mcpResponse as Record<string, unknown>
+    const responsePayload =
+      (responseRecord.data as Record<string, unknown> | undefined) ?? responseRecord
+    const mcpRunId =
+      (responsePayload && (responsePayload as Record<string, unknown>).run_id) ||
+      responseRecord.run_id ||
+      null
+    const responseTraceId =
+      (responsePayload && (responsePayload as Record<string, unknown>).trace_id) ||
+      responseRecord.trace_id ||
+      null
 
-    const artifactData = {
-      run_id: runId,
-      patient_id: run.patient_id,
-      diagnosis_result: diagnosisResult,
-      metadata: {
-        mcp_run_id: mcpResponse.data.run_id,
-        run_version: mcpResponse.version?.run_version,
-        prompt_version: mcpResponse.version?.prompt_version,
-        executed_at: new Date().toISOString(),
-        processing_time_ms: processingTimeMs,
-        trace_id: traceId,
-      },
+    const rawMcpResponse = shouldSanitizeMcpResponse(mcpResponse)
+      ? sanitizeMcpResponse(mcpResponse, diagnosisPayload)
+      : (mcpResponse as Json)
+
+    const baseMetadata = {
+      mcp_run_id: mcpRunId,
+      executed_at: new Date().toISOString(),
+      processing_time_ms: processingTimeMs,
+      trace_id: traceId,
+      response_trace_id: responseTraceId,
     }
 
     const persistStart = Date.now()
-    const { data: existingArtifact, error: existingArtifactError } = await adminClient
-      .from('diagnosis_artifacts')
-      .select('id')
-      .eq('run_id', runId)
-      .eq('artifact_type', ARTIFACT_TYPE.DIAGNOSIS_JSON)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
 
-    if (existingArtifactError) {
-      logInfo('DIAG_ARTIFACT_PERSIST', {
-        run_id: runId,
-        trace_id: traceId,
-        ok: false,
-        error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
-        elapsed_ms: Date.now() - persistStart,
-      })
-      await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
-        message: 'Failed to check existing diagnosis artifacts',
-        details: {
-          trace_id: traceId,
-          existingArtifactError: serializeErrorDetails(existingArtifactError),
-        },
-      })
-      return {
-        success: false,
-        run_id: runId,
-        error: {
-          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
-          message: 'Failed to check existing diagnosis artifacts',
-          details: {
-            trace_id: traceId,
-            existingArtifactError: serializeErrorDetails(existingArtifactError),
-          },
-        },
+    const persistArtifact = async (payload: {
+      artifact_type: typeof ARTIFACT_TYPE[keyof typeof ARTIFACT_TYPE]
+      artifact_data: Json
+      metadata: Json
+      risk_level?: string | null
+      confidence_score?: number | null
+      primary_findings?: string[] | null
+      recommendations_count?: number | null
+    }) => {
+      const { data: existingArtifact, error: existingArtifactError } = await adminClient
+        .from('diagnosis_artifacts')
+        .select('id')
+        .eq('run_id', runId)
+        .eq('artifact_type', payload.artifact_type)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (existingArtifactError) {
+        return { artifact: null, error: existingArtifactError }
       }
+
+      const artifactPayload = {
+        run_id: runId,
+        patient_id: run.patient_id,
+        artifact_type: payload.artifact_type,
+        artifact_data: payload.artifact_data,
+        schema_version: DEFAULT_SCHEMA_VERSION,
+        created_by: run.clinician_id,
+        risk_level: payload.risk_level ?? null,
+        confidence_score: payload.confidence_score ?? null,
+        primary_findings: payload.primary_findings ?? null,
+        recommendations_count: payload.recommendations_count ?? null,
+        metadata: payload.metadata,
+      }
+
+      const { data: artifact, error: artifactError } = existingArtifact
+        ? await adminClient
+            .from('diagnosis_artifacts')
+            .update(artifactPayload)
+            .eq('id', existingArtifact.id)
+            .select()
+            .single()
+        : await adminClient
+            .from('diagnosis_artifacts')
+            .insert(artifactPayload)
+            .select()
+            .single()
+
+      return { artifact, error: artifactError }
     }
 
-    const artifactPayload = {
-      run_id: runId,
-      patient_id: run.patient_id,
-      artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
-      artifact_data: artifactData,
-      schema_version: DEFAULT_SCHEMA_VERSION,
-      created_by: run.clinician_id,
-      risk_level: diagnosisResult.risk_level,
-      confidence_score: diagnosisResult.confidence_score,
-      primary_findings: diagnosisResult.primary_findings,
-      recommendations_count: diagnosisResult.recommendations.length,
-      metadata: artifactData.metadata,
-    }
+    const mcpArtifactResult = await persistArtifact({
+      artifact_type: ARTIFACT_TYPE.MCP_RESPONSE,
+      artifact_data: rawMcpResponse,
+      metadata: baseMetadata,
+    })
 
-    const { data: artifact, error: artifactError } = existingArtifact
-      ? await adminClient
-          .from('diagnosis_artifacts')
-          .update(artifactPayload)
-          .eq('id', existingArtifact.id)
-          .select()
-          .single()
-      : await adminClient
-          .from('diagnosis_artifacts')
-          .insert(artifactPayload)
-          .select()
-          .single()
-
-    if (artifactError || !artifact) {
+    if (mcpArtifactResult.error || !mcpArtifactResult.artifact) {
       logInfo('DIAG_ARTIFACT_PERSIST', {
         run_id: runId,
         trace_id: traceId,
+        mcp_run_id: mcpRunId,
         ok: false,
         error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        artifact_type: ARTIFACT_TYPE.MCP_RESPONSE,
         elapsed_ms: Date.now() - persistStart,
       })
       await updateRunAsFailed(adminClient, runId, {
         code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
-        message: 'Failed to persist diagnosis artifact',
+        message: 'Failed to persist MCP response artifact',
         details: {
           trace_id: traceId,
-          artifactError: serializeErrorDetails(artifactError),
+          mcp_run_id: mcpRunId ?? null,
+          artifactError: serializeErrorDetails(mcpArtifactResult.error),
         },
       })
       return {
@@ -429,10 +529,11 @@ export async function executeDiagnosisRun(
         run_id: runId,
         error: {
           code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
-          message: 'Failed to persist diagnosis artifact',
+          message: 'Failed to persist MCP response artifact',
           details: {
             trace_id: traceId,
-            artifactError: serializeErrorDetails(artifactError),
+            mcp_run_id: mcpRunId ?? null,
+            artifactError: serializeErrorDetails(mcpArtifactResult.error),
           },
         },
       }
@@ -441,9 +542,81 @@ export async function executeDiagnosisRun(
     logInfo('DIAG_ARTIFACT_PERSIST', {
       run_id: runId,
       trace_id: traceId,
+      mcp_run_id: mcpRunId,
+      artifact_id: mcpArtifactResult.artifact.id,
       ok: true,
+      artifact_type: ARTIFACT_TYPE.MCP_RESPONSE,
       elapsed_ms: Date.now() - persistStart,
     })
+
+    let diagnosisArtifact: DiagnosisArtifact | null = null
+
+    if (diagnosisPayload) {
+      const artifactData = {
+        run_id: runId,
+        patient_id: run.patient_id,
+        diagnosis_result: diagnosisPayload,
+        metadata: {
+          ...baseMetadata,
+          validation: validationMetadata,
+        },
+      }
+
+      const diagnosisArtifactResult = await persistArtifact({
+        artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
+        artifact_data: artifactData as Json,
+        metadata: artifactData.metadata as Json,
+        risk_level: diagnosisResult?.risk_level ?? null,
+        confidence_score: diagnosisResult?.confidence_score ?? null,
+        primary_findings: diagnosisResult?.primary_findings ?? null,
+        recommendations_count: diagnosisResult?.recommendations.length ?? null,
+      })
+
+      if (diagnosisArtifactResult.error || !diagnosisArtifactResult.artifact) {
+        logInfo('DIAG_ARTIFACT_PERSIST', {
+          run_id: runId,
+          trace_id: traceId,
+          mcp_run_id: mcpRunId,
+          ok: false,
+          error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+          artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
+          elapsed_ms: Date.now() - persistStart,
+        })
+        await updateRunAsFailed(adminClient, runId, {
+          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+          message: 'Failed to persist diagnosis artifact',
+          details: {
+            trace_id: traceId,
+            mcp_run_id: mcpRunId ?? null,
+            artifactError: serializeErrorDetails(diagnosisArtifactResult.error),
+          },
+        })
+        return {
+          success: false,
+          run_id: runId,
+          error: {
+            code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+            message: 'Failed to persist diagnosis artifact',
+            details: {
+              trace_id: traceId,
+              mcp_run_id: mcpRunId ?? null,
+              artifactError: serializeErrorDetails(diagnosisArtifactResult.error),
+            },
+          },
+        }
+      }
+
+      diagnosisArtifact = diagnosisArtifactResult.artifact
+      logInfo('DIAG_ARTIFACT_PERSIST', {
+        run_id: runId,
+        trace_id: traceId,
+        mcp_run_id: mcpRunId,
+        artifact_id: diagnosisArtifact.id,
+        ok: true,
+        artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
+        elapsed_ms: Date.now() - persistStart,
+      })
+    }
 
     // =========================================================================
     // STEP 7: Update run as completed
@@ -454,7 +627,7 @@ export async function executeDiagnosisRun(
       .update({
         status: DIAGNOSIS_RUN_STATUS.COMPLETED,
         completed_at: new Date().toISOString(),
-        mcp_run_id: mcpResponse.data.run_id,
+        mcp_run_id: mcpRunId ?? null,
         processing_time_ms: processingTimeMs,
       })
       .eq('id', runId)
@@ -467,7 +640,7 @@ export async function executeDiagnosisRun(
     return {
       success: true,
       run_id: runId,
-      artifact_id: artifact.id,
+      artifact_id: diagnosisArtifact?.id ?? mcpArtifactResult.artifact.id,
     }
 
   } catch (unexpectedError) {
