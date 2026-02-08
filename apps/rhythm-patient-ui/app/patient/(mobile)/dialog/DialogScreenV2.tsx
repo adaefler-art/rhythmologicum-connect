@@ -50,7 +50,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
       {
         id: '1',
         sender: 'amy',
-        text: 'Hallo! Ich habe Ihre Assessment-Ergebnisse analysiert. Wie geht es Ihnen damit?',
+        text: 'Hallo! Welche Beschwerden stehen bei Ihnen aktuell im Vordergrund und seit wann bestehen sie?',
         timestamp: timestamp(5),
       },
       {
@@ -73,7 +73,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
       {
         id: '1',
         sender: 'amy',
-        text: 'Willkommen! Ich bin AMY, Ihre persönliche Assistentin für Stress und Resilienz. Wie kann ich Ihnen heute helfen?',
+        text: 'Hallo! Was fuehrt Sie heute her und seit wann bestehen die Beschwerden?',
         timestamp: timestamp(2),
       },
     ]
