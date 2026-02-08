@@ -1,7 +1,10 @@
 // lib/amyFallbacks.ts
 /**
- * Fallback texts for AMY-LLM integration failures
+ * Fallback texts for AI assistant LLM integration failures
  * These texts are used when the LLM is unavailable or returns an error
+ * 
+ * Note: File name retains "amy" prefix for backward compatibility.
+ * The actual assistant identity is configured in /lib/config/assistant.ts
  */
 
 export type RiskLevel = 'low' | 'moderate' | 'high' | null;

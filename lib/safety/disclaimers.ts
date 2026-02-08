@@ -9,6 +9,9 @@
  * - Consistent emergency numbers across all contexts
  * - Non-emergency disclaimers prevent misuse
  * - Red flag escalations use stronger, more urgent language
+ * 
+ * Note: References to "AMY" in variable names retained for backward compatibility.
+ * The actual assistant identity is configured in /lib/config/assistant.ts
  */
 
 /**
@@ -34,8 +37,8 @@ export const EMERGENCY_CONTACTS = {
 } as const
 
 /**
- * Non-emergency disclaimer for dashboard and general AMY interactions
- * Use this near AMY composer and general triage entry points
+ * Non-emergency disclaimer for dashboard and general AI assistant interactions
+ * Use this near assistant composer and general triage entry points
  */
 export const NON_EMERGENCY_DISCLAIMER = {
   title: 'Hinweis',
@@ -44,7 +47,7 @@ export const NON_EMERGENCY_DISCLAIMER = {
 
 /**
  * Standard emergency guidance (moderate urgency)
- * Use in AMY composer when ESCALATE tier is detected
+ * Use in assistant composer when ESCALATE tier is detected
  */
 export const STANDARD_EMERGENCY_GUIDANCE = {
   title: 'Bei akuten Notfällen',

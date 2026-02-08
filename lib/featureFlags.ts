@@ -5,8 +5,8 @@
  * Flags can be controlled via environment variables (NEXT_PUBLIC_FEATURE_*).
  * 
  * Environment variables:
- * - NEXT_PUBLIC_FEATURE_AMY_ENABLED: Enable/disable AMY AI assistant (default: true)
- * - NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: Enable/disable AMY chat widget (E73.8) (default: false)
+ * - NEXT_PUBLIC_FEATURE_AMY_ENABLED: Enable/disable AI assistant (default: true)
+ * - NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: Enable/disable AI assistant chat widget (E73.8) (default: false)
  * - NEXT_PUBLIC_FEATURE_CLINICIAN_DASHBOARD_ENABLED: Enable/disable clinician dashboard (default: true)
  * - NEXT_PUBLIC_FEATURE_CHARTS_ENABLED: Enable/disable charts in clinician views (default: true)
  * - NEXT_PUBLIC_FEATURE_PROCESSING_RESULTS_ENABLED: Enable/disable processing results endpoint (default: false)
@@ -16,6 +16,9 @@
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_V1_ENABLED: Enable/disable diagnosis MCP flow (E76.x) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PROMPT_ENABLED: Enable/disable diagnosis prompt API (E76.5) (default: false)
  * - NEXT_PUBLIC_FEATURE_DIAGNOSIS_PATIENT_ENABLED: Enable/disable diagnosis patient UI (E76.6) (default: false)
+ * 
+ * Note: Variable names retain "AMY" prefix for backward compatibility with existing environments.
+ * The actual assistant identity is configured in /lib/config/assistant.ts
  */
 
 import { env } from '@/lib/env'

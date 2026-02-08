@@ -166,10 +166,11 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 ## AI Integration (Anthropic Claude)
 
 ### Assessment Analysis
-- AMY (Assessment Management Yielder) uses Claude API
+- AI Assistant uses Claude API for assessment analysis
 - Fallback responses available in `lib/amyFallbacks.ts`
-- API route: `/app/api/amy/stress-report/`
+- API route: `/app/api/amy/stress-report/` (route name kept for backward compatibility)
 - Handles stress scoring, risk levels, and report generation
+- Assistant identity configured in `/lib/config/assistant.ts`
 
 ### Best Practices
 - Always have fallback responses for API failures
