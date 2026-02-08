@@ -369,25 +369,19 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     }))
 
     try {
-      const response = await fetch(`/api/studio/diagnosis/runs/${runId}/artifact`)
-
-      if (response.status === 404) {
-        setArtifactStates((prev) => ({
-          ...prev,
-          [runId]: {
-            status: 'empty',
-            message: 'Noch kein Ergebnis',
-          },
-        }))
-        return
-      }
+      const response = await fetch(`/api/studio/diagnosis/runs/${runId}`)
 
       if (!response.ok) {
         setArtifactStates((prev) => ({
           ...prev,
           [runId]: {
             status: 'error',
-            message: response.status === 403 ? 'Keine Berechtigung' : 'Fehler beim Laden des Ergebnisses',
+            message:
+              response.status === 403
+                ? 'Keine Berechtigung'
+                : response.status === 404
+                  ? 'Run nicht gefunden'
+                  : 'Fehler beim Laden des Ergebnisses',
           },
         }))
         return
@@ -405,15 +399,27 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         return
       }
 
+      const payload = result.data?.result ?? null
+      if (!payload) {
+        setArtifactStates((prev) => ({
+          ...prev,
+          [runId]: {
+            status: 'empty',
+            message: 'Ergebnis noch nicht verfuegbar',
+          },
+        }))
+        return
+      }
+
       setArtifactStates((prev) => ({
         ...prev,
         [runId]: {
           status: 'success',
-          data: result.data,
+          data: payload,
         },
       }))
     } catch (err) {
-      console.error('[DiagnosisSection] Artifact error:', err)
+      console.error('[DiagnosisSection] Result error:', err)
       setArtifactStates((prev) => ({
         ...prev,
         [runId]: {
@@ -592,6 +598,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewArtifact(run.id)}
+                        disabled={run.status !== 'completed'}
                       >
                         {isExpanded ? 'Ausblenden' : 'View Result'}
                       </Button>

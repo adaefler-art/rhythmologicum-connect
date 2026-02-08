@@ -62,6 +62,7 @@
     "verify:e71": "npm run build && node scripts/verify-e71.mjs",
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
     "verify:legacy": "node scripts/verify-legacy-ghosting.mjs",
+    "verify:diagnosis:smoke": "node scripts/verify/verify-diagnosis-smoke.mjs",
     "db:typegen": "pwsh -File scripts/db/typegen.ps1 -Generate",
     "db:typegen:verify": "pwsh -File scripts/db/typegen.ps1 -Verify",
     "db:reset": "supabase db reset",

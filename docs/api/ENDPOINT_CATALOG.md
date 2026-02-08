@@ -306,7 +306,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/studio/diagnosis/health | GET | clinician |  | 1 | yes - Diagnosis health probe (no callsite in this branch) | apps/rhythm-studio-ui/app/api/studio/diagnosis/health/route.ts |
 | /api/studio/diagnosis/prompt | GET, POST | clinician | diagnosis:prompt | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/prompt/route.ts |
 | /api/studio/diagnosis/queue | POST | clinician | diagnosis:queue | 2 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/queue/route.ts |
-| /api/studio/diagnosis/runs/[runId]/artifact | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts |
+| /api/studio/diagnosis/runs/[runId] | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/route.ts |
+| /api/studio/diagnosis/runs/[runId]/artifact | GET | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/artifact/route.ts |
 | /api/studio/patients/[patientId]/anamnesis/export.json | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/studio/patients/[patientId]/anamnesis/export.json/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 |  | apps/rhythm-legacy/app/api/support-cases/route.ts |
 | /api/support-cases | GET, POST | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/support-cases/route.ts |

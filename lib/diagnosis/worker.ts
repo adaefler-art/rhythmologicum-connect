@@ -13,6 +13,7 @@
  */
 
 import 'server-only'
+import crypto from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/lib/types/supabase'
 import { env } from '@/lib/env'
@@ -88,6 +89,7 @@ export async function executeDiagnosisRun(
   runId: string,
 ): Promise<DiagnosisExecutionResult> {
   const startTime = Date.now()
+  const traceId = crypto.randomUUID()
 
   try {
     // =========================================================================
@@ -334,25 +336,62 @@ export async function executeDiagnosisRun(
         prompt_version: mcpResponse.version?.prompt_version,
         executed_at: new Date().toISOString(),
         processing_time_ms: processingTimeMs,
+        trace_id: traceId,
       },
     }
 
-    const { data: artifact, error: artifactError } = await adminClient
+    const { data: existingArtifact, error: existingArtifactError } = await adminClient
       .from('diagnosis_artifacts')
-      .insert({
-        run_id: runId,
-        patient_id: run.patient_id,
-        artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
-        artifact_data: artifactData,
-        schema_version: DEFAULT_SCHEMA_VERSION,
-        created_by: run.clinician_id,
-        risk_level: diagnosisResult.risk_level,
-        confidence_score: diagnosisResult.confidence_score,
-        primary_findings: diagnosisResult.primary_findings,
-        recommendations_count: diagnosisResult.recommendations.length,
+      .select('id')
+      .eq('run_id', runId)
+      .eq('artifact_type', ARTIFACT_TYPE.DIAGNOSIS_JSON)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingArtifactError) {
+      await updateRunAsFailed(adminClient, runId, {
+        code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+        message: 'Failed to check existing diagnosis artifacts',
+        details: { existingArtifactError: serializeErrorDetails(existingArtifactError) },
       })
-      .select()
-      .single()
+      return {
+        success: false,
+        run_id: runId,
+        error: {
+          code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+          message: 'Failed to check existing diagnosis artifacts',
+          details: { existingArtifactError: serializeErrorDetails(existingArtifactError) },
+        },
+      }
+    }
+
+    const artifactPayload = {
+      run_id: runId,
+      patient_id: run.patient_id,
+      artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
+      artifact_data: artifactData,
+      schema_version: DEFAULT_SCHEMA_VERSION,
+      created_by: run.clinician_id,
+      risk_level: diagnosisResult.risk_level,
+      confidence_score: diagnosisResult.confidence_score,
+      primary_findings: diagnosisResult.primary_findings,
+      recommendations_count: diagnosisResult.recommendations.length,
+      metadata: artifactData.metadata,
+    }
+
+    const { data: artifact, error: artifactError } = existingArtifact
+      ? await adminClient
+          .from('diagnosis_artifacts')
+          .update(artifactPayload)
+          .eq('id', existingArtifact.id)
+          .select()
+          .single()
+      : await adminClient
+          .from('diagnosis_artifacts')
+          .insert(artifactPayload)
+          .select()
+          .single()
 
     if (artifactError || !artifact) {
       await updateRunAsFailed(adminClient, runId, {
