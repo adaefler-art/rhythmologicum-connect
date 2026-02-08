@@ -47,7 +47,7 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
 type SpeechSynthesisUtteranceLike = {
   lang: string
   text: string
-  onend: (() => void) | null
+  onend: ((event: unknown) => void) | null
   onerror: ((event: unknown) => void) | null
 }
 
