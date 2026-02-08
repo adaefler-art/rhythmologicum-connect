@@ -37,7 +37,7 @@ export const CANONICAL_ROUTES = {
   /** Results overview */
   RESULTS: '/patient/results-v2',
   
-  /** Anamnese Timeline (E75.3) */
+  /** Patient Record Timeline (E75.3) */
   ANAMNESE_TIMELINE: '/patient/anamnese-timeline',
 } as const
 
@@ -207,7 +207,7 @@ export function getNearestCanonicalRoute(path: string): string {
     return CANONICAL_ROUTES.RESULTS
   }
   
-  // Anamnese routes (E75.3)
+  // Patient Record routes (E75.3)
   if (pathWithoutQuery.startsWith('/patient/anamnese-timeline')) {
     return CANONICAL_ROUTES.ANAMNESE_TIMELINE
   }

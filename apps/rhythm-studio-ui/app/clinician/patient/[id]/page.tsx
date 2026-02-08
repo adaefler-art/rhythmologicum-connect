@@ -570,7 +570,7 @@ export default function PatientDetailPage() {
         <TabsList>
           <TabTrigger value="overview">Overview</TabTrigger>
           <TabTrigger value="assessments">Assessments</TabTrigger>
-          <TabTrigger value="anamnese">Anamnese</TabTrigger>
+          <TabTrigger value="anamnese">Patient Record</TabTrigger>
           <TabTrigger value="diagnosis">Diagnosis</TabTrigger>
           <TabTrigger value="insights">{ASSISTANT_CONFIG.name} Insights</TabTrigger>
           <TabTrigger value="actions">Actions</TabTrigger>
@@ -903,7 +903,7 @@ export default function PatientDetailPage() {
           )}
         </TabContent>
 
-        {/* Anamnese Tab - E75.4 */}
+        {/* Patient Record Tab - E75.4 */}
         <TabContent value="anamnese">
           <AnamnesisSection patientId={patientProfileId} />
         </TabContent>

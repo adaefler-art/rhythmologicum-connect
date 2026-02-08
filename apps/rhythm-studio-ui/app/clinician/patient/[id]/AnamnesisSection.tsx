@@ -115,7 +115,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         } else if (error.status === 403) {
           setError('Keine Berechtigung für diesen Patienten')
         } else {
-          setError(error.message || 'Fehler beim Laden der Anamnese-Einträge')
+          setError(error.message || 'Fehler beim Laden der Patient Record-Einträge')
         }
         return
       }
@@ -133,7 +133,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       }
     } catch (err) {
       console.error('[AnamnesisSection] Fetch error:', err)
-      setError('Fehler beim Laden der Anamnese-Einträge')
+      setError('Fehler beim Laden der Patient Record-Einträge')
     } finally {
       setIsLoading(false)
     }
@@ -142,7 +142,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const buildSuggestedText = (facts: SuggestedFact[]) => {
     if (facts.length === 0) return ''
     const lines = facts.map((fact) => `- ${fact.label}: ${fact.value}`)
-    return ['Anamnese (Vorschlag)', ...lines].join('\n')
+    return ['Patient Record (Vorschlag)', ...lines].join('\n')
   }
 
   const openSuggestedPreview = () => {
@@ -163,7 +163,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
     try {
       const text = buildSuggestedText(facts)
-      const title = `Anamnese Vorschlag ${new Date().toLocaleDateString('de-DE')}`
+      const title = `Patient Record Vorschlag ${new Date().toLocaleDateString('de-DE')}`
 
       const { error } = await postAnamnesis(patientId, { text, sources: facts, title })
 
@@ -363,11 +363,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Anamnese
+            Patient Record
           </h2>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Anamnese-Einträge werden geladen…
+          Patient Record-Einträge werden geladen…
         </p>
       </Card>
     )
@@ -379,7 +379,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Anamnese
+            Patient Record
           </h2>
         </div>
         <div className="text-center py-6">
@@ -406,7 +406,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Aktuelle Anamnese
+            Aktuelle Patient Record
           </h2>
         </div>
 
@@ -436,7 +436,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
               </p>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Keine Anamnese-Inhalte vorhanden.
+                Keine Patient Record-Inhalte vorhanden.
               </p>
             )}
             {getContentSources(latestEntry.content).length > 0 && (
@@ -458,7 +458,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           <div className="text-center py-6">
             <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Noch keine Anamnese-Version vorhanden
+              Noch keine Patient Record-Version vorhanden
             </p>
           </div>
         )}
@@ -530,7 +530,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Anamnese
+              Patient Record
             </h2>
           </div>
           <Button
@@ -547,7 +547,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           <div className="text-center py-6">
             <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Noch keine Anamnese-Einträge vorhanden
+              Noch keine Patient Record-Einträge vorhanden
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
               Fügen Sie einen neuen Eintrag hinzu, um zu beginnen
@@ -623,7 +623,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       <Modal
         isOpen={isSuggestedPreviewOpen}
         onClose={() => setIsSuggestedPreviewOpen(false)}
-        title="Vorschau: neue Anamnese-Version"
+        title="Vorschau: neue Patient Record-Version"
         size="xl"
         footer={
           <>
@@ -684,7 +684,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           setIsAddDialogOpen(false)
           resetForm()
         }}
-        title="Neuer Anamnese-Eintrag"
+        title="Neuer Patient Record-Eintrag"
         size="xl"
         footer={
           <>
@@ -743,7 +743,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <Textarea
               value={formContent}
               onChange={(e) => setFormContent(e.target.value)}
-              placeholder="Detaillierte Informationen zum Anamnese-Eintrag..."
+              placeholder="Detaillierte Informationen zum Patient Record-Eintrag..."
               rows={6}
             />
           </FormField>
@@ -767,7 +767,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           setSelectedEntry(null)
           resetForm()
         }}
-        title="Anamnese-Eintrag bearbeiten"
+        title="Patient Record-Eintrag bearbeiten"
         size="xl"
         footer={
           <>
@@ -827,7 +827,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <Textarea
               value={formContent}
               onChange={(e) => setFormContent(e.target.value)}
-              placeholder="Detaillierte Informationen zum Anamnese-Eintrag..."
+              placeholder="Detaillierte Informationen zum Patient Record-Eintrag..."
               rows={6}
             />
           </FormField>
