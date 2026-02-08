@@ -86,7 +86,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
       {
         id: '1',
         sender: 'amy',
-        text: 'Hallo! Was fuehrt Sie heute her und seit wann bestehen die Beschwerden?',
+        text: 'Hallo, was fuehrt Sie zu mir?',
         timestamp: timestamp(2),
       },
     ]
@@ -96,7 +96,7 @@ function getStubbedConversation(context: string | null, assessmentId: string | n
     {
       id: '1',
       sender: 'amy',
-      text: 'Hallo! Was fuehrt Sie heute her und seit wann bestehen die Beschwerden?',
+      text: 'Hallo, was fuehrt Sie zu mir?',
       timestamp: timestamp(2),
     },
   ]
@@ -320,68 +320,37 @@ export function DialogScreenV2() {
             </div>
           </Card>
 
-          {/* Quick Actions - I2.5: Use canonical routes */}
-          <Card padding="md" shadow="sm">
-            <h2 className="text-base font-semibold text-slate-900 mb-3">
-              Schnelle Hilfe
-            </h2>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href={CANONICAL_ROUTES.DASHBOARD} className="flex-1">
-                <Button variant="secondary" size="md" fullWidth>
-                  Zurück zum Dashboard
-                </Button>
-              </Link>
-              {context === 'results' && (
-                <Link href={CANONICAL_ROUTES.RESULTS} className="flex-1">
-                  <Button variant="secondary" size="md" fullWidth>
-                    Zu den Ergebnissen
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </Card>
         </div>
 
         {/* Chat Input */}
-        <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 pb-6 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
-          <Card padding="md" shadow="sm" className="border-2 border-dashed border-slate-200">
-            <div className="space-y-3">
+        <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white/95 px-4 pb-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="flex items-end gap-2">
               <textarea
                 placeholder={
                   isChatEnabled
                     ? 'Ihre Nachricht an AMY...'
                     : 'Ihre Nachricht an AMY (in Kürze verfügbar)...'
                 }
-                rows={3}
+                rows={2}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 disabled={!isChatEnabled || isSending || isDictating}
-                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 resize-none"
+                className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
-              {dictationError && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                  <p className="text-sm text-rose-800">{dictationError}</p>
-                </div>
-              )}
-              {sendError && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                  <p className="text-sm text-rose-800">{sendError}</p>
-                </div>
-              )}
               <Button
                 variant="primary"
-                size="md"
-                fullWidth
+                size="sm"
                 onClick={handleSend}
                 disabled={!isChatEnabled || isSending || input.trim().length === 0}
               >
-                {isSending ? 'Wird gesendet...' : 'Nachricht senden'}
+                {isSending ? '...' : 'Senden'}
               </Button>
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-2">
               {isDictationSupported ? (
-                <Button
-                  variant="secondary"
-                  size="md"
-                  fullWidth
+                <button
+                  type="button"
                   onClick={() => {
                     if (!recognitionRef.current) {
                       setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
@@ -396,16 +365,21 @@ export function DialogScreenV2() {
                     }
                   }}
                   disabled={!isChatEnabled || isSending}
+                  className="text-xs font-semibold text-slate-600 disabled:text-slate-400"
                 >
                   {isDictating ? 'Diktat stoppen' : 'Diktat starten'}
-                </Button>
+                </button>
               ) : (
-                <p className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500">
                   Diktat ist in diesem Browser nicht verfuegbar.
-                </p>
+                </span>
               )}
+              {dictationError && (
+                <span className="text-xs text-rose-700">{dictationError}</span>
+              )}
+              {sendError && <span className="text-xs text-rose-700">{sendError}</span>}
             </div>
-          </Card>
+          </div>
         </div>
 
       </div>
