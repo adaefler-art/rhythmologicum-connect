@@ -808,10 +808,22 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          llm_error: string | null
+          llm_latency_ms: number | null
+          llm_model: string | null
+          llm_prompt_version: string | null
+          llm_provider: string | null
+          llm_raw_response: string | null
+          llm_request_id: string | null
+          llm_tokens_in: number | null
+          llm_tokens_out: number | null
+          llm_tokens_total: number | null
+          llm_used: boolean | null
           metadata: Json | null
           patient_id: string
           primary_findings: string[] | null
           recommendations_count: number | null
+          result_source: string | null
           risk_level: string | null
           run_id: string
           schema_version: string
@@ -823,10 +835,22 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          llm_error?: string | null
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_prompt_version?: string | null
+          llm_provider?: string | null
+          llm_raw_response?: string | null
+          llm_request_id?: string | null
+          llm_tokens_in?: number | null
+          llm_tokens_out?: number | null
+          llm_tokens_total?: number | null
+          llm_used?: boolean | null
           metadata?: Json | null
           patient_id: string
           primary_findings?: string[] | null
           recommendations_count?: number | null
+          result_source?: string | null
           risk_level?: string | null
           run_id: string
           schema_version?: string
@@ -838,10 +862,22 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          llm_error?: string | null
+          llm_latency_ms?: number | null
+          llm_model?: string | null
+          llm_prompt_version?: string | null
+          llm_provider?: string | null
+          llm_raw_response?: string | null
+          llm_request_id?: string | null
+          llm_tokens_in?: number | null
+          llm_tokens_out?: number | null
+          llm_tokens_total?: number | null
+          llm_used?: boolean | null
           metadata?: Json | null
           patient_id?: string
           primary_findings?: string[] | null
           recommendations_count?: number | null
+          result_source?: string | null
           risk_level?: string | null
           run_id?: string
           schema_version?: string

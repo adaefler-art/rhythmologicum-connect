@@ -121,6 +121,22 @@ function extractJson(content: string): string {
   return jsonContent
 }
 
+function capText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value
+  return `${value.slice(0, maxLength)}\n...[truncated ${value.length - maxLength} chars]`
+}
+
+function mapParseError(error: string): string {
+  const lower = error.toLowerCase()
+  if (lower.includes('unexpected token') || lower.includes('json')) {
+    return 'NON_JSON'
+  }
+  if (lower.includes('invalid') || lower.includes('required') || lower.includes('zod')) {
+    return 'SCHEMA_FAIL'
+  }
+  return 'PARSE_ERROR'
+}
+
 function buildDiagnosisFallbackV2(promptVersion: string, model: string): DiagnosisPromptOutputV2 {
   const timestamp = new Date().toISOString()
   return {
@@ -840,12 +856,27 @@ export async function handleRunDiagnosis(
 
     if (isStubEnabled()) {
       const stubResult = buildDiagnosisFallbackV2(promptVersion, 'stub')
+      const rawStub = JSON.stringify(stubResult, null, 2)
       const output: RunDiagnosisOutput = {
         run_id: runId,
         patient_id: input.patient_id,
         diagnosis_result: stubResult,
         parsed_result_v2: stubResult,
-        raw_llm_text: JSON.stringify(stubResult, null, 2),
+        raw_llm_text: rawStub,
+        provenance: {
+          result_source: 'rule_based',
+          llm_used: false,
+          llm_provider: null,
+          llm_model: null,
+          llm_prompt_version: promptVersion,
+          llm_request_id: null,
+          llm_latency_ms: null,
+          llm_tokens_in: null,
+          llm_tokens_out: null,
+          llm_tokens_total: null,
+          llm_error: 'STUBBED',
+          llm_raw_response: rawStub,
+        },
         metadata: {
           run_version: versionMetadata.run_version,
           prompt_version: versionMetadata.prompt_version,
@@ -922,7 +953,11 @@ export async function handleRunDiagnosis(
     metrics.max_tokens = modelConfig.maxTokens
 
     let llmText = ''
+    let llmLatencyMs: number | null = null
+    let llmMeta: LlmResponseMeta | null = null
+    let llmRawResponse: string | null = null
     try {
+      const llmStart = Date.now()
       const llmResponse = await callAnthropicDiagnosis(
         systemPrompt,
         userPrompt,
@@ -930,7 +965,10 @@ export async function handleRunDiagnosis(
         resolvedTraceId,
         markStage,
       )
+      llmLatencyMs = Date.now() - llmStart
       llmText = llmResponse.text
+      llmRawResponse = llmResponse.text
+      llmMeta = llmResponse.meta
       metrics.llm_response_id = llmResponse.meta.id
       metrics.llm_usage_input_tokens = llmResponse.meta.usage?.input_tokens
       metrics.llm_usage_output_tokens = llmResponse.meta.usage?.output_tokens
@@ -971,11 +1009,13 @@ export async function handleRunDiagnosis(
     }
     let parsedOutput: DiagnosisPromptOutputV2 | null = null
     let parseResult = parseDiagnosisOutputV2(llmText)
+    let llmError: string | null = parseResult.success ? null : mapParseError(parseResult.error)
     if (!parseResult.success) {
       log.warn('Diagnosis output invalid, retrying once', {
         error: parseResult.error,
         trace_id: resolvedTraceId,
       })
+      const retryStart = Date.now()
       const retryResponse = await callAnthropicDiagnosis(
         systemPrompt,
         userPrompt,
@@ -983,11 +1023,15 @@ export async function handleRunDiagnosis(
         resolvedTraceId,
         markStage,
       )
+      llmLatencyMs = Date.now() - retryStart
       llmText = retryResponse.text
+      llmRawResponse = retryResponse.text
+      llmMeta = retryResponse.meta
       metrics.llm_response_id = retryResponse.meta.id
       metrics.llm_usage_input_tokens = retryResponse.meta.usage?.input_tokens
       metrics.llm_usage_output_tokens = retryResponse.meta.usage?.output_tokens
       parseResult = parseDiagnosisOutputV2(llmText)
+      llmError = parseResult.success ? null : mapParseError(parseResult.error)
     }
 
     if (parseResult.success) {
@@ -1000,12 +1044,37 @@ export async function handleRunDiagnosis(
       parsedOutput = buildDiagnosisFallbackV2(promptVersion, modelConfig.model)
     }
 
+    const llmTokensIn = llmMeta?.usage?.input_tokens ?? null
+    const llmTokensOut = llmMeta?.usage?.output_tokens ?? null
+    const llmTokensTotal =
+      typeof llmTokensIn === 'number' && typeof llmTokensOut === 'number'
+        ? llmTokensIn + llmTokensOut
+        : null
+    const cappedRawResponse = llmRawResponse ? capText(llmRawResponse, 50000) : null
+    const llmUsed = Boolean(parseResult.success)
+    const resultSource = llmUsed ? 'llm' : 'fallback'
+    const provenance = {
+      result_source: resultSource,
+      llm_used: llmUsed,
+      llm_provider: llmProvider || null,
+      llm_model: modelConfig.model || null,
+      llm_prompt_version: promptVersion || null,
+      llm_request_id: llmMeta?.id ?? null,
+      llm_latency_ms: llmLatencyMs,
+      llm_tokens_in: llmTokensIn,
+      llm_tokens_out: llmTokensOut,
+      llm_tokens_total: llmTokensTotal,
+      llm_error: llmUsed ? null : llmError,
+      llm_raw_response: cappedRawResponse,
+    }
+
     const output: RunDiagnosisOutput = {
       run_id: runId,
       patient_id: input.patient_id,
       diagnosis_result: parsedOutput,
       parsed_result_v2: parsedOutput,
-      raw_llm_text: llmText,
+      raw_llm_text: capText(llmText, 50000),
+      provenance,
       metadata: {
         run_version: versionMetadata.run_version,
         prompt_version: promptVersion,

@@ -166,6 +166,7 @@ function sanitizeMcpResponse(rawResponse: unknown, diagnosisPayload: unknown): J
     diagnosis_result: diagnosisPayload ?? null,
     raw_llm_text: payloadRecord.raw_llm_text ?? null,
     parsed_result_v2: payloadRecord.parsed_result_v2 ?? null,
+    provenance: payloadRecord.provenance ?? null,
     metadata: payloadRecord.metadata ?? responseRecord.metadata ?? null,
   }
 
@@ -482,6 +483,49 @@ export async function executeDiagnosisRun(
           : null
     const outputVersion = parsedResultV2 ? 'v2' : null
 
+    const provenanceCandidate =
+      (responsePayload && (responsePayload as Record<string, unknown>).provenance) ||
+      responseRecord.provenance ||
+      (responsePayload && (responsePayload as Record<string, unknown>).metadata
+        ? (responsePayload as Record<string, unknown>).metadata
+        : null)
+    const provenanceRecord =
+      provenanceCandidate && typeof provenanceCandidate === 'object'
+        ? ((provenanceCandidate as Record<string, unknown>).provenance &&
+            typeof (provenanceCandidate as Record<string, unknown>).provenance === 'object'
+            ? ((provenanceCandidate as Record<string, unknown>).provenance as Record<
+                string,
+                unknown
+              >)
+            : (provenanceCandidate as Record<string, unknown>))
+        : null
+    const normalizeNumber = (value: unknown): number | null =>
+      typeof value === 'number' && Number.isFinite(value) ? value : null
+    const fallbackResultSource = parsedResultV2 ? 'llm' : 'fallback'
+    const resultSource =
+      typeof provenanceRecord?.result_source === 'string'
+        ? String(provenanceRecord?.result_source)
+        : fallbackResultSource
+    const llmUsed =
+      typeof provenanceRecord?.llm_used === 'boolean'
+        ? provenanceRecord.llm_used
+        : resultSource === 'llm'
+    const llmRawResponse = normalizeString(provenanceRecord?.llm_raw_response) ?? rawLlmText
+    const provenance = {
+      result_source: resultSource,
+      llm_used: llmUsed,
+      llm_provider: normalizeString(provenanceRecord?.llm_provider),
+      llm_model: normalizeString(provenanceRecord?.llm_model),
+      llm_prompt_version: normalizeString(provenanceRecord?.llm_prompt_version),
+      llm_request_id: normalizeString(provenanceRecord?.llm_request_id),
+      llm_latency_ms: normalizeNumber(provenanceRecord?.llm_latency_ms),
+      llm_tokens_in: normalizeNumber(provenanceRecord?.llm_tokens_in),
+      llm_tokens_out: normalizeNumber(provenanceRecord?.llm_tokens_out),
+      llm_tokens_total: normalizeNumber(provenanceRecord?.llm_tokens_total),
+      llm_error: normalizeString(provenanceRecord?.llm_error) ?? (llmUsed ? null : 'UNKNOWN'),
+      llm_raw_response: llmRawResponse,
+    }
+
     const rawMcpResponse = shouldSanitizeMcpResponse(mcpResponse)
       ? sanitizeMcpResponse(mcpResponse, diagnosisPayload)
       : (mcpResponse as Json)
@@ -504,6 +548,18 @@ export async function executeDiagnosisRun(
       confidence_score?: number | null
       primary_findings?: string[] | null
       recommendations_count?: number | null
+      result_source?: string | null
+      llm_used?: boolean | null
+      llm_provider?: string | null
+      llm_model?: string | null
+      llm_prompt_version?: string | null
+      llm_request_id?: string | null
+      llm_latency_ms?: number | null
+      llm_tokens_in?: number | null
+      llm_tokens_out?: number | null
+      llm_tokens_total?: number | null
+      llm_error?: string | null
+      llm_raw_response?: string | null
     }) => {
       const { data: existingArtifact, error: existingArtifactError } = await adminClient
         .from('diagnosis_artifacts')
@@ -530,6 +586,18 @@ export async function executeDiagnosisRun(
         primary_findings: payload.primary_findings ?? null,
         recommendations_count: payload.recommendations_count ?? null,
         metadata: payload.metadata,
+        result_source: payload.result_source ?? null,
+        llm_used: payload.llm_used ?? null,
+        llm_provider: payload.llm_provider ?? null,
+        llm_model: payload.llm_model ?? null,
+        llm_prompt_version: payload.llm_prompt_version ?? null,
+        llm_request_id: payload.llm_request_id ?? null,
+        llm_latency_ms: payload.llm_latency_ms ?? null,
+        llm_tokens_in: payload.llm_tokens_in ?? null,
+        llm_tokens_out: payload.llm_tokens_out ?? null,
+        llm_tokens_total: payload.llm_tokens_total ?? null,
+        llm_error: payload.llm_error ?? null,
+        llm_raw_response: payload.llm_raw_response ?? null,
       }
 
       const { data: artifact, error: artifactError } = existingArtifact
@@ -611,6 +679,7 @@ export async function executeDiagnosisRun(
         metadata: {
           ...baseMetadata,
           validation: validationMetadata,
+          provenance,
         },
       }
 
@@ -635,6 +704,18 @@ export async function executeDiagnosisRun(
         confidence_score: legacyResult?.confidence_score ?? null,
         primary_findings: legacyResult?.primary_findings ?? null,
         recommendations_count: legacyResult?.recommendations?.length ?? null,
+        result_source: provenance.result_source,
+        llm_used: provenance.llm_used,
+        llm_provider: provenance.llm_provider,
+        llm_model: provenance.llm_model,
+        llm_prompt_version: provenance.llm_prompt_version,
+        llm_request_id: provenance.llm_request_id,
+        llm_latency_ms: provenance.llm_latency_ms,
+        llm_tokens_in: provenance.llm_tokens_in,
+        llm_tokens_out: provenance.llm_tokens_out,
+        llm_tokens_total: provenance.llm_tokens_total,
+        llm_error: provenance.llm_error,
+        llm_raw_response: provenance.llm_raw_response,
       })
 
       if (diagnosisArtifactResult.error || !diagnosisArtifactResult.artifact) {

@@ -77,6 +77,21 @@ type DiagnosisV2Result = {
   output_version: 'v2'
 }
 
+type DiagnosisProvenance = {
+  result_source: 'llm' | 'fallback' | 'cached' | 'rule_based'
+  llm_used: boolean
+  llm_provider?: string | null
+  llm_model?: string | null
+  llm_prompt_version?: string | null
+  llm_request_id?: string | null
+  llm_latency_ms?: number | null
+  llm_tokens_in?: number | null
+  llm_tokens_out?: number | null
+  llm_tokens_total?: number | null
+  llm_error?: string | null
+  llm_raw_response?: string | null
+}
+
 type ArtifactState = {
   status: 'idle' | 'loading' | 'success' | 'empty' | 'error'
   data?: Record<string, unknown>
@@ -614,6 +629,24 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
     return `${Math.round(value * 100)}%`
   }
 
+  const formatLatency = (value: number | null | undefined): string => {
+    if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+    return `${Math.round(value)}ms`
+  }
+
+  const formatTokens = (provenance: DiagnosisProvenance): string => {
+    if (typeof provenance.llm_tokens_total === 'number') {
+      return `${provenance.llm_tokens_total} tokens`
+    }
+    if (
+      typeof provenance.llm_tokens_in === 'number' &&
+      typeof provenance.llm_tokens_out === 'number'
+    ) {
+      return `${provenance.llm_tokens_in}/${provenance.llm_tokens_out} tokens`
+    }
+    return '—'
+  }
+
   const isDiagnosisResultV2 = (value: unknown): value is DiagnosisV2Result => {
     if (!value || typeof value !== 'object') return false
     const record = value as Record<string, unknown>
@@ -635,6 +668,32 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           result: nestedCandidate,
           rawLlmText: typeof nested.raw_llm_text === 'string' ? nested.raw_llm_text : rawLlmText,
         }
+      }
+    }
+    return null
+  }
+
+  const resolveProvenance = (data?: Record<string, unknown>): DiagnosisProvenance | null => {
+    if (!data || typeof data !== 'object') return null
+    const meta = (data.metadata && typeof data.metadata === 'object'
+      ? (data.metadata as Record<string, unknown>)
+      : null) as Record<string, unknown> | null
+    const direct = meta?.provenance && typeof meta.provenance === 'object'
+      ? (meta.provenance as Record<string, unknown>)
+      : null
+    if (direct && typeof direct.result_source === 'string' && typeof direct.llm_used === 'boolean') {
+      return direct as DiagnosisProvenance
+    }
+    if (data.artifact_data && typeof data.artifact_data === 'object') {
+      const nested = data.artifact_data as Record<string, unknown>
+      const nestedMeta = nested.metadata && typeof nested.metadata === 'object'
+        ? (nested.metadata as Record<string, unknown>)
+        : null
+      const nestedProv = nestedMeta?.provenance && typeof nestedMeta.provenance === 'object'
+        ? (nestedMeta.provenance as Record<string, unknown>)
+        : null
+      if (nestedProv && typeof nestedProv.result_source === 'string' && typeof nestedProv.llm_used === 'boolean') {
+        return nestedProv as DiagnosisProvenance
       }
     }
     return null
@@ -920,6 +979,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                   ? (artifactState.data as Record<string, unknown>)
                   : undefined,
               )
+              const provenance = resolveProvenance(
+                artifactState.data && typeof artifactState.data === 'object'
+                  ? (artifactState.data as Record<string, unknown>)
+                  : undefined,
+              )
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
@@ -1038,6 +1102,38 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                           {artifactState.meta?.errorCode && (
                             <div className="text-xs text-slate-500">
                               error_code: {artifactState.meta.errorCode}
+                            </div>
+                          )}
+                          {provenance && (
+                            <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200">
+                              <div className="text-[10px] uppercase tracking-wide text-slate-500">Source</div>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <Badge
+                                  size="sm"
+                                  variant={provenance.result_source === 'llm' ? 'success' : 'warning'}
+                                >
+                                  {provenance.result_source.toUpperCase()}
+                                </Badge>
+                                {provenance.result_source === 'llm' ? (
+                                  <span>
+                                    {provenance.llm_model || 'model'} • {formatLatency(provenance.llm_latency_ms)} • {formatTokens(provenance)}
+                                  </span>
+                                ) : (
+                                  <span>
+                                    {provenance.llm_error || 'fallback used'}
+                                  </span>
+                                )}
+                              </div>
+                              {provenance.llm_prompt_version && (
+                                <div className="mt-2 text-[11px] text-slate-500">
+                                  Prompt: {provenance.llm_prompt_version}
+                                </div>
+                              )}
+                              {provenance.llm_request_id && (
+                                <div className="mt-1 text-[11px] text-slate-500">
+                                  Request ID: {provenance.llm_request_id}
+                                </div>
+                              )}
                             </div>
                           )}
                           {resolvedV2 ? (

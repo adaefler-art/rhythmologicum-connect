@@ -163,6 +163,16 @@ export const DIAGNOSIS_NEXT_STEP_CATEGORY = {
 export type DiagnosisNextStepCategory =
   typeof DIAGNOSIS_NEXT_STEP_CATEGORY[keyof typeof DIAGNOSIS_NEXT_STEP_CATEGORY]
 
+export const DIAGNOSIS_RESULT_SOURCE = {
+  LLM: 'llm',
+  FALLBACK: 'fallback',
+  CACHED: 'cached',
+  RULE_BASED: 'rule_based',
+} as const
+
+export type DiagnosisResultSource =
+  typeof DIAGNOSIS_RESULT_SOURCE[keyof typeof DIAGNOSIS_RESULT_SOURCE]
+
 export const DiagnosisResultV2Schema = z.object({
   summary_for_clinician: z.string().min(10),
   triage: z.object({
@@ -263,6 +273,27 @@ export const DiagnosisArtifactDataSchema = z.object({
     prompt_version: z.string().optional(),
     executed_at: z.string().datetime(),
     processing_time_ms: z.number().optional(),
+    provenance: z
+      .object({
+        result_source: z.enum([
+          DIAGNOSIS_RESULT_SOURCE.LLM,
+          DIAGNOSIS_RESULT_SOURCE.FALLBACK,
+          DIAGNOSIS_RESULT_SOURCE.CACHED,
+          DIAGNOSIS_RESULT_SOURCE.RULE_BASED,
+        ]),
+        llm_used: z.boolean(),
+        llm_provider: z.string().nullable(),
+        llm_model: z.string().nullable(),
+        llm_prompt_version: z.string().nullable(),
+        llm_request_id: z.string().nullable(),
+        llm_latency_ms: z.number().nullable(),
+        llm_tokens_in: z.number().nullable(),
+        llm_tokens_out: z.number().nullable(),
+        llm_tokens_total: z.number().nullable(),
+        llm_error: z.string().nullable(),
+        llm_raw_response: z.string().nullable(),
+      })
+      .optional(),
   }),
 })
 
@@ -323,6 +354,23 @@ export const DiagnosisArtifactSchema = z.object({
   confidence_score: z.number().min(0).max(1).nullable(),
   primary_findings: z.array(z.string()).nullable(),
   recommendations_count: z.number().nullable(),
+  result_source: z.enum([
+    DIAGNOSIS_RESULT_SOURCE.LLM,
+    DIAGNOSIS_RESULT_SOURCE.FALLBACK,
+    DIAGNOSIS_RESULT_SOURCE.CACHED,
+    DIAGNOSIS_RESULT_SOURCE.RULE_BASED,
+  ]).nullable(),
+  llm_used: z.boolean().nullable(),
+  llm_provider: z.string().nullable(),
+  llm_model: z.string().nullable(),
+  llm_prompt_version: z.string().nullable(),
+  llm_request_id: z.string().nullable(),
+  llm_latency_ms: z.number().nullable(),
+  llm_tokens_in: z.number().nullable(),
+  llm_tokens_out: z.number().nullable(),
+  llm_tokens_total: z.number().nullable(),
+  llm_error: z.string().nullable(),
+  llm_raw_response: z.string().nullable(),
   metadata: z.record(z.string(), z.any()),
 })
 

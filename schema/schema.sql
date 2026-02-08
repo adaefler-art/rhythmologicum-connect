@@ -2869,6 +2869,18 @@ CREATE TABLE IF NOT EXISTS "public"."diagnosis_artifacts" (
     "primary_findings" "text"[],
     "recommendations_count" integer,
     "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "result_source" "text",
+    "llm_used" boolean,
+    "llm_provider" "text",
+    "llm_model" "text",
+    "llm_prompt_version" "text",
+    "llm_request_id" "text",
+    "llm_latency_ms" integer,
+    "llm_tokens_in" integer,
+    "llm_tokens_out" integer,
+    "llm_tokens_total" integer,
+    "llm_error" "text",
+    "llm_raw_response" "text",
     CONSTRAINT "diagnosis_artifacts_artifact_type_check" CHECK (("artifact_type" = ANY (ARRAY['diagnosis_json'::"text", 'context_pack'::"text", 'mcp_response'::"text"]))),
     CONSTRAINT "diagnosis_artifacts_confidence_score_check" CHECK (((("confidence_score" >= (0.0)::double precision) AND ("confidence_score" <= (1.0)::double precision)) OR ("confidence_score" IS NULL))),
     CONSTRAINT "diagnosis_artifacts_risk_level_check" CHECK ((("risk_level" = ANY (ARRAY['low'::"text", 'medium'::"text", 'high'::"text", 'critical'::"text"])) OR ("risk_level" IS NULL)))
@@ -2923,6 +2935,54 @@ COMMENT ON COLUMN "public"."diagnosis_artifacts"."primary_findings" IS 'Extracte
 
 
 COMMENT ON COLUMN "public"."diagnosis_artifacts"."recommendations_count" IS 'Count of recommendations';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."result_source" IS 'LLM provenance result source (llm|fallback|cached|rule_based)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_used" IS 'Whether a structured LLM output was successfully parsed';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_provider" IS 'LLM provider identifier (e.g., anthropic, openai)';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_model" IS 'LLM model name used for the run';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_prompt_version" IS 'Prompt version used for the LLM call';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_request_id" IS 'Provider request or response id for the LLM call';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_latency_ms" IS 'Measured latency of the LLM call in milliseconds';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_tokens_in" IS 'Input tokens for the LLM call';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_tokens_out" IS 'Output tokens for the LLM call';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_tokens_total" IS 'Total tokens for the LLM call';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_error" IS 'LLM error or fallback reason if structured output failed';
+
+
+
+COMMENT ON COLUMN "public"."diagnosis_artifacts"."llm_raw_response" IS 'Optional raw LLM response (truncated)';
 
 
 

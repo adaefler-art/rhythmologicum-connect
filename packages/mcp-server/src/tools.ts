@@ -11,6 +11,21 @@
 import { z } from 'zod'
 import { DiagnosisPromptOutputV2Schema } from './contracts/diagnosis-prompt.js'
 
+const DiagnosisProvenanceSchema = z.object({
+  result_source: z.enum(['llm', 'fallback', 'cached', 'rule_based']),
+  llm_used: z.boolean(),
+  llm_provider: z.string().nullable(),
+  llm_model: z.string().nullable(),
+  llm_prompt_version: z.string().nullable(),
+  llm_request_id: z.string().nullable(),
+  llm_latency_ms: z.number().nullable(),
+  llm_tokens_in: z.number().nullable(),
+  llm_tokens_out: z.number().nullable(),
+  llm_tokens_total: z.number().nullable(),
+  llm_error: z.string().nullable(),
+  llm_raw_response: z.string().nullable(),
+})
+
 // ==================== get_patient_context ====================
 
 export const GetPatientContextInputSchema = z.object({
@@ -105,6 +120,7 @@ export const RunDiagnosisOutputSchema = z.object({
   diagnosis_result: DiagnosisPromptOutputV2Schema,
   parsed_result_v2: DiagnosisPromptOutputV2Schema,
   raw_llm_text: z.string(),
+  provenance: DiagnosisProvenanceSchema,
   metadata: z.object({
     run_version: z.string(),
     prompt_version: z.string(),
