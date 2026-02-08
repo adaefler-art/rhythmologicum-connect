@@ -7,6 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { isValidUUID } from '@/lib/validators/uuid'
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
       )
     }
 
-    const { data: run, error: runError } = await supabase
+    const admin = createAdminSupabaseClient()
+    const { data: run, error: runError } = await admin
       .from('diagnosis_runs')
       .select(
         'id, patient_id, clinician_id, status, created_at, updated_at, inputs_hash, started_at, completed_at, error_code, error_message, processing_time_ms, mcp_run_id',
@@ -97,7 +99,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const { data: diagnosisArtifact, error: diagnosisArtifactError } = await supabase
+    const { data: diagnosisArtifact, error: diagnosisArtifactError } = await admin
       .from('diagnosis_artifacts')
       .select(
         'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
@@ -124,7 +126,7 @@ export async function GET(request: Request) {
 
     let artifact = diagnosisArtifact
     if (!artifact) {
-      const { data: latestArtifact, error: latestArtifactError } = await supabase
+      const { data: latestArtifact, error: latestArtifactError } = await admin
         .from('diagnosis_artifacts')
         .select(
           'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
