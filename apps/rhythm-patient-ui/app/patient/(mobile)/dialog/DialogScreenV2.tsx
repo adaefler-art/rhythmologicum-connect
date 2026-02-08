@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
@@ -97,12 +97,55 @@ export function DialogScreenV2() {
   const [chatMessages, setChatMessages] = useState<StubbedMessage[]>([])
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
+  const [dictationError, setDictationError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [isDictating, setIsDictating] = useState(false)
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
 
   useEffect(() => {
     setChatMessages(getStubbedConversation(context, assessmentId))
   }, [context, assessmentId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const SpeechRecognitionCtor =
+      (window as typeof window & { SpeechRecognition?: typeof SpeechRecognition }).
+        SpeechRecognition ||
+      (window as typeof window & { webkitSpeechRecognition?: typeof SpeechRecognition }).
+        webkitSpeechRecognition
+
+    if (!SpeechRecognitionCtor) return
+
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = 'de-DE'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+
+    recognition.onresult = (event) => {
+      const result = event.results?.[0]?.[0]?.transcript
+      if (result) {
+        setInput((prev) => (prev ? `${prev} ${result}` : result))
+      }
+    }
+
+    recognition.onerror = () => {
+      setDictationError('Spracherkennung fehlgeschlagen. Bitte erneut versuchen.')
+      setIsDictating(false)
+    }
+
+    recognition.onend = () => {
+      setIsDictating(false)
+    }
+
+    recognitionRef.current = recognition
+
+    return () => {
+      recognition.stop()
+      recognitionRef.current = null
+    }
+  }, [])
 
   const hasContext = isValidContext(context, assessmentId)
 
@@ -117,6 +160,7 @@ export function DialogScreenV2() {
 
     setIsSending(true)
     setSendError(null)
+    setDictationError(null)
 
     const userMessage: StubbedMessage = {
       id: `user-${Date.now()}`,
@@ -264,9 +308,14 @@ export function DialogScreenV2() {
               rows={3}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              disabled={!isChatEnabled || isSending}
+              disabled={!isChatEnabled || isSending || isDictating}
               className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 resize-none"
             />
+            {dictationError && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
+                <p className="text-sm text-rose-800">{dictationError}</p>
+              </div>
+            )}
             {sendError && (
               <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
                 <p className="text-sm text-rose-800">{sendError}</p>
@@ -280,6 +329,27 @@ export function DialogScreenV2() {
               disabled={!isChatEnabled || isSending || input.trim().length === 0}
             >
               {isSending ? 'Wird gesendet...' : 'Nachricht senden'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
+              onClick={() => {
+                if (!recognitionRef.current) {
+                  setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
+                  return
+                }
+                setDictationError(null)
+                if (isDictating) {
+                  recognitionRef.current.stop()
+                } else {
+                  recognitionRef.current.start()
+                  setIsDictating(true)
+                }
+              }}
+              disabled={!isChatEnabled || isSending}
+            >
+              {isDictating ? 'Diktat stoppen' : 'Diktat starten'}
             </Button>
           </div>
         </Card>
