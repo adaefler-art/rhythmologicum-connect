@@ -29,6 +29,7 @@ import {
   type DiagnosisArtifact,
   type DiagnosisErrorCode,
 } from '@/lib/contracts/diagnosis'
+import { logError, logInfo } from '@/lib/logging/logger'
 
 const MCP_TIMEOUT_MS = 60000
 
@@ -340,6 +341,7 @@ export async function executeDiagnosisRun(
       },
     }
 
+    const persistStart = Date.now()
     const { data: existingArtifact, error: existingArtifactError } = await adminClient
       .from('diagnosis_artifacts')
       .select('id')
@@ -350,18 +352,31 @@ export async function executeDiagnosisRun(
       .maybeSingle()
 
     if (existingArtifactError) {
+      logInfo('DIAG_ARTIFACT_PERSIST', {
+        run_id: runId,
+        trace_id: traceId,
+        ok: false,
+        error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        elapsed_ms: Date.now() - persistStart,
+      })
       await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+        code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
         message: 'Failed to check existing diagnosis artifacts',
-        details: { existingArtifactError: serializeErrorDetails(existingArtifactError) },
+        details: {
+          trace_id: traceId,
+          existingArtifactError: serializeErrorDetails(existingArtifactError),
+        },
       })
       return {
         success: false,
         run_id: runId,
         error: {
-          code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
           message: 'Failed to check existing diagnosis artifacts',
-          details: { existingArtifactError: serializeErrorDetails(existingArtifactError) },
+          details: {
+            trace_id: traceId,
+            existingArtifactError: serializeErrorDetails(existingArtifactError),
+          },
         },
       }
     }
@@ -394,21 +409,41 @@ export async function executeDiagnosisRun(
           .single()
 
     if (artifactError || !artifact) {
+      logInfo('DIAG_ARTIFACT_PERSIST', {
+        run_id: runId,
+        trace_id: traceId,
+        ok: false,
+        error_code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
+        elapsed_ms: Date.now() - persistStart,
+      })
       await updateRunAsFailed(adminClient, runId, {
-        code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+        code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
         message: 'Failed to persist diagnosis artifact',
-        details: { artifactError: serializeErrorDetails(artifactError) },
+        details: {
+          trace_id: traceId,
+          artifactError: serializeErrorDetails(artifactError),
+        },
       })
       return {
         success: false,
         run_id: runId,
         error: {
-          code: DIAGNOSIS_ERROR_CODE.UNKNOWN_ERROR,
+          code: DIAGNOSIS_ERROR_CODE.DIAGNOSIS_PERSIST_FAILED,
           message: 'Failed to persist diagnosis artifact',
-          details: { artifactError: serializeErrorDetails(artifactError) },
+          details: {
+            trace_id: traceId,
+            artifactError: serializeErrorDetails(artifactError),
+          },
         },
       }
     }
+
+    logInfo('DIAG_ARTIFACT_PERSIST', {
+      run_id: runId,
+      trace_id: traceId,
+      ok: true,
+      elapsed_ms: Date.now() - persistStart,
+    })
 
     // =========================================================================
     // STEP 7: Update run as completed

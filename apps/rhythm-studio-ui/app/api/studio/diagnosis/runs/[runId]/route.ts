@@ -9,6 +9,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { DIAGNOSIS_ERROR_CODE, DIAGNOSIS_RUN_STATUS } from '@/lib/contracts/diagnosis'
 import { isValidUUID } from '@/lib/validators/uuid'
 
 type RouteContext = {
@@ -130,6 +131,29 @@ export async function GET(_request: Request, context: RouteContext) {
         ? (resultPayload as { diagnosis_result?: Record<string, unknown> }).diagnosis_result ??
           resultPayload
         : null
+
+    if (run.status === DIAGNOSIS_RUN_STATUS.COMPLETED && !artifact) {
+      const { error: demoteError } = await supabase
+        .from('diagnosis_runs')
+        .update({
+          status: DIAGNOSIS_RUN_STATUS.FAILED,
+          completed_at: run.completed_at ?? new Date().toISOString(),
+          error_code: DIAGNOSIS_ERROR_CODE.COMPLETED_NO_RESULT,
+          error_message: 'Diagnosis completed without persisted result',
+          error_details: {
+            reason: 'artifact_missing',
+          },
+        })
+        .eq('id', runId)
+
+      if (demoteError) {
+        console.error('[studio/diagnosis/runs/[runId] GET] Demote error:', demoteError)
+      } else {
+        run.status = DIAGNOSIS_RUN_STATUS.FAILED
+        run.error_code = DIAGNOSIS_ERROR_CODE.COMPLETED_NO_RESULT
+        run.error_message = 'Diagnosis completed without persisted result'
+      }
+    }
 
     return NextResponse.json({
       success: true,
