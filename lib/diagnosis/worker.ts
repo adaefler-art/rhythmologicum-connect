@@ -424,20 +424,25 @@ export async function executeDiagnosisRun(
     const responseRecord = mcpResponse as Record<string, unknown>
     const responsePayload =
       (responseRecord.data as Record<string, unknown> | undefined) ?? responseRecord
-    const mcpRunId =
+    const normalizeString = (value: unknown): string | null =>
+      typeof value === 'string' ? value : null
+
+    const mcpRunId = normalizeString(
       (responsePayload && (responsePayload as Record<string, unknown>).run_id) ||
-      responseRecord.run_id ||
-      null
-    const responseTraceId =
+        responseRecord.run_id ||
+        null,
+    )
+    const responseTraceId = normalizeString(
       (responsePayload && (responsePayload as Record<string, unknown>).trace_id) ||
-      responseRecord.trace_id ||
-      null
+        responseRecord.trace_id ||
+        null,
+    )
 
     const rawMcpResponse = shouldSanitizeMcpResponse(mcpResponse)
       ? sanitizeMcpResponse(mcpResponse, diagnosisPayload)
       : (mcpResponse as Json)
 
-    const baseMetadata = {
+    const baseMetadata: Json = {
       mcp_run_id: mcpRunId,
       executed_at: new Date().toISOString(),
       processing_time_ms: processingTimeMs,
