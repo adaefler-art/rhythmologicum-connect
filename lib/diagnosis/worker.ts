@@ -616,7 +616,7 @@ export async function executeDiagnosisRun(
         run_id: runId,
         trace_id: traceId,
         mcp_run_id: mcpRunId,
-        artifact_id: diagnosisArtifact.id,
+        artifact_id: diagnosisArtifact?.id ?? null,
         ok: true,
         artifact_type: ARTIFACT_TYPE.DIAGNOSIS_JSON,
         elapsed_ms: Date.now() - persistStart,
