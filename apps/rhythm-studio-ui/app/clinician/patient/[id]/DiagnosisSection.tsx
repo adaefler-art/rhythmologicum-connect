@@ -36,6 +36,11 @@ type ArtifactState = {
   status: 'idle' | 'loading' | 'success' | 'empty' | 'error'
   data?: Record<string, unknown>
   message?: string
+  meta?: {
+    requestId?: string | null
+    traceId?: string | null
+    errorCode?: string | null
+  }
 }
 
 type DiagnosisGateStatus = 'checking' | 'available' | 'unavailable' | 'forbidden' | 'disabled'
@@ -242,7 +247,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
 
   const pollRunStatus = async (runId: string) => {
     const attempts = pollAttemptsRef.current[runId] ?? 0
-    if (attempts >= 6) {
+    if (attempts >= 12) {
       return
     }
     pollAttemptsRef.current[runId] = attempts + 1
@@ -370,6 +375,10 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
 
     try {
       const response = await fetch(`/api/studio/diagnosis/runs/${runId}`)
+      const requestId =
+        response.headers.get('x-request-id') ||
+        response.headers.get('x-correlation-id') ||
+        response.headers.get('x-requestid')
 
       if (!response.ok) {
         setArtifactStates((prev) => ({
@@ -394,18 +403,69 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           [runId]: {
             status: 'error',
             message: 'Fehler beim Laden des Ergebnisses',
+            meta: {
+              requestId,
+            },
           },
         }))
         return
       }
 
-      const payload = result.data?.result ?? null
-      if (!payload) {
+      const detailData = result.data ?? null
+      const artifact = detailData?.artifact ?? null
+      const traceId =
+        artifact?.artifact_data?.metadata?.trace_id ||
+        artifact?.artifact_data?.metadata?.traceId ||
+        null
+      const errorCode = detailData?.run?.error_code ?? null
+      const runStatus = detailData?.run?.status ?? null
+
+      if (runStatus === 'failed') {
+        setArtifactStates((prev) => ({
+          ...prev,
+          [runId]: {
+            status: 'success',
+            message: 'Diagnose fehlgeschlagen.',
+            data: detailData ?? undefined,
+            meta: {
+              requestId,
+              traceId,
+              errorCode,
+            },
+          },
+        }))
+        return
+      }
+
+      if (!artifact && runStatus === 'completed') {
+        setArtifactStates((prev) => ({
+          ...prev,
+          [runId]: {
+            status: 'success',
+            message: 'Server konnte Ergebnis nicht persistieren.',
+            data: detailData ?? undefined,
+            meta: {
+              requestId,
+              traceId,
+              errorCode,
+            },
+          },
+        }))
+        return
+      }
+
+      if (!artifact && !detailData?.result) {
         setArtifactStates((prev) => ({
           ...prev,
           [runId]: {
             status: 'empty',
             message: 'Ergebnis noch nicht verfuegbar',
+            data: detailData ?? undefined,
+            meta: {
+              requestId,
+              traceId,
+              errorCode,
+            },
           },
         }))
         return
@@ -415,7 +475,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         ...prev,
         [runId]: {
           status: 'success',
-          data: payload,
+          data: detailData ?? undefined,
+          meta: {
+            requestId,
+            traceId,
+            errorCode,
+          },
         },
       }))
     } catch (err) {
@@ -458,6 +523,11 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
       default:
         return 'default'
     }
+  }
+
+  const getStatusLabel = (status: string): string => {
+    if (status === 'completed') return 'succeeded'
+    return status
   }
 
   const shortHash = (hash: string): string => {
@@ -543,17 +613,36 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">Runs</h3>
 
         {isLoading ? (
-          <div className="py-6 text-sm text-slate-500">Lade Diagnose-Runs…</div>
+          <div className="py-6 text-sm text-slate-500">Lade Diagnose-Runs...</div>
         ) : runs.length === 0 ? (
-          <div className="py-6 text-sm text-slate-500">Keine Diagnose-Runs vorhanden.</div>
+          <div className="flex flex-col gap-3 py-6 text-sm text-slate-500">
+            <span>Keine Diagnose-Runs vorhanden.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<Brain className="h-4 w-4" />}
+              onClick={handleQueueRun}
+              disabled={isQueueing || isGateChecking || gateStatus !== 'available'}
+            >
+              Diagnose starten
+            </Button>
+          </div>
         ) : (
           <div className="space-y-4">
             {orderedRuns.map((run) => {
               const artifactState = artifactStates[run.id] || { status: 'idle' }
               const isExpanded = expandedRunId === run.id
               const summary = run.summary
+              const hasArtifact = Boolean(summary?.result_json)
+              const isCompleted = run.status === 'completed'
+              const isFailed = run.status === 'failed'
+              const isQueued = run.status === 'queued'
+              const isRunning = run.status === 'running'
+              const isInconsistent = isCompleted && !hasArtifact
               const riskLevel = summary?.risk_level
               const findings = summary?.primary_findings || []
+              const actionLabel = isFailed || isInconsistent ? 'Diagnose oeffnen' : 'View Result'
+              const actionDisabled = !(isFailed || isInconsistent || hasArtifact)
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
@@ -561,13 +650,28 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={getStatusVariant(run.status)} size="sm">
-                          {run.status}
+                          {getStatusLabel(run.status)}
                         </Badge>
+                        {isInconsistent && (
+                          <Badge variant="warning" size="sm">
+                            INCONSISTENT_STATE
+                          </Badge>
+                        )}
                         {run.is_optimistic && (
                           <span className="text-xs text-amber-600">Optimistisch</span>
                         )}
                         <span className="text-xs text-slate-500">Run ID: {run.id}</span>
                       </div>
+                      {(isQueued || isRunning) && (
+                        <div className="text-xs text-slate-500">
+                          Diagnose wird erstellt...
+                        </div>
+                      )}
+                      {isInconsistent && (
+                        <div className="text-xs text-amber-700">
+                          Server konnte Ergebnis nicht persistieren.
+                        </div>
+                      )}
                       <div className="text-sm text-slate-600 dark:text-slate-300">
                         Erstellt: {formatDate(run.created_at)}
                       </div>
@@ -598,10 +702,13 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewArtifact(run.id)}
-                        disabled={run.status !== 'completed'}
+                        disabled={actionDisabled}
                       >
-                        {isExpanded ? 'Ausblenden' : 'View Result'}
+                        {isExpanded ? 'Ausblenden' : actionLabel}
                       </Button>
+                      {run.error_code && (
+                        <span className="text-xs text-red-600">{run.error_code}</span>
+                      )}
                       {run.error_message && (
                         <span className="text-xs text-red-600">{run.error_message}</span>
                       )}
@@ -611,18 +718,55 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
                   {isExpanded && (
                     <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
                       {artifactState.status === 'loading' && (
-                        <div className="text-sm text-slate-500">Lade Ergebnis…</div>
+                        <div className="text-sm text-slate-500">Lade Ergebnis...</div>
                       )}
                       {artifactState.status === 'empty' && (
-                        <div className="text-sm text-slate-500">{artifactState.message}</div>
+                        <div className="space-y-2 text-sm text-slate-500">
+                          <div>{artifactState.message}</div>
+                          {artifactState.meta?.requestId && (
+                            <div className="text-xs text-slate-500">
+                              requestId: {artifactState.meta.requestId}
+                            </div>
+                          )}
+                          {artifactState.meta?.traceId && (
+                            <div className="text-xs text-slate-500">
+                              trace_id: {artifactState.meta.traceId}
+                            </div>
+                          )}
+                          {artifactState.meta?.errorCode && (
+                            <div className="text-xs text-slate-500">
+                              error_code: {artifactState.meta.errorCode}
+                            </div>
+                          )}
+                        </div>
                       )}
                       {artifactState.status === 'error' && (
                         <div className="text-sm text-red-600">{artifactState.message}</div>
                       )}
                       {artifactState.status === 'success' && artifactState.data && (
-                        <pre className="max-h-96 overflow-auto rounded bg-white dark:bg-slate-900 p-4 text-xs text-slate-800 dark:text-slate-200">
-                          {JSON.stringify(artifactState.data, null, 2)}
-                        </pre>
+                        <div className="space-y-2">
+                          {artifactState.message && (
+                            <div className="text-sm text-slate-500">{artifactState.message}</div>
+                          )}
+                          {artifactState.meta?.requestId && (
+                            <div className="text-xs text-slate-500">
+                              requestId: {artifactState.meta.requestId}
+                            </div>
+                          )}
+                          {artifactState.meta?.traceId && (
+                            <div className="text-xs text-slate-500">
+                              trace_id: {artifactState.meta.traceId}
+                            </div>
+                          )}
+                          {artifactState.meta?.errorCode && (
+                            <div className="text-xs text-slate-500">
+                              error_code: {artifactState.meta.errorCode}
+                            </div>
+                          )}
+                          <pre className="max-h-96 overflow-auto rounded bg-white dark:bg-slate-900 p-4 text-xs text-slate-800 dark:text-slate-200">
+                            {JSON.stringify(artifactState.data, null, 2)}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   )}

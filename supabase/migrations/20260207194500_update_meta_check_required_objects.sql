@@ -1,4 +1,5 @@
 -- Update required-objects probe to return missing samples and enforce timeout.
+drop function if exists public.meta_check_required_objects(text[]);
 create or replace function public.meta_check_required_objects(required_objects text[])
 returns table(missing_count int, missing_sample text[])
 language plpgsql
