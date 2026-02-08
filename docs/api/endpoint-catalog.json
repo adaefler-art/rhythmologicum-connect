@@ -598,6 +598,21 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/admin/diagnosis/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/diagnosis/reconcile/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"

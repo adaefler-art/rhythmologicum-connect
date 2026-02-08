@@ -30,6 +30,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/admin/dev/endpoint-catalog | GET | admin |  | 0 |  | apps/rhythm-legacy/app/api/admin/dev/endpoint-catalog/route.ts |
 | /api/admin/dev/endpoint-catalog | GET | admin |  | 0 |  | apps/rhythm-studio-ui/app/api/admin/dev/endpoint-catalog/route.ts |
 | /api/admin/dev/endpoint-catalog | GET | admin |  | 0 |  | legacy/code/app/api/admin/dev/endpoint-catalog/route.ts |
+| /api/admin/diagnosis/reconcile | POST | admin |  | 0 |  | apps/rhythm-studio-ui/app/api/admin/diagnosis/reconcile/route.ts |
 | /api/admin/diagnostics/pillars-sot | GET | admin |  | 0 |  | apps/rhythm-legacy/app/api/admin/diagnostics/pillars-sot/route.ts |
 | /api/admin/diagnostics/pillars-sot | GET | admin |  | 0 |  | legacy/code/app/api/admin/diagnostics/pillars-sot/route.ts |
 | /api/admin/diagnostics/required-funnel-definitions | GET | admin |  | 0 |  | apps/rhythm-studio-ui/app/api/admin/diagnostics/required-funnel-definitions/route.ts |
