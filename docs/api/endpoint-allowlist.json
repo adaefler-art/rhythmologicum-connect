@@ -144,6 +144,7 @@
       "reason": "Diagnosis health probe (no callsite in this branch)"
     },
     "/api/studio/diagnosis/queue",
+    "/api/studio/diagnosis/run",
     "/api/studio/diagnosis/runs/[runId]",
     "/api/studio/diagnosis/runs/[runId]/artifact",
     "/api/_debug/env",
