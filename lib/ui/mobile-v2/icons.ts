@@ -21,6 +21,7 @@ export {
   ChevronLeft,
   ChevronRight,
   Home,
+  Menu,
   
   // Actions
   Check,
@@ -56,6 +57,7 @@ export {
   TrendingUp,
   TrendingDown,
   User,
+  Mic,
   
   // Type
   type LucideIcon,

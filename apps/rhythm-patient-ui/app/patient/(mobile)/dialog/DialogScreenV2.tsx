@@ -3,26 +3,35 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, Button, Badge } from '@/lib/ui/mobile-v2'
-import { Bot, MessageCircle, Sparkles } from '@/lib/ui/mobile-v2/icons'
+import { Bot, MessageCircle, Sparkles, Mic } from '@/lib/ui/mobile-v2/icons'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 /**
- * I2.2 — Assistant Dialog MVP (I2.5 Navigation Consistency)
+ * DialogScreenV2 Component (Issue 2 - Chat-First Dashboard)
+ * 
+ * Primary entry point for patient interaction (PAT Chat).
+ * This is now the default landing page after login (Issue 2).
  * 
  * Entry Points:
+ * - Default landing: /patient/dialog
  * - Dashboard Hero → /patient/dialog?context=dashboard
  * - Results CTA → /patient/dialog?context=results&assessmentId=<id>
  * 
  * Navigation (I2.5):
- * - Back: Always to dashboard (canonical, last non-dialog screen fallback)
+ * - Back: Always to dashboard (canonical)
  * - Close: Always to dashboard
  * 
  * Features:
- * - Context-aware stubbed conversation responses
+ * - Live chat with AI assistant (when enabled)
+ * - Voice input (dictation) with start/stop control (Issue 2)
  * - Clean, flow-ready UI for patient dialog
- * - Placeholder for future real-time dialog implementation
+ * 
+ * Issue 2 Changes:
+ * - Enhanced voice input with microphone button
+ * - Removed TTS/voice output (non-goal)
+ * - Improved dictation UX (push-to-talk style)
  */
 
 interface StubbedMessage {
@@ -44,15 +53,6 @@ type SpeechRecognitionInstance = {
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
-
-type SpeechSynthesisUtteranceLike = {
-  lang: string
-  text: string
-  onend: ((event: unknown) => void) | null
-  onerror: ((event: unknown) => void) | null
-}
-
-type SpeechSynthesisUtteranceConstructor = new (text: string) => SpeechSynthesisUtteranceLike
 
 // Helper to check if context is valid
 function isValidContext(context: string | null, assessmentId: string | null): boolean {
@@ -119,12 +119,9 @@ export function DialogScreenV2() {
   const [input, setInput] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
   const [dictationError, setDictationError] = useState<string | null>(null)
-  const [speechError, setSpeechError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
-  const [isSpeechSupported, setIsSpeechSupported] = useState(true)
-  const [isSpeaking, setIsSpeaking] = useState(false)
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
@@ -177,57 +174,8 @@ export function DialogScreenV2() {
   }, [])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const hasSynthesis =
-      typeof window.speechSynthesis !== 'undefined' &&
-      typeof (window as typeof window & { SpeechSynthesisUtterance?: SpeechSynthesisUtteranceConstructor })
-        .SpeechSynthesisUtterance !== 'undefined'
-
-    if (!hasSynthesis) {
-      setIsSpeechSupported(false)
-    }
-    return () => {
-      window.speechSynthesis?.cancel()
-    }
-  }, [])
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
-
-  const handleSpeak = (text: string) => {
-    if (!isSpeechSupported || typeof window === 'undefined') {
-      setSpeechError('Sprachausgabe wird von diesem Browser nicht unterstuetzt.')
-      return
-    }
-
-    const SpeechUtteranceCtor =
-      (window as typeof window & { SpeechSynthesisUtterance?: SpeechSynthesisUtteranceConstructor })
-        .SpeechSynthesisUtterance
-
-    if (!SpeechUtteranceCtor) {
-      setIsSpeechSupported(false)
-      setSpeechError('Sprachausgabe wird von diesem Browser nicht unterstuetzt.')
-      return
-    }
-
-    setSpeechError(null)
-    window.speechSynthesis.cancel()
-
-    const utterance = new SpeechUtteranceCtor(text)
-    utterance.lang = 'de-DE'
-    utterance.onend = () => {
-      setIsSpeaking(false)
-    }
-    utterance.onerror = () => {
-      setSpeechError('Sprachausgabe fehlgeschlagen. Bitte erneut versuchen.')
-      setIsSpeaking(false)
-    }
-
-    setIsSpeaking(true)
-    window.speechSynthesis.speak(utterance)
-  }
 
   const hasContext = isValidContext(context, assessmentId)
 
@@ -349,16 +297,6 @@ export function DialogScreenV2() {
                           <span className="text-xs text-slate-500">{message.timestamp}</span>
                         </div>
                         <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
-                        {message.sender === 'assistant' && isSpeechSupported && (
-                          <button
-                            type="button"
-                            onClick={() => handleSpeak(message.text)}
-                            className="text-xs font-semibold text-slate-600"
-                            disabled={isSpeaking}
-                          >
-                            {isSpeaking ? 'Vorlesen...' : 'Vorlesen'}
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -435,9 +373,22 @@ export function DialogScreenV2() {
                     }
                   }}
                   disabled={!isChatEnabled || isSending}
-                  className="text-xs font-semibold text-slate-600 disabled:text-slate-400"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                    isDictating
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:bg-slate-50 disabled:text-slate-400'
+                  }`}
+                  aria-label={isDictating ? 'Diktat stoppen' : 'Diktat starten'}
                 >
-                  {isDictating ? 'Diktat stoppen' : 'Diktat starten'}
+                  <Mic className="w-4 h-4" />
+                  {isDictating ? (
+                    <>
+                      <span className="inline-block w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse" />
+                      Aufnahme läuft
+                    </>
+                  ) : (
+                    'Diktat starten'
+                  )}
                 </button>
               ) : (
                 <span className="text-xs text-slate-500">
@@ -447,7 +398,6 @@ export function DialogScreenV2() {
               {dictationError && (
                 <span className="text-xs text-rose-700">{dictationError}</span>
               )}
-              {speechError && <span className="text-xs text-rose-700">{speechError}</span>}
               {sendError && <span className="text-xs text-rose-700">{sendError}</span>}
             </div>
           </div>
