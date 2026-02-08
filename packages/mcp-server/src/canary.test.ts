@@ -22,6 +22,7 @@ assert.ok(output.provenance.llm_model)
 assert.ok(output.provenance.llm_latency_ms !== null)
 assert.ok(output.provenance.llm_tokens_in !== null)
 assert.ok(output.provenance.llm_tokens_out !== null)
+assert.equal(output.diagnosis_result.output_version, 'v2')
 assert.ok(output.diagnosis_result.summary_for_clinician.includes('CANARY_LLM_WAS_USED'))
 
 console.log('canary test passed')

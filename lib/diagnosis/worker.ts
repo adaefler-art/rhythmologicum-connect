@@ -83,6 +83,10 @@ function serializeErrorDetails(error: unknown): Json {
   }
 }
 
+function computeHash(value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex')
+}
+
 function extractDiagnosisPayload(rawResponse: unknown): unknown {
   if (!rawResponse || typeof rawResponse !== 'object') {
     return null
@@ -530,6 +534,45 @@ export async function executeDiagnosisRun(
       llm_raw_response: llmRawResponse,
     }
 
+    const legacyFindingsCount =
+      diagnosisResult && typeof diagnosisResult === 'object'
+        ? Array.isArray((diagnosisResult as { primary_findings?: unknown }).primary_findings)
+          ? (diagnosisResult as { primary_findings?: unknown[] }).primary_findings?.length ?? 0
+          : 0
+        : 0
+    const hasV2Summary = Boolean(parsedResultV2?.summary_for_clinician)
+    const hasV2Output = parsedResultV2?.output_version === 'v2'
+    const mappingSuspect =
+      provenance.llm_used &&
+      provenance.result_source === 'llm' &&
+      !(hasV2Output || hasV2Summary || legacyFindingsCount > 1)
+    const mappingAssertionEnabled = mappingSuspect && process.env.NODE_ENV !== 'production'
+    const llmRawResponseHash = llmRawResponse ? computeHash(llmRawResponse) : null
+    const parsedResultHash = (() => {
+      try {
+        if (parsedResultV2) {
+          return computeHash(JSON.stringify(parsedResultV2))
+        }
+        if (diagnosisPayload) {
+          return computeHash(JSON.stringify(diagnosisPayload))
+        }
+      } catch {
+        return null
+      }
+      return null
+    })()
+
+    if (mappingAssertionEnabled) {
+      logInfo('MAPPING_SUSPECT', {
+        run_id: runId,
+        trace_id: traceId,
+        llm_used: provenance.llm_used,
+        result_source: provenance.result_source,
+        llm_raw_response_hash: llmRawResponseHash,
+        parsed_result_hash: parsedResultHash,
+      })
+    }
+
     const rawMcpResponse = shouldSanitizeMcpResponse(mcpResponse)
       ? sanitizeMcpResponse(mcpResponse, diagnosisPayload)
       : (mcpResponse as Json)
@@ -684,6 +727,13 @@ export async function executeDiagnosisRun(
           ...baseMetadata,
           validation: validationMetadata,
           provenance,
+          mapping_assertion: mappingAssertionEnabled
+            ? {
+                status: 'MAPPING_SUSPECT',
+                llm_raw_response_hash: llmRawResponseHash,
+                parsed_result_hash: parsedResultHash,
+              }
+            : { status: 'OK' },
         },
       }
 

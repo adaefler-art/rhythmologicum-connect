@@ -192,6 +192,10 @@ function buildCanaryPromptInstruction(): string {
   return `\n\nCANARY MODE: Prefix summary_for_clinician with "${CANARY_MARKER}" and keep the marker visible.`
 }
 
+function buildRetryPromptInstruction(): string {
+  return '\n\nIMPORTANT: Return ONLY valid JSON that matches the schema. No prose, no markdown.'
+}
+
 function applyCanaryMarker(output: DiagnosisPromptOutputV2): DiagnosisPromptOutputV2 {
   if (output.summary_for_clinician.startsWith(CANARY_MARKER)) {
     return output
@@ -1064,7 +1068,7 @@ export async function handleRunDiagnosis(
       })
       const retryStart = Date.now()
       const retryResponse = await callAnthropicDiagnosis(
-        systemPrompt,
+        `${systemPrompt}${buildRetryPromptInstruction()}`,
         userPrompt,
         modelConfig,
         resolvedTraceId,
