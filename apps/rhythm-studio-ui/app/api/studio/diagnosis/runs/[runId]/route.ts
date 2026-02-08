@@ -1,13 +1,12 @@
 /**
- * Studio Diagnosis Run Detail API
+ * Studio Diagnosis Run Detail API (proxy forwarder)
  *
  * GET /api/studio/diagnosis/runs/[runId]
  *
- * Returns run metadata and latest diagnosis result (if available).
+ * Forwards to /api/studio/diagnosis/run?runId=... to keep JSON behavior stable.
  */
 
 import { NextResponse } from 'next/server'
-import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { isValidUUID } from '@/lib/validators/uuid'
 
@@ -15,7 +14,7 @@ type RouteContext = {
   params: Promise<{ runId: string }>
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   try {
     const { runId } = await context.params
 
@@ -32,62 +31,48 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
-    const supabase = await createServerSupabaseClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const upstreamUrl = new URL('/api/studio/diagnosis/run', request.url)
+    upstreamUrl.searchParams.set('runId', runId)
 
-    if (authError || !user) {
+    const upstreamResponse = await fetch(upstreamUrl.toString(), {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        cookie: request.headers.get('cookie') ?? '',
+      },
+      cache: 'no-store',
+    })
+
+    const contentType = upstreamResponse.headers.get('content-type') ?? ''
+    const raw = await upstreamResponse.text()
+
+    if (upstreamResponse.ok) {
+      if (contentType.includes('application/json')) {
+        try {
+          return NextResponse.json(JSON.parse(raw), { status: 200 })
+        } catch (parseError) {
+          console.error(
+            '[studio/diagnosis/runs/[runId] GET] Upstream JSON parse error:',
+            parseError,
+          )
+        }
+      }
+
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.UNAUTHORIZED,
-            message: 'Authentication required',
+            code: ErrorCode.INTERNAL_ERROR,
+            message: 'Upstream returned invalid JSON response',
           },
+          status: upstreamResponse.status,
+          snippet: raw.slice(0, 300),
         },
-        { status: 401 },
+        { status: 502 },
       )
     }
 
-    const isClinician = await hasClinicianRole()
-    if (!isClinician) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: ErrorCode.FORBIDDEN,
-            message: 'Clinician or admin role required',
-          },
-        },
-        { status: 403 },
-      )
-    }
-
-    const { data: run, error: runError } = await supabase
-      .from('diagnosis_runs')
-      .select(
-        'id, patient_id, clinician_id, status, created_at, updated_at, inputs_hash, started_at, completed_at, error_code, error_message, processing_time_ms, mcp_run_id',
-      )
-      .eq('id', runId)
-      .maybeSingle()
-
-    if (runError) {
-      console.error('[studio/diagnosis/runs/[runId] GET] Run query error:', runError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to fetch diagnosis run',
-          },
-        },
-        { status: 503 },
-      )
-    }
-
-    if (!run) {
+    if (upstreamResponse.status === 404) {
       return NextResponse.json(
         {
           success: false,
@@ -95,119 +80,65 @@ export async function GET(_request: Request, context: RouteContext) {
             code: ErrorCode.RUN_NOT_FOUND,
             message: 'Diagnosis run not found',
           },
+          runId,
         },
         { status: 404 },
       )
     }
 
-    const { data: diagnosisArtifact, error: diagnosisArtifactError } = await supabase
-      .from('diagnosis_artifacts')
-      .select(
-        'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
-      )
-      .eq('run_id', runId)
-      .eq('artifact_type', 'diagnosis_json')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (diagnosisArtifactError) {
-      console.error(
-        '[studio/diagnosis/runs/[runId] GET] Artifact query error:',
-        diagnosisArtifactError,
-      )
+    if (upstreamResponse.status === 504 || upstreamResponse.status === 408) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to fetch diagnosis result',
+            code: ErrorCode.INTERNAL_ERROR,
+            message: 'Upstream timeout',
           },
+          status: upstreamResponse.status,
+          snippet: raw.slice(0, 300),
         },
-        { status: 503 },
+        { status: 504 },
       )
     }
 
-    let artifact = diagnosisArtifact
-    if (!artifact) {
-      const { data: latestArtifact, error: latestArtifactError } = await supabase
-        .from('diagnosis_artifacts')
-        .select(
-          'id, artifact_type, artifact_data, created_at, risk_level, confidence_score, primary_findings, recommendations_count',
-        )
-        .eq('run_id', runId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (latestArtifactError) {
-        console.error(
-          '[studio/diagnosis/runs/[runId] GET] Artifact query error:',
-          latestArtifactError,
-        )
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: ErrorCode.DATABASE_ERROR,
-              message: 'Failed to fetch diagnosis result',
-            },
-          },
-          { status: 503 },
-        )
-      }
-
-      artifact = latestArtifact
-    }
-
-    if (!artifact) {
+    if (upstreamResponse.status >= 500) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.ARTIFACT_NOT_FOUND,
-            message: 'Diagnosis artifact not found',
+            code: ErrorCode.INTERNAL_ERROR,
+            message: 'Upstream error',
           },
+          status: upstreamResponse.status,
+          snippet: raw.slice(0, 300),
         },
-        { status: 404 },
+        { status: 502 },
       )
     }
 
-    const resultPayload = artifact?.artifact_data
-    const diagnosisResult =
-      resultPayload && typeof resultPayload === 'object'
-        ? (resultPayload as { diagnosis_result?: Record<string, unknown> }).diagnosis_result ??
-          resultPayload
-        : null
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        run,
-        result: diagnosisResult ?? null,
-        artifact: {
-          id: artifact.id,
-          artifact_type: artifact.artifact_type,
-          created_at: artifact.created_at,
-          artifact_data: artifact.artifact_data,
-          risk_level: artifact.risk_level,
-          confidence_score: artifact.confidence_score,
-          primary_findings: artifact.primary_findings,
-          recommendations_count: artifact.recommendations_count,
-        },
-      },
-    })
-  } catch (err) {
-    console.error('[studio/diagnosis/runs/[runId] GET] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,
         error: {
           code: ErrorCode.INTERNAL_ERROR,
-          message: 'An unexpected error occurred',
+          message: 'Unexpected upstream response',
+        },
+        status: upstreamResponse.status,
+        snippet: raw.slice(0, 300),
+      },
+      { status: 502 },
+    )
+  } catch (err) {
+    console.error('[studio/diagnosis/runs/[runId] GET] Upstream error:', err)
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'Failed to reach upstream',
         },
       },
-      { status: 503 },
+      { status: 502 },
     )
   }
 }
