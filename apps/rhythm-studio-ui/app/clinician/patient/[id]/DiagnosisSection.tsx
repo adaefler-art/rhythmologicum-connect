@@ -381,16 +381,20 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         response.headers.get('x-requestid')
 
       if (!response.ok) {
+        const message =
+          response.status === 403
+            ? 'Keine Berechtigung'
+            : response.status === 404
+              ? `Run not found in API (runId: ${runId})`
+              : 'Fehler beim Laden des Ergebnisses'
         setArtifactStates((prev) => ({
           ...prev,
           [runId]: {
-            status: 'error',
-            message:
-              response.status === 403
-                ? 'Keine Berechtigung'
-                : response.status === 404
-                  ? 'Run nicht gefunden'
-                  : 'Fehler beim Laden des Ergebnisses',
+            status: response.status === 404 ? 'error' : 'error',
+            message,
+            meta: {
+              requestId,
+            },
           },
         }))
         return
@@ -402,12 +406,25 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
           result && typeof result === 'object'
             ? (result as { error?: { code?: string } }).error?.code
             : undefined
+        if (response.status === 404 && errorCode === 'RUN_NOT_FOUND') {
+          setArtifactStates((prev) => ({
+            ...prev,
+            [runId]: {
+              status: 'error',
+              message: `Run not found in API (runId: ${runId})`,
+              meta: {
+                requestId,
+              },
+            },
+          }))
+          return
+        }
         if (response.status === 404 && errorCode === 'ARTIFACT_NOT_FOUND') {
           setArtifactStates((prev) => ({
             ...prev,
             [runId]: {
               status: 'empty',
-              message: 'Abgeschlossen, aber kein Artifact vorhanden.',
+              message: 'Noch kein Artifact gespeichert.',
               meta: {
                 requestId,
               },
@@ -454,29 +471,12 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         return
       }
 
-      if (!artifact && runStatus === 'completed') {
-        setArtifactStates((prev) => ({
-          ...prev,
-          [runId]: {
-            status: 'success',
-            message: 'Server konnte Ergebnis nicht persistieren.',
-            data: detailData ?? undefined,
-            meta: {
-              requestId,
-              traceId,
-              errorCode,
-            },
-          },
-        }))
-        return
-      }
-
-      if (!artifact && !detailData?.result) {
+      if (!artifact) {
         setArtifactStates((prev) => ({
           ...prev,
           [runId]: {
             status: 'empty',
-            message: 'Ergebnis noch nicht verfuegbar',
+            message: `Noch kein Artifact gespeichert. Status: ${runStatus || 'unbekannt'}`,
             data: detailData ?? undefined,
             meta: {
               requestId,
@@ -492,7 +492,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
         ...prev,
         [runId]: {
           status: 'success',
-          data: detailData ?? undefined,
+          data: artifact?.artifact_data ?? detailData ?? undefined,
           meta: {
             requestId,
             traceId,
@@ -659,7 +659,7 @@ export function DiagnosisSection({ patientId }: DiagnosisSectionProps) {
               const riskLevel = summary?.risk_level
               const findings = summary?.primary_findings || []
               const actionLabel = 'View Result'
-              const actionDisabled = run.status !== 'completed'
+              const actionDisabled = !hasArtifact
 
               return (
                 <div key={run.id} className="rounded-lg border border-slate-200 dark:border-slate-700">
