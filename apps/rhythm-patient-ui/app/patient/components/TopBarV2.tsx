@@ -14,6 +14,7 @@ interface TopBarV2Props {
   onMenuClick?: () => void
   showAvatar?: boolean
   showBell?: boolean
+  showTitle?: boolean
 }
 
 /**
@@ -56,6 +57,7 @@ export function TopBarV2({
   onMenuClick,
   showAvatar = false,
   showBell = true,
+  showTitle = true,
 }: TopBarV2Props) {
   const router = useRouter()
 
@@ -142,9 +144,11 @@ export function TopBarV2({
           )}
 
           {/* Title */}
-          <h1 className="text-base font-semibold text-slate-900 truncate">
-            {title}
-          </h1>
+          {showTitle && title ? (
+            <h1 className="text-base font-semibold text-slate-900 truncate">
+              {title}
+            </h1>
+          ) : null}
         </div>
 
         {/* Right Section */}
