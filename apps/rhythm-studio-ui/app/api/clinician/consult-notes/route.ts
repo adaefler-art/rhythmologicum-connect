@@ -186,10 +186,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
       patientId: patient_id,
     })
 
+    const normalizedConsultNote = {
+      ...consultNote,
+      content: consultNote.content as unknown as ConsultNoteContent,
+      metadata: consultNote.metadata
+        ? (consultNote.metadata as Record<string, unknown>)
+        : undefined,
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        consultNote,
+        consultNote: normalizedConsultNote,
         validation,
       },
     })
