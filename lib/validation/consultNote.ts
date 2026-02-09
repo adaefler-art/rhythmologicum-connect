@@ -657,13 +657,6 @@ export function containsNumericalProbabilities(text: string): boolean {
 // HELPER FUNCTIONS (continued)
 // ============================================================================
 
-/**
- * Collects all text fields from consult note content for validation
- */
-function collectAllTextFields(
-  content: ConsultNoteContent
-): Array<{ section: string; field?: string; text: string }> {
- */
 export function isHandoffSummaryValid(summary: string[]): boolean {
   return summary.length > 0 && summary.length <= MAX_HANDOFF_LINES
 }
