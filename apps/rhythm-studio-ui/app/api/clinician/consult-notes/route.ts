@@ -321,10 +321,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<ConsultNot
       total: count,
     })
 
+    const normalizedConsultNotes = (consultNotes || []).map((note) => ({
+      ...note,
+      content: note.content as unknown as ConsultNoteContent,
+      metadata: note.metadata ? (note.metadata as Record<string, unknown>) : undefined,
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
-        consultNotes: consultNotes || [],
+        consultNotes: normalizedConsultNotes,
         total: count || 0,
         page,
         perPage,
