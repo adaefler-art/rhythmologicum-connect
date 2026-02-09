@@ -18,6 +18,7 @@ import type {
   CreateConsultNoteResponse,
   ListConsultNotesResponse,
 } from '@/lib/types/consultNote'
+import type { Json } from '@/lib/types/supabase'
 import { validateConsultNote } from '@/lib/validation/consultNote'
 import { createConsultNotePayload } from '@/lib/consultNote/helpers'
 import { randomUUID } from 'crypto'
@@ -147,6 +148,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
     // Add created_by
     const insertPayload = {
       ...payload,
+      content: payload.content as unknown as Json,
+      metadata: payload.metadata as unknown as Json,
       created_by: user.id,
       updated_by: user.id,
     }
