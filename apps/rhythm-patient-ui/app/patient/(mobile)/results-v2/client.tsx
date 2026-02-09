@@ -5,6 +5,9 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Button, ErrorState } from '@/lib/ui/mobile-v2'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
+import { PatientSignalsSection } from './components/PatientSignalsSection'
+import { transformToPatientHints } from '@/lib/utils/signalTransform'
+import type { RawSignalData } from '@/lib/types/signals'
 
 interface ResultsV2ClientProps {
   slug: string
@@ -222,6 +225,23 @@ export default function ResultsV2Client({ slug, assessmentId }: ResultsV2ClientP
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#1f2937]">{funnelTitle || 'Ergebnis'}</h1>
         </div>
+
+        {/* Issue 8: Patient Signals Section (collapsed by default) */}
+        <PatientSignalsSection
+          hint={
+            riskLevel || riskScore
+              ? transformToPatientHints({
+                  riskLevel: riskLevel,
+                  safetyScore: typeof riskScore === 'number' ? riskScore : undefined,
+                  safetyFindings: undefined,
+                  riskModels: undefined,
+                  priorityRanking: priorityRanking,
+                } as RawSignalData)
+              : null
+          }
+          loading={false}
+        />
+
         <Card padding="lg" shadow="md">
           <div className="space-y-4">
             <div>

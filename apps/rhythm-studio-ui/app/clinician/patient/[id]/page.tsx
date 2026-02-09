@@ -20,9 +20,12 @@ import { AnamnesisSection } from './AnamnesisSection'
 import { DiagnosisSection } from './DiagnosisSection'
 import { getResults } from '@/lib/fetchClinician'
 import { AmyInsightsSection } from './AmyInsightsSection'
+import { ClinicianSignalsSection } from './ClinicianSignalsSection'
 import { Plus, Brain, LineChart } from 'lucide-react'
 import type { LabValue, Medication } from '@/lib/types/extraction'
 import type { WorkupStatus } from '@/lib/types/workupStatus'
+import { transformToClinicianSignal } from '@/lib/utils/signalTransform'
+import type { RawSignalData } from '@/lib/types/signals'
 
 type PatientMeasure = {
   id: string
@@ -711,6 +714,24 @@ export default function PatientDetailPage() {
                   {resultsDebugHint}
                 </div>
               )}
+
+              {/* Issue 8: Clinician Signals Section */}
+              <ClinicianSignalsSection
+                signal={
+                  safetyState.state === 'ok' || scoresState.state === 'ok'
+                    ? transformToClinicianSignal({
+                        riskLevel: safetyState.state === 'ok' ? safetyState.items[0]?.risk_level : undefined,
+                        safetyScore: safetyState.state === 'ok' ? safetyState.items[0]?.safety_score : undefined,
+                        safetyFindings: safetyState.state === 'ok' ? safetyState.items[0]?.safety_findings : undefined,
+                        riskModels: scoresState.state === 'ok' ? scoresState.items[0]?.risk_models : undefined,
+                        priorityRanking: interventionsState.state === 'ok' && interventionsState.items[0]
+                          ? { topInterventions: interventionsState.items }
+                          : undefined,
+                      } as RawSignalData)
+                    : null
+                }
+                loading={false}
+              />
 
               {/* Interventions Section */}
               <InterventionsSection
