@@ -5,7 +5,7 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Button, ErrorState } from '@/lib/ui/mobile-v2'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
-import { PatientSignalsSection } from './components/PatientSignalsSection'
+import { PatientSignalsSection } from '../components/PatientSignalsSection'
 import { transformToPatientHints } from '@/lib/utils/signalTransform'
 import type { RawSignalData } from '@/lib/types/signals'
 
