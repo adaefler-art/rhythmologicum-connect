@@ -8,7 +8,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import type { ConsultNote, ConsultNoteApiResponse } from '@/lib/types/consultNote'
+import type { ConsultNote, ConsultNoteApiResponse, ConsultNoteContent } from '@/lib/types/consultNote'
 import { randomUUID } from 'crypto'
 
 type RouteContext = {
@@ -117,9 +117,14 @@ export async function GET(
       patientId: consultNote.patient_id,
     })
 
+    const typedConsultNote: ConsultNote = {
+      ...consultNote,
+      content: consultNote.content as ConsultNoteContent,
+    }
+
     return NextResponse.json({
       success: true,
-      data: consultNote as ConsultNote,
+      data: typedConsultNote,
     })
   } catch (error) {
     console.error('[consult-notes] Unexpected error', {
