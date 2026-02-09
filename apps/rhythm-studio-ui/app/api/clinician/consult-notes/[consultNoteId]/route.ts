@@ -117,9 +117,16 @@ export async function GET(
       patientId: consultNote.patient_id,
     })
 
+    const metadata = consultNote.metadata
+    const normalizedMetadata =
+      metadata && typeof metadata === 'object' && !Array.isArray(metadata)
+        ? (metadata as Record<string, unknown>)
+        : undefined
+
     const typedConsultNote: ConsultNote = {
       ...consultNote,
       content: consultNote.content as ConsultNoteContent,
+      metadata: normalizedMetadata,
     }
 
     return NextResponse.json({
