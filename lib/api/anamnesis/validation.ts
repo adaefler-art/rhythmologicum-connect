@@ -161,7 +161,10 @@ export function validateEntryType(entryType: string | undefined | null): boolean
 export function validateCreateEntry(data: unknown): CreateAnamnesisEntryRequest {
   const validated = createAnamnesisEntrySchema.parse(data)
   if (validated.entry_type === 'intake') {
-    intakeContentSchema.parse(validated.content)
+    const hasContent = Object.keys(validated.content || {}).length > 0
+    if (hasContent) {
+      intakeContentSchema.parse(validated.content)
+    }
   }
   validateContentSize(validated.content)
   return validated

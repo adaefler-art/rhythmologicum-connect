@@ -32,7 +32,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientProfileId, getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import { validateCreateEntry } from '@/lib/api/anamnesis/validation'
+import { ENTRY_TYPES, validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
@@ -57,6 +57,22 @@ const logIntakeEvent = (params: {
     }),
   )
 }
+
+const createEntrySchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
+  content: z.record(z.string(), z.unknown()).optional(),
+  entry_type: z.enum(ENTRY_TYPES),
+  tags: z.array(z.string()).optional().default([]),
+  change_reason: z.string().optional(),
+})
+
+const toFieldErrors = (issues: z.ZodIssue[]) =>
+  issues.reduce<Record<string, string[]>>((acc, issue) => {
+    const key = issue.path.length > 0 ? issue.path.join('.') : 'root'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(issue.message)
+    return acc
+  }, {})
 
 export async function GET() {
   try {
@@ -232,17 +248,17 @@ export async function POST(request: Request) {
         entryId: null,
         entryType: null,
         ok: false,
-        errorCode: ErrorCode.NOT_FOUND,
+        errorCode: 'PATIENT_MAPPING_MISSING',
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.NOT_FOUND,
-            message: 'Patient profile not found',
+            code: 'PATIENT_MAPPING_MISSING',
+            message: 'Patient profile mapping missing',
           },
         },
-        { status: 404 }
+        { status: 403 }
       )
     }
 
@@ -257,26 +273,55 @@ export async function POST(request: Request) {
         entryId: null,
         entryType: null,
         ok: false,
-        errorCode: ErrorCode.NOT_FOUND,
+        errorCode: 'PATIENT_MAPPING_MISSING',
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.NOT_FOUND,
-            message: 'Patient organization not found',
+            code: 'PATIENT_MAPPING_MISSING',
+            message: 'Patient organization mapping missing',
           },
         },
-        { status: 404 }
+        { status: 403 }
       )
     }
 
     // Parse and validate request body
-    const body = await request.json()
+    let body: unknown
+
+    try {
+      body = await request.json()
+    } catch {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.VALIDATION_FAILED,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.VALIDATION_FAILED,
+            message: 'Invalid JSON body',
+            fieldErrors: { root: ['Invalid JSON body'] },
+          },
+        },
+        { status: 400 }
+      )
+    }
     let validatedData
 
     try {
-      validatedData = validateCreateEntry(body)
+      const baseValidated = createEntrySchema.parse(body)
+      validatedData = validateCreateEntry({
+        ...baseValidated,
+        content: baseValidated.content ?? {},
+      })
     } catch (err) {
       if (err instanceof z.ZodError) {
         logIntakeEvent({
@@ -294,13 +339,32 @@ export async function POST(request: Request) {
             error: {
               code: ErrorCode.VALIDATION_FAILED,
               message: 'Validation failed',
-              details: err.issues,
+              fieldErrors: toFieldErrors(err.issues),
             },
           },
           { status: 400 }
         )
       }
-      throw err
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: typeof body?.entry_type === 'string' ? body.entry_type : null,
+        ok: false,
+        errorCode: ErrorCode.VALIDATION_FAILED,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.VALIDATION_FAILED,
+            message: err instanceof Error ? err.message : 'Validation failed',
+            fieldErrors: { root: ['Validation failed'] },
+          },
+        },
+        { status: 400 }
+      )
     }
 
     // Create anamnesis entry
@@ -322,6 +386,8 @@ export async function POST(request: Request) {
 
     if (createError) {
       console.error('[patient/anamnesis POST] Create error:', createError)
+      const isRlsBlocked = createError.code === '42501' || createError.code === 'PGRST301'
+      const errorCode = isRlsBlocked ? 'RLS_BLOCKED' : ErrorCode.DATABASE_ERROR
       logIntakeEvent({
         runId,
         userId: user.id,
@@ -329,17 +395,19 @@ export async function POST(request: Request) {
         entryId: null,
         entryType: validatedData.entry_type || null,
         ok: false,
-        errorCode: ErrorCode.DATABASE_ERROR,
+        errorCode,
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to create anamnesis entry',
+            code: errorCode,
+            message: isRlsBlocked
+              ? 'Row-level security blocked the insert'
+              : 'Failed to create anamnesis entry',
           },
         },
-        { status: 500 }
+        { status: isRlsBlocked ? 403 : 400 }
       )
     }
 
@@ -405,7 +473,7 @@ export async function POST(request: Request) {
           message: 'An unexpected error occurred',
         },
       },
-      { status: 500 }
+      { status: 400 }
     )
   }
 }
