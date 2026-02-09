@@ -80,7 +80,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
         {
           success: false,
           error: {
-            code: ErrorCode.INVALID_REQUEST,
+            code: ErrorCode.INVALID_INPUT,
             message: 'Invalid JSON in request body',
           },
         },
