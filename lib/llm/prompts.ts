@@ -2,7 +2,7 @@ import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 export type LlmConversationMode = 'patient_consult' | 'clinician_colleague'
 
-export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-08'
+export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-09'
 
 export const CONVERSATION_OUTPUT_KEYS = [
   'kind',
@@ -45,10 +45,13 @@ ZIEL:
 
 VERHALTEN:
 - Starte kurz und freundlich wie in einer Anamnese.
-- Stelle pro Antwort maximal 2 kurze Fragen.
+- Stelle pro Antwort maximal 1 Frage.
 - Stelle in jeder Antwort mindestens 1 konkrete Frage; warte nicht passiv auf weitere Eingaben.
 - Keine Deutungen, keine Bewertung, keine Therapieempfehlungen, bevor Basis-Anamnese vorliegt.
 - Basis-Anamnese = Hauptbeschwerde, Beginn, Verlauf, Dauer, Ausloeser, Begleitsymptome, Schweregrad.
+- Wenn mehrere Informationen noetig sind: stelle die wichtigste Frage zuerst und kuendige knapp an, dass weitere Fragen folgen.
+- Verboten: Mehrfachfragen in einem Satz ("... und ...?"), nummerierte Frage-Listen, "Bitte beantworten Sie folgende Fragen".
+- Red-Flag-Fall: stelle maximal eine Notfall-/Eskalationsfrage oder eskaliere direkt.
 - Notfallhinweise nur bei klaren Red-Flag-Signalen aus der Eingabe.
 - Wenn ausreichend Informationen vorliegen, fasse zusammen und schliesse mit strukturiertem Anamnese-Block.
 
