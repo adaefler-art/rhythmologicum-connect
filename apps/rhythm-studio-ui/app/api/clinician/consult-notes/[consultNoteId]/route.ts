@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import type { ConsultNote, ConsultNoteApiResponse } from '@/lib/types/consultNote'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 type RouteContext = {
   params: Promise<{ consultNoteId: string }>
@@ -22,7 +22,7 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ): Promise<NextResponse<ConsultNoteApiResponse<ConsultNote>>> {
-  const requestId = uuidv4()
+  const requestId = randomUUID()
   const { consultNoteId } = await context.params
   const endpoint = `/api/clinician/consult-notes/${consultNoteId}`
 

@@ -20,7 +20,7 @@ import type {
   ConsultationType,
 } from '@/lib/types/consultNote'
 import { validateConsultNote } from '@/lib/validation/consultNote'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 const MAX_TOKENS = 4000
@@ -126,7 +126,7 @@ async function generateConsultNoteContent(
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<ConsultNoteApiResponse<{ content: ConsultNoteContent }>>> {
-  const requestId = uuidv4()
+  const requestId = randomUUID()
   const endpoint = '/api/clinician/consult-notes/generate'
 
   try {

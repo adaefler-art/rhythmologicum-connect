@@ -20,13 +20,13 @@ import type {
 } from '@/lib/types/consultNote'
 import { validateConsultNote } from '@/lib/validation/consultNote'
 import { createConsultNotePayload } from '@/lib/consultNote/helpers'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 /**
  * POST - Create new consult note
  */
 export async function POST(request: NextRequest): Promise<NextResponse<ConsultNoteApiResponse<CreateConsultNoteResponse>>> {
-  const requestId = uuidv4()
+  const requestId = randomUUID()
   const endpoint = '/api/clinician/consult-notes'
 
   try {
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
  * GET - List consult notes for a patient
  */
 export async function GET(request: NextRequest): Promise<NextResponse<ConsultNoteApiResponse<ListConsultNotesResponse>>> {
-  const requestId = uuidv4()
+  const requestId = randomUUID()
   const endpoint = '/api/clinician/consult-notes'
 
   try {
