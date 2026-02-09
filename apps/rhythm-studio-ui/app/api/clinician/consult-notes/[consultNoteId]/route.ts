@@ -125,7 +125,7 @@ export async function GET(
 
     const typedConsultNote: ConsultNote = {
       ...consultNote,
-      content: consultNote.content as ConsultNoteContent,
+      content: consultNote.content as unknown as ConsultNoteContent,
       metadata: normalizedMetadata,
     }
 
