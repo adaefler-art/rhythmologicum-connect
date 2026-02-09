@@ -67,6 +67,28 @@ import { validateCreateVersion } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
+const logIntakeEvent = (params: {
+  runId: string | null
+  userId: string | null
+  action: 'patch'
+  entryId: string | null
+  entryType: string | null
+  ok: boolean
+  errorCode?: string
+}) => {
+  console.info(
+    JSON.stringify({
+      runId: params.runId,
+      userId: params.userId,
+      action: params.action,
+      entryId: params.entryId,
+      entryType: params.entryType,
+      ok: params.ok,
+      errorCode: params.errorCode ?? null,
+    }),
+  )
+}
+
 type RouteContext = {
   params: Promise<{ entryId: string }>
 }
@@ -161,6 +183,8 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const runId = request.headers.get('x-intake-run-id')
+
   try {
     const { entryId } = await context.params
     const supabase = await createServerSupabaseClient()
@@ -172,6 +196,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      logIntakeEvent({
+        runId,
+        userId: user?.id ?? null,
+        action: 'patch',
+        entryId,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.UNAUTHORIZED,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -188,6 +221,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     const entry = await getAnamnesisEntry(supabase, entryId)
 
     if (!entry) {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'patch',
+        entryId,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.NOT_FOUND,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -208,6 +250,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       validatedData = validateCreateVersion(body)
     } catch (err) {
       if (err instanceof z.ZodError) {
+        logIntakeEvent({
+          runId,
+          userId: user.id,
+          action: 'patch',
+          entryId,
+          entryType: typeof body?.entry_type === 'string' ? body.entry_type : entry.entry_type,
+          ok: false,
+          errorCode: ErrorCode.VALIDATION_FAILED,
+        })
         return NextResponse.json(
           {
             success: false,
@@ -239,6 +290,15 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (updateError) {
       console.error('[patient/anamnesis/[entryId] PATCH] Update error:', updateError)
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'patch',
+        entryId,
+        entryType: validatedData.entry_type || entry.entry_type,
+        ok: false,
+        errorCode: ErrorCode.DATABASE_ERROR,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -250,6 +310,15 @@ export async function PATCH(request: Request, context: RouteContext) {
         { status: 500 }
       )
     }
+
+    logIntakeEvent({
+      runId,
+      userId: user.id,
+      action: 'patch',
+      entryId: updatedEntry.id,
+      entryType: updatedEntry.entry_type,
+      ok: true,
+    })
 
     // Get the latest version number (created by trigger)
     const { data: latestVersion, error: versionError } = await supabase
@@ -273,6 +342,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     })
   } catch (err) {
     console.error('[patient/anamnesis/[entryId] PATCH] Unexpected error:', err)
+    logIntakeEvent({
+      runId,
+      userId: null,
+      action: 'patch',
+      entryId: null,
+      entryType: null,
+      ok: false,
+      errorCode: ErrorCode.INTERNAL_ERROR,
+    })
     return NextResponse.json(
       {
         success: false,
