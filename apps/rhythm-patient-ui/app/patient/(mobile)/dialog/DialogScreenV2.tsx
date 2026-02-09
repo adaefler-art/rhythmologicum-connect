@@ -264,7 +264,7 @@ export function DialogScreenV2() {
   }
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden">
+    <div className="w-full overflow-x-hidden">
       <div className="flex min-h-[calc(100dvh-56px)] flex-col">
         <div className="flex-1 space-y-6 overflow-y-auto px-4 pb-[calc(120px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-6">
           {/* Header */}
