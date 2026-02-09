@@ -13,6 +13,7 @@
 
 import { useState } from 'react'
 import { Card } from '@/lib/ui/mobile-v2'
+import { env } from '@/lib/env'
 import { ChevronDown, ChevronUp, Info } from 'lucide-react'
 import type { PatientSignalHint } from '@/lib/types/signals'
 import { getRedFlagMessage } from '@/lib/utils/signalTransform'
@@ -56,15 +57,15 @@ export function PatientSignalsSection({ hint, loading }: PatientSignalsSectionPr
         className="w-full flex items-center justify-between gap-3"
       >
         <div className="flex items-center gap-2">
-          <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+          <Info className="w-5 h-5 text-blue-500 shrink-0" />
           <span className="text-sm font-medium text-slate-900 text-left">
             Automatische Hinweise (ärztlich zu prüfen)
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-slate-400 flex-shrink-0" />
+          <ChevronUp className="w-5 h-5 text-slate-400 shrink-0" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
+          <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />
         )}
       </button>
 
@@ -84,7 +85,7 @@ export function PatientSignalsSection({ hint, loading }: PatientSignalsSectionPr
               <ul className="space-y-2">
                 {hint.riskAreaHints.map((hintText, idx) => (
                   <li key={`hint-${idx}`} className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-1 flex-shrink-0">•</span>
+                    <span className="text-blue-500 mt-1 shrink-0">•</span>
                     <span className="text-sm text-slate-700">{hintText}</span>
                   </li>
                 ))}
@@ -99,7 +100,7 @@ export function PatientSignalsSection({ hint, loading }: PatientSignalsSectionPr
               <ul className="space-y-1">
                 {hint.recommendedNextSteps.map((step, idx) => (
                   <li key={`step-${idx}`} className="flex items-start gap-2">
-                    <span className="text-blue-600 mt-0.5 flex-shrink-0">→</span>
+                    <span className="text-blue-600 mt-0.5 shrink-0">→</span>
                     <span className="text-xs text-blue-700">{step}</span>
                   </li>
                 ))}
@@ -115,7 +116,7 @@ export function PatientSignalsSection({ hint, loading }: PatientSignalsSectionPr
           </div>
 
           {/* Debug info (only in development) */}
-          {process.env.NODE_ENV === 'development' && (
+          {env.NODE_ENV === 'development' && (
             <div className="mt-2 text-xs text-slate-400">
               Bullets: {totalBullets}/5 max
             </div>

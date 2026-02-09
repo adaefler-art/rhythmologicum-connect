@@ -79,6 +79,7 @@ type ExtractedDocument = {
 type ReportWithSafety = {
   id: string
   assessment_id: string
+  risk_level: string | null
   safety_score: number | null
   safety_findings: Record<string, unknown> | null
   created_at: string
