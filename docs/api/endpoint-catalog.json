@@ -3996,6 +3996,67 @@
       "isAllowedOrphan": true
     },
     {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/[consultNoteId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/[consultNoteId]/versions",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/versions/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/generate",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/generate/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "internalUnused": false,
       "internalUnusedReason": null,
       "path": "/api/clinician/patient-funnels",

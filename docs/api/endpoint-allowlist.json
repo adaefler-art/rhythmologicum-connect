@@ -67,6 +67,26 @@
     "/api/clinician/assessments/[assessmentId]/details",
     "/api/clinician/anamnesis/[entryId]/archive",
     "/api/clinician/anamnesis/[entryId]/versions",
+    {
+      "path": "/api/clinician/consult-notes",
+      "internal_unused": true,
+      "reason": "Issue 5 consult note APIs (no UI callsite yet)"
+    },
+    {
+      "path": "/api/clinician/consult-notes/[consultNoteId]",
+      "internal_unused": true,
+      "reason": "Issue 5 consult note APIs (no UI callsite yet)"
+    },
+    {
+      "path": "/api/clinician/consult-notes/[consultNoteId]/versions",
+      "internal_unused": true,
+      "reason": "Issue 5 consult note APIs (no UI callsite yet)"
+    },
+    {
+      "path": "/api/clinician/consult-notes/generate",
+      "internal_unused": true,
+      "reason": "Issue 5 consult note APIs (no UI callsite yet)"
+    },
     "/api/clinician/patients/[patientId]/funnels",
     "/api/clinician/patient/[patientId]/[...probe]",
     "/api/clinician/triage/cases/[caseId]/ack",

@@ -16,6 +16,8 @@
     "clinician_patient_assignments",
     "content_page_sections",
     "content_pages",
+    "consult_note_versions",
+    "consult_notes",
     "design_tokens",
     "diagnosis_artifacts",
     "diagnosis_runs",
@@ -65,8 +67,11 @@
     "user_profiles"
   ],
   "enums": [
+    "assertiveness_level",
     "assessment_state",
     "assessment_status",
+    "audience_type",
+    "consultation_type",
     "diagnosis_run_status",
     "funnel_version_status",
     "notification_status",
@@ -84,6 +89,7 @@
     "support_case_status",
     "task_status",
     "triage_action_type",
+    "uncertainty_profile",
     "user_role",
     "validation_status",
     "workup_status"
@@ -426,6 +432,39 @@
       "evaluated_at",
       "created_at",
       "updated_at"
+    ],
+    "consult_notes": [
+      "id",
+      "patient_id",
+      "organization_id",
+      "chat_session_id",
+      "consultation_type",
+      "source",
+      "guideline_version",
+      "uncertainty_profile",
+      "assertiveness",
+      "audience",
+      "content",
+      "rendered_markdown",
+      "version_number",
+      "is_archived",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by",
+      "metadata"
+    ],
+    "consult_note_versions": [
+      "id",
+      "consult_note_id",
+      "version_number",
+      "content",
+      "rendered_markdown",
+      "change_summary",
+      "diff",
+      "created_at",
+      "created_by",
+      "metadata"
     ]
   },
   "constraints": {

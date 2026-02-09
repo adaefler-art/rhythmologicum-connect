@@ -598,6 +598,21 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/admin/diagnosis/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/admin/diagnosis/reconcile/route.ts",
+      "intent": null,
+      "accessRole": "admin",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/admin/diagnostics/pillars-sot",
       "methods": [
         "GET"
@@ -3973,6 +3988,67 @@
         "GET"
       ],
       "file": "apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/[consultNoteId]",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/[consultNoteId]/versions",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/versions/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
+      "path": "/api/clinician/consult-notes/generate",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/generate/route.ts",
       "intent": null,
       "accessRole": "clinician",
       "usedByCount": 0,
@@ -9257,6 +9333,27 @@
           "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/DiagnosisSection.tsx",
           "apiPath": "/api/studio/diagnosis/queue",
           "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
+      "path": "/api/studio/diagnosis/run",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/run/route.ts",
+      "intent": null,
+      "accessRole": "clinician",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/app/api/studio/diagnosis/runs/[runId]/route.ts",
+          "apiPath": "/api/studio/diagnosis/run",
+          "kind": "url"
         }
       ],
       "isOrphan": false,

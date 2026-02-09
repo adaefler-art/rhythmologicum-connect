@@ -8,7 +8,11 @@
 import { readdirSync, readFileSync } from 'fs'
 import { resolve, join } from 'path'
 
-const { REQUIRED_FUNNEL_SLUGS } = await import('../../lib/config/requiredFunnelDefinitions.ts')
+const REQUIRED_FUNNEL_SLUGS = [
+  'stress-assessment',
+  'cardiovascular-age',
+  'sleep-quality',
+]
 
 const migrationsDir = resolve(process.cwd(), 'supabase', 'migrations')
 const migrationFiles = readdirSync(migrationsDir)
