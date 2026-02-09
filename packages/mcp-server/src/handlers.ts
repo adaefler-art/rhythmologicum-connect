@@ -12,12 +12,12 @@ import type {
   GetPatientContextOutput,
   RunDiagnosisInput,
   RunDiagnosisOutput,
-} from './tools.js'
-import { MCP_TOOLS } from './tools.js'
-import { generateRunVersion, getVersionMetadata } from './version.js'
-import { logger } from './logger.js'
-import { env } from './env.js'
-import { getPrompt } from './prompts/registry.js'
+} from './tools'
+import { MCP_TOOLS } from './tools'
+import { generateRunVersion, getVersionMetadata } from './version'
+import { logger } from './logger'
+import { env } from './env'
+import { getPrompt } from './prompts/registry'
 import {
   CONFIDENCE_LEVEL,
   URGENCY_LEVEL,
@@ -25,7 +25,7 @@ import {
   validateDiagnosisPromptOutputV2,
   type DiagnosisPromptOutputV1,
   type DiagnosisPromptOutputV2,
-} from './contracts/diagnosis-prompt.js'
+} from './contracts/diagnosis-prompt'
 
 const anthropicApiKey = env.ANTHROPIC_API_KEY || env.ANTHROPIC_KEY
 const anthropic = anthropicApiKey ? new Anthropic({ apiKey: anthropicApiKey }) : null
