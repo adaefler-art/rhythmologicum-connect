@@ -7,36 +7,76 @@
 -- ============================================================================
 
 -- Consultation type
-CREATE TYPE public.consultation_type AS ENUM (
-  'first',
-  'follow_up'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    WHERE t.typname = 'consultation_type'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.consultation_type AS ENUM (
+      'first',
+      'follow_up'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.consultation_type IS 'Issue 5: Type of medical consultation (first visit or follow-up)';
 
 -- Uncertainty profile
-CREATE TYPE public.uncertainty_profile AS ENUM (
-  'off',
-  'qualitative',
-  'mixed'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    WHERE t.typname = 'uncertainty_profile'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.uncertainty_profile AS ENUM (
+      'off',
+      'qualitative',
+      'mixed'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.uncertainty_profile IS 'Issue 5: Uncertainty mode for consult note generation';
 
 -- Assertiveness level
-CREATE TYPE public.assertiveness_level AS ENUM (
-  'conservative',
-  'balanced',
-  'direct'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    WHERE t.typname = 'assertiveness_level'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.assertiveness_level AS ENUM (
+      'conservative',
+      'balanced',
+      'direct'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.assertiveness_level IS 'Issue 5: Assertiveness level for medical statements';
 
 -- Audience type
-CREATE TYPE public.audience_type AS ENUM (
-  'patient',
-  'clinician'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    WHERE t.typname = 'audience_type'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.audience_type AS ENUM (
+      'patient',
+      'clinician'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.audience_type IS 'Issue 5: Target audience for consult note';
 
@@ -44,7 +84,7 @@ COMMENT ON TYPE public.audience_type IS 'Issue 5: Target audience for consult no
 -- 2. CONSULT NOTES TABLE
 -- ============================================================================
 
-CREATE TABLE public.consult_notes (
+CREATE TABLE IF NOT EXISTS public.consult_notes (
   -- Identity
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
@@ -93,10 +133,10 @@ CREATE TABLE public.consult_notes (
 );
 
 -- Indexes
-CREATE INDEX consult_notes_patient_id_idx ON public.consult_notes(patient_id);
-CREATE INDEX consult_notes_organization_id_idx ON public.consult_notes(organization_id);
-CREATE INDEX consult_notes_created_at_idx ON public.consult_notes(created_at DESC);
-CREATE INDEX consult_notes_chat_session_id_idx ON public.consult_notes(chat_session_id) WHERE chat_session_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS consult_notes_patient_id_idx ON public.consult_notes(patient_id);
+CREATE INDEX IF NOT EXISTS consult_notes_organization_id_idx ON public.consult_notes(organization_id);
+CREATE INDEX IF NOT EXISTS consult_notes_created_at_idx ON public.consult_notes(created_at DESC);
+CREATE INDEX IF NOT EXISTS consult_notes_chat_session_id_idx ON public.consult_notes(chat_session_id) WHERE chat_session_id IS NOT NULL;
 
 -- Comments
 COMMENT ON TABLE public.consult_notes IS 'Issue 5: Medical consultation notes with strict 12-section structure. Versioned, immutable records.';
@@ -109,7 +149,7 @@ COMMENT ON COLUMN public.consult_notes.chat_session_id IS 'Issue 5: Optional ref
 -- 3. CONSULT NOTE VERSIONS TABLE (Audit Trail)
 -- ============================================================================
 
-CREATE TABLE public.consult_note_versions (
+CREATE TABLE IF NOT EXISTS public.consult_note_versions (
   -- Identity
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
@@ -140,8 +180,8 @@ CREATE TABLE public.consult_note_versions (
 );
 
 -- Indexes
-CREATE INDEX consult_note_versions_consult_note_id_idx ON public.consult_note_versions(consult_note_id);
-CREATE INDEX consult_note_versions_created_at_idx ON public.consult_note_versions(created_at DESC);
+CREATE INDEX IF NOT EXISTS consult_note_versions_consult_note_id_idx ON public.consult_note_versions(consult_note_id);
+CREATE INDEX IF NOT EXISTS consult_note_versions_created_at_idx ON public.consult_note_versions(created_at DESC);
 
 -- Comments
 COMMENT ON TABLE public.consult_note_versions IS 'Issue 5: Immutable version history for consult notes. Tracks all edits with diffs.';
@@ -160,157 +200,278 @@ ALTER TABLE public.consult_note_versions ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 
 -- Patients can view their own consult notes
-CREATE POLICY "Patients can view own consult notes"
-  ON public.consult_notes
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.patient_profiles pp
-      WHERE pp.id = consult_notes.patient_id
-        AND pp.user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Patients can view own consult notes'
+  ) THEN
+    CREATE POLICY "Patients can view own consult notes"
+      ON public.consult_notes
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.patient_profiles pp
+          WHERE pp.id = consult_notes.patient_id
+            AND pp.user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- Clinicians can view consult notes for assigned patients
-CREATE POLICY "Clinicians can view assigned patient consult notes"
-  ON public.consult_notes
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.clinician_patient_assignments cpa
-      JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
-      WHERE cpa.clinician_user_id = auth.uid()
-        AND pp.id = consult_notes.patient_id
-        AND cpa.organization_id = consult_notes.organization_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Clinicians can view assigned patient consult notes'
+  ) THEN
+    CREATE POLICY "Clinicians can view assigned patient consult notes"
+      ON public.consult_notes
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.clinician_patient_assignments cpa
+          JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
+          WHERE cpa.clinician_user_id = auth.uid()
+            AND pp.id = consult_notes.patient_id
+            AND cpa.organization_id = consult_notes.organization_id
+        )
+      );
+  END IF;
+END $$;
 
 -- Admins can view all consult notes in their organization
-CREATE POLICY "Admins can view org consult notes"
-  ON public.consult_notes
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.organizations o
-      WHERE o.id = consult_notes.organization_id
-        AND o.admin_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Admins can view org consult notes'
+  ) THEN
+    CREATE POLICY "Admins can view org consult notes"
+      ON public.consult_notes
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.organizations o
+          WHERE o.id = consult_notes.organization_id
+            AND o.admin_user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================
 -- Consult Notes: INSERT Policies
 -- ============================================================
 
 -- Only clinicians can create consult notes
-CREATE POLICY "Clinicians can create consult notes for assigned patients"
-  ON public.consult_notes
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.clinician_patient_assignments cpa
-      JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
-      WHERE cpa.clinician_user_id = auth.uid()
-        AND pp.id = consult_notes.patient_id
-        AND cpa.organization_id = consult_notes.organization_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Clinicians can create consult notes for assigned patients'
+  ) THEN
+    CREATE POLICY "Clinicians can create consult notes for assigned patients"
+      ON public.consult_notes
+      FOR INSERT
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.clinician_patient_assignments cpa
+          JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
+          WHERE cpa.clinician_user_id = auth.uid()
+            AND pp.id = consult_notes.patient_id
+            AND cpa.organization_id = consult_notes.organization_id
+        )
+      );
+  END IF;
+END $$;
 
 -- Admins can create consult notes in their organization
-CREATE POLICY "Admins can create consult notes in org"
-  ON public.consult_notes
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.organizations o
-      WHERE o.id = consult_notes.organization_id
-        AND o.admin_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Admins can create consult notes in org'
+  ) THEN
+    CREATE POLICY "Admins can create consult notes in org"
+      ON public.consult_notes
+      FOR INSERT
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.organizations o
+          WHERE o.id = consult_notes.organization_id
+            AND o.admin_user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================
 -- Consult Notes: UPDATE Policies (Limited - prefer versioning)
 -- ============================================================
 
 -- Clinicians can update (archive) consult notes for assigned patients
-CREATE POLICY "Clinicians can archive consult notes"
-  ON public.consult_notes
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.clinician_patient_assignments cpa
-      JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
-      WHERE cpa.clinician_user_id = auth.uid()
-        AND pp.id = consult_notes.patient_id
-        AND cpa.organization_id = consult_notes.organization_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Clinicians can archive consult notes'
+  ) THEN
+    CREATE POLICY "Clinicians can archive consult notes"
+      ON public.consult_notes
+      FOR UPDATE
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.clinician_patient_assignments cpa
+          JOIN public.patient_profiles pp ON pp.user_id = cpa.patient_user_id
+          WHERE cpa.clinician_user_id = auth.uid()
+            AND pp.id = consult_notes.patient_id
+            AND cpa.organization_id = consult_notes.organization_id
+        )
+      );
+  END IF;
+END $$;
 
 -- Admins can update consult notes in their organization
-CREATE POLICY "Admins can update org consult notes"
-  ON public.consult_notes
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.organizations o
-      WHERE o.id = consult_notes.organization_id
-        AND o.admin_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_notes'
+      AND policyname = 'Admins can update org consult notes'
+  ) THEN
+    CREATE POLICY "Admins can update org consult notes"
+      ON public.consult_notes
+      FOR UPDATE
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.organizations o
+          WHERE o.id = consult_notes.organization_id
+            AND o.admin_user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================
 -- Consult Note Versions: SELECT Policies
 -- ============================================================
 
 -- Patients can view version history of their own consult notes
-CREATE POLICY "Patients can view own consult note versions"
-  ON public.consult_note_versions
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.consult_notes cn
-      JOIN public.patient_profiles pp ON pp.id = cn.patient_id
-      WHERE cn.id = consult_note_versions.consult_note_id
-        AND pp.user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_note_versions'
+      AND policyname = 'Patients can view own consult note versions'
+  ) THEN
+    CREATE POLICY "Patients can view own consult note versions"
+      ON public.consult_note_versions
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.consult_notes cn
+          JOIN public.patient_profiles pp ON pp.id = cn.patient_id
+          WHERE cn.id = consult_note_versions.consult_note_id
+            AND pp.user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- Clinicians can view version history for assigned patients
-CREATE POLICY "Clinicians can view assigned patient consult note versions"
-  ON public.consult_note_versions
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.consult_notes cn
-      JOIN public.patient_profiles pp ON pp.id = cn.patient_id
-      JOIN public.clinician_patient_assignments cpa ON cpa.patient_user_id = pp.user_id
-      WHERE cn.id = consult_note_versions.consult_note_id
-        AND cpa.clinician_user_id = auth.uid()
-        AND cpa.organization_id = cn.organization_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_note_versions'
+      AND policyname = 'Clinicians can view assigned patient consult note versions'
+  ) THEN
+    CREATE POLICY "Clinicians can view assigned patient consult note versions"
+      ON public.consult_note_versions
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.consult_notes cn
+          JOIN public.patient_profiles pp ON pp.id = cn.patient_id
+          JOIN public.clinician_patient_assignments cpa ON cpa.patient_user_id = pp.user_id
+          WHERE cn.id = consult_note_versions.consult_note_id
+            AND cpa.clinician_user_id = auth.uid()
+            AND cpa.organization_id = cn.organization_id
+        )
+      );
+  END IF;
+END $$;
 
 -- Admins can view all version history in their organization
-CREATE POLICY "Admins can view org consult note versions"
-  ON public.consult_note_versions
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.consult_notes cn
-      JOIN public.organizations o ON o.id = cn.organization_id
-      WHERE cn.id = consult_note_versions.consult_note_id
-        AND o.admin_user_id = auth.uid()
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_note_versions'
+      AND policyname = 'Admins can view org consult note versions'
+  ) THEN
+    CREATE POLICY "Admins can view org consult note versions"
+      ON public.consult_note_versions
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.consult_notes cn
+          JOIN public.organizations o ON o.id = cn.organization_id
+          WHERE cn.id = consult_note_versions.consult_note_id
+            AND o.admin_user_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
 
 -- ============================================================
 -- Consult Note Versions: INSERT Policies
 -- ============================================================
 
 -- Service role can insert versions (for automatic versioning trigger)
-CREATE POLICY "Service can insert consult note versions"
-  ON public.consult_note_versions
-  FOR INSERT
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'consult_note_versions'
+      AND policyname = 'Service can insert consult note versions'
+  ) THEN
+    CREATE POLICY "Service can insert consult note versions"
+      ON public.consult_note_versions
+      FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 5. TRIGGERS FOR AUTO-VERSIONING
