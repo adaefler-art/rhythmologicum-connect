@@ -78,7 +78,7 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
 
       {/* Menu Panel */}
       <nav
-        className={`fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-50 flex h-[100dvh] w-screen max-w-none flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{

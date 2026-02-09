@@ -92,10 +92,11 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isDialog = pathname?.startsWith('/patient/dialog')
 
   const variant = getTopBarVariant(pathname)
   const hideBottomNav = shouldHideBottomNav(pathname)
-  const title = getPageTitle(pathname)
+  const title = isDialog ? '' : getPageTitle(pathname)
 
   // I2.5: Navigation handlers - deterministic, canonical routes
   const handleBackClick = () => {
@@ -135,6 +136,8 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
       <TopBarV2 
         variant={variant} 
         title={title}
+        showTitle={!isDialog}
+        showBell={!isDialog}
         onBurgerClick={() => setIsMenuOpen(true)}
         onBackClick={variant === 'result' || pathname?.includes('/dialog') ? handleBackClick : undefined}
         onCloseClick={variant === 'flow' ? handleCloseClick : undefined}
