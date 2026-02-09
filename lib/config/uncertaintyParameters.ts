@@ -298,28 +298,3 @@ Assertiveness: ${params.assertiveness}
 Audience: ${params.audience}`
 }
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export type {
-  UncertaintyParameters,
-}
-
-export {
-  PATIENT_MODE_DEFAULTS,
-  CLINICIAN_MODE_DEFAULTS,
-  DEFAULT_UNCERTAINTY_PARAMETERS,
-  UNCERTAINTY_OFF_RULES,
-  QUALITATIVE_MARKERS,
-  MIXED_MODE_RULES,
-  CONSERVATIVE_MARKERS,
-  BALANCED_MARKERS,
-  DIRECT_MARKERS,
-  PATIENT_AUDIENCE_RULES,
-  CLINICIAN_AUDIENCE_RULES,
-  validateParameterCombination,
-  getDefaultParametersForAudience,
-  areNumbersAllowed,
-  formatParametersForHeader,
-}
