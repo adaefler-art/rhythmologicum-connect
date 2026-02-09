@@ -8,7 +8,7 @@ export default function PatientEntryScreen() {
   const router = useRouter()
 
   return (
-    <div className="w-full max-w-[100vw] overflow-x-hidden bg-slate-50">
+    <div className="w-full overflow-x-hidden bg-slate-50">
       <div className="flex min-h-[calc(100dvh-56px)] flex-col px-4 pb-[calc(24px+env(safe-area-inset-bottom,0px))] pt-5">
         <div className="flex-1 space-y-6">
           <header className="space-y-2">
@@ -20,7 +20,7 @@ export default function PatientEntryScreen() {
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
                 <MessageCircle className="h-5 w-5" />
               </div>
               <div className="space-y-1">
@@ -31,16 +31,16 @@ export default function PatientEntryScreen() {
               </div>
             </div>
             <div className="mt-5 flex items-center gap-2">
-              <span className="h-2 w-6 rounded-full bg-slate-900" />
-              <span className="h-2 w-2 rounded-full bg-slate-300" />
-              <span className="h-2 w-2 rounded-full bg-slate-300" />
+              <span className="h-2 w-6 rounded-md bg-slate-900" />
+              <span className="h-2 w-2 rounded-md bg-slate-300" />
+              <span className="h-2 w-2 rounded-md bg-slate-300" />
             </div>
           </Card>
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div>

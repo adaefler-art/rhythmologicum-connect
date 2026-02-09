@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { Card } from '@/lib/ui/mobile-v2'
 import { env } from '@/lib/env'
-import { ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, Info } from '@/lib/ui/mobile-v2/icons'
 import type { PatientSignalHint } from '@/lib/types/signals'
 import { getRedFlagMessage } from '@/lib/utils/signalTransform'
 
