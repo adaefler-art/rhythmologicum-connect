@@ -2501,7 +2501,7 @@ CREATE TABLE IF NOT EXISTS "public"."anamnesis_entries" (
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "created_by" "uuid",
     "updated_by" "uuid",
-    CONSTRAINT "anamnesis_entries_entry_type_check" CHECK (("entry_type" = ANY (ARRAY['medical_history'::"text", 'symptoms'::"text", 'medications'::"text", 'allergies'::"text", 'family_history'::"text", 'lifestyle'::"text", 'funnel_summary'::"text", 'other'::"text"])))
+    CONSTRAINT "anamnesis_entries_entry_type_check" CHECK (("entry_type" = ANY (ARRAY['medical_history'::"text", 'symptoms'::"text", 'medications'::"text", 'allergies'::"text", 'family_history'::"text", 'lifestyle'::"text", 'funnel_summary'::"text", 'intake'::"text", 'other'::"text"])))
 );
 
 
@@ -2540,7 +2540,7 @@ COMMENT ON COLUMN "public"."anamnesis_entries"."updated_at" IS 'Timestamp of lat
 
 
 
-COMMENT ON CONSTRAINT "anamnesis_entries_entry_type_check" ON "public"."anamnesis_entries" IS 'E75.5: Valid entry types including funnel_summary for system-generated assessment summaries';
+COMMENT ON CONSTRAINT "anamnesis_entries_entry_type_check" ON "public"."anamnesis_entries" IS 'E79.1: Valid entry types including intake for patient intake entries';
 
 
 
