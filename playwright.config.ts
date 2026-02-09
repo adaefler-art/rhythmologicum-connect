@@ -4,8 +4,9 @@ import { env } from './lib/env'
 const baseURL = env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
 const reuseExistingServer = env.NODE_ENV !== 'test'
 const webServerEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321',
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'test-anon-key',
+  NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key',
+  NODE_ENV: 'test',
 }
 
 export default defineConfig({
