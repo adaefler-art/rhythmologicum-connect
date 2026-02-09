@@ -65,6 +65,11 @@
     "/api/clinician/patient-funnels",
     "/api/clinician/patient-funnels/[id]",
     "/api/clinician/assessments/[assessmentId]/details",
+    {
+      "path": "/api/clinician/chat",
+      "internal_unused": true,
+      "reason": "Clinician colleague mode API (no UI callsite yet)"
+    },
     "/api/clinician/anamnesis/[entryId]/archive",
     "/api/clinician/anamnesis/[entryId]/versions",
     {
