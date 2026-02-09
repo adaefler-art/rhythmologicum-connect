@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -518,6 +513,155 @@ export type Database = {
           {
             foreignKeyName: "clinician_patient_assignments_patient_fkey"
             columns: ["patient_user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      consult_note_versions: {
+        Row: {
+          change_summary: string | null
+          consult_note_id: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          diff: Json | null
+          id: string
+          metadata: Json | null
+          rendered_markdown: string | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          consult_note_id: string
+          content: Json
+          created_at?: string
+          created_by?: string | null
+          diff?: Json | null
+          id?: string
+          metadata?: Json | null
+          rendered_markdown?: string | null
+          version_number: number
+        }
+        Update: {
+          change_summary?: string | null
+          consult_note_id?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          diff?: Json | null
+          id?: string
+          metadata?: Json | null
+          rendered_markdown?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consult_note_versions_consult_note_id_fkey"
+            columns: ["consult_note_id"]
+            isOneToOne: false
+            referencedRelation: "consult_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consult_note_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      consult_notes: {
+        Row: {
+          assertiveness: Database["public"]["Enums"]["assertiveness_level"]
+          audience: Database["public"]["Enums"]["audience_type"]
+          chat_session_id: string | null
+          consultation_type: Database["public"]["Enums"]["consultation_type"]
+          content: Json
+          created_at: string
+          created_by: string | null
+          guideline_version: string | null
+          id: string
+          is_archived: boolean
+          metadata: Json | null
+          organization_id: string
+          patient_id: string
+          rendered_markdown: string | null
+          source: string
+          uncertainty_profile: Database["public"]["Enums"]["uncertainty_profile"]
+          updated_at: string
+          updated_by: string | null
+          version_number: number
+        }
+        Insert: {
+          assertiveness?: Database["public"]["Enums"]["assertiveness_level"]
+          audience?: Database["public"]["Enums"]["audience_type"]
+          chat_session_id?: string | null
+          consultation_type?: Database["public"]["Enums"]["consultation_type"]
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          guideline_version?: string | null
+          id?: string
+          is_archived?: boolean
+          metadata?: Json | null
+          organization_id: string
+          patient_id: string
+          rendered_markdown?: string | null
+          source?: string
+          uncertainty_profile?: Database["public"]["Enums"]["uncertainty_profile"]
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Update: {
+          assertiveness?: Database["public"]["Enums"]["assertiveness_level"]
+          audience?: Database["public"]["Enums"]["audience_type"]
+          chat_session_id?: string | null
+          consultation_type?: Database["public"]["Enums"]["consultation_type"]
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          guideline_version?: string | null
+          id?: string
+          is_archived?: boolean
+          metadata?: Json | null
+          organization_id?: string
+          patient_id?: string
+          rendered_markdown?: string | null
+          source?: string
+          uncertainty_profile?: Database["public"]["Enums"]["uncertainty_profile"]
+          updated_at?: string
+          updated_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consult_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "consult_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consult_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consult_notes_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "pending_account_deletions"
             referencedColumns: ["user_id"]
@@ -3629,8 +3773,11 @@ export type Database = {
       }
     }
     Enums: {
+      assertiveness_level: "conservative" | "balanced" | "direct"
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
+      audience_type: "patient" | "clinician"
+      consultation_type: "first" | "follow_up"
       diagnosis_run_status: "queued" | "running" | "completed" | "failed"
       funnel_version_status: "draft" | "published" | "archived"
       notification_status:
@@ -3708,6 +3855,7 @@ export type Database = {
         | "manual_flag"
         | "clear_manual_flag"
         | "add_note"
+      uncertainty_profile: "off" | "qualitative" | "mixed"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
       workup_status: "needs_more_data" | "ready_for_review"
@@ -3841,8 +3989,11 @@ export const Constants = {
   },
   public: {
     Enums: {
+      assertiveness_level: ["conservative", "balanced", "direct"],
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
+      audience_type: ["patient", "clinician"],
+      consultation_type: ["first", "follow_up"],
       diagnosis_run_status: ["queued", "running", "completed", "failed"],
       funnel_version_status: ["draft", "published", "archived"],
       notification_status: [
@@ -3928,9 +4079,11 @@ export const Constants = {
         "clear_manual_flag",
         "add_note",
       ],
+      uncertainty_profile: ["off", "qualitative", "mixed"],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],
       workup_status: ["needs_more_data", "ready_for_review"],
     },
   },
 } as const
+
