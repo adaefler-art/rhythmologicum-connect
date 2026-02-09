@@ -146,7 +146,9 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
 
       {/* Main Content Area - Scrollable */}
       <main
-        className="flex-1 overflow-y-auto w-full max-w-[100vw] overflow-x-hidden"
+        className={`flex-1 w-full max-w-[100vw] overflow-x-hidden ${
+          isDialog ? 'overflow-y-hidden' : 'overflow-y-auto'
+        }`}
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
           // Issue 2: Bottom nav is hidden, no need for bottom padding

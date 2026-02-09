@@ -258,8 +258,8 @@ export function DialogScreenV2() {
 
   return (
     <div className="w-full overflow-x-hidden">
-      <div className="flex min-h-[calc(100dvh-56px)] flex-col">
-        <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-[calc(120px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-6">
+      <div className="flex min-h-[calc(100dvh-56px)] flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 space-y-5 overflow-y-auto px-4 pb-[calc(120px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-6">
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-slate-900">
               <Bot className="h-5 w-5 text-slate-700" />
@@ -282,7 +282,7 @@ export function DialogScreenV2() {
                     <div
                       className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                         isAssistant
-                          ? 'bg-white text-slate-800 border border-slate-200'
+                          ? 'bg-sky-50 text-slate-800 border border-sky-100'
                           : 'bg-slate-900 text-white'
                       }`}
                     >
@@ -310,7 +310,7 @@ export function DialogScreenV2() {
           )}
         </div>
 
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur sm:px-6">
+        <div className="sticky bottom-0 shrink-0 border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur sm:px-6">
           <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <div className="flex items-end gap-2">
               <textarea
