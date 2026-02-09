@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { TopBarV2, type TopBarVariant } from './TopBarV2'
@@ -128,10 +128,14 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
     router.push(CANONICAL_ROUTES.DASHBOARD)
   }
 
+  const handleMenuClose = useCallback(() => {
+    setIsMenuOpen(false)
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150 w-full max-w-[100vw] overflow-x-hidden">
       {/* Hamburger Menu - Issue 2 */}
-      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <HamburgerMenu isOpen={isMenuOpen} onClose={handleMenuClose} />
 
       {/* TopBar - Always visible on mobile */}
       <TopBarV2 
