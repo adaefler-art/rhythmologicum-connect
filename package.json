@@ -48,6 +48,7 @@
     "verify:e76-5": "node scripts/ci/verify-e76-5-diagnosis-prompt.mjs",
     "verify:e76-6": "node scripts/ci/verify-e76-6-diagnosis-ui.mjs",
     "verify:e76-8": "node scripts/ci/verify-e76-8-idempotency.mjs",
+    "verify:issue-6": "node scripts/ci/verify-issue-6-uncertainty.mjs",
     "verify:e76-9": "node scripts/ci/verify-endpoint-wiring.mjs",
     "verify:e78-1": "node scripts/ci/verify-e78-1-inbox.mjs",
     "verify:e78-2": "node scripts/ci/verify-e78-2-triage-view.mjs",

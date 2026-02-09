@@ -348,7 +348,7 @@ if (validationContent) {
   // Import check
   checkPatternExists(
     validationContent,
-    /import.*from.*['"]@\/lib\/config\/uncertaintyParameters['"]/,
+    /from ['"]@\/lib\/config\/uncertaintyParameters['"]/,
     'R-I6-19',
     'Validation imports uncertainty parameter utilities'
   )
