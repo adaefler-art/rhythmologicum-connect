@@ -13,6 +13,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ENTRY_TYPES, validateContentSize, validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
+import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 
 type RouteContext = {
   params: Promise<{ patientId: string }>
@@ -156,6 +157,7 @@ export async function GET(_request: Request, context: RouteContext) {
     const { patientId } = await context.params
     const endpoint = `/api/clinician/patient/${patientId}/anamnesis`
     const supabase = await createServerSupabaseClient()
+    const admin = createAdminSupabaseClient()
 
     const {
       data: { user },
@@ -183,18 +185,28 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    const resolution = await resolvePatientIds(admin, patientId)
+
+    if (!resolution.patientProfileId) {
+      return NextResponse.json(
+        { error: 'NOT_FOUND', endpoint, patientId },
+        { status: 404 },
+      )
+    }
+
+    const resolvedPatientId = resolution.patientProfileId
+
     const { data: patient, error: patientError } = await supabase
       .from('patient_profiles')
       .select('id')
-      .eq('id', patientId)
+      .eq('id', resolvedPatientId)
       .maybeSingle()
 
     if (patientError || !patient) {
-      const admin = createAdminSupabaseClient()
       const { data: adminPatient, error: adminError } = await admin
         .from('patient_profiles')
         .select('id')
-        .eq('id', patientId)
+        .eq('id', resolvedPatientId)
         .maybeSingle()
 
       if (adminError) {
@@ -236,7 +248,7 @@ export async function GET(_request: Request, context: RouteContext) {
         updated_by
       `,
       )
-      .eq('patient_id', patientId)
+      .eq('patient_id', resolvedPatientId)
       .order('updated_at', { ascending: false })
 
     if (entryError) {
@@ -250,7 +262,10 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
-    const latestEntry = entries?.[0] ?? null
+    const activeEntries = (entries ?? []).filter((entry) => !entry.is_archived)
+    const latestEntry = activeEntries.find((entry) => entry.entry_type !== 'intake') ?? null
+    const latestIntakeEntry = activeEntries.find((entry) => entry.entry_type === 'intake') ?? null
+
     const versions = latestEntry
       ? await supabase
           .from('anamnesis_entry_versions')
@@ -263,7 +278,33 @@ export async function GET(_request: Request, context: RouteContext) {
       console.error('[clinician/patient/anamnesis GET] Versions error:', versions.error)
     }
 
-    const suggestedFacts = await computeAnamnesisFacts(supabase, patientId)
+    let intakeHistory: typeof versions | null = null
+    let intakeVersionsCount = 0
+
+    if (latestIntakeEntry) {
+      intakeHistory = await supabase
+        .from('anamnesis_entry_versions')
+        .select('id, version_number, title, content, entry_type, tags, changed_at, change_reason')
+        .eq('entry_id', latestIntakeEntry.id)
+        .order('version_number', { ascending: false })
+
+      if (intakeHistory.error) {
+        console.error('[clinician/patient/anamnesis GET] Intake versions error:', intakeHistory.error)
+      }
+
+      const { count: intakeCount, error: intakeCountError } = await supabase
+        .from('anamnesis_entry_versions')
+        .select('id', { count: 'exact', head: true })
+        .eq('entry_id', latestIntakeEntry.id)
+
+      if (intakeCountError) {
+        console.error('[clinician/patient/anamnesis GET] Intake count error:', intakeCountError)
+      }
+
+      intakeVersionsCount = intakeCount ?? 0
+    }
+
+    const suggestedFacts = await computeAnamnesisFacts(supabase, resolvedPatientId)
 
     console.info(
       JSON.stringify({
@@ -280,6 +321,14 @@ export async function GET(_request: Request, context: RouteContext) {
         entries: entries ?? [],
         latestEntry,
         versions: versions.data ?? [],
+        latestIntakeEntry: latestIntakeEntry
+          ? {
+              ...latestIntakeEntry,
+              entryId: latestIntakeEntry.id,
+              versions_count: intakeVersionsCount,
+            }
+          : null,
+        intakeHistory: intakeHistory?.data ?? [],
         suggestedFacts,
       },
     })
@@ -300,6 +349,7 @@ export async function POST(request: Request, context: RouteContext) {
     const { patientId } = await context.params
     const endpoint = `/api/clinician/patient/${patientId}/anamnesis`
     const supabase = await createServerSupabaseClient()
+    const admin = createAdminSupabaseClient()
     const { searchParams } = new URL(request.url)
     const createNewParam = searchParams.get('createNew')
 
@@ -329,18 +379,28 @@ export async function POST(request: Request, context: RouteContext) {
       )
     }
 
+    const resolution = await resolvePatientIds(admin, patientId)
+
+    if (!resolution.patientProfileId) {
+      return NextResponse.json(
+        { error: 'NOT_FOUND', endpoint, patientId },
+        { status: 404 },
+      )
+    }
+
+    const resolvedPatientId = resolution.patientProfileId
+
     const { data: patient, error: patientError } = await supabase
       .from('patient_profiles')
       .select('id')
-      .eq('id', patientId)
+      .eq('id', resolvedPatientId)
       .maybeSingle()
 
     if (patientError || !patient) {
-      const admin = createAdminSupabaseClient()
       const { data: adminPatient, error: adminError } = await admin
         .from('patient_profiles')
         .select('id')
-        .eq('id', patientId)
+        .eq('id', resolvedPatientId)
         .maybeSingle()
 
       if (adminError) {
@@ -392,7 +452,7 @@ export async function POST(request: Request, context: RouteContext) {
     const { data: latestEntry } = await supabase
       .from('anamnesis_entries')
       .select('*')
-      .eq('patient_id', patientId)
+      .eq('patient_id', resolvedPatientId)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -451,7 +511,7 @@ export async function POST(request: Request, context: RouteContext) {
       )
     }
 
-    const organizationId = await getPatientOrganizationId(supabase, patientId)
+    const organizationId = await getPatientOrganizationId(supabase, resolvedPatientId)
     if (!organizationId) {
       return NextResponse.json(
         {
@@ -465,7 +525,7 @@ export async function POST(request: Request, context: RouteContext) {
     const { data: newEntry, error: insertError } = await supabase
       .from('anamnesis_entries')
       .insert({
-        patient_id: patientId,
+        patient_id: resolvedPatientId,
         organization_id: organizationId,
         title,
         content: content as Json,

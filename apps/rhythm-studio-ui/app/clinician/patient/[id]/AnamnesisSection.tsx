@@ -75,6 +75,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<AnamnesisEntry | null>(null)
   const [latestEntry, setLatestEntry] = useState<AnamnesisEntry | null>(null)
+  const [latestIntakeEntry, setLatestIntakeEntry] = useState<AnamnesisEntry | null>(null)
   const [versions, setVersions] = useState<AnamnesisVersion[]>([])
   const [suggestedFacts, setSuggestedFacts] = useState<SuggestedFact[]>([])
   const [selectedFactIds, setSelectedFactIds] = useState<string[]>([])
@@ -140,6 +141,14 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         setVersions((data.data.versions || []) as unknown as AnamnesisVersion[])
         setSuggestedFacts((data.data.suggestedFacts || []) as unknown as SuggestedFact[])
         setSelectedFactIds([])
+
+        const providedIntake = (data.data.latestIntakeEntry as unknown) as AnamnesisEntry | null
+        const fallbackIntake = loadedEntries.find((entry) => entry.entry_type === 'intake') || null
+        const resolvedIntake = providedIntake ?? fallbackIntake
+        setLatestIntakeEntry(resolvedIntake)
+
+        const intakeHistory = (data.data.intakeHistory || []) as unknown as AnamnesisVersion[]
+        setIntakeVersions(intakeHistory)
       }
     } catch (err) {
       console.error('[AnamnesisSection] Fetch error:', err)
@@ -348,6 +357,30 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     if (typeof textValue === 'number') return String(textValue)
     const narrativeValue = (content as { narrative?: unknown }).narrative
     if (typeof narrativeValue === 'string' && narrativeValue.trim()) return narrativeValue
+    const narrativeSummary = (content as { narrativeSummary?: unknown }).narrativeSummary
+    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) return narrativeSummary
+    return null
+  }
+
+  const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+    const summary = (content as { narrativeSummary?: unknown }).narrativeSummary
+    if (typeof summary === 'string' && summary.trim()) return summary.trim()
+    const complaint = (content as { chiefComplaint?: unknown }).chiefComplaint
+    if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
+    const status = (content as { status?: unknown }).status
+    if (typeof status === 'string' && status.trim()) return status.trim()
+    return getContentText(content)
+  }
+
+  const getIntakeStatus = (content: Record<string, unknown>): string | null => {
+    const status = (content as { status?: unknown }).status
+    if (typeof status === 'string' && status.trim()) return status.trim()
+    return null
+  }
+
+  const getIntakeChiefComplaint = (content: Record<string, unknown>): string | null => {
+    const complaint = (content as { chiefComplaint?: unknown }).chiefComplaint
+    if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
     return null
   }
 
@@ -372,19 +405,38 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const getIntakeEvidence = (content: Record<string, unknown>): string[] => {
-    const evidenceValue = (content as { evidence?: unknown }).evidence
-    if (!Array.isArray(evidenceValue)) return []
-
-    return evidenceValue
-      .filter((item) => typeof item === 'object' && item !== null)
-      .map((item) => {
-        const entry = item as { label?: unknown; ref?: unknown }
-        const label = entry.label ? String(entry.label) : null
-        const ref = entry.ref ? String(entry.ref) : ''
-        if (!ref.trim()) return null
-        return label ? `${label}: ${ref}` : ref
+    const items: string[] = []
+    const evidenceRefs = (content as { evidenceRefs?: unknown }).evidenceRefs
+    if (Array.isArray(evidenceRefs)) {
+      evidenceRefs.forEach((entry) => {
+        if (typeof entry === 'string' && entry.trim()) {
+          items.push(entry.trim())
+        }
       })
-      .filter((value): value is string => Boolean(value))
+    }
+
+    const structured = (content as { structured?: unknown }).structured
+    if (structured && typeof structured === 'object') {
+      const keySymptoms = (structured as { keySymptoms?: unknown }).keySymptoms
+      if (Array.isArray(keySymptoms)) {
+        keySymptoms.forEach((symptom) => {
+          if (typeof symptom === 'string' && symptom.trim()) {
+            items.push(`Symptom: ${symptom.trim()}`)
+          }
+        })
+      }
+    }
+
+    const redFlags = (content as { redFlags?: unknown }).redFlags
+    if (Array.isArray(redFlags)) {
+      redFlags.forEach((flag) => {
+        if (typeof flag === 'string' && flag.trim()) {
+          items.push(`Red Flag: ${flag.trim()}`)
+        }
+      })
+    }
+
+    return items
   }
 
   const fetchIntakeHistory = async (entryId: string) => {
@@ -454,9 +506,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     )
   }
 
-  const intakeEntries = entries.filter((entry) => entry.entry_type === 'intake')
-  const latestIntake = intakeEntries[0] || null
+  const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
   const intakeEvidence = latestIntake ? getIntakeEvidence(latestIntake.content) : []
+  const intakeSummary = latestIntake ? getIntakeNarrative(latestIntake.content) : null
+  const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(latestIntake.content) : null
+  const intakeStatus = latestIntake ? getIntakeStatus(latestIntake.content) : null
 
   return (
     <>
@@ -488,13 +542,23 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 {isIntakeHistoryLoading ? 'Laedt…' : 'History'}
               </Button>
             </div>
-            {getContentText(latestIntake.content) ? (
+            {intakeSummary ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                {getContentText(latestIntake.content)}
+                {intakeSummary}
               </p>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Keine Intake-Zusammenfassung vorhanden.
+              </p>
+            )}
+            {intakeChiefComplaint && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Hauptbeschwerde: {intakeChiefComplaint}
+              </p>
+            )}
+            {intakeStatus && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Status: {intakeStatus}
               </p>
             )}
             {intakeEvidence.length > 0 && (
@@ -706,9 +770,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     {formatDate(version.changed_at)}
                   </p>
                 </div>
-                {getContentText(version.content) ? (
+                {getIntakeNarrative(version.content) ? (
                   <p className="text-sm text-slate-600 dark:text-slate-300">
-                    {getContentText(version.content)}
+                    {getIntakeNarrative(version.content)}
                   </p>
                 ) : (
                   <p className="text-sm text-slate-500 dark:text-slate-400">
