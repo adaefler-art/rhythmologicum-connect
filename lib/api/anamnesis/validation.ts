@@ -20,6 +20,8 @@ export const ENTRY_TYPES = [
   'allergies',
   'family_history',
   'lifestyle',
+  'intake',
+  'funnel_summary',
   'other',
 ] as const
 
@@ -30,6 +32,40 @@ export type EntryType = (typeof ENTRY_TYPES)[number]
  * Conservative limit to prevent excessive storage and performance issues
  */
 export const MAX_JSONB_SIZE_BYTES = 1024 * 1024 // 1MB
+
+export const MAX_INTAKE_NARRATIVE_LENGTH = 4000
+export const MAX_INTAKE_EVIDENCE_ITEMS = 20
+export const MAX_INTAKE_OPEN_QUESTIONS = 10
+export const MAX_INTAKE_OPEN_QUESTION_LENGTH = 200
+export const MAX_INTAKE_RED_FLAGS = 10
+export const MAX_INTAKE_RED_FLAG_LENGTH = 200
+
+const intakeContentSchema = z.object({
+  narrative: z
+    .string()
+    .min(1, 'Narrative is required')
+    .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative is too long'),
+  evidence: z
+    .array(
+      z.object({
+        label: z.string().max(120, 'Evidence label is too long').optional(),
+        ref: z.string().max(2000, 'Evidence ref is too long'),
+      }),
+    )
+    .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence items')
+    .optional()
+    .default([]),
+  openQuestions: z
+    .array(z.string().max(MAX_INTAKE_OPEN_QUESTION_LENGTH, 'Open question is too long'))
+    .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
+    .optional()
+    .default([]),
+  redFlags: z
+    .array(z.string().max(MAX_INTAKE_RED_FLAG_LENGTH, 'Red flag is too long'))
+    .max(MAX_INTAKE_RED_FLAGS, 'Too many red flags')
+    .optional()
+    .default([]),
+})
 
 /**
  * Zod schema for anamnesis entry creation
@@ -103,6 +139,9 @@ export function validateEntryType(entryType: string | undefined | null): boolean
  */
 export function validateCreateEntry(data: unknown): CreateAnamnesisEntryRequest {
   const validated = createAnamnesisEntrySchema.parse(data)
+  if (validated.entry_type === 'intake') {
+    intakeContentSchema.parse(validated.content)
+  }
   validateContentSize(validated.content)
   return validated
 }
@@ -116,6 +155,9 @@ export function validateCreateEntry(data: unknown): CreateAnamnesisEntryRequest 
  */
 export function validateCreateVersion(data: unknown): CreateVersionRequest {
   const validated = createVersionSchema.parse(data)
+  if (validated.entry_type === 'intake') {
+    intakeContentSchema.parse(validated.content)
+  }
   validateContentSize(validated.content)
   return validated
 }
