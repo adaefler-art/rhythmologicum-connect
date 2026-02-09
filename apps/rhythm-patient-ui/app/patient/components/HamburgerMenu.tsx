@@ -79,7 +79,7 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
       {/* Menu Panel */}
       <nav
         className={`fixed inset-0 z-50 flex w-[100vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? 'translate-x-0 pointer-events-auto' : '-translate-x-full pointer-events-none'
         }`}
         style={{
           height: '100dvh',
