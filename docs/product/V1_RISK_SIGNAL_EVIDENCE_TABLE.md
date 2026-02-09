@@ -1,0 +1,12 @@
+# V1 Risk Signal Evidence Table
+
+| Component | Input Type | Output Fields | Source (file:line) | Notes |
+| --- | --- | --- | --- | --- |
+| Assessment answer save API | `assessmentId`, `questionId`, `answerValue` -> `assessment_answers` | `assessment_id`, `question_id`, `answer_value` | [apps/rhythm-patient-ui/app/api/assessment-answers/save/route.ts](apps/rhythm-patient-ui/app/api/assessment-answers/save/route.ts#L146-L154) | Primary producer of structured answers.
+| Risk stage processor | `assessment_answers.question_id/answer_value` | Risk bundle (`RiskBundleV1`) persisted in `risk_bundles.bundle_data` | [lib/processing/riskStageProcessor.ts](lib/processing/riskStageProcessor.ts#L62-L104), [lib/risk/persistence.ts](lib/risk/persistence.ts#L53-L63) | Reads answers, computes and saves bundle JSON.
+| Risk bundle contract | `RiskBundleInput.answers` map | `riskScore` with `riskLevel` + factors | [lib/contracts/riskBundle.ts](lib/contracts/riskBundle.ts#L65-L104) | Defines canonical risk score output fields.
+| Ranking stage processor | `risk_bundles.bundle_data` (by job or id) | `PriorityRankingV1` (ranked interventions, tier) | [lib/processing/rankingStageProcessor.ts](lib/processing/rankingStageProcessor.ts#L41-L120), [lib/contracts/priorityRanking.ts](lib/contracts/priorityRanking.ts#L180-L210) | Input is derived from risk bundle; no free JSON input.
+| Results stage processor | Risk bundle + optional ranking + `assessment_answers` for `inputs_hash` | `calculated_results` write via results writer | [lib/processing/resultsStageProcessor.ts](lib/processing/resultsStageProcessor.ts#L84-L191) | Aggregates pipeline outputs into SSOT results.
+| Calculated results persistence | `scores`, `riskModels`, `priorityRanking`, `inputsData` | `calculated_results` with `risk_models`, `priority_ranking`, `inputs_hash` | [lib/results/persistence.ts](lib/results/persistence.ts#L18-L182) | Inputs data is used only to compute `inputs_hash`.
+| Assessment completion orchestrator | Processing job id + assessment id | Triggers `processRiskStage` and `processResultsStage` | [apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts](apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/complete/route.ts#L398-L440) | Starts pipeline after completion.
+| Calculated results schema | N/A (schema) | `scores`, `risk_models`, `priority_ranking`, `inputs_hash` columns | [schema/schema.sql](schema/schema.sql#L2611-L2621) | Stable storage contract for results.
