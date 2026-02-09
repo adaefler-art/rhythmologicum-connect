@@ -52,6 +52,7 @@ function shouldHideBottomNav(pathname: string): boolean {
  * Get page title based on current route
  */
 function getPageTitle(pathname: string): string {
+  if (pathname?.startsWith('/patient/start')) return 'Start'
   if (pathname?.startsWith('/patient/dashboard')) return 'Dashboard'
   if (pathname?.startsWith('/patient/assess')) return 'Assessment'
   if (pathname?.startsWith('/patient/dialog')) return 'Dialog'
@@ -102,7 +103,7 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   const handleBackClick = () => {
     // Dialog screens always go back to dashboard
     if (pathname?.includes('/dialog')) {
-      router.push(CANONICAL_ROUTES.DASHBOARD)
+      router.push(CANONICAL_ROUTES.START)
       return
     }
 
@@ -128,7 +129,7 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150">
+    <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150 w-full max-w-[100vw] overflow-x-hidden">
       {/* Hamburger Menu - Issue 2 */}
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
@@ -136,8 +137,8 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
       <TopBarV2 
         variant={variant} 
         title={title}
-        showTitle={!isDialog}
-        showBell={!isDialog}
+        showTitle={variant !== 'tab'}
+        showBell={false}
         onBurgerClick={() => setIsMenuOpen(true)}
         onBackClick={variant === 'result' || pathname?.includes('/dialog') ? handleBackClick : undefined}
         onCloseClick={variant === 'flow' ? handleCloseClick : undefined}
@@ -145,7 +146,7 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
 
       {/* Main Content Area - Scrollable */}
       <main
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto w-full max-w-[100vw] overflow-x-hidden"
         style={{
           paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))',
           // Issue 2: Bottom nav is hidden, no need for bottom padding

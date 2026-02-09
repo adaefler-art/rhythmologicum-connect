@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Stethoscope } from '@/lib/ui/mobile-v2/icons'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 
 export type TopBarVariant = 'tab' | 'flow' | 'result'
@@ -56,7 +57,7 @@ export function TopBarV2({
   onCloseClick,
   onMenuClick,
   showAvatar = false,
-  showBell = true,
+  showBell = false,
   showTitle = true,
 }: TopBarV2Props) {
   const router = useRouter()
@@ -100,25 +101,12 @@ export function TopBarV2({
         {/* Left Section */}
         <div className="flex items-center gap-3 flex-1">
           {variant === 'tab' && (
-            <button
-              onClick={onBurgerClick}
-              className="p-2 -ml-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              aria-label="Menu"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+                <Stethoscope className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-semibold text-slate-900">PAT</span>
+            </div>
           )}
 
           {(variant === 'flow' || variant === 'result') && (
@@ -153,6 +141,28 @@ export function TopBarV2({
 
         {/* Right Section */}
         <div className="flex items-center gap-2">
+          {variant === 'tab' && (
+            <button
+              onClick={onBurgerClick}
+              className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+              aria-label="Menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          )}
+
           {variant === 'tab' && showBell && (
             <button
               className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative"

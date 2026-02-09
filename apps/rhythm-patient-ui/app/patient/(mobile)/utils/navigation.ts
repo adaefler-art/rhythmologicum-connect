@@ -19,6 +19,9 @@
  * Canonical patient routes - single source of truth
  */
 export const CANONICAL_ROUTES = {
+  /** Entry/welcome screen */
+  START: '/patient/start',
+
   /** Main hub/home screen */
   DASHBOARD: '/patient/dashboard',
   
@@ -78,8 +81,8 @@ export const NAVIGATION_SEMANTICS = {
     close: CANONICAL_ROUTES.DASHBOARD, // Results close to dashboard
   },
   'dialog': {
-    back: CANONICAL_ROUTES.DASHBOARD, // Dialog back to dashboard (last non-dialog screen)
-    close: CANONICAL_ROUTES.DASHBOARD, // Dialog close to dashboard
+    back: CANONICAL_ROUTES.START, // Dialog back to entry screen (last non-dialog screen)
+    close: CANONICAL_ROUTES.START, // Dialog close to entry screen
   },
   'content': {
     back: CANONICAL_ROUTES.DASHBOARD, // Content back to dashboard
@@ -151,7 +154,7 @@ export function getDialogUrl(context?: {
  * Always returns to dashboard (last non-dialog screen fallback)
  */
 export function getDialogBackRoute(): string {
-  return CANONICAL_ROUTES.DASHBOARD
+  return CANONICAL_ROUTES.START
 }
 
 // ==========================================

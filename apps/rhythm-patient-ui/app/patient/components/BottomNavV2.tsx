@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Home, MessageCircle, User } from '@/lib/ui/mobile-v2/icons'
+import { ClipboardList, FileText, Home, MessageCircle, User } from '@/lib/ui/mobile-v2/icons'
 import { CANONICAL_ROUTES } from '../(mobile)/utils/navigation'
 import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 
@@ -28,7 +28,9 @@ import { PATIENT_MOBILE_MENU_ITEMS } from '../(mobile)/navigation/menuConfig'
 export function BottomNavV2() {
   const pathname = usePathname()
 
-  const navItems = [...PATIENT_MOBILE_MENU_ITEMS].sort((a, b) => a.order - b.order)
+  const navItems = [...PATIENT_MOBILE_MENU_ITEMS]
+    .filter((item) => item.enabled !== false)
+    .sort((a, b) => a.order - b.order)
 
   const isActive = (href: string) => {
     // Exact match for dashboard
@@ -51,13 +53,15 @@ export function BottomNavV2() {
         {navItems.map((item) => {
           const active = isActive(item.href)
           const Icon =
-            item.id === 'home'
+            item.id === 'start'
               ? Home
-              : item.id === 'check-in'
-                ? ClipboardList
+              : item.id === 'patient-record'
+                ? FileText
                 : item.id === 'dialog'
                   ? MessageCircle
-                  : User
+                  : item.id === 'check-in'
+                    ? ClipboardList
+                    : User
           return (
             <Link
               key={item.id}

@@ -5,6 +5,7 @@ export type PatientMobileMenuItem = {
   label: string
   href: string
   order: number
+  enabled?: boolean
 }
 
 /**
@@ -20,27 +21,24 @@ export type PatientMobileMenuItem = {
  */
 export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
   {
-    id: 'dialog',
-    label: 'Chat',
-    href: CANONICAL_ROUTES.DIALOG,
+    id: 'start',
+    label: 'Start',
+    href: CANONICAL_ROUTES.START,
     order: 0,
+    enabled: true,
   },
   {
-    id: 'home',
-    label: 'Dashboard',
-    href: CANONICAL_ROUTES.DASHBOARD,
+    id: 'dialog',
+    label: 'Dialog',
+    href: CANONICAL_ROUTES.DIALOG,
     order: 1,
+    enabled: true,
   },
   {
-    id: 'check-in',
-    label: 'Check-In',
-    href: CANONICAL_ROUTES.ASSESS,
+    id: 'patient-record',
+    label: 'Patient Record',
+    href: CANONICAL_ROUTES.ANAMNESE_TIMELINE,
     order: 2,
-  },
-  {
-    id: 'profile',
-    label: 'Profil',
-    href: CANONICAL_ROUTES.PROFILE,
-    order: 3,
+    enabled: true,
   },
 ]

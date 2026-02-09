@@ -78,10 +78,11 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
 
       {/* Menu Panel */}
       <nav
-        className={`fixed inset-0 z-50 flex h-[100dvh] w-screen max-w-none flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
+        className={`fixed inset-0 z-50 flex w-[100vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{
+          height: '100dvh',
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -107,6 +108,20 @@ export function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
           <ul className="space-y-1 px-3">
             {menuItems.map((item) => {
               const active = isActive(item.href)
+              const isEnabled = item.enabled !== false
+              if (!isEnabled) {
+                return (
+                  <li key={item.id}>
+                    <div
+                      className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-slate-400"
+                      aria-disabled="true"
+                    >
+                      <span className="text-base">{item.label}</span>
+                      <span className="text-xs uppercase tracking-wide">Bald</span>
+                    </div>
+                  </li>
+                )
+              }
               return (
                 <li key={item.id}>
                   <Link

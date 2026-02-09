@@ -77,6 +77,6 @@ export default async function PatientIndexRedirect({
   }
 
   const query = buildQuery(searchParams)
-  // Issue 2: Chat-First Dashboard - redirect to dialog (PAT Chat) as primary entry point
-  redirect(`/patient/dialog${query}`)
+  // Entry screen landing for the patient experience
+  redirect(`/patient/start${query}`)
 }

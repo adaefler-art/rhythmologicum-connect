@@ -41,6 +41,7 @@ export {
   Moon,
   Zap,
   Brain,
+  Stethoscope,
   
   // Documents & Data
   ClipboardCheck,

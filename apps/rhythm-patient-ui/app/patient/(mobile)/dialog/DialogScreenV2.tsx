@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Card, Button } from '@/lib/ui/mobile-v2'
-import { Bot, Sparkles, Mic } from '@/lib/ui/mobile-v2/icons'
+import { Badge } from '@/lib/ui/mobile-v2'
+import { Bot, Mic, ChevronRight } from '@/lib/ui/mobile-v2/icons'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
@@ -53,11 +53,6 @@ type SpeechRecognitionInstance = {
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
-
-// Helper to check if context is valid
-function isValidContext(context: string | null, assessmentId: string | null): boolean {
-  return context === 'dashboard' || (context === 'results' && !!assessmentId)
-}
 
 function getStubbedConversation(context: string | null, assessmentId: string | null): StubbedMessage[] {
   const now = new Date()
@@ -199,8 +194,6 @@ export function DialogScreenV2() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
 
-  const hasContext = isValidContext(context, assessmentId)
-
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
@@ -266,73 +259,57 @@ export function DialogScreenV2() {
   return (
     <div className="w-full overflow-x-hidden">
       <div className="flex min-h-[calc(100dvh-56px)] flex-col">
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 pb-[calc(120px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-6">
-          {/* Header */}
-          <header className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-sky-600" />
-                <p className="text-xs font-semibold uppercase tracking-wide text-sky-600">
-                  DIALOG MIT {ASSISTANT_CONFIG.name}
-                </p>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                Live
-              </span>
+        <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-[calc(120px+env(safe-area-inset-bottom,0px))] pt-5 sm:px-6">
+          <header className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-slate-900">
+              <Bot className="h-5 w-5 text-slate-700" />
+              <p className="text-base font-semibold">Dialog mit PAT</p>
             </div>
-            <p className="text-sm text-slate-600">
-              Sichere Kommunikation und Beratung.
-            </p>
+            <Badge variant="success" size="sm">
+              Live
+            </Badge>
           </header>
 
-          {/* Context Badge (if entry point is known) */}
-          {hasContext && (
-            <Card padding="sm" shadow="none" className="bg-sky-50 border border-sky-200">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-sky-600" />
-                <span className="text-sm text-sky-900">
-                  {context === 'dashboard' && 'Dialog vom Dashboard gestartet'}
-                  {context === 'results' && 'Dialog zu Ihren Assessment-Ergebnissen'}
-                </span>
-              </div>
-            </Card>
-          )}
-
-          {/* Stubbed Conversation */}
           {chatMessages.length > 0 && (
-            <Card padding="none" shadow="sm">
-              <div className="divide-y divide-slate-100">
-                {chatMessages.map((message) => (
+            <div className="space-y-3">
+              {chatMessages.map((message) => {
+                const isAssistant = message.sender === 'assistant'
+                return (
                   <div
                     key={message.id}
-                    className={`p-4 ${message.sender === 'assistant' ? 'bg-gradient-to-r from-purple-50 to-pink-50' : 'bg-white'}`}
+                    className={`flex ${isAssistant ? 'justify-start' : 'justify-end'}`}
                   >
-                    <div className="flex items-start gap-3">
-                      {message.sender === 'assistant' && (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-5 h-5 text-white" />
-                        </div>
-                      )}
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-slate-900">
-                            {message.sender === 'assistant' ? ASSISTANT_CONFIG.name : 'Sie'}
-                          </span>
-                          <span className="text-xs text-slate-500">{message.timestamp}</span>
-                        </div>
-                        <p className="text-sm text-slate-700 leading-relaxed">{message.text}</p>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                        isAssistant
+                          ? 'bg-white text-slate-800 border border-slate-200'
+                          : 'bg-slate-900 text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 text-xs font-semibold">
+                        {isAssistant ? (
+                          <span className="text-slate-700">{ASSISTANT_CONFIG.name}</span>
+                        ) : (
+                          <span className="text-white/80">Sie</span>
+                        )}
                       </div>
+                      <p className="mt-1">{message.text}</p>
+                      <span
+                        className={`mt-2 block text-[11px] ${
+                          isAssistant ? 'text-slate-400' : 'text-white/70'
+                        }`}
+                      >
+                        {message.timestamp}
+                      </span>
                     </div>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            </Card>
+                )
+              })}
+              <div ref={messagesEndRef} />
+            </div>
           )}
-
         </div>
 
-        {/* Chat Input */}
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur sm:px-6">
           <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
             <div className="flex items-end gap-2">
@@ -340,7 +317,7 @@ export function DialogScreenV2() {
                 placeholder={
                   isChatEnabled
                     ? `Ihre Nachricht an ${ASSISTANT_CONFIG.name}...`
-                    : `Ihre Nachricht an ${ASSISTANT_CONFIG.name} (in Kürze verfügbar)...`
+                    : `Ihre Nachricht an ${ASSISTANT_CONFIG.name} (in Kuerze verfuegbar)...`
                 }
                 rows={2}
                 value={input}
@@ -348,14 +325,19 @@ export function DialogScreenV2() {
                 disabled={!isChatEnabled || isSending}
                 className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
-              <Button
-                variant="primary"
-                size="sm"
+              <button
+                type="button"
                 onClick={handleSend}
                 disabled={!isChatEnabled || isSending || input.trim().length === 0}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white transition-colors disabled:bg-slate-200 disabled:text-slate-400"
+                aria-label="Senden"
               >
-                {isSending ? '...' : 'Senden'}
-              </Button>
+                {isSending ? (
+                  <span className="text-xs">...</span>
+                ) : (
+                  <ChevronRight className="h-5 w-5" />
+                )}
+              </button>
             </div>
             <div className="flex items-center justify-between gap-3 pt-2">
               {isDictationSupported ? (
@@ -389,7 +371,7 @@ export function DialogScreenV2() {
                 >
                   <Mic className="w-4 h-4" />
                   {isDictating && (
-                    <span className="sr-only">Aufnahme läuft</span>
+                    <span className="sr-only">Aufnahme laeuft</span>
                   )}
                 </button>
               ) : (
@@ -404,7 +386,6 @@ export function DialogScreenV2() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   )
