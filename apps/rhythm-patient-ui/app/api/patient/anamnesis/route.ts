@@ -274,7 +274,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Fetch the version that was created by the trigger
     const { data: version, error: versionError } = await supabase
       .from('anamnesis_entry_versions')
       .select('*')
@@ -284,7 +283,15 @@ export async function POST(request: Request) {
 
     if (versionError) {
       console.error('[patient/anamnesis POST] Version fetch error:', versionError)
-      // Entry was created but version fetch failed - still return success
+    }
+
+    const { count: versionsCount, error: versionsCountError } = await supabase
+      .from('anamnesis_entry_versions')
+      .select('*', { count: 'exact', head: true })
+      .eq('entry_id', entry.id)
+
+    if (versionsCountError) {
+      console.error('[patient/anamnesis POST] Versions count error:', versionsCountError)
     }
 
     return NextResponse.json(
@@ -293,6 +300,10 @@ export async function POST(request: Request) {
         data: {
           entry,
           version: version || null,
+          entryId: entry.id,
+          created_at: entry.created_at,
+          entry_type: entry.entry_type,
+          versions_count: versionsCount || 0,
         },
       },
       { status: 201 }

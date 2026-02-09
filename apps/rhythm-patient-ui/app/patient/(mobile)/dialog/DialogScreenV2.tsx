@@ -41,6 +41,18 @@ interface StubbedMessage {
   timestamp: string
 }
 
+type IntakeEntry = {
+  id: string
+  content: Record<string, unknown>
+  entry_type: string | null
+  created_at: string
+}
+
+type IntakeEvidenceItem = {
+  label?: string
+  ref: string
+}
+
 type SpeechRecognitionInstance = {
   lang: string
   interimResults: boolean
@@ -54,55 +66,37 @@ type SpeechRecognitionInstance = {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
 
-function getStubbedConversation(context: string | null, assessmentId: string | null): StubbedMessage[] {
-  const now = new Date()
-  const timestamp = (minutesAgo: number) => {
-    const time = new Date(now.getTime() - minutesAgo * 60000)
-    return time.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  }
+const DEFAULT_OPENING_QUESTION = 'Was kann ich heute fuer Sie tun?'
+const INTAKE_SESSION_KEY = 'intakeEntryId'
+const MAX_INTAKE_EVIDENCE = 10
+const MAX_INTAKE_OPEN_QUESTIONS = 5
+const MAX_INTAKE_NARRATIVE_LENGTH = 1000
+const MAX_INTAKE_ITEM_LENGTH = 200
 
-  if (context === 'results' && assessmentId) {
-    return [
-      {
-        id: '1',
-        sender: 'assistant',
-        text: 'Hallo! Welche Beschwerden stehen bei Ihnen aktuell im Vordergrund und seit wann bestehen sie?',
-        timestamp: timestamp(5),
-      },
-      {
-        id: '2',
-        sender: 'user',
-        text: 'Danke. Die Ergebnisse waren interessant. Was empfehlen Sie als nächste Schritte?',
-        timestamp: timestamp(3),
-      },
-      {
-        id: '3',
-        sender: 'assistant',
-        text: 'Basierend auf Ihren Ergebnissen empfehle ich, mit kleinen Schritten zur Stressreduktion zu beginnen. Haben Sie bereits über die empfohlenen Ressourcen nachgedacht?',
-        timestamp: timestamp(1),
-      },
-    ]
-  }
+const trimText = (value: string, max: number) =>
+  value.length > max ? value.slice(0, max).trim() : value.trim()
 
-  if (context === 'dashboard') {
-    return [
-      {
-        id: '1',
-        sender: 'assistant',
-        text: 'Hallo, was führt Sie zu mir?',
-        timestamp: timestamp(2),
-      },
-    ]
-  }
+const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+  const narrative = content?.narrative
+  if (typeof narrative === 'string' && narrative.trim()) return narrative.trim()
+  const text = content?.text
+  if (typeof text === 'string' && text.trim()) return text.trim()
+  return null
+}
 
-  return [
-    {
-      id: '1',
-      sender: 'assistant',
-      text: 'Hallo, was fuehrt Sie zu mir?',
-      timestamp: timestamp(2),
-    },
-  ]
+const extractTopic = (narrative: string): string | null => {
+  const firstLine = narrative.split(/\n|\./)[0]?.trim()
+  if (!firstLine) return null
+  return trimText(firstLine, 80)
+}
+
+const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
+  if (!latestIntake) return DEFAULT_OPENING_QUESTION
+  const narrative = getIntakeNarrative(latestIntake.content)
+  if (!narrative) return DEFAULT_OPENING_QUESTION
+  const topic = extractTopic(narrative)
+  if (!topic) return DEFAULT_OPENING_QUESTION
+  return `Wie geht es Ihnen heute mit ${topic}?`
 }
 
 export function DialogScreenV2() {
@@ -117,15 +111,58 @@ export function DialogScreenV2() {
   const [isSending, setIsSending] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
+  const [intakeEntryId, setIntakeEntryId] = useState<string | null>(null)
+  const [intakeEvidence, setIntakeEvidence] = useState<IntakeEvidenceItem[]>([])
+  const [intakeQuestions, setIntakeQuestions] = useState<string[]>([])
+  const [intakeNotes, setIntakeNotes] = useState<string[]>([])
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const intakeSnapshotTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    setChatMessages(getStubbedConversation(context, assessmentId))
-  }, [context, assessmentId])
+    if (!isChatEnabled) return
+
+    let isMounted = true
+
+    const initChat = async () => {
+      const latestIntake = await fetchLatestIntake()
+      if (!isMounted) return
+      const openingQuestion = buildOpeningQuestion(latestIntake)
+      setChatMessages([
+        {
+          id: `assistant-${Date.now()}`,
+          sender: 'assistant',
+          text: openingQuestion,
+          timestamp: buildTimestamp(),
+        },
+      ])
+
+      const existingEntryId = typeof window !== 'undefined'
+        ? window.sessionStorage.getItem(INTAKE_SESSION_KEY)
+        : null
+
+      if (existingEntryId) {
+        setIntakeEntryId(existingEntryId)
+        return
+      }
+
+      const newEntryId = await createNewIntakeEntry()
+      if (!isMounted || !newEntryId) return
+      setIntakeEntryId(newEntryId)
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(INTAKE_SESSION_KEY, newEntryId)
+      }
+    }
+
+    void initChat()
+
+    return () => {
+      isMounted = false
+    }
+  }, [assessmentId, context, isChatEnabled])
 
   useEffect(() => {
     isDictatingRef.current = isDictating
@@ -194,8 +231,126 @@ export function DialogScreenV2() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
 
+  useEffect(() => {
+    return () => {
+      if (intakeSnapshotTimeoutRef.current) {
+        clearTimeout(intakeSnapshotTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+
+  const fetchLatestIntake = async (): Promise<IntakeEntry | null> => {
+    try {
+      const response = await fetch('/api/patient/anamnesis')
+      const data = await response.json()
+      if (!response.ok || !data?.success) return null
+
+      const entries = (data?.data?.entries as IntakeEntry[] | undefined) || []
+      const intakeEntries = entries.filter((entry) => entry.entry_type === 'intake')
+      if (intakeEntries.length === 0) return null
+      return intakeEntries[0]
+    } catch (err) {
+      console.error('[DialogScreenV2] Failed to load intake entries', err)
+      return null
+    }
+  }
+
+  const createNewIntakeEntry = async (): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/patient/intake', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Intake',
+          content: {
+            narrative: 'Kontakt gestartet.',
+            evidence: [],
+            openQuestions: [],
+            redFlags: [],
+          },
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Failed to create intake')
+      }
+
+      return data?.data?.entryId || data?.data?.entry?.id || null
+    } catch (err) {
+      console.error('[DialogScreenV2] Failed to create intake entry', err)
+      return null
+    }
+  }
+
+  const buildSnapshotContent = () => {
+    const narrative = trimText(intakeNotes.join(' '), MAX_INTAKE_NARRATIVE_LENGTH)
+    return {
+      narrative: narrative || 'Kontakt gestartet.',
+      evidence: intakeEvidence.slice(0, MAX_INTAKE_EVIDENCE),
+      openQuestions: intakeQuestions.slice(0, MAX_INTAKE_OPEN_QUESTIONS),
+      redFlags: [],
+    }
+  }
+
+  const flushIntakeSnapshot = async () => {
+    if (!intakeEntryId) return
+
+    try {
+      const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Intake',
+          entry_type: 'intake',
+          content: buildSnapshotContent(),
+          change_reason: 'snapshot',
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Failed to update intake')
+      }
+    } catch (err) {
+      console.error('[DialogScreenV2] Failed to update intake snapshot', err)
+    }
+  }
+
+  const queueSnapshot = () => {
+    if (!intakeEntryId) return
+    if (intakeSnapshotTimeoutRef.current) {
+      clearTimeout(intakeSnapshotTimeoutRef.current)
+    }
+    intakeSnapshotTimeoutRef.current = setTimeout(() => {
+      void flushIntakeSnapshot()
+    }, 4000)
+  }
+
+  const collectEvidence = (text: string) => {
+    const trimmed = trimText(text, 400)
+    if (!trimmed) return
+    setIntakeEvidence((prev) => [{ label: 'User', ref: trimmed }, ...prev].slice(0, MAX_INTAKE_EVIDENCE))
+  }
+
+  const collectNote = (text: string) => {
+    const trimmed = trimText(text, 200)
+    if (!trimmed) return
+    setIntakeNotes((prev) => [trimmed, ...prev].slice(0, 5))
+  }
+
+  const collectOpenQuestion = (text: string) => {
+    const candidate = text.split('?')[0]
+    if (!candidate) return
+    const question = trimText(candidate, MAX_INTAKE_ITEM_LENGTH)
+    setIntakeQuestions((prev) => {
+      if (prev.includes(question)) return prev
+      return [question, ...prev].slice(0, MAX_INTAKE_OPEN_QUESTIONS)
+    })
+  }
 
   const handleSend = async () => {
     if (!isChatEnabled || isSending) return
@@ -216,6 +371,9 @@ export function DialogScreenV2() {
 
     setChatMessages((prev) => [...prev, userMessage])
     setInput('')
+    collectEvidence(trimmed)
+    collectNote(trimmed)
+    queueSnapshot()
 
     try {
       const response = await fetch('/api/amy/chat', {
@@ -244,6 +402,10 @@ export function DialogScreenV2() {
       }
 
       setChatMessages((prev) => [...prev, assistantMessage])
+      if (replyText.includes('?')) {
+        collectOpenQuestion(replyText)
+      }
+      queueSnapshot()
     } catch (err) {
       console.error('[DialogScreenV2] Chat send failed', err)
       setSendError(
