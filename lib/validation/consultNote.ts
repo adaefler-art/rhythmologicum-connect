@@ -1,11 +1,14 @@
 /**
  * Issue 5: Consult Note v1 Validation
+ * Issue 6: Uncertainty Parameter Validation
  * 
  * Validates the 12-section structure and enforces rules:
  * - All 12 sections must be present
  * - Handoff summary max 10 lines
  * - No diagnosis language allowed
  * - Problem list 3-7 items
+ * - Uncertainty parameters present and valid (Issue 6)
+ * - No numbers in patient mode (Issue 6)
  */
 
 import type {
@@ -14,6 +17,10 @@ import type {
   ValidationError,
   ValidationWarning,
 } from '@/lib/types/consultNote'
+import {
+  areNumbersAllowed,
+  QUALITATIVE_MARKERS,
+} from '@/lib/config/uncertaintyParameters'
 
 // ============================================================================
 // CONSTANTS
@@ -75,6 +82,9 @@ export function validateConsultNote(content: ConsultNoteContent): ConsultNoteVal
 
   // Check for diagnosis language across all text fields
   validateNoDiagnosisLanguage(content, errors)
+
+  // Issue 6: Validate uncertainty parameters and compliance
+  validateUncertaintyParameters(content, errors, warnings)
 
   return {
     valid: errors.length === 0,
@@ -472,8 +482,181 @@ function collectAllTextFields(
 }
 
 /**
- * Quick check if handoff summary is within limits
+ * Issue 6: R-I6-16: Validate uncertainty parameters
+ * 
+ * Ensures that:
+ * - All three uncertainty parameters are present in header
+ * - No numerical probabilities in patient mode
+ * - Language consistency with parameters
  */
+function validateUncertaintyParameters(
+  content: ConsultNoteContent,
+  errors: ValidationError[],
+  warnings: ValidationWarning[]
+): void {
+  if (!content.header) {
+    return // Already caught by header validation
+  }
+
+  const { uncertaintyProfile, assertiveness, audience } = content.header
+
+  // R-I6-16.1: All parameters must be present
+  if (!uncertaintyProfile) {
+    errors.push({
+      section: 'header',
+      field: 'uncertaintyProfile',
+      message: 'violates R-I6-16: Uncertainty profile is required',
+      code: 'MISSING_UNCERTAINTY_PROFILE',
+    })
+  }
+
+  if (!assertiveness) {
+    errors.push({
+      section: 'header',
+      field: 'assertiveness',
+      message: 'violates R-I6-16: Assertiveness level is required',
+      code: 'MISSING_ASSERTIVENESS',
+    })
+  }
+
+  if (!audience) {
+    errors.push({
+      section: 'header',
+      field: 'audience',
+      message: 'violates R-I6-16: Audience is required',
+      code: 'MISSING_AUDIENCE',
+    })
+  }
+
+  // If we don't have all parameters, can't do further validation
+  if (!uncertaintyProfile || !assertiveness || !audience) {
+    return
+  }
+
+  // R-I6-17: No numerical probabilities in patient mode
+  if (
+    !areNumbersAllowed({ uncertaintyProfile, assertiveness, audience })
+  ) {
+    validateNoNumbersInText(content, errors)
+  }
+
+  // R-I6-18: Check language consistency
+  validateLanguageConsistency(content, uncertaintyProfile, assertiveness, warnings)
+}
+
+/**
+ * R-I6-17: Ensure no numerical probabilities in patient mode
+ */
+function validateNoNumbersInText(
+  content: ConsultNoteContent,
+  errors: ValidationError[]
+): void {
+  const textFields = collectAllTextFields(content)
+
+  for (const { section, field, text } of textFields) {
+    // Check against prohibited patterns from QUALITATIVE_MARKERS
+    for (const pattern of QUALITATIVE_MARKERS.prohibited) {
+      if (pattern.test(text)) {
+        errors.push({
+          section,
+          field,
+          message: `violates R-I6-17: Numerical probability detected in patient mode: "${text.match(pattern)?.[0]}"`,
+          code: 'NUMERICAL_PROBABILITY_IN_PATIENT_MODE',
+        })
+      }
+    }
+
+    // Additional check for numbers followed by probability words
+    const numericProbabilityPatterns = [
+      /\d+\s*(percent|prozent)/i,
+      /\d+%/,
+      /\d+\s*von\s*\d+/i,
+      /\d+\s*:\s*\d+/,  // Ratios like "3:1"
+    ]
+
+    for (const pattern of numericProbabilityPatterns) {
+      if (pattern.test(text)) {
+        errors.push({
+          section,
+          field,
+          message: `violates R-I6-17: Numerical probability detected: "${text.match(pattern)?.[0]}"`,
+          code: 'NUMERICAL_PROBABILITY_DETECTED',
+        })
+      }
+    }
+  }
+}
+
+/**
+ * R-I6-18: Check language consistency with parameters
+ */
+function validateLanguageConsistency(
+  content: ConsultNoteContent,
+  uncertaintyProfile: string,
+  assertiveness: string,
+  warnings: ValidationWarning[]
+): void {
+  // If profile is 'off', warn if uncertainty markers are found
+  if (uncertaintyProfile === 'off') {
+    const textFields = collectAllTextFields(content)
+    const uncertaintyMarkers = QUALITATIVE_MARKERS.german
+
+    for (const { section, field, text } of textFields) {
+      const lowerText = text.toLowerCase()
+      const foundMarkers = uncertaintyMarkers.filter((marker) =>
+        lowerText.includes(marker.toLowerCase())
+      )
+
+      if (foundMarkers.length > 0 && !isRedFlagContext(text)) {
+        warnings.push({
+          section,
+          field,
+          message: `violates R-I6-18: Uncertainty markers found with profile='off': ${foundMarkers.join(', ')}`,
+          code: 'UNCERTAINTY_MARKERS_WITH_OFF_PROFILE',
+        })
+      }
+    }
+  }
+
+  // Note: More sophisticated consistency checks could be added here
+  // For now, we rely on the LLM prompt to enforce consistency
+}
+
+/**
+ * Helper: Check if text is in a red flag or safety warning context
+ */
+function isRedFlagContext(text: string): boolean {
+  const redFlagKeywords = [
+    'notfall',
+    'sofort',
+    'akut',
+    '112',
+    'notarzt',
+    'rettungsdienst',
+    'gefahr',
+    'lebensbedrohlich',
+  ]
+
+  const lowerText = text.toLowerCase()
+  return redFlagKeywords.some((keyword) => lowerText.includes(keyword))
+}
+
+/**
+ * Quick check if a text contains numerical probabilities
+ */
+export function containsNumericalProbabilities(text: string): boolean {
+  for (const pattern of QUALITATIVE_MARKERS.prohibited) {
+    if (pattern.test(text)) {
+      return true
+    }
+  }
+  return false
+}
+
+// ============================================================================
+// HELPER FUNCTIONS (continued)
+// ============================================================================
+
 export function isHandoffSummaryValid(summary: string[]): boolean {
   return summary.length > 0 && summary.length <= MAX_HANDOFF_LINES
 }
