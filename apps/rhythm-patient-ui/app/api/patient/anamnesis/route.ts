@@ -32,7 +32,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientProfileId, getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import { ENTRY_TYPES, validateCreateEntry } from '@/lib/api/anamnesis/validation'
+import { validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
@@ -61,7 +61,7 @@ const logIntakeEvent = (params: {
 const createEntrySchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
   content: z.record(z.string(), z.unknown()).optional(),
-  entry_type: z.enum(ENTRY_TYPES),
+  entry_type: z.literal('intake'),
   tags: z.array(z.string()).optional().default([]),
   change_reason: z.string().optional(),
 })
@@ -73,12 +73,6 @@ const toFieldErrors = (issues: z.ZodIssue[]) =>
     acc[key].push(issue.message)
     return acc
   }, {})
-
-const getEntryTypeFromBody = (value: unknown): string | null => {
-  if (!value || typeof value !== 'object') return null
-  const entryType = (value as { entry_type?: unknown }).entry_type
-  return typeof entryType === 'string' ? entryType : null
-}
 
 export async function GET() {
   try {
@@ -227,7 +221,7 @@ export async function POST(request: Request) {
         userId: user?.id ?? null,
         action: 'create',
         entryId: null,
-        entryType: null,
+        entryType: 'intake',
         ok: false,
         errorCode: ErrorCode.UNAUTHORIZED,
       })
@@ -252,16 +246,16 @@ export async function POST(request: Request) {
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: null,
+        entryType: 'intake',
         ok: false,
-        errorCode: 'PATIENT_MAPPING_MISSING',
+        errorCode: 'PATIENT_PROFILE_NOT_FOUND',
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'PATIENT_MAPPING_MISSING',
-            message: 'Patient profile mapping missing',
+            code: 'PATIENT_PROFILE_NOT_FOUND',
+            message: 'Patient profile not found',
           },
         },
         { status: 403 }
@@ -277,19 +271,19 @@ export async function POST(request: Request) {
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: null,
+        entryType: 'intake',
         ok: false,
-        errorCode: 'PATIENT_MAPPING_MISSING',
+        errorCode: 'DB_CONSTRAINT_VIOLATION',
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'PATIENT_MAPPING_MISSING',
+            code: 'DB_CONSTRAINT_VIOLATION',
             message: 'Patient organization mapping missing',
           },
         },
-        { status: 403 }
+        { status: 400 }
       )
     }
 
@@ -304,7 +298,7 @@ export async function POST(request: Request) {
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: null,
+        entryType: 'intake',
         ok: false,
         errorCode: ErrorCode.VALIDATION_FAILED,
       })
@@ -335,7 +329,7 @@ export async function POST(request: Request) {
           userId: user.id,
           action: 'create',
           entryId: null,
-          entryType: getEntryTypeFromBody(body),
+          entryType: 'intake',
           ok: false,
           errorCode: ErrorCode.VALIDATION_FAILED,
         })
@@ -356,7 +350,7 @@ export async function POST(request: Request) {
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: getEntryTypeFromBody(body),
+        entryType: 'intake',
         ok: false,
         errorCode: ErrorCode.VALIDATION_FAILED,
       })
@@ -382,24 +376,36 @@ export async function POST(request: Request) {
         organization_id: organizationId,
         title: validatedData.title,
         content: validatedData.content as Json,
-        entry_type: validatedData.entry_type || null,
+        entry_type: 'intake',
         tags: validatedData.tags || [],
         created_by: user.id,
         updated_by: user.id,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     if (createError) {
       console.error('[patient/anamnesis POST] Create error:', createError)
-      const isRlsBlocked = createError.code === '42501' || createError.code === 'PGRST301'
-      const errorCode = isRlsBlocked ? 'RLS_BLOCKED' : ErrorCode.DATABASE_ERROR
+      const isRlsBlocked =
+        createError.code === '42501' ||
+        createError.code === 'PGRST301' ||
+        createError.message.toLowerCase().includes('row-level security')
+      const isConstraintViolation =
+        createError.code === '23502' ||
+        createError.code === '23503' ||
+        createError.code === '23514'
+      const errorCode = isRlsBlocked
+        ? 'RLS_BLOCKED'
+        : isConstraintViolation
+          ? 'DB_CONSTRAINT_VIOLATION'
+          : ErrorCode.DATABASE_ERROR
       logIntakeEvent({
         runId,
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: validatedData.entry_type || null,
+        entryType: 'intake',
         ok: false,
         errorCode,
       })
@@ -410,7 +416,9 @@ export async function POST(request: Request) {
             code: errorCode,
             message: isRlsBlocked
               ? 'Row-level security blocked the insert'
-              : 'Failed to create anamnesis entry',
+              : isConstraintViolation
+                ? 'Database constraint violation'
+                : 'Failed to create anamnesis entry',
           },
         },
         { status: isRlsBlocked ? 403 : 400 }
@@ -442,7 +450,7 @@ export async function POST(request: Request) {
       userId: user.id,
       action: 'create',
       entryId: entry.id,
-      entryType: entry.entry_type,
+      entryType: 'intake',
       ok: true,
     })
 
@@ -467,7 +475,7 @@ export async function POST(request: Request) {
       userId: null,
       action: 'create',
       entryId: null,
-      entryType: null,
+      entryType: 'intake',
       ok: false,
       errorCode: ErrorCode.INTERNAL_ERROR,
     })
