@@ -7,10 +7,12 @@ describe('anamnesis intake validation', () => {
         title: 'Intake Summary',
         entry_type: 'intake',
         content: {
-          narrative: 'Short narrative',
-          evidence: [],
+          status: 'draft',
+          narrativeSummary: 'Short narrative',
+          structured: { timeline: [], keySymptoms: [] },
           openQuestions: [],
           redFlags: [],
+          evidenceRefs: [],
         },
       }),
     ).not.toThrow()
@@ -23,10 +25,12 @@ describe('anamnesis intake validation', () => {
         title: 'Intake Summary',
         entry_type: 'intake',
         content: {
-          narrative: longNarrative,
-          evidence: [],
+          status: 'draft',
+          narrativeSummary: longNarrative,
+          structured: { timeline: [], keySymptoms: [] },
           openQuestions: [],
           redFlags: [],
+          evidenceRefs: [],
         },
       }),
     ).toThrow()

@@ -34,25 +34,43 @@ export type EntryType = (typeof ENTRY_TYPES)[number]
 export const MAX_JSONB_SIZE_BYTES = 1024 * 1024 // 1MB
 
 export const MAX_INTAKE_NARRATIVE_LENGTH = 4000
+export const MAX_INTAKE_CHIEF_COMPLAINT_LENGTH = 200
 export const MAX_INTAKE_EVIDENCE_ITEMS = 20
+export const MAX_INTAKE_EVIDENCE_REF_LENGTH = 2000
 export const MAX_INTAKE_OPEN_QUESTIONS = 10
 export const MAX_INTAKE_OPEN_QUESTION_LENGTH = 200
 export const MAX_INTAKE_RED_FLAGS = 10
-export const MAX_INTAKE_RED_FLAG_LENGTH = 200
+export const MAX_INTAKE_NARRATIVE_LENGTH = 4000
+export const MAX_INTAKE_CHIEF_COMPLAINT_LENGTH = 200
+export const MAX_INTAKE_EVIDENCE_ITEMS = 20
+export const MAX_INTAKE_EVIDENCE_REF_LENGTH = 200
+export const MAX_INTAKE_TIMELINE_ITEM_LENGTH = 200
+export const MAX_INTAKE_KEY_SYMPTOMS = 10
+export const MAX_INTAKE_KEY_SYMPTOM_LENGTH = 120
 
 const intakeContentSchema = z.object({
-  narrative: z
+  chiefComplaint: z
+  status: z.string().min(1, 'Status is required').max(40, 'Status is too long'),
+  chiefComplaint: z
     .string()
-    .min(1, 'Narrative is required')
-    .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative is too long'),
-  evidence: z
-    .array(
-      z.object({
-        label: z.string().max(120, 'Evidence label is too long').optional(),
-        ref: z.string().max(2000, 'Evidence ref is too long'),
-      }),
-    )
-    .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence items')
+    .max(MAX_INTAKE_CHIEF_COMPLAINT_LENGTH, 'Chief complaint is too long')
+    .optional()
+    .default(''),
+  narrativeSummary: z
+    .string()
+    .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative summary is too long')
+    .optional()
+    .default(''),
+  structured: z
+    .object({
+      timeline: z.array(z.string().max(200, 'Timeline item is too long')).optional().default([]),
+      keySymptoms: z.array(z.string().max(200, 'Key symptom is too long')).optional().default([]),
+    })
+    .optional()
+    .default({ timeline: [], keySymptoms: [] }),
+  redFlags: z
+    .array(z.string().max(MAX_INTAKE_RED_FLAG_LENGTH, 'Red flag is too long'))
+    .max(MAX_INTAKE_RED_FLAGS, 'Too many red flags')
     .optional()
     .default([]),
   openQuestions: z
@@ -60,11 +78,37 @@ const intakeContentSchema = z.object({
     .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
     .optional()
     .default([]),
-  redFlags: z
-    .array(z.string().max(MAX_INTAKE_RED_FLAG_LENGTH, 'Red flag is too long'))
-    .max(MAX_INTAKE_RED_FLAGS, 'Too many red flags')
+  evidenceRefs: z
+    .array(z.string().max(MAX_INTAKE_EVIDENCE_REF_LENGTH, 'Evidence ref is too long'))
+    .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence refs')
     .optional()
     .default([]),
+})
+    .optional()
+    .default([]),
+  openQuestions: z
+    .array(z.string().max(MAX_INTAKE_OPEN_QUESTION_LENGTH, 'Open question is too long'))
+    .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
+    .optional()
+    .default([]),
+  evidenceRefs: z
+    .array(z.string().max(MAX_INTAKE_EVIDENCE_REF_LENGTH, 'Evidence ref is too long'))
+    .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence refs')
+    .optional()
+    .default([]),
+  narrative: z
+    .string()
+    .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative is too long')
+    .optional(),
+  evidence: z
+    .array(
+      z.object({
+        label: z.string().max(120, 'Evidence label is too long').optional(),
+        ref: z.string().max(MAX_INTAKE_EVIDENCE_REF_LENGTH, 'Evidence ref is too long'),
+      }),
+    )
+    .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence items')
+    .optional(),
 })
 
 /**

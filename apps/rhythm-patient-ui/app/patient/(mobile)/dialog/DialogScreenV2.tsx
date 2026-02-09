@@ -56,7 +56,9 @@ type IntakeEvidenceItem = {
 type IntakePersistenceStatus = {
   runId: string | null
   createAttempted: boolean
-  createSkipped: boolean
+  createFailed: boolean
+  patchAttempted: boolean
+  patchFailed: boolean
   createOk: boolean
   patchOk: boolean
   entryId: string | null
@@ -81,13 +83,18 @@ const MAX_INTAKE_EVIDENCE = 10
 const MAX_INTAKE_OPEN_QUESTIONS = 5
 const MAX_INTAKE_NARRATIVE_LENGTH = 1000
 const MAX_INTAKE_ITEM_LENGTH = 200
+const MAX_CHIEF_COMPLAINT_LENGTH = 200
 
 const trimText = (value: string, max: number) =>
   value.length > max ? value.slice(0, max).trim() : value.trim()
 
 const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+  const summary = content?.narrativeSummary
+  if (typeof summary === 'string' && summary.trim()) return summary.trim()
   const narrative = content?.narrative
   if (typeof narrative === 'string' && narrative.trim()) return narrative.trim()
+  const complaint = content?.chiefComplaint
+  if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
   const text = content?.text
   if (typeof text === 'string' && text.trim()) return text.trim()
   return null
@@ -119,6 +126,15 @@ const isDevPreview = (): boolean => {
   )
 }
 
+const hashText = (value: string): string => {
+  let hash = 0
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i)
+    hash |= 0
+  }
+  return `msg_${Math.abs(hash)}`
+}
+
 export function DialogScreenV2() {
   const searchParams = useSearchParams()
   const context = searchParams.get('context')
@@ -135,10 +151,13 @@ export function DialogScreenV2() {
   const [intakeEvidence, setIntakeEvidence] = useState<IntakeEvidenceItem[]>([])
   const [intakeQuestions, setIntakeQuestions] = useState<string[]>([])
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
+  const [chiefComplaint, setChiefComplaint] = useState('')
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
-    createSkipped: false,
+    createFailed: false,
+    patchAttempted: false,
+    patchFailed: false,
     createOk: false,
     patchOk: false,
     entryId: null,
@@ -146,8 +165,10 @@ export function DialogScreenV2() {
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const intakeSnapshotTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeRunIdRef = useRef<string | null>(null)
+  const createInFlightRef = useRef(false)
+  const createDoneRef = useRef(false)
+  const createAbortRef = useRef<AbortController | null>(null)
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -177,27 +198,16 @@ export function DialogScreenV2() {
         },
       ])
 
-      const existingEntryId = typeof window !== 'undefined'
-        ? window.sessionStorage.getItem(INTAKE_SESSION_KEY)
-        : null
-
-      if (existingEntryId) {
-        setIntakeEntryId(existingEntryId)
-        setIntakePersistence((prev) => ({
-          ...prev,
-          createAttempted: false,
-          createSkipped: true,
-          createOk: false,
-          entryId: existingEntryId,
-        }))
-        return
-      }
-
-      const newEntryId = await createNewIntakeEntry()
-      if (!isMounted || !newEntryId) return
-      setIntakeEntryId(newEntryId)
       if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem(INTAKE_SESSION_KEY, newEntryId)
+        const storedEntryId = window.sessionStorage.getItem(INTAKE_SESSION_KEY)
+        if (storedEntryId) {
+          setIntakeEntryId(storedEntryId)
+          setIntakePersistence((prev) => ({
+            ...prev,
+            entryId: storedEntryId,
+          }))
+          createDoneRef.current = true
+        }
       }
     }
 
@@ -275,14 +285,6 @@ export function DialogScreenV2() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
 
-  useEffect(() => {
-    return () => {
-      if (intakeSnapshotTimeoutRef.current) {
-        clearTimeout(intakeSnapshotTimeoutRef.current)
-      }
-    }
-  }, [])
-
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
@@ -313,23 +315,43 @@ export function DialogScreenV2() {
   }
 
   const createNewIntakeEntry = async (): Promise<string | null> => {
+    if (typeof window !== 'undefined') {
+      const storedEntryId = window.sessionStorage.getItem(INTAKE_SESSION_KEY)
+      if (storedEntryId) {
+        createDoneRef.current = true
+        setIntakeEntryId(storedEntryId)
+        setIntakePersistence((prev) => ({
+          ...prev,
+          entryId: storedEntryId,
+        }))
+        return storedEntryId
+      }
+    }
+
+    if (createInFlightRef.current || createDoneRef.current) {
+      return intakeEntryId
+    }
+
+    createInFlightRef.current = true
+    createAbortRef.current?.abort()
+    createAbortRef.current = new AbortController()
+
     try {
       setIntakePersistence((prev) => ({
         ...prev,
         createAttempted: true,
-        createSkipped: false,
+        createFailed: false,
       }))
 
-      const response = await fetch('/api/patient/intake', {
+      const response = await fetch('/api/patient/anamnesis', {
         method: 'POST',
         headers: getRequestHeaders(),
+        signal: createAbortRef.current.signal,
         body: JSON.stringify({
           title: 'Intake',
+          entry_type: 'intake',
           content: {
-            narrative: 'Kontakt gestartet.',
-            evidence: [],
-            openQuestions: [],
-            redFlags: [],
+            status: 'draft',
           },
         }),
       })
@@ -340,38 +362,68 @@ export function DialogScreenV2() {
       }
 
       const entryId = data?.data?.entryId || data?.data?.entry?.id || null
+      createDoneRef.current = Boolean(entryId)
       setIntakePersistence((prev) => ({
         ...prev,
         createOk: Boolean(entryId),
-        createSkipped: false,
+        createFailed: !entryId,
         entryId,
       }))
+
+      if (entryId && typeof window !== 'undefined') {
+        window.sessionStorage.setItem(INTAKE_SESSION_KEY, entryId)
+      }
+
+      if (entryId) {
+        setIntakeEntryId(entryId)
+      }
+
+      void verifyIntakeWrite()
       return entryId
     } catch (err) {
       console.error('[DialogScreenV2] Failed to create intake entry', err)
       setIntakePersistence((prev) => ({
         ...prev,
         createOk: false,
-        createSkipped: false,
+        createFailed: true,
       }))
       return null
+    } finally {
+      createInFlightRef.current = false
     }
   }
 
   const buildSnapshotContent = () => {
-    const narrative = trimText(intakeNotes.join(' '), MAX_INTAKE_NARRATIVE_LENGTH)
+    const narrativeSummary = trimText(intakeNotes.join(' '), MAX_INTAKE_NARRATIVE_LENGTH)
+    const evidenceRefs = intakeEvidence
+      .map((item) => item.ref)
+      .filter(Boolean)
+      .slice(0, MAX_INTAKE_EVIDENCE)
+
     return {
-      narrative: narrative || 'Kontakt gestartet.',
-      evidence: intakeEvidence.slice(0, MAX_INTAKE_EVIDENCE),
-      openQuestions: intakeQuestions.slice(0, MAX_INTAKE_OPEN_QUESTIONS),
+      status: 'draft',
+      chiefComplaint: trimText(chiefComplaint, MAX_CHIEF_COMPLAINT_LENGTH),
+      narrativeSummary: narrativeSummary || 'Kontakt gestartet.',
+      structured: {
+        timeline: [],
+        keySymptoms: [],
+      },
       redFlags: [],
+      openQuestions: intakeQuestions.slice(0, MAX_INTAKE_OPEN_QUESTIONS),
+      evidenceRefs,
     }
   }
 
-  const flushIntakeSnapshot = async () => {
+  const saveIntakeSnapshot = async () => {
     if (!intakeEntryId) return
 
     try {
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchAttempted: true,
+        patchFailed: false,
+      }))
+
       const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
         method: 'PATCH',
         headers: getRequestHeaders(),
@@ -391,27 +443,42 @@ export function DialogScreenV2() {
       setIntakePersistence((prev) => ({
         ...prev,
         patchOk: true,
+        patchFailed: false,
         entryId: data?.data?.entryId || data?.data?.entry?.id || intakeEntryId,
       }))
+      void verifyIntakeWrite()
     } catch (err) {
       console.error('[DialogScreenV2] Failed to update intake snapshot', err)
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchFailed: true,
+      }))
     }
   }
 
-  const queueSnapshot = () => {
-    if (!intakeEntryId) return
-    if (intakeSnapshotTimeoutRef.current) {
-      clearTimeout(intakeSnapshotTimeoutRef.current)
+  const verifyIntakeWrite = async () => {
+    try {
+      const response = await fetch('/api/patient/_meta/intake-write-check', {
+        headers: getRequestHeaders(),
+      })
+      const data = await response.json()
+      if (!response.ok || !data?.success) return
+      if (data?.data?.lastAnamnesisEntryId) {
+        setIntakePersistence((prev) => ({
+          ...prev,
+          entryId: data.data.lastAnamnesisEntryId,
+        }))
+      }
+    } catch (err) {
+      console.error('[DialogScreenV2] Intake write check failed', err)
     }
-    intakeSnapshotTimeoutRef.current = setTimeout(() => {
-      void flushIntakeSnapshot()
-    }, 4000)
   }
 
   const collectEvidence = (text: string) => {
     const trimmed = trimText(text, 400)
     if (!trimmed) return
-    setIntakeEvidence((prev) => [{ label: 'User', ref: trimmed }, ...prev].slice(0, MAX_INTAKE_EVIDENCE))
+    const ref = hashText(trimmed)
+    setIntakeEvidence((prev) => [{ label: 'User', ref }, ...prev].slice(0, MAX_INTAKE_EVIDENCE))
   }
 
   const collectNote = (text: string) => {
@@ -436,6 +503,15 @@ export function DialogScreenV2() {
     const trimmed = input.trim()
     if (!trimmed) return
 
+    if (!intakeEntryId) {
+      const entryId = await createNewIntakeEntry()
+      if (!entryId) {
+        setSendError('Intake konnte nicht gespeichert werden. Bitte erneut versuchen.')
+        setIsSending(false)
+        return
+      }
+    }
+
     setIsSending(true)
     setSendError(null)
     setDictationError(null)
@@ -451,7 +527,9 @@ export function DialogScreenV2() {
     setInput('')
     collectEvidence(trimmed)
     collectNote(trimmed)
-    queueSnapshot()
+    if (!chiefComplaint) {
+      setChiefComplaint(trimText(trimmed, MAX_CHIEF_COMPLAINT_LENGTH))
+    }
 
     try {
       const response = await fetch('/api/amy/chat', {
@@ -483,7 +561,6 @@ export function DialogScreenV2() {
       if (replyText.includes('?')) {
         collectOpenQuestion(replyText)
       }
-      queueSnapshot()
     } catch (err) {
       console.error('[DialogScreenV2] Chat send failed', err)
       setSendError(
@@ -516,14 +593,35 @@ export function DialogScreenV2() {
               <p>runId: {intakePersistence.runId || 'pending'}</p>
               <p>entryId: {intakePersistence.entryId || 'none'}</p>
               <p>
-                create: {intakePersistence.createOk ? 'ok' : intakePersistence.createSkipped ? 'skipped' : 'pending'}
-                {' · '}patch: {intakePersistence.patchOk ? 'ok' : 'pending'}
+                create: {intakePersistence.createOk ? 'ok' : intakePersistence.createFailed ? 'failed' : 'pending'}
+                {' · '}patch: {intakePersistence.patchOk ? 'ok' : intakePersistence.patchFailed ? 'failed' : 'pending'}
               </p>
-              {intakePersistence.createSkipped && !intakePersistence.createOk && (
+              {intakePersistence.createFailed && (
                 <p className="mt-2 font-semibold text-amber-800">
                   Intake not persisted (no anamnesis write)
                 </p>
               )}
+              {intakePersistence.patchFailed && (
+                <p className="mt-2 font-semibold text-amber-800">
+                  Intake patch failed (no version write)
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-md border border-amber-300 px-2 py-1 text-xs font-semibold text-amber-900"
+                  onClick={() => void createNewIntakeEntry()}
+                >
+                  Retry Create
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-amber-300 px-2 py-1 text-xs font-semibold text-amber-900"
+                  onClick={() => void saveIntakeSnapshot()}
+                >
+                  Save Snapshot
+                </button>
+              </div>
             </div>
           )}
 
