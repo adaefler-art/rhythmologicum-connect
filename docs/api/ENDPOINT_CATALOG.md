@@ -141,6 +141,7 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/clinician/anamnesis/[entryId]/archive | POST | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/archive/route.ts |
 | /api/clinician/anamnesis/[entryId]/versions | POST | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/versions/route.ts |
 | /api/clinician/assessments/[assessmentId]/details | GET | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts |
+| /api/clinician/chat | GET, POST | clinician |  | 0 | yes - Clinician colleague mode API (no UI callsite yet) | apps/rhythm-studio-ui/app/api/clinician/chat/route.ts |
 | /api/clinician/consult-notes | GET, POST | clinician |  | 0 | yes - Issue 5 consult note APIs (no UI callsite yet) | apps/rhythm-studio-ui/app/api/clinician/consult-notes/route.ts |
 | /api/clinician/consult-notes/[consultNoteId] | GET | clinician |  | 0 | yes - Issue 5 consult note APIs (no UI callsite yet) | apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/route.ts |
 | /api/clinician/consult-notes/[consultNoteId]/versions | GET | clinician |  | 0 | yes - Issue 5 consult note APIs (no UI callsite yet) | apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/versions/route.ts |
