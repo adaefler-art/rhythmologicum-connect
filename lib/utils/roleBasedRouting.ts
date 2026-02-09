@@ -97,7 +97,7 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
     },
     {
       href: '/clinician/anamnesis',
-      label: 'Anamnese',
+      label: 'Patient Record',
       active: pathname?.startsWith('/clinician/anamnesis') ?? false,
     },
     {
@@ -147,7 +147,7 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
     },
     {
       href: '/clinician/anamnesis',
-      label: 'Anamnese',
+      label: 'Patient Record',
       active: pathname?.startsWith('/clinician/anamnesis') ?? false,
     },
     {

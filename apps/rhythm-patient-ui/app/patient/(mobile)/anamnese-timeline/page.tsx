@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
 /**
- * E75.3: Anamnese Timeline Page
+ * E75.3: Patient Record Timeline Page
  * 
  * Patient can view, add, edit, and archive medical history entries.
  * Enforces dashboard-first policy.

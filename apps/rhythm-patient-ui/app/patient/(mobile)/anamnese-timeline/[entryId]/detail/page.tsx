@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 
 /**
- * E75.3: Anamnese Entry Detail Page
+ * E75.3: Patient Record Entry Detail Page
  * 
  * Patient can view entry details, version history, edit, and archive.
  * Enforces dashboard-first policy.

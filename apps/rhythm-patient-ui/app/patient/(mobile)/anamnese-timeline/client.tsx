@@ -13,7 +13,7 @@ import {
 import { Plus, Clock, ArrowLeft } from '@/lib/ui/mobile-v2/icons'
 
 /**
- * E75.3: Anamnese Timeline Client Component
+ * E75.3: Patient Record Timeline Client Component
  * 
  * Displays patient medical history entries with:
  * - List grouped by entry_type and date
@@ -189,7 +189,7 @@ export default function AnamneseTimelineClient() {
         <EmptyState
           iconVariant="inbox"
           title="Keine Einträge vorhanden"
-          message="Beginnen Sie mit der Dokumentation Ihrer Anamnese"
+          message="Beginnen Sie mit der Dokumentation Ihrer Patient Record"
           ctaText="Ersten Eintrag hinzufügen"
           onCtaClick={() => setShowAddModal(true)}
         />
@@ -220,7 +220,7 @@ export default function AnamneseTimelineClient() {
 
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Anamnese Timeline</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Patient Record Timeline</h1>
         <p className="text-sm text-slate-600 mt-1">
           {filteredEntries.length} {filteredEntries.length === 1 ? 'Eintrag' : 'Einträge'}
         </p>

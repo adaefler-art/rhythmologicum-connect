@@ -88,7 +88,7 @@ describe('Role-Specific Menu Filtering (V05-I06.3)', () => {
       expect(navItems[4].href).toBe('/clinician/funnels')
       expect(navItems[4].label).toBe('Fragebögen')
       expect(navItems[5].href).toBe('/clinician/anamnesis')
-      expect(navItems[5].label).toBe('Anamnese')
+      expect(navItems[5].label).toBe('Patient Record')
       expect(navItems[6].href).toBe('/admin/content')
       expect(navItems[6].label).toBe('Inhalte')
       expect(navItems[7].href).toBe('/admin/navigation')

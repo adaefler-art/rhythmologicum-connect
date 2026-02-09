@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { DiagnosisPromptOutputV2Schema } from './contracts/diagnosis-prompt.js'
+import { DiagnosisPromptOutputV2Schema } from './contracts/diagnosis-prompt'
 
 const DiagnosisProvenanceSchema = z.object({
   result_source: z.enum(['llm', 'fallback', 'cached', 'rule_based']),

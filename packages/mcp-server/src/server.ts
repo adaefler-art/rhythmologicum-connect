@@ -7,8 +7,8 @@
 
 import http from 'node:http'
 import crypto from 'node:crypto'
-import { getVersionMetadata, generateRunVersion } from './version.js'
-import { logger } from './logger.js'
+import { getVersionMetadata, generateRunVersion } from './version'
+import { logger } from './logger'
 import {
   handleGetPatientContext,
   handleRunDiagnosis,
@@ -16,9 +16,9 @@ import {
   type TraceTimelineEntry,
   type TraceTimelineSummary,
   type ToolResult,
-} from './handlers.js'
-import type { GetPatientContextInput, RunDiagnosisInput } from './tools.js'
-import { env } from './env.js'
+} from './handlers'
+import type { GetPatientContextInput, RunDiagnosisInput } from './tools'
+import { env } from './env'
 
 const PORT = Number(env.PORT || env.MCP_SERVER_PORT || 3001)
 const HOST = '0.0.0.0'

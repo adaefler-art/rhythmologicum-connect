@@ -4,11 +4,11 @@
  * Public API for the MCP server package.
  */
 
-export { createServer, startServer } from './server.js'
-export { getVersionMetadata, generateRunVersion } from './version.js'
-export { logger } from './logger.js'
-export { MCP_TOOLS } from './tools.js'
-export type { GetPatientContextInput, GetPatientContextOutput, RunDiagnosisInput, RunDiagnosisOutput } from './tools.js'
+export { createServer, startServer } from './server'
+export { getVersionMetadata, generateRunVersion } from './version'
+export { logger } from './logger'
+export { MCP_TOOLS } from './tools'
+export type { GetPatientContextInput, GetPatientContextOutput, RunDiagnosisInput, RunDiagnosisOutput } from './tools'
 export {
 	handleGetPatientContext,
 	handleRunDiagnosis,
@@ -16,4 +16,4 @@ export {
 	type TraceTimelineSummary,
 	type TraceTelemetry,
 	type ToolResult,
-} from './handlers.js'
+} from './handlers'

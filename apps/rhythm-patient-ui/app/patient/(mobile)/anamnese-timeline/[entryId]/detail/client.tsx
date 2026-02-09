@@ -12,7 +12,7 @@ import {
 import { ArrowLeft, Clock } from '@/lib/ui/mobile-v2/icons'
 
 /**
- * E75.3: Anamnese Entry Detail Client Component
+ * E75.3: Patient Record Entry Detail Client Component
  * 
  * Displays entry details with:
  * - Full entry information
