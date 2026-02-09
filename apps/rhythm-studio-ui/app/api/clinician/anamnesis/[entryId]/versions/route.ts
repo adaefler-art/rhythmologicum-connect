@@ -16,6 +16,100 @@ type RouteContext = {
   params: Promise<{ entryId: string }>
 }
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { entryId } = await context.params
+    const supabase = await createServerSupabaseClient()
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.UNAUTHORIZED,
+            message: 'Authentication required',
+          },
+        },
+        { status: 401 },
+      )
+    }
+
+    const isClinician = await hasClinicianRole()
+
+    if (!isClinician) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.FORBIDDEN,
+            message: 'Clinician or admin role required',
+          },
+        },
+        { status: 403 },
+      )
+    }
+
+    const entry = await getAnamnesisEntry(supabase, entryId)
+
+    if (!entry) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.NOT_FOUND,
+            message: 'Anamnesis entry not found or not accessible',
+          },
+        },
+        { status: 404 },
+      )
+    }
+
+    const { data: versions, error: versionsError } = await supabase
+      .from('anamnesis_entry_versions')
+      .select('id, version_number, title, content, entry_type, tags, changed_at, change_reason')
+      .eq('entry_id', entryId)
+      .order('version_number', { ascending: false })
+
+    if (versionsError) {
+      console.error('[clinician/anamnesis/versions GET] Versions error:', versionsError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.DATABASE_ERROR,
+            message: 'Failed to fetch versions',
+          },
+        },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        versions: versions || [],
+      },
+    })
+  } catch (err) {
+    console.error('[clinician/anamnesis/versions GET] Unexpected error:', err)
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'An unexpected error occurred',
+        },
+      },
+      { status: 500 },
+    )
+  }
+}
+
 export async function POST(request: Request, context: RouteContext) {
   try {
     const { entryId } = await context.params

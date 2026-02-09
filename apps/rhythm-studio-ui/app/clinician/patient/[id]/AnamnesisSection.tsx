@@ -84,6 +84,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [previewText, setPreviewText] = useState('')
   const [previewFacts, setPreviewFacts] = useState<SuggestedFact[]>([])
   const [debugHint, setDebugHint] = useState<string | null>(null)
+  const [intakeVersions, setIntakeVersions] = useState<AnamnesisVersion[]>([])
+  const [isIntakeHistoryOpen, setIsIntakeHistoryOpen] = useState(false)
+  const [isIntakeHistoryLoading, setIsIntakeHistoryLoading] = useState(false)
+  const [intakeHistoryError, setIntakeHistoryError] = useState<string | null>(null)
 
   // Form state for add/edit
   const [formTitle, setFormTitle] = useState('')
@@ -121,12 +125,18 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       }
 
       if (data?.success && data.data) {
-        setEntries((data.data.entries || []) as unknown as AnamnesisEntry[])
-        setLatestEntry(
-          ((data.data.latestEntry as unknown) as AnamnesisEntry | null) ||
-            ((data.data.entries?.[0] as unknown) as AnamnesisEntry | undefined) ||
-            null,
-        )
+        const loadedEntries = (data.data.entries || []) as unknown as AnamnesisEntry[]
+        const nonIntakeEntries = loadedEntries.filter((entry) => entry.entry_type !== 'intake')
+        const fallbackLatest = nonIntakeEntries[0] || null
+
+        setEntries(loadedEntries)
+        const providedLatest = (data.data.latestEntry as unknown) as AnamnesisEntry | null
+        const resolvedLatest =
+          providedLatest && providedLatest.entry_type !== 'intake'
+            ? providedLatest
+            : fallbackLatest
+
+        setLatestEntry(resolvedLatest)
         setVersions((data.data.versions || []) as unknown as AnamnesisVersion[])
         setSuggestedFacts((data.data.suggestedFacts || []) as unknown as SuggestedFact[])
         setSelectedFactIds([])
@@ -324,6 +334,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       allergies: 'Allergien',
       family_history: 'Familienanamnese',
       lifestyle: 'Lebensstil',
+      intake: 'Intake',
+      funnel_summary: 'Funnel-Zusammenfassung',
       other: 'Sonstiges',
     }
     
@@ -334,6 +346,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     const textValue = (content as { text?: unknown }).text
     if (typeof textValue === 'string' && textValue.trim()) return textValue
     if (typeof textValue === 'number') return String(textValue)
+    const narrativeValue = (content as { narrative?: unknown }).narrative
+    if (typeof narrativeValue === 'string' && narrativeValue.trim()) return narrativeValue
     return null
   }
 
@@ -355,6 +369,46 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         }
       })
       .filter((source) => source.value.trim().length > 0)
+  }
+
+  const getIntakeEvidence = (content: Record<string, unknown>): string[] => {
+    const evidenceValue = (content as { evidence?: unknown }).evidence
+    if (!Array.isArray(evidenceValue)) return []
+
+    return evidenceValue
+      .filter((item) => typeof item === 'object' && item !== null)
+      .map((item) => {
+        const entry = item as { label?: unknown; ref?: unknown }
+        const label = entry.label ? String(entry.label) : null
+        const ref = entry.ref ? String(entry.ref) : ''
+        if (!ref.trim()) return null
+        return label ? `${label}: ${ref}` : ref
+      })
+      .filter((value): value is string => Boolean(value))
+  }
+
+  const fetchIntakeHistory = async (entryId: string) => {
+    setIsIntakeHistoryLoading(true)
+    setIntakeHistoryError(null)
+
+    try {
+      const response = await fetch(`/api/clinician/anamnesis/${entryId}/versions`)
+      const data = await response.json()
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Fehler beim Laden der Intake-Historie')
+      }
+
+      setIntakeVersions((data.data?.versions || []) as AnamnesisVersion[])
+      setIsIntakeHistoryOpen(true)
+    } catch (err) {
+      console.error('[AnamnesisSection] Intake history error:', err)
+      setIntakeHistoryError(
+        err instanceof Error ? err.message : 'Fehler beim Laden der Intake-Historie',
+      )
+    } finally {
+      setIsIntakeHistoryLoading(false)
+    }
   }
 
   if (isLoading) {
@@ -400,65 +454,72 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     )
   }
 
+  const intakeEntries = entries.filter((entry) => entry.entry_type === 'intake')
+  const latestIntake = intakeEntries[0] || null
+  const intakeEvidence = latestIntake ? getIntakeEvidence(latestIntake.content) : []
+
   return (
     <>
       <Card padding="lg" shadow="md" className="mb-6">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Aktuelle Patient Record
+            Intake
           </h2>
         </div>
 
-        {latestEntry ? (
+        {latestIntake ? (
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                  {latestEntry.title}
+                  {latestIntake.title || 'Intake (letzter Kontakt)'}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Aktualisiert: {formatDate(latestEntry.updated_at)}
+                  Aktualisiert: {formatDate(latestIntake.updated_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  v{versions[0]?.version_number ?? 1}
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {getContentSources(latestEntry.content).length} Quellen
-                </Badge>
-              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => fetchIntakeHistory(latestIntake.id)}
+                disabled={isIntakeHistoryLoading}
+              >
+                {isIntakeHistoryLoading ? 'Laedt…' : 'History'}
+              </Button>
             </div>
-            {getContentText(latestEntry.content) ? (
+            {getContentText(latestIntake.content) ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                {getContentText(latestEntry.content)}
+                {getContentText(latestIntake.content)}
               </p>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Keine Patient Record-Inhalte vorhanden.
+                Keine Intake-Zusammenfassung vorhanden.
               </p>
             )}
-            {getContentSources(latestEntry.content).length > 0 && (
+            {intakeEvidence.length > 0 && (
               <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
-                  Quellen (aus Vorschlaegen)
+                  Key Facts
                 </p>
                 <div className="space-y-1">
-                  {getContentSources(latestEntry.content).map((source) => (
-                    <div key={source.id} className="text-xs text-slate-600 dark:text-slate-300">
-                      <span className="font-medium">{source.label}:</span> {source.value}
+                  {intakeEvidence.map((fact, index) => (
+                    <div key={`${latestIntake.id}-fact-${index}`} className="text-xs text-slate-600 dark:text-slate-300">
+                      {fact}
                     </div>
                   ))}
                 </div>
               </div>
+            )}
+            {intakeHistoryError && (
+              <Alert variant="error">{intakeHistoryError}</Alert>
             )}
           </div>
         ) : (
           <div className="text-center py-6">
             <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Noch keine Patient Record-Version vorhanden
+              Noch kein Intake erfasst
             </p>
           </div>
         )}
@@ -543,7 +604,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           </Button>
         </div>
 
-        {entries.length === 0 ? (
+        {entries.filter((entry) => entry.entry_type !== 'intake').length === 0 ? (
           <div className="text-center py-6">
             <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -557,6 +618,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           <div className="space-y-3">
             {entries
               .filter((entry) => !entry.is_archived)
+              .filter((entry) => entry.entry_type !== 'intake')
               .map((entry) => (
                 <div
                   key={entry.id}
@@ -618,6 +680,46 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
           </div>
         )}
       </Card>
+
+      <Modal
+        isOpen={isIntakeHistoryOpen}
+        onClose={() => setIsIntakeHistoryOpen(false)}
+        title="Intake Historie"
+        size="xl"
+      >
+        {intakeVersions.length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Keine Intake-Versionen gefunden.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {intakeVersions.map((version) => (
+              <div
+                key={version.id}
+                className="rounded-lg border border-slate-200 dark:border-slate-700 p-3"
+              >
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    v{version.version_number}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formatDate(version.changed_at)}
+                  </p>
+                </div>
+                {getContentText(version.content) ? (
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {getContentText(version.content)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Keine Inhalte in dieser Version.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
 
       {/* Add Entry Dialog */}
       <Modal

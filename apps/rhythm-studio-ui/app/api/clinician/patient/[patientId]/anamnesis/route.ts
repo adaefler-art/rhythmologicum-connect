@@ -300,6 +300,8 @@ export async function POST(request: Request, context: RouteContext) {
     const { patientId } = await context.params
     const endpoint = `/api/clinician/patient/${patientId}/anamnesis`
     const supabase = await createServerSupabaseClient()
+    const { searchParams } = new URL(request.url)
+    const createNewParam = searchParams.get('createNew')
 
     const {
       data: { user },
@@ -385,6 +387,8 @@ export async function POST(request: Request, context: RouteContext) {
       tags = validated.tags ?? []
     }
 
+    const shouldCreateNew = createNewParam === 'true' || entryType === 'intake'
+
     const { data: latestEntry } = await supabase
       .from('anamnesis_entries')
       .select('*')
@@ -393,7 +397,7 @@ export async function POST(request: Request, context: RouteContext) {
       .limit(1)
       .maybeSingle()
 
-    if (latestEntry) {
+    if (latestEntry && !shouldCreateNew) {
       const { data: updatedEntry, error: updateError } = await supabase
         .from('anamnesis_entries')
         .update({
@@ -426,8 +430,23 @@ export async function POST(request: Request, context: RouteContext) {
         .limit(1)
         .maybeSingle()
 
+      const { count: versionsCount } = await supabase
+        .from('anamnesis_entry_versions')
+        .select('*', { count: 'exact', head: true })
+        .eq('entry_id', updatedEntry.id)
+
       return NextResponse.json(
-        { success: true, data: { entry: updatedEntry, version: version ?? null } },
+        {
+          success: true,
+          data: {
+            entry: updatedEntry,
+            version: version ?? null,
+            entryId: updatedEntry.id,
+            created_at: updatedEntry.created_at,
+            entry_type: updatedEntry.entry_type,
+            versions_count: versionsCount || 0,
+          },
+        },
         { status: 201 },
       )
     }
@@ -477,8 +496,23 @@ export async function POST(request: Request, context: RouteContext) {
       .limit(1)
       .maybeSingle()
 
+    const { count: versionsCount } = await supabase
+      .from('anamnesis_entry_versions')
+      .select('*', { count: 'exact', head: true })
+      .eq('entry_id', newEntry.id)
+
     return NextResponse.json(
-      { success: true, data: { entry: newEntry, version: version ?? null } },
+      {
+        success: true,
+        data: {
+          entry: newEntry,
+          version: version ?? null,
+          entryId: newEntry.id,
+          created_at: newEntry.created_at,
+          entry_type: newEntry.entry_type,
+          versions_count: versionsCount || 0,
+        },
+      },
       { status: 201 },
     )
   } catch (err) {
