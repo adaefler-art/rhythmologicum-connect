@@ -54,7 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
     }
 
     // Check clinician role
-    const isClinician = await hasClinicianRole(request)
+    const isClinician = await hasClinicianRole()
     if (!isClinician) {
       console.warn('[consult-notes] Non-clinician access attempt', { requestId, userId: user.id })
       return NextResponse.json(
@@ -241,7 +241,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ConsultNot
     }
 
     // Check clinician role
-    const isClinician = await hasClinicianRole(request)
+    const isClinician = await hasClinicianRole()
     if (!isClinician) {
       console.warn('[consult-notes] Non-clinician access attempt', { requestId, userId: user.id })
       return NextResponse.json(

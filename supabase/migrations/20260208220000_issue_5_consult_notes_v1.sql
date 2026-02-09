@@ -261,11 +261,7 @@ BEGIN
       ON public.consult_notes
       FOR SELECT
       USING (
-        EXISTS (
-          SELECT 1 FROM public.organizations o
-          WHERE o.id = consult_notes.organization_id
-            AND o.admin_user_id = auth.uid()
-        )
+        public.current_user_role(consult_notes.organization_id) = 'admin'::public.user_role
       );
   END IF;
 END $$;
@@ -313,11 +309,7 @@ BEGIN
       ON public.consult_notes
       FOR INSERT
       WITH CHECK (
-        EXISTS (
-          SELECT 1 FROM public.organizations o
-          WHERE o.id = consult_notes.organization_id
-            AND o.admin_user_id = auth.uid()
-        )
+        public.current_user_role(consult_notes.organization_id) = 'admin'::public.user_role
       );
   END IF;
 END $$;
@@ -365,11 +357,7 @@ BEGIN
       ON public.consult_notes
       FOR UPDATE
       USING (
-        EXISTS (
-          SELECT 1 FROM public.organizations o
-          WHERE o.id = consult_notes.organization_id
-            AND o.admin_user_id = auth.uid()
-        )
+        public.current_user_role(consult_notes.organization_id) = 'admin'::public.user_role
       );
   END IF;
 END $$;
@@ -444,9 +432,8 @@ BEGIN
       USING (
         EXISTS (
           SELECT 1 FROM public.consult_notes cn
-          JOIN public.organizations o ON o.id = cn.organization_id
           WHERE cn.id = consult_note_versions.consult_note_id
-            AND o.admin_user_id = auth.uid()
+            AND public.current_user_role(cn.organization_id) = 'admin'::public.user_role
         )
       );
   END IF;

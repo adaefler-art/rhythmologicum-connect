@@ -51,7 +51,7 @@ export async function GET(
     }
 
     // Check clinician role
-    const isClinician = await hasClinicianRole(request)
+    const isClinician = await hasClinicianRole()
     if (!isClinician) {
       console.warn('[consult-notes] Non-clinician access attempt', {
         requestId,
