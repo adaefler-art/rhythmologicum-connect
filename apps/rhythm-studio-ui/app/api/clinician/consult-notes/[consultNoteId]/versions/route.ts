@@ -8,7 +8,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import type { ConsultNoteVersion, ConsultNoteApiResponse } from '@/lib/types/consultNote'
+import type {
+  ConsultNoteVersion,
+  ConsultNoteApiResponse,
+  ConsultNoteContent,
+} from '@/lib/types/consultNote'
 import { randomUUID } from 'crypto'
 
 type RouteContext = {
@@ -109,9 +113,27 @@ export async function GET(
       versionCount: versions?.length || 0,
     })
 
+    const typedVersions: ConsultNoteVersion[] = (versions || []).map((version) => {
+      const metadata = version.metadata
+      const normalizedMetadata =
+        metadata && typeof metadata === 'object' && !Array.isArray(metadata)
+          ? (metadata as Record<string, unknown>)
+          : undefined
+
+      return {
+        ...version,
+        content: version.content as unknown as ConsultNoteContent,
+        diff:
+          version.diff && typeof version.diff === 'object' && !Array.isArray(version.diff)
+            ? (version.diff as Record<string, unknown>)
+            : null,
+        metadata: normalizedMetadata,
+      }
+    })
+
     return NextResponse.json({
       success: true,
-      data: (versions || []) as ConsultNoteVersion[],
+      data: typedVersions,
     })
   } catch (error) {
     console.error('[consult-notes/versions] Unexpected error', {
