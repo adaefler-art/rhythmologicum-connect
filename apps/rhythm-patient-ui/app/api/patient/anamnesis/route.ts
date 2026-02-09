@@ -36,6 +36,28 @@ import { validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
+const logIntakeEvent = (params: {
+  runId: string | null
+  userId: string | null
+  action: 'create'
+  entryId: string | null
+  entryType: string | null
+  ok: boolean
+  errorCode?: string
+}) => {
+  console.info(
+    JSON.stringify({
+      runId: params.runId,
+      userId: params.userId,
+      action: params.action,
+      entryId: params.entryId,
+      entryType: params.entryType,
+      ok: params.ok,
+      errorCode: params.errorCode ?? null,
+    }),
+  )
+}
+
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient()
@@ -166,6 +188,8 @@ export async function GET() {
  * }
  */
 export async function POST(request: Request) {
+  const runId = request.headers.get('x-intake-run-id')
+
   try {
     const supabase = await createServerSupabaseClient()
 
@@ -176,6 +200,15 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      logIntakeEvent({
+        runId,
+        userId: user?.id ?? null,
+        action: 'create',
+        entryId: null,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.UNAUTHORIZED,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -192,6 +225,15 @@ export async function POST(request: Request) {
     const patientId = await getPatientProfileId(supabase, user.id)
 
     if (!patientId) {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.NOT_FOUND,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -208,6 +250,15 @@ export async function POST(request: Request) {
     const organizationId = await getPatientOrganizationId(supabase, patientId)
 
     if (!organizationId) {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: null,
+        ok: false,
+        errorCode: ErrorCode.NOT_FOUND,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -228,6 +279,15 @@ export async function POST(request: Request) {
       validatedData = validateCreateEntry(body)
     } catch (err) {
       if (err instanceof z.ZodError) {
+        logIntakeEvent({
+          runId,
+          userId: user.id,
+          action: 'create',
+          entryId: null,
+          entryType: typeof body?.entry_type === 'string' ? body.entry_type : null,
+          ok: false,
+          errorCode: ErrorCode.VALIDATION_FAILED,
+        })
         return NextResponse.json(
           {
             success: false,
@@ -262,6 +322,15 @@ export async function POST(request: Request) {
 
     if (createError) {
       console.error('[patient/anamnesis POST] Create error:', createError)
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: validatedData.entry_type || null,
+        ok: false,
+        errorCode: ErrorCode.DATABASE_ERROR,
+      })
       return NextResponse.json(
         {
           success: false,
@@ -294,6 +363,15 @@ export async function POST(request: Request) {
       console.error('[patient/anamnesis POST] Versions count error:', versionsCountError)
     }
 
+    logIntakeEvent({
+      runId,
+      userId: user.id,
+      action: 'create',
+      entryId: entry.id,
+      entryType: entry.entry_type,
+      ok: true,
+    })
+
     return NextResponse.json(
       {
         success: true,
@@ -310,6 +388,15 @@ export async function POST(request: Request) {
     )
   } catch (err) {
     console.error('[patient/anamnesis POST] Unexpected error:', err)
+    logIntakeEvent({
+      runId,
+      userId: null,
+      action: 'create',
+      entryId: null,
+      entryType: null,
+      ok: false,
+      errorCode: ErrorCode.INTERNAL_ERROR,
+    })
     return NextResponse.json(
       {
         success: false,

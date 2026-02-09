@@ -53,6 +53,15 @@ type IntakeEvidenceItem = {
   ref: string
 }
 
+type IntakePersistenceStatus = {
+  runId: string | null
+  createAttempted: boolean
+  createSkipped: boolean
+  createOk: boolean
+  patchOk: boolean
+  entryId: string | null
+}
+
 type SpeechRecognitionInstance = {
   lang: string
   interimResults: boolean
@@ -99,6 +108,17 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
 
+const isDevPreview = (): boolean => {
+  if (typeof window === 'undefined') return false
+  const hostname = window.location.hostname
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.includes('preview') ||
+    hostname.includes('dev-')
+  )
+}
+
 export function DialogScreenV2() {
   const searchParams = useSearchParams()
   const context = searchParams.get('context')
@@ -115,10 +135,19 @@ export function DialogScreenV2() {
   const [intakeEvidence, setIntakeEvidence] = useState<IntakeEvidenceItem[]>([])
   const [intakeQuestions, setIntakeQuestions] = useState<string[]>([])
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
+  const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
+    runId: null,
+    createAttempted: false,
+    createSkipped: false,
+    createOk: false,
+    patchOk: false,
+    entryId: null,
+  })
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeSnapshotTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const intakeRunIdRef = useRef<string | null>(null)
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -128,6 +157,14 @@ export function DialogScreenV2() {
     let isMounted = true
 
     const initChat = async () => {
+      if (!intakeRunIdRef.current) {
+        intakeRunIdRef.current = crypto.randomUUID()
+        setIntakePersistence((prev) => ({
+          ...prev,
+          runId: intakeRunIdRef.current,
+        }))
+      }
+
       const latestIntake = await fetchLatestIntake()
       if (!isMounted) return
       const openingQuestion = buildOpeningQuestion(latestIntake)
@@ -146,6 +183,13 @@ export function DialogScreenV2() {
 
       if (existingEntryId) {
         setIntakeEntryId(existingEntryId)
+        setIntakePersistence((prev) => ({
+          ...prev,
+          createAttempted: false,
+          createSkipped: true,
+          createOk: false,
+          entryId: existingEntryId,
+        }))
         return
       }
 
@@ -242,9 +286,19 @@ export function DialogScreenV2() {
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 
+  const getRequestHeaders = (contentType = 'application/json') => {
+    const headers: Record<string, string> = { 'content-type': contentType }
+    if (intakeRunIdRef.current) {
+      headers['x-intake-run-id'] = intakeRunIdRef.current
+    }
+    return headers
+  }
+
   const fetchLatestIntake = async (): Promise<IntakeEntry | null> => {
     try {
-      const response = await fetch('/api/patient/anamnesis')
+      const response = await fetch('/api/patient/anamnesis', {
+        headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
+      })
       const data = await response.json()
       if (!response.ok || !data?.success) return null
 
@@ -260,9 +314,15 @@ export function DialogScreenV2() {
 
   const createNewIntakeEntry = async (): Promise<string | null> => {
     try {
+      setIntakePersistence((prev) => ({
+        ...prev,
+        createAttempted: true,
+        createSkipped: false,
+      }))
+
       const response = await fetch('/api/patient/intake', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: getRequestHeaders(),
         body: JSON.stringify({
           title: 'Intake',
           content: {
@@ -279,9 +339,21 @@ export function DialogScreenV2() {
         throw new Error(data?.error?.message || 'Failed to create intake')
       }
 
-      return data?.data?.entryId || data?.data?.entry?.id || null
+      const entryId = data?.data?.entryId || data?.data?.entry?.id || null
+      setIntakePersistence((prev) => ({
+        ...prev,
+        createOk: Boolean(entryId),
+        createSkipped: false,
+        entryId,
+      }))
+      return entryId
     } catch (err) {
       console.error('[DialogScreenV2] Failed to create intake entry', err)
+      setIntakePersistence((prev) => ({
+        ...prev,
+        createOk: false,
+        createSkipped: false,
+      }))
       return null
     }
   }
@@ -302,7 +374,7 @@ export function DialogScreenV2() {
     try {
       const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: getRequestHeaders(),
         body: JSON.stringify({
           title: 'Intake',
           entry_type: 'intake',
@@ -315,6 +387,12 @@ export function DialogScreenV2() {
       if (!response.ok || !data?.success) {
         throw new Error(data?.error?.message || 'Failed to update intake')
       }
+
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchOk: true,
+        entryId: data?.data?.entryId || data?.data?.entry?.id || intakeEntryId,
+      }))
     } catch (err) {
       console.error('[DialogScreenV2] Failed to update intake snapshot', err)
     }
@@ -378,7 +456,7 @@ export function DialogScreenV2() {
     try {
       const response = await fetch('/api/amy/chat', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: getRequestHeaders(),
         body: JSON.stringify({ message: trimmed }),
       })
 
@@ -431,6 +509,23 @@ export function DialogScreenV2() {
               Live
             </Badge>
           </header>
+
+          {isDevPreview() && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+              <p className="font-semibold">Intake Persistence</p>
+              <p>runId: {intakePersistence.runId || 'pending'}</p>
+              <p>entryId: {intakePersistence.entryId || 'none'}</p>
+              <p>
+                create: {intakePersistence.createOk ? 'ok' : intakePersistence.createSkipped ? 'skipped' : 'pending'}
+                {' · '}patch: {intakePersistence.patchOk ? 'ok' : 'pending'}
+              </p>
+              {intakePersistence.createSkipped && !intakePersistence.createOk && (
+                <p className="mt-2 font-semibold text-amber-800">
+                  Intake not persisted (no anamnesis write)
+                </p>
+              )}
+            </div>
+          )}
 
           {chatMessages.length > 0 && (
             <div className="space-y-3">
