@@ -74,6 +74,12 @@ const toFieldErrors = (issues: z.ZodIssue[]) =>
     return acc
   }, {})
 
+const getEntryTypeFromBody = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object') return null
+  const entryType = (value as { entry_type?: unknown }).entry_type
+  return typeof entryType === 'string' ? entryType : null
+}
+
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient()
@@ -329,7 +335,7 @@ export async function POST(request: Request) {
           userId: user.id,
           action: 'create',
           entryId: null,
-          entryType: typeof body?.entry_type === 'string' ? body.entry_type : null,
+          entryType: getEntryTypeFromBody(body),
           ok: false,
           errorCode: ErrorCode.VALIDATION_FAILED,
         })
@@ -350,7 +356,7 @@ export async function POST(request: Request) {
         userId: user.id,
         action: 'create',
         entryId: null,
-        entryType: typeof body?.entry_type === 'string' ? body.entry_type : null,
+        entryType: getEntryTypeFromBody(body),
         ok: false,
         errorCode: ErrorCode.VALIDATION_FAILED,
       })
