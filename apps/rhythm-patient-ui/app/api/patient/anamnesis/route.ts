@@ -35,6 +35,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
+import { env } from '@/lib/env'
 
 const logIntakeEvent = (params: {
   runId: string | null
@@ -57,6 +58,13 @@ const logIntakeEvent = (params: {
     }),
   )
 }
+
+const getBuildSha = () =>
+  env.VERCEL_GIT_COMMIT_SHA || env.GIT_COMMIT_SHA || env.COMMIT_SHA || 'unknown'
+
+const withBuildHeaders = () => ({
+  'x-build-sha': getBuildSha(),
+})
 
 const createEntrySchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
@@ -110,6 +118,8 @@ const mapCreateError = (error: { code?: string | null; message?: string | null }
 }
 
 export async function GET() {
+  const respond = (payload: Record<string, unknown>, status: number) =>
+    NextResponse.json(payload, { status, headers: withBuildHeaders() })
   try {
     const supabase = await createServerSupabaseClient()
 
@@ -120,7 +130,7 @@ export async function GET() {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -129,7 +139,7 @@ export async function GET() {
             details: { source: 'auth' },
           },
         },
-        { status: 401 }
+        401,
       )
     }
 
@@ -138,12 +148,15 @@ export async function GET() {
 
     if (!patientId) {
       // No patient profile - return empty list
-      return NextResponse.json({
-        success: true,
-        data: {
-          entries: [],
+      return respond(
+        {
+          success: true,
+          data: {
+            entries: [],
+          },
         },
-      })
+        200,
+      )
     }
 
     // Fetch anamnesis entries with version count
@@ -167,7 +180,7 @@ export async function GET() {
 
     if (queryError) {
       console.error('[patient/anamnesis] Query error:', queryError)
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -175,7 +188,7 @@ export async function GET() {
             message: 'Failed to fetch anamnesis entries',
           },
         },
-        { status: 500 }
+        500,
       )
     }
 
@@ -194,15 +207,18 @@ export async function GET() {
       })
     )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        entries: entriesWithVersions,
+    return respond(
+      {
+        success: true,
+        data: {
+          entries: entriesWithVersions,
+        },
       },
-    })
+      200,
+    )
   } catch (err) {
     console.error('[patient/anamnesis] Unexpected error:', err)
-    return NextResponse.json(
+    return respond(
       {
         success: false,
         error: {
@@ -210,7 +226,7 @@ export async function GET() {
           message: 'An unexpected error occurred',
         },
       },
-      { status: 500 }
+      500,
     )
   }
 }
@@ -241,6 +257,8 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   const runId = request.headers.get('x-intake-run-id')
+  const respond = (payload: Record<string, unknown>, status: number) =>
+    NextResponse.json(payload, { status, headers: withBuildHeaders() })
 
   try {
     const supabase = await createServerSupabaseClient()
@@ -261,7 +279,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: ErrorCode.UNAUTHORIZED,
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -269,7 +287,7 @@ export async function POST(request: Request) {
             message: 'Authentication required',
           },
         },
-        { status: 401 }
+        401,
       )
     }
 
@@ -286,7 +304,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: 'PATIENT_PROFILE_NOT_FOUND',
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -295,7 +313,7 @@ export async function POST(request: Request) {
             details: { source: 'patient_profiles', userId: user.id },
           },
         },
-        { status: 403 }
+        403,
       )
     }
 
@@ -312,7 +330,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: 'DB_CONSTRAINT_VIOLATION',
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -321,7 +339,36 @@ export async function POST(request: Request) {
             details: { source: 'user_org_membership', patientId },
           },
         },
-        { status: 400 }
+        400,
+      )
+    }
+
+    const { data: organization, error: organizationError } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('id', organizationId)
+      .maybeSingle()
+
+    if (organizationError || !organization) {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: 'intake',
+        ok: false,
+        errorCode: 'DB_CONSTRAINT_VIOLATION',
+      })
+      return respond(
+        {
+          success: false,
+          error: {
+            code: 'DB_CONSTRAINT_VIOLATION',
+            message: 'Organization reference missing',
+            details: { source: 'organizations', organizationId },
+          },
+        },
+        400,
       )
     }
 
@@ -340,7 +387,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: ErrorCode.VALIDATION_FAILED,
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -350,7 +397,7 @@ export async function POST(request: Request) {
             details: { fieldErrors: { root: ['Invalid JSON body'] } },
           },
         },
-        { status: 400 }
+        400,
       )
     }
     let validatedData
@@ -372,7 +419,7 @@ export async function POST(request: Request) {
           ok: false,
           errorCode: ErrorCode.VALIDATION_FAILED,
         })
-        return NextResponse.json(
+        return respond(
           {
             success: false,
             error: {
@@ -382,7 +429,7 @@ export async function POST(request: Request) {
               details: { fieldErrors: toFieldErrors(err.issues) },
             },
           },
-          { status: 400 }
+          400,
         )
       }
       logIntakeEvent({
@@ -394,7 +441,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: ErrorCode.VALIDATION_FAILED,
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -404,7 +451,7 @@ export async function POST(request: Request) {
             details: { fieldErrors: { root: ['Validation failed'] } },
           },
         },
-        { status: 400 }
+        400,
       )
     }
 
@@ -440,7 +487,7 @@ export async function POST(request: Request) {
           ok: false,
           errorCode: mapped.code,
         })
-        return NextResponse.json(
+        return respond(
           {
             success: false,
             error: {
@@ -449,7 +496,7 @@ export async function POST(request: Request) {
               details: mapped.details,
             },
           },
-          { status: mapped.status }
+          mapped.status,
         )
       }
 
@@ -469,7 +516,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: mapped.code,
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -478,7 +525,7 @@ export async function POST(request: Request) {
             details: mapped.details,
           },
         },
-        { status: mapped.status }
+        mapped.status,
       )
     }
 
@@ -493,7 +540,7 @@ export async function POST(request: Request) {
         ok: false,
         errorCode: mapped.code,
       })
-      return NextResponse.json(
+      return respond(
         {
           success: false,
           error: {
@@ -502,7 +549,7 @@ export async function POST(request: Request) {
             details: mapped.details,
           },
         },
-        { status: mapped.status }
+        mapped.status,
       )
     }
 
@@ -535,7 +582,7 @@ export async function POST(request: Request) {
       ok: true,
     })
 
-    return NextResponse.json(
+    return respond(
       {
         success: true,
         data: {
@@ -547,7 +594,7 @@ export async function POST(request: Request) {
           versions_count: versionsCount || 0,
         },
       },
-      { status: 201 }
+      201,
     )
   } catch (err) {
     console.error('[patient/anamnesis POST] Unexpected error:', err)
@@ -564,7 +611,7 @@ export async function POST(request: Request) {
       ok: false,
       errorCode: mapped.code,
     })
-    return NextResponse.json(
+    return respond(
       {
         success: false,
         error: {
@@ -573,7 +620,7 @@ export async function POST(request: Request) {
           details: mapped.details,
         },
       },
-      { status: mapped.status }
+      mapped.status,
     )
   }
 }
