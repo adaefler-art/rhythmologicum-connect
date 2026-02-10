@@ -9,6 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerSupabaseClient, hasClinicianRole } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import type { ConsultNote, ConsultNoteApiResponse, ConsultNoteContent } from '@/lib/types/consultNote'
+import type { Json } from '@/lib/types/supabase'
 import { validateConsultNote } from '@/lib/validation/consultNote'
 import { renderConsultNoteMarkdown } from '@/lib/consultNote/helpers'
 import { randomUUID } from 'crypto'
@@ -247,7 +248,7 @@ export async function PATCH(
     const { data: updatedNote, error: updateError } = await supabase
       .from('consult_notes')
       .update({
-        content,
+        content: content as Json,
         rendered_markdown: renderedMarkdown,
         updated_by: user.id,
         updated_at: new Date().toISOString(),
