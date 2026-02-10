@@ -74,6 +74,41 @@ const toFieldErrors = (issues: z.ZodIssue[]) =>
     return acc
   }, {})
 
+const mapCreateError = (error: { code?: string | null; message?: string | null }) => {
+  const code = error.code ?? 'UNKNOWN'
+  const message = error.message ?? 'Unknown error'
+  const isRlsBlocked =
+    code === '42501' ||
+    code === 'PGRST301' ||
+    message.toLowerCase().includes('row-level security')
+  const isConstraintViolation = code === '23502' || code === '23503' || code === '23514'
+
+  if (isRlsBlocked) {
+    return {
+      status: 403,
+      code: 'RLS_BLOCKED',
+      message: 'Row-level security blocked the insert',
+      details: { source: 'anamnesis_entries', dbCode: code },
+    }
+  }
+
+  if (isConstraintViolation) {
+    return {
+      status: 400,
+      code: 'DB_CONSTRAINT_VIOLATION',
+      message: 'Database constraint violation',
+      details: { source: 'anamnesis_entries', dbCode: code },
+    }
+  }
+
+  return {
+    status: 400,
+    code: 'DB_CONSTRAINT_VIOLATION',
+    message: 'Database constraint violation',
+    details: { source: 'anamnesis_entries', dbCode: code },
+  }
+}
+
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient()
@@ -91,6 +126,7 @@ export async function GET() {
           error: {
             code: ErrorCode.UNAUTHORIZED,
             message: 'Authentication required',
+            details: { source: 'auth' },
           },
         },
         { status: 401 }
@@ -256,6 +292,7 @@ export async function POST(request: Request) {
           error: {
             code: 'PATIENT_PROFILE_NOT_FOUND',
             message: 'Patient profile not found',
+            details: { source: 'patient_profiles', userId: user.id },
           },
         },
         { status: 403 }
@@ -281,6 +318,7 @@ export async function POST(request: Request) {
           error: {
             code: 'DB_CONSTRAINT_VIOLATION',
             message: 'Patient organization mapping missing',
+            details: { source: 'user_org_membership', patientId },
           },
         },
         { status: 400 }
@@ -309,6 +347,7 @@ export async function POST(request: Request) {
             code: ErrorCode.VALIDATION_FAILED,
             message: 'Invalid JSON body',
             fieldErrors: { root: ['Invalid JSON body'] },
+            details: { fieldErrors: { root: ['Invalid JSON body'] } },
           },
         },
         { status: 400 }
@@ -340,6 +379,7 @@ export async function POST(request: Request) {
               code: ErrorCode.VALIDATION_FAILED,
               message: 'Validation failed',
               fieldErrors: toFieldErrors(err.issues),
+              details: { fieldErrors: toFieldErrors(err.issues) },
             },
           },
           { status: 400 }
@@ -361,6 +401,7 @@ export async function POST(request: Request) {
             code: ErrorCode.VALIDATION_FAILED,
             message: err instanceof Error ? err.message : 'Validation failed',
             fieldErrors: { root: ['Validation failed'] },
+            details: { fieldErrors: { root: ['Validation failed'] } },
           },
         },
         { status: 400 }
@@ -369,37 +410,56 @@ export async function POST(request: Request) {
 
     // Create anamnesis entry
     // Database trigger will automatically create version 1
-    const { data: entry, error: createError } = await supabase
-      .from('anamnesis_entries')
-      .insert({
-        patient_id: patientId,
-        organization_id: organizationId,
-        title: validatedData.title,
-        content: validatedData.content as Json,
-        entry_type: 'intake',
-        tags: validatedData.tags || [],
-        created_by: user.id,
-        updated_by: user.id,
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+    let entry: { id: string; created_at: string; entry_type: string | null } | null = null
+    try {
+      const { data, error: createError } = await supabase
+        .from('anamnesis_entries')
+        .insert({
+          patient_id: patientId,
+          organization_id: organizationId,
+          title: validatedData.title,
+          content: validatedData.content as Json,
+          entry_type: 'intake',
+          tags: validatedData.tags || [],
+          created_by: user.id,
+          updated_by: user.id,
+          created_at: new Date().toISOString(),
+        })
+        .select('id, created_at, entry_type')
+        .single()
 
-    if (createError) {
-      console.error('[patient/anamnesis POST] Create error:', createError)
-      const isRlsBlocked =
-        createError.code === '42501' ||
-        createError.code === 'PGRST301' ||
-        createError.message.toLowerCase().includes('row-level security')
-      const isConstraintViolation =
-        createError.code === '23502' ||
-        createError.code === '23503' ||
-        createError.code === '23514'
-      const errorCode = isRlsBlocked
-        ? 'RLS_BLOCKED'
-        : isConstraintViolation
-          ? 'DB_CONSTRAINT_VIOLATION'
-          : ErrorCode.DATABASE_ERROR
+      if (createError) {
+        const mapped = mapCreateError({ code: createError.code, message: createError.message })
+        console.error('[patient/anamnesis POST] Create error:', createError)
+        logIntakeEvent({
+          runId,
+          userId: user.id,
+          action: 'create',
+          entryId: null,
+          entryType: 'intake',
+          ok: false,
+          errorCode: mapped.code,
+        })
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: mapped.code,
+              message: mapped.message,
+              details: mapped.details,
+            },
+          },
+          { status: mapped.status }
+        )
+      }
+
+      entry = data ?? null
+    } catch (err) {
+      const mapped = mapCreateError({
+        code: null,
+        message: err instanceof Error ? err.message : 'Unknown error',
+      })
+      console.error('[patient/anamnesis POST] Create exception:', err)
       logIntakeEvent({
         runId,
         userId: user.id,
@@ -407,21 +467,42 @@ export async function POST(request: Request) {
         entryId: null,
         entryType: 'intake',
         ok: false,
-        errorCode,
+        errorCode: mapped.code,
       })
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: errorCode,
-            message: isRlsBlocked
-              ? 'Row-level security blocked the insert'
-              : isConstraintViolation
-                ? 'Database constraint violation'
-                : 'Failed to create anamnesis entry',
+            code: mapped.code,
+            message: mapped.message,
+            details: mapped.details,
           },
         },
-        { status: isRlsBlocked ? 403 : 400 }
+        { status: mapped.status }
+      )
+    }
+
+    if (!entry) {
+      const mapped = mapCreateError({ code: null, message: 'Insert returned no data' })
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'create',
+        entryId: null,
+        entryType: 'intake',
+        ok: false,
+        errorCode: mapped.code,
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: mapped.code,
+            message: mapped.message,
+            details: mapped.details,
+          },
+        },
+        { status: mapped.status }
       )
     }
 
@@ -470,6 +551,10 @@ export async function POST(request: Request) {
     )
   } catch (err) {
     console.error('[patient/anamnesis POST] Unexpected error:', err)
+    const mapped = mapCreateError({
+      code: null,
+      message: err instanceof Error ? err.message : 'Unknown error',
+    })
     logIntakeEvent({
       runId,
       userId: null,
@@ -477,17 +562,18 @@ export async function POST(request: Request) {
       entryId: null,
       entryType: 'intake',
       ok: false,
-      errorCode: ErrorCode.INTERNAL_ERROR,
+      errorCode: mapped.code,
     })
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: ErrorCode.INTERNAL_ERROR,
-          message: 'An unexpected error occurred',
+          code: mapped.code,
+          message: mapped.message,
+          details: mapped.details,
         },
       },
-      { status: 400 }
+      { status: mapped.status }
     )
   }
 }
