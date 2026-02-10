@@ -62,6 +62,9 @@ type IntakePersistenceStatus = {
   createOk: boolean
   patchOk: boolean
   entryId: string | null
+  latestIntakeEntryId: string | null
+  recentIntakeCount: number | null
+  latestVersionCount: number | null
 }
 
 type SpeechRecognitionInstance = {
@@ -161,6 +164,9 @@ export function DialogScreenV2() {
     createOk: false,
     patchOk: false,
     entryId: null,
+    latestIntakeEntryId: null,
+    recentIntakeCount: null,
+    latestVersionCount: null,
   })
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
@@ -462,13 +468,16 @@ export function DialogScreenV2() {
         headers: getRequestHeaders(),
       })
       const data = await response.json()
-      if (!response.ok || !data?.success) return
-      if (data?.data?.lastAnamnesisEntryId) {
-        setIntakePersistence((prev) => ({
-          ...prev,
-          entryId: data.data.lastAnamnesisEntryId,
-        }))
-      }
+      if (!response.ok || !data?.ok) return
+      setIntakePersistence((prev) => ({
+        ...prev,
+        entryId: data.latestIntakeEntryId ?? prev.entryId,
+        latestIntakeEntryId: data.latestIntakeEntryId ?? null,
+        recentIntakeCount:
+          typeof data.recentIntakeCount === 'number' ? data.recentIntakeCount : null,
+        latestVersionCount:
+          typeof data.latestVersionCount === 'number' ? data.latestVersionCount : null,
+      }))
     } catch (err) {
       console.error('[DialogScreenV2] Intake write check failed', err)
     }
@@ -592,6 +601,19 @@ export function DialogScreenV2() {
               <p className="font-semibold">Intake Persistence</p>
               <p>runId: {intakePersistence.runId || 'pending'}</p>
               <p>entryId: {intakePersistence.entryId || 'none'}</p>
+              <p>latestIntakeEntryId: {intakePersistence.latestIntakeEntryId || 'none'}</p>
+              <p>
+                recentIntakeCount:{' '}
+                {intakePersistence.recentIntakeCount === null
+                  ? 'unknown'
+                  : intakePersistence.recentIntakeCount}
+              </p>
+              <p>
+                latestVersionCount:{' '}
+                {intakePersistence.latestVersionCount === null
+                  ? 'unknown'
+                  : intakePersistence.latestVersionCount}
+              </p>
               <p>
                 create: {intakePersistence.createOk ? 'ok' : intakePersistence.createFailed ? 'failed' : 'pending'}
                 {' · '}patch: {intakePersistence.patchOk ? 'ok' : intakePersistence.patchFailed ? 'failed' : 'pending'}
@@ -604,6 +626,11 @@ export function DialogScreenV2() {
               {intakePersistence.patchFailed && (
                 <p className="mt-2 font-semibold text-amber-800">
                   Intake patch failed (no version write)
+                </p>
+              )}
+              {intakePersistence.patchOk && intakePersistence.latestVersionCount === 0 && (
+                <p className="mt-2 font-semibold text-amber-800">
+                  Intake patch persisted, but no version recorded yet
                 </p>
               )}
               <div className="mt-3 flex gap-2">

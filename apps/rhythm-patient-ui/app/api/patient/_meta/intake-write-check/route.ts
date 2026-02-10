@@ -15,7 +15,7 @@ export async function GET() {
     if (authError || !user) {
       return NextResponse.json(
         {
-          success: false,
+          ok: false,
           error: {
             code: ErrorCode.UNAUTHORIZED,
             message: 'Authentication required',
@@ -30,13 +30,13 @@ export async function GET() {
     if (!patientId) {
       return NextResponse.json(
         {
-          success: false,
+          ok: false,
           error: {
-            code: ErrorCode.NOT_FOUND,
+            code: 'PATIENT_PROFILE_NOT_FOUND',
             message: 'Patient profile not found',
           },
         },
-        { status: 404 },
+        { status: 403 },
       )
     }
 
@@ -44,7 +44,7 @@ export async function GET() {
       .from('anamnesis_entries')
       .select('id, entry_type, created_at')
       .eq('patient_id', patientId)
-      .in('entry_type', ['intake', 'funnel_summary'])
+      .eq('entry_type', 'intake')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -52,13 +52,13 @@ export async function GET() {
     if (latestError) {
       return NextResponse.json(
         {
-          success: false,
+          ok: false,
           error: {
             code: ErrorCode.DATABASE_ERROR,
             message: 'Failed to fetch latest anamnesis entry',
           },
         },
-        { status: 500 },
+        { status: 400 },
       )
     }
 
@@ -67,40 +67,59 @@ export async function GET() {
       .from('anamnesis_entries')
       .select('*', { count: 'exact', head: true })
       .eq('patient_id', patientId)
+      .eq('entry_type', 'intake')
       .gte('created_at', cutoff)
 
     if (countError) {
       return NextResponse.json(
         {
-          success: false,
+          ok: false,
           error: {
             code: ErrorCode.DATABASE_ERROR,
             message: 'Failed to count recent anamnesis entries',
           },
         },
-        { status: 500 },
+        { status: 400 },
+      )
+    }
+
+    const { count: latestVersionCount, error: versionCountError } = latestEntry?.id
+      ? await supabase
+          .from('anamnesis_entry_versions')
+          .select('*', { count: 'exact', head: true })
+          .eq('entry_id', latestEntry.id)
+      : { count: 0, error: null }
+
+    if (versionCountError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: ErrorCode.DATABASE_ERROR,
+            message: 'Failed to count intake entry versions',
+          },
+        },
+        { status: 400 },
       )
     }
 
     return NextResponse.json({
-      success: true,
-      data: {
-        lastAnamnesisEntryId: latestEntry?.id ?? null,
-        lastAnamnesisEntryType: latestEntry?.entry_type ?? null,
-        countRecentEntries: recentCount || 0,
-      },
+      ok: true,
+      latestIntakeEntryId: latestEntry?.id ?? null,
+      recentIntakeCount: recentCount || 0,
+      latestVersionCount: latestVersionCount || 0,
     })
   } catch (err) {
     console.error('[patient/_meta/intake-write-check] Unexpected error:', err)
     return NextResponse.json(
       {
-        success: false,
+        ok: false,
         error: {
-          code: ErrorCode.INTERNAL_ERROR,
+          code: ErrorCode.DATABASE_ERROR,
           message: 'An unexpected error occurred',
         },
       },
-      { status: 500 },
+      { status: 400 },
     )
   }
 }
