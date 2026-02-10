@@ -290,6 +290,8 @@ export async function GET(_request: Request, context: RouteContext) {
     const latestEntry = activeEntries.find((entry) => entry.entry_type !== 'intake') ?? null
     const latestIntakeEntry = activeEntries.find((entry) => entry.entry_type === 'intake') ?? null
 
+    const patientOrganizationId = await getPatientOrganizationId(supabase, resolvedPatientId)
+
     const versions = latestEntry
       ? await supabase
           .from('anamnesis_entry_versions')
@@ -367,6 +369,7 @@ export async function GET(_request: Request, context: RouteContext) {
             created_at: version.changed_at,
           })),
         suggestedFacts,
+        patientOrganizationId,
       },
     })
   } catch (err) {

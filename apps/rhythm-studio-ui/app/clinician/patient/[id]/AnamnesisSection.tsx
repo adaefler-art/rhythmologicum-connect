@@ -15,11 +15,17 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Card, Badge, Button, Modal, FormField, Input, Textarea, Select, Alert } from '@/lib/ui'
-import { FileText, Plus, Edit, Archive, Clock } from 'lucide-react'
-import { ENTRY_TYPES } from '@/lib/api/anamnesis/validation'
-import type { EntryType } from '@/lib/api/anamnesis/validation'
-import { getAnamnesis, postAnamnesis } from '@/lib/fetchClinician'
+import { Card, Badge, Button, Modal, FormField, Textarea, Alert } from '@/lib/ui'
+import { FileText, Plus } from 'lucide-react'
+import {
+  getAnamnesis,
+  getConsultNotes,
+  createConsultNote,
+  getConsultNote,
+  getConsultNoteVersions,
+  updateConsultNote,
+} from '@/lib/fetchClinician'
+import type { ConsultNote, ConsultNoteContent, ConsultNoteVersion } from '@/lib/types/consultNote'
 
 export interface AnamnesisEntry {
   id: string
@@ -47,14 +53,6 @@ export interface AnamnesisVersion {
   change_reason: string | null
 }
 
-export interface SuggestedFact {
-  id: string
-  label: string
-  value: string
-  sourceType: string
-  sourceId: string
-  occurredAt: string | null
-}
 
 export interface AnamnesisSectionProps {
   /** Patient ID for fetching/creating entries */
@@ -72,32 +70,24 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [entries, setEntries] = useState<AnamnesisEntry[]>([])
   const [isLoading, setIsLoading] = useState(loading ?? false)
   const [error, setError] = useState<string | null>(null)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedEntry, setSelectedEntry] = useState<AnamnesisEntry | null>(null)
-  const [latestEntry, setLatestEntry] = useState<AnamnesisEntry | null>(null)
   const [latestIntakeEntry, setLatestIntakeEntry] = useState<AnamnesisEntry | null>(null)
-  const [versions, setVersions] = useState<AnamnesisVersion[]>([])
-  const [suggestedFacts, setSuggestedFacts] = useState<SuggestedFact[]>([])
-  const [selectedFactIds, setSelectedFactIds] = useState<string[]>([])
-  const [isCreatingVersion, setIsCreatingVersion] = useState(false)
-  const [suggestedError, setSuggestedError] = useState<string | null>(null)
-  const [isSuggestedPreviewOpen, setIsSuggestedPreviewOpen] = useState(false)
-  const [previewText, setPreviewText] = useState('')
-  const [previewFacts, setPreviewFacts] = useState<SuggestedFact[]>([])
   const [debugHint, setDebugHint] = useState<string | null>(null)
   const [intakeVersions, setIntakeVersions] = useState<AnamnesisVersion[]>([])
   const [isIntakeHistoryOpen, setIsIntakeHistoryOpen] = useState(false)
   const [isIntakeHistoryLoading, setIsIntakeHistoryLoading] = useState(false)
   const [intakeHistoryError, setIntakeHistoryError] = useState<string | null>(null)
+  const [patientOrganizationId, setPatientOrganizationId] = useState<string | null>(null)
 
-  // Form state for add/edit
-  const [formTitle, setFormTitle] = useState('')
-  const [formContent, setFormContent] = useState('')
-  const [formEntryType, setFormEntryType] = useState<EntryType | ''>('')
-  const [formTags, setFormTags] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
+  const [consultNotes, setConsultNotes] = useState<ConsultNote[]>([])
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [notesError, setNotesError] = useState<string | null>(null)
+  const [selectedConsultNote, setSelectedConsultNote] = useState<ConsultNote | null>(null)
+  const [consultNoteVersions, setConsultNoteVersions] = useState<ConsultNoteVersion[]>([])
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [noteDraftText, setNoteDraftText] = useState('')
+  const [noteMode, setNoteMode] = useState<'create' | 'edit'>('create')
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [noteError, setNoteError] = useState<string | null>(null)
 
   // Fetch entries on mount
   useEffect(() => {
@@ -107,7 +97,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const fetchEntries = async () => {
     setIsLoading(true)
     setError(null)
-    setSuggestedError(null)
     setDebugHint(null)
 
     try {
@@ -128,20 +117,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
       if (data?.success && data.data) {
         const loadedEntries = (data.data.entries || []) as unknown as AnamnesisEntry[]
-        const nonIntakeEntries = loadedEntries.filter((entry) => entry.entry_type !== 'intake')
-        const fallbackLatest = nonIntakeEntries[0] || null
-
         setEntries(loadedEntries)
-        const providedLatest = (data.data.latestEntry as unknown) as AnamnesisEntry | null
-        const resolvedLatest =
-          providedLatest && providedLatest.entry_type !== 'intake'
-            ? providedLatest
-            : fallbackLatest
-
-        setLatestEntry(resolvedLatest)
-        setVersions((data.data.versions || []) as unknown as AnamnesisVersion[])
-        setSuggestedFacts((data.data.suggestedFacts || []) as unknown as SuggestedFact[])
-        setSelectedFactIds([])
+        setPatientOrganizationId(
+          typeof data.data.patientOrganizationId === 'string'
+            ? data.data.patientOrganizationId
+            : null,
+        )
 
         const providedIntake = (data.data.latestIntakeEntry as unknown) as AnamnesisEntry | null
         const fallbackIntake = loadedEntries.find((entry) => entry.entry_type === 'intake') || null
@@ -159,166 +140,182 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
-  const buildSuggestedText = (facts: SuggestedFact[]) => {
-    if (facts.length === 0) return ''
-    const lines = facts.map((fact) => `- ${fact.label}: ${fact.value}`)
-    return ['Patient Record (Vorschlag)', ...lines].join('\n')
-  }
+  useEffect(() => {
+    void loadConsultNotes()
+  }, [patientId])
 
-  const openSuggestedPreview = () => {
-    if (selectedFactIds.length === 0) {
-      setSuggestedError('Bitte wählen Sie mindestens einen Vorschlag aus.')
-      return
+  const buildConsultNoteContent = (noteText: string): ConsultNoteContent => {
+    const nowIso = new Date().toISOString()
+    const trimmed = noteText.trim()
+    const title = trimmed.split('\n')[0]?.trim() || 'Notiz'
+    const summaryLines = trimmed
+      ? trimmed.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 10)
+      : ['Draft']
+
+    return {
+      header: {
+        timestamp: nowIso,
+        consultationType: 'first',
+        source: 'Manual note',
+        uncertaintyProfile: 'qualitative',
+        assertiveness: 'conservative',
+        audience: 'clinician',
+      },
+      chiefComplaint: {
+        text: title,
+      },
+      hpi: {},
+      redFlagsScreening: {
+        screened: false,
+        positive: [],
+      },
+      medicalHistory: {},
+      medications: {},
+      objectiveData: {
+        note: 'Manual note',
+      },
+      problemList: {
+        problems: [
+          'Manuelle Notiz (Draft)',
+          'Weitere Abklaerung ausstehend',
+          'Keine Diagnose festgelegt',
+        ],
+      },
+      preliminaryAssessment: {
+        hypotheses: ['Keine Hypothesen dokumentiert'],
+      },
+      missingData: {},
+      nextSteps: {},
+      handoffSummary: {
+        summary: summaryLines,
+      },
     }
-
-    const selectedFacts = suggestedFacts.filter((fact) => selectedFactIds.includes(fact.id))
-    setPreviewFacts(selectedFacts)
-    setPreviewText(buildSuggestedText(selectedFacts))
-    setIsSuggestedPreviewOpen(true)
   }
 
-  const submitSuggestedFacts = async (facts: SuggestedFact[]) => {
-    setIsCreatingVersion(true)
-    setSuggestedError(null)
+  const extractNoteText = (note: ConsultNote | null) => {
+    if (!note) return ''
+    const summary = note.content?.handoffSummary?.summary
+    if (Array.isArray(summary) && summary.length > 0) {
+      return summary.join('\n')
+    }
+    return note.content?.chiefComplaint?.text || ''
+  }
+
+  const loadConsultNotes = async () => {
+    setNotesLoading(true)
+    setNotesError(null)
 
     try {
-      const text = buildSuggestedText(facts)
-      const title = `Patient Record Vorschlag ${new Date().toLocaleDateString('de-DE')}`
-
-      const { error } = await postAnamnesis(patientId, { text, sources: facts, title })
-
+      const { data, error } = await getConsultNotes(patientId)
       if (error) {
-        throw new Error(error.message || 'Fehler beim Erstellen der Version')
+        throw new Error(error.message || 'Fehler beim Laden der Notizen')
       }
 
-      await fetchEntries()
-      setIsSuggestedPreviewOpen(false)
+      const notes = (data?.data?.consultNotes || []) as unknown as ConsultNote[]
+      setConsultNotes(notes)
     } catch (err) {
-      console.error('[AnamnesisSection] Suggested version error:', err)
-      setSuggestedError(err instanceof Error ? err.message : 'Fehler beim Speichern der Version')
+      console.error('[AnamnesisSection] Consult notes fetch error:', err)
+      setNotesError(err instanceof Error ? err.message : 'Fehler beim Laden der Notizen')
     } finally {
-      setIsCreatingVersion(false)
+      setNotesLoading(false)
     }
   }
 
-  const handleAddEntry = async () => {
-    if (!formTitle.trim()) {
-      return
-    }
-
-    setIsSaving(true)
-    setFormError(null)
-
+  const loadConsultNoteVersions = async (consultNoteId: string) => {
     try {
-      const { error } = await postAnamnesis(patientId, {
-        title: formTitle,
-        content: { text: formContent },
-        entry_type: formEntryType || null,
-        tags: formTags ? formTags.split(',').map((t) => t.trim()) : [],
-      })
-
+      const { data, error } = await getConsultNoteVersions(consultNoteId)
       if (error) {
-        throw new Error(error.message || 'Fehler beim Erstellen des Eintrags')
+        throw new Error(error.message || 'Fehler beim Laden der Versionen')
       }
-
-      // Reset form and close dialog
-      resetForm()
-      setIsAddDialogOpen(false)
-
-      // Refresh entries
-      await fetchEntries()
+      const versions = (data?.data || []) as unknown as ConsultNoteVersion[]
+      setConsultNoteVersions(versions)
     } catch (err) {
-      console.error('[AnamnesisSection] Add error:', err)
-      setFormError(err instanceof Error ? err.message : 'Fehler beim Erstellen des Eintrags')
-    } finally {
-      setIsSaving(false)
+      console.error('[AnamnesisSection] Consult note versions error:', err)
+      setNoteError(err instanceof Error ? err.message : 'Fehler beim Laden der Versionen')
     }
   }
 
-  const handleEditEntry = async () => {
-    if (!selectedEntry || !formTitle.trim()) {
+  const openNewNote = () => {
+    setNoteMode('create')
+    setSelectedConsultNote(null)
+    setNoteDraftText('')
+    setConsultNoteVersions([])
+    setNoteError(null)
+    setIsNoteModalOpen(true)
+  }
+
+  const openNoteDetail = async (noteId: string) => {
+    setNoteMode('edit')
+    setNoteError(null)
+
+    try {
+      const { data, error } = await getConsultNote(noteId)
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Laden der Notiz')
+      }
+
+      const note = (data?.data || null) as ConsultNote | null
+      if (!note) {
+        throw new Error('Notiz nicht gefunden')
+      }
+
+      setSelectedConsultNote(note)
+      setNoteDraftText(extractNoteText(note))
+      await loadConsultNoteVersions(note.id)
+      setIsNoteModalOpen(true)
+    } catch (err) {
+      console.error('[AnamnesisSection] Consult note detail error:', err)
+      setNoteError(err instanceof Error ? err.message : 'Fehler beim Laden der Notiz')
+    }
+  }
+
+  const saveNote = async () => {
+    if (!noteDraftText.trim()) {
+      setNoteError('Bitte eine Notiz eingeben.')
       return
     }
 
-    setIsSaving(true)
-    setFormError(null)
+    setNoteSaving(true)
+    setNoteError(null)
 
     try {
-      const response = await fetch(`/api/clinician/anamnesis/${selectedEntry.id}/versions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: formTitle,
-          content: { text: formContent },
-          entry_type: formEntryType || null,
-          tags: formTags ? formTags.split(',').map((t) => t.trim()) : [],
-          change_reason: 'Clinician update',
-        }),
-      })
+      const content = buildConsultNoteContent(noteDraftText)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Fehler beim Aktualisieren des Eintrags')
+      if (noteMode === 'create') {
+        if (!patientOrganizationId) {
+          throw new Error('Organisation konnte nicht ermittelt werden.')
+        }
+
+        const { error } = await createConsultNote({
+          patientId,
+          organizationId: patientOrganizationId,
+          content,
+        })
+
+        if (error) {
+          throw new Error(error.message || 'Fehler beim Erstellen der Notiz')
+        }
+      } else if (selectedConsultNote) {
+        const { error } = await updateConsultNote({
+          consultNoteId: selectedConsultNote.id,
+          content,
+        })
+
+        if (error) {
+          throw new Error(error.message || 'Fehler beim Aktualisieren der Notiz')
+        }
       }
 
-      // Reset form and close dialog
-      resetForm()
-      setIsEditDialogOpen(false)
-      setSelectedEntry(null)
-      
-      // Refresh entries
-      await fetchEntries()
+      setIsNoteModalOpen(false)
+      await loadConsultNotes()
     } catch (err) {
-      console.error('[AnamnesisSection] Edit error:', err)
-      setFormError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren des Eintrags')
+      console.error('[AnamnesisSection] Consult note save error:', err)
+      setNoteError(err instanceof Error ? err.message : 'Fehler beim Speichern der Notiz')
     } finally {
-      setIsSaving(false)
+      setNoteSaving(false)
     }
   }
 
-  const handleArchiveEntry = async (entryId: string) => {
-    if (!confirm('Möchten Sie diesen Eintrag wirklich archivieren?')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/clinician/anamnesis/${entryId}/archive`, {
-        method: 'POST',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Fehler beim Archivieren')
-      }
-
-      // Refresh entries
-      await fetchEntries()
-    } catch (err) {
-      console.error('[AnamnesisSection] Archive error:', err)
-      setError(err instanceof Error ? err.message : 'Fehler beim Archivieren des Eintrags')
-    }
-  }
-
-  const openEditDialog = (entry: AnamnesisEntry) => {
-    setSelectedEntry(entry)
-    setFormTitle(entry.title)
-    setFormContent(
-      typeof entry.content === 'object' && entry.content !== null && 'text' in entry.content
-        ? String(entry.content.text)
-        : ''
-    )
-    setFormEntryType((entry.entry_type as EntryType) || '')
-    setFormTags(entry.tags.join(', '))
-    setIsEditDialogOpen(true)
-  }
-
-  const resetForm = () => {
-    setFormTitle('')
-    setFormContent('')
-    setFormEntryType('')
-    setFormTags('')
-    setFormError(null)
-  }
 
   const formatDate = (isoString: string): string => {
     try {
@@ -332,24 +329,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     } catch {
       return 'Datum unbekannt'
     }
-  }
-
-  const getEntryTypeLabel = (type: string | null): string => {
-    if (!type) return 'Sonstiges'
-    
-    const labels: Record<string, string> = {
-      medical_history: 'Krankengeschichte',
-      symptoms: 'Symptome',
-      medications: 'Medikation',
-      allergies: 'Allergien',
-      family_history: 'Familienanamnese',
-      lifestyle: 'Lebensstil',
-      intake: 'Intake',
-      funnel_summary: 'Funnel-Zusammenfassung',
-      other: 'Sonstiges',
-    }
-    
-    return labels[type] || type
   }
 
   const getContentText = (content: Record<string, unknown>): string | null => {
@@ -461,26 +440,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     const complaint = (content as { chiefComplaint?: unknown }).chiefComplaint
     if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
     return null
-  }
-
-  const getContentSources = (content: Record<string, unknown>): SuggestedFact[] => {
-    const sourcesValue = (content as { sources?: unknown }).sources
-    if (!Array.isArray(sourcesValue)) return []
-
-    return sourcesValue
-      .filter((item) => typeof item === 'object' && item !== null)
-      .map((item) => {
-        const source = item as Partial<SuggestedFact>
-        return {
-          id: source.id || `${source.sourceType || 'source'}:${source.sourceId || ''}:${source.label || ''}`,
-          label: source.label ? String(source.label) : 'Quelle',
-          value: source.value ? String(source.value) : '',
-          sourceType: source.sourceType ? String(source.sourceType) : 'source',
-          sourceId: source.sourceId ? String(source.sourceId) : '',
-          occurredAt: source.occurredAt ? String(source.occurredAt) : null,
-        }
-      })
-      .filter((source) => source.value.trim().length > 0)
   }
 
   const getIntakeEvidence = (content: Record<string, unknown>): string[] => {
@@ -684,160 +643,63 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       </Card>
 
       <Card padding="lg" shadow="md" className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Vorschläge
-          </h2>
-        </div>
-
-        {suggestedFacts.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Keine Vorschläge aus Assessments oder Ergebnissen verfügbar.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {suggestedFacts.map((fact) => (
-              <label key={fact.id} className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={selectedFactIds.includes(fact.id)}
-                  onChange={(event) => {
-                    setSelectedFactIds((prev) =>
-                      event.target.checked
-                        ? [...prev, fact.id]
-                        : prev.filter((id) => id !== fact.id),
-                    )
-                  }}
-                />
-                <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                    {fact.label}: {fact.value}
-                  </p>
-                  {fact.occurredAt && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {formatDate(fact.occurredAt)}
-                    </p>
-                  )}
-                </div>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {suggestedError && (
-          <div className="mt-4">
-            <Alert variant="error">{suggestedError}</Alert>
-          </div>
-        )}
-
-        <div className="mt-4">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={openSuggestedPreview}
-            disabled={suggestedFacts.length === 0 || isCreatingVersion}
-          >
-            {isCreatingVersion ? 'Wird gespeichert…' : 'Vorschau & speichern'}
-          </Button>
-        </div>
-      </Card>
-
-      <Card padding="lg" shadow="md">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <h2 className="text-base md:text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Patient Record
+              Notizen
             </h2>
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setIsAddDialogOpen(true)}
-          >
+          <Button variant="primary" size="sm" onClick={openNewNote}>
             <Plus className="w-4 h-4 mr-1" />
-            Eintrag hinzufügen
+            Neue Notiz
           </Button>
         </div>
 
-        {entries.filter((entry) => entry.entry_type !== 'intake').length === 0 ? (
+        {notesLoading ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400">Notizen werden geladen…</p>
+        ) : notesError ? (
+          <Alert variant="error">{notesError}</Alert>
+        ) : consultNotes.length === 0 ? (
           <div className="text-center py-6">
             <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Noch keine Patient Record-Einträge vorhanden
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              Fügen Sie einen neuen Eintrag hinzu, um zu beginnen
+              Noch keine Notizen vorhanden.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {entries
-              .filter((entry) => !entry.is_archived)
-              .filter((entry) => entry.entry_type !== 'intake')
-              .map((entry) => (
-                <div
-                  key={entry.id}
-                  className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-1">
-                        {entry.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-2 items-center">
-                        {entry.entry_type && (
-                          <Badge variant="secondary" size="sm">
-                            {getEntryTypeLabel(entry.entry_type)}
-                          </Badge>
-                        )}
-                        {entry.version_count > 1 && (
-                          <Badge variant="secondary" size="sm">
-                            <Clock className="w-3 h-3 mr-1" />
-                            v{entry.version_count}
-                          </Badge>
-                        )}
-                        {entry.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" size="sm">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditDialog(entry)}
-                        className="p-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                        title="Bearbeiten"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleArchiveEntry(entry.id)}
-                        className="p-2 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
-                        title="Archivieren"
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {getContentText(entry.content) && (
-                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                      {getContentText(entry.content)}
+            {consultNotes.map((note) => (
+              <button
+                key={note.id}
+                type="button"
+                onClick={() => openNoteDetail(note.id)}
+                className="w-full text-left p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                      {note.content?.chiefComplaint?.text || 'Notiz'}
                     </p>
-                  )}
-
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Aktualisiert: {formatDate(entry.updated_at)}
-                  </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Aktualisiert: {formatDate(note.updated_at)}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" size="sm">
+                    Draft
+                  </Badge>
                 </div>
-              ))}
+                {note.updated_by && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                    Author: {note.updated_by.slice(0, 8)}…
+                  </p>
+                )}
+              </button>
+            ))}
           </div>
         )}
       </Card>
+
 
       <Modal
         isOpen={isIntakeHistoryOpen}
@@ -879,57 +741,43 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         )}
       </Modal>
 
-      {/* Add Entry Dialog */}
       <Modal
-        isOpen={isSuggestedPreviewOpen}
-        onClose={() => setIsSuggestedPreviewOpen(false)}
-        title="Vorschau: neue Patient Record-Version"
+        isOpen={isNoteModalOpen}
+        onClose={() => setIsNoteModalOpen(false)}
+        title={noteMode === 'create' ? 'Neue Notiz' : 'Notiz bearbeiten'}
         size="xl"
         footer={
           <>
-            <Button
-              variant="ghost"
-              onClick={() => setIsSuggestedPreviewOpen(false)}
-              disabled={isCreatingVersion}
-            >
+            <Button variant="ghost" onClick={() => setIsNoteModalOpen(false)} disabled={noteSaving}>
               Abbrechen
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!previewText) return
-                navigator.clipboard?.writeText(previewText)
-              }}
-              disabled={!previewText}
-            >
-              Text kopieren
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => submitSuggestedFacts(previewFacts)}
-              disabled={previewFacts.length === 0 || isCreatingVersion}
-            >
-              {isCreatingVersion ? 'Wird gespeichert…' : 'Als neue Version speichern'}
+            <Button variant="primary" onClick={saveNote} disabled={noteSaving}>
+              {noteSaving ? 'Wird gespeichert…' : 'Speichern'}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
-          {previewText ? (
-            <pre className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
-              {previewText}
-            </pre>
-          ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">Keine Vorschlaege ausgewaehlt.</p>
-          )}
+          {noteError && <Alert variant="error">{noteError}</Alert>}
 
-          {previewFacts.length > 0 && (
+          <FormField label="Notiz" required>
+            <Textarea
+              value={noteDraftText}
+              onChange={(event) => setNoteDraftText(event.target.value)}
+              placeholder="Freie Notiz fuer Arzt/Nurse…"
+              rows={8}
+            />
+          </FormField>
+
+          {consultNoteVersions.length > 0 && (
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Quellen</p>
-              <div className="space-y-1">
-                {previewFacts.map((source) => (
-                  <div key={source.id} className="text-xs text-slate-600 dark:text-slate-300">
-                    <span className="font-medium">{source.label}:</span> {source.value}
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
+                Versionshistorie
+              </p>
+              <div className="space-y-2">
+                {consultNoteVersions.map((version) => (
+                  <div key={version.id} className="text-xs text-slate-600 dark:text-slate-300">
+                    v{version.version_number} · {formatDate(version.created_at)}
                   </div>
                 ))}
               </div>
@@ -938,179 +786,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         </div>
       </Modal>
 
-      <Modal
-        isOpen={isAddDialogOpen}
-        onClose={() => {
-          setIsAddDialogOpen(false)
-          resetForm()
-        }}
-        title="Neuer Patient Record-Eintrag"
-        size="xl"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsAddDialogOpen(false)
-                resetForm()
-              }}
-              disabled={isSaving}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleAddEntry}
-              disabled={!formTitle.trim() || isSaving}
-            >
-              {isSaving ? 'Wird gespeichert…' : 'Speichern'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          {formError && (
-            <Alert variant="error">
-              {formError}
-            </Alert>
-          )}
-
-          <FormField label="Titel" required>
-            <Input
-              type="text"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="z.B. Chronische Rückenschmerzen"
-              required
-            />
-          </FormField>
-
-          <FormField label="Typ">
-            <Select
-              value={formEntryType}
-              onChange={(e) => setFormEntryType(e.target.value as EntryType | '')}
-            >
-              <option value="">Bitte wählen</option>
-              {ENTRY_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {getEntryTypeLabel(type)}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-
-          <FormField label="Inhalt">
-            <Textarea
-              value={formContent}
-              onChange={(e) => setFormContent(e.target.value)}
-              placeholder="Detaillierte Informationen zum Patient Record-Eintrag..."
-              rows={6}
-            />
-          </FormField>
-
-          <FormField label="Tags (kommagetrennt)">
-            <Input
-              type="text"
-              value={formTags}
-              onChange={(e) => setFormTags(e.target.value)}
-              placeholder="z.B. chronisch, behandelt"
-            />
-          </FormField>
-        </div>
-      </Modal>
-
-      {/* Edit Entry Dialog */}
-      <Modal
-        isOpen={isEditDialogOpen}
-        onClose={() => {
-          setIsEditDialogOpen(false)
-          setSelectedEntry(null)
-          resetForm()
-        }}
-        title="Patient Record-Eintrag bearbeiten"
-        size="xl"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsEditDialogOpen(false)
-                setSelectedEntry(null)
-                resetForm()
-              }}
-              disabled={isSaving}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleEditEntry}
-              disabled={!formTitle.trim() || isSaving}
-            >
-              {isSaving ? 'Wird gespeichert…' : 'Änderungen speichern'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          {formError && (
-            <Alert variant="error">
-              {formError}
-            </Alert>
-          )}
-
-          <FormField label="Titel" required>
-            <Input
-              type="text"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="z.B. Chronische Rückenschmerzen"
-              required
-            />
-          </FormField>
-
-          <FormField label="Typ">
-            <Select
-              value={formEntryType}
-              onChange={(e) => setFormEntryType(e.target.value as EntryType | '')}
-            >
-              <option value="">Bitte wählen</option>
-              {ENTRY_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {getEntryTypeLabel(type)}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-
-          <FormField label="Inhalt">
-            <Textarea
-              value={formContent}
-              onChange={(e) => setFormContent(e.target.value)}
-              placeholder="Detaillierte Informationen zum Patient Record-Eintrag..."
-              rows={6}
-            />
-          </FormField>
-
-          <FormField label="Tags (kommagetrennt)">
-            <Input
-              type="text"
-              value={formTags}
-              onChange={(e) => setFormTags(e.target.value)}
-              placeholder="z.B. chronisch, behandelt"
-            />
-          </FormField>
-
-          {selectedEntry && selectedEntry.version_count > 0 && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
-                <Clock className="w-3 h-3 inline mr-1" />
-                Beim Speichern wird eine neue Version (v{selectedEntry.version_count + 1}) erstellt
-              </p>
-            </div>
-          )}
-        </div>
-      </Modal>
     </>
   )
 }

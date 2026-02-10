@@ -347,6 +347,78 @@ export const getAmyInsights = (patientId: string) =>
     patientId,
   })
 
+export const getConsultNotes = (patientId: string) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: {
+      consultNotes?: Array<Record<string, unknown>>
+      total?: number
+      page?: number
+      perPage?: number
+    }
+  }>({
+    endpoint: `/api/clinician/consult-notes?patientId=${patientId}`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
+export const createConsultNote = (payload: {
+  patientId: string
+  organizationId: string
+  content: Record<string, unknown>
+}) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: { consultNote?: Record<string, unknown> }
+  }>({
+    endpoint: '/api/clinician/consult-notes',
+    method: 'POST',
+    body: {
+      patient_id: payload.patientId,
+      organization_id: payload.organizationId,
+      content: payload.content,
+    },
+    routeContext: 'patient-detail',
+    patientId: payload.patientId,
+  })
+
+export const getConsultNote = (consultNoteId: string) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: Record<string, unknown>
+  }>({
+    endpoint: `/api/clinician/consult-notes/${consultNoteId}`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+  })
+
+export const getConsultNoteVersions = (consultNoteId: string) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: Array<Record<string, unknown>>
+  }>({
+    endpoint: `/api/clinician/consult-notes/${consultNoteId}/versions`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+  })
+
+export const updateConsultNote = (payload: {
+  consultNoteId: string
+  content: Record<string, unknown>
+}) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: { consultNote?: Record<string, unknown> }
+  }>({
+    endpoint: `/api/clinician/consult-notes/${payload.consultNoteId}`,
+    method: 'PATCH',
+    body: {
+      content: payload.content,
+    },
+    routeContext: 'patient-detail',
+  })
+
 export const getAnamnesis = (patientId: string) =>
   requestClinicianJson<{
     success?: boolean
@@ -357,6 +429,7 @@ export const getAnamnesis = (patientId: string) =>
       versions?: Array<Record<string, unknown>>
       intakeHistory?: Array<Record<string, unknown>>
       suggestedFacts?: Array<Record<string, unknown>>
+      patientOrganizationId?: string | null
     }
   }>({
     endpoint: `/api/clinician/patient/${patientId}/anamnesis`,
