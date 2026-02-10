@@ -363,13 +363,39 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
-    const summary = (content as { narrativeSummary?: unknown }).narrativeSummary
-    if (typeof summary === 'string' && summary.trim()) return summary.trim()
+    const summaryAlias = (content as { summary?: unknown }).summary
+    if (typeof summaryAlias === 'string' && summaryAlias.trim()) return summaryAlias.trim()
+    const narrativeSummary = (content as { narrativeSummary?: unknown }).narrativeSummary
+    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) return narrativeSummary.trim()
     const complaint = (content as { chiefComplaint?: unknown }).chiefComplaint
     if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
+    const narrative = (content as { narrative?: unknown }).narrative
+    if (typeof narrative === 'string' && narrative.trim()) return narrative.trim()
     const status = (content as { status?: unknown }).status
     if (typeof status === 'string' && status.trim()) return status.trim()
     return getContentText(content)
+  }
+
+  const isDraftOnlyIntake = (content: Record<string, unknown>): boolean => {
+    const status = (content as { status?: unknown }).status
+    if (typeof status !== 'string' || !status.trim()) return false
+
+    const summary = (content as { narrativeSummary?: unknown }).narrativeSummary
+    const chiefComplaint = (content as { chiefComplaint?: unknown }).chiefComplaint
+    const narrative = (content as { narrative?: unknown }).narrative
+    const summaryAlias = (content as { summary?: unknown }).summary
+    const structured = (content as { structured?: unknown }).structured
+    const evidenceRefs = (content as { evidenceRefs?: unknown }).evidenceRefs
+
+    const hasSummary =
+      (typeof summary === 'string' && summary.trim()) ||
+      (typeof summaryAlias === 'string' && summaryAlias.trim()) ||
+      (typeof narrative === 'string' && narrative.trim())
+    const hasChiefComplaint = typeof chiefComplaint === 'string' && chiefComplaint.trim()
+    const hasStructured = structured && typeof structured === 'object'
+    const hasEvidenceRefs = Array.isArray(evidenceRefs) && evidenceRefs.length > 0
+
+    return !hasSummary && !hasChiefComplaint && !hasStructured && !hasEvidenceRefs
   }
 
   const getIntakeStatus = (content: Record<string, unknown>): string | null => {
@@ -507,10 +533,13 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
-  const intakeEvidence = latestIntake ? getIntakeEvidence(latestIntake.content) : []
-  const intakeSummary = latestIntake ? getIntakeNarrative(latestIntake.content) : null
-  const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(latestIntake.content) : null
-  const intakeStatus = latestIntake ? getIntakeStatus(latestIntake.content) : null
+  const intakeContent = intakeVersions[0]?.content || latestIntake?.content || {}
+  const intakeEvidence = latestIntake ? getIntakeEvidence(intakeContent) : []
+  const intakeSummary = latestIntake ? getIntakeNarrative(intakeContent) : null
+  const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
+  const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
+  const intakeUpdatedAt = intakeVersions[0]?.changed_at || latestIntake?.updated_at
+  const intakeIsDraftOnly = latestIntake ? isDraftOnlyIntake(intakeContent) : false
 
   return (
     <>
@@ -529,9 +558,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
                   {latestIntake.title || 'Intake (letzter Kontakt)'}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Aktualisiert: {formatDate(latestIntake.updated_at)}
-                </p>
+                {intakeUpdatedAt && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Aktualisiert: {formatDate(intakeUpdatedAt)}
+                  </p>
+                )}
               </div>
               <Button
                 variant="secondary"
@@ -545,6 +576,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             {intakeSummary ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {intakeSummary}
+              </p>
+            ) : intakeIsDraftOnly ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Draft gespeichert (noch keine Zusammenfassung).
               </p>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
