@@ -572,9 +572,6 @@ BEGIN
         END
     );
 
-    -- Update entry timestamp
-    NEW.updated_at := NOW();
-
     RETURN NEW;
 END;
 $$;
@@ -584,6 +581,23 @@ ALTER FUNCTION "public"."anamnesis_entry_create_version"() OWNER TO "postgres";
 
 
 COMMENT ON FUNCTION "public"."anamnesis_entry_create_version"() IS 'E75.1: Auto-create immutable version record on anamnesis_entry insert/update';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."update_anamnesis_entries_updated_at"() RETURNS "trigger"
+  LANGUAGE "plpgsql"
+  AS $$
+BEGIN
+  NEW.updated_at := NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_anamnesis_entries_updated_at"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."update_anamnesis_entries_updated_at"() IS 'E79: Auto-update updated_at timestamp on anamnesis_entries changes';
 
 
 
@@ -6976,7 +6990,10 @@ CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_audit" AFTER INSERT OR DELETE
 
 
 
-CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_versioning" BEFORE INSERT OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_create_version"();
+CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_versioning" AFTER INSERT OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_create_version"();
+
+
+CREATE OR REPLACE TRIGGER "trigger_anamnesis_entries_updated_at" BEFORE UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."update_anamnesis_entries_updated_at"();
 
 
 
@@ -9054,6 +9071,11 @@ GRANT ALL ON FUNCTION "public"."anamnesis_entry_audit_log"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "anon";
 GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "service_role";
+
+
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "service_role";
 
 
 
