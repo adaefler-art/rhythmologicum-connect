@@ -60,10 +60,20 @@
  */
 
 import { NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getAnamnesisEntry, getEntryVersions } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
-import { validateCreateVersion } from '@/lib/api/anamnesis/validation'
+import {
+  MAX_INTAKE_NARRATIVE_LENGTH,
+  MAX_INTAKE_OPEN_QUESTION_LENGTH,
+  MAX_INTAKE_OPEN_QUESTIONS,
+  MAX_INTAKE_SHORT_SUMMARY_ITEMS,
+  MAX_INTAKE_SHORT_SUMMARY_LENGTH,
+  validateCreateVersion,
+} from '@/lib/api/anamnesis/validation'
+import { getEngineEnv } from '@/lib/env'
+import { getIntakeInterpretationPrompt } from '@/lib/llm/prompts'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
@@ -91,6 +101,148 @@ const logIntakeEvent = (params: {
 
 type RouteContext = {
   params: Promise<{ entryId: string }>
+}
+
+const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
+const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
+
+type InterpretedClinicalSummary = {
+  short_summary?: string[]
+  narrative_history?: string
+  open_questions?: string[]
+}
+
+function hasStructuredIntakeSignal(payload: Record<string, unknown>): boolean {
+  const hasString = (value: unknown) => typeof value === 'string' && value.trim().length > 0
+  const hasArray = (value: unknown) =>
+    Array.isArray(value) && value.some((item) => typeof item === 'string' && item.trim())
+
+  const structured = payload.structured
+  if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
+    const structuredRecord = structured as Record<string, unknown>
+    if (hasArray(structuredRecord.timeline) || hasArray(structuredRecord.key_symptoms)) {
+      return true
+    }
+  }
+
+  return (
+    hasString(payload.chief_complaint) ||
+    hasString(payload.narrative_summary) ||
+    hasArray(payload.red_flags) ||
+    hasArray(payload.open_questions) ||
+    hasArray(payload.evidence_refs)
+  )
+}
+
+function sanitizeInterpretedSummary(payload: unknown): InterpretedClinicalSummary | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
+  const data = payload as Record<string, unknown>
+
+  const summary = data.interpreted_clinical_summary
+  if (!summary || typeof summary !== 'object' || Array.isArray(summary)) return null
+  const record = summary as Record<string, unknown>
+
+  const shortSummary = Array.isArray(record.short_summary)
+    ? record.short_summary
+        .filter((item) => typeof item === 'string' && item.trim())
+        .map((item) => item.trim().slice(0, MAX_INTAKE_SHORT_SUMMARY_LENGTH))
+        .slice(0, MAX_INTAKE_SHORT_SUMMARY_ITEMS)
+    : []
+
+  const narrativeHistoryRaw =
+    typeof record.narrative_history === 'string' ? record.narrative_history.trim() : ''
+  const narrativeHistory = narrativeHistoryRaw
+    ? narrativeHistoryRaw.slice(0, MAX_INTAKE_NARRATIVE_LENGTH)
+    : ''
+
+  const openQuestions = Array.isArray(record.open_questions)
+    ? record.open_questions
+        .filter((item) => typeof item === 'string' && item.trim())
+        .map((item) => item.trim().slice(0, MAX_INTAKE_OPEN_QUESTION_LENGTH))
+        .slice(0, MAX_INTAKE_OPEN_QUESTIONS)
+    : []
+
+  if (shortSummary.length === 0 && !narrativeHistory && openQuestions.length === 0) {
+    return null
+  }
+
+  return {
+    short_summary: shortSummary.length > 0 ? shortSummary : undefined,
+    narrative_history: narrativeHistory || undefined,
+    open_questions: openQuestions.length > 0 ? openQuestions : undefined,
+  }
+}
+
+function parseOutputJson(raw: string): InterpretedClinicalSummary | null {
+  const markerIndex = raw.indexOf(OUTPUT_JSON_MARKER)
+  let candidate = raw
+
+  if (markerIndex !== -1) {
+    const after = raw.slice(markerIndex)
+    const jsonStart = after.indexOf('{')
+    const jsonEnd = after.lastIndexOf('}')
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      candidate = after.slice(jsonStart, jsonEnd + 1)
+    }
+  }
+
+  try {
+    return sanitizeInterpretedSummary(JSON.parse(candidate))
+  } catch (err) {
+    return null
+  }
+}
+
+async function generateInterpretedSummary(
+  structuredIntakeData: Record<string, unknown>,
+  runId: string | null,
+  entryId: string,
+): Promise<InterpretedClinicalSummary | null> {
+  const engineEnv = getEngineEnv()
+  const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
+  const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
+
+  if (!anthropicApiKey) {
+    console.warn('[patient/anamnesis/[entryId] PATCH] Anthropic not configured', {
+      runId,
+      entryId,
+    })
+    return null
+  }
+
+  const anthropic = new Anthropic({ apiKey: anthropicApiKey })
+  const systemPrompt = getIntakeInterpretationPrompt()
+  const userPrompt = `STRUCTURED_INTAKE_DATA:\n${JSON.stringify(structuredIntakeData).slice(0, 6000)}`
+
+  try {
+    const response = await anthropic.messages.create({
+      model,
+      max_tokens: 800,
+      temperature: 0,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+    })
+
+    const responseText = response.content
+      .filter((item) => item.type === 'text')
+      .map((item) => ('text' in item ? item.text : ''))
+      .join('\n')
+      .trim()
+
+    return parseOutputJson(responseText)
+  } catch (err) {
+    console.error('[patient/anamnesis/[entryId] PATCH] LLM request failed', {
+      runId,
+      entryId,
+      error: String(err),
+    })
+    return null
+  }
 }
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -274,13 +426,35 @@ export async function PATCH(request: Request, context: RouteContext) {
       throw err
     }
 
+    const nextEntryType = validatedData.entry_type || entry.entry_type
+    const nextContent = validatedData.content as Record<string, unknown>
+    const structuredIntakeData =
+      nextEntryType === 'intake' &&
+      nextContent.structured_intake_data &&
+      typeof nextContent.structured_intake_data === 'object' &&
+      !Array.isArray(nextContent.structured_intake_data)
+        ? (nextContent.structured_intake_data as Record<string, unknown>)
+        : null
+
+    if (structuredIntakeData && hasStructuredIntakeSignal(structuredIntakeData)) {
+      const interpretedSummary = await generateInterpretedSummary(
+        structuredIntakeData,
+        runId,
+        entryId,
+      )
+
+      if (interpretedSummary) {
+        nextContent.interpreted_clinical_summary = interpretedSummary
+      }
+    }
+
     // Update entry (trigger will create new version automatically)
     const { data: updatedEntry, error: updateError } = await supabase
       .from('anamnesis_entries')
       .update({
         title: validatedData.title,
-        content: validatedData.content as Json,
-        entry_type: validatedData.entry_type || null,
+        content: nextContent as Json,
+        entry_type: nextEntryType || null,
         tags: validatedData.tags || entry.tags,
         updated_by: user.id,
       })

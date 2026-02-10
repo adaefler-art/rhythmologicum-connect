@@ -69,6 +69,24 @@ REGELN FUER interpreted_clinical_summary:
 `
 }
 
+export function getIntakeInterpretationPrompt(): string {
+  return `Du bist ${ASSISTANT_CONFIG.personaName}. Deine Aufgabe ist es, aus STRUCTURED_INTAKE_DATA eine klinisch lesbare Kurz-Interpretation zu erstellen.
+
+WICHTIG:
+- Nutze ausschliesslich STRUCTURED_INTAKE_DATA als Quelle.
+- Keine Chat-Zitate, keine Rohtexte, keine IDs.
+- Keine neuen Informationen erfinden.
+- Wenn Daten fehlen, markiere dies in open_questions.
+
+${RED_FLAG_ESCALATION}
+${DETERMINISM_GUARD}
+
+AUSGABEFORMAT:
+- Gib NUR eine Zeile mit OUTPUT_JSON aus.
+${OUTPUT_CONTRACT_DESCRIPTION}
+`
+}
+
 export function getClinicianColleaguePrompt(): string {
   return `Du bist ${ASSISTANT_CONFIG.personaName} als Kolleg*in fuer Human-in-the-loop.
 
