@@ -117,10 +117,13 @@ const mapCreateError = (error: { code?: string | null; message?: string | null }
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const respond = (payload: Record<string, unknown>, status: number) =>
     NextResponse.json(payload, { status, headers: withBuildHeaders() })
   try {
+    const { searchParams } = new URL(request.url)
+    const entryTypeParam = searchParams.get('entry_type')
+    const latestOnly = searchParams.get('latest') === '1' || searchParams.get('latest') === 'true'
     const supabase = await createServerSupabaseClient()
 
     // Check authentication
@@ -147,6 +150,19 @@ export async function GET() {
     const patientId = await getPatientProfileId(supabase, user.id)
 
     if (!patientId) {
+      if (latestOnly) {
+        return respond(
+          {
+            success: true,
+            data: {
+              entry: null,
+              latestVersion: null,
+            },
+          },
+          200,
+        )
+      }
+
       // No patient profile - return empty list
       return respond(
         {
@@ -159,9 +175,73 @@ export async function GET() {
       )
     }
 
+    if (latestOnly) {
+      const { data: latestEntry, error: latestError } = await supabase
+        .from('anamnesis_entries')
+        .select(
+          `
+          id,
+          title,
+          content,
+          entry_type,
+          tags,
+          is_archived,
+          created_at,
+          updated_at
+        `,
+        )
+        .eq('patient_id', patientId)
+        .eq('entry_type', entryTypeParam || 'intake')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (latestError) {
+        console.error('[patient/anamnesis] Latest query error:', latestError)
+        return respond(
+          {
+            success: false,
+            error: {
+              code: ErrorCode.DATABASE_ERROR,
+              message: 'Failed to fetch latest anamnesis entry',
+            },
+          },
+          500,
+        )
+      }
+
+      let latestVersion: Record<string, unknown> | null = null
+      if (latestEntry?.id) {
+        const { data: version, error: versionError } = await supabase
+          .from('anamnesis_entry_versions')
+          .select('id, version_number, title, content, entry_type, tags, changed_at, change_reason')
+          .eq('entry_id', latestEntry.id)
+          .order('version_number', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (versionError) {
+          console.error('[patient/anamnesis] Latest version error:', versionError)
+        } else if (version) {
+          latestVersion = version as Record<string, unknown>
+        }
+      }
+
+      return respond(
+        {
+          success: true,
+          data: {
+            entry: latestEntry ?? null,
+            latestVersion,
+          },
+        },
+        200,
+      )
+    }
+
     // Fetch anamnesis entries with version count
     // RLS policies automatically filter to patient's own entries
-    const { data: entries, error: queryError } = await supabase
+    let entriesQuery = supabase
       .from('anamnesis_entries')
       .select(
         `
@@ -177,6 +257,12 @@ export async function GET() {
       )
       .eq('patient_id', patientId)
       .order('updated_at', { ascending: false })
+
+    if (entryTypeParam) {
+      entriesQuery = entriesQuery.eq('entry_type', entryTypeParam)
+    }
+
+    const { data: entries, error: queryError } = await entriesQuery
 
     if (queryError) {
       console.error('[patient/anamnesis] Query error:', queryError)

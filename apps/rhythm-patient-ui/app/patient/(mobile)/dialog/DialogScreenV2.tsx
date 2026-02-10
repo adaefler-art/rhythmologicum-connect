@@ -105,6 +105,30 @@ const getIntakeNarrative = (content: Record<string, unknown>): string | null => 
   return null
 }
 
+const getTopicHook = (content: Record<string, unknown>): string | null => {
+  const complaint = content?.chiefComplaint
+  if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
+
+  const summary = getIntakeNarrative(content)
+  if (summary) {
+    const firstSentence = summary.split(/[.!?\n]/)[0]?.trim()
+    if (firstSentence) return firstSentence
+  }
+
+  const structured = content?.structured
+  if (structured && typeof structured === 'object') {
+    const keySymptoms = (structured as { keySymptoms?: unknown }).keySymptoms
+    if (Array.isArray(keySymptoms)) {
+      const firstSymptom = keySymptoms.find(
+        (item) => typeof item === 'string' && item.trim(),
+      ) as string | undefined
+      if (firstSymptom) return firstSymptom.trim()
+    }
+  }
+
+  return null
+}
+
 const extractTopic = (narrative: string): string | null => {
   const firstLine = narrative.split(/\n|\./)[0]?.trim()
   if (!firstLine) return null
@@ -119,6 +143,9 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   if (!topic) return DEFAULT_OPENING_QUESTION
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
+
+const buildReturningQuestion = (topic: string) =>
+  `Schoen, dass Sie wieder da sind. Letztes Mal ging es um ${topic}. Wie ist es heute damit? Und gibt es etwas Neues?`
 
 const isDevPreview = (): boolean => {
   if (typeof window === 'undefined') return false
@@ -157,6 +184,8 @@ export function DialogScreenV2() {
   const [intakeQuestions, setIntakeQuestions] = useState<string[]>([])
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
   const [chiefComplaint, setChiefComplaint] = useState('')
+  const [lastSummary, setLastSummary] = useState<string | null>(null)
+  const [llmContext, setLlmContext] = useState<string | null>(null)
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
@@ -202,7 +231,18 @@ export function DialogScreenV2() {
 
       const latestIntake = await fetchLatestIntake()
       if (!isMounted) return
-      const openingQuestion = buildOpeningQuestion(latestIntake)
+      const hook = latestIntake ? getTopicHook(latestIntake.content) : null
+      if (hook) {
+        setLlmContext(
+          `Patient is returning. Previous topic: ${hook}. Ask a brief follow-up.`,
+        )
+      } else {
+        setLlmContext(null)
+      }
+
+      const openingQuestion = hook
+        ? buildReturningQuestion(hook)
+        : buildOpeningQuestion(latestIntake)
       setChatMessages([
         {
           id: `assistant-${Date.now()}`,
@@ -347,16 +387,29 @@ export function DialogScreenV2() {
 
   const fetchLatestIntake = async (): Promise<IntakeEntry | null> => {
     try {
-      const response = await fetch('/api/patient/anamnesis', {
+      const response = await fetch('/api/patient/anamnesis?entry_type=intake&latest=1', {
         headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
       })
       const data = await response.json()
       if (!response.ok || !data?.success) return null
 
-      const entries = (data?.data?.entries as IntakeEntry[] | undefined) || []
-      const intakeEntries = entries.filter((entry) => entry.entry_type === 'intake')
-      if (intakeEntries.length === 0) return null
-      return intakeEntries[0]
+      const entry = data?.data?.entry as IntakeEntry | null | undefined
+      if (!entry) return null
+
+      const latestVersion = data?.data?.latestVersion as
+        | { content?: Record<string, unknown> | null }
+        | null
+        | undefined
+
+      const content =
+        latestVersion?.content && typeof latestVersion.content === 'object'
+          ? latestVersion.content
+          : entry.content
+
+      return {
+        ...entry,
+        content: content as Record<string, unknown>,
+      }
     } catch (err) {
       console.error('[DialogScreenV2] Failed to load intake entries', err)
       return null
@@ -496,6 +549,15 @@ export function DialogScreenV2() {
       console.info('[DialogScreenV2] OUTPUT_JSON stripped from assistant text')
     }
     return cleaned
+  }
+
+  const generateIntakeSummary = (snapshot: Record<string, unknown>) => {
+    const summaryValue = snapshot.narrativeSummary
+    if (typeof summaryValue === 'string' && summaryValue.trim()) {
+      setLastSummary(summaryValue.trim())
+    }
+
+    void persistIntakeSnapshot(snapshot, 'summary')
   }
 
   const markAutosaveDirty = () => {
@@ -709,7 +771,7 @@ export function DialogScreenV2() {
       const response = await fetch('/api/amy/chat', {
         method: 'POST',
         headers: getRequestHeaders(),
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ message: trimmed, context: llmContext }),
       })
 
       const data = await response.json()
@@ -739,7 +801,7 @@ export function DialogScreenV2() {
 
       const intakeSnapshot = data?.data?.intakeSnapshot
       if (intakeSnapshot && typeof intakeSnapshot === 'object') {
-        void persistIntakeSnapshot(intakeSnapshot as Record<string, unknown>, 'summary')
+        generateIntakeSummary(intakeSnapshot as Record<string, unknown>)
       }
     } catch (err) {
       console.error('[DialogScreenV2] Chat send failed', err)
@@ -785,6 +847,7 @@ export function DialogScreenV2() {
                   ? 'unknown'
                   : intakePersistence.latestVersionCount}
               </p>
+              <p>lastSummary: {lastSummary || 'none'}</p>
               <p>
                 create: {intakePersistence.createOk ? 'ok' : intakePersistence.createFailed ? 'failed' : 'pending'}
                 {' · '}patch: {intakePersistence.patchOk ? 'ok' : intakePersistence.patchFailed ? 'failed' : 'pending'}

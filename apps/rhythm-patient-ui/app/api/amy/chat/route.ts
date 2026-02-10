@@ -190,7 +190,8 @@ async function saveMessage(
  */
 async function getChatResponse(
   userMessage: string,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  context?: string
 ): Promise<string> {
   const engineEnv = getEngineEnv()
   const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
@@ -231,11 +232,15 @@ async function getChatResponse(
       content: userMessage,
     })
 
+    const systemPrompt = context
+      ? `${SYSTEM_PROMPT}\n\nCONTEXT:\n${context}`
+      : SYSTEM_PROMPT
+
     const response = await anthropic.messages.create({
       model,
       max_tokens: 500,
       temperature: 0,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages,
     })
 
@@ -367,6 +372,11 @@ export async function POST(req: Request) {
       )
     }
 
+    const context =
+      typeof body.context === 'string' && body.context.trim()
+        ? body.context.trim().slice(0, 500)
+        : undefined
+
     console.log('[amy/chat] Processing chat request', {
       userId: user.id,
       messageLength: message.length,
@@ -381,7 +391,7 @@ export async function POST(req: Request) {
     })
 
     // Get LLM response
-    const rawReply = await getChatResponse(message, history)
+    const rawReply = await getChatResponse(message, history, context)
     const { assistantText, intakeSnapshot, hadOutputJson } = splitAssistantOutput(rawReply)
     const reply = sanitizeAssistantReply(assistantText)
 
