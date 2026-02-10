@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { featureFlags } from '@/lib/featureFlags'
 import { logError } from '@/lib/logging/logger'
-import { getEngineEnv } from '@/lib/env'
+import { env, getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientConsultPrompt, PATIENT_CONSULT_PROMPT_VERSION } from '@/lib/llm/prompts'
@@ -385,7 +385,7 @@ export async function POST(req: Request) {
     const { assistantText, intakeSnapshot, hadOutputJson } = splitAssistantOutput(rawReply)
     const reply = sanitizeAssistantReply(assistantText)
 
-    if (hadOutputJson && process.env.NODE_ENV !== 'production') {
+    if (hadOutputJson && env.NODE_ENV !== 'production') {
       console.info('[amy/chat] OUTPUT_JSON sanitized from response')
     }
 

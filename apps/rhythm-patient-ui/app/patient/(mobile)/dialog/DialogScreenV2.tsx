@@ -450,7 +450,7 @@ export function DialogScreenV2() {
     const markerIndex = value.indexOf(OUTPUT_JSON_MARKER)
     if (markerIndex === -1) return value
     const cleaned = value.slice(0, markerIndex).trim()
-    if (process.env.NODE_ENV !== 'production') {
+    if (env.NODE_ENV !== 'production') {
       console.info('[DialogScreenV2] OUTPUT_JSON stripped from assistant text')
     }
     return cleaned
