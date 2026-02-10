@@ -360,8 +360,33 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     const openQuestions = Array.isArray(record.open_questions)
       ? record.open_questions.filter((item) => typeof item === 'string' && item.trim())
       : []
+    const relevantNegatives = Array.isArray(record.relevant_negatives)
+      ? record.relevant_negatives.filter((item) => typeof item === 'string' && item.trim())
+      : []
+    const meds = Array.isArray(record.meds)
+      ? record.meds.filter((item) => typeof item === 'string' && item.trim())
+      : []
+    const redFlagsRecord = record.red_flags
+    const redFlags =
+      redFlagsRecord && typeof redFlagsRecord === 'object' && !Array.isArray(redFlagsRecord)
+        ? {
+            present: Boolean((redFlagsRecord as { present?: unknown }).present),
+            items: Array.isArray((redFlagsRecord as { items?: unknown }).items)
+              ? (redFlagsRecord as { items?: unknown }).items.filter(
+                  (item) => typeof item === 'string' && item.trim(),
+                )
+              : [],
+          }
+        : { present: false, items: [] }
 
-    if (shortSummary.length === 0 && !narrativeHistory && openQuestions.length === 0) {
+    if (
+      shortSummary.length === 0 &&
+      !narrativeHistory &&
+      openQuestions.length === 0 &&
+      relevantNegatives.length === 0 &&
+      meds.length === 0 &&
+      redFlags.items.length === 0
+    ) {
       return null
     }
 
@@ -369,6 +394,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       shortSummary,
       narrativeHistory,
       openQuestions,
+      relevantNegatives,
+      meds,
+      redFlags,
     }
   }
 
@@ -457,26 +485,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return hasTimeline || hasSymptoms
   }
 
-  const buildIntakeFallbackSummary = (content: Record<string, unknown>): string | null => {
-    const complaint = getIntakeChiefComplaint(content)
-    if (!complaint) return null
-
-    const structured = getStructuredIntakeData(content)?.structured
-    const keySymptoms = structured && typeof structured === 'object'
-      ? (structured as { key_symptoms?: unknown }).key_symptoms
-      : null
-
-    if (Array.isArray(keySymptoms) && keySymptoms.length > 0) {
-      const sample = keySymptoms
-        .filter((item) => typeof item === 'string' && item.trim())
-        .slice(0, 2)
-      if (sample.length > 0) {
-        return `${complaint} · Symptome: ${sample.join(', ')}`
-      }
-    }
-
-    return complaint
-  }
 
   const isDraftOnlyIntake = (content: Record<string, unknown>): boolean => {
     const status = (content as { status?: unknown }).status
@@ -588,9 +596,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const structuredIntakeDisplay = structuredIntakeData
     ? (({ evidence_refs, ...rest }) => rest)(structuredIntakeData)
     : null
-  const intakeSummary =
-    latestIntake?.displaySummary || (latestIntake ? getIntakeNarrative(intakeContent) : null)
-  const intakeFallbackSummary = latestIntake ? buildIntakeFallbackSummary(intakeContent) : null
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
   const intakeUpdatedAt = intakeVersions[0]?.changed_at || latestIntake?.updated_at
@@ -644,14 +649,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {interpretedSummary.narrativeHistory}
               </p>
-            ) : intakeSummary ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                {intakeSummary}
-              </p>
-            ) : intakeFallbackSummary ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                {intakeFallbackSummary}
-              </p>
             ) : intakeIsDraftOnly ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Draft gespeichert (noch keine Zusammenfassung).
@@ -673,6 +670,36 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            {(interpretedSummary?.relevantNegatives && interpretedSummary.relevantNegatives.length > 0) && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Relevante Negativa: {interpretedSummary.relevantNegatives.join(', ')}
+              </p>
+            )}
+            {(interpretedSummary?.meds && interpretedSummary.meds.length > 0) && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Medikation: {interpretedSummary.meds.join(', ')}
+              </p>
+            )}
+            {(interpretedSummary?.redFlags && (interpretedSummary.redFlags.present || interpretedSummary.redFlags.items.length > 0)) && (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-200 mb-2">
+                  Red Flags
+                </p>
+                {interpretedSummary.redFlags.items.length > 0 ? (
+                  <div className="space-y-1">
+                    {interpretedSummary.redFlags.items.map((item, index) => (
+                      <div key={`intake-redflag-${index}`} className="text-xs text-amber-700 dark:text-amber-200">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-700 dark:text-amber-200">
+                    Red Flags vorhanden.
+                  </p>
+                )}
               </div>
             )}
             {intakeChiefComplaint && (

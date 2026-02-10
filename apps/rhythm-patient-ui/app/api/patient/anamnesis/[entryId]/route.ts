@@ -65,15 +65,18 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getAnamnesisEntry, getEntryVersions } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import {
+  interpretedClinicalSummaryObjectSchema,
   MAX_INTAKE_NARRATIVE_LENGTH,
-  MAX_INTAKE_OPEN_QUESTION_LENGTH,
-  MAX_INTAKE_OPEN_QUESTIONS,
   MAX_INTAKE_SHORT_SUMMARY_ITEMS,
-  MAX_INTAKE_SHORT_SUMMARY_LENGTH,
   validateCreateVersion,
 } from '@/lib/api/anamnesis/validation'
 import { getEngineEnv } from '@/lib/env'
-import { getIntakeInterpretationPrompt } from '@/lib/llm/prompts'
+import {
+  getClinicalWriteupFewShot,
+  getClinicalWriteupInstruction,
+  getClinicalWriteupSystemPrompt,
+  getIntakeFactNormalizationPrompt,
+} from '@/lib/llm/prompts'
 import type { Json } from '@/lib/types/supabase'
 import { z } from 'zod'
 
@@ -105,12 +108,33 @@ type RouteContext = {
 
 const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
+const FIRST_PERSON_REGEX = /\b(ich|mir|mein)\b/i
+const MSG_ID_REGEX = /msg_/i
+
+const normalizedFactsSchema = z.object({
+  chief_complaint: z.string().max(240).default(''),
+  timeline: z.string().max(MAX_INTAKE_NARRATIVE_LENGTH).default(''),
+  positives: z.array(z.string().max(200)).max(20).default([]),
+  negatives: z.array(z.string().max(200)).max(20).default([]),
+  meds: z.array(z.string().max(200)).max(20).default([]),
+  psychosocial: z.array(z.string().max(200)).max(20).default([]),
+  uncertainty: z.array(z.string().max(200)).max(20).default([]),
+  severity: z.enum(['mild', 'moderate', 'severe', 'unknown']).default('unknown'),
+})
 
 type InterpretedClinicalSummary = {
   short_summary?: string[]
   narrative_history?: string
   open_questions?: string[]
+  relevant_negatives?: string[]
+  meds?: string[]
+  red_flags?: {
+    present: boolean
+    items: string[]
+  }
 }
+
+type NormalizedFacts = z.infer<typeof normalizedFactsSchema>
 
 function hasStructuredIntakeSignal(payload: Record<string, unknown>): boolean {
   const hasString = (value: unknown) => typeof value === 'string' && value.trim().length > 0
@@ -140,51 +164,33 @@ function sanitizeInterpretedSummary(payload: unknown): InterpretedClinicalSummar
 
   const summary = data.interpreted_clinical_summary
   if (!summary || typeof summary !== 'object' || Array.isArray(summary)) return null
-  const record = summary as Record<string, unknown>
 
-  const shortSummary = Array.isArray(record.short_summary)
-    ? record.short_summary
-        .filter((item) => typeof item === 'string' && item.trim())
-        .map((item) => item.trim().slice(0, MAX_INTAKE_SHORT_SUMMARY_LENGTH))
-        .slice(0, MAX_INTAKE_SHORT_SUMMARY_ITEMS)
-    : []
+  const parsed = interpretedClinicalSummaryObjectSchema.safeParse(summary)
+  if (!parsed.success) return null
 
-  const narrativeHistoryRaw =
-    typeof record.narrative_history === 'string' ? record.narrative_history.trim() : ''
-  const narrativeHistory = narrativeHistoryRaw
-    ? narrativeHistoryRaw.slice(0, MAX_INTAKE_NARRATIVE_LENGTH)
-    : ''
+  return parsed.data
+}
 
-  const openQuestions = Array.isArray(record.open_questions)
-    ? record.open_questions
-        .filter((item) => typeof item === 'string' && item.trim())
-        .map((item) => item.trim().slice(0, MAX_INTAKE_OPEN_QUESTION_LENGTH))
-        .slice(0, MAX_INTAKE_OPEN_QUESTIONS)
-    : []
+function extractJsonCandidate(raw: string): string | null {
+  if (!raw.trim()) return null
+  const trimmed = raw.trim()
+  const jsonMatch =
+    trimmed.match(/```json\s*([\s\S]*?)\s*```/i) ||
+    trimmed.match(/```\s*([\s\S]*?)\s*```/i)
 
-  if (shortSummary.length === 0 && !narrativeHistory && openQuestions.length === 0) {
-    return null
-  }
+  const base = jsonMatch ? jsonMatch[1] : trimmed
+  const markerIndex = base.indexOf(OUTPUT_JSON_MARKER)
+  const candidate = markerIndex !== -1 ? base.slice(markerIndex) : base
+  const jsonStart = candidate.indexOf('{')
+  const jsonEnd = candidate.lastIndexOf('}')
 
-  return {
-    short_summary: shortSummary.length > 0 ? shortSummary : undefined,
-    narrative_history: narrativeHistory || undefined,
-    open_questions: openQuestions.length > 0 ? openQuestions : undefined,
-  }
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) return null
+  return candidate.slice(jsonStart, jsonEnd + 1)
 }
 
 function parseOutputJson(raw: string): InterpretedClinicalSummary | null {
-  const markerIndex = raw.indexOf(OUTPUT_JSON_MARKER)
-  let candidate = raw
-
-  if (markerIndex !== -1) {
-    const after = raw.slice(markerIndex)
-    const jsonStart = after.indexOf('{')
-    const jsonEnd = after.lastIndexOf('}')
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      candidate = after.slice(jsonStart, jsonEnd + 1)
-    }
-  }
+  const candidate = extractJsonCandidate(raw)
+  if (!candidate) return null
 
   try {
     return sanitizeInterpretedSummary(JSON.parse(candidate))
@@ -193,11 +199,45 @@ function parseOutputJson(raw: string): InterpretedClinicalSummary | null {
   }
 }
 
-async function generateInterpretedSummary(
+function parseNormalizedFacts(raw: string): NormalizedFacts | null {
+  const candidate = extractJsonCandidate(raw)
+  if (!candidate) return null
+
+  try {
+    const parsed = normalizedFactsSchema.safeParse(JSON.parse(candidate))
+    return parsed.success ? parsed.data : null
+  } catch (err) {
+    return null
+  }
+}
+
+function passesSummaryQuality(summary: InterpretedClinicalSummary): string[] {
+  const failures: string[] = []
+  const narrative = summary.narrative_history ?? ''
+  const shortSummary = summary.short_summary ?? []
+  const serialized = JSON.stringify(summary)
+
+  if (FIRST_PERSON_REGEX.test(narrative)) failures.push('narrative_first_person')
+  if (MSG_ID_REGEX.test(serialized)) failures.push('contains_msg_id')
+
+  const sentenceCount = narrative
+    .split('.')
+    .map((part) => part.trim())
+    .filter(Boolean).length
+  if (sentenceCount < 2) failures.push('narrative_too_short')
+
+  if (shortSummary.length < 5 || shortSummary.length > MAX_INTAKE_SHORT_SUMMARY_ITEMS) {
+    failures.push('short_summary_count')
+  }
+
+  return failures
+}
+
+async function generateNormalizedFacts(
   structuredIntakeData: Record<string, unknown>,
   runId: string | null,
   entryId: string,
-): Promise<InterpretedClinicalSummary | null> {
+): Promise<NormalizedFacts | null> {
   const engineEnv = getEngineEnv()
   const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
   const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
@@ -211,7 +251,7 @@ async function generateInterpretedSummary(
   }
 
   const anthropic = new Anthropic({ apiKey: anthropicApiKey })
-  const systemPrompt = getIntakeInterpretationPrompt()
+  const systemPrompt = getIntakeFactNormalizationPrompt()
   const userPrompt = `STRUCTURED_INTAKE_DATA:\n${JSON.stringify(structuredIntakeData).slice(0, 6000)}`
 
   try {
@@ -234,9 +274,75 @@ async function generateInterpretedSummary(
       .join('\n')
       .trim()
 
+    return parseNormalizedFacts(responseText)
+  } catch (err) {
+    console.error('[patient/anamnesis/[entryId] PATCH] Normalization request failed', {
+      runId,
+      entryId,
+      error: String(err),
+    })
+    return null
+  }
+}
+
+async function generateClinicalWriteup(
+  normalizedFacts: NormalizedFacts,
+  runId: string | null,
+  entryId: string,
+  extraInstruction?: string,
+): Promise<InterpretedClinicalSummary | null> {
+  const engineEnv = getEngineEnv()
+  const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
+  const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
+
+  if (!anthropicApiKey) {
+    console.warn('[patient/anamnesis/[entryId] PATCH] Anthropic not configured', {
+      runId,
+      entryId,
+    })
+    return null
+  }
+
+  const anthropic = new Anthropic({ apiKey: anthropicApiKey })
+  const systemPrompt = getClinicalWriteupSystemPrompt()
+  const instruction = getClinicalWriteupInstruction()
+  const fewShot = getClinicalWriteupFewShot()
+  const retryHint = extraInstruction ? `\n${extraInstruction}` : ''
+  const outputSchema = `{
+  "interpreted_clinical_summary": {
+    "short_summary": ["..."],
+    "narrative_history": "...",
+    "open_questions": ["..."],
+    "relevant_negatives": ["..."],
+    "meds": ["..."],
+    "red_flags": { "present": false, "items": ["..."] }
+  }
+}`
+  const userPrompt = `${instruction}\n${fewShot}\nInput (normalized_facts):\n${JSON.stringify(normalizedFacts, null, 2)}\n\nOutput-Schema:\n${outputSchema}\n\nGib NUR JSON mit interpreted_clinical_summary gemaess Schema aus.${retryHint}`
+
+  try {
+    const response = await anthropic.messages.create({
+      model,
+      max_tokens: 1000,
+      temperature: 0,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+    })
+
+    const responseText = response.content
+      .filter((item) => item.type === 'text')
+      .map((item) => ('text' in item ? item.text : ''))
+      .join('\n')
+      .trim()
+
     return parseOutputJson(responseText)
   } catch (err) {
-    console.error('[patient/anamnesis/[entryId] PATCH] LLM request failed', {
+    console.error('[patient/anamnesis/[entryId] PATCH] Writeup request failed', {
       runId,
       entryId,
       error: String(err),
@@ -437,14 +543,35 @@ export async function PATCH(request: Request, context: RouteContext) {
         : null
 
     if (structuredIntakeData && hasStructuredIntakeSignal(structuredIntakeData)) {
-      const interpretedSummary = await generateInterpretedSummary(
-        structuredIntakeData,
-        runId,
-        entryId,
-      )
+      const normalizedFacts = await generateNormalizedFacts(structuredIntakeData, runId, entryId)
 
-      if (interpretedSummary) {
-        nextContent.interpreted_clinical_summary = interpretedSummary
+      if (normalizedFacts) {
+        let interpretedSummary = await generateClinicalWriteup(
+          normalizedFacts,
+          runId,
+          entryId,
+        )
+        let failures = interpretedSummary ? passesSummaryQuality(interpretedSummary) : ['invalid']
+
+        if (!interpretedSummary || failures.length > 0) {
+          interpretedSummary = await generateClinicalWriteup(
+            normalizedFacts,
+            runId,
+            entryId,
+            'Dein Output war nicht in Arztsprache. Schreibe strikt in 3. Person und als klinische Dokumentation.',
+          )
+          failures = interpretedSummary ? passesSummaryQuality(interpretedSummary) : ['invalid']
+        }
+
+        if (interpretedSummary && failures.length === 0) {
+          nextContent.interpreted_clinical_summary = interpretedSummary
+        } else if (failures.length > 0) {
+          console.warn('[patient/anamnesis/[entryId] PATCH] Intake summary quality gate failed', {
+            runId,
+            entryId,
+            failures,
+          })
+        }
       }
     }
 

@@ -44,28 +44,59 @@ export const MAX_INTAKE_RED_FLAG_LENGTH = 200
 export const MAX_INTAKE_TIMELINE_ITEM_LENGTH = 200
 export const MAX_INTAKE_KEY_SYMPTOMS = 10
 export const MAX_INTAKE_KEY_SYMPTOM_LENGTH = 120
+export const MIN_INTAKE_SHORT_SUMMARY_ITEMS = 5
 export const MAX_INTAKE_SHORT_SUMMARY_ITEMS = 7
 export const MAX_INTAKE_SHORT_SUMMARY_LENGTH = 200
+export const MAX_INTAKE_RELEVANT_NEGATIVES = 5
+export const MAX_INTAKE_MED_ITEMS = 10
+export const MAX_INTAKE_RELEVANT_NEGATIVE_LENGTH = 200
+export const MAX_INTAKE_MED_LENGTH = 200
+export const MAX_INTAKE_INTERPRETED_OPEN_QUESTIONS = 5
+export const MAX_INTAKE_INTERPRETED_OPEN_QUESTION_LENGTH = 200
+export const MAX_INTAKE_RED_FLAG_ITEMS = 5
 
-const interpretedClinicalSummarySchema = z
-  .object({
-    short_summary: z
-      .array(z.string().max(MAX_INTAKE_SHORT_SUMMARY_LENGTH, 'Short summary item is too long'))
-      .max(MAX_INTAKE_SHORT_SUMMARY_ITEMS, 'Too many short summary items')
-      .optional()
-      .default([]),
-    narrative_history: z
-      .string()
-      .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative history is too long')
-      .optional()
-      .default(''),
-    open_questions: z
-      .array(z.string().max(MAX_INTAKE_OPEN_QUESTION_LENGTH, 'Open question is too long'))
-      .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
-      .optional()
-      .default([]),
-  })
-  .optional()
+export const interpretedClinicalSummaryObjectSchema = z.object({
+  short_summary: z
+    .array(z.string().max(MAX_INTAKE_SHORT_SUMMARY_LENGTH, 'Short summary item is too long'))
+    .min(MIN_INTAKE_SHORT_SUMMARY_ITEMS, 'Too few short summary items')
+    .max(MAX_INTAKE_SHORT_SUMMARY_ITEMS, 'Too many short summary items')
+    .default([]),
+  narrative_history: z
+    .string()
+    .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative history is too long')
+    .default(''),
+  open_questions: z
+    .array(
+      z
+        .string()
+        .max(MAX_INTAKE_INTERPRETED_OPEN_QUESTION_LENGTH, 'Open question is too long'),
+    )
+    .max(MAX_INTAKE_INTERPRETED_OPEN_QUESTIONS, 'Too many open questions')
+    .default([]),
+  relevant_negatives: z
+    .array(
+      z
+        .string()
+        .max(MAX_INTAKE_RELEVANT_NEGATIVE_LENGTH, 'Relevant negative is too long'),
+    )
+    .max(MAX_INTAKE_RELEVANT_NEGATIVES, 'Too many relevant negatives')
+    .default([]),
+  meds: z
+    .array(z.string().max(MAX_INTAKE_MED_LENGTH, 'Medication entry is too long'))
+    .max(MAX_INTAKE_MED_ITEMS, 'Too many medications')
+    .default([]),
+  red_flags: z
+    .object({
+      present: z.boolean().default(false),
+      items: z
+        .array(z.string().max(MAX_INTAKE_RED_FLAG_LENGTH, 'Red flag item is too long'))
+        .max(MAX_INTAKE_RED_FLAG_ITEMS, 'Too many red flag items')
+        .default([]),
+    })
+    .default({ present: false, items: [] }),
+})
+
+export const interpretedClinicalSummarySchema = interpretedClinicalSummaryObjectSchema.optional()
 
 const structuredIntakeDataSchema = z
   .object({
