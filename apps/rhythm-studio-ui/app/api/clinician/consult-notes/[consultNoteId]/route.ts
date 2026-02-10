@@ -248,7 +248,7 @@ export async function PATCH(
     const { data: updatedNote, error: updateError } = await supabase
       .from('consult_notes')
       .update({
-        content: content as Json,
+        content: content as unknown as Json,
         rendered_markdown: renderedMarkdown,
         updated_by: user.id,
         updated_at: new Date().toISOString(),
