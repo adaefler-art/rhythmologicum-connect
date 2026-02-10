@@ -191,7 +191,7 @@ async function saveMessage(
 async function getChatResponse(
   userMessage: string,
   history: ChatMessage[],
-  context?: string
+  options?: { context?: string; systemPrompt?: string }
 ): Promise<string> {
   const engineEnv = getEngineEnv()
   const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
@@ -232,9 +232,10 @@ async function getChatResponse(
       content: userMessage,
     })
 
-    const systemPrompt = context
-      ? `${SYSTEM_PROMPT}\n\nCONTEXT:\n${context}`
-      : SYSTEM_PROMPT
+    const basePrompt = options?.systemPrompt ?? SYSTEM_PROMPT
+    const systemPrompt = options?.context
+      ? `${basePrompt}\n\nCONTEXT:\n${options.context}`
+      : basePrompt
 
     const response = await anthropic.messages.create({
       model,
@@ -344,15 +345,27 @@ export async function POST(req: Request) {
       )
     }
 
-    // Validate message
-    const message = body.message?.trim()
+    const mode = body.mode === 'resume' ? 'resume' : 'default'
+
+    const resumeContext =
+      mode === 'resume' && body.resumeContext && typeof body.resumeContext === 'object'
+        ? (body.resumeContext as Record<string, unknown>)
+        : null
+
+    const message =
+      mode === 'resume'
+        ? resumeContext
+          ? JSON.stringify(resumeContext).slice(0, MAX_MESSAGE_LENGTH)
+          : ''
+        : body.message?.trim()
+
     if (!message) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'VALIDATION_FAILED',
-            message: 'Message is required',
+            message: mode === 'resume' ? 'Resume context is required' : 'Message is required',
           },
         },
         { status: 400 }
@@ -380,18 +393,30 @@ export async function POST(req: Request) {
     console.log('[amy/chat] Processing chat request', {
       userId: user.id,
       messageLength: message.length,
+      mode,
     })
 
     // Fetch chat history for context
-    const history = await getChatHistory(user.id, supabase)
+    const history = mode === 'resume' ? [] : await getChatHistory(user.id, supabase)
 
     // Save user message (best-effort, non-blocking for response)
-    const userMessageId = await saveMessage(user.id, 'user', message, supabase, {
-      correlationId,
-    })
+    const userMessageId =
+      mode === 'resume'
+        ? null
+        : await saveMessage(user.id, 'user', message, supabase, {
+            correlationId,
+          })
 
     // Get LLM response
-    const rawReply = await getChatResponse(message, history, context)
+    const resumePrompt =
+      'Du bist ein medizinischer Aufnahmeassistent. Schreibe fehlerfreies Deutsch.\n' +
+      'Formuliere 2-3 Saetze: kurze Begruessung, 1 Satz Kontext ("Letztes Mal ging es um ..."), 1 Frage ("Wie ist es heute ...?").\n' +
+      'Keine Zitate, keine Rohtexte, keine JSON-Ausgabe.'
+
+    const rawReply = await getChatResponse(message, history, {
+      systemPrompt: mode === 'resume' ? resumePrompt : undefined,
+      context,
+    })
     const { assistantText, intakeSnapshot, hadOutputJson } = splitAssistantOutput(rawReply)
     const reply = sanitizeAssistantReply(assistantText)
 
@@ -404,6 +429,7 @@ export async function POST(req: Request) {
       correlationId,
       model: getEngineEnv().ANTHROPIC_MODEL ?? MODEL_FALLBACK,
       promptVersion: PATIENT_CONSULT_PROMPT_VERSION,
+      mode,
     })
 
     const totalDuration = Date.now() - requestStartTime
@@ -418,7 +444,7 @@ export async function POST(req: Request) {
       success: true,
       data: {
         reply,
-        intakeSnapshot: intakeSnapshot ?? undefined,
+        intakeSnapshot: mode === 'resume' ? undefined : intakeSnapshot ?? undefined,
         messageId: assistantMessageId || 'temp-' + Date.now(),
       },
     })

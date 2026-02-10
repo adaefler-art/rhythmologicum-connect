@@ -33,6 +33,7 @@ export interface AnamnesisEntry {
   created_by: string
   updated_by: string
   version_count: number
+  displaySummary?: string | null
 }
 
 export interface AnamnesisVersion {
@@ -588,7 +589,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const intakeRawContent = intakeVersions[0]?.content || latestIntake?.content
   const intakeContent = normalizeIntakeContent(intakeRawContent)
   const intakeEvidence = latestIntake ? getIntakeEvidence(intakeContent) : []
-  const intakeSummary = latestIntake ? getIntakeNarrative(intakeContent) : null
+  const intakeSummary = latestIntake?.displaySummary || (latestIntake ? getIntakeNarrative(intakeContent) : null)
   const intakeFallbackSummary = latestIntake ? buildIntakeFallbackSummary(intakeContent) : null
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null

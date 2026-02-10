@@ -46,6 +46,7 @@ type IntakeEntry = {
   content: Record<string, unknown>
   entry_type: string | null
   created_at: string
+  updated_at?: string | null
 }
 
 type IntakeEvidenceItem = {
@@ -185,7 +186,6 @@ export function DialogScreenV2() {
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
   const [chiefComplaint, setChiefComplaint] = useState('')
   const [lastSummary, setLastSummary] = useState<string | null>(null)
-  const [llmContext, setLlmContext] = useState<string | null>(null)
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
@@ -231,17 +231,10 @@ export function DialogScreenV2() {
 
       const latestIntake = await fetchLatestIntake()
       if (!isMounted) return
-      const hook = latestIntake ? getTopicHook(latestIntake.content) : null
-      if (hook) {
-        setLlmContext(
-          `Patient is returning. Previous topic: ${hook}. Ask a brief follow-up.`,
-        )
-      } else {
-        setLlmContext(null)
-      }
 
-      const openingQuestion = hook
-        ? buildReturningQuestion(hook)
+      const resumeContext = buildResumeContext(latestIntake)
+      const openingQuestion = resumeContext
+        ? await fetchResumeStart(resumeContext)
         : buildOpeningQuestion(latestIntake)
       setChatMessages([
         {
@@ -413,6 +406,59 @@ export function DialogScreenV2() {
     } catch (err) {
       console.error('[DialogScreenV2] Failed to load intake entries', err)
       return null
+    }
+  }
+
+  const buildResumeContext = (latestIntake: IntakeEntry | null) => {
+    if (!latestIntake) return null
+
+    const chiefComplaint =
+      typeof latestIntake.content?.chiefComplaint === 'string'
+        ? latestIntake.content.chiefComplaint.trim()
+        : null
+
+    const narrativeSummaryRaw = getIntakeNarrative(latestIntake.content)
+    const narrativeSummary = narrativeSummaryRaw
+      ? trimText(narrativeSummaryRaw, 400)
+      : null
+
+    const openQuestionsRaw = latestIntake.content?.openQuestions
+    const openQuestions = Array.isArray(openQuestionsRaw)
+      ? openQuestionsRaw
+          .filter((item) => typeof item === 'string' && item.trim())
+          .slice(0, 3)
+      : []
+
+    return {
+      chiefComplaint: chiefComplaint || undefined,
+      narrativeSummary: narrativeSummary || undefined,
+      openQuestions,
+      lastUpdatedAt: latestIntake.updated_at ?? null,
+    }
+  }
+
+  const fetchResumeStart = async (resumeContext: Record<string, unknown>) => {
+    try {
+      const response = await fetch('/api/amy/chat', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ mode: 'resume', resumeContext }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Resume request failed')
+      }
+
+      const replyText = typeof data?.data?.reply === 'string' ? data.data.reply : null
+      if (!replyText) {
+        throw new Error('Invalid resume response')
+      }
+
+      return replyText
+    } catch (err) {
+      console.error('[DialogScreenV2] Resume start failed', err)
+      return DEFAULT_OPENING_QUESTION
     }
   }
 
@@ -771,7 +817,7 @@ export function DialogScreenV2() {
       const response = await fetch('/api/amy/chat', {
         method: 'POST',
         headers: getRequestHeaders(),
-        body: JSON.stringify({ message: trimmed, context: llmContext }),
+        body: JSON.stringify({ message: trimmed }),
       })
 
       const data = await response.json()

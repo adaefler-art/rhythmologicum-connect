@@ -64,6 +64,30 @@ const formatAssessmentStatus = (status: string) => {
   return status
 }
 
+const buildIntakeDisplaySummary = (content: Json | null): string => {
+  if (!content || typeof content !== 'object') {
+    return 'Draft gespeichert (noch keine Zusammenfassung)'
+  }
+
+  const record = content as Record<string, unknown>
+  const narrativeSummary = record.narrativeSummary
+  if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
+    return narrativeSummary.trim()
+  }
+
+  const summary = record.summary
+  if (typeof summary === 'string' && summary.trim()) {
+    return summary.trim()
+  }
+
+  const chiefComplaint = record.chiefComplaint
+  if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
+    return chiefComplaint.trim()
+  }
+
+  return 'Draft gespeichert (noch keine Zusammenfassung)'
+}
+
 async function computeAnamnesisFacts(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, patientId: string) {
   const facts: SuggestedFact[] = []
 
@@ -280,6 +304,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     let intakeHistory: typeof versions | null = null
     let intakeVersionsCount = 0
+    let latestIntakeVersion: Record<string, unknown> | null = null
 
     if (latestIntakeEntry) {
       intakeHistory = await supabase
@@ -290,6 +315,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
       if (intakeHistory.error) {
         console.error('[clinician/patient/anamnesis GET] Intake versions error:', intakeHistory.error)
+      } else if (intakeHistory.data && intakeHistory.data.length > 0) {
+        latestIntakeVersion = intakeHistory.data[0] as Record<string, unknown>
       }
 
       const { count: intakeCount, error: intakeCountError } = await supabase
@@ -326,9 +353,19 @@ export async function GET(_request: Request, context: RouteContext) {
               ...latestIntakeEntry,
               entryId: latestIntakeEntry.id,
               versions_count: intakeVersionsCount,
+              content: latestIntakeVersion?.content ?? latestIntakeEntry.content,
+              updated_at: (latestIntakeVersion?.changed_at as string | undefined) ?? latestIntakeEntry.updated_at,
+              displaySummary: buildIntakeDisplaySummary(
+                (latestIntakeVersion?.content as Json | undefined) ??
+                  (latestIntakeEntry.content as Json | null),
+              ),
             }
           : null,
-        intakeHistory: intakeHistory?.data ?? [],
+        intakeHistory:
+          (intakeHistory?.data ?? []).map((version) => ({
+            ...version,
+            created_at: version.changed_at,
+          })),
         suggestedFacts,
       },
     })
