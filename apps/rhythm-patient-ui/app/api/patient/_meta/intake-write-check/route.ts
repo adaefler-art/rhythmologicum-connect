@@ -42,10 +42,10 @@ export async function GET() {
 
     const { data: latestEntry, error: latestError } = await supabase
       .from('anamnesis_entries')
-      .select('id, entry_type, created_at')
+      .select('id, entry_type, created_at, updated_at')
       .eq('patient_id', patientId)
       .eq('entry_type', 'intake')
-      .order('created_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -108,6 +108,7 @@ export async function GET() {
       latestIntakeEntryId: latestEntry?.id ?? null,
       recentIntakeCount: recentCount || 0,
       latestVersionCount: latestVersionCount || 0,
+      latestUpdatedAt: latestEntry?.updated_at ?? null,
     })
   } catch (err) {
     console.error('[patient/_meta/intake-write-check] Unexpected error:', err)
