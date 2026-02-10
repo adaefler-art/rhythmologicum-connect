@@ -477,6 +477,11 @@ export async function POST(request: Request) {
 
       if (createError) {
         const mapped = mapCreateError({ code: createError.code, message: createError.message })
+        const extraDetails = {
+          dbDetails: 'details' in createError ? createError.details : null,
+          dbHint: 'hint' in createError ? createError.hint : null,
+          dbConstraint: 'constraint' in createError ? createError.constraint : null,
+        }
         console.error('[patient/anamnesis POST] Create error:', createError)
         logIntakeEvent({
           runId,
@@ -493,7 +498,7 @@ export async function POST(request: Request) {
             error: {
               code: mapped.code,
               message: mapped.message,
-              details: mapped.details,
+              details: { ...mapped.details, ...extraDetails },
             },
           },
           mapped.status,
