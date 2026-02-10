@@ -353,7 +353,9 @@ export const getAnamnesis = (patientId: string) =>
     data?: {
       entries?: Array<Record<string, unknown>>
       latestEntry?: Record<string, unknown> | null
+      latestIntakeEntry?: Record<string, unknown> | null
       versions?: Array<Record<string, unknown>>
+      intakeHistory?: Array<Record<string, unknown>>
       suggestedFacts?: Array<Record<string, unknown>>
     }
   }>({
