@@ -59,6 +59,7 @@ type IntakePersistenceStatus = {
   createFailed: boolean
   patchAttempted: boolean
   patchFailed: boolean
+  autosaveFailed: boolean
   createOk: boolean
   patchOk: boolean
   entryId: string | null
@@ -162,6 +163,7 @@ export function DialogScreenV2() {
     createFailed: false,
     patchAttempted: false,
     patchFailed: false,
+    autosaveFailed: false,
     createOk: false,
     patchOk: false,
     entryId: null,
@@ -176,6 +178,11 @@ export function DialogScreenV2() {
   const createInFlightRef = useRef(false)
   const createDoneRef = useRef(false)
   const createAbortRef = useRef<AbortController | null>(null)
+  const autosaveDirtyRef = useRef(false)
+  const autosaveTurnsRef = useRef(0)
+  const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autosaveInFlightRef = useRef(false)
+  const autosaveAbortRef = useRef<AbortController | null>(null)
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -291,6 +298,41 @@ export function DialogScreenV2() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages.length])
+
+  useEffect(() => {
+    if (!isChatEnabled) return
+
+    if (autosaveTimerRef.current) {
+      clearInterval(autosaveTimerRef.current)
+    }
+
+    autosaveTimerRef.current = setInterval(() => {
+      void maybeAutosave('timer')
+    }, 120_000)
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearInterval(autosaveTimerRef.current)
+        autosaveTimerRef.current = null
+      }
+    }
+  }, [isChatEnabled])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handleExit = () => {
+      void maybeAutosave('exit', { keepalive: true, skipVerify: true })
+    }
+
+    window.addEventListener('beforeunload', handleExit)
+    window.addEventListener('pagehide', handleExit)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleExit)
+      window.removeEventListener('pagehide', handleExit)
+    }
+  }, [intakeEntryId])
 
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -456,6 +498,29 @@ export function DialogScreenV2() {
     return cleaned
   }
 
+  const markAutosaveDirty = () => {
+    autosaveDirtyRef.current = true
+    autosaveTurnsRef.current += 1
+  }
+
+  const maybeAutosave = async (
+    reason: string,
+    options?: { keepalive?: boolean; skipVerify?: boolean },
+  ) => {
+    if (!autosaveDirtyRef.current) return
+    if (!intakeEntryId) return
+    if (autosaveInFlightRef.current) return
+
+    const shouldSaveByTurns = autosaveTurnsRef.current >= 3
+    const shouldSaveByTimer = reason === 'timer' || reason === 'exit'
+
+    if (!shouldSaveByTurns && !shouldSaveByTimer && reason !== 'summary') {
+      return
+    }
+
+    await persistIntakeSnapshot(buildSnapshotContent(), reason, options)
+  }
+
   const saveIntakeSnapshot = async () => {
     if (!intakeEntryId) return
 
@@ -498,19 +563,31 @@ export function DialogScreenV2() {
     }
   }
 
-  const persistIntakeSnapshot = async (snapshot: Record<string, unknown>, reason: string) => {
+  const persistIntakeSnapshot = async (
+    snapshot: Record<string, unknown>,
+    reason: string,
+    options?: { keepalive?: boolean; skipVerify?: boolean },
+  ) => {
     if (!intakeEntryId) return
+    if (autosaveInFlightRef.current) return
+
+    autosaveInFlightRef.current = true
+    autosaveAbortRef.current?.abort()
+    autosaveAbortRef.current = new AbortController()
 
     try {
       setIntakePersistence((prev) => ({
         ...prev,
         patchAttempted: true,
         patchFailed: false,
+        autosaveFailed: false,
       }))
 
       const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
         method: 'PATCH',
         headers: getRequestHeaders(),
+        signal: autosaveAbortRef.current.signal,
+        keepalive: options?.keepalive,
         body: JSON.stringify({
           title: 'Intake',
           entry_type: 'intake',
@@ -528,16 +605,24 @@ export function DialogScreenV2() {
         ...prev,
         patchOk: true,
         patchFailed: false,
+        autosaveFailed: false,
         entryId: data?.data?.entryId || data?.data?.entry?.id || intakeEntryId,
       }))
-      void verifyIntakeWrite()
+      autosaveDirtyRef.current = false
+      autosaveTurnsRef.current = 0
+      if (!options?.skipVerify) {
+        void verifyIntakeWrite()
+      }
     } catch (err) {
       console.error('[DialogScreenV2] Failed to persist intake snapshot', err)
       setIntakePersistence((prev) => ({
         ...prev,
         patchFailed: true,
+        autosaveFailed: true,
       }))
+      autosaveDirtyRef.current = true
     }
+    autosaveInFlightRef.current = false
   }
 
   const verifyIntakeWrite = async () => {
@@ -617,6 +702,8 @@ export function DialogScreenV2() {
     if (!chiefComplaint) {
       setChiefComplaint(trimText(trimmed, MAX_CHIEF_COMPLAINT_LENGTH))
     }
+    markAutosaveDirty()
+    void maybeAutosave('turn')
 
     try {
       const response = await fetch('/api/amy/chat', {
@@ -652,7 +739,7 @@ export function DialogScreenV2() {
 
       const intakeSnapshot = data?.data?.intakeSnapshot
       if (intakeSnapshot && typeof intakeSnapshot === 'object') {
-        void persistIntakeSnapshot(intakeSnapshot as Record<string, unknown>, 'llm')
+        void persistIntakeSnapshot(intakeSnapshot as Record<string, unknown>, 'summary')
       }
     } catch (err) {
       console.error('[DialogScreenV2] Chat send failed', err)
@@ -710,6 +797,11 @@ export function DialogScreenV2() {
               {intakePersistence.patchFailed && (
                 <p className="mt-2 font-semibold text-amber-800">
                   Intake patch failed (no version write)
+                </p>
+              )}
+              {intakePersistence.autosaveFailed && (
+                <p className="mt-2 font-semibold text-amber-800">
+                  Autosave failed (dirty state retained)
                 </p>
               )}
               {intakePersistence.patchOk && intakePersistence.latestVersionCount === 0 && (
