@@ -289,7 +289,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         const { error } = await createConsultNote({
           patientId,
           organizationId: patientOrganizationId,
-          content,
+          content: content as Record<string, unknown>,
         })
 
         if (error) {
@@ -298,7 +298,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       } else if (selectedConsultNote) {
         const { error } = await updateConsultNote({
           consultNoteId: selectedConsultNote.id,
-          content,
+          content: content as Record<string, unknown>,
         })
 
         if (error) {
