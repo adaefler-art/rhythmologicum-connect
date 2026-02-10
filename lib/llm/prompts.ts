@@ -2,22 +2,20 @@ import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 export type LlmConversationMode = 'patient_consult' | 'clinician_colleague'
 
-export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-09'
+export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-10'
 
 export const CONVERSATION_OUTPUT_KEYS = [
   'kind',
-  'summary',
-  'redFlags',
-  'missingData',
-  'nextSteps',
+  'interpreted_clinical_summary',
 ] as const
 
 const OUTPUT_CONTRACT_DESCRIPTION = `OUTPUT_JSON (must be valid JSON object):
 - kind: "patient_consult" | "clinician_colleague"
-- summary: string (short, structured)
-- redFlags: string[]
-- missingData: string[]
-- nextSteps: string[]`
+- interpreted_clinical_summary: {
+    short_summary: string[] (5-7 Bulletpoints, klinisch priorisiert)
+    narrative_history: string (Fliesstext, Arztbrief-Stil)
+    open_questions: string[] (max 5, medizinisch sinnvoll)
+  }`
 
 const RED_FLAG_ESCALATION = `
 RED FLAGS / NOTFALL:
@@ -62,6 +60,12 @@ ABSCHLUSSFORMAT:
 1) Antworte kurz fuer den Patienten.
 2) Danach eine separate Zeile: OUTPUT_JSON:
 ${OUTPUT_CONTRACT_DESCRIPTION}
+
+REGELN FUER interpreted_clinical_summary:
+- Keine Chat-Zitate, keine Message-IDs.
+- Keine Selbstkorrektur-Saetze (z.B. "das war ein Fehler").
+- Widersprueche aufloesen oder explizit markieren.
+- Medizinische Sprache, korrektes Deutsch.
 `
 }
 

@@ -50,12 +50,11 @@ const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
 
 type IntakeSnapshot = {
   status: 'draft'
-  narrativeSummary?: string
-  chiefComplaint?: string
-  structured?: { timeline: string[]; keySymptoms: string[] }
-  redFlags?: string[]
-  openQuestions?: string[]
-  evidenceRefs?: string[]
+  interpreted_clinical_summary?: {
+    short_summary?: string[]
+    narrative_history?: string
+    open_questions?: string[]
+  }
 }
 
 function sanitizeAssistantReply(text: string): string {
@@ -66,25 +65,50 @@ function mapOutputToIntakeSnapshot(payload: unknown): IntakeSnapshot | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
   const data = payload as Record<string, unknown>
 
-  const summary = typeof data.summary === 'string' ? data.summary.trim() : ''
-  const redFlags = Array.isArray(data.redFlags)
-    ? data.redFlags.filter((flag) => typeof flag === 'string' && flag.trim())
-    : []
-  const missingData = Array.isArray(data.missingData)
+  const interpreted = data.interpreted_clinical_summary
+  if (interpreted && typeof interpreted === 'object' && !Array.isArray(interpreted)) {
+    const record = interpreted as Record<string, unknown>
+    const shortSummary = Array.isArray(record.short_summary)
+      ? record.short_summary.filter((item) => typeof item === 'string' && item.trim())
+      : []
+    const narrativeHistory =
+      typeof record.narrative_history === 'string' && record.narrative_history.trim()
+        ? record.narrative_history.trim()
+        : ''
+    const openQuestions = Array.isArray(record.open_questions)
+      ? record.open_questions.filter((item) => typeof item === 'string' && item.trim())
+      : []
+
+    if (shortSummary.length === 0 && !narrativeHistory && openQuestions.length === 0) {
+      return null
+    }
+
+    return {
+      status: 'draft',
+      interpreted_clinical_summary: {
+        short_summary: shortSummary.length > 0 ? shortSummary : undefined,
+        narrative_history: narrativeHistory || undefined,
+        open_questions: openQuestions.length > 0 ? openQuestions : undefined,
+      },
+    }
+  }
+
+  const legacySummary = typeof data.summary === 'string' ? data.summary.trim() : ''
+  const legacyMissing = Array.isArray(data.missingData)
     ? data.missingData.filter((item) => typeof item === 'string' && item.trim())
     : []
 
-  if (!summary && redFlags.length === 0 && missingData.length === 0) {
+  if (!legacySummary && legacyMissing.length === 0) {
     return null
   }
 
   return {
     status: 'draft',
-    narrativeSummary: summary || undefined,
-    structured: { timeline: [], keySymptoms: [] },
-    redFlags: redFlags.length > 0 ? redFlags : undefined,
-    openQuestions: missingData.length > 0 ? missingData : undefined,
-    evidenceRefs: [],
+    interpreted_clinical_summary: {
+      short_summary: legacySummary ? [legacySummary] : undefined,
+      narrative_history: legacySummary || undefined,
+      open_questions: legacyMissing.length > 0 ? legacyMissing : undefined,
+    },
   }
 }
 
@@ -385,10 +409,25 @@ export async function POST(req: Request) {
       )
     }
 
-    const context =
+    const baseContext =
       typeof body.context === 'string' && body.context.trim()
         ? body.context.trim().slice(0, 500)
         : undefined
+
+    const structuredIntakeData =
+      mode !== 'resume' && body.structuredIntakeData && typeof body.structuredIntakeData === 'object'
+        ? (body.structuredIntakeData as Record<string, unknown>)
+        : null
+
+    const contextParts: string[] = []
+    if (baseContext) contextParts.push(baseContext)
+    if (structuredIntakeData) {
+      contextParts.push(
+        `STRUCTURED_INTAKE_DATA:\n${JSON.stringify(structuredIntakeData).slice(0, 1500)}`,
+      )
+    }
+
+    const context = contextParts.length > 0 ? contextParts.join('\n\n') : undefined
 
     console.log('[amy/chat] Processing chat request', {
       userId: user.id,

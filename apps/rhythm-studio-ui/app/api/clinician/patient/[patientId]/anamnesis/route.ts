@@ -70,6 +70,34 @@ const buildIntakeDisplaySummary = (content: Json | null): string => {
   }
 
   const record = content as Record<string, unknown>
+  const interpreted = record.interpreted_clinical_summary
+  if (interpreted && typeof interpreted === 'object' && !Array.isArray(interpreted)) {
+    const interpretedRecord = interpreted as Record<string, unknown>
+    const shortSummary = interpretedRecord.short_summary
+    if (Array.isArray(shortSummary)) {
+      const first = shortSummary.find((item) => typeof item === 'string' && item.trim())
+      if (first && typeof first === 'string') return first.trim()
+    }
+
+    const narrativeHistory = interpretedRecord.narrative_history
+    if (typeof narrativeHistory === 'string' && narrativeHistory.trim()) {
+      return narrativeHistory.trim()
+    }
+  }
+
+  const structuredData = record.structured_intake_data
+  if (structuredData && typeof structuredData === 'object' && !Array.isArray(structuredData)) {
+    const structuredRecord = structuredData as Record<string, unknown>
+    const narrativeSummary = structuredRecord.narrative_summary
+    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
+      return narrativeSummary.trim()
+    }
+    const chiefComplaint = structuredRecord.chief_complaint
+    if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
+      return chiefComplaint.trim()
+    }
+  }
+
   const narrativeSummary = record.narrativeSummary
   if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
     return narrativeSummary.trim()

@@ -95,6 +95,27 @@ const trimText = (value: string, max: number) =>
   value.length > max ? value.slice(0, max).trim() : value.trim()
 
 const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+  const interpreted = content?.interpreted_clinical_summary
+  if (interpreted && typeof interpreted === 'object') {
+    const record = interpreted as Record<string, unknown>
+    const narrative = record.narrative_history
+    if (typeof narrative === 'string' && narrative.trim()) return narrative.trim()
+    const shortSummary = record.short_summary
+    if (Array.isArray(shortSummary)) {
+      const first = shortSummary.find((item) => typeof item === 'string' && item.trim())
+      if (first && typeof first === 'string') return first.trim()
+    }
+  }
+
+  const structuredData = content?.structured_intake_data
+  if (structuredData && typeof structuredData === 'object') {
+    const record = structuredData as Record<string, unknown>
+    const summary = record.narrative_summary
+    if (typeof summary === 'string' && summary.trim()) return summary.trim()
+    const complaint = record.chief_complaint
+    if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
+  }
+
   const summary = content?.narrativeSummary
   if (typeof summary === 'string' && summary.trim()) return summary.trim()
   const narrative = content?.narrative
@@ -103,30 +124,6 @@ const getIntakeNarrative = (content: Record<string, unknown>): string | null => 
   if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
   const text = content?.text
   if (typeof text === 'string' && text.trim()) return text.trim()
-  return null
-}
-
-const getTopicHook = (content: Record<string, unknown>): string | null => {
-  const complaint = content?.chiefComplaint
-  if (typeof complaint === 'string' && complaint.trim()) return complaint.trim()
-
-  const summary = getIntakeNarrative(content)
-  if (summary) {
-    const firstSentence = summary.split(/[.!?\n]/)[0]?.trim()
-    if (firstSentence) return firstSentence
-  }
-
-  const structured = content?.structured
-  if (structured && typeof structured === 'object') {
-    const keySymptoms = (structured as { keySymptoms?: unknown }).keySymptoms
-    if (Array.isArray(keySymptoms)) {
-      const firstSymptom = keySymptoms.find(
-        (item) => typeof item === 'string' && item.trim(),
-      ) as string | undefined
-      if (firstSymptom) return firstSymptom.trim()
-    }
-  }
-
   return null
 }
 
@@ -144,9 +141,6 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   if (!topic) return DEFAULT_OPENING_QUESTION
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
-
-const buildReturningQuestion = (topic: string) =>
-  `Schoen, dass Sie wieder da sind. Letztes Mal ging es um ${topic}. Wie ist es heute damit? Und gibt es etwas Neues?`
 
 const isDevPreview = (): boolean => {
   if (typeof window === 'undefined') return false
@@ -215,6 +209,7 @@ export function DialogScreenV2() {
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!isChatEnabled) return
 
@@ -265,6 +260,7 @@ export function DialogScreenV2() {
     }
   }, [assessmentId, context, isChatEnabled])
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     isDictatingRef.current = isDictating
   }, [isDictating])
@@ -350,7 +346,9 @@ export function DialogScreenV2() {
       }
     }
   }, [isChatEnabled])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -366,6 +364,7 @@ export function DialogScreenV2() {
       window.removeEventListener('pagehide', handleExit)
     }
   }, [intakeEntryId])
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const buildTimestamp = () =>
     new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -412,8 +411,17 @@ export function DialogScreenV2() {
   const buildResumeContext = (latestIntake: IntakeEntry | null) => {
     if (!latestIntake) return null
 
-    const chiefComplaint =
-      typeof latestIntake.content?.chiefComplaint === 'string'
+    const structuredData =
+      latestIntake.content?.structured_intake_data &&
+      typeof latestIntake.content.structured_intake_data === 'object'
+        ? (latestIntake.content.structured_intake_data as Record<string, unknown>)
+        : null
+
+    const chiefComplaint = structuredData
+      ? typeof structuredData.chief_complaint === 'string'
+        ? structuredData.chief_complaint.trim()
+        : null
+      : typeof latestIntake.content?.chiefComplaint === 'string'
         ? latestIntake.content.chiefComplaint.trim()
         : null
 
@@ -422,7 +430,13 @@ export function DialogScreenV2() {
       ? trimText(narrativeSummaryRaw, 400)
       : null
 
-    const openQuestionsRaw = latestIntake.content?.openQuestions
+    const interpreted =
+      latestIntake.content?.interpreted_clinical_summary &&
+      typeof latestIntake.content.interpreted_clinical_summary === 'object'
+        ? (latestIntake.content.interpreted_clinical_summary as Record<string, unknown>)
+        : null
+
+    const openQuestionsRaw = interpreted?.open_questions ?? structuredData?.open_questions ?? latestIntake.content?.openQuestions
     const openQuestions = Array.isArray(openQuestionsRaw)
       ? openQuestionsRaw
           .filter((item) => typeof item === 'string' && item.trim())
@@ -550,40 +564,76 @@ export function DialogScreenV2() {
 
     return {
       status: 'draft',
-      chiefComplaint: trimText(chiefComplaint, MAX_CHIEF_COMPLAINT_LENGTH),
-      narrativeSummary: narrativeSummary || 'Kontakt gestartet.',
-      structured: {
-        timeline: [],
-        keySymptoms: [],
+      interpreted_clinical_summary: undefined,
+      structured_intake_data: {
+        chief_complaint: trimText(chiefComplaint, MAX_CHIEF_COMPLAINT_LENGTH),
+        narrative_summary: narrativeSummary || 'Kontakt gestartet.',
+        structured: {
+          timeline: [],
+          key_symptoms: [],
+        },
+        red_flags: [],
+        open_questions: intakeQuestions.slice(0, MAX_INTAKE_OPEN_QUESTIONS),
+        evidence_refs: evidenceRefs,
       },
-      redFlags: [],
-      openQuestions: intakeQuestions.slice(0, MAX_INTAKE_OPEN_QUESTIONS),
-      evidenceRefs,
     }
   }
 
   const mergeSnapshotContent = (snapshot: Record<string, unknown>) => {
     const base = buildSnapshotContent()
-    const incomingStructured = snapshot.structured
-    const mergedStructured = {
-      ...base.structured,
-      ...(incomingStructured && typeof incomingStructured === 'object' ? incomingStructured : {}),
+    const baseStructured = base.structured_intake_data as Record<string, unknown>
+
+    const incomingStructured =
+      snapshot.structured_intake_data && typeof snapshot.structured_intake_data === 'object'
+        ? (snapshot.structured_intake_data as Record<string, unknown>)
+        : null
+
+    const legacyStructured =
+      snapshot.structured && typeof snapshot.structured === 'object'
+        ? (snapshot.structured as Record<string, unknown>)
+        : null
+
+    const mergedStructuredBlock = {
+      ...(baseStructured.structured as Record<string, unknown>),
+      ...(incomingStructured?.structured && typeof incomingStructured.structured === 'object'
+        ? (incomingStructured.structured as Record<string, unknown>)
+        : {}),
+      ...(legacyStructured ? { key_symptoms: legacyStructured.keySymptoms } : {}),
+    }
+
+    const mergedStructuredIntake = {
+      ...baseStructured,
+      ...(incomingStructured || {}),
+      chief_complaint:
+        typeof snapshot.chiefComplaint === 'string' && snapshot.chiefComplaint.trim()
+          ? snapshot.chiefComplaint
+          : baseStructured.chief_complaint,
+      narrative_summary:
+        typeof snapshot.narrativeSummary === 'string' && snapshot.narrativeSummary.trim()
+          ? snapshot.narrativeSummary
+          : baseStructured.narrative_summary,
+      red_flags: Array.isArray(snapshot.redFlags) ? snapshot.redFlags : baseStructured.red_flags,
+      open_questions: Array.isArray(snapshot.openQuestions)
+        ? snapshot.openQuestions
+        : baseStructured.open_questions,
+      evidence_refs: Array.isArray(snapshot.evidenceRefs)
+        ? snapshot.evidenceRefs
+        : baseStructured.evidence_refs,
+      structured: mergedStructuredBlock,
     }
 
     return {
       ...base,
       ...snapshot,
-      chiefComplaint: base.chiefComplaint,
-      narrativeSummary:
-        typeof snapshot.narrativeSummary === 'string' && snapshot.narrativeSummary.trim()
-          ? snapshot.narrativeSummary
-          : base.narrativeSummary,
-      structured: mergedStructured,
-      redFlags: Array.isArray(snapshot.redFlags) ? snapshot.redFlags : base.redFlags,
-      openQuestions: Array.isArray(snapshot.openQuestions)
-        ? snapshot.openQuestions
-        : base.openQuestions,
-      evidenceRefs: Array.isArray(snapshot.evidenceRefs) ? snapshot.evidenceRefs : base.evidenceRefs,
+      structured_intake_data: mergedStructuredIntake,
+      interpreted_clinical_summary:
+        snapshot.interpreted_clinical_summary &&
+        typeof snapshot.interpreted_clinical_summary === 'object'
+          ? snapshot.interpreted_clinical_summary
+          : snapshot.interpretedClinicalSummary &&
+              typeof snapshot.interpretedClinicalSummary === 'object'
+            ? snapshot.interpretedClinicalSummary
+            : base.interpreted_clinical_summary,
     }
   }
 
@@ -598,9 +648,17 @@ export function DialogScreenV2() {
   }
 
   const generateIntakeSummary = (snapshot: Record<string, unknown>) => {
-    const summaryValue = snapshot.narrativeSummary
-    if (typeof summaryValue === 'string' && summaryValue.trim()) {
-      setLastSummary(summaryValue.trim())
+    const interpreted = snapshot.interpreted_clinical_summary
+    if (interpreted && typeof interpreted === 'object') {
+      const record = interpreted as Record<string, unknown>
+      const narrative = record.narrative_history
+      const shortSummary = record.short_summary
+      if (typeof narrative === 'string' && narrative.trim()) {
+        setLastSummary(narrative.trim())
+      } else if (Array.isArray(shortSummary)) {
+        const first = shortSummary.find((item) => typeof item === 'string' && item.trim())
+        if (first && typeof first === 'string') setLastSummary(first.trim())
+      }
     }
 
     void persistIntakeSnapshot(snapshot, 'summary')
@@ -817,7 +875,10 @@ export function DialogScreenV2() {
       const response = await fetch('/api/amy/chat', {
         method: 'POST',
         headers: getRequestHeaders(),
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({
+          message: trimmed,
+          structuredIntakeData: buildSnapshotContent().structured_intake_data,
+        }),
       })
 
       const data = await response.json()

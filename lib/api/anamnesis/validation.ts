@@ -44,9 +44,77 @@ export const MAX_INTAKE_RED_FLAG_LENGTH = 200
 export const MAX_INTAKE_TIMELINE_ITEM_LENGTH = 200
 export const MAX_INTAKE_KEY_SYMPTOMS = 10
 export const MAX_INTAKE_KEY_SYMPTOM_LENGTH = 120
+export const MAX_INTAKE_SHORT_SUMMARY_ITEMS = 7
+export const MAX_INTAKE_SHORT_SUMMARY_LENGTH = 200
+
+const interpretedClinicalSummarySchema = z
+  .object({
+    short_summary: z
+      .array(z.string().max(MAX_INTAKE_SHORT_SUMMARY_LENGTH, 'Short summary item is too long'))
+      .max(MAX_INTAKE_SHORT_SUMMARY_ITEMS, 'Too many short summary items')
+      .optional()
+      .default([]),
+    narrative_history: z
+      .string()
+      .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative history is too long')
+      .optional()
+      .default(''),
+    open_questions: z
+      .array(z.string().max(MAX_INTAKE_OPEN_QUESTION_LENGTH, 'Open question is too long'))
+      .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
+      .optional()
+      .default([]),
+  })
+  .optional()
+
+const structuredIntakeDataSchema = z
+  .object({
+    chief_complaint: z
+      .string()
+      .max(MAX_INTAKE_CHIEF_COMPLAINT_LENGTH, 'Chief complaint is too long')
+      .optional()
+      .default(''),
+    narrative_summary: z
+      .string()
+      .max(MAX_INTAKE_NARRATIVE_LENGTH, 'Narrative summary is too long')
+      .optional()
+      .default(''),
+    structured: z
+      .object({
+        timeline: z
+          .array(z.string().max(MAX_INTAKE_TIMELINE_ITEM_LENGTH, 'Timeline item is too long'))
+          .optional()
+          .default([]),
+        key_symptoms: z
+          .array(z.string().max(MAX_INTAKE_KEY_SYMPTOM_LENGTH, 'Key symptom is too long'))
+          .max(MAX_INTAKE_KEY_SYMPTOMS, 'Too many key symptoms')
+          .optional()
+          .default([]),
+      })
+      .optional()
+      .default({ timeline: [], key_symptoms: [] }),
+    red_flags: z
+      .array(z.string().max(MAX_INTAKE_RED_FLAG_LENGTH, 'Red flag is too long'))
+      .max(MAX_INTAKE_RED_FLAGS, 'Too many red flags')
+      .optional()
+      .default([]),
+    open_questions: z
+      .array(z.string().max(MAX_INTAKE_OPEN_QUESTION_LENGTH, 'Open question is too long'))
+      .max(MAX_INTAKE_OPEN_QUESTIONS, 'Too many open questions')
+      .optional()
+      .default([]),
+    evidence_refs: z
+      .array(z.string().max(MAX_INTAKE_EVIDENCE_REF_LENGTH, 'Evidence ref is too long'))
+      .max(MAX_INTAKE_EVIDENCE_ITEMS, 'Too many evidence refs')
+      .optional()
+      .default([]),
+  })
+  .optional()
 
 const intakeContentSchema = z.object({
   status: z.string().min(1, 'Status is required').max(40, 'Status is too long'),
+  interpreted_clinical_summary: interpretedClinicalSummarySchema,
+  structured_intake_data: structuredIntakeDataSchema,
   chiefComplaint: z
     .string()
     .max(MAX_INTAKE_CHIEF_COMPLAINT_LENGTH, 'Chief complaint is too long')
