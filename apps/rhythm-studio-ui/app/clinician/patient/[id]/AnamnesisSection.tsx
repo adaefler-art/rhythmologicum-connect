@@ -376,6 +376,59 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return getContentText(content)
   }
 
+  const normalizeIntakeContent = (content: unknown): Record<string, unknown> => {
+    if (content && typeof content === 'object' && !Array.isArray(content)) {
+      return content as Record<string, unknown>
+    }
+
+    if (typeof content === 'string' && content.trim()) {
+      try {
+        const parsed = JSON.parse(content)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return parsed as Record<string, unknown>
+        }
+      } catch {
+        return { text: content }
+      }
+    }
+
+    return {}
+  }
+
+  const hasStructuredSignals = (content: Record<string, unknown>): boolean => {
+    const structured = (content as { structured?: unknown }).structured
+    if (!structured || typeof structured !== 'object') return false
+
+    const timeline = (structured as { timeline?: unknown }).timeline
+    const keySymptoms = (structured as { keySymptoms?: unknown }).keySymptoms
+
+    const hasTimeline = Array.isArray(timeline) && timeline.length > 0
+    const hasSymptoms = Array.isArray(keySymptoms) && keySymptoms.length > 0
+
+    return hasTimeline || hasSymptoms
+  }
+
+  const buildIntakeFallbackSummary = (content: Record<string, unknown>): string | null => {
+    const complaint = getIntakeChiefComplaint(content)
+    if (!complaint) return null
+
+    const structured = (content as { structured?: unknown }).structured
+    const keySymptoms = structured && typeof structured === 'object'
+      ? (structured as { keySymptoms?: unknown }).keySymptoms
+      : null
+
+    if (Array.isArray(keySymptoms) && keySymptoms.length > 0) {
+      const sample = keySymptoms
+        .filter((item) => typeof item === 'string' && item.trim())
+        .slice(0, 2)
+      if (sample.length > 0) {
+        return `${complaint} · Symptome: ${sample.join(', ')}`
+      }
+    }
+
+    return complaint
+  }
+
   const isDraftOnlyIntake = (content: Record<string, unknown>): boolean => {
     const status = (content as { status?: unknown }).status
     if (typeof status !== 'string' || !status.trim()) return false
@@ -384,7 +437,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     const chiefComplaint = (content as { chiefComplaint?: unknown }).chiefComplaint
     const narrative = (content as { narrative?: unknown }).narrative
     const summaryAlias = (content as { summary?: unknown }).summary
-    const structured = (content as { structured?: unknown }).structured
     const evidenceRefs = (content as { evidenceRefs?: unknown }).evidenceRefs
 
     const hasSummary =
@@ -392,7 +444,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       (typeof summaryAlias === 'string' && summaryAlias.trim()) ||
       (typeof narrative === 'string' && narrative.trim())
     const hasChiefComplaint = typeof chiefComplaint === 'string' && chiefComplaint.trim()
-    const hasStructured = structured && typeof structured === 'object'
+    const hasStructured = hasStructuredSignals(content)
     const hasEvidenceRefs = Array.isArray(evidenceRefs) && evidenceRefs.length > 0
 
     return !hasSummary && !hasChiefComplaint && !hasStructured && !hasEvidenceRefs
@@ -533,9 +585,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
-  const intakeContent = intakeVersions[0]?.content || latestIntake?.content || {}
+  const intakeRawContent = intakeVersions[0]?.content || latestIntake?.content
+  const intakeContent = normalizeIntakeContent(intakeRawContent)
   const intakeEvidence = latestIntake ? getIntakeEvidence(intakeContent) : []
   const intakeSummary = latestIntake ? getIntakeNarrative(intakeContent) : null
+  const intakeFallbackSummary = latestIntake ? buildIntakeFallbackSummary(intakeContent) : null
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
   const intakeUpdatedAt = intakeVersions[0]?.changed_at || latestIntake?.updated_at
@@ -576,6 +630,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             {intakeSummary ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {intakeSummary}
+              </p>
+            ) : intakeFallbackSummary ? (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {intakeFallbackSummary}
               </p>
             ) : intakeIsDraftOnly ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
