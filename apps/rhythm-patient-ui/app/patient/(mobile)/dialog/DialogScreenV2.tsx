@@ -87,6 +87,7 @@ const MAX_INTAKE_OPEN_QUESTIONS = 5
 const MAX_INTAKE_NARRATIVE_LENGTH = 1000
 const MAX_INTAKE_ITEM_LENGTH = 200
 const MAX_CHIEF_COMPLAINT_LENGTH = 200
+const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
 
 const trimText = (value: string, max: number) =>
   value.length > max ? value.slice(0, max).trim() : value.trim()
@@ -420,6 +421,41 @@ export function DialogScreenV2() {
     }
   }
 
+  const mergeSnapshotContent = (snapshot: Record<string, unknown>) => {
+    const base = buildSnapshotContent()
+    const incomingStructured = snapshot.structured
+    const mergedStructured = {
+      ...base.structured,
+      ...(incomingStructured && typeof incomingStructured === 'object' ? incomingStructured : {}),
+    }
+
+    return {
+      ...base,
+      ...snapshot,
+      chiefComplaint: base.chiefComplaint,
+      narrativeSummary:
+        typeof snapshot.narrativeSummary === 'string' && snapshot.narrativeSummary.trim()
+          ? snapshot.narrativeSummary
+          : base.narrativeSummary,
+      structured: mergedStructured,
+      redFlags: Array.isArray(snapshot.redFlags) ? snapshot.redFlags : base.redFlags,
+      openQuestions: Array.isArray(snapshot.openQuestions)
+        ? snapshot.openQuestions
+        : base.openQuestions,
+      evidenceRefs: Array.isArray(snapshot.evidenceRefs) ? snapshot.evidenceRefs : base.evidenceRefs,
+    }
+  }
+
+  const stripOutputJson = (value: string) => {
+    const markerIndex = value.indexOf(OUTPUT_JSON_MARKER)
+    if (markerIndex === -1) return value
+    const cleaned = value.slice(0, markerIndex).trim()
+    if (process.env.NODE_ENV !== 'production') {
+      console.info('[DialogScreenV2] OUTPUT_JSON stripped from assistant text')
+    }
+    return cleaned
+  }
+
   const saveIntakeSnapshot = async () => {
     if (!intakeEntryId) return
 
@@ -455,6 +491,48 @@ export function DialogScreenV2() {
       void verifyIntakeWrite()
     } catch (err) {
       console.error('[DialogScreenV2] Failed to update intake snapshot', err)
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchFailed: true,
+      }))
+    }
+  }
+
+  const persistIntakeSnapshot = async (snapshot: Record<string, unknown>, reason: string) => {
+    if (!intakeEntryId) return
+
+    try {
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchAttempted: true,
+        patchFailed: false,
+      }))
+
+      const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
+        method: 'PATCH',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({
+          title: 'Intake',
+          entry_type: 'intake',
+          content: mergeSnapshotContent(snapshot),
+          change_reason: reason,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Failed to update intake')
+      }
+
+      setIntakePersistence((prev) => ({
+        ...prev,
+        patchOk: true,
+        patchFailed: false,
+        entryId: data?.data?.entryId || data?.data?.entry?.id || intakeEntryId,
+      }))
+      void verifyIntakeWrite()
+    } catch (err) {
+      console.error('[DialogScreenV2] Failed to persist intake snapshot', err)
       setIntakePersistence((prev) => ({
         ...prev,
         patchFailed: true,
@@ -553,7 +631,8 @@ export function DialogScreenV2() {
         throw new Error(data?.error?.message || 'Chat request failed')
       }
 
-      const replyText = data?.data?.reply
+      const rawReplyText = data?.data?.reply
+      const replyText = rawReplyText ? stripOutputJson(rawReplyText) : rawReplyText
 
       if (!replyText || typeof replyText !== 'string') {
         throw new Error('Invalid chat response')
@@ -569,6 +648,11 @@ export function DialogScreenV2() {
       setChatMessages((prev) => [...prev, assistantMessage])
       if (replyText.includes('?')) {
         collectOpenQuestion(replyText)
+      }
+
+      const intakeSnapshot = data?.data?.intakeSnapshot
+      if (intakeSnapshot && typeof intakeSnapshot === 'object') {
+        void persistIntakeSnapshot(intakeSnapshot as Record<string, unknown>, 'llm')
       }
     } catch (err) {
       console.error('[DialogScreenV2] Chat send failed', err)

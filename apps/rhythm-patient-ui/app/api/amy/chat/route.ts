@@ -46,9 +46,75 @@ type ChatMessage = {
 }
 
 const SYSTEM_PROMPT = getPatientConsultPrompt()
+const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
+
+type IntakeSnapshot = {
+  status: 'draft'
+  narrativeSummary?: string
+  chiefComplaint?: string
+  structured?: { timeline: string[]; keySymptoms: string[] }
+  redFlags?: string[]
+  openQuestions?: string[]
+  evidenceRefs?: string[]
+}
 
 function sanitizeAssistantReply(text: string): string {
   return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(EMOJI_REGEX, '').trim()
+}
+
+function mapOutputToIntakeSnapshot(payload: unknown): IntakeSnapshot | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null
+  const data = payload as Record<string, unknown>
+
+  const summary = typeof data.summary === 'string' ? data.summary.trim() : ''
+  const redFlags = Array.isArray(data.redFlags)
+    ? data.redFlags.filter((flag) => typeof flag === 'string' && flag.trim())
+    : []
+  const missingData = Array.isArray(data.missingData)
+    ? data.missingData.filter((item) => typeof item === 'string' && item.trim())
+    : []
+
+  if (!summary && redFlags.length === 0 && missingData.length === 0) {
+    return null
+  }
+
+  return {
+    status: 'draft',
+    narrativeSummary: summary || undefined,
+    structured: { timeline: [], keySymptoms: [] },
+    redFlags: redFlags.length > 0 ? redFlags : undefined,
+    openQuestions: missingData.length > 0 ? missingData : undefined,
+    evidenceRefs: [],
+  }
+}
+
+function splitAssistantOutput(raw: string) {
+  const markerIndex = raw.indexOf(OUTPUT_JSON_MARKER)
+  if (markerIndex === -1) {
+    return { assistantText: raw.trim(), intakeSnapshot: null, hadOutputJson: false }
+  }
+
+  const before = raw.slice(0, markerIndex).trim()
+  const after = raw.slice(markerIndex)
+  const jsonStart = after.indexOf('{')
+  const jsonEnd = after.lastIndexOf('}')
+
+  let intakeSnapshot: IntakeSnapshot | null = null
+
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    const jsonString = after.slice(jsonStart, jsonEnd + 1)
+    try {
+      intakeSnapshot = mapOutputToIntakeSnapshot(JSON.parse(jsonString))
+    } catch (err) {
+      console.warn('[amy/chat] Failed to parse OUTPUT_JSON payload')
+    }
+  }
+
+  return {
+    assistantText: before || raw.replace(/OUTPUT_JSON[\s\S]*/g, '').trim(),
+    intakeSnapshot,
+    hadOutputJson: true,
+  }
 }
 
 /**
@@ -315,7 +381,13 @@ export async function POST(req: Request) {
     })
 
     // Get LLM response
-    const reply = sanitizeAssistantReply(await getChatResponse(message, history))
+    const rawReply = await getChatResponse(message, history)
+    const { assistantText, intakeSnapshot, hadOutputJson } = splitAssistantOutput(rawReply)
+    const reply = sanitizeAssistantReply(assistantText)
+
+    if (hadOutputJson && process.env.NODE_ENV !== 'production') {
+      console.info('[amy/chat] OUTPUT_JSON sanitized from response')
+    }
 
     // Save assistant message
     const assistantMessageId = await saveMessage(user.id, 'assistant', reply, supabase, {
@@ -336,6 +408,7 @@ export async function POST(req: Request) {
       success: true,
       data: {
         reply,
+        intakeSnapshot: intakeSnapshot ?? undefined,
         messageId: assistantMessageId || 'temp-' + Date.now(),
       },
     })
