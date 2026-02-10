@@ -533,7 +533,7 @@ BEGIN
         WHERE entry_id = NEW.id
         ORDER BY version_number DESC
         LIMIT 1;
-        
+
         -- If no previous version, use OLD content
         IF v_previous_content IS NULL THEN
             v_previous_content := OLD.content;
@@ -562,7 +562,7 @@ BEGIN
         NEW.tags,
         COALESCE(NEW.updated_by, NEW.created_by, auth.uid()),
         NOW(),
-        CASE 
+        CASE
             WHEN v_previous_content IS NOT NULL THEN
                 jsonb_build_object(
                     'from', v_previous_content,
@@ -581,23 +581,6 @@ ALTER FUNCTION "public"."anamnesis_entry_create_version"() OWNER TO "postgres";
 
 
 COMMENT ON FUNCTION "public"."anamnesis_entry_create_version"() IS 'E75.1: Auto-create immutable version record on anamnesis_entry insert/update';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."update_anamnesis_entries_updated_at"() RETURNS "trigger"
-  LANGUAGE "plpgsql"
-  AS $$
-BEGIN
-  NEW.updated_at := NOW();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."update_anamnesis_entries_updated_at"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."update_anamnesis_entries_updated_at"() IS 'E79: Auto-update updated_at timestamp on anamnesis_entries changes';
 
 
 
@@ -2250,6 +2233,19 @@ ALTER FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_perce
 
 COMMENT ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") IS 'V05-I05.7: Deterministic sampling decision based on hash modulo';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."update_anamnesis_entries_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+    NEW.updated_at := NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_anamnesis_entries_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_consult_note_timestamp"() RETURNS "trigger"
@@ -6986,14 +6982,15 @@ CREATE OR REPLACE TRIGGER "trg_notifications_updated_at" BEFORE UPDATE ON "publi
 
 
 
+CREATE OR REPLACE TRIGGER "trigger_anamnesis_entries_updated_at" BEFORE UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."update_anamnesis_entries_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_audit" AFTER INSERT OR DELETE OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_audit_log"();
 
 
 
 CREATE OR REPLACE TRIGGER "trigger_anamnesis_entry_versioning" AFTER INSERT OR UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."anamnesis_entry_create_version"();
-
-
-CREATE OR REPLACE TRIGGER "trigger_anamnesis_entries_updated_at" BEFORE UPDATE ON "public"."anamnesis_entries" FOR EACH ROW EXECUTE FUNCTION "public"."update_anamnesis_entries_updated_at"();
 
 
 
@@ -9073,11 +9070,6 @@ GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "authentica
 GRANT ALL ON FUNCTION "public"."anamnesis_entry_create_version"() TO "service_role";
 
 
-GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "anon";
-GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "service_role";
-
-
 
 GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "anon";
 GRANT ALL ON FUNCTION "public"."audit_kpi_thresholds"() TO "authenticated";
@@ -9313,6 +9305,12 @@ GRANT ALL ON FUNCTION "public"."set_user_role"("user_email" "text", "user_role" 
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."should_sample_job"("p_job_id" "uuid", "p_sampling_percentage" integer, "p_salt" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "service_role";
 
 
 
