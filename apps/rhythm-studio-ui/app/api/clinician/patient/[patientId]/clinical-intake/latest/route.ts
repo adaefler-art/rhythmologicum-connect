@@ -14,8 +14,16 @@ type RouteContext = {
   params: Promise<{ patientId: string }>
 }
 
-const getUserRole = (user: { app_metadata?: { role?: string }; user_metadata?: { role?: string } }) =>
-  user.app_metadata?.role || user.user_metadata?.role || null
+const getUserRole = (user: {
+  app_metadata?: Record<string, unknown>
+  user_metadata?: Record<string, unknown>
+}) => {
+  const appRole = user.app_metadata?.role
+  if (typeof appRole === 'string') return appRole
+  const userRole = user.user_metadata?.role
+  if (typeof userRole === 'string') return userRole
+  return null
+}
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
