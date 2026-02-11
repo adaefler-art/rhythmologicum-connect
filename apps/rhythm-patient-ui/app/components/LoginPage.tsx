@@ -250,7 +250,11 @@ export default function LoginPage() {
           )}
         </section>
 
-        <Card className="w-full max-w-none min-w-0 self-stretch sm:max-w-lg lg:mx-0 lg:max-w-md" padding="lg" shadow="md">
+        <Card
+          className="w-full max-w-none self-stretch min-w-[280px] sm:max-w-xl lg:mx-0 lg:max-w-lg lg:min-w-[380px]"
+          padding="lg"
+          shadow="md"
+        >
           <h2 className="text-xl font-semibold text-slate-900">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
