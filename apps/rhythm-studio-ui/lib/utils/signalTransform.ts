@@ -9,8 +9,8 @@ import type {
   ClinicianSignal,
   PatientSignalHint,
   SignalValidationResult,
-} from '@/lib/types/signals'
-import { FORBIDDEN_PATIENT_TERMS, PATIENT_HINT_TEMPLATES } from '@/lib/types/signals'
+} from '../types/signals'
+import { FORBIDDEN_PATIENT_TERMS, PATIENT_HINT_TEMPLATES } from '../types/signals'
 
 /**
  * Transform raw signal data into clinician-facing format

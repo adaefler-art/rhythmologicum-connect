@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -465,6 +460,106 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "funnel_versions"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinical_intakes: {
+        Row: {
+          chat_session_id: string | null
+          clinical_summary: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          last_updated_from_messages: string[] | null
+          metadata: Json | null
+          organization_id: string | null
+          patient_id: string | null
+          status: Database["public"]["Enums"]["intake_status"]
+          structured_data: Json
+          trigger_reason: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          chat_session_id?: string | null
+          clinical_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_updated_from_messages?: string[] | null
+          metadata?: Json | null
+          organization_id?: string | null
+          patient_id?: string | null
+          status?: Database["public"]["Enums"]["intake_status"]
+          structured_data?: Json
+          trigger_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          chat_session_id?: string | null
+          clinical_summary?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_updated_from_messages?: string[] | null
+          metadata?: Json | null
+          organization_id?: string | null
+          patient_id?: string | null
+          status?: Database["public"]["Enums"]["intake_status"]
+          structured_data?: Json
+          trigger_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_intakes_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "amy_chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_intakes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "clinical_intakes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_intakes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinical_intakes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "clinical_intakes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "pending_account_deletions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3785,6 +3880,7 @@ export type Database = {
       consultation_type: "first" | "follow_up"
       diagnosis_run_status: "queued" | "running" | "completed" | "failed"
       funnel_version_status: "draft" | "published" | "archived"
+      intake_status: "draft" | "active" | "superseded" | "archived"
       notification_status:
         | "scheduled"
         | "sent"
@@ -4001,6 +4097,7 @@ export const Constants = {
       consultation_type: ["first", "follow_up"],
       diagnosis_run_status: ["queued", "running", "completed", "failed"],
       funnel_version_status: ["draft", "published", "archived"],
+      intake_status: ["draft", "active", "superseded", "archived"],
       notification_status: [
         "scheduled",
         "sent",
@@ -4091,3 +4188,4 @@ export const Constants = {
     },
   },
 } as const
+

@@ -371,11 +371,14 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       redFlagsRecord && typeof redFlagsRecord === 'object' && !Array.isArray(redFlagsRecord)
         ? {
             present: Boolean((redFlagsRecord as { present?: unknown }).present),
-            items: Array.isArray((redFlagsRecord as { items?: unknown }).items)
-              ? (redFlagsRecord as { items?: unknown }).items.filter(
-                  (item) => typeof item === 'string' && item.trim(),
-                )
-              : [],
+            items: (() => {
+              const itemsValue = (redFlagsRecord as { items?: unknown }).items
+              if (!Array.isArray(itemsValue)) return []
+
+              return itemsValue.filter(
+                (item): item is string => typeof item === 'string' && item.trim().length > 0,
+              )
+            })(),
           }
         : { present: false, items: [] }
 

@@ -10,8 +10,8 @@ import {
   validatePatientSignal,
   getRedFlagMessage,
   validateMaxBullets,
-} from '@/lib/utils/signalTransform'
-import type { RawSignalData, PatientSignalHint } from '@/lib/types/signals'
+} from '../signalTransform'
+import type { RawSignalData, PatientSignalHint } from '../../types/signals'
 
 describe('Signal Transformation (Issue 8)', () => {
   describe('transformToClinicianSignal', () => {

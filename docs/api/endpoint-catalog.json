@@ -2741,7 +2741,7 @@
       "file": "apps/rhythm-patient-ui/app/api/amy/chat/route.ts",
       "intent": null,
       "accessRole": "system",
-      "usedByCount": 3,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
@@ -2750,6 +2750,11 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/components/AMYChatWidget.tsx",
+          "apiPath": "/api/amy/chat",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
           "apiPath": "/api/amy/chat",
           "kind": "fetch"
         },
@@ -3939,6 +3944,36 @@
       "isAllowedOrphan": false
     },
     {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 10 clinical intake generation (no UI callsite yet)",
+      "path": "/api/clinical-intake/generate",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/clinical-intake/generate/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Issue 10 clinical intake retrieval (no UI callsite yet)",
+      "path": "/api/clinical-intake/latest",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/clinical-intake/latest/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
+    },
+    {
       "internalUnused": false,
       "internalUnusedReason": null,
       "path": "/api/clinician/anamnesis/[entryId]/archive",
@@ -3948,22 +3983,17 @@
       "file": "apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/archive/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 1,
-      "usedBy": [
-        {
-          "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/clinician/anamnesis/${entryId}/archive",
-          "kind": "fetch"
-        }
-      ],
-      "isOrphan": false,
-      "isAllowedOrphan": false
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "internalUnused": false,
       "internalUnusedReason": null,
       "path": "/api/clinician/anamnesis/[entryId]/versions",
       "methods": [
+        "GET",
         "POST"
       ],
       "file": "apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/versions/route.ts",
@@ -3973,7 +4003,7 @@
       "usedBy": [
         {
           "file": "apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx",
-          "apiPath": "/api/clinician/anamnesis/${selectedEntry.id}/versions",
+          "apiPath": "/api/clinician/anamnesis/${entryId}/versions",
           "kind": "fetch"
         }
       ],
@@ -4022,25 +4052,48 @@
       "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/consult-notes",
+          "kind": "client"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/consult-notes",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "internalUnused": true,
       "internalUnusedReason": "Issue 5 consult note APIs (no UI callsite yet)",
       "path": "/api/clinician/consult-notes/[consultNoteId]",
       "methods": [
-        "GET"
+        "GET",
+        "PATCH"
       ],
       "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 2,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/consult-notes/${consultNoteId}",
+          "kind": "client"
+        },
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/consult-notes/${payload.consultNoteId}",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "internalUnused": true,
@@ -4052,10 +4105,16 @@
       "file": "apps/rhythm-studio-ui/app/api/clinician/consult-notes/[consultNoteId]/versions/route.ts",
       "intent": null,
       "accessRole": "clinician",
-      "usedByCount": 0,
-      "usedBy": [],
-      "isOrphan": true,
-      "isAllowedOrphan": true
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-studio-ui/lib/fetchClinician.ts",
+          "apiPath": "/api/clinician/consult-notes/${consultNoteId}/versions",
+          "kind": "client"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
     },
     {
       "internalUnused": true,
@@ -7841,6 +7900,27 @@
     {
       "internalUnused": false,
       "internalUnusedReason": null,
+      "path": "/api/patient/_meta/intake-write-check",
+      "methods": [
+        "GET"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/_meta/intake-write-check/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 1,
+      "usedBy": [
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
+          "apiPath": "/api/patient/_meta/intake-write-check",
+          "kind": "fetch"
+        }
+      ],
+      "isOrphan": false,
+      "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": false,
+      "internalUnusedReason": null,
       "path": "/api/patient/anamnesis",
       "methods": [
         "GET",
@@ -7849,7 +7929,7 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/client.tsx",
@@ -7858,6 +7938,16 @@
         },
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/client.tsx",
+          "apiPath": "/api/patient/anamnesis",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
+          "apiPath": "/api/patient/anamnesis",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
           "apiPath": "/api/patient/anamnesis",
           "kind": "fetch"
         }
@@ -7876,7 +7966,7 @@
       "file": "apps/rhythm-patient-ui/app/api/patient/anamnesis/[entryId]/route.ts",
       "intent": null,
       "accessRole": "patient",
-      "usedByCount": 2,
+      "usedByCount": 4,
       "usedBy": [
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/[entryId]/detail/client.tsx",
@@ -7886,6 +7976,16 @@
         {
           "file": "apps/rhythm-patient-ui/app/patient/(mobile)/anamnese-timeline/[entryId]/detail/client.tsx",
           "apiPath": "/api/patient/anamnesis/${entryId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
+          "apiPath": "/api/patient/anamnesis/${intakeEntryId}",
+          "kind": "fetch"
+        },
+        {
+          "file": "apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx",
+          "apiPath": "/api/patient/anamnesis/${intakeEntryId}",
           "kind": "fetch"
         }
       ],
@@ -8159,6 +8259,21 @@
       ],
       "isOrphan": false,
       "isAllowedOrphan": false
+    },
+    {
+      "internalUnused": true,
+      "internalUnusedReason": "Intake alias to anamnesis write endpoint",
+      "path": "/api/patient/intake",
+      "methods": [
+        "POST"
+      ],
+      "file": "apps/rhythm-patient-ui/app/api/patient/intake/route.ts",
+      "intent": null,
+      "accessRole": "patient",
+      "usedByCount": 0,
+      "usedBy": [],
+      "isOrphan": true,
+      "isAllowedOrphan": true
     },
     {
       "internalUnused": false,

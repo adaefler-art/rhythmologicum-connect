@@ -641,7 +641,10 @@ export function DialogScreenV2() {
     const markerIndex = value.indexOf(OUTPUT_JSON_MARKER)
     if (markerIndex === -1) return value
     const cleaned = value.slice(0, markerIndex).trim()
-    if (env.NODE_ENV !== 'production') {
+    const isLocalHost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    if (isLocalHost) {
       console.info('[DialogScreenV2] OUTPUT_JSON stripped from assistant text')
     }
     return cleaned
