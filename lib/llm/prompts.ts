@@ -471,6 +471,13 @@ AUSGABEFORMAT:
 
 Gib NUR folgendes aus:
 
+WICHTIG:
+- Die Ausgabe muss mit exakt "OUTPUT_JSON:" beginnen.
+- Danach folgt NUR ein einzelnes JSON-Objekt (keine Einleitung, keine Nachsätze, kein Markdown).
+- Das JSON muss die Keys "STRUCTURED_INTAKE" und "CLINICAL_SUMMARY" enthalten.
+- Schreibe absolut nichts ausserhalb des JSON.
+- OUTPUT_JSON steht immer am Ende (keine weiteren Zeichen danach).
+
 OUTPUT_JSON:
 {
   "STRUCTURED_INTAKE": { ... JSON wie oben beschrieben ... },
