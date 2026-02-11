@@ -25,6 +25,7 @@ import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { getPatientOrganizationId, getPatientProfileId } from '@/lib/api/anamnesis/helpers'
+import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
 import type { Json } from '@/lib/types/supabase'
 import type {
   GenerateIntakeRequest,
@@ -223,6 +224,13 @@ function parseIntakeOutput(text: string): IntakeGenerationResult {
   }
 }
 
+function appendSafetySummary(summary: string, safetyLine: string) {
+  const trimmed = summary.trim()
+  if (!trimmed) return safetyLine
+  if (trimmed.includes(safetyLine)) return trimmed
+  return `${trimmed}\n\n${safetyLine}`
+}
+
 /**
  * Save intake to database
  */
@@ -384,11 +392,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const evidenceText = messages
+      .filter((message) => message.role === 'user')
+      .map((message) => message.content)
+      .join(' ')
+
+    const safetyResult = evaluateRedFlags({
+      structuredData: result.structuredData,
+      evidenceText,
+      evidenceRefs: messages.map((m) => m.id),
+    })
+
+    result.structuredData.safety = safetyResult
+    result.structuredData.red_flags = safetyResult.red_flags.map((flag) => flag.id)
+
+    const safetyLine = formatSafetySummaryLine(safetyResult)
+    const clinicalSummary = appendSafetySummary(result.clinicalSummary, safetyLine)
+
     // Save to database
     const intake = await saveIntake(
       user.id,
       result.structuredData,
-      result.clinicalSummary,
+      clinicalSummary,
       messages.map((m) => m.id),
       triggerReason,
       supabase

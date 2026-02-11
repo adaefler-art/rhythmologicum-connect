@@ -256,52 +256,53 @@ export default function LoginPage() {
           </Card>
 
           <Card className="border border-slate-100 bg-white" padding="lg" shadow="md">
-          <h2 className="text-xl font-semibold text-slate-900">
-            {mode === 'login' ? 'Login' : 'Registrieren'}
-          </h2>
+            <h2 className="text-xl font-semibold text-slate-900">
+              {mode === 'login' ? 'Login' : 'Registrieren'}
+            </h2>
 
-          <form className="mt-6 flex w-full flex-col space-y-4" onSubmit={handleAuth}>
-            <Input
-              type="email"
-              label="E-Mail"
-              placeholder="name@domain.de"
-              value={email}
-              onChange={setEmail}
-              className="min-w-0"
-            />
+            <form className="mt-6 flex w-full flex-col space-y-4" onSubmit={handleAuth}>
+              <Input
+                type="email"
+                label="E-Mail"
+                placeholder="name@domain.de"
+                value={email}
+                onChange={setEmail}
+                className="min-w-0"
+              />
 
-            <Input
-              type="password"
-              label="Passwort"
-              placeholder="••••••••"
-              value={password}
-              onChange={setPassword}
-              className="min-w-0"
-            />
+              <Input
+                type="password"
+                label="Passwort"
+                placeholder="••••••••"
+                value={password}
+                onChange={setPassword}
+                className="min-w-0"
+              />
 
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-            {info && <p className="text-sm text-emerald-600">{info}</p>}
+              {error && <p className="text-sm text-rose-600">{error}</p>}
+              {info && <p className="text-sm text-emerald-600">{info}</p>}
 
-            <Button type="submit" fullWidth disabled={loading} size="md">
-              {loading ? 'Bitte warten…' : mode === 'login' ? 'Anmelden' : 'Registrieren'}
-            </Button>
-          </form>
+              <Button type="submit" fullWidth disabled={loading} size="md">
+                {loading ? 'Bitte warten…' : mode === 'login' ? 'Anmelden' : 'Registrieren'}
+              </Button>
+            </form>
 
-          <div className="mt-6 text-sm text-slate-500">
-            {mode === 'login' ? 'Noch kein Konto?' : 'Schon registriert?'}{' '}
-            <button
-              type="button"
-              onClick={() => {
-                setMode(mode === 'login' ? 'signup' : 'login')
-                setError(null)
-                setInfo(null)
-              }}
-              className="font-semibold text-sky-600 hover:text-sky-500"
-            >
-              {mode === 'login' ? 'Jetzt registrieren' : 'Zum Login wechseln'}
-            </button>
-          </div>
-        </Card>
+            <div className="mt-6 text-sm text-slate-500">
+              {mode === 'login' ? 'Noch kein Konto?' : 'Schon registriert?'}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === 'login' ? 'signup' : 'login')
+                  setError(null)
+                  setInfo(null)
+                }}
+                className="font-semibold text-sky-600 hover:text-sky-500"
+              >
+                {mode === 'login' ? 'Jetzt registrieren' : 'Zum Login wechseln'}
+              </button>
+            </div>
+          </Card>
+        </div>
       </div>
     </main>
   )

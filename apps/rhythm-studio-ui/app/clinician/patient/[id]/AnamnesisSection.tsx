@@ -472,6 +472,22 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const getSafetyInfo = (content: Record<string, unknown>) => {
+    const structuredData = getStructuredIntakeData(content)
+    const safety = (structuredData as { safety?: unknown }).safety
+    if (safety && typeof safety === 'object' && !Array.isArray(safety)) {
+      return safety as Record<string, unknown>
+    }
+    return null
+  }
+
+  const getEscalationBadge = (level: string | null) => {
+    if (!level) return null
+    if (level === 'A') return { label: 'Level A', variant: 'danger' as const }
+    if (level === 'B') return { label: 'Level B', variant: 'warning' as const }
+    return { label: 'Level C', variant: 'secondary' as const }
+  }
+
   const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
     const summary = getClinicalSummary(content)
     if (summary) return summary
@@ -586,6 +602,16 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const intakeContent = latestIntake ? buildIntakeContent(latestIntake) : {}
   const intakeClinicalSummary = latestIntake ? getClinicalSummary(intakeContent) : null
   const structuredIntakeData = latestIntake ? getStructuredIntakeData(intakeContent) : null
+  const safetyInfo = latestIntake ? getSafetyInfo(intakeContent) : null
+  const escalationLevel =
+    safetyInfo && typeof safetyInfo.escalation_level === 'string'
+      ? safetyInfo.escalation_level
+      : null
+  const escalationBadge = getEscalationBadge(escalationLevel)
+  const redFlags =
+    safetyInfo && Array.isArray(safetyInfo.red_flags)
+      ? (safetyInfo.red_flags as Array<Record<string, unknown>>)
+      : []
   const structuredIntakeDisplay = structuredIntakeData
     ? (({ evidence_refs, ...rest }) => rest)(structuredIntakeData)
     : null
@@ -620,6 +646,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   {typeof latestIntake.version_number === 'number' && (
                     <span>Version: v{latestIntake.version_number}</span>
                   )}
+                  {escalationBadge && (
+                    <Badge variant={escalationBadge.variant} size="sm">
+                      Eskalation: {escalationBadge.label}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <Button
@@ -647,6 +678,28 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Hauptbeschwerde: {intakeChiefComplaint}
               </p>
+            )}
+            {escalationLevel === 'B' && (
+              <p className="text-xs text-amber-700">
+                Draft – Review erforderlich (Level B).
+              </p>
+            )}
+            {redFlags.length > 0 && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                <p className="text-xs font-semibold text-rose-700 mb-2">Safety Red Flags</p>
+                <div className="space-y-2">
+                  {redFlags.map((flag, index) => (
+                    <div key={`red-flag-${index}`} className="text-xs text-rose-700">
+                      <div className="font-semibold">
+                        {(flag.id as string) || 'Red Flag'}
+                      </div>
+                      {typeof flag.rationale === 'string' && flag.rationale.trim() && (
+                        <div>{flag.rationale}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
             {structuredIntakeDisplay && (
               <details className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">

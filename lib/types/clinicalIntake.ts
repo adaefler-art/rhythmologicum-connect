@@ -11,6 +11,29 @@
 
 export type IntakeStatus = 'draft' | 'active' | 'superseded' | 'archived'
 
+export type EscalationLevel = 'A' | 'B' | 'C'
+
+export interface RedFlagFinding {
+  id: string
+  domain: string
+  trigger: string
+  level: EscalationLevel
+  rationale: string
+  evidence_refs?: string[]
+}
+
+export interface SafetyEvaluation {
+  red_flag_present: boolean
+  escalation_level: EscalationLevel | null
+  red_flags: RedFlagFinding[]
+  contradictions_present?: boolean
+  safety_questions?: string[]
+  quality?: {
+    confidence?: 'low' | 'medium' | 'high'
+    notes?: string[]
+  }
+}
+
 export type TriggerReason = 
   | 'new_medical_info' 
   | 'clarification' 
@@ -38,6 +61,7 @@ export interface StructuredIntakeData {
   red_flags?: string[]
   uncertainties?: string[]
   last_updated_from_messages?: string[]
+  safety?: SafetyEvaluation
 }
 
 // ============================================================================

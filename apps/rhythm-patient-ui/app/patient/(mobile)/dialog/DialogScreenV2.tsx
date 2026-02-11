@@ -7,6 +7,7 @@ import { Bot, Mic, ChevronRight } from '@/lib/ui/mobile-v2/icons'
 import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
+import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
 
 /**
  * DialogScreenV2 Component (Issue 2 - Chat-First Dashboard)
@@ -107,7 +108,7 @@ const getIntakeNarrative = (content: Record<string, unknown>): string | null => 
     }
   }
 
-  const structuredData = content?.structured_intake_data
+  const structuredData = content?.structured_data ?? content?.structured_intake_data
   if (structuredData && typeof structuredData === 'object') {
     const record = structuredData as Record<string, unknown>
     const summary = record.narrative_summary
@@ -142,6 +143,28 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
 
+const getStructuredDataFromContent = (content: Record<string, unknown>) => {
+  const structuredData = content?.structured_data
+  if (structuredData && typeof structuredData === 'object' && !Array.isArray(structuredData)) {
+    return structuredData as Record<string, unknown>
+  }
+  const legacyStructured = content?.structured_intake_data
+  if (legacyStructured && typeof legacyStructured === 'object' && !Array.isArray(legacyStructured)) {
+    return legacyStructured as Record<string, unknown>
+  }
+  return null
+}
+
+const getSafetyFromContent = (content: Record<string, unknown>): SafetyEvaluation | null => {
+  const structured = getStructuredDataFromContent(content)
+  if (!structured) return null
+  const safety = (structured as { safety?: unknown }).safety
+  if (safety && typeof safety === 'object' && !Array.isArray(safety)) {
+    return safety as SafetyEvaluation
+  }
+  return null
+}
+
 const hashText = (value: string): string => {
   let hash = 0
   for (let i = 0; i < value.length; i += 1) {
@@ -170,6 +193,7 @@ export function DialogScreenV2() {
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
   const [chiefComplaint, setChiefComplaint] = useState('')
   const [lastSummary, setLastSummary] = useState<string | null>(null)
+  const [safetyStatus, setSafetyStatus] = useState<SafetyEvaluation | null>(null)
   const [isManualIntakeRunning, setIsManualIntakeRunning] = useState(false)
   const [manualIntakeStatus, setManualIntakeStatus] = useState<'ok' | 'error' | null>(null)
   const [manualIntakeError, setManualIntakeError] = useState<string | null>(null)
@@ -188,6 +212,7 @@ export function DialogScreenV2() {
     latestVersionCount: null,
   })
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
+  const isSafetyBlocked = safetyStatus?.escalation_level === 'A'
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeRunIdRef = useRef<string | null>(null)
@@ -219,6 +244,9 @@ export function DialogScreenV2() {
 
       const latestIntake = await fetchLatestIntake()
       if (!isMounted) return
+
+      const safety = latestIntake ? getSafetyFromContent(latestIntake.content) : null
+      setSafetyStatus(safety)
 
       const resumeContext = buildResumeContext(latestIntake)
       const openingQuestion = resumeContext
@@ -404,11 +432,7 @@ export function DialogScreenV2() {
   const buildResumeContext = (latestIntake: IntakeEntry | null) => {
     if (!latestIntake) return null
 
-    const structuredData =
-      latestIntake.content?.structured_intake_data &&
-      typeof latestIntake.content.structured_intake_data === 'object'
-        ? (latestIntake.content.structured_intake_data as Record<string, unknown>)
-        : null
+    const structuredData = getStructuredDataFromContent(latestIntake.content)
 
     const chiefComplaint = structuredData
       ? typeof structuredData.chief_complaint === 'string'
@@ -429,7 +453,8 @@ export function DialogScreenV2() {
         ? (latestIntake.content.interpreted_clinical_summary as Record<string, unknown>)
         : null
 
-    const openQuestionsRaw = interpreted?.open_questions ?? structuredData?.open_questions ?? latestIntake.content?.openQuestions
+    const openQuestionsRaw =
+      interpreted?.open_questions ?? structuredData?.open_questions ?? latestIntake.content?.openQuestions
     const openQuestions = Array.isArray(openQuestionsRaw)
       ? openQuestionsRaw
           .filter((item) => typeof item === 'string' && item.trim())
@@ -863,6 +888,10 @@ export function DialogScreenV2() {
 
   const handleSend = async () => {
     if (!isChatEnabled || isSending) return
+    if (isSafetyBlocked) {
+      setSendError('Bitte brechen Sie den Chat ab und wenden Sie sich umgehend an medizinische Hilfe.')
+      return
+    }
 
     const trimmed = input.trim()
     if (!trimmed) return
@@ -973,6 +1002,16 @@ export function DialogScreenV2() {
               </Badge>
             </div>
           </header>
+
+          {isSafetyBlocked && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800">
+              <p className="font-semibold">Sicherheits-Hinweis (Level A)</p>
+              <p className="mt-1">
+                Es wurde ein sicherheitskritischer Hinweis erkannt. Bitte wenden Sie sich umgehend
+                an den Notruf oder eine medizinische Fachperson. Der Chat ist vorerst deaktiviert.
+              </p>
+            </div>
+          )}
 
           {devtoolsEnabled && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
@@ -1101,13 +1140,13 @@ export function DialogScreenV2() {
                 rows={2}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                disabled={!isChatEnabled || isSending}
+                disabled={!isChatEnabled || isSending || isSafetyBlocked}
                 className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={!isChatEnabled || isSending || input.trim().length === 0}
+                disabled={!isChatEnabled || isSending || isSafetyBlocked || input.trim().length === 0}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white transition-colors disabled:bg-slate-200 disabled:text-slate-400"
                 aria-label="Senden"
               >
@@ -1140,7 +1179,7 @@ export function DialogScreenV2() {
                       setIsDictating(true)
                     }
                   }}
-                  disabled={!isChatEnabled || isSending}
+                  disabled={!isChatEnabled || isSending || isSafetyBlocked}
                   className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
                     isDictating
                       ? 'bg-red-100 text-red-700 hover:bg-red-200'
