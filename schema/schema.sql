@@ -7959,7 +7959,7 @@ CREATE POLICY "Patients can insert own anamnesis entries" ON "public"."anamnesis
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
 
 
-CREATE POLICY "clinical_intakes_patient_insert" ON "public"."clinical_intakes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "clinical_intakes_patient_insert" ON "public"."clinical_intakes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id") AND (("organization_id" IS NULL) OR "public"."is_member_of_org"("organization_id")) AND (("patient_id" IS NULL) OR ("patient_id" = "public"."get_my_patient_profile_id"())));
 
 
 
@@ -7992,7 +7992,7 @@ CREATE POLICY "Patients can update own anamnesis entries" ON "public"."anamnesis
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
 
 
-CREATE POLICY "clinical_intakes_patient_update" ON "public"."clinical_intakes" FOR UPDATE USING (("auth"."uid"() = "user_id") AND ("status" = 'draft'::"public"."intake_status"));
+CREATE POLICY "clinical_intakes_patient_update" ON "public"."clinical_intakes" FOR UPDATE USING (("auth"."uid"() = "user_id") AND ("status" = 'draft'::"public"."intake_status")) WITH CHECK (("auth"."uid"() = "user_id") AND ("status" = 'draft'::"public"."intake_status") AND (("organization_id" IS NULL) OR "public"."is_member_of_org"("organization_id")) AND (("patient_id" IS NULL) OR ("patient_id" = "public"."get_my_patient_profile_id"())));
 
 
 

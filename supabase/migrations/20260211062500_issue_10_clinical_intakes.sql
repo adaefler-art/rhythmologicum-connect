@@ -2,12 +2,22 @@
 -- Creates table for storing structured clinical intake data generated from patient conversations
 
 -- Create intake_status enum
-CREATE TYPE public.intake_status AS ENUM (
-  'draft',
-  'active',
-  'superseded',
-  'archived'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    WHERE t.typname = 'intake_status'
+      AND t.typnamespace = 'public'::regnamespace
+  ) THEN
+    CREATE TYPE public.intake_status AS ENUM (
+      'draft',
+      'active',
+      'superseded',
+      'archived'
+    );
+  END IF;
+END $$;
 
 COMMENT ON TYPE public.intake_status IS 'Issue 10: Status of clinical intake record';
 
@@ -61,13 +71,13 @@ COMMENT ON COLUMN public.clinical_intakes.trigger_reason IS 'Reason for intake u
 COMMENT ON COLUMN public.clinical_intakes.last_updated_from_messages IS 'Array of message IDs that triggered this update';
 
 -- Indexes for efficient queries
-CREATE INDEX clinical_intakes_user_id_idx ON public.clinical_intakes(user_id);
-CREATE INDEX clinical_intakes_patient_id_idx ON public.clinical_intakes(patient_id) WHERE patient_id IS NOT NULL;
-CREATE INDEX clinical_intakes_organization_id_idx ON public.clinical_intakes(organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX clinical_intakes_chat_session_id_idx ON public.clinical_intakes(chat_session_id) WHERE chat_session_id IS NOT NULL;
-CREATE INDEX clinical_intakes_status_idx ON public.clinical_intakes(status);
-CREATE INDEX clinical_intakes_created_at_idx ON public.clinical_intakes(created_at DESC);
-CREATE INDEX clinical_intakes_user_status_idx ON public.clinical_intakes(user_id, status);
+CREATE INDEX IF NOT EXISTS clinical_intakes_user_id_idx ON public.clinical_intakes(user_id);
+CREATE INDEX IF NOT EXISTS clinical_intakes_patient_id_idx ON public.clinical_intakes(patient_id) WHERE patient_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS clinical_intakes_organization_id_idx ON public.clinical_intakes(organization_id) WHERE organization_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS clinical_intakes_chat_session_id_idx ON public.clinical_intakes(chat_session_id) WHERE chat_session_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS clinical_intakes_status_idx ON public.clinical_intakes(status);
+CREATE INDEX IF NOT EXISTS clinical_intakes_created_at_idx ON public.clinical_intakes(created_at DESC);
+CREATE INDEX IF NOT EXISTS clinical_intakes_user_status_idx ON public.clinical_intakes(user_id, status);
 
 -- Enable RLS
 ALTER TABLE public.clinical_intakes ENABLE ROW LEVEL SECURITY;
@@ -75,44 +85,109 @@ ALTER TABLE public.clinical_intakes ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 
 -- Patients can view their own intakes
-CREATE POLICY "clinical_intakes_patient_select" 
-  ON public.clinical_intakes 
-  FOR SELECT 
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'clinical_intakes'
+      AND policyname = 'clinical_intakes_patient_select'
+  ) THEN
+    CREATE POLICY "clinical_intakes_patient_select" 
+      ON public.clinical_intakes 
+      FOR SELECT 
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Patients can insert their own intakes
-CREATE POLICY "clinical_intakes_patient_insert" 
-  ON public.clinical_intakes 
-  FOR INSERT 
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'clinical_intakes'
+      AND policyname = 'clinical_intakes_patient_insert'
+  ) THEN
+    CREATE POLICY "clinical_intakes_patient_insert" 
+      ON public.clinical_intakes 
+      FOR INSERT 
+      WITH CHECK (
+        auth.uid() = user_id
+        AND (organization_id IS NULL OR public.is_member_of_org(organization_id))
+        AND (patient_id IS NULL OR patient_id = public.get_my_patient_profile_id())
+      );
+  END IF;
+END $$;
 
 -- Patients can update their own draft intakes
-CREATE POLICY "clinical_intakes_patient_update" 
-  ON public.clinical_intakes 
-  FOR UPDATE 
-  USING (auth.uid() = user_id AND status = 'draft');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'clinical_intakes'
+      AND policyname = 'clinical_intakes_patient_update'
+  ) THEN
+    CREATE POLICY "clinical_intakes_patient_update" 
+      ON public.clinical_intakes 
+      FOR UPDATE 
+      USING (auth.uid() = user_id AND status = 'draft')
+      WITH CHECK (
+        auth.uid() = user_id
+        AND status = 'draft'
+        AND (organization_id IS NULL OR public.is_member_of_org(organization_id))
+        AND (patient_id IS NULL OR patient_id = public.get_my_patient_profile_id())
+      );
+  END IF;
+END $$;
 
 -- Clinicians can view assigned patients' intakes
-CREATE POLICY "Clinicians can view assigned patient intakes" 
-  ON public.clinical_intakes 
-  FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 
-      FROM public.clinician_patient_assignments cpa
-      WHERE cpa.clinician_user_id = auth.uid() 
-        AND cpa.patient_user_id = clinical_intakes.user_id
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'clinical_intakes'
+      AND policyname = 'Clinicians can view assigned patient intakes'
+  ) THEN
+    CREATE POLICY "Clinicians can view assigned patient intakes" 
+      ON public.clinical_intakes 
+      FOR SELECT 
+      USING (
+        EXISTS (
+          SELECT 1 
+          FROM public.clinician_patient_assignments cpa
+          WHERE cpa.clinician_user_id = auth.uid() 
+            AND cpa.patient_user_id = clinical_intakes.user_id
+        )
+      );
+  END IF;
+END $$;
 
 -- Admins can view intakes in their organization
-CREATE POLICY "Admins can view org intakes" 
-  ON public.clinical_intakes 
-  FOR SELECT 
-  USING (
-    organization_id IS NOT NULL 
-    AND public.current_user_role(organization_id) = 'admin'::public.user_role
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'clinical_intakes'
+      AND policyname = 'Admins can view org intakes'
+  ) THEN
+    CREATE POLICY "Admins can view org intakes" 
+      ON public.clinical_intakes 
+      FOR SELECT 
+      USING (
+        organization_id IS NOT NULL 
+        AND public.current_user_role(organization_id) = 'admin'::public.user_role
+      );
+  END IF;
+END $$;
 
 -- Grants
 GRANT ALL ON TABLE public.clinical_intakes TO anon;
