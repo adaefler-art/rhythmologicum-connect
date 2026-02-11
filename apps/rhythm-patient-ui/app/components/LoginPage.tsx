@@ -224,41 +224,38 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-white to-sky-50 text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-none flex-col gap-10 px-6 py-10 sm:px-8 lg:max-w-6xl lg:flex-row lg:items-center lg:justify-between">
-        <section className="w-full max-w-none min-w-0 lg:max-w-xl">
-          <Card className="border border-slate-100 bg-white/90" padding="lg" shadow="sm">
-            <div className="space-y-4">
-              <div className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-500">
-                Rhythmologicum Connect
+      <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-6 py-10 sm:px-8">
+        <div className="grid w-full gap-6 lg:grid-cols-2 lg:items-stretch">
+          <Card className="border border-slate-100 bg-white/95" padding="lg" shadow="sm">
+            <div className="flex h-full flex-col justify-between gap-6">
+              <div className="space-y-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.35em] text-sky-500">
+                  Rhythmologicum Connect
+                </div>
+                <h1
+                  className="font-semibold text-slate-900"
+                  style={{
+                    fontSize: mobileTypography.fontSize['3xl'],
+                    lineHeight: mobileTypography.lineHeight.tight,
+                  }}
+                >
+                  Willkommen zurück
+                </h1>
+                <p className="text-base text-slate-600">
+                  Melden Sie sich an, um Ihre Assessments zu starten und Ihre Ergebnisse einzusehen.
+                </p>
               </div>
-              <h1
-                className="font-semibold text-slate-900"
-                style={{
-                  fontSize: mobileTypography.fontSize['3xl'],
-                  lineHeight: mobileTypography.lineHeight.tight,
-                }}
-              >
-                Willkommen zurück
-              </h1>
-              <p className="text-base text-slate-600">
-                Melden Sie sich an, um Ihre Assessments zu starten und Ihre Ergebnisse einzusehen.
-              </p>
 
               {versionInfo && (
-                <div className="pt-4 text-xs text-slate-400">
+                <div className="text-xs text-slate-400">
                   <div>Commit: {versionInfo.commitHashShort}</div>
                   <div>Build: {new Date(versionInfo.buildDate).toLocaleString('de-DE')}</div>
                 </div>
               )}
             </div>
           </Card>
-        </section>
 
-        <Card
-          className="w-full max-w-none self-stretch min-w-[300px] sm:max-w-xl lg:mx-0 lg:max-w-lg lg:min-w-[420px]"
-          padding="lg"
-          shadow="md"
-        >
+          <Card className="border border-slate-100 bg-white" padding="lg" shadow="md">
           <h2 className="text-xl font-semibold text-slate-900">
             {mode === 'login' ? 'Login' : 'Registrieren'}
           </h2>
