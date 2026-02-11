@@ -527,7 +527,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         throw new Error(error.message || 'Fehler beim Laden der Intake-Historie')
       }
 
-      setIntakeVersions((data?.intakes || []) as ClinicalIntakeRecord[])
+      setIntakeVersions((data?.intakes || []) as unknown as ClinicalIntakeRecord[])
       setIsIntakeHistoryOpen(true)
     } catch (err) {
       console.error('[AnamnesisSection] Intake history error:', err)
