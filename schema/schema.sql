@@ -112,6 +112,21 @@ COMMENT ON TYPE "public"."consultation_type" IS 'Issue 5: Type of medical consul
 
 
 
+CREATE TYPE "public"."intake_status" AS ENUM (
+  'draft',
+  'active',
+  'superseded',
+  'archived'
+);
+
+
+ALTER TYPE "public"."intake_status" OWNER TO "postgres";
+
+
+COMMENT ON TYPE "public"."intake_status" IS 'Issue 10: Status of clinical intake record';
+
+
+
 CREATE TYPE "public"."diagnosis_run_status" AS ENUM (
     'queued',
     'running',
@@ -2264,6 +2279,19 @@ ALTER FUNCTION "public"."update_consult_note_timestamp"() OWNER TO "postgres";
 COMMENT ON FUNCTION "public"."update_consult_note_timestamp"() IS 'Issue 5: Automatically updates updated_at timestamp on consult note modifications';
 
 
+CREATE OR REPLACE FUNCTION "public"."update_clinical_intake_timestamp"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_clinical_intake_timestamp"() OWNER TO "postgres";
+
+
 
 CREATE OR REPLACE FUNCTION "public"."update_device_shipments_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
@@ -2867,6 +2895,56 @@ COMMENT ON COLUMN "public"."consult_notes"."rendered_markdown" IS 'Issue 5: Pre-
 
 
 COMMENT ON COLUMN "public"."consult_notes"."version_number" IS 'Issue 5: Version number (increments on each edit, never modified in-place)';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."clinical_intakes" (
+  "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+  "user_id" "uuid" NOT NULL,
+  "patient_id" "uuid",
+  "organization_id" "uuid",
+  "chat_session_id" "uuid",
+  "status" "public"."intake_status" DEFAULT 'draft'::"public"."intake_status" NOT NULL,
+  "version_number" integer DEFAULT 1 NOT NULL,
+  "structured_data" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+  "clinical_summary" "text",
+  "trigger_reason" "text",
+  "last_updated_from_messages" "uuid"[],
+  "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+  "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+  "created_by" "uuid",
+  "updated_by" "uuid",
+  "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+  CONSTRAINT "clinical_intakes_structured_data_not_empty" CHECK (("structured_data" <> '{}'::"jsonb")),
+  CONSTRAINT "clinical_intakes_version_positive" CHECK (("version_number" > 0))
+);
+
+
+ALTER TABLE "public"."clinical_intakes" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."clinical_intakes" IS 'Issue 10: Clinical intake synthesis from patient conversations. Stores both structured data (STRUCTURED_INTAKE) and physician-readable summary (CLINICAL_SUMMARY).';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."user_id" IS 'User (patient) this intake belongs to';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."patient_id" IS 'Optional patient profile reference';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."chat_session_id" IS 'Reference to first message in conversation that triggered this intake';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."structured_data" IS 'STRUCTURED_INTAKE: machine-readable JSONB with standardized clinical fields';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."clinical_summary" IS 'CLINICAL_SUMMARY: physician-readable narrative summary';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."trigger_reason" IS 'Reason for intake update: new_medical_info, clarification, thematic_block_complete, time_based';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."last_updated_from_messages" IS 'Array of message IDs that triggered this update';
 
 
 
@@ -5503,6 +5581,10 @@ ALTER TABLE ONLY "public"."consult_notes"
     ADD CONSTRAINT "consult_notes_pkey" PRIMARY KEY ("id");
 
 
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_pkey" PRIMARY KEY ("id");
+
+
 
 ALTER TABLE ONLY "public"."content_page_sections"
     ADD CONSTRAINT "content_page_sections_pkey" PRIMARY KEY ("id");
@@ -5927,6 +6009,27 @@ CREATE INDEX "consult_notes_organization_id_idx" ON "public"."consult_notes" USI
 
 
 CREATE INDEX "consult_notes_patient_id_idx" ON "public"."consult_notes" USING "btree" ("patient_id");
+
+
+CREATE INDEX "clinical_intakes_user_id_idx" ON "public"."clinical_intakes" USING "btree" ("user_id");
+
+
+CREATE INDEX "clinical_intakes_patient_id_idx" ON "public"."clinical_intakes" USING "btree" ("patient_id") WHERE ("patient_id" IS NOT NULL);
+
+
+CREATE INDEX "clinical_intakes_organization_id_idx" ON "public"."clinical_intakes" USING "btree" ("organization_id") WHERE ("organization_id" IS NOT NULL);
+
+
+CREATE INDEX "clinical_intakes_chat_session_id_idx" ON "public"."clinical_intakes" USING "btree" ("chat_session_id") WHERE ("chat_session_id" IS NOT NULL);
+
+
+CREATE INDEX "clinical_intakes_status_idx" ON "public"."clinical_intakes" USING "btree" ("status");
+
+
+CREATE INDEX "clinical_intakes_created_at_idx" ON "public"."clinical_intakes" USING "btree" ("created_at" DESC);
+
+
+CREATE INDEX "clinical_intakes_user_status_idx" ON "public"."clinical_intakes" USING "btree" ("user_id", "status");
 
 
 
@@ -6953,6 +7056,9 @@ CREATE OR REPLACE TRIGGER "consult_notes_auto_version" AFTER UPDATE ON "public".
 CREATE OR REPLACE TRIGGER "consult_notes_update_timestamp" BEFORE UPDATE ON "public"."consult_notes" FOR EACH ROW EXECUTE FUNCTION "public"."update_consult_note_timestamp"();
 
 
+CREATE OR REPLACE TRIGGER "clinical_intakes_update_timestamp" BEFORE UPDATE ON "public"."clinical_intakes" FOR EACH ROW EXECUTE FUNCTION "public"."update_clinical_intake_timestamp"();
+
+
 
 CREATE OR REPLACE TRIGGER "navigation_item_configs_updated_at" BEFORE UPDATE ON "public"."navigation_item_configs" FOR EACH ROW EXECUTE FUNCTION "public"."update_navigation_updated_at"();
 
@@ -7163,6 +7269,30 @@ ALTER TABLE ONLY "public"."clinician_patient_assignments"
 
 ALTER TABLE ONLY "public"."clinician_patient_assignments"
     ADD CONSTRAINT "clinician_patient_assignments_patient_fkey" FOREIGN KEY ("patient_user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_chat_session_id_fkey" FOREIGN KEY ("chat_session_id") REFERENCES "public"."amy_chat_messages"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "public"."clinical_intakes"
+  ADD CONSTRAINT "clinical_intakes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -7628,6 +7758,9 @@ CREATE POLICY "Admins can view org consult note versions" ON "public"."consult_n
 CREATE POLICY "Admins can view org consult notes" ON "public"."consult_notes" FOR SELECT USING (("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
 
 
+CREATE POLICY "Admins can view org intakes" ON "public"."clinical_intakes" FOR SELECT USING (("organization_id" IS NOT NULL) AND ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"));
+
+
 
 CREATE POLICY "Admins can view org entry versions" ON "public"."anamnesis_entry_versions" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."anamnesis_entries" "ae"
@@ -7803,6 +7936,11 @@ CREATE POLICY "Clinicians can view assigned patient consult notes" ON "public"."
   WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "consult_notes"."patient_id") AND ("cpa"."organization_id" = "consult_notes"."organization_id")))));
 
 
+CREATE POLICY "Clinicians can view assigned patient intakes" ON "public"."clinical_intakes" FOR SELECT USING ((EXISTS ( SELECT 1
+  FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "clinical_intakes"."user_id")))));
+
+
 
 CREATE POLICY "Clinicians can view own assignments" ON "public"."clinician_patient_assignments" FOR SELECT USING (("clinician_user_id" = "auth"."uid"()));
 
@@ -7819,6 +7957,9 @@ CREATE POLICY "Clinicians can view versions for assigned patients" ON "public"."
 CREATE POLICY "Patients can insert own anamnesis entries" ON "public"."anamnesis_entries" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."patient_profiles" "pp"
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
+
+
+CREATE POLICY "clinical_intakes_patient_insert" ON "public"."clinical_intakes" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -7849,6 +7990,9 @@ CREATE POLICY "Patients can update own anamnesis entries" ON "public"."anamnesis
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"()))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."patient_profiles" "pp"
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
+
+
+CREATE POLICY "clinical_intakes_patient_update" ON "public"."clinical_intakes" FOR UPDATE USING (("auth"."uid"() = "user_id") AND ("status" = 'draft'::"public"."intake_status"));
 
 
 
@@ -7883,6 +8027,9 @@ CREATE POLICY "Patients can upload own documents" ON "public"."documents" FOR IN
 CREATE POLICY "Patients can view own anamnesis entries" ON "public"."anamnesis_entries" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM "public"."patient_profiles" "pp"
   WHERE (("pp"."id" = "anamnesis_entries"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))));
+
+
+CREATE POLICY "clinical_intakes_patient_select" ON "public"."clinical_intakes" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
@@ -8227,6 +8374,9 @@ ALTER TABLE "public"."consult_note_versions" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."consult_notes" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."clinical_intakes" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."content_page_sections" ENABLE ROW LEVEL SECURITY;
@@ -9319,6 +9469,11 @@ GRANT ALL ON FUNCTION "public"."update_consult_note_timestamp"() TO "authenticat
 GRANT ALL ON FUNCTION "public"."update_consult_note_timestamp"() TO "service_role";
 
 
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "service_role";
+
+
 
 GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_device_shipments_updated_at"() TO "authenticated";
@@ -9476,6 +9631,11 @@ GRANT ALL ON TABLE "public"."calculated_results" TO "service_role";
 GRANT ALL ON TABLE "public"."clinician_patient_assignments" TO "anon";
 GRANT ALL ON TABLE "public"."clinician_patient_assignments" TO "authenticated";
 GRANT ALL ON TABLE "public"."clinician_patient_assignments" TO "service_role";
+
+
+GRANT ALL ON TABLE "public"."clinical_intakes" TO "anon";
+GRANT ALL ON TABLE "public"."clinical_intakes" TO "authenticated";
+GRANT ALL ON TABLE "public"."clinical_intakes" TO "service_role";
 
 
 

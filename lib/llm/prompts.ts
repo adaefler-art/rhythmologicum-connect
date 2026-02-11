@@ -13,8 +13,11 @@ const OUTPUT_CONTRACT_DESCRIPTION = `OUTPUT_JSON (must be valid JSON object):
 - kind: "patient_consult" | "clinician_colleague"
 - interpreted_clinical_summary: {
     short_summary: string[] (5-7 Bulletpoints, klinisch priorisiert)
-    narrative_history: string (Fliesstext, Arztbrief-Stil)
-    open_questions: string[] (max 5, medizinisch sinnvoll)
+  narrative_history: string (6-10 Saetze, Arztbrief-Stil, 3. Person)
+  open_questions: string[] (max 5, medizinisch sinnvoll)
+  relevant_negatives: string[] (max 5)
+  meds: string[] (max 10, nur relevante)
+  red_flags: { present: boolean; items: string[] (max 5) }
   }`
 
 const RED_FLAG_ESCALATION = `
@@ -84,6 +87,63 @@ ${DETERMINISM_GUARD}
 AUSGABEFORMAT:
 - Gib NUR eine Zeile mit OUTPUT_JSON aus.
 ${OUTPUT_CONTRACT_DESCRIPTION}
+`
+}
+
+export function getIntakeFactNormalizationPrompt(): string {
+  return `Du bist ${ASSISTANT_CONFIG.personaName}. Deine Aufgabe ist es, STRUCTURED_INTAKE_DATA in normalisierte Fakten zu ueberfuehren.
+
+REGELN:
+- Nutze ausschliesslich STRUCTURED_INTAKE_DATA als Quelle.
+- Keine freien Texte aus dem Chat.
+- Keine neuen Informationen erfinden.
+- Wenn etwas unklar ist, nutze "unklar".
+
+${DETERMINISM_GUARD}
+
+AUSGABEFORMAT:
+Gib NUR JSON mit folgendem Schema aus:
+{
+  "chief_complaint": string,
+  "timeline": string,
+  "positives": string[],
+  "negatives": string[],
+  "meds": string[],
+  "psychosocial": string[],
+  "uncertainty": string[],
+  "severity": "mild" | "moderate" | "severe" | "unknown"
+}
+`
+}
+
+export function getClinicalWriteupSystemPrompt(): string {
+  return 'Du bist ein medizinischer Dokumentationsassistent (Clinical Scribe) in Deutschland.\nDu schreibst klinische Texte fuer Aerzt:innen, kurz und praezise.'
+}
+
+export function getClinicalWriteupInstruction(): string {
+  return `Instruction:
+- Schreibe in medizinischem Deutsch, 3. Person.
+- Keine direkten Zitate, keine umgangssprachlichen Formulierungen.
+- Glaette fehlerhafte Patientensprache, aber erfinde keine Fakten.
+- Markiere Unsicherheiten als "unklar" statt zu raten.
+- Priorisiere klinisch relevantes, lasse Fuellwoerter weg.
+`
+}
+
+export function getClinicalWriteupFewShot(): string {
+  return `Beispiel:
+Input (normalized_facts):
+chief_complaint: "Kopfschmerzen frontal"
+timeline: "seit ca. 2 Stunden, abends zunehmend"
+positives: ["Kopfschmerz frontal", "Verschlechterung am Abend"]
+negatives: ["keine neurologischen Ausfaelle (unklar abgefragt)"]
+meds: []
+psychosocial: []
+uncertainty: ["Begleitsymptome nicht systematisch erhoben"]
+severity: "unknown"
+
+Output (narrative_history) Beispiel:
+"Der Patient berichtet ueber seit etwa zwei Stunden bestehende frontale Kopfschmerzen mit Zunahme am Abend. Begleitsymptome wurden bislang nicht systematisch erhoben. Hinweise auf akute neurologische Ausfaelle wurden nicht berichtet; die Anamnese hierzu ist jedoch unvollstaendig."
 `
 }
 
