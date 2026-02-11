@@ -235,9 +235,28 @@ export type TriageHealthResponse = {
   membershipError?: { code?: string; message?: string } | null
 }
 
+export type ClinicianInboxPatient = {
+  patientId: string
+  name: string
+  age?: number | null
+  sex?: string | null
+  lastActivityAt?: string | null
+  lastIntakeAt?: string | null
+}
+
 export const triageHealth = () =>
   requestClinicianJson<TriageHealthResponse>({
     endpoint: '/api/triage/health',
+    method: 'GET',
+    routeContext: 'triage',
+  })
+
+export const getClinicianInbox = () =>
+  requestClinicianJson<{
+    success?: boolean
+    patients?: ClinicianInboxPatient[]
+  }>({
+    endpoint: '/api/clinician/inbox',
     method: 'GET',
     routeContext: 'triage',
   })
