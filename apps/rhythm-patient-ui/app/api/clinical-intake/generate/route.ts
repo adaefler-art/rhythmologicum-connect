@@ -78,20 +78,34 @@ async function getMessagesForIntake(
   }
 }
 
+type IntakeGenerationResult =
+  | {
+      ok: true
+      structuredData: StructuredIntakeData
+      clinicalSummary: string
+    }
+  | {
+      ok: false
+      errorCode:
+        | 'ANTHROPIC_NOT_CONFIGURED'
+        | 'OUTPUT_JSON_MISSING'
+        | 'OUTPUT_JSON_INVALID'
+        | 'OUTPUT_JSON_MISSING_FIELDS'
+        | 'OUTPUT_JSON_PARSE_ERROR'
+        | 'LLM_REQUEST_FAILED'
+    }
+
 /**
  * Generate clinical intake using LLM
  */
-async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<{
-  structuredData: StructuredIntakeData
-  clinicalSummary: string
-} | null> {
+async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<IntakeGenerationResult> {
   const engineEnv = getEngineEnv()
   const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
   const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
 
   if (!anthropicApiKey) {
     console.warn('[clinical-intake/generate] Anthropic not configured')
-    return null
+    return { ok: false, errorCode: 'ANTHROPIC_NOT_CONFIGURED' }
   }
 
   const anthropic = new Anthropic({ apiKey: anthropicApiKey })
@@ -139,9 +153,11 @@ async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<{
 
     // Parse OUTPUT_JSON
     const parsed = parseIntakeOutput(responseText)
-    if (!parsed) {
-      console.error('[clinical-intake/generate] Failed to parse LLM output')
-      return null
+    if (!parsed.ok) {
+      console.error('[clinical-intake/generate] Failed to parse LLM output', {
+        errorCode: parsed.errorCode,
+      })
+      return parsed
     }
 
     return parsed
@@ -158,23 +174,20 @@ async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<{
       duration,
     })
 
-    return null
+    return { ok: false, errorCode: 'LLM_REQUEST_FAILED' }
   }
 }
 
 /**
  * Parse LLM output to extract STRUCTURED_INTAKE and CLINICAL_SUMMARY
  */
-function parseIntakeOutput(text: string): {
-  structuredData: StructuredIntakeData
-  clinicalSummary: string
-} | null {
+function parseIntakeOutput(text: string): IntakeGenerationResult {
   try {
     // Look for OUTPUT_JSON marker
     const jsonMarker = text.indexOf('OUTPUT_JSON')
     if (jsonMarker === -1) {
       console.warn('[clinical-intake/generate] No OUTPUT_JSON marker found')
-      return null
+      return { ok: false, errorCode: 'OUTPUT_JSON_MISSING' }
     }
 
     const afterMarker = text.slice(jsonMarker)
@@ -183,7 +196,7 @@ function parseIntakeOutput(text: string): {
 
     if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
       console.warn('[clinical-intake/generate] Invalid JSON structure')
-      return null
+      return { ok: false, errorCode: 'OUTPUT_JSON_INVALID' }
     }
 
     const jsonString = afterMarker.slice(jsonStart, jsonEnd + 1)
@@ -192,7 +205,7 @@ function parseIntakeOutput(text: string): {
     // Validate structure
     if (!parsed.STRUCTURED_INTAKE || !parsed.CLINICAL_SUMMARY) {
       console.warn('[clinical-intake/generate] Missing required fields in output')
-      return null
+      return { ok: false, errorCode: 'OUTPUT_JSON_MISSING_FIELDS' }
     }
 
     const structuredData = parsed.STRUCTURED_INTAKE as StructuredIntakeData
@@ -201,10 +214,10 @@ function parseIntakeOutput(text: string): {
     // Ensure status is 'draft'
     structuredData.status = 'draft'
 
-    return { structuredData, clinicalSummary }
+    return { ok: true, structuredData, clinicalSummary }
   } catch (err) {
     console.error('[clinical-intake/generate] JSON parse error', { error: String(err) })
-    return null
+    return { ok: false, errorCode: 'OUTPUT_JSON_PARSE_ERROR' }
   }
 }
 
@@ -305,19 +318,67 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate intake with LLM
-    const result = await generateIntakeWithLLM(messages)
+    const engineEnv = getEngineEnv()
+    const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
 
-    if (!result) {
+    if (!anthropicApiKey) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: 'GENERATION_FAILED',
-            message: 'Failed to generate clinical intake',
+            code: 'ANTHROPIC_NOT_CONFIGURED',
+            message: 'Anthropic API key not configured',
           },
         } satisfies GenerateIntakeResponse,
-        { status: 500 }
+        { status: 503 }
+      )
+    }
+
+    // Generate intake with LLM
+    const result = await generateIntakeWithLLM(messages)
+
+    if (!result.ok) {
+      const errorMap: Record<string, { status: number; message: string }> = {
+        OUTPUT_JSON_MISSING: {
+          status: 502,
+          message: 'LLM output missing OUTPUT_JSON marker',
+        },
+        OUTPUT_JSON_INVALID: {
+          status: 502,
+          message: 'LLM output JSON structure invalid',
+        },
+        OUTPUT_JSON_MISSING_FIELDS: {
+          status: 502,
+          message: 'LLM output missing required fields',
+        },
+        OUTPUT_JSON_PARSE_ERROR: {
+          status: 502,
+          message: 'LLM output JSON parse error',
+        },
+        LLM_REQUEST_FAILED: {
+          status: 502,
+          message: 'LLM request failed',
+        },
+        ANTHROPIC_NOT_CONFIGURED: {
+          status: 503,
+          message: 'Anthropic API key not configured',
+        },
+      }
+
+      const mapped = errorMap[result.errorCode] ?? {
+        status: 500,
+        message: 'Failed to generate clinical intake',
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: result.errorCode,
+            message: mapped.message,
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: mapped.status }
       )
     }
 
