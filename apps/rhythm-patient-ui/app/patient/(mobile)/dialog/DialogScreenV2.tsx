@@ -142,17 +142,6 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
 
-const isDevPreview = (): boolean => {
-  if (typeof window === 'undefined') return false
-  const hostname = window.location.hostname
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname.includes('preview') ||
-    hostname.includes('dev-')
-  )
-}
-
 const hashText = (value: string): string => {
   let hash = 0
   for (let i = 0; i < value.length; i += 1) {
@@ -166,6 +155,7 @@ export function DialogScreenV2() {
   const searchParams = useSearchParams()
   const context = searchParams.get('context')
   const assessmentId = searchParams.get('assessmentId')
+  const devtoolsEnabled = searchParams.has('devtools')
 
   const [chatMessages, setChatMessages] = useState<StubbedMessage[]>([])
   const [input, setInput] = useState('')
@@ -180,6 +170,9 @@ export function DialogScreenV2() {
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
   const [chiefComplaint, setChiefComplaint] = useState('')
   const [lastSummary, setLastSummary] = useState<string | null>(null)
+  const [isManualIntakeRunning, setIsManualIntakeRunning] = useState(false)
+  const [manualIntakeStatus, setManualIntakeStatus] = useState<'ok' | 'error' | null>(null)
+  const [manualIntakeError, setManualIntakeError] = useState<string | null>(null)
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
@@ -815,6 +808,36 @@ export function DialogScreenV2() {
     }
   }
 
+  const triggerManualIntake = async () => {
+    if (isManualIntakeRunning) return
+
+    setIsManualIntakeRunning(true)
+    setManualIntakeStatus(null)
+    setManualIntakeError(null)
+
+    try {
+      const response = await fetch('/api/clinical-intake/generate', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ force: true, triggerReason: 'manual' }),
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Failed to generate intake')
+      }
+
+      setManualIntakeStatus('ok')
+      void verifyIntakeWrite()
+    } catch (err) {
+      console.error('[DialogScreenV2] Manual intake generation failed', err)
+      setManualIntakeStatus('error')
+      setManualIntakeError(err instanceof Error ? err.message : 'Intake generation failed')
+    } finally {
+      setIsManualIntakeRunning(false)
+    }
+  }
+
   const collectEvidence = (text: string) => {
     const trimmed = trimText(text, 400)
     if (!trimmed) return
@@ -934,12 +957,24 @@ export function DialogScreenV2() {
               <Bot className="h-5 w-5 text-slate-700" />
               <p className="text-base font-semibold">Dialog mit PAT</p>
             </div>
-            <Badge variant="success" size="sm">
-              Live
-            </Badge>
+            <div className="flex items-center gap-2">
+              {devtoolsEnabled && (
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm"
+                  onClick={() => void triggerManualIntake()}
+                  disabled={isManualIntakeRunning}
+                >
+                  {isManualIntakeRunning ? 'Generating…' : 'Generate Intake (Dev)'}
+                </button>
+              )}
+              <Badge variant="success" size="sm">
+                Live
+              </Badge>
+            </div>
           </header>
 
-          {isDevPreview() && (
+          {devtoolsEnabled && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
               <p className="font-semibold">Intake Persistence</p>
               <p>runId: {intakePersistence.runId || 'pending'}</p>
@@ -981,6 +1016,19 @@ export function DialogScreenV2() {
                 <p className="mt-2 font-semibold text-amber-800">
                   Intake patch persisted, but no version recorded yet
                 </p>
+              )}
+              {manualIntakeStatus === 'ok' && (
+                <p className="mt-2 font-semibold text-emerald-700">
+                  Manual intake generation succeeded
+                </p>
+              )}
+              {manualIntakeStatus === 'error' && (
+                <p className="mt-2 font-semibold text-amber-800">
+                  Manual intake generation failed
+                </p>
+              )}
+              {manualIntakeError && (
+                <p className="mt-1 text-amber-800">{manualIntakeError}</p>
               )}
               <div className="mt-3 flex gap-2">
                 <button
