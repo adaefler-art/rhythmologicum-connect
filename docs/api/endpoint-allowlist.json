@@ -101,6 +101,21 @@
     "/api/clinician/triage/cases/[caseId]/reopen",
     "/api/clinician/triage/cases/[caseId]/snooze",
     "/api/clinician/triage",
+    {
+      "path": "/api/clinical-intake/generate",
+      "internal_unused": true,
+      "reason": "Issue 10 clinical intake generation (no UI callsite yet)"
+    },
+    {
+      "path": "/api/clinical-intake/latest",
+      "internal_unused": true,
+      "reason": "Issue 10 clinical intake retrieval (no UI callsite yet)"
+    },
+    {
+      "path": "/api/patient/intake",
+      "internal_unused": true,
+      "reason": "Intake alias to anamnesis write endpoint"
+    },
     "/api/triage/basic",
     "/api/documents/[id]/extract",
     "/api/documents/[id]/status",
