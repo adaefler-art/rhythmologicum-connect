@@ -69,12 +69,13 @@ function checkMedicalTerminology(summary: string): IntakeQualityCheck {
  * Rule: R-I10-2.1
  */
 function checkRequiredFields(data: StructuredIntakeData): IntakeQualityCheck {
-  const hasContent =
+  const hasContent = Boolean(
     data.chief_complaint ||
-    data.history_of_present_illness ||
-    (data.relevant_negatives && data.relevant_negatives.length > 0) ||
-    (data.past_medical_history && data.past_medical_history.length > 0) ||
-    (data.medication && data.medication.length > 0)
+      data.history_of_present_illness ||
+      (data.relevant_negatives && data.relevant_negatives.length > 0) ||
+      (data.past_medical_history && data.past_medical_history.length > 0) ||
+      (data.medication && data.medication.length > 0),
+  )
 
   return {
     rule: 'R-I10-2.1',
