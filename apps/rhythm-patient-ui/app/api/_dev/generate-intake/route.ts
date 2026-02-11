@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { POST as generateIntake } from '@/app/api/clinical-intake/generate/route'
+import { env } from '@/lib/env'
 
 type GenerateErrorResponse = {
   success: false
@@ -12,7 +13,7 @@ type GenerateErrorResponse = {
 export async function POST(request: NextRequest) {
   const url = new URL(request.url)
   const devtoolsEnabled = url.searchParams.has('devtools')
-  const isDev = process.env.NODE_ENV !== 'production'
+  const isDev = env.NODE_ENV !== 'production'
 
   if (!devtoolsEnabled && !isDev) {
     return NextResponse.json(
