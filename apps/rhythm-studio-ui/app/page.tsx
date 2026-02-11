@@ -218,7 +218,7 @@ export default function LoginPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
         return
       }
 
