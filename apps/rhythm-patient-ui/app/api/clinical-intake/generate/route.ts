@@ -24,6 +24,7 @@ import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/l
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { projectClinicalIntakeToAnamnesis } from '@/lib/clinicalIntake/projection'
 import type {
   GenerateIntakeRequest,
   GenerateIntakeResponse,
@@ -338,6 +339,39 @@ export async function POST(req: NextRequest) {
           error: {
             code: 'SAVE_FAILED',
             message: 'Failed to save clinical intake',
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: 500 }
+      )
+    }
+
+    const projection = await projectClinicalIntakeToAnamnesis(supabase, {
+      userId: user.id,
+      intakeId: intake.id,
+      structuredData: result.structuredData,
+      clinicalSummary: result.clinicalSummary,
+      promptVersion:
+        typeof intake.metadata?.prompt_version === 'string'
+          ? intake.metadata.prompt_version
+          : CLINICAL_INTAKE_PROMPT_VERSION,
+      lastUpdatedFromMessages: intake.last_updated_from_messages ?? messages.map((m) => m.id),
+    })
+
+    if (!projection.success) {
+      console.error('[clinical-intake/generate] Projection failed', {
+        intakeId: intake.id,
+        userId: user.id,
+        error: projection.error,
+        errorCode: projection.errorCode,
+        correlationId,
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'PROJECTION_FAILED',
+            message: 'Failed to project intake into anamnesis',
           },
         } satisfies GenerateIntakeResponse,
         { status: 500 }

@@ -331,6 +331,17 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const isDevPreview = (): boolean => {
+    if (typeof window === 'undefined') return false
+    const hostname = window.location.hostname
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.includes('preview') ||
+      hostname.includes('dev-')
+    )
+  }
+
   const getContentText = (content: Record<string, unknown>): string | null => {
     const textValue = (content as { text?: unknown }).text
     if (typeof textValue === 'string' && textValue.trim()) return textValue
@@ -403,10 +414,36 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const getClinicalSummary = (content: Record<string, unknown>): string | null => {
+    const summary = (content as { clinical_summary?: unknown }).clinical_summary
+    if (typeof summary === 'string' && summary.trim()) return summary.trim()
+    return null
+  }
+
+  const getQualityReport = (content: Record<string, unknown>) => {
+    const quality = (content as { quality?: unknown }).quality
+    if (!quality || typeof quality !== 'object' || Array.isArray(quality)) return null
+
+    const record = quality as Record<string, unknown>
+    const errors = Array.isArray(record.errors) ? record.errors : []
+    const warnings = Array.isArray(record.warnings) ? record.warnings : []
+
+    return {
+      isValid: Boolean(record.isValid),
+      errors,
+      warnings,
+    }
+  }
+
   const getStructuredIntakeData = (content: Record<string, unknown>) => {
-    const structured = (content as { structured_intake_data?: unknown }).structured_intake_data
+    const structured = (content as { structured_data?: unknown }).structured_data
     if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
       return structured as Record<string, unknown>
+    }
+
+    const structuredIntake = (content as { structured_intake_data?: unknown }).structured_intake_data
+    if (structuredIntake && typeof structuredIntake === 'object' && !Array.isArray(structuredIntake)) {
+      return structuredIntake as Record<string, unknown>
     }
 
     const legacyStructured = (content as { structured?: unknown }).structured
@@ -428,6 +465,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+    const summary = getClinicalSummary(content)
+    if (summary) return summary
+
     const interpreted = getInterpretedClinicalSummary(content)
     if (interpreted?.narrativeHistory) return interpreted.narrativeHistory
     if (interpreted?.shortSummary && interpreted.shortSummary.length > 0) {
@@ -494,6 +534,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     if (typeof status !== 'string' || !status.trim()) return false
 
     const structuredData = getStructuredIntakeData(content)
+    const clinicalSummary = getClinicalSummary(content)
     const summary = structuredData?.narrative_summary ?? (content as { narrativeSummary?: unknown }).narrativeSummary
     const chiefComplaint = structuredData?.chief_complaint ?? (content as { chiefComplaint?: unknown }).chiefComplaint
     const narrative = (content as { narrative?: unknown }).narrative
@@ -501,6 +542,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     const evidenceRefs = structuredData?.evidence_refs ?? (content as { evidenceRefs?: unknown }).evidenceRefs
 
     const hasSummary =
+      (typeof clinicalSummary === 'string' && clinicalSummary.trim()) ||
       (typeof summary === 'string' && summary.trim()) ||
       (typeof summaryAlias === 'string' && summaryAlias.trim()) ||
       (typeof narrative === 'string' && narrative.trim())
@@ -594,6 +636,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
   const intakeRawContent = intakeVersions[0]?.content || latestIntake?.content
   const intakeContent = normalizeIntakeContent(intakeRawContent)
+  const intakeClinicalSummary = latestIntake ? getClinicalSummary(intakeContent) : null
+  const qualityReport = latestIntake ? getQualityReport(intakeContent) : null
   const interpretedSummary = latestIntake ? getInterpretedClinicalSummary(intakeContent) : null
   const structuredIntakeData = latestIntake ? getStructuredIntakeData(intakeContent) : null
   const structuredIntakeDisplay = structuredIntakeData
@@ -603,6 +647,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
   const intakeUpdatedAt = intakeVersions[0]?.changed_at || latestIntake?.updated_at
   const intakeIsDraftOnly = latestIntake ? isDraftOnlyIntake(intakeContent) : false
+  const showQualityNotice =
+    !intakeClinicalSummary &&
+    qualityReport &&
+    (qualityReport.errors.length > 0 || qualityReport.warnings.length > 0)
 
   return (
     <>
@@ -639,6 +687,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
             </p>
+            {intakeClinicalSummary && (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {intakeClinicalSummary}
+              </p>
+            )}
             {interpretedSummary?.shortSummary && interpretedSummary.shortSummary.length > 0 && (
               <div className="space-y-1">
                 {interpretedSummary.shortSummary.map((item, index) => (
@@ -648,10 +701,22 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 ))}
               </div>
             )}
-            {interpretedSummary?.narrativeHistory ? (
+            {!intakeClinicalSummary && interpretedSummary?.narrativeHistory ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {interpretedSummary.narrativeHistory}
               </p>
+            ) : showQualityNotice ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                <p className="font-semibold">
+                  Intake generiert, aber Qualitätskriterien nicht erfüllt.
+                </p>
+                {qualityReport?.errors.length ? (
+                  <p className="mt-2">Fehler: {qualityReport.errors.length}</p>
+                ) : null}
+                {qualityReport?.warnings.length ? (
+                  <p>Warnungen: {qualityReport.warnings.length}</p>
+                ) : null}
+              </div>
             ) : intakeIsDraftOnly ? (
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 Draft gespeichert (noch keine Zusammenfassung).
@@ -724,6 +789,19 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 {JSON.stringify(structuredIntakeDisplay, null, 2)}
                 </pre>
               </details>
+            )}
+            {isDevPreview() && qualityReport && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                <p className="font-semibold">
+                  Quality: {qualityReport.isValid ? 'ok' : 'review'}
+                </p>
+                {qualityReport.errors.length > 0 && (
+                  <p className="mt-1">Errors: {qualityReport.errors.length}</p>
+                )}
+                {qualityReport.warnings.length > 0 && (
+                  <p>Warnings: {qualityReport.warnings.length}</p>
+                )}
+              </div>
             )}
             {intakeHistoryError && (
               <Alert variant="error">{intakeHistoryError}</Alert>

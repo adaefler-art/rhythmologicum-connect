@@ -10,10 +10,13 @@ This document describes the testing strategy and test cases for the Clinical Int
 
 **Location:** `lib/clinicalIntake/__tests__/validation.test.ts`
 
+**Additional:** `test/issue-10-intake-projection.test.ts`
+
 **Coverage:**
 - Quality validation functions
 - All 7 rule checks (R-I10-1.1 through R-I10-4.2)
 - Edge cases and error conditions
+- Projection of clinical_intakes into anamnesis entries + versions
 
 **Running Tests:**
 ```bash
