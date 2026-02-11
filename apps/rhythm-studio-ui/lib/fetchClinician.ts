@@ -438,6 +438,30 @@ export const getAnamnesis = (patientId: string) =>
     patientId,
   })
 
+export const getClinicalIntakeLatest = (patientId: string) =>
+  requestClinicianJson<{
+    success?: boolean
+    intake?: Record<string, unknown> | null
+  }>({
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
+export const getClinicalIntakeHistory = (patientId: string, limit?: number) => {
+  const params = typeof limit === 'number' ? `?limit=${encodeURIComponent(limit)}` : ''
+  return requestClinicianJson<{
+    success?: boolean
+    intakes?: Array<Record<string, unknown>>
+  }>({
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/history${params}`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+    patientId,
+  })
+}
+
 export const postAnamnesis = (patientId: string, body: Record<string, unknown>) =>
   requestClinicianJson<{ success?: boolean }>({
     endpoint: `/api/clinician/patient/${patientId}/anamnesis`,

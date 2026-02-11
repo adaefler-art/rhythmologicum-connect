@@ -10,7 +10,8 @@
  * - Archive entries
  * - Access only via assignment (enforced by RLS)
  * 
- * Data source: /api/clinician/patient/[patientId]/anamnesis
+ * Data sources: /api/clinician/patient/[patientId]/anamnesis (entries) +
+ *               /api/clinician/patient/[patientId]/clinical-intake/latest (intake)
  * Access control: Requires clinician role + patient assignment
  */
 
@@ -24,6 +25,8 @@ import {
   getConsultNote,
   getConsultNoteVersions,
   updateConsultNote,
+  getClinicalIntakeLatest,
+  getClinicalIntakeHistory,
 } from '@/lib/fetchClinician'
 import type { ConsultNote, ConsultNoteContent, ConsultNoteVersion } from '@/lib/types/consultNote'
 
@@ -42,15 +45,16 @@ export interface AnamnesisEntry {
   displaySummary?: string | null
 }
 
-export interface AnamnesisVersion {
+export interface ClinicalIntakeRecord {
   id: string
+  status: string
   version_number: number
-  title: string
-  content: Record<string, unknown>
-  entry_type: string | null
-  tags: string[] | null
-  changed_at: string
-  change_reason: string | null
+  clinical_summary: string | null
+  structured_data: Record<string, unknown>
+  trigger_reason: string | null
+  last_updated_from_messages: string[] | null
+  created_at: string
+  updated_at: string
 }
 
 
@@ -70,12 +74,13 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [entries, setEntries] = useState<AnamnesisEntry[]>([])
   const [isLoading, setIsLoading] = useState(loading ?? false)
   const [error, setError] = useState<string | null>(null)
-  const [latestIntakeEntry, setLatestIntakeEntry] = useState<AnamnesisEntry | null>(null)
+  const [latestClinicalIntake, setLatestClinicalIntake] = useState<ClinicalIntakeRecord | null>(null)
   const [debugHint, setDebugHint] = useState<string | null>(null)
-  const [intakeVersions, setIntakeVersions] = useState<AnamnesisVersion[]>([])
+  const [intakeVersions, setIntakeVersions] = useState<ClinicalIntakeRecord[]>([])
   const [isIntakeHistoryOpen, setIsIntakeHistoryOpen] = useState(false)
   const [isIntakeHistoryLoading, setIsIntakeHistoryLoading] = useState(false)
   const [intakeHistoryError, setIntakeHistoryError] = useState<string | null>(null)
+  const [intakeError, setIntakeError] = useState<string | null>(null)
   const [patientOrganizationId, setPatientOrganizationId] = useState<string | null>(null)
 
   const [consultNotes, setConsultNotes] = useState<ConsultNote[]>([])
@@ -123,20 +128,41 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             ? data.data.patientOrganizationId
             : null,
         )
-
-        const providedIntake = (data.data.latestIntakeEntry as unknown) as AnamnesisEntry | null
-        const fallbackIntake = loadedEntries.find((entry) => entry.entry_type === 'intake') || null
-        const resolvedIntake = providedIntake ?? fallbackIntake
-        setLatestIntakeEntry(resolvedIntake)
-
-        const intakeHistory = (data.data.intakeHistory || []) as unknown as AnamnesisVersion[]
-        setIntakeVersions(intakeHistory)
       }
+
+      await loadLatestClinicalIntake()
     } catch (err) {
       console.error('[AnamnesisSection] Fetch error:', err)
       setError('Fehler beim Laden der Patient Record-Einträge')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadLatestClinicalIntake = async () => {
+    setIntakeError(null)
+
+    try {
+      const { data, error } = await getClinicalIntakeLatest(patientId)
+
+      if (error) {
+        if (error.status === 403) {
+          setIntakeError('Keine Berechtigung fuer diesen Intake')
+        } else if (error.status === 404) {
+          setIntakeError('Intake nicht gefunden')
+        } else {
+          setIntakeError(error.message || 'Fehler beim Laden des Intakes')
+        }
+        setLatestClinicalIntake(null)
+        return
+      }
+
+      const intake = (data?.intake || null) as ClinicalIntakeRecord | null
+      setLatestClinicalIntake(intake)
+    } catch (err) {
+      console.error('[AnamnesisSection] Intake fetch error:', err)
+      setIntakeError('Fehler beim Laden des Intakes')
+      setLatestClinicalIntake(null)
     }
   }
 
@@ -409,6 +435,14 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return null
   }
 
+  const buildIntakeContent = (intake: ClinicalIntakeRecord): Record<string, unknown> => ({
+    status: intake.status,
+    clinical_summary: intake.clinical_summary,
+    structured_data: intake.structured_data,
+    trigger_reason: intake.trigger_reason,
+    last_updated_from_messages: intake.last_updated_from_messages,
+  })
+
   const getStructuredIntakeData = (content: Record<string, unknown>) => {
     const structured = (content as { structured_data?: unknown }).structured_data
     if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
@@ -469,62 +503,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return getContentText(content)
   }
 
-  const normalizeIntakeContent = (content: unknown): Record<string, unknown> => {
-    if (content && typeof content === 'object' && !Array.isArray(content)) {
-      return content as Record<string, unknown>
-    }
-
-    if (typeof content === 'string' && content.trim()) {
-      try {
-        const parsed = JSON.parse(content)
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          return parsed as Record<string, unknown>
-        }
-      } catch {
-        return { text: content }
-      }
-    }
-
-    return {}
-  }
-
-  const hasStructuredSignals = (content: Record<string, unknown>): boolean => {
-    const structuredData = getStructuredIntakeData(content)
-    const structured = structuredData?.structured
-    if (!structured || typeof structured !== 'object') return false
-
-    const timeline = (structured as { timeline?: unknown }).timeline
-    const keySymptoms = (structured as { key_symptoms?: unknown }).key_symptoms
-
-    const hasTimeline = Array.isArray(timeline) && timeline.length > 0
-    const hasSymptoms = Array.isArray(keySymptoms) && keySymptoms.length > 0
-
-    return hasTimeline || hasSymptoms
-  }
-
-
-  const isDraftOnlyIntake = (content: Record<string, unknown>): boolean => {
-    const status = (content as { status?: unknown }).status
-    if (typeof status !== 'string' || !status.trim()) return false
-
-    const structuredData = getStructuredIntakeData(content)
-    const summary = structuredData?.narrative_summary ?? (content as { narrativeSummary?: unknown }).narrativeSummary
-    const chiefComplaint = structuredData?.chief_complaint ?? (content as { chiefComplaint?: unknown }).chiefComplaint
-    const narrative = (content as { narrative?: unknown }).narrative
-    const summaryAlias = (content as { summary?: unknown }).summary
-    const evidenceRefs = structuredData?.evidence_refs ?? (content as { evidenceRefs?: unknown }).evidenceRefs
-
-    const hasSummary =
-      (typeof summary === 'string' && summary.trim()) ||
-      (typeof summaryAlias === 'string' && summaryAlias.trim()) ||
-      (typeof narrative === 'string' && narrative.trim())
-    const hasChiefComplaint = typeof chiefComplaint === 'string' && chiefComplaint.trim()
-    const hasStructured = hasStructuredSignals(content)
-    const hasEvidenceRefs = Array.isArray(evidenceRefs) && evidenceRefs.length > 0
-
-    return !hasSummary && !hasChiefComplaint && !hasStructured && !hasEvidenceRefs
-  }
-
   const getIntakeStatus = (content: Record<string, unknown>): string | null => {
     const status = (content as { status?: unknown }).status
     if (typeof status === 'string' && status.trim()) return status.trim()
@@ -538,19 +516,18 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return null
   }
 
-  const fetchIntakeHistory = async (entryId: string) => {
+  const fetchIntakeHistory = async () => {
     setIsIntakeHistoryLoading(true)
     setIntakeHistoryError(null)
 
     try {
-      const response = await fetch(`/api/clinician/anamnesis/${entryId}/versions`)
-      const data = await response.json()
+      const { data, error } = await getClinicalIntakeHistory(patientId)
 
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.error?.message || 'Fehler beim Laden der Intake-Historie')
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Laden der Intake-Historie')
       }
 
-      setIntakeVersions((data.data?.versions || []) as AnamnesisVersion[])
+      setIntakeVersions((data?.intakes || []) as ClinicalIntakeRecord[])
       setIsIntakeHistoryOpen(true)
     } catch (err) {
       console.error('[AnamnesisSection] Intake history error:', err)
@@ -605,19 +582,16 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     )
   }
 
-  const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
-  const intakeRawContent = intakeVersions[0]?.content || latestIntake?.content
-  const intakeContent = normalizeIntakeContent(intakeRawContent)
+  const latestIntake = latestClinicalIntake
+  const intakeContent = latestIntake ? buildIntakeContent(latestIntake) : {}
   const intakeClinicalSummary = latestIntake ? getClinicalSummary(intakeContent) : null
-  const interpretedSummary = latestIntake ? getInterpretedClinicalSummary(intakeContent) : null
   const structuredIntakeData = latestIntake ? getStructuredIntakeData(intakeContent) : null
   const structuredIntakeDisplay = structuredIntakeData
     ? (({ evidence_refs, ...rest }) => rest)(structuredIntakeData)
     : null
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
-  const intakeUpdatedAt = intakeVersions[0]?.changed_at || latestIntake?.updated_at
-  const intakeIsDraftOnly = latestIntake ? isDraftOnlyIntake(intakeContent) : false
+  const intakeUpdatedAt = latestIntake?.updated_at
 
   return (
     <>
@@ -634,18 +608,24 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                  {latestIntake.title || 'Intake (letzter Kontakt)'}
+                  Intake (letzter Kontakt)
                 </h3>
                 {intakeUpdatedAt && (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Aktualisiert: {formatDate(intakeUpdatedAt)}
                   </p>
                 )}
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  {intakeStatus && <span>Status: {intakeStatus}</span>}
+                  {typeof latestIntake.version_number === 'number' && (
+                    <span>Version: v{latestIntake.version_number}</span>
+                  )}
+                </div>
               </div>
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => fetchIntakeHistory(latestIntake.id)}
+                onClick={() => fetchIntakeHistory()}
                 disabled={isIntakeHistoryLoading}
               >
                 {isIntakeHistoryLoading ? 'Laedt…' : 'History'}
@@ -654,85 +634,18 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
             </p>
-            {intakeClinicalSummary && (
+            {intakeClinicalSummary ? (
               <p className="text-sm text-slate-600 dark:text-slate-300">
                 {intakeClinicalSummary}
               </p>
-            )}
-            {interpretedSummary?.shortSummary && interpretedSummary.shortSummary.length > 0 && (
-              <div className="space-y-1">
-                {interpretedSummary.shortSummary.map((item, index) => (
-                  <div key={`intake-summary-${index}`} className="text-sm text-slate-600 dark:text-slate-300">
-                    • {item}
-                  </div>
-                ))}
-              </div>
-            )}
-            {interpretedSummary?.narrativeHistory ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                {interpretedSummary.narrativeHistory}
-              </p>
-            ) : intakeIsDraftOnly ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Draft gespeichert (noch keine Zusammenfassung).
-              </p>
             ) : (
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Keine Intake-Zusammenfassung vorhanden.
+                Intake generiert, aber keine klinische Zusammenfassung vorhanden.
               </p>
-            )}
-            {interpretedSummary?.openQuestions && interpretedSummary.openQuestions.length > 0 && (
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
-                  Offene Fragen
-                </p>
-                <div className="space-y-1">
-                  {interpretedSummary.openQuestions.map((question, index) => (
-                    <div key={`intake-question-${index}`} className="text-xs text-slate-600 dark:text-slate-300">
-                      {question}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {(interpretedSummary?.relevantNegatives && interpretedSummary.relevantNegatives.length > 0) && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Relevante Negativa: {interpretedSummary.relevantNegatives.join(', ')}
-              </p>
-            )}
-            {(interpretedSummary?.meds && interpretedSummary.meds.length > 0) && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Medikation: {interpretedSummary.meds.join(', ')}
-              </p>
-            )}
-            {(interpretedSummary?.redFlags && (interpretedSummary.redFlags.present || interpretedSummary.redFlags.items.length > 0)) && (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 p-3">
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-200 mb-2">
-                  Red Flags
-                </p>
-                {interpretedSummary.redFlags.items.length > 0 ? (
-                  <div className="space-y-1">
-                    {interpretedSummary.redFlags.items.map((item, index) => (
-                      <div key={`intake-redflag-${index}`} className="text-xs text-amber-700 dark:text-amber-200">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-amber-700 dark:text-amber-200">
-                    Red Flags vorhanden.
-                  </p>
-                )}
-              </div>
             )}
             {intakeChiefComplaint && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Hauptbeschwerde: {intakeChiefComplaint}
-              </p>
-            )}
-            {intakeStatus && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Status: {intakeStatus}
               </p>
             )}
             {structuredIntakeDisplay && (
@@ -745,6 +658,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 </pre>
               </details>
             )}
+            {intakeError && <Alert variant="error">{intakeError}</Alert>}
             {intakeHistoryError && (
               <Alert variant="error">{intakeHistoryError}</Alert>
             )}
@@ -840,12 +754,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     v{version.version_number}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {formatDate(version.changed_at)}
+                    {formatDate(version.updated_at)}
                   </p>
                 </div>
-                {getIntakeNarrative(version.content) ? (
+                {getIntakeNarrative(buildIntakeContent(version)) ? (
                   <p className="text-sm text-slate-600 dark:text-slate-300">
-                    {getIntakeNarrative(version.content)}
+                    {getIntakeNarrative(buildIntakeContent(version))}
                   </p>
                 ) : (
                   <p className="text-sm text-slate-500 dark:text-slate-400">
