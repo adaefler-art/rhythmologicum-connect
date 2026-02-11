@@ -24,6 +24,7 @@ import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/l
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { getPatientOrganizationId, getPatientProfileId } from '@/lib/api/anamnesis/helpers'
 import type {
   GenerateIntakeRequest,
   GenerateIntakeResponse,
@@ -403,6 +404,123 @@ export async function POST(req: NextRequest) {
         } satisfies GenerateIntakeResponse,
         { status: 500 }
       )
+    }
+
+    const patientId = await getPatientProfileId(supabase, user.id)
+
+    if (!patientId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'PROJECTION_FAILED',
+            message: 'Patient profile not found for projection',
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: 500 }
+      )
+    }
+
+    const organizationId = await getPatientOrganizationId(supabase, patientId)
+
+    if (!organizationId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'PROJECTION_FAILED',
+            message: 'Patient organization not found for projection',
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: 500 }
+      )
+    }
+
+    const projectionContent = {
+      status: 'draft',
+      clinical_intake_id: intake.id,
+      clinical_summary: result.clinicalSummary,
+      structured_data: result.structuredData,
+      source: {
+        kind: 'clinical_intakes',
+        prompt_version: CLINICAL_INTAKE_PROMPT_VERSION,
+        last_updated_from_messages: messages.map((m) => m.id),
+      },
+    }
+
+    const { data: existingEntry, error: existingEntryError } = await supabase
+      .from('anamnesis_entries')
+      .select('id, tags')
+      .eq('patient_id', patientId)
+      .eq('entry_type', 'intake')
+      .eq('is_archived', false)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingEntryError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'PROJECTION_FAILED',
+            message: 'Failed to load anamnesis intake entry',
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: 500 }
+      )
+    }
+
+    if (existingEntry?.id) {
+      const { error: updateError } = await supabase
+        .from('anamnesis_entries')
+        .update({
+          title: 'Intake',
+          content: projectionContent,
+          entry_type: 'intake',
+          tags: existingEntry.tags ?? [],
+          updated_by: user.id,
+        })
+        .eq('id', existingEntry.id)
+
+      if (updateError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'PROJECTION_FAILED',
+              message: 'Failed to update anamnesis intake entry',
+            },
+          } satisfies GenerateIntakeResponse,
+          { status: 500 }
+        )
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('anamnesis_entries')
+        .insert({
+          patient_id: patientId,
+          organization_id: organizationId,
+          title: 'Intake',
+          content: projectionContent,
+          entry_type: 'intake',
+          tags: [],
+          created_by: user.id,
+          updated_by: user.id,
+        })
+
+      if (insertError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: 'PROJECTION_FAILED',
+              message: 'Failed to create anamnesis intake entry',
+            },
+          } satisfies GenerateIntakeResponse,
+          { status: 500 }
+        )
+      }
     }
 
     console.log('[clinical-intake/generate] Intake generated successfully', {

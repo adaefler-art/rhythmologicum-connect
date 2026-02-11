@@ -70,6 +70,10 @@ const buildIntakeDisplaySummary = (content: Json | null): string => {
   }
 
   const record = content as Record<string, unknown>
+  const clinicalSummary = record.clinical_summary
+  if (typeof clinicalSummary === 'string' && clinicalSummary.trim()) {
+    return clinicalSummary.trim()
+  }
   const interpreted = record.interpreted_clinical_summary
   if (interpreted && typeof interpreted === 'object' && !Array.isArray(interpreted)) {
     const interpretedRecord = interpreted as Record<string, unknown>
@@ -85,9 +89,22 @@ const buildIntakeDisplaySummary = (content: Json | null): string => {
     }
   }
 
-  const structuredData = record.structured_intake_data
+  const structuredData = record.structured_data
   if (structuredData && typeof structuredData === 'object' && !Array.isArray(structuredData)) {
     const structuredRecord = structuredData as Record<string, unknown>
+    const narrativeSummary = structuredRecord.narrative_summary
+    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
+      return narrativeSummary.trim()
+    }
+    const chiefComplaint = structuredRecord.chief_complaint
+    if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
+      return chiefComplaint.trim()
+    }
+  }
+
+  const legacyStructured = record.structured_intake_data
+  if (legacyStructured && typeof legacyStructured === 'object' && !Array.isArray(legacyStructured)) {
+    const structuredRecord = legacyStructured as Record<string, unknown>
     const narrativeSummary = structuredRecord.narrative_summary
     if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
       return narrativeSummary.trim()

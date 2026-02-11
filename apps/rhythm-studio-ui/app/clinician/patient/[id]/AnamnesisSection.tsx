@@ -403,10 +403,21 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const getClinicalSummary = (content: Record<string, unknown>): string | null => {
+    const summary = (content as { clinical_summary?: unknown }).clinical_summary
+    if (typeof summary === 'string' && summary.trim()) return summary.trim()
+    return null
+  }
+
   const getStructuredIntakeData = (content: Record<string, unknown>) => {
-    const structured = (content as { structured_intake_data?: unknown }).structured_intake_data
+    const structured = (content as { structured_data?: unknown }).structured_data
     if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
       return structured as Record<string, unknown>
+    }
+
+    const structuredIntake = (content as { structured_intake_data?: unknown }).structured_intake_data
+    if (structuredIntake && typeof structuredIntake === 'object' && !Array.isArray(structuredIntake)) {
+      return structuredIntake as Record<string, unknown>
     }
 
     const legacyStructured = (content as { structured?: unknown }).structured
@@ -428,6 +439,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   }
 
   const getIntakeNarrative = (content: Record<string, unknown>): string | null => {
+    const summary = getClinicalSummary(content)
+    if (summary) return summary
+
     const interpreted = getInterpretedClinicalSummary(content)
     if (interpreted?.narrativeHistory) return interpreted.narrativeHistory
     if (interpreted?.shortSummary && interpreted.shortSummary.length > 0) {
@@ -594,6 +608,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const latestIntake = latestIntakeEntry || entries.find((entry) => entry.entry_type === 'intake') || null
   const intakeRawContent = intakeVersions[0]?.content || latestIntake?.content
   const intakeContent = normalizeIntakeContent(intakeRawContent)
+  const intakeClinicalSummary = latestIntake ? getClinicalSummary(intakeContent) : null
   const interpretedSummary = latestIntake ? getInterpretedClinicalSummary(intakeContent) : null
   const structuredIntakeData = latestIntake ? getStructuredIntakeData(intakeContent) : null
   const structuredIntakeDisplay = structuredIntakeData
@@ -639,6 +654,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
             </p>
+            {intakeClinicalSummary && (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {intakeClinicalSummary}
+              </p>
+            )}
             {interpretedSummary?.shortSummary && interpretedSummary.shortSummary.length > 0 && (
               <div className="space-y-1">
                 {interpretedSummary.shortSummary.map((item, index) => (
