@@ -25,6 +25,7 @@ import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { getPatientOrganizationId, getPatientProfileId } from '@/lib/api/anamnesis/helpers'
+import type { Json } from '@/lib/types/supabase'
 import type {
   GenerateIntakeRequest,
   GenerateIntakeResponse,
@@ -436,11 +437,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const projectionContent = {
+    const structuredDataJson = result.structuredData as unknown as Json
+    const projectionContent: Json = {
       status: 'draft',
       clinical_intake_id: intake.id,
       clinical_summary: result.clinicalSummary,
-      structured_data: result.structuredData,
+      structured_data: structuredDataJson,
       source: {
         kind: 'clinical_intakes',
         prompt_version: CLINICAL_INTAKE_PROMPT_VERSION,
