@@ -33,6 +33,37 @@ const parseLimit = (request: Request) => {
   return Math.min(raw, 50)
 }
 
+const fetchIntakeHistory = async (params: {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
+  column: 'patient_id' | 'user_id'
+  value: string
+  limit: number
+}) => {
+  const { supabase, column, value, limit } = params
+
+  const { data, error } = await supabase
+    .from('clinical_intakes')
+    .select(
+      `
+        id,
+        status,
+        version_number,
+        clinical_summary,
+        structured_data,
+        trigger_reason,
+        last_updated_from_messages,
+        created_at,
+        updated_at
+      `,
+    )
+    .eq(column, value)
+    .order('version_number', { ascending: false })
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+
+  return { data: data ?? [], error }
+}
+
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { patientId } = await context.params
@@ -100,27 +131,15 @@ export async function GET(request: Request, context: RouteContext) {
       }
     }
 
-    const { data: intakes, error: intakeError } = await supabase
-      .from('clinical_intakes')
-      .select(
-        `
-        id,
-        status,
-        version_number,
-        clinical_summary,
-        structured_data,
-        trigger_reason,
-        last_updated_from_messages,
-        created_at,
-        updated_at
-      `,
-      )
-      .eq('patient_id', resolution.patientProfileId)
-      .order('version_number', { ascending: false })
-      .limit(limit)
+    const patientIdResult = await fetchIntakeHistory({
+      supabase,
+      column: 'patient_id',
+      value: resolution.patientProfileId,
+      limit,
+    })
 
-    if (intakeError) {
-      console.error('[clinician/patient/clinical-intake/history] Intake error:', intakeError)
+    if (patientIdResult.error) {
+      console.error('[clinician/patient/clinical-intake/history] Intake error:', patientIdResult.error)
       return NextResponse.json(
         {
           success: false,
@@ -130,9 +149,33 @@ export async function GET(request: Request, context: RouteContext) {
       )
     }
 
+    let intakes = patientIdResult.data
+
+    if (intakes.length === 0 && resolution.patientUserId) {
+      const userIdResult = await fetchIntakeHistory({
+        supabase,
+        column: 'user_id',
+        value: resolution.patientUserId,
+        limit,
+      })
+
+      if (userIdResult.error) {
+        console.error('[clinician/patient/clinical-intake/history] Intake error:', userIdResult.error)
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake history' },
+          },
+          { status: 500 },
+        )
+      }
+
+      intakes = userIdResult.data
+    }
+
     return NextResponse.json({
       success: true,
-      intakes: intakes ?? [],
+      intakes,
     })
   } catch (err) {
     console.error('[clinician/patient/clinical-intake/history] Unexpected error:', err)
