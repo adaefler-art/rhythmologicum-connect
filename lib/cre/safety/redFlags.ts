@@ -7,6 +7,7 @@ import {
   detectClinicalRedFlags,
   type ClinicalRedFlag,
 } from '@/lib/triage/redFlagCatalog'
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 
 export type EscalationLevel = 'A' | 'B' | 'C'
 
@@ -124,7 +125,7 @@ const escalateLevel = (current: EscalationLevel | null, next: EscalationLevel): 
 }
 
 export function evaluateRedFlags(params: {
-  structuredData: Record<string, unknown>
+  structuredData: StructuredIntakeData
   evidenceText?: string
   evidenceRefs?: string[]
 }): SafetyEvaluation {
