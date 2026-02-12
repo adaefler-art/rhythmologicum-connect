@@ -319,7 +319,7 @@ export async function POST(req: NextRequest) {
           success: false,
           error: {
             code: 'INSUFFICIENT_DATA',
-            message: `Need at least ${MIN_MESSAGES_FOR_INTAKE} messages for intake generation`,
+            message: `Need at least ${INTAKE_TRIGGER_RULES.minMessagesForIntake} messages for intake generation`,
           },
         } satisfies GenerateIntakeResponse,
         { status: 400 }
