@@ -1,9 +1,3 @@
-/**
- * Clinician Clinical Intake API - History
- *
- * GET /api/clinician/patient/[patientId]/clinical-intake/history
- */
-
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
@@ -11,7 +5,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 
 type RouteContext = {
-  params: Promise<{ patientId: string }>
+  params: Promise<{ patientId: string; versionNumber: string }>
 }
 
 type IntakeRecord = {
@@ -26,18 +20,21 @@ type IntakeRecord = {
   updated_at: string
 }
 
-const mapIntake = (intake: IntakeRecord) => ({
-  uuid: intake.id,
-  id: intake.id,
-  status: intake.status,
-  version_number: intake.version_number,
-  clinical_summary: intake.clinical_summary,
-  structured_data: intake.structured_data,
-  trigger_reason: intake.trigger_reason,
-  last_updated_from_messages: intake.last_updated_from_messages,
-  created_at: intake.created_at,
-  updated_at: intake.updated_at,
-})
+const mapIntake = (intake: IntakeRecord | null) =>
+  intake
+    ? {
+        uuid: intake.id,
+        id: intake.id,
+        status: intake.status,
+        version_number: intake.version_number,
+        clinical_summary: intake.clinical_summary,
+        structured_data: intake.structured_data,
+        trigger_reason: intake.trigger_reason,
+        last_updated_from_messages: intake.last_updated_from_messages,
+        created_at: intake.created_at,
+        updated_at: intake.updated_at,
+      }
+    : null
 
 const getUserRole = (user: {
   app_metadata?: Record<string, unknown>
@@ -50,21 +47,13 @@ const getUserRole = (user: {
   return null
 }
 
-const parseLimit = (request: Request) => {
-  const { searchParams } = new URL(request.url)
-  const raw = Number(searchParams.get('limit'))
-  if (!Number.isFinite(raw)) return 10
-  if (raw <= 0) return 10
-  return Math.min(raw, 50)
-}
-
-const fetchIntakeHistory = async (params: {
+const fetchIntakeVersion = async (params: {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>
   column: 'patient_id' | 'user_id'
   value: string
-  limit: number
+  versionNumber: number
 }) => {
-  const { supabase, column, value, limit } = params
+  const { supabase, column, value, versionNumber } = params
 
   const { data, error } = await supabase
     .from('clinical_intakes')
@@ -82,19 +71,30 @@ const fetchIntakeHistory = async (params: {
       `,
     )
     .eq(column, value)
-    .order('version_number', { ascending: false })
-    .order('updated_at', { ascending: false })
-    .limit(limit)
+    .eq('version_number', versionNumber)
+    .limit(1)
+    .maybeSingle()
 
-  return { data: (data ?? []) as IntakeRecord[], error }
+  return { data: (data ?? null) as IntakeRecord | null, error }
 }
 
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(_request: Request, context: RouteContext) {
   try {
-    const { patientId } = await context.params
+    const { patientId, versionNumber } = await context.params
+    const parsed = Number(versionNumber)
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: ErrorCode.INVALID_INPUT, message: 'Invalid intake version number' },
+        },
+        { status: 400 },
+      )
+    }
+
     const supabase = await createServerSupabaseClient()
     const admin = createAdminSupabaseClient()
-    const limit = parseLimit(request)
 
     const {
       data: { user },
@@ -156,54 +156,64 @@ export async function GET(request: Request, context: RouteContext) {
       }
     }
 
-    const patientIdResult = await fetchIntakeHistory({
+    const patientIdResult = await fetchIntakeVersion({
       supabase,
       column: 'patient_id',
       value: resolution.patientProfileId,
-      limit,
+      versionNumber: parsed,
     })
 
     if (patientIdResult.error) {
-      console.error('[clinician/patient/clinical-intake/history] Intake error:', patientIdResult.error)
+      console.error('[clinician/patient/intake/version] Intake error:', patientIdResult.error)
       return NextResponse.json(
         {
           success: false,
-          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake history' },
+          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
         },
         { status: 500 },
       )
     }
 
-    let intakes = patientIdResult.data
+    let intake = patientIdResult.data
 
-    if (intakes.length === 0 && resolution.patientUserId) {
-      const userIdResult = await fetchIntakeHistory({
+    if (!intake && resolution.patientUserId) {
+      const userIdResult = await fetchIntakeVersion({
         supabase,
         column: 'user_id',
         value: resolution.patientUserId,
-        limit,
+        versionNumber: parsed,
       })
 
       if (userIdResult.error) {
-        console.error('[clinician/patient/clinical-intake/history] Intake error:', userIdResult.error)
+        console.error('[clinician/patient/intake/version] Intake error:', userIdResult.error)
         return NextResponse.json(
           {
             success: false,
-            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake history' },
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
           },
           { status: 500 },
         )
       }
 
-      intakes = userIdResult.data
+      intake = userIdResult.data
+    }
+
+    if (!intake) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: ErrorCode.NOT_FOUND, message: 'Intake version not found' },
+        },
+        { status: 404 },
+      )
     }
 
     return NextResponse.json({
       success: true,
-      intakes: intakes.map(mapIntake),
+      intake: mapIntake(intake),
     })
   } catch (err) {
-    console.error('[clinician/patient/clinical-intake/history] Unexpected error:', err)
+    console.error('[clinician/patient/intake/version] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,

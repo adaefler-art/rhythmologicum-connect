@@ -8,6 +8,7 @@ import { env } from '@/lib/env'
 import { flagEnabled } from '@/lib/env/flags'
 import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
+import { getSafetyUiState } from '@/lib/cre/safety/policy'
 
 /**
  * DialogScreenV2 Component (Issue 2 - Chat-First Dashboard)
@@ -45,9 +46,9 @@ interface StubbedMessage {
 type IntakeEntry = {
   id: string
   content: Record<string, unknown>
-  entry_type: string | null
   created_at: string
   updated_at?: string | null
+  version_number?: number | null
 }
 
 type IntakeEvidenceItem = {
@@ -91,6 +92,7 @@ const MAX_INTAKE_NARRATIVE_LENGTH = 1000
 const MAX_INTAKE_ITEM_LENGTH = 200
 const MAX_CHIEF_COMPLAINT_LENGTH = 200
 const OUTPUT_JSON_MARKER = 'OUTPUT_JSON'
+const ANAMNESIS_INTAKE_WRITES_DISABLED = true
 
 const trimText = (value: string, max: number) =>
   value.length > max ? value.slice(0, max).trim() : value.trim()
@@ -107,6 +109,9 @@ const getIntakeNarrative = (content: Record<string, unknown>): string | null => 
       if (first && typeof first === 'string') return first.trim()
     }
   }
+
+  const clinicalSummary = content?.clinical_summary
+  if (typeof clinicalSummary === 'string' && clinicalSummary.trim()) return clinicalSummary.trim()
 
   const structuredData = content?.structured_data ?? content?.structured_intake_data
   if (structuredData && typeof structuredData === 'object') {
@@ -179,6 +184,12 @@ export function DialogScreenV2() {
   const context = searchParams.get('context')
   const assessmentId = searchParams.get('assessmentId')
   const devtoolsEnabled = searchParams.has('devtools')
+  const isDevPreviewHost =
+    env.NODE_ENV !== 'production' ||
+    env.VERCEL_ENV === 'preview' ||
+    (typeof window !== 'undefined' &&
+      ['localhost', '127.0.0.1'].includes(window.location.hostname))
+  const showManualTrigger = devtoolsEnabled || isDevPreviewHost
 
   const [chatMessages, setChatMessages] = useState<StubbedMessage[]>([])
   const [input, setInput] = useState('')
@@ -212,7 +223,8 @@ export function DialogScreenV2() {
     latestVersionCount: null,
   })
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
-  const isSafetyBlocked = safetyStatus?.escalation_level === 'A'
+  const safetyUiState = getSafetyUiState(safetyStatus)
+  const isSafetyBlocked = safetyUiState.blockChat
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeRunIdRef = useRef<string | null>(null)
@@ -400,28 +412,38 @@ export function DialogScreenV2() {
 
   const fetchLatestIntake = async (): Promise<IntakeEntry | null> => {
     try {
-      const response = await fetch('/api/patient/anamnesis?entry_type=intake&latest=1', {
+      const response = await fetch('/api/patient/intake/latest', {
         headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
       })
       const data = await response.json()
       if (!response.ok || !data?.success) return null
 
-      const entry = data?.data?.entry as IntakeEntry | null | undefined
-      if (!entry) return null
-
-      const latestVersion = data?.data?.latestVersion as
-        | { content?: Record<string, unknown> | null }
+      const intake = data?.intake as
+        | {
+            id?: string
+            uuid?: string
+            structured_data?: Record<string, unknown>
+            clinical_summary?: string | null
+            updated_at?: string | null
+            version_number?: number | null
+            created_at?: string
+          }
         | null
         | undefined
 
-      const content =
-        latestVersion?.content && typeof latestVersion.content === 'object'
-          ? latestVersion.content
-          : entry.content
+      if (!intake) return null
+
+      const content: Record<string, unknown> = {
+        structured_data: intake.structured_data ?? {},
+        clinical_summary: intake.clinical_summary ?? null,
+      }
 
       return {
-        ...entry,
-        content: content as Record<string, unknown>,
+        id: intake.id || intake.uuid || 'unknown',
+        content,
+        created_at: intake.created_at || intake.updated_at || new Date().toISOString(),
+        updated_at: intake.updated_at ?? null,
+        version_number: intake.version_number ?? null,
       }
     } catch (err) {
       console.error('[DialogScreenV2] Failed to load intake entries', err)
@@ -495,6 +517,10 @@ export function DialogScreenV2() {
   }
 
   const createNewIntakeEntry = async (): Promise<string | null> => {
+    if (ANAMNESIS_INTAKE_WRITES_DISABLED) {
+      console.warn('[DialogScreenV2] Anamnesis intake writes are disabled')
+      return null
+    }
     if (typeof window !== 'undefined') {
       const storedEntryId = window.sessionStorage.getItem(INTAKE_SESSION_KEY)
       if (storedEntryId) {
@@ -709,6 +735,10 @@ export function DialogScreenV2() {
   }
 
   const saveIntakeSnapshot = async () => {
+    if (ANAMNESIS_INTAKE_WRITES_DISABLED) {
+      console.warn('[DialogScreenV2] Anamnesis intake writes are disabled')
+      return
+    }
     if (!intakeEntryId) return
 
     try {
@@ -755,6 +785,10 @@ export function DialogScreenV2() {
     reason: string,
     options?: { keepalive?: boolean; skipVerify?: boolean },
   ) => {
+    if (ANAMNESIS_INTAKE_WRITES_DISABLED) {
+      console.warn('[DialogScreenV2] Anamnesis intake writes are disabled')
+      return
+    }
     if (!intakeEntryId) return
     if (autosaveInFlightRef.current) return
 
@@ -819,14 +853,20 @@ export function DialogScreenV2() {
       })
       const data = await response.json()
       if (!response.ok || !data?.ok) return
+      const latestIntakeId = data.latestIntakeId ?? data.latestIntakeEntryId ?? null
+      const latestVersionNumber =
+        typeof data.latestVersionNumber === 'number'
+          ? data.latestVersionNumber
+          : typeof data.latestVersionCount === 'number'
+            ? data.latestVersionCount
+            : null
       setIntakePersistence((prev) => ({
         ...prev,
-        entryId: data.latestIntakeEntryId ?? prev.entryId,
-        latestIntakeEntryId: data.latestIntakeEntryId ?? null,
+        entryId: latestIntakeId ?? prev.entryId,
+        latestIntakeEntryId: latestIntakeId,
         recentIntakeCount:
           typeof data.recentIntakeCount === 'number' ? data.recentIntakeCount : null,
-        latestVersionCount:
-          typeof data.latestVersionCount === 'number' ? data.latestVersionCount : null,
+        latestVersionCount: latestVersionNumber,
       }))
     } catch (err) {
       console.error('[DialogScreenV2] Intake write check failed', err)
@@ -895,15 +935,6 @@ export function DialogScreenV2() {
 
     const trimmed = input.trim()
     if (!trimmed) return
-
-    if (!intakeEntryId) {
-      const entryId = await createNewIntakeEntry()
-      if (!entryId) {
-        setSendError('Intake konnte nicht gespeichert werden. Bitte erneut versuchen.')
-        setIsSending(false)
-        return
-      }
-    }
 
     setIsSending(true)
     setSendError(null)
@@ -987,7 +1018,7 @@ export function DialogScreenV2() {
               <p className="text-base font-semibold">Dialog mit PAT</p>
             </div>
             <div className="flex items-center gap-2">
-              {devtoolsEnabled && (
+              {showManualTrigger && (
                 <button
                   type="button"
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm"
@@ -1007,18 +1038,19 @@ export function DialogScreenV2() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800">
               <p className="font-semibold">Sicherheits-Hinweis (Level A)</p>
               <p className="mt-1">
-                Es wurde ein sicherheitskritischer Hinweis erkannt. Bitte wenden Sie sich umgehend
-                an den Notruf oder eine medizinische Fachperson. Der Chat ist vorerst deaktiviert.
+                Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer
+                medizinischen Fachperson besprochen wird. Bitte nutzen Sie jetzt einen
+                direkten Kontaktweg (z.B. telefonische Beratung oder Notfallnummer).
+                Der Chat ist vorerst pausiert.
               </p>
             </div>
           )}
 
           {devtoolsEnabled && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
-              <p className="font-semibold">Intake Persistence</p>
+              <p className="font-semibold">Intake Debug</p>
               <p>runId: {intakePersistence.runId || 'pending'}</p>
-              <p>entryId: {intakePersistence.entryId || 'none'}</p>
-              <p>latestIntakeEntryId: {intakePersistence.latestIntakeEntryId || 'none'}</p>
+              <p>latestIntakeId: {intakePersistence.latestIntakeEntryId || 'none'}</p>
               <p>
                 recentIntakeCount:{' '}
                 {intakePersistence.recentIntakeCount === null
@@ -1026,36 +1058,12 @@ export function DialogScreenV2() {
                   : intakePersistence.recentIntakeCount}
               </p>
               <p>
-                latestVersionCount:{' '}
+                latestVersionNumber:{' '}
                 {intakePersistence.latestVersionCount === null
                   ? 'unknown'
                   : intakePersistence.latestVersionCount}
               </p>
               <p>lastSummary: {lastSummary || 'none'}</p>
-              <p>
-                create: {intakePersistence.createOk ? 'ok' : intakePersistence.createFailed ? 'failed' : 'pending'}
-                {' · '}patch: {intakePersistence.patchOk ? 'ok' : intakePersistence.patchFailed ? 'failed' : 'pending'}
-              </p>
-              {intakePersistence.createFailed && (
-                <p className="mt-2 font-semibold text-amber-800">
-                  Intake not persisted (no anamnesis write)
-                </p>
-              )}
-              {intakePersistence.patchFailed && (
-                <p className="mt-2 font-semibold text-amber-800">
-                  Intake patch failed (no version write)
-                </p>
-              )}
-              {intakePersistence.autosaveFailed && (
-                <p className="mt-2 font-semibold text-amber-800">
-                  Autosave failed (dirty state retained)
-                </p>
-              )}
-              {intakePersistence.patchOk && intakePersistence.latestVersionCount === 0 && (
-                <p className="mt-2 font-semibold text-amber-800">
-                  Intake patch persisted, but no version recorded yet
-                </p>
-              )}
               {manualIntakeStatus === 'ok' && (
                 <p className="mt-2 font-semibold text-emerald-700">
                   Manual intake generation succeeded
@@ -1069,22 +1077,6 @@ export function DialogScreenV2() {
               {manualIntakeError && (
                 <p className="mt-1 text-amber-800">{manualIntakeError}</p>
               )}
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  className="rounded-md border border-amber-300 px-2 py-1 text-xs font-semibold text-amber-900"
-                  onClick={() => void createNewIntakeEntry()}
-                >
-                  Retry Create
-                </button>
-                <button
-                  type="button"
-                  className="rounded-md border border-amber-300 px-2 py-1 text-xs font-semibold text-amber-900"
-                  onClick={() => void saveIntakeSnapshot()}
-                >
-                  Save Snapshot
-                </button>
-              </div>
             </div>
           )}
 

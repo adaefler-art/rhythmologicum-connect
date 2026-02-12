@@ -24,9 +24,8 @@ import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/l
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
-import { getPatientOrganizationId, getPatientProfileId } from '@/lib/api/anamnesis/helpers'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
-import type { Json } from '@/lib/types/supabase'
+import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
   GenerateIntakeResponse,
@@ -36,7 +35,6 @@ import type {
 
 const MODEL_FALLBACK = 'claude-sonnet-4-5-20250929'
 const MAX_TOKENS = 2000
-const MIN_MESSAGES_FOR_INTAKE = 3
 
 type ChatMessage = {
   id: string
@@ -64,7 +62,7 @@ async function getMessagesForIntake(
       query = query.in('id', messageIds)
     } else {
       // If no specific messages, get recent conversation
-      query = query.limit(50)
+      query = query.limit(INTAKE_TRIGGER_RULES.maxRecentMessages)
     }
 
     const { data, error } = await query
@@ -315,7 +313,7 @@ export async function POST(req: NextRequest) {
     // Fetch messages for intake
     const messages = await getMessagesForIntake(user.id, messageIds, supabase)
 
-    if (messages.length < MIN_MESSAGES_FOR_INTAKE) {
+    if (messages.length < INTAKE_TRIGGER_RULES.minMessagesForIntake) {
       return NextResponse.json(
         {
           success: false,
@@ -400,7 +398,7 @@ export async function POST(req: NextRequest) {
     const safetyResult = evaluateRedFlags({
       structuredData: result.structuredData,
       evidenceText,
-      evidenceRefs: messages.map((m) => m.id),
+      evidenceMessageIds: messages.map((m) => m.id),
     })
 
     result.structuredData.safety = safetyResult
@@ -430,124 +428,6 @@ export async function POST(req: NextRequest) {
         } satisfies GenerateIntakeResponse,
         { status: 500 }
       )
-    }
-
-    const patientId = await getPatientProfileId(supabase, user.id)
-
-    if (!patientId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'PROJECTION_FAILED',
-            message: 'Patient profile not found for projection',
-          },
-        } satisfies GenerateIntakeResponse,
-        { status: 500 }
-      )
-    }
-
-    const organizationId = await getPatientOrganizationId(supabase, patientId)
-
-    if (!organizationId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'PROJECTION_FAILED',
-            message: 'Patient organization not found for projection',
-          },
-        } satisfies GenerateIntakeResponse,
-        { status: 500 }
-      )
-    }
-
-    const structuredDataJson = result.structuredData as unknown as Json
-    const projectionContent: Json = {
-      status: 'draft',
-      clinical_intake_id: intake.id,
-      clinical_summary: result.clinicalSummary,
-      structured_data: structuredDataJson,
-      source: {
-        kind: 'clinical_intakes',
-        prompt_version: CLINICAL_INTAKE_PROMPT_VERSION,
-        last_updated_from_messages: messages.map((m) => m.id),
-      },
-    }
-
-    const { data: existingEntry, error: existingEntryError } = await supabase
-      .from('anamnesis_entries')
-      .select('id, tags')
-      .eq('patient_id', patientId)
-      .eq('entry_type', 'intake')
-      .eq('is_archived', false)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (existingEntryError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'PROJECTION_FAILED',
-            message: 'Failed to load anamnesis intake entry',
-          },
-        } satisfies GenerateIntakeResponse,
-        { status: 500 }
-      )
-    }
-
-    if (existingEntry?.id) {
-      const { error: updateError } = await supabase
-        .from('anamnesis_entries')
-        .update({
-          title: 'Intake',
-          content: projectionContent,
-          entry_type: 'intake',
-          tags: existingEntry.tags ?? [],
-          updated_by: user.id,
-        })
-        .eq('id', existingEntry.id)
-
-      if (updateError) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: 'PROJECTION_FAILED',
-              message: 'Failed to update anamnesis intake entry',
-            },
-          } satisfies GenerateIntakeResponse,
-          { status: 500 }
-        )
-      }
-    } else {
-      const { error: insertError } = await supabase
-        .from('anamnesis_entries')
-        .insert({
-          patient_id: patientId,
-          organization_id: organizationId,
-          title: 'Intake',
-          content: projectionContent,
-          entry_type: 'intake',
-          tags: [],
-          created_by: user.id,
-          updated_by: user.id,
-        })
-
-      if (insertError) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: 'PROJECTION_FAILED',
-              message: 'Failed to create anamnesis intake entry',
-            },
-          } satisfies GenerateIntakeResponse,
-          { status: 500 }
-        )
-      }
     }
 
     console.log('[clinical-intake/generate] Intake generated successfully', {

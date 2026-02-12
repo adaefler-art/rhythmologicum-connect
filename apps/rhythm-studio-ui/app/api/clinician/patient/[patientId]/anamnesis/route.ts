@@ -12,7 +12,6 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ENTRY_TYPES, validateContentSize, validateCreateEntry } from '@/lib/api/anamnesis/validation'
-import type { Json } from '@/lib/types/supabase'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 
 type RouteContext = {
@@ -64,74 +63,6 @@ const formatAssessmentStatus = (status: string) => {
   return status
 }
 
-const buildIntakeDisplaySummary = (content: Json | null): string => {
-  if (!content || typeof content !== 'object') {
-    return 'Draft gespeichert (noch keine Zusammenfassung)'
-  }
-
-  const record = content as Record<string, unknown>
-  const clinicalSummary = record.clinical_summary
-  if (typeof clinicalSummary === 'string' && clinicalSummary.trim()) {
-    return clinicalSummary.trim()
-  }
-  const interpreted = record.interpreted_clinical_summary
-  if (interpreted && typeof interpreted === 'object' && !Array.isArray(interpreted)) {
-    const interpretedRecord = interpreted as Record<string, unknown>
-    const shortSummary = interpretedRecord.short_summary
-    if (Array.isArray(shortSummary)) {
-      const first = shortSummary.find((item) => typeof item === 'string' && item.trim())
-      if (first && typeof first === 'string') return first.trim()
-    }
-
-    const narrativeHistory = interpretedRecord.narrative_history
-    if (typeof narrativeHistory === 'string' && narrativeHistory.trim()) {
-      return narrativeHistory.trim()
-    }
-  }
-
-  const structuredData = record.structured_data
-  if (structuredData && typeof structuredData === 'object' && !Array.isArray(structuredData)) {
-    const structuredRecord = structuredData as Record<string, unknown>
-    const narrativeSummary = structuredRecord.narrative_summary
-    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
-      return narrativeSummary.trim()
-    }
-    const chiefComplaint = structuredRecord.chief_complaint
-    if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
-      return chiefComplaint.trim()
-    }
-  }
-
-  const legacyStructured = record.structured_intake_data
-  if (legacyStructured && typeof legacyStructured === 'object' && !Array.isArray(legacyStructured)) {
-    const structuredRecord = legacyStructured as Record<string, unknown>
-    const narrativeSummary = structuredRecord.narrative_summary
-    if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
-      return narrativeSummary.trim()
-    }
-    const chiefComplaint = structuredRecord.chief_complaint
-    if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
-      return chiefComplaint.trim()
-    }
-  }
-
-  const narrativeSummary = record.narrativeSummary
-  if (typeof narrativeSummary === 'string' && narrativeSummary.trim()) {
-    return narrativeSummary.trim()
-  }
-
-  const summary = record.summary
-  if (typeof summary === 'string' && summary.trim()) {
-    return summary.trim()
-  }
-
-  const chiefComplaint = record.chiefComplaint
-  if (typeof chiefComplaint === 'string' && chiefComplaint.trim()) {
-    return chiefComplaint.trim()
-  }
-
-  return 'Draft gespeichert (noch keine Zusammenfassung)'
-}
 
 async function computeAnamnesisFacts(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, patientId: string) {
   const facts: SuggestedFact[] = []
@@ -333,7 +264,6 @@ export async function GET(_request: Request, context: RouteContext) {
 
     const activeEntries = (entries ?? []).filter((entry) => !entry.is_archived)
     const latestEntry = activeEntries.find((entry) => entry.entry_type !== 'intake') ?? null
-    const latestIntakeEntry = activeEntries.find((entry) => entry.entry_type === 'intake') ?? null
 
     const patientOrganizationId = await getPatientOrganizationId(supabase, resolvedPatientId)
 
@@ -347,35 +277,6 @@ export async function GET(_request: Request, context: RouteContext) {
 
     if (versions.error) {
       console.error('[clinician/patient/anamnesis GET] Versions error:', versions.error)
-    }
-
-    let intakeHistory: typeof versions | null = null
-    let intakeVersionsCount = 0
-    let latestIntakeVersion: Record<string, unknown> | null = null
-
-    if (latestIntakeEntry) {
-      intakeHistory = await supabase
-        .from('anamnesis_entry_versions')
-        .select('id, version_number, title, content, entry_type, tags, changed_at, change_reason')
-        .eq('entry_id', latestIntakeEntry.id)
-        .order('version_number', { ascending: false })
-
-      if (intakeHistory.error) {
-        console.error('[clinician/patient/anamnesis GET] Intake versions error:', intakeHistory.error)
-      } else if (intakeHistory.data && intakeHistory.data.length > 0) {
-        latestIntakeVersion = intakeHistory.data[0] as Record<string, unknown>
-      }
-
-      const { count: intakeCount, error: intakeCountError } = await supabase
-        .from('anamnesis_entry_versions')
-        .select('id', { count: 'exact', head: true })
-        .eq('entry_id', latestIntakeEntry.id)
-
-      if (intakeCountError) {
-        console.error('[clinician/patient/anamnesis GET] Intake count error:', intakeCountError)
-      }
-
-      intakeVersionsCount = intakeCount ?? 0
     }
 
     const suggestedFacts = await computeAnamnesisFacts(supabase, resolvedPatientId)
@@ -395,24 +296,6 @@ export async function GET(_request: Request, context: RouteContext) {
         entries: entries ?? [],
         latestEntry,
         versions: versions.data ?? [],
-        latestIntakeEntry: latestIntakeEntry
-          ? {
-              ...latestIntakeEntry,
-              entryId: latestIntakeEntry.id,
-              versions_count: intakeVersionsCount,
-              content: latestIntakeVersion?.content ?? latestIntakeEntry.content,
-              updated_at: (latestIntakeVersion?.changed_at as string | undefined) ?? latestIntakeEntry.updated_at,
-              displaySummary: buildIntakeDisplaySummary(
-                (latestIntakeVersion?.content as Json | undefined) ??
-                  (latestIntakeEntry.content as Json | null),
-              ),
-            }
-          : null,
-        intakeHistory:
-          (intakeHistory?.data ?? []).map((version) => ({
-            ...version,
-            created_at: version.changed_at,
-          })),
         suggestedFacts,
         patientOrganizationId,
       },

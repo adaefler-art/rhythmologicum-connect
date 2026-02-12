@@ -8,22 +8,27 @@ import {
   type ClinicalRedFlag,
 } from '@/lib/triage/redFlagCatalog'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
+import { evaluateSafetyRules } from '@/lib/cre/safety/rules/evaluate'
 
 export type EscalationLevel = 'A' | 'B' | 'C'
 
 export type RedFlagFinding = {
   id: string
+  rule_id: string
+  policy_version: string
   domain: string
   trigger: string
   level: EscalationLevel
   rationale: string
-  evidence_refs?: string[]
+  evidence_message_ids?: string[]
 }
 
 export type SafetyEvaluation = {
   red_flag_present: boolean
   escalation_level: EscalationLevel | null
   red_flags: RedFlagFinding[]
+  rule_ids?: string[]
+  check_ids?: string[]
   contradictions_present?: boolean
   safety_questions?: string[]
   quality?: {
@@ -34,56 +39,67 @@ export type SafetyEvaluation = {
 
 type RuleMeta = {
   id: string
+  rule_id: string
   domain: string
   level: EscalationLevel
   rationale: string
 }
 
+const SAFETY_POLICY_VERSION = '2.1'
+
 const RULES: Record<ClinicalRedFlag, RuleMeta> = {
   [CLINICAL_RED_FLAG.CHEST_PAIN]: {
     id: 'CHEST_PAIN',
+    rule_id: 'SFTY-2.1-R-CHEST-PAIN',
     domain: 'cardio',
     level: 'B',
     rationale: 'Brustschmerz erfordert eine priorisierte Abklaerung.',
   },
   [CLINICAL_RED_FLAG.SYNCOPE]: {
     id: 'SYNCOPE',
+    rule_id: 'SFTY-2.1-R-SYNCOPE',
     domain: 'cardio',
     level: 'B',
     rationale: 'Synkope oder Bewusstseinsverlust erfordert eine dringende Abklaerung.',
   },
   [CLINICAL_RED_FLAG.SEVERE_DYSPNEA]: {
     id: 'SEVERE_DYSPNEA',
+    rule_id: 'SFTY-2.1-R-SEVERE-DYSPNEA',
     domain: 'respiratory',
     level: 'A',
     rationale: 'Schwere Atemnot erfordert sofortige medizinische Abklaerung.',
   },
   [CLINICAL_RED_FLAG.SUICIDAL_IDEATION]: {
     id: 'SUICIDAL_IDEATION',
+    rule_id: 'SFTY-2.1-R-SUICIDAL-IDEATION',
     domain: 'mental-health',
     level: 'A',
     rationale: 'Suizidale Gedanken erfordern sofortige Hilfe und Unterbrechung des digitalen Prozesses.',
   },
   [CLINICAL_RED_FLAG.ACUTE_PSYCHIATRIC_CRISIS]: {
     id: 'ACUTE_PSYCHIATRIC_CRISIS',
+    rule_id: 'SFTY-2.1-R-ACUTE-PSYCH',
     domain: 'mental-health',
     level: 'B',
     rationale: 'Akute psychische Krise erfordert priorisierte aerztliche Ruecksprache.',
   },
   [CLINICAL_RED_FLAG.SEVERE_PALPITATIONS]: {
     id: 'SEVERE_PALPITATIONS',
+    rule_id: 'SFTY-2.1-R-SEVERE-PALPITATIONS',
     domain: 'cardio',
     level: 'B',
     rationale: 'Ausgepraegte Palpitationen erfordern priorisierte Abklaerung.',
   },
   [CLINICAL_RED_FLAG.ACUTE_NEUROLOGICAL]: {
     id: 'ACUTE_NEUROLOGICAL',
+    rule_id: 'SFTY-2.1-R-ACUTE-NEURO',
     domain: 'neurology',
     level: 'A',
     rationale: 'Akute neurologische Ausfaelle erfordern sofortige Abklaerung.',
   },
   [CLINICAL_RED_FLAG.SEVERE_UNCONTROLLED_SYMPTOMS]: {
     id: 'SEVERE_UNCONTROLLED_SYMPTOMS',
+    rule_id: 'SFTY-2.1-R-SEVERE-UNCONTROLLED',
     domain: 'general',
     level: 'A',
     rationale: 'Schwere unkontrollierbare Symptome erfordern eine sofortige Abklaerung.',
@@ -127,9 +143,9 @@ const escalateLevel = (current: EscalationLevel | null, next: EscalationLevel): 
 export function evaluateRedFlags(params: {
   structuredData: StructuredIntakeData
   evidenceText?: string
-  evidenceRefs?: string[]
+  evidenceMessageIds?: string[]
 }): SafetyEvaluation {
-  const { structuredData, evidenceText, evidenceRefs } = params
+  const { structuredData, evidenceText, evidenceMessageIds } = params
 
   const textParts: string[] = []
   const pushText = (value?: unknown) => {
@@ -172,11 +188,13 @@ export function evaluateRedFlags(params: {
     if (!rule) return
     findings.push({
       id: rule.id,
+      rule_id: rule.rule_id,
+      policy_version: SAFETY_POLICY_VERSION,
       domain: rule.domain,
       trigger: flag,
       level: rule.level,
       rationale: rule.rationale,
-      evidence_refs: evidenceRefs,
+      evidence_message_ids: evidenceMessageIds,
     })
     escalation = escalateLevel(escalation, rule.level)
   })
@@ -189,11 +207,13 @@ export function evaluateRedFlags(params: {
   if (detected.includes(CLINICAL_RED_FLAG.CHEST_PAIN) && durationMinutes !== null && durationMinutes >= 20) {
     findings.push({
       id: 'CHEST_PAIN_PROLONGED',
+      rule_id: 'SFTY-2.1-R-CHEST-PAIN-20M',
+      policy_version: SAFETY_POLICY_VERSION,
       domain: 'cardio',
       trigger: 'CHEST_PAIN_DURATION',
       level: 'A',
       rationale: 'Brustschmerz seit >= 20 Minuten erfordert sofortige Abklaerung.',
-      evidence_refs: evidenceRefs,
+      evidence_message_ids: evidenceMessageIds,
     })
     escalation = escalateLevel(escalation, 'A')
   }
@@ -202,10 +222,13 @@ export function evaluateRedFlags(params: {
   if (Array.isArray(uncertainties) && uncertainties.length >= 2 && escalation === null) {
     findings.push({
       id: 'UNCERTAINTY_HIGH',
+      rule_id: 'SFTY-2.1-R-UNCERTAINTY-2PLUS',
+      policy_version: SAFETY_POLICY_VERSION,
       domain: 'safety',
       trigger: 'UNCERTAINTY',
       level: 'C',
       rationale: 'Mehrere Unsicherheiten erfordern gezielte Sicherheitsfragen.',
+      evidence_message_ids: evidenceMessageIds,
     })
     escalation = 'C'
   }
@@ -226,11 +249,14 @@ export function evaluateRedFlags(params: {
   }
 
   const redFlagPresent = findings.some((flag) => flag.level === 'A' || flag.level === 'B')
+  const ruleEvaluation = evaluateSafetyRules({ structuredData, evidenceText })
 
   return {
     red_flag_present: redFlagPresent,
     escalation_level: escalation,
     red_flags: findings,
+    rule_ids: ruleEvaluation.ruleIds,
+    check_ids: ruleEvaluation.checkIds,
     contradictions_present: contradictions || undefined,
     safety_questions: escalation === 'C' ? SAFETY_QUESTIONS_LEVEL_C : undefined,
     quality: {
@@ -241,12 +267,15 @@ export function evaluateRedFlags(params: {
 
 export function formatSafetySummaryLine(result: SafetyEvaluation): string {
   if (!result.escalation_level) {
-    return 'Red Flags: keine.'
+    return 'Safety: keine Red Flags.'
   }
 
   const level = result.escalation_level
-  const labels = result.red_flags.map((flag) => flag.id).join(', ')
-  const base = `Red Flags: Level ${level}${labels ? ` (${labels})` : ''}.`
+  const labels = result.red_flags
+    .map((flag) => flag.rule_id || flag.id)
+    .filter(Boolean)
+    .join(', ')
+  const base = `Safety: Level ${level}${labels ? ` (${labels})` : ''}.`
 
   if (level === 'C' && result.safety_questions && result.safety_questions.length > 0) {
     return `${base} Offene Sicherheitsfragen: ${result.safety_questions.join(' ')}`

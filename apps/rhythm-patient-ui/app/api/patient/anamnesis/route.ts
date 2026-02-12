@@ -69,7 +69,7 @@ const withBuildHeaders = () => ({
 const createEntrySchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be 500 characters or less'),
   content: z.record(z.string(), z.unknown()).optional(),
-  entry_type: z.literal('intake'),
+  entry_type: z.string().optional(),
   tags: z.array(z.string()).optional().default([]),
   change_reason: z.string().optional(),
 })
@@ -175,6 +175,19 @@ export async function GET(request: Request) {
       )
     }
 
+    if (entryTypeParam === 'intake') {
+      return respond(
+        {
+          success: false,
+          error: {
+            code: 'INTAKE_NOT_SUPPORTED',
+            message: 'Intake is sourced from clinical_intakes only.',
+          },
+        },
+        410,
+      )
+    }
+
     if (latestOnly) {
       const { data: latestEntry, error: latestError } = await supabase
         .from('anamnesis_entries')
@@ -191,7 +204,7 @@ export async function GET(request: Request) {
         `,
         )
         .eq('patient_id', patientId)
-        .eq('entry_type', entryTypeParam || 'intake')
+        .neq('entry_type', 'intake')
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -260,6 +273,8 @@ export async function GET(request: Request) {
 
     if (entryTypeParam) {
       entriesQuery = entriesQuery.eq('entry_type', entryTypeParam)
+    } else {
+      entriesQuery = entriesQuery.neq('entry_type', 'intake')
     }
 
     const { data: entries, error: queryError } = await entriesQuery
@@ -490,6 +505,18 @@ export async function POST(request: Request) {
 
     try {
       const baseValidated = createEntrySchema.parse(body)
+      if (baseValidated.entry_type === 'intake') {
+        return respond(
+          {
+            success: false,
+            error: {
+              code: 'INTAKE_NOT_SUPPORTED',
+              message: 'Intake is sourced from clinical_intakes only.',
+            },
+          },
+          410,
+        )
+      }
       validatedData = validateCreateEntry({
         ...baseValidated,
         content: baseValidated.content ?? {},
@@ -552,7 +579,7 @@ export async function POST(request: Request) {
           organization_id: organizationId,
           title: validatedData.title,
           content: validatedData.content as Json,
-          entry_type: 'intake',
+          entry_type: validatedData.entry_type ?? 'other',
           tags: validatedData.tags || [],
           created_by: user.id,
           updated_by: user.id,

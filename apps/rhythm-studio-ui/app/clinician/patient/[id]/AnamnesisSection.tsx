@@ -11,13 +11,14 @@
  * - Access only via assignment (enforced by RLS)
  * 
  * Data sources: /api/clinician/patient/[patientId]/anamnesis (entries) +
- *               /api/clinician/patient/[patientId]/clinical-intake/latest (intake)
+ *               /api/clinical-intake/patient/[patientId]/latest (intake)
  * Access control: Requires clinician role + patient assignment
  */
 
 import { useState, useEffect } from 'react'
 import { Card, Badge, Button, Modal, FormField, Textarea, Alert } from '@/lib/ui'
 import { FileText, Plus } from 'lucide-react'
+import { env } from '@/lib/env'
 import {
   getAnamnesis,
   getConsultNotes,
@@ -29,6 +30,8 @@ import {
   getClinicalIntakeHistory,
 } from '@/lib/fetchClinician'
 import type { ConsultNote, ConsultNoteContent, ConsultNoteVersion } from '@/lib/types/consultNote'
+import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
+import { getSafetyUiState } from '@/lib/cre/safety/policy'
 
 export interface AnamnesisEntry {
   id: string
@@ -607,6 +610,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     safetyInfo && typeof safetyInfo.escalation_level === 'string'
       ? safetyInfo.escalation_level
       : null
+  const safetyUiState = getSafetyUiState(
+    safetyInfo && typeof safetyInfo === 'object' ? (safetyInfo as SafetyEvaluation) : null,
+  )
   const escalationBadge = getEscalationBadge(escalationLevel)
   const redFlags =
     safetyInfo && Array.isArray(safetyInfo.red_flags)
@@ -618,6 +624,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
   const intakeUpdatedAt = latestIntake?.updated_at
+  const showDebug = env.NODE_ENV !== 'production'
 
   return (
     <>
@@ -679,7 +686,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 Hauptbeschwerde: {intakeChiefComplaint}
               </p>
             )}
-            {escalationLevel === 'B' && (
+            {safetyUiState.showClinicianReview && (
               <p className="text-xs text-amber-700">
                 Draft – Review erforderlich (Level B).
               </p>
@@ -691,7 +698,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   {redFlags.map((flag, index) => (
                     <div key={`red-flag-${index}`} className="text-xs text-rose-700">
                       <div className="font-semibold">
-                        {(flag.id as string) || 'Red Flag'}
+                        {((flag.rule_id as string) || (flag.id as string) || 'Red Flag')}
                       </div>
                       {typeof flag.rationale === 'string' && flag.rationale.trim() && (
                         <div>{flag.rationale}</div>
@@ -701,7 +708,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 </div>
               </div>
             )}
-            {structuredIntakeDisplay && (
+            {showDebug && structuredIntakeDisplay && (
               <details className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                 <summary className="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">
                   Structured Intake-Daten (Debug)

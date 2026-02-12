@@ -238,6 +238,30 @@ curl http://localhost:3000/api/clinical-intake/latest \
 
 ## Quality Metrics
 
+## How to Verify (SSOT + Safety 2.1)
+
+1. Patient latest intake endpoint
+  - `GET /api/patient/intake/latest`
+  - Expect `success: true` and `intake` with `version_number`, `clinical_summary`, `structured_data`.
+
+2. Clinician intake endpoints
+  - `GET /api/clinical-intake/patient/[patientId]/latest`
+  - `GET /api/clinical-intake/patient/[patientId]/history`
+  - `GET /api/clinical-intake/patient/[patientId]/version/1`
+
+3. Manual intake trigger (dev/preview)
+  - Open patient dialog on dev or preview host.
+  - Click `Generate Intake (Dev)` and confirm a new intake version appears in history.
+
+4. Safety enforcement
+  - Create a test conversation with a Level A red flag (e.g. prolonged chest pain).
+  - Confirm patient chat is blocked with a Level A banner.
+  - Confirm clinician intake card shows Level A badge and red flag list.
+
+5. SSOT validation
+  - Verify no intake reads/writes use `anamnesis_entries` for clinical intake data.
+  - Intake UI should read from `clinical_intakes` only.
+
 ### Code Coverage Goals
 - Validation functions: 100%
 - API endpoints: 80%

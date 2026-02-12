@@ -15,6 +15,34 @@ type RouteContext = {
   params: Promise<{ patientId: string }>
 }
 
+type IntakeRecord = {
+  id: string
+  status: string
+  version_number: number
+  clinical_summary: string | null
+  structured_data: Record<string, unknown>
+  trigger_reason: string | null
+  last_updated_from_messages: string[] | null
+  created_at: string
+  updated_at: string
+}
+
+const mapIntake = (intake: IntakeRecord | null) =>
+  intake
+    ? {
+        uuid: intake.id,
+        id: intake.id,
+        status: intake.status,
+        version_number: intake.version_number,
+        clinical_summary: intake.clinical_summary,
+        structured_data: intake.structured_data,
+        trigger_reason: intake.trigger_reason,
+        last_updated_from_messages: intake.last_updated_from_messages,
+        created_at: intake.created_at,
+        updated_at: intake.updated_at,
+      }
+    : null
+
 const getUserRole = (user: {
   app_metadata?: Record<string, unknown>
   user_metadata?: Record<string, unknown>
@@ -60,7 +88,7 @@ const fetchLatestIntake = async (params: {
     .eq(column, value)
 
   return {
-    intake: intake ?? null,
+    intake: mapIntake((intake ?? null) as IntakeRecord | null),
     count: count ?? 0,
     error,
   }

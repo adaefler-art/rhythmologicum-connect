@@ -138,8 +138,11 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/auth/signout | GET, POST | public |  | 4 |  | apps/rhythm-patient-ui/app/api/auth/signout/route.ts |
 | /api/auth/signout | GET, POST | public |  | 4 |  | apps/rhythm-studio-ui/app/api/auth/signout/route.ts |
 | /api/auth/signout | GET, POST | public |  | 4 |  | legacy/code/app/api/auth/signout/route.ts |
-| /api/clinical-intake/generate | POST | patient |  | 0 | yes - Issue 10 clinical intake generation (no UI callsite yet) | apps/rhythm-patient-ui/app/api/clinical-intake/generate/route.ts |
-| /api/clinical-intake/latest | GET | patient |  | 0 | yes - Issue 10 clinical intake retrieval (no UI callsite yet) | apps/rhythm-patient-ui/app/api/clinical-intake/latest/route.ts |
+| /api/clinical-intake/generate | POST | patient |  | 0 | yes - Issue 10 clinical intake generation (manual dev trigger) | apps/rhythm-patient-ui/app/api/clinical-intake/generate/route.ts |
+| /api/clinical-intake/latest | GET | patient |  | 0 | yes - Issue 10 clinical intake retrieval | apps/rhythm-patient-ui/app/api/clinical-intake/latest/route.ts |
+| /api/clinical-intake/patient/[patientId]/latest | GET | clinician |  | 0 | yes - Clinician latest intake read model | apps/rhythm-studio-ui/app/api/clinical-intake/patient/[patientId]/latest/route.ts |
+| /api/clinical-intake/patient/[patientId]/history | GET | clinician |  | 0 | yes - Clinician intake history | apps/rhythm-studio-ui/app/api/clinical-intake/patient/[patientId]/history/route.ts |
+| /api/clinical-intake/patient/[patientId]/version/[versionNumber] | GET | clinician |  | 0 | yes - Clinician intake version lookup | apps/rhythm-studio-ui/app/api/clinical-intake/patient/[patientId]/version/[versionNumber]/route.ts |
 | /api/clinician/anamnesis/[entryId]/archive | POST | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/archive/route.ts |
 | /api/clinician/anamnesis/[entryId]/versions | GET, POST | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/clinician/anamnesis/[entryId]/versions/route.ts |
 | /api/clinician/assessments/[assessmentId]/details | GET | clinician |  | 0 |  | apps/rhythm-studio-ui/app/api/clinician/assessments/[assessmentId]/details/route.ts |
@@ -153,6 +156,9 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/clinician/patient/[patientId]/[...probe] | DELETE, GET, PATCH, POST, PUT | clinician |  | 0 | yes - internal proxy/debug probe; not a product UI callsite | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/[...probe]/route.ts |
 | /api/clinician/patient/[patientId]/amy-insights | GET | clinician |  | 2 |  | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/amy-insights/route.ts |
 | /api/clinician/patient/[patientId]/anamnesis | GET, POST | clinician |  | 3 |  | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/anamnesis/route.ts |
+| /api/clinician/patient/[patientId]/intake/latest | GET | clinician |  | 0 | yes - Clinician latest intake read model | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/intake/latest/route.ts |
+| /api/clinician/patient/[patientId]/intake/history | GET | clinician |  | 0 | yes - Clinician intake history | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/intake/history/route.ts |
+| /api/clinician/patient/[patientId]/intake/version/[versionNumber] | GET | clinician |  | 0 | yes - Clinician intake version lookup | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/intake/version/[versionNumber]/route.ts |
 | /api/clinician/patient/[patientId]/diagnosis/runs | GET | clinician |  | 2 |  | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/diagnosis/runs/route.ts |
 | /api/clinician/patient/[patientId]/results | GET | clinician |  | 2 |  | apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/results/route.ts |
 | /api/clinician/patients/[patientId]/funnels | GET | clinician |  | 1 |  | apps/rhythm-studio-ui/app/api/clinician/patients/[patientId]/funnels/route.ts |
@@ -255,7 +261,8 @@ Deterministic inventory of Next API routes and in-repo callsites.
 | /api/patient/diagnosis/artifacts/[id] | GET | patient | diagnosis:patient:artifact | 0 |  | apps/rhythm-patient-ui/app/api/patient/diagnosis/artifacts/[id]/route.ts |
 | /api/patient/diagnosis/runs | GET | patient | diagnosis:patient:list | 2 |  | apps/rhythm-patient-ui/app/api/patient/diagnosis/runs/route.ts |
 | /api/patient/diagnosis/runs/[runId]/artifact | GET | patient | diagnosis:patient:artifact_by_run | 1 |  | apps/rhythm-patient-ui/app/api/patient/diagnosis/runs/[runId]/artifact/route.ts |
-| /api/patient/intake | POST | patient |  | 0 | yes - Intake alias to anamnesis write endpoint | apps/rhythm-patient-ui/app/api/patient/intake/route.ts |
+| /api/patient/intake | POST | patient |  | 0 | deprecated - alias removed; use /api/clinical-intake/generate | apps/rhythm-patient-ui/app/api/patient/intake/route.ts |
+| /api/patient/intake/latest | GET | patient |  | 0 | yes - Patient latest intake read model | apps/rhythm-patient-ui/app/api/patient/intake/latest/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 |  | apps/rhythm-legacy/app/api/patient/onboarding-status/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 |  | apps/rhythm-patient-ui/app/api/patient/onboarding-status/route.ts |
 | /api/patient/onboarding-status | GET | patient |  | 4 |  | legacy/code/app/api/patient/onboarding-status/route.ts |

@@ -391,6 +391,19 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    if (entry.entry_type === 'intake') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INTAKE_NOT_SUPPORTED',
+            message: 'Intake is sourced from clinical_intakes only.',
+          },
+        },
+        { status: 410 },
+      )
+    }
+
     // Fetch all versions
     const versions = await getEntryVersions(supabase, entryId)
 
@@ -500,6 +513,28 @@ export async function PATCH(request: Request, context: RouteContext) {
       )
     }
 
+    if (entry.entry_type === 'intake') {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'patch',
+        entryId,
+        entryType: entry.entry_type,
+        ok: false,
+        errorCode: 'INTAKE_NOT_SUPPORTED',
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INTAKE_NOT_SUPPORTED',
+            message: 'Intake is sourced from clinical_intakes only.',
+          },
+        },
+        { status: 410 },
+      )
+    }
+
     // Parse and validate request body
     const body = await request.json()
     let validatedData
@@ -533,6 +568,27 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const nextEntryType = validatedData.entry_type || entry.entry_type
+    if (nextEntryType === 'intake') {
+      logIntakeEvent({
+        runId,
+        userId: user.id,
+        action: 'patch',
+        entryId,
+        entryType: nextEntryType,
+        ok: false,
+        errorCode: 'INTAKE_NOT_SUPPORTED',
+      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INTAKE_NOT_SUPPORTED',
+            message: 'Intake is sourced from clinical_intakes only.',
+          },
+        },
+        { status: 410 },
+      )
+    }
     const nextContent = validatedData.content as Record<string, unknown>
     const structuredIntakeData =
       nextEntryType === 'intake' &&

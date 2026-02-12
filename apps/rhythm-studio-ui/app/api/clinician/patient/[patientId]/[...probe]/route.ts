@@ -23,8 +23,9 @@ const buildProbeResponse = async (request: Request, context: RouteContext) => {
       },
       knownCanonicals: [
         '/api/clinician/patient/[patientId]/anamnesis',
-        '/api/clinician/patient/[patientId]/clinical-intake/latest',
-        '/api/clinician/patient/[patientId]/clinical-intake/history',
+        '/api/clinician/patient/[patientId]/intake/latest',
+        '/api/clinician/patient/[patientId]/intake/history',
+        '/api/clinician/patient/[patientId]/intake/version/[versionNumber]',
         '/api/clinician/patient/[patientId]/diagnosis/runs',
         '/api/clinician/patient/[patientId]/results',
         '/api/clinician/patient/[patientId]/amy-insights',

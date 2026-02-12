@@ -21,6 +21,22 @@ import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { logError } from '@/lib/logging/logger'
 import type { GetIntakeResponse, ClinicalIntake } from '@/lib/types/clinicalIntake'
 
+const mapIntake = (intake: ClinicalIntake | null) =>
+  intake
+    ? {
+        uuid: intake.id,
+        id: intake.id,
+        status: intake.status,
+        version_number: intake.version_number,
+        clinical_summary: intake.clinical_summary,
+        structured_data: intake.structured_data,
+        trigger_reason: intake.trigger_reason,
+        created_at: intake.created_at,
+        updated_at: intake.updated_at,
+        last_updated_from_messages: intake.last_updated_from_messages,
+      }
+    : null
+
 /**
  * GET /api/clinical-intake/latest
  */
@@ -58,7 +74,8 @@ export async function GET(req: NextRequest) {
       .from('clinical_intakes')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+      .order('version_number', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
@@ -84,6 +101,7 @@ export async function GET(req: NextRequest) {
     }
 
     const intake = data as ClinicalIntake | null
+    const mapped = mapIntake(intake)
 
     console.log('[clinical-intake/latest] Request completed', {
       userId: user.id,
@@ -94,6 +112,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      intake: mapped,
       data: {
         intake,
       },

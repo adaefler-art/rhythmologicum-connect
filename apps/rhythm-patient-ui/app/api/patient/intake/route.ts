@@ -1,18 +1,14 @@
-import { POST as createAnamnesisEntry } from '@/app/api/patient/anamnesis/route'
+import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
-  const body = await request.json()
-  const headers = new Headers(request.headers)
-  headers.set('Content-Type', 'application/json')
-
-  const nextRequest = new Request(request.url.replace('/patient/intake', '/patient/anamnesis'), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      ...body,
-      entry_type: 'intake',
-    }),
-  })
-
-  return createAnamnesisEntry(nextRequest)
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: 'INTAKE_ALIAS_REMOVED',
+        message: 'This endpoint has been removed. Use /api/clinical-intake/generate instead.',
+      },
+    },
+    { status: 410 },
+  )
 }

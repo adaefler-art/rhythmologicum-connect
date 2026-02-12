@@ -444,9 +444,7 @@ export const getAnamnesis = (patientId: string) =>
     data?: {
       entries?: Array<Record<string, unknown>>
       latestEntry?: Record<string, unknown> | null
-      latestIntakeEntry?: Record<string, unknown> | null
       versions?: Array<Record<string, unknown>>
-      intakeHistory?: Array<Record<string, unknown>>
       suggestedFacts?: Array<Record<string, unknown>>
       patientOrganizationId?: string | null
     }
@@ -462,7 +460,7 @@ export const getClinicalIntakeLatest = (patientId: string) =>
     success?: boolean
     intake?: Record<string, unknown> | null
   }>({
-    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,
+    endpoint: `/api/clinical-intake/patient/${patientId}/latest`,
     method: 'GET',
     routeContext: 'patient-detail',
     patientId,
@@ -474,12 +472,23 @@ export const getClinicalIntakeHistory = (patientId: string, limit?: number) => {
     success?: boolean
     intakes?: Array<Record<string, unknown>>
   }>({
-    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/history${params}`,
+    endpoint: `/api/clinical-intake/patient/${patientId}/history${params}`,
     method: 'GET',
     routeContext: 'patient-detail',
     patientId,
   })
 }
+
+export const getClinicalIntakeVersion = (patientId: string, versionNumber: number) =>
+  requestClinicianJson<{
+    success?: boolean
+    intake?: Record<string, unknown> | null
+  }>({
+    endpoint: `/api/clinical-intake/patient/${patientId}/version/${versionNumber}`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+    patientId,
+  })
 
 export const postAnamnesis = (patientId: string, body: Record<string, unknown>) =>
   requestClinicianJson<{ success?: boolean }>({

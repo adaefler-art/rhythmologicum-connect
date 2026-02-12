@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { getPatientProfileId } from '@/lib/api/anamnesis/helpers'
 import { ErrorCode } from '@/lib/api/responseTypes'
 
 export async function GET() {
@@ -25,26 +24,11 @@ export async function GET() {
       )
     }
 
-    const patientId = await getPatientProfileId(supabase, user.id)
-
-    if (!patientId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: {
-            code: 'PATIENT_PROFILE_NOT_FOUND',
-            message: 'Patient profile not found',
-          },
-        },
-        { status: 403 },
-      )
-    }
-
-    const { data: latestEntry, error: latestError } = await supabase
-      .from('anamnesis_entries')
-      .select('id, entry_type, created_at, updated_at')
-      .eq('patient_id', patientId)
-      .eq('entry_type', 'intake')
+    const { data: latestIntake, error: latestError } = await supabase
+      .from('clinical_intakes')
+      .select('id, version_number, created_at, updated_at')
+      .eq('user_id', user.id)
+      .order('version_number', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -55,7 +39,7 @@ export async function GET() {
           ok: false,
           error: {
             code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to fetch latest anamnesis entry',
+            message: 'Failed to fetch latest clinical intake',
           },
         },
         { status: 400 },
@@ -64,10 +48,9 @@ export async function GET() {
 
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { count: recentCount, error: countError } = await supabase
-      .from('anamnesis_entries')
+      .from('clinical_intakes')
       .select('*', { count: 'exact', head: true })
-      .eq('patient_id', patientId)
-      .eq('entry_type', 'intake')
+      .eq('user_id', user.id)
       .gte('created_at', cutoff)
 
     if (countError) {
@@ -76,27 +59,7 @@ export async function GET() {
           ok: false,
           error: {
             code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to count recent anamnesis entries',
-          },
-        },
-        { status: 400 },
-      )
-    }
-
-    const { count: latestVersionCount, error: versionCountError } = latestEntry?.id
-      ? await supabase
-          .from('anamnesis_entry_versions')
-          .select('*', { count: 'exact', head: true })
-          .eq('entry_id', latestEntry.id)
-      : { count: 0, error: null }
-
-    if (versionCountError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: {
-            code: ErrorCode.DATABASE_ERROR,
-            message: 'Failed to count intake entry versions',
+            message: 'Failed to count recent clinical intakes',
           },
         },
         { status: 400 },
@@ -105,10 +68,12 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      latestIntakeEntryId: latestEntry?.id ?? null,
+        latestIntakeId: latestIntake?.id ?? null,
+        latestIntakeEntryId: latestIntake?.id ?? null,
       recentIntakeCount: recentCount || 0,
-      latestVersionCount: latestVersionCount || 0,
-      latestUpdatedAt: latestEntry?.updated_at ?? null,
+        latestVersionNumber: latestIntake?.version_number ?? null,
+        latestVersionCount: latestIntake?.version_number ?? 0,
+        latestUpdatedAt: latestIntake?.updated_at ?? null,
     })
   } catch (err) {
     console.error('[patient/_meta/intake-write-check] Unexpected error:', err)

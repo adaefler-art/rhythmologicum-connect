@@ -15,17 +15,21 @@ export type EscalationLevel = 'A' | 'B' | 'C'
 
 export interface RedFlagFinding {
   id: string
+  rule_id: string
+  policy_version: string
   domain: string
   trigger: string
   level: EscalationLevel
   rationale: string
-  evidence_refs?: string[]
+  evidence_message_ids?: string[]
 }
 
 export interface SafetyEvaluation {
   red_flag_present: boolean
   escalation_level: EscalationLevel | null
   red_flags: RedFlagFinding[]
+  rule_ids?: string[]
+  check_ids?: string[]
   contradictions_present?: boolean
   safety_questions?: string[]
   quality?: {
