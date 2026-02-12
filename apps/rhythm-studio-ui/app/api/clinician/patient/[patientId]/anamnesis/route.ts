@@ -13,6 +13,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { getPatientOrganizationId } from '@/lib/api/anamnesis/helpers'
 import { ENTRY_TYPES, validateContentSize, validateCreateEntry } from '@/lib/api/anamnesis/validation'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
+import type { Json } from '@/lib/types/supabase'
 
 type RouteContext = {
   params: Promise<{ patientId: string }>
