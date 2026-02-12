@@ -15,7 +15,7 @@
  * Access control: Requires clinician role + patient assignment
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, Badge, Button, Modal, FormField, Textarea, Alert } from '@/lib/ui'
 import { FileText, Plus } from 'lucide-react'
 import { env } from '@/lib/env'
@@ -28,9 +28,17 @@ import {
   updateConsultNote,
   getClinicalIntakeLatest,
   getClinicalIntakeHistory,
+  updateClinicalIntakeOverride,
 } from '@/lib/fetchClinician'
 import type { ConsultNote, ConsultNoteContent, ConsultNoteVersion } from '@/lib/types/consultNote'
-import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
+import type {
+  SafetyEvaluation,
+  SafetyOverride,
+  SafetyPolicyResult,
+  SafetyTriggeredRule,
+  ChatAction,
+  EscalationLevel,
+} from '@/lib/types/clinicalIntake'
 import { getSafetyUiState } from '@/lib/cre/safety/policy'
 
 export interface AnamnesisEntry {
@@ -74,7 +82,7 @@ export interface AnamnesisSectionProps {
  * Displays patient anamnesis entries with add/edit/archive capabilities
  */
 export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: AnamnesisSectionProps) {
-  const [entries, setEntries] = useState<AnamnesisEntry[]>([])
+  const [, setEntries] = useState<AnamnesisEntry[]>([])
   const [isLoading, setIsLoading] = useState(loading ?? false)
   const [error, setError] = useState<string | null>(null)
   const [latestClinicalIntake, setLatestClinicalIntake] = useState<ClinicalIntakeRecord | null>(null)
@@ -85,6 +93,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [intakeHistoryError, setIntakeHistoryError] = useState<string | null>(null)
   const [intakeError, setIntakeError] = useState<string | null>(null)
   const [patientOrganizationId, setPatientOrganizationId] = useState<string | null>(null)
+  const [overrideLevel, setOverrideLevel] = useState<EscalationLevel | 'none'>('none')
+  const [overrideAction, setOverrideAction] = useState<ChatAction | 'none'>('none')
+  const [overrideReason, setOverrideReason] = useState('')
+  const [overrideSaving, setOverrideSaving] = useState(false)
+  const [overrideError, setOverrideError] = useState<string | null>(null)
 
   const [consultNotes, setConsultNotes] = useState<ConsultNote[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -97,12 +110,34 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteError, setNoteError] = useState<string | null>(null)
 
-  // Fetch entries on mount
-  useEffect(() => {
-    fetchEntries()
+  const loadLatestClinicalIntake = useCallback(async () => {
+    setIntakeError(null)
+
+    try {
+      const { data, error } = await getClinicalIntakeLatest(patientId)
+
+      if (error) {
+        if (error.status === 403) {
+          setIntakeError('Keine Berechtigung fuer diesen Intake')
+        } else if (error.status === 404) {
+          setIntakeError('Intake nicht gefunden')
+        } else {
+          setIntakeError(error.message || 'Fehler beim Laden des Intakes')
+        }
+        setLatestClinicalIntake(null)
+        return
+      }
+
+      const intake = (data?.intake || null) as ClinicalIntakeRecord | null
+      setLatestClinicalIntake(intake)
+    } catch (err) {
+      console.error('[AnamnesisSection] Intake fetch error:', err)
+      setIntakeError('Fehler beim Laden des Intakes')
+      setLatestClinicalIntake(null)
+    }
   }, [patientId])
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     setDebugHint(null)
@@ -140,38 +175,44 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [loadLatestClinicalIntake, patientId])
 
-  const loadLatestClinicalIntake = async () => {
-    setIntakeError(null)
+  // Fetch entries on mount
+  useEffect(() => {
+    void fetchEntries()
+  }, [fetchEntries])
+
+  const loadConsultNotes = useCallback(async () => {
+    setNotesLoading(true)
+    setNotesError(null)
 
     try {
-      const { data, error } = await getClinicalIntakeLatest(patientId)
-
+      const { data, error } = await getConsultNotes(patientId)
       if (error) {
-        if (error.status === 403) {
-          setIntakeError('Keine Berechtigung fuer diesen Intake')
-        } else if (error.status === 404) {
-          setIntakeError('Intake nicht gefunden')
-        } else {
-          setIntakeError(error.message || 'Fehler beim Laden des Intakes')
-        }
-        setLatestClinicalIntake(null)
-        return
+        throw new Error(error.message || 'Fehler beim Laden der Notizen')
       }
 
-      const intake = (data?.intake || null) as ClinicalIntakeRecord | null
-      setLatestClinicalIntake(intake)
+      const notes = (data?.data?.consultNotes || []) as unknown as ConsultNote[]
+      setConsultNotes(notes)
     } catch (err) {
-      console.error('[AnamnesisSection] Intake fetch error:', err)
-      setIntakeError('Fehler beim Laden des Intakes')
-      setLatestClinicalIntake(null)
+      console.error('[AnamnesisSection] Consult notes fetch error:', err)
+      setNotesError(err instanceof Error ? err.message : 'Fehler beim Laden der Notizen')
+    } finally {
+      setNotesLoading(false)
     }
-  }
+  }, [patientId])
 
   useEffect(() => {
     void loadConsultNotes()
-  }, [patientId])
+  }, [loadConsultNotes])
+
+  useEffect(() => {
+    const safety = latestClinicalIntake?.structured_data?.safety as SafetyEvaluation | undefined
+    const override = safety?.override ?? null
+    setOverrideLevel((override?.level_override as EscalationLevel) ?? 'none')
+    setOverrideAction((override?.chat_action_override as ChatAction) ?? 'none')
+    setOverrideReason(override?.reason ?? '')
+  }, [latestClinicalIntake])
 
   const buildConsultNoteContent = (noteText: string): ConsultNoteContent => {
     const nowIso = new Date().toISOString()
@@ -228,26 +269,6 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
       return summary.join('\n')
     }
     return note.content?.chiefComplaint?.text || ''
-  }
-
-  const loadConsultNotes = async () => {
-    setNotesLoading(true)
-    setNotesError(null)
-
-    try {
-      const { data, error } = await getConsultNotes(patientId)
-      if (error) {
-        throw new Error(error.message || 'Fehler beim Laden der Notizen')
-      }
-
-      const notes = (data?.data?.consultNotes || []) as unknown as ConsultNote[]
-      setConsultNotes(notes)
-    } catch (err) {
-      console.error('[AnamnesisSection] Consult notes fetch error:', err)
-      setNotesError(err instanceof Error ? err.message : 'Fehler beim Laden der Notizen')
-    } finally {
-      setNotesLoading(false)
-    }
   }
 
   const loadConsultNoteVersions = async (consultNoteId: string) => {
@@ -610,21 +631,60 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     safetyInfo && typeof safetyInfo.escalation_level === 'string'
       ? safetyInfo.escalation_level
       : null
-  const safetyUiState = getSafetyUiState(
-    safetyInfo && typeof safetyInfo === 'object' ? (safetyInfo as SafetyEvaluation) : null,
-  )
+  const safetyEvaluation =
+    safetyInfo && typeof safetyInfo === 'object'
+      ? (safetyInfo as unknown as SafetyEvaluation)
+      : null
+  const safetyUiState = getSafetyUiState(safetyEvaluation)
   const escalationBadge = getEscalationBadge(escalationLevel)
   const redFlags =
     safetyInfo && Array.isArray(safetyInfo.red_flags)
       ? (safetyInfo.red_flags as Array<Record<string, unknown>>)
       : []
   const structuredIntakeDisplay = structuredIntakeData
-    ? (({ evidence_refs, ...rest }) => rest)(structuredIntakeData)
+    ? (() => {
+        const { evidence_refs: _evidenceRefs, ...rest } = structuredIntakeData
+        void _evidenceRefs
+        return rest
+      })()
     : null
   const intakeChiefComplaint = latestIntake ? getIntakeChiefComplaint(intakeContent) : null
   const intakeStatus = latestIntake ? getIntakeStatus(intakeContent) : null
   const intakeUpdatedAt = latestIntake?.updated_at
   const showDebug = env.NODE_ENV !== 'production'
+  const policyResult = safetyEvaluation?.policy_result as SafetyPolicyResult | undefined
+  const overrideInfo = safetyEvaluation?.override as SafetyOverride | null | undefined
+  const triggeredRules = safetyEvaluation?.triggered_rules as SafetyTriggeredRule[] | undefined
+
+  const handleOverrideSave = async () => {
+    if (!latestIntake) return
+    if (!overrideReason.trim()) {
+      setOverrideError('Bitte einen Grund fuer die Uebersteuerung angeben.')
+      return
+    }
+
+    setOverrideSaving(true)
+    setOverrideError(null)
+
+    try {
+      const payload = {
+        levelOverride: overrideLevel === 'none' ? null : overrideLevel,
+        chatActionOverride: overrideAction === 'none' ? null : overrideAction,
+        reason: overrideReason.trim(),
+      }
+
+      const { error } = await updateClinicalIntakeOverride(patientId, payload)
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Speichern der Uebersteuerung')
+      }
+
+      await loadLatestClinicalIntake()
+    } catch (err) {
+      setOverrideError(err instanceof Error ? err.message : 'Fehler beim Speichern')
+    } finally {
+      setOverrideSaving(false)
+    }
+  }
 
   return (
     <>
@@ -700,6 +760,11 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                       <div className="font-semibold">
                         {((flag.rule_id as string) || (flag.id as string) || 'Red Flag')}
                       </div>
+                      {Array.isArray((flag as { evidence_message_ids?: unknown }).evidence_message_ids) && (
+                        <div className="text-rose-600">
+                          Evidence: {(flag as { evidence_message_ids?: string[] }).evidence_message_ids?.join(', ') || 'n/a'}
+                        </div>
+                      )}
                       {typeof flag.rationale === 'string' && flag.rationale.trim() && (
                         <div>{flag.rationale}</div>
                       )}
@@ -708,6 +773,78 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 </div>
               </div>
             )}
+            {Array.isArray(triggeredRules) && triggeredRules.length > 0 && (
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Triggered Rules</p>
+                <div className="space-y-2">
+                  {triggeredRules.map((rule, index) => (
+                    <div key={`rule-${index}`} className="text-xs text-slate-600">
+                      <div className="font-semibold">
+                        {rule.rule_id} · Level {rule.severity}
+                      </div>
+                      {rule.evidence_message_ids && rule.evidence_message_ids.length > 0 && (
+                        <div>Evidence: {rule.evidence_message_ids.join(', ')}</div>
+                      )}
+                      {rule.rationale && <div>{rule.rationale}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {policyResult && (
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Policy Result</p>
+                <p className="text-xs text-slate-600">
+                  Level: {policyResult.escalation_level ?? 'None'} · Action: {policyResult.chat_action}
+                </p>
+              </div>
+            )}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold text-slate-600 mb-2">Override</p>
+              {overrideInfo && (
+                <p className="text-xs text-slate-500 mb-2">
+                  Override von {overrideInfo.by_user_id} am {formatDate(overrideInfo.at)} — {overrideInfo.reason}
+                </p>
+              )}
+              <div className="grid gap-3 md:grid-cols-2">
+                <FormField label="Level">
+                  <select
+                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                    value={overrideLevel}
+                    onChange={(event) => setOverrideLevel(event.target.value as EscalationLevel | 'none')}
+                  >
+                    <option value="none">Kein Override</option>
+                    <option value="A">Level A</option>
+                    <option value="B">Level B</option>
+                    <option value="C">Level C</option>
+                  </select>
+                </FormField>
+                <FormField label="Chat Action">
+                  <select
+                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                    value={overrideAction}
+                    onChange={(event) => setOverrideAction(event.target.value as ChatAction | 'none')}
+                  >
+                    <option value="none">Kein Override</option>
+                    <option value="warn">Warn</option>
+                    <option value="require_confirm">Require Confirm</option>
+                    <option value="hard_stop">Hard Stop</option>
+                  </select>
+                </FormField>
+              </div>
+              <FormField label="Begruendung" required>
+                <Textarea
+                  value={overrideReason}
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  rows={3}
+                  placeholder="Grund fuer die Uebersteuerung..."
+                />
+              </FormField>
+              {overrideError && <Alert variant="error">{overrideError}</Alert>}
+              <Button variant="primary" size="sm" onClick={handleOverrideSave} disabled={overrideSaving}>
+                {overrideSaving ? 'Speichern…' : 'Override speichern'}
+              </Button>
+            </div>
             {showDebug && structuredIntakeDisplay && (
               <details className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
                 <summary className="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">

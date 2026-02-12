@@ -13,6 +13,8 @@ export type IntakeStatus = 'draft' | 'active' | 'superseded' | 'archived'
 
 export type EscalationLevel = 'A' | 'B' | 'C'
 
+export type ChatAction = 'none' | 'warn' | 'require_confirm' | 'hard_stop'
+
 export interface RedFlagFinding {
   id: string
   rule_id: string
@@ -24,10 +26,39 @@ export interface RedFlagFinding {
   evidence_message_ids?: string[]
 }
 
+export interface SafetyTriggeredRule {
+  rule_id: string
+  severity: EscalationLevel
+  rationale: string
+  evidence_message_ids?: string[]
+  policy_version: string
+}
+
+export interface SafetyPolicyResult {
+  policy_version: string
+  escalation_level: EscalationLevel | null
+  chat_action: ChatAction
+  studio_badge: string
+  patient_banner_text: string
+}
+
+export interface SafetyOverride {
+  level_override?: EscalationLevel | null
+  chat_action_override?: ChatAction | null
+  reason: string
+  by_user_id: string
+  at: string
+}
+
 export interface SafetyEvaluation {
   red_flag_present: boolean
   escalation_level: EscalationLevel | null
   red_flags: RedFlagFinding[]
+  triggered_rules?: SafetyTriggeredRule[]
+  policy_result?: SafetyPolicyResult
+  override?: SafetyOverride | null
+  effective_level?: EscalationLevel | null
+  effective_action?: ChatAction
   rule_ids?: string[]
   check_ids?: string[]
   contradictions_present?: boolean

@@ -23,10 +23,26 @@ export type RedFlagFinding = {
   evidence_message_ids?: string[]
 }
 
+export type ChatAction = 'none' | 'warn' | 'require_confirm' | 'hard_stop'
+
 export type SafetyEvaluation = {
   red_flag_present: boolean
   escalation_level: EscalationLevel | null
   red_flags: RedFlagFinding[]
+  triggered_rules?: Array<{
+    rule_id: string
+    severity: EscalationLevel
+    rationale: string
+    evidence_message_ids?: string[]
+    policy_version: string
+  }>
+  policy_result?: {
+    policy_version: string
+    escalation_level: EscalationLevel | null
+    chat_action: ChatAction
+    studio_badge: string
+    patient_banner_text: string
+  }
   rule_ids?: string[]
   check_ids?: string[]
   contradictions_present?: boolean
@@ -266,18 +282,20 @@ export function evaluateRedFlags(params: {
 }
 
 export function formatSafetySummaryLine(result: SafetyEvaluation): string {
-  if (!result.escalation_level) {
+  const policyLevel = result.policy_result?.escalation_level ?? result.escalation_level
+  const policyAction = result.policy_result?.chat_action
+  if (!policyLevel) {
     return 'Safety: keine Red Flags.'
   }
 
-  const level = result.escalation_level
-  const labels = result.red_flags
-    .map((flag) => flag.rule_id || flag.id)
+  const labels = (result.triggered_rules ?? result.red_flags)
+    .map((flag: { rule_id?: string; id?: string }) => flag.rule_id || flag.id)
     .filter(Boolean)
     .join(', ')
-  const base = `Safety: Level ${level}${labels ? ` (${labels})` : ''}.`
+  const actionHint = policyAction ? ` Action ${policyAction}.` : ''
+  const base = `Safety: Level ${policyLevel}${labels ? ` (${labels})` : ''}.${actionHint}`
 
-  if (level === 'C' && result.safety_questions && result.safety_questions.length > 0) {
+  if (policyLevel === 'C' && result.safety_questions && result.safety_questions.length > 0) {
     return `${base} Offene Sicherheitsfragen: ${result.safety_questions.join(' ')}`
   }
 

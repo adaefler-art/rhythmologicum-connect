@@ -262,6 +262,13 @@ curl http://localhost:3000/api/clinical-intake/latest \
   - Verify no intake reads/writes use `anamnesis_entries` for clinical intake data.
   - Intake UI should read from `clinical_intakes` only.
 
+6. Safety policy + override
+   - Edit policy in `config/cre/safety-policy.v1.json` and redeploy.
+   - Use `PATCH /api/clinical-intake/patient/[patientId]/latest` with:
+     `{"levelOverride":"B","chatActionOverride":"warn","reason":"Manual review"}`
+   - Confirm Studio shows override reason + effective Level/Action.
+   - Confirm patient chat uses override action (no hard stop when warn).
+
 ### Code Coverage Goals
 - Validation functions: 100%
 - API endpoints: 80%

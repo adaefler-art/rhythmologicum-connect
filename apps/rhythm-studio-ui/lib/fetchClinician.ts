@@ -490,6 +490,25 @@ export const getClinicalIntakeVersion = (patientId: string, versionNumber: numbe
     patientId,
   })
 
+export const updateClinicalIntakeOverride = (
+  patientId: string,
+  payload: {
+    levelOverride?: string | null
+    chatActionOverride?: string | null
+    reason: string
+  },
+) =>
+  requestClinicianJson<{
+    success?: boolean
+    intake?: Record<string, unknown> | null
+  }>({
+    endpoint: `/api/clinical-intake/patient/${patientId}/latest`,
+    method: 'PATCH',
+    body: payload,
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
 export const postAnamnesis = (patientId: string, body: Record<string, unknown>) =>
   requestClinicianJson<{ success?: boolean }>({
     endpoint: `/api/clinician/patient/${patientId}/anamnesis`,

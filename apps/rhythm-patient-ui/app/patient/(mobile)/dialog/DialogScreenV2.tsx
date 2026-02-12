@@ -225,6 +225,7 @@ export function DialogScreenV2() {
   const isChatEnabled = flagEnabled(env.NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED)
   const safetyUiState = getSafetyUiState(safetyStatus)
   const isSafetyBlocked = safetyUiState.blockChat
+  const safetyBannerText = safetyStatus?.policy_result?.patient_banner_text
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeRunIdRef = useRef<string | null>(null)
@@ -929,7 +930,10 @@ export function DialogScreenV2() {
   const handleSend = async () => {
     if (!isChatEnabled || isSending) return
     if (isSafetyBlocked) {
-      setSendError('Bitte brechen Sie den Chat ab und wenden Sie sich umgehend an medizinische Hilfe.')
+      setSendError(
+        safetyBannerText ||
+          'Bitte nutzen Sie einen direkten Kontaktweg, um Ihre Situation zu klaeren.',
+      )
       return
     }
 
@@ -1038,10 +1042,8 @@ export function DialogScreenV2() {
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800">
               <p className="font-semibold">Sicherheits-Hinweis (Level A)</p>
               <p className="mt-1">
-                Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer
-                medizinischen Fachperson besprochen wird. Bitte nutzen Sie jetzt einen
-                direkten Kontaktweg (z.B. telefonische Beratung oder Notfallnummer).
-                Der Chat ist vorerst pausiert.
+                {safetyBannerText ||
+                  'Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer medizinischen Fachperson besprochen wird. Bitte nutzen Sie jetzt einen direkten Kontaktweg (z.B. telefonische Beratung oder Notfallnummer). Der Chat ist vorerst pausiert.'}
               </p>
             </div>
           )}

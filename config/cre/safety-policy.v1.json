@@ -1,0 +1,37 @@
+{
+  "version": "v1",
+  "defaults": {
+    "escalationBySeverity": {
+      "A": "A",
+      "B": "B",
+      "C": "C"
+    },
+    "chatActionBySeverity": {
+      "A": "hard_stop",
+      "B": "warn",
+      "C": "warn"
+    },
+    "studioBadgeByLevel": {
+      "A": "Level A",
+      "B": "Level B",
+      "C": "Level C",
+      "None": "Kein Level"
+    },
+    "patientBannerTextByAction": {
+      "none": "",
+      "warn": "Bitte beobachten Sie Ihre Symptome und wenden Sie sich bei Verschlechterung an eine medizinische Fachperson.",
+      "require_confirm": "Bitte bestaetigen Sie, dass Sie die Hinweise verstanden haben, bevor der Chat fortgesetzt wird.",
+      "hard_stop": "Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer medizinischen Fachperson besprochen wird. Bitte nutzen Sie einen direkten Kontaktweg."
+    }
+  },
+  "rules": {
+    "SFTY-2.1-R-SUICIDAL-IDEATION": {
+      "escalationLevel": "A",
+      "chatAction": "hard_stop",
+      "studioBadge": "Level A",
+      "patientBannerText": "Bitte suchen Sie sofort Hilfe und kontaktieren Sie eine medizinische Fachperson oder den Notruf."
+    }
+  },
+  "orgOverrides": {},
+  "funnelOverrides": {}
+}

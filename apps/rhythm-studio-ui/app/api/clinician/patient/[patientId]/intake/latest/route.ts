@@ -1,1 +1,1 @@
-export { GET } from '../../clinical-intake/latest/route'
+export { GET, PATCH } from '../../clinical-intake/latest/route'

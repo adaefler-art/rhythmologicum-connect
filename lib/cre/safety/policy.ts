@@ -1,4 +1,5 @@
 import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
+import { getEffectiveSafetyState } from '@/lib/cre/safety/policyEngine'
 
 export type SafetyUiState = {
   blockChat: boolean
@@ -6,9 +7,13 @@ export type SafetyUiState = {
 }
 
 export const getSafetyUiState = (safety: SafetyEvaluation | null): SafetyUiState => {
-  const level = safety?.escalation_level ?? null
+  const effective = getEffectiveSafetyState({
+    policyResult: safety?.policy_result ?? null,
+    override: safety?.override ?? null,
+  })
+  const level = effective.escalationLevel
   return {
-    blockChat: level === 'A',
+    blockChat: effective.chatAction === 'hard_stop',
     showClinicianReview: level === 'B',
   }
 }

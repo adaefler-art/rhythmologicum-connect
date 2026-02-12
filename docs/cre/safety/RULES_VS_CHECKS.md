@@ -15,6 +15,12 @@ This map links each Safety 2.1 rule ID to its code implementation and UI action.
 | SFTY-2.1-R-CHEST-PAIN-20M | Chest pain >= 20 minutes | lib/cre/safety/rules/rules.ts | Level A hard stop |
 | SFTY-2.1-R-UNCERTAINTY-2PLUS | 2+ uncertainties | lib/cre/safety/rules/rules.ts | Level C follow-up |
 
+Policy application:
+
+- Policy config: [config/cre/safety-policy.v1.json](../../../config/cre/safety-policy.v1.json)
+- Engine: [lib/cre/safety/policyEngine.ts](../../../lib/cre/safety/policyEngine.ts)
+- Override endpoint: `PATCH /api/clinical-intake/patient/[patientId]/latest`
+
 Checks (data quality):
 
 - SFTY-2.1-C-CHIEF-OR-HPI -> lib/cre/safety/rules/checks.ts

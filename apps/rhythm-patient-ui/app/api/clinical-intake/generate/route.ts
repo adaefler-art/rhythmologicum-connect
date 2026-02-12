@@ -25,6 +25,7 @@ import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
+import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
@@ -400,6 +401,24 @@ export async function POST(req: NextRequest) {
       evidenceText,
       evidenceMessageIds: messages.map((m) => m.id),
     })
+
+    const triggeredRules = safetyResult.red_flags.map((flag) => ({
+      rule_id: flag.rule_id,
+      severity: flag.level,
+      rationale: flag.rationale,
+      evidence_message_ids: flag.evidence_message_ids,
+      policy_version: flag.policy_version,
+    }))
+
+    const policy = loadSafetyPolicy({ organizationId: null, funnelId: null })
+    const policyResult = applySafetyPolicy({ triggeredRules, policy })
+    const effective = getEffectiveSafetyState({ policyResult, override: null })
+
+    safetyResult.triggered_rules = triggeredRules
+    safetyResult.policy_result = policyResult
+    safetyResult.override = null
+    safetyResult.effective_action = effective.chatAction
+    safetyResult.effective_level = effective.escalationLevel
 
     result.structuredData.safety = safetyResult
     result.structuredData.red_flags = safetyResult.red_flags.map((flag) => flag.id)
