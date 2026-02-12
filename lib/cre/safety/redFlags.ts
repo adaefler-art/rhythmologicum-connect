@@ -43,6 +43,15 @@ export type SafetyEvaluation = {
     studio_badge: string
     patient_banner_text: string
   }
+  override?: {
+    level_override?: EscalationLevel | null
+    chat_action_override?: ChatAction | null
+    reason: string
+    by_user_id: string
+    at: string
+  } | null
+  effective_level?: EscalationLevel | null
+  effective_action?: ChatAction
   rule_ids?: string[]
   check_ids?: string[]
   contradictions_present?: boolean
