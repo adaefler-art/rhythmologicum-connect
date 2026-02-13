@@ -849,25 +849,11 @@ export function DialogScreenV2() {
 
   const verifyIntakeWrite = async () => {
     try {
-      const response = await fetch('/api/patient/_meta/intake-write-check', {
-        headers: getRequestHeaders(),
-      })
-      const data = await response.json()
-      if (!response.ok || !data?.ok) return
-      const latestIntakeId = data.latestIntakeId ?? data.latestIntakeEntryId ?? null
-      const latestVersionNumber =
-        typeof data.latestVersionNumber === 'number'
-          ? data.latestVersionNumber
-          : typeof data.latestVersionCount === 'number'
-            ? data.latestVersionCount
-            : null
+      if (!intakeEntryId) return
       setIntakePersistence((prev) => ({
         ...prev,
-        entryId: latestIntakeId ?? prev.entryId,
-        latestIntakeEntryId: latestIntakeId,
-        recentIntakeCount:
-          typeof data.recentIntakeCount === 'number' ? data.recentIntakeCount : null,
-        latestVersionCount: latestVersionNumber,
+        entryId: prev.entryId ?? intakeEntryId,
+        latestIntakeEntryId: intakeEntryId,
       }))
     } catch (err) {
       console.error('[DialogScreenV2] Intake write check failed', err)

@@ -199,6 +199,50 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     if (!intake) {
+      const adminPatientIdResult = await fetchIntakeVersion({
+        supabase: admin,
+        column: 'patient_id',
+        value: resolution.patientProfileId,
+        versionNumber: parsed,
+      })
+
+      if (adminPatientIdResult.error) {
+        console.error('[clinician/patient/intake/version] Admin intake error:', adminPatientIdResult.error)
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
+          },
+          { status: 500 },
+        )
+      }
+
+      intake = adminPatientIdResult.data
+    }
+
+    if (!intake && resolution.patientUserId) {
+      const adminUserIdResult = await fetchIntakeVersion({
+        supabase: admin,
+        column: 'user_id',
+        value: resolution.patientUserId,
+        versionNumber: parsed,
+      })
+
+      if (adminUserIdResult.error) {
+        console.error('[clinician/patient/intake/version] Admin intake error:', adminUserIdResult.error)
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
+          },
+          { status: 500 },
+        )
+      }
+
+      intake = adminUserIdResult.data
+    }
+
+    if (!intake) {
       return NextResponse.json(
         {
           success: false,

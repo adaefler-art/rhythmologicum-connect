@@ -198,6 +198,56 @@ export async function GET(request: Request, context: RouteContext) {
       intakes = userIdResult.data
     }
 
+    if (intakes.length === 0) {
+      const adminPatientIdResult = await fetchIntakeHistory({
+        supabase: admin,
+        column: 'patient_id',
+        value: resolution.patientProfileId,
+        limit,
+      })
+
+      if (adminPatientIdResult.error) {
+        console.error(
+          '[clinician/patient/clinical-intake/history] Admin intake error:',
+          adminPatientIdResult.error,
+        )
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake history' },
+          },
+          { status: 500 },
+        )
+      }
+
+      intakes = adminPatientIdResult.data
+    }
+
+    if (intakes.length === 0 && resolution.patientUserId) {
+      const adminUserIdResult = await fetchIntakeHistory({
+        supabase: admin,
+        column: 'user_id',
+        value: resolution.patientUserId,
+        limit,
+      })
+
+      if (adminUserIdResult.error) {
+        console.error(
+          '[clinician/patient/clinical-intake/history] Admin intake error:',
+          adminUserIdResult.error,
+        )
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake history' },
+          },
+          { status: 500 },
+        )
+      }
+
+      intakes = adminUserIdResult.data
+    }
+
     return NextResponse.json({
       success: true,
       intakes: intakes.map(mapIntake),
