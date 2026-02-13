@@ -3235,6 +3235,71 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_rule_versions: {
+        Row: {
+          change_reason: string
+          created_at: string
+          created_by: string
+          defaults: Json
+          id: string
+          logic_json: Json
+          rule_id: string
+          status: Database["public"]["Enums"]["safety_rule_version_status"]
+          version: number
+        }
+        Insert: {
+          change_reason: string
+          created_at?: string
+          created_by: string
+          defaults?: Json
+          id?: string
+          logic_json?: Json
+          rule_id: string
+          status?: Database["public"]["Enums"]["safety_rule_version_status"]
+          version: number
+        }
+        Update: {
+          change_reason?: string
+          created_at?: string
+          created_by?: string
+          defaults?: Json
+          id?: string
+          logic_json?: Json
+          rule_id?: string
+          status?: Database["public"]["Enums"]["safety_rule_version_status"]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_rule_versions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "safety_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safety_rules: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          title?: string
+        }
+        Relationships: []
+      }
       shipment_events: {
         Row: {
           carrier: string | null
@@ -3934,6 +3999,7 @@ export type Database = {
       report_status: "pending" | "generating" | "completed" | "failed"
       review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
       safety_action: "PASS" | "FLAG" | "BLOCK" | "UNKNOWN"
+      safety_rule_version_status: "draft" | "active" | "archived"
       shipment_status:
         | "ordered"
         | "shipped"
@@ -4155,6 +4221,7 @@ export const Constants = {
       report_status: ["pending", "generating", "completed", "failed"],
       review_status: ["PENDING", "APPROVED", "REJECTED", "CHANGES_REQUESTED"],
       safety_action: ["PASS", "FLAG", "BLOCK", "UNKNOWN"],
+      safety_rule_version_status: ["draft", "active", "archived"],
       shipment_status: [
         "ordered",
         "shipped",
