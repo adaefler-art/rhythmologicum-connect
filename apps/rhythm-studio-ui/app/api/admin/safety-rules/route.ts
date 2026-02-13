@@ -20,10 +20,10 @@ export async function GET() {
       return databaseErrorResponse('Failed to load safety rules.')
     }
 
-    const { data: activeVersions, error: versionsError } = await admin
+    const { data: activeVersions, error: versionsError } = (await admin
       .from('safety_rule_versions' as any)
       .select('id, rule_id, version, status, created_at, change_reason, created_by, defaults')
-      .eq('status', 'active')
+      .eq('status', 'active')) as any
 
     if (versionsError) {
       return databaseErrorResponse('Failed to load active safety rule versions.')
