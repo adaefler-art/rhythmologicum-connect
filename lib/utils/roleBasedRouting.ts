@@ -115,6 +115,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       label: 'Reasoning Config',
       active: pathname?.startsWith('/clinician/admin/reasoning-config') ?? false,
     },
+    {
+      href: '/clinician/admin/safety-rules',
+      label: 'Safety Rules',
+      active: pathname?.startsWith('/clinician/admin/safety-rules') ?? false,
+    },
   ]
 }
 
@@ -169,6 +174,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician/admin/reasoning-config',
       label: 'Reasoning Config',
       active: pathname?.startsWith('/clinician/admin/reasoning-config') ?? false,
+    },
+    {
+      href: '/clinician/admin/safety-rules',
+      label: 'Safety Rules',
+      active: pathname?.startsWith('/clinician/admin/safety-rules') ?? false,
     },
     {
       href: '/admin/dev/endpoints',
