@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/api/_meta/:path*',
-        destination: '/api/meta/:path*',
+        destination: '/api/_meta/:path*',
       },
       {
         source: '/api/admin/funnels/:path*',

@@ -11,7 +11,7 @@
  * - Access only via assignment (enforced by RLS)
  * 
  * Data sources: /api/clinician/patient/[patientId]/anamnesis (entries) +
- *               /api/clinical-intake/patient/[patientId]/latest (intake)
+ *               /api/clinician/patient/[patientId]/clinical-intake/latest (intake)
  * Access control: Requires clinician role + patient assignment
  */
 

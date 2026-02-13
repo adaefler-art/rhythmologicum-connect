@@ -183,6 +183,7 @@ const requestClinicianJson = async <T>(params: {
   patientId?: string | null
 }): Promise<ApiResult<T>> => {
   const { endpoint, method = 'GET', body, headers, routeContext, patientId } = params
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const start = nowMs()
   const options: RequestInit = {
     method,
@@ -190,12 +191,12 @@ const requestClinicianJson = async <T>(params: {
     body: body ? JSON.stringify(body) : undefined,
   }
 
-  const { response, data, debugHint } = await fetchClinicianJson<T>(endpoint, options)
+  const { response, data, debugHint } = await fetchClinicianJson<T>(normalizedEndpoint, options)
   const durationMs = Math.round(nowMs() - start)
 
   logApiCall({
     kind: 'API_CALL',
-    endpoint,
+    endpoint: normalizedEndpoint,
     method,
     status: response.status,
     durationMs,
@@ -203,10 +204,10 @@ const requestClinicianJson = async <T>(params: {
     patientId: patientId ?? null,
   })
 
-  if (endpoint.startsWith('/api') && endpoint.includes('/clinician/patient/')) {
+  if (normalizedEndpoint.startsWith('/api') && normalizedEndpoint.includes('/clinician/patient/')) {
     logPatientEndpointCall({
       kind: 'PATIENT_ENDPOINT_CALL',
-      endpoint,
+      endpoint: normalizedEndpoint,
       status: response.status,
       patientId: patientId ?? null,
       routeContext: 'triage',
@@ -460,7 +461,7 @@ export const getClinicalIntakeLatest = (patientId: string) =>
     success?: boolean
     intake?: Record<string, unknown> | null
   }>({
-    endpoint: `/api/clinical-intake/patient/${patientId}/latest`,
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,
     method: 'GET',
     routeContext: 'patient-detail',
     patientId,
@@ -472,7 +473,7 @@ export const getClinicalIntakeHistory = (patientId: string, limit?: number) => {
     success?: boolean
     intakes?: Array<Record<string, unknown>>
   }>({
-    endpoint: `/api/clinical-intake/patient/${patientId}/history${params}`,
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/history${params}`,
     method: 'GET',
     routeContext: 'patient-detail',
     patientId,
@@ -484,7 +485,7 @@ export const getClinicalIntakeVersion = (patientId: string, versionNumber: numbe
     success?: boolean
     intake?: Record<string, unknown> | null
   }>({
-    endpoint: `/api/clinical-intake/patient/${patientId}/version/${versionNumber}`,
+    endpoint: `/api/clinician/patient/${patientId}/intake/version/${versionNumber}`,
     method: 'GET',
     routeContext: 'patient-detail',
     patientId,
@@ -502,7 +503,7 @@ export const updateClinicalIntakeOverride = (
     success?: boolean
     intake?: Record<string, unknown> | null
   }>({
-    endpoint: `/api/clinical-intake/patient/${patientId}/latest`,
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,
     method: 'PATCH',
     body: payload,
     routeContext: 'patient-detail',
