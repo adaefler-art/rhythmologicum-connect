@@ -33,7 +33,7 @@ export async function GET() {
       ((activeVersions ?? []) as any[]).map((version) => [version.rule_id, version])
     )
 
-    const payload = (rules ?? []).map((rule) => ({
+    const payload = ((rules ?? []) as any[]).map((rule) => ({
       ...rule,
       active_version: activeByRule.get(rule.id) ?? null,
     }))
