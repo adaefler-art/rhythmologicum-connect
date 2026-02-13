@@ -1,11 +1,18 @@
 import { defineConfig, devices } from '@playwright/test'
 import { env } from './lib/env'
 
-const baseURL = env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
+const appTarget = env.PATIENT_BASE_URL ? 'patient' : 'studio'
+const baseURL =
+  appTarget === 'patient'
+    ? env.PATIENT_BASE_URL || 'http://127.0.0.1:3001'
+    : env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
 const reuseExistingServer = env.NODE_ENV !== 'test'
 const webServerEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key',
+  NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: 'true',
+  SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
+  PORT: appTarget === 'patient' ? '3001' : '3000',
   NODE_ENV: 'test',
 }
 
@@ -23,7 +30,7 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    command: 'npm run start:studio',
+    command: appTarget === 'patient' ? 'npm run start:patient' : 'npm run start:studio',
     url: baseURL,
     reuseExistingServer,
     timeout: 120_000,

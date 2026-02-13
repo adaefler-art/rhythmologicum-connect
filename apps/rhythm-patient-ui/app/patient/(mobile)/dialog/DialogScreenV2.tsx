@@ -71,6 +71,14 @@ type IntakePersistenceStatus = {
   latestVersionCount: number | null
 }
 
+type FollowupQuestion = {
+  id: string
+  question: string
+  why: string
+  priority: 1 | 2 | 3
+  source: 'reasoning' | 'gap_rule'
+}
+
 type SpeechRecognitionInstance = {
   lang: string
   interimResults: boolean
@@ -170,6 +178,39 @@ const getSafetyFromContent = (content: Record<string, unknown>): SafetyEvaluatio
   return null
 }
 
+const getFollowupFromContent = (content: Record<string, unknown>) => {
+  const structured = getStructuredDataFromContent(content)
+  if (!structured) return null
+
+  const followup = (structured as { followup?: unknown }).followup
+  if (!followup || typeof followup !== 'object' || Array.isArray(followup)) return null
+
+  const record = followup as Record<string, unknown>
+  const nextQuestionsRaw = Array.isArray(record.next_questions) ? record.next_questions : []
+  const nextQuestions: FollowupQuestion[] = nextQuestionsRaw
+    .filter((entry) => typeof entry === 'object' && entry !== null && !Array.isArray(entry))
+    .map((entry) => {
+      const item = entry as Record<string, unknown>
+      const priority: 1 | 2 | 3 =
+        item.priority === 1 || item.priority === 2 || item.priority === 3 ? item.priority : 3
+      const source: 'reasoning' | 'gap_rule' =
+        item.source === 'reasoning' ? 'reasoning' : 'gap_rule'
+
+      return {
+        id: typeof item.id === 'string' ? item.id : '',
+        question: typeof item.question === 'string' ? item.question : '',
+        why: typeof item.why === 'string' ? item.why : '',
+        priority,
+        source,
+      }
+    })
+    .filter((entry) => entry.id && entry.question)
+
+  return {
+    next_questions: nextQuestions,
+  }
+}
+
 const hashText = (value: string): string => {
   let hash = 0
   for (let i = 0; i < value.length; i += 1) {
@@ -208,6 +249,9 @@ export function DialogScreenV2() {
   const [isManualIntakeRunning, setIsManualIntakeRunning] = useState(false)
   const [manualIntakeStatus, setManualIntakeStatus] = useState<'ok' | 'error' | null>(null)
   const [manualIntakeError, setManualIntakeError] = useState<string | null>(null)
+  const [latestClinicalIntakeId, setLatestClinicalIntakeId] = useState<string | null>(null)
+  const [activeFollowupQuestion, setActiveFollowupQuestion] = useState<FollowupQuestion | null>(null)
+  const [followupAnsweredCount, setFollowupAnsweredCount] = useState(0)
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
@@ -240,6 +284,62 @@ export function DialogScreenV2() {
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
+  const appendAssistantMessage = (text: string) => {
+    const assistantMessage: StubbedMessage = {
+      id: `assistant-${Date.now()}`,
+      sender: 'assistant',
+      text,
+      timestamp: buildTimestamp(),
+    }
+
+    setChatMessages((prev) => [...prev, assistantMessage])
+  }
+
+  const persistUserAnswerToChat = async (answer: string) => {
+    await fetch('/api/amy/chat', {
+      method: 'POST',
+      headers: getRequestHeaders(),
+      body: JSON.stringify({
+        mode: 'log_only',
+        message: answer,
+        structuredIntakeData: buildSnapshotContent().structured_intake_data,
+      }),
+    })
+  }
+
+  const generateFollowup = async (params: { intakeId: string; askedQuestionId?: string }) => {
+    const response = await fetch('/api/patient/followup/generate', {
+      method: 'POST',
+      headers: getRequestHeaders(),
+      body: JSON.stringify({
+        intakeId: params.intakeId,
+        asked_question_id: params.askedQuestionId,
+      }),
+    })
+
+    const payload = await response.json()
+
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.error?.message || 'Failed to generate followup questions')
+    }
+
+    const nextQuestionsRaw = payload?.data?.next_questions
+    const nextQuestions = Array.isArray(nextQuestionsRaw)
+      ? (nextQuestionsRaw as FollowupQuestion[])
+      : []
+
+    const intakeId =
+      typeof payload?.data?.intake_id === 'string' && payload.data.intake_id
+        ? payload.data.intake_id
+        : params.intakeId
+
+    return {
+      nextQuestions,
+      intakeId,
+      blocked: Boolean(payload?.data?.blocked),
+    }
+  }
+
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!isChatEnabled) return
@@ -258,8 +358,49 @@ export function DialogScreenV2() {
       const latestIntake = await fetchLatestIntake()
       if (!isMounted) return
 
+      setLatestClinicalIntakeId(latestIntake?.id ?? null)
+
       const safety = latestIntake ? getSafetyFromContent(latestIntake.content) : null
       setSafetyStatus(safety)
+      const localSafetyUiState = getSafetyUiState(safety)
+
+      const intakeFollowup = latestIntake ? getFollowupFromContent(latestIntake.content) : null
+      if (
+        !localSafetyUiState.blockChat &&
+        intakeFollowup?.next_questions &&
+        intakeFollowup.next_questions.length > 0
+      ) {
+        setActiveFollowupQuestion(intakeFollowup.next_questions[0])
+        setChatMessages([
+          {
+            id: `assistant-${Date.now()}`,
+            sender: 'assistant',
+            text: intakeFollowup.next_questions[0].question,
+            timestamp: buildTimestamp(),
+          },
+        ])
+        return
+      }
+
+      if (!localSafetyUiState.blockChat && latestIntake?.id) {
+        try {
+          const generatedFollowup = await generateFollowup({ intakeId: latestIntake.id })
+          if (!generatedFollowup.blocked && generatedFollowup.nextQuestions.length > 0) {
+            setActiveFollowupQuestion(generatedFollowup.nextQuestions[0])
+            setChatMessages([
+              {
+                id: `assistant-${Date.now()}`,
+                sender: 'assistant',
+                text: generatedFollowup.nextQuestions[0].question,
+                timestamp: buildTimestamp(),
+              },
+            ])
+            return
+          }
+        } catch (followupError) {
+          console.warn('[DialogScreenV2] Initial followup generation failed', followupError)
+        }
+      }
 
       const resumeContext = buildResumeContext(latestIntake)
       const openingQuestion = resumeContext
@@ -947,7 +1088,72 @@ export function DialogScreenV2() {
     markAutosaveDirty()
     void maybeAutosave('turn')
 
+    const currentFollowupQuestion = activeFollowupQuestion
+
     try {
+      if (currentFollowupQuestion && latestClinicalIntakeId && !isSafetyBlocked) {
+        try {
+          await persistUserAnswerToChat(trimmed)
+
+          const followupResult = await generateFollowup({
+            intakeId: latestClinicalIntakeId,
+            askedQuestionId: currentFollowupQuestion.id,
+          })
+
+          setLatestClinicalIntakeId(followupResult.intakeId)
+
+          if (followupResult.blocked) {
+            setActiveFollowupQuestion(null)
+            setFollowupAnsweredCount(0)
+            return
+          }
+
+          const answeredCount = followupAnsweredCount + 1
+          setFollowupAnsweredCount(answeredCount)
+
+          if (followupResult.nextQuestions.length > 0 && answeredCount < 3) {
+            const nextQuestion = followupResult.nextQuestions[0]
+            setActiveFollowupQuestion(nextQuestion)
+            appendAssistantMessage(nextQuestion.question)
+            return
+          }
+
+          setActiveFollowupQuestion(null)
+
+          const regenerateResponse = await fetch('/api/clinical-intake/generate', {
+            method: 'POST',
+            headers: getRequestHeaders(),
+            body: JSON.stringify({ force: true, triggerReason: 'clarification' }),
+          })
+
+          const regeneratePayload = await regenerateResponse.json()
+          if (regenerateResponse.ok && regeneratePayload?.success) {
+            const refreshedIntake = await fetchLatestIntake()
+            setLatestClinicalIntakeId(refreshedIntake?.id ?? null)
+            setSafetyStatus(refreshedIntake ? getSafetyFromContent(refreshedIntake.content) : null)
+
+            if (refreshedIntake?.id) {
+              try {
+                const refreshedFollowup = await generateFollowup({ intakeId: refreshedIntake.id })
+                setLatestClinicalIntakeId(refreshedFollowup.intakeId)
+                if (!refreshedFollowup.blocked && refreshedFollowup.nextQuestions.length > 0) {
+                  const nextQuestion = refreshedFollowup.nextQuestions[0]
+                  setActiveFollowupQuestion(nextQuestion)
+                  appendAssistantMessage(nextQuestion.question)
+                }
+              } catch (followupError) {
+                console.warn('[DialogScreenV2] Followup refresh after regeneration failed', followupError)
+              }
+            }
+          }
+
+          setFollowupAnsweredCount(0)
+          return
+        } catch (followupLoopError) {
+          console.warn('[DialogScreenV2] Followup loop failed, fallback to normal chat', followupLoopError)
+        }
+      }
+
       const response = await fetch('/api/amy/chat', {
         method: 'POST',
         headers: getRequestHeaders(),
@@ -970,14 +1176,7 @@ export function DialogScreenV2() {
         throw new Error('Invalid chat response')
       }
 
-      const assistantMessage: StubbedMessage = {
-        id: `assistant-${Date.now()}`,
-        sender: 'assistant',
-        text: replyText,
-        timestamp: buildTimestamp(),
-      }
-
-      setChatMessages((prev) => [...prev, assistantMessage])
+      appendAssistantMessage(replyText)
       if (replyText.includes('?')) {
         collectOpenQuestion(replyText)
       }

@@ -131,6 +131,20 @@ export interface ClinicalReasoningPack {
   uncertainties: string[]
 }
 
+export interface ClinicalFollowupQuestion {
+  id: string
+  question: string
+  why: string
+  priority: 1 | 2 | 3
+  source: 'reasoning' | 'gap_rule'
+}
+
+export interface ClinicalFollowup {
+  next_questions: ClinicalFollowupQuestion[]
+  asked_question_ids: string[]
+  last_generated_at: string
+}
+
 export interface StructuredIntakeData {
   status: 'draft'
   chief_complaint?: string
@@ -144,6 +158,7 @@ export interface StructuredIntakeData {
   last_updated_from_messages?: string[]
   safety?: SafetyEvaluation
   reasoning?: ClinicalReasoningPack
+  followup?: ClinicalFollowup
 }
 
 // ============================================================================

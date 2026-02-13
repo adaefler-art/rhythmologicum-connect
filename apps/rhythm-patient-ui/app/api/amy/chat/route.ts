@@ -369,7 +369,12 @@ export async function POST(req: Request) {
       )
     }
 
-    const mode = body.mode === 'resume' ? 'resume' : 'default'
+    const mode =
+      body.mode === 'resume'
+        ? 'resume'
+        : body.mode === 'log_only'
+          ? 'log_only'
+          : 'default'
 
     const resumeContext =
       mode === 'resume' && body.resumeContext && typeof body.resumeContext === 'object'
@@ -389,7 +394,10 @@ export async function POST(req: Request) {
           success: false,
           error: {
             code: 'VALIDATION_FAILED',
-            message: mode === 'resume' ? 'Resume context is required' : 'Message is required',
+            message:
+              mode === 'resume'
+                ? 'Resume context is required'
+                : 'Message is required',
           },
         },
         { status: 400 }
@@ -445,6 +453,25 @@ export async function POST(req: Request) {
         : await saveMessage(user.id, 'user', message, supabase, {
             correlationId,
           })
+
+    if (mode === 'log_only') {
+      const totalDuration = Date.now() - requestStartTime
+      console.log('[amy/chat] Log-only request completed', {
+        duration: `${totalDuration}ms`,
+        userMessageId,
+        correlationId,
+      })
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          reply: '',
+          intakeSnapshot: undefined,
+          messageId: userMessageId || 'temp-' + Date.now(),
+          logged: true,
+        },
+      })
+    }
 
     // Get LLM response
     const resumePrompt =
