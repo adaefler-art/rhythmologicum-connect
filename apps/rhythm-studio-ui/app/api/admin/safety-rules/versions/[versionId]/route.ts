@@ -28,11 +28,11 @@ export async function PATCH(
     const { versionId } = await params
     const admin = createAdminSupabaseClient()
 
-    const { data: version, error: versionError } = await admin
+    const { data: version, error: versionError } = (await admin
       .from('safety_rule_versions' as any)
       .select('id, status')
       .eq('id', versionId)
-      .maybeSingle()
+      .maybeSingle()) as any
 
     if (versionError) {
       return databaseErrorResponse('Failed to load safety rule version.')
