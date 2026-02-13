@@ -479,6 +479,7 @@ export type Database = {
           metadata: Json | null
           organization_id: string | null
           patient_id: string | null
+          policy_override: Json | null
           status: Database["public"]["Enums"]["intake_status"]
           structured_data: Json
           trigger_reason: string | null
@@ -497,6 +498,7 @@ export type Database = {
           metadata?: Json | null
           organization_id?: string | null
           patient_id?: string | null
+          policy_override?: Json | null
           status?: Database["public"]["Enums"]["intake_status"]
           structured_data?: Json
           trigger_reason?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           metadata?: Json | null
           organization_id?: string | null
           patient_id?: string | null
+          policy_override?: Json | null
           status?: Database["public"]["Enums"]["intake_status"]
           structured_data?: Json
           trigger_reason?: string | null
