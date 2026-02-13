@@ -132,11 +132,11 @@ async function recordAction(
 		payload: payload as Json,
 	}
 
-	const { data: action, error: insertError } = await supabase
-		.from('triage_case_actions')
+	const { data: action, error: insertError } = (await supabase
+		.from('triage_case_actions' as any)
 		.insert(insertPayload)
 		.select('id, created_at, created_by, assessment_id, action_type, payload')
-		.single()
+		.single()) as { data: any; error: any }
 
 	if (insertError || !action) {
 		const classified = classifySupabaseError(insertError)
@@ -179,13 +179,13 @@ export async function getLatestAction(
 	caseId: string,
 	actionType: TriageActionType,
 ): Promise<any | null> {
-	const { data: actions } = await supabase
-		.from('triage_case_actions')
+	const { data: actions } = (await supabase
+		.from('triage_case_actions' as any)
 		.select('*')
 		.eq('assessment_id', caseId)
 		.eq('action_type', actionType)
 		.order('created_at', { ascending: false })
-		.limit(1)
+		.limit(1)) as { data: any }
 
 	return actions && actions.length > 0 ? actions[0] : null
 }

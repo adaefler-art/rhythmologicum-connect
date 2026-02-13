@@ -67,13 +67,13 @@ export async function POST(
 			// R-E78.4-025: Idempotency check - is case already closed?
 			checkIdempotency: async (supabase, _assessment) => {
 				// Check for most recent close or reopen action
-				const { data: actions } = await supabase
-					.from('triage_case_actions')
+				const { data: actions } = (await supabase
+					.from('triage_case_actions' as any)
 					.select('*')
 					.eq('assessment_id', caseId)
 					.in('action_type', ['close', 'reopen'])
 					.order('created_at', { ascending: false })
-					.limit(1)
+					.limit(1)) as { data: any }
 
 				if (actions && actions.length > 0 && actions[0].action_type === 'close') {
 					// Most recent action was close - idempotent
