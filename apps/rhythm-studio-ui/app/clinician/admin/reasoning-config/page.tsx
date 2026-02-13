@@ -67,6 +67,35 @@ type SandboxResult = {
   } | null
 }
 
+type ApiErrorPayload = {
+  success?: boolean
+  code?: string
+  message?: string
+  details?: {
+    code?: string | null
+  }
+  error?: {
+    code?: string
+    message?: string
+    details?: {
+      code?: string | null
+    }
+  }
+}
+
+const formatApiError = (payload: ApiErrorPayload | null, fallback: string): string => {
+  if (!payload) return fallback
+
+  const message = payload.message || payload.error?.message || fallback
+  const detailCode = payload.details?.code || payload.error?.details?.code || payload.code || payload.error?.code
+
+  if (detailCode) {
+    return `${message} (${detailCode})`
+  }
+
+  return message
+}
+
 const defaultSandboxInput = {
   status: 'draft',
   chief_complaint: 'Ich habe Herzrasen und starke Angst seit gestern.',
@@ -175,10 +204,10 @@ export default function ReasoningConfigPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ change_reason: changeReason.trim() }),
     })
-    const data = await response.json().catch(() => null)
+    const data = (await response.json().catch(() => null)) as ApiErrorPayload | null
 
     if (!response.ok || !data?.success) {
-      setActionError(data?.error?.message || 'Failed to create draft version')
+      setActionError(formatApiError(data, 'Failed to create draft version'))
       return
     }
 
