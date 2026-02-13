@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -468,109 +463,6 @@ export type Database = {
           },
         ]
       }
-      clinical_intakes: {
-        Row: {
-          chat_session_id: string | null
-          clinical_summary: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          last_updated_from_messages: string[] | null
-          metadata: Json | null
-          organization_id: string | null
-          patient_id: string | null
-          policy_override: Json | null
-          status: Database["public"]["Enums"]["intake_status"]
-          structured_data: Json
-          trigger_reason: string | null
-          updated_at: string
-          updated_by: string | null
-          user_id: string
-          version_number: number
-        }
-        Insert: {
-          chat_session_id?: string | null
-          clinical_summary?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          last_updated_from_messages?: string[] | null
-          metadata?: Json | null
-          organization_id?: string | null
-          patient_id?: string | null
-          policy_override?: Json | null
-          status?: Database["public"]["Enums"]["intake_status"]
-          structured_data?: Json
-          trigger_reason?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          user_id: string
-          version_number?: number
-        }
-        Update: {
-          chat_session_id?: string | null
-          clinical_summary?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          last_updated_from_messages?: string[] | null
-          metadata?: Json | null
-          organization_id?: string | null
-          patient_id?: string | null
-          policy_override?: Json | null
-          status?: Database["public"]["Enums"]["intake_status"]
-          structured_data?: Json
-          trigger_reason?: string | null
-          updated_at?: string
-          updated_by?: string | null
-          user_id?: string
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clinical_intakes_chat_session_id_fkey"
-            columns: ["chat_session_id"]
-            isOneToOne: false
-            referencedRelation: "amy_chat_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "clinical_intakes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "clinical_intakes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "clinical_intakes_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patient_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "clinical_intakes_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "clinical_intakes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       clinician_patient_assignments: {
         Row: {
           clinician_user_id: string
@@ -621,155 +513,6 @@ export type Database = {
           {
             foreignKeyName: "clinician_patient_assignments_patient_fkey"
             columns: ["patient_user_id"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      consult_note_versions: {
-        Row: {
-          change_summary: string | null
-          consult_note_id: string
-          content: Json
-          created_at: string
-          created_by: string | null
-          diff: Json | null
-          id: string
-          metadata: Json | null
-          rendered_markdown: string | null
-          version_number: number
-        }
-        Insert: {
-          change_summary?: string | null
-          consult_note_id: string
-          content: Json
-          created_at?: string
-          created_by?: string | null
-          diff?: Json | null
-          id?: string
-          metadata?: Json | null
-          rendered_markdown?: string | null
-          version_number: number
-        }
-        Update: {
-          change_summary?: string | null
-          consult_note_id?: string
-          content?: Json
-          created_at?: string
-          created_by?: string | null
-          diff?: Json | null
-          id?: string
-          metadata?: Json | null
-          rendered_markdown?: string | null
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consult_note_versions_consult_note_id_fkey"
-            columns: ["consult_note_id"]
-            isOneToOne: false
-            referencedRelation: "consult_notes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consult_note_versions_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      consult_notes: {
-        Row: {
-          assertiveness: Database["public"]["Enums"]["assertiveness_level"]
-          audience: Database["public"]["Enums"]["audience_type"]
-          chat_session_id: string | null
-          consultation_type: Database["public"]["Enums"]["consultation_type"]
-          content: Json
-          created_at: string
-          created_by: string | null
-          guideline_version: string | null
-          id: string
-          is_archived: boolean
-          metadata: Json | null
-          organization_id: string
-          patient_id: string
-          rendered_markdown: string | null
-          source: string
-          uncertainty_profile: Database["public"]["Enums"]["uncertainty_profile"]
-          updated_at: string
-          updated_by: string | null
-          version_number: number
-        }
-        Insert: {
-          assertiveness?: Database["public"]["Enums"]["assertiveness_level"]
-          audience?: Database["public"]["Enums"]["audience_type"]
-          chat_session_id?: string | null
-          consultation_type?: Database["public"]["Enums"]["consultation_type"]
-          content?: Json
-          created_at?: string
-          created_by?: string | null
-          guideline_version?: string | null
-          id?: string
-          is_archived?: boolean
-          metadata?: Json | null
-          organization_id: string
-          patient_id: string
-          rendered_markdown?: string | null
-          source?: string
-          uncertainty_profile?: Database["public"]["Enums"]["uncertainty_profile"]
-          updated_at?: string
-          updated_by?: string | null
-          version_number?: number
-        }
-        Update: {
-          assertiveness?: Database["public"]["Enums"]["assertiveness_level"]
-          audience?: Database["public"]["Enums"]["audience_type"]
-          chat_session_id?: string | null
-          consultation_type?: Database["public"]["Enums"]["consultation_type"]
-          content?: Json
-          created_at?: string
-          created_by?: string | null
-          guideline_version?: string | null
-          id?: string
-          is_archived?: boolean
-          metadata?: Json | null
-          organization_id?: string
-          patient_id?: string
-          rendered_markdown?: string | null
-          source?: string
-          uncertainty_profile?: Database["public"]["Enums"]["uncertainty_profile"]
-          updated_at?: string
-          updated_by?: string | null
-          version_number?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "consult_notes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "consult_notes_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consult_notes_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patient_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "consult_notes_updated_by_fkey"
-            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "pending_account_deletions"
             referencedColumns: ["user_id"]
@@ -1060,22 +803,10 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
-          llm_error: string | null
-          llm_latency_ms: number | null
-          llm_model: string | null
-          llm_prompt_version: string | null
-          llm_provider: string | null
-          llm_raw_response: string | null
-          llm_request_id: string | null
-          llm_tokens_in: number | null
-          llm_tokens_out: number | null
-          llm_tokens_total: number | null
-          llm_used: boolean | null
           metadata: Json | null
           patient_id: string
           primary_findings: string[] | null
           recommendations_count: number | null
-          result_source: string | null
           risk_level: string | null
           run_id: string
           schema_version: string
@@ -1087,22 +818,10 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
-          llm_error?: string | null
-          llm_latency_ms?: number | null
-          llm_model?: string | null
-          llm_prompt_version?: string | null
-          llm_provider?: string | null
-          llm_raw_response?: string | null
-          llm_request_id?: string | null
-          llm_tokens_in?: number | null
-          llm_tokens_out?: number | null
-          llm_tokens_total?: number | null
-          llm_used?: boolean | null
           metadata?: Json | null
           patient_id: string
           primary_findings?: string[] | null
           recommendations_count?: number | null
-          result_source?: string | null
           risk_level?: string | null
           run_id: string
           schema_version?: string
@@ -1114,22 +833,10 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
-          llm_error?: string | null
-          llm_latency_ms?: number | null
-          llm_model?: string | null
-          llm_prompt_version?: string | null
-          llm_provider?: string | null
-          llm_raw_response?: string | null
-          llm_request_id?: string | null
-          llm_tokens_in?: number | null
-          llm_tokens_out?: number | null
-          llm_tokens_total?: number | null
-          llm_used?: boolean | null
           metadata?: Json | null
           patient_id?: string
           primary_findings?: string[] | null
           recommendations_count?: number | null
-          result_source?: string | null
           risk_level?: string | null
           run_id?: string
           schema_version?: string
@@ -1517,55 +1224,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "funnels"
             referencedColumns: ["id"]
-          },
-        ]
-      }
-      funnel_triage_settings: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          funnel_id: string
-          overdue_days: number
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          funnel_id: string
-          overdue_days: number
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          funnel_id?: string
-          overdue_days?: number
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "funnel_triage_settings_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "funnel_triage_settings_funnel_id_fkey"
-            columns: ["funnel_id"]
-            isOneToOne: true
-            referencedRelation: "funnels_catalog"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "funnel_triage_settings_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2625,6 +2283,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "priority_rankings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
+          },
+          {
             foreignKeyName: "priority_rankings_risk_bundle_id_fkey"
             columns: ["risk_bundle_id"]
             isOneToOne: false
@@ -3107,6 +2772,13 @@ export type Database = {
             referencedRelation: "processing_jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "risk_bundles_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "triage_cases_v1"
+            referencedColumns: ["job_id"]
+          },
         ]
       }
       rls_test_results: {
@@ -3232,71 +2904,6 @@ export type Database = {
           sections_id?: string
           total_tokens?: number | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      safety_rule_versions: {
-        Row: {
-          change_reason: string
-          created_at: string
-          created_by: string
-          defaults: Json
-          id: string
-          logic_json: Json
-          rule_id: string
-          status: Database["public"]["Enums"]["safety_rule_version_status"]
-          version: number
-        }
-        Insert: {
-          change_reason: string
-          created_at?: string
-          created_by: string
-          defaults?: Json
-          id?: string
-          logic_json?: Json
-          rule_id: string
-          status?: Database["public"]["Enums"]["safety_rule_version_status"]
-          version: number
-        }
-        Update: {
-          change_reason?: string
-          created_at?: string
-          created_by?: string
-          defaults?: Json
-          id?: string
-          logic_json?: Json
-          rule_id?: string
-          status?: Database["public"]["Enums"]["safety_rule_version_status"]
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "safety_rule_versions_rule_id_fkey"
-            columns: ["rule_id"]
-            isOneToOne: false
-            referencedRelation: "safety_rules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      safety_rules: {
-        Row: {
-          created_at: string
-          id: string
-          key: string
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key: string
-          title: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key?: string
-          title?: string
         }
         Relationships: []
       }
@@ -3513,75 +3120,6 @@ export type Database = {
           },
         ]
       }
-      triage_case_actions: {
-        Row: {
-          action_type: Database["public"]["Enums"]["triage_action_type"]
-          assessment_id: string
-          created_at: string
-          created_by: string
-          funnel_id: string | null
-          id: string
-          patient_id: string
-          payload: Json | null
-        }
-        Insert: {
-          action_type: Database["public"]["Enums"]["triage_action_type"]
-          assessment_id: string
-          created_at?: string
-          created_by: string
-          funnel_id?: string | null
-          id?: string
-          patient_id: string
-          payload?: Json | null
-        }
-        Update: {
-          action_type?: Database["public"]["Enums"]["triage_action_type"]
-          assessment_id?: string
-          created_at?: string
-          created_by?: string
-          funnel_id?: string | null
-          id?: string
-          patient_id?: string
-          payload?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "triage_case_actions_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "assessments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "triage_case_actions_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "triage_cases_v1"
-            referencedColumns: ["case_id"]
-          },
-          {
-            foreignKeyName: "triage_case_actions_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "triage_case_actions_funnel_id_fkey"
-            columns: ["funnel_id"]
-            isOneToOne: false
-            referencedRelation: "funnels_catalog"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "triage_case_actions_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "pending_account_deletions"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       triage_sessions: {
         Row: {
           correlation_id: string
@@ -3788,36 +3326,33 @@ export type Database = {
       }
       triage_cases_v1: {
         Row: {
-          acknowledged_at: string | null
           assigned_at: string | null
           attention_items: string[] | null
           attention_level: string | null
           case_id: string | null
           case_state: string | null
           completed_at: string | null
-          due_at: string | null
+          delivery_status: string | null
+          first_name: string | null
           funnel_id: string | null
-          funnel_id_enrichment: string | null
-          has_manual_flag: boolean | null
+          funnel_slug: string | null
           is_active: boolean | null
-          is_manually_closed: boolean | null
+          job_id: string | null
+          job_stage: Database["public"]["Enums"]["processing_stage"] | null
+          job_status: Database["public"]["Enums"]["processing_status"] | null
           last_activity_at: string | null
-          manual_flag_reason: string | null
-          manual_flag_severity: string | null
+          last_name: string | null
           next_action: string | null
+          patient_display: string | null
           patient_id: string | null
-          sla_days: number | null
+          preferred_name: string | null
+          priority_score: number | null
+          review_decided_at: string | null
+          review_status: Database["public"]["Enums"]["review_status"] | null
           snoozed_until: string | null
           updated_at: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "assessments_funnel_id_fkey"
-            columns: ["funnel_id_enrichment"]
-            isOneToOne: false
-            referencedRelation: "funnels"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "assessments_funnel_id_fkey"
             columns: ["funnel_id"]
@@ -3836,10 +3371,6 @@ export type Database = {
       }
     }
     Functions: {
-      can_staff_see_patient_profile: {
-        Args: { patient_profile_id: string; staff_user_id: string }
-        Returns: boolean
-      }
       cancel_account_deletion: {
         Args: { target_user_id: string }
         Returns: Json
@@ -3882,7 +3413,6 @@ export type Database = {
       }
       get_design_tokens: { Args: { org_id?: string }; Returns: Json }
       get_my_patient_profile_id: { Args: never; Returns: string }
-      get_triage_sla_days: { Args: { p_funnel_id: string }; Returns: number }
       get_user_org_ids: { Args: never; Returns: string[] }
       has_any_role: {
         Args: { check_role: Database["public"]["Enums"]["user_role"] }
@@ -3903,13 +3433,6 @@ export type Database = {
       log_rls_violation: {
         Args: { attempted_id?: string; operation: string; table_name: string }
         Returns: undefined
-      }
-      meta_check_required_objects: {
-        Args: { required_objects: string[] }
-        Returns: {
-          missing_count: number
-          missing_sample: string[]
-        }[]
       }
       publish_draft_version: {
         Args: {
@@ -3946,14 +3469,10 @@ export type Database = {
       }
     }
     Enums: {
-      assertiveness_level: "conservative" | "balanced" | "direct"
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
-      audience_type: "patient" | "clinician"
-      consultation_type: "first" | "follow_up"
       diagnosis_run_status: "queued" | "running" | "completed" | "failed"
       funnel_version_status: "draft" | "published" | "archived"
-      intake_status: "draft" | "active" | "superseded" | "archived"
       notification_status:
         | "scheduled"
         | "sent"
@@ -3999,7 +3518,6 @@ export type Database = {
       report_status: "pending" | "generating" | "completed" | "failed"
       review_status: "PENDING" | "APPROVED" | "REJECTED" | "CHANGES_REQUESTED"
       safety_action: "PASS" | "FLAG" | "BLOCK" | "UNKNOWN"
-      safety_rule_version_status: "draft" | "active" | "archived"
       shipment_status:
         | "ordered"
         | "shipped"
@@ -4022,15 +3540,6 @@ export type Database = {
         | "resolved"
         | "closed"
       task_status: "pending" | "in_progress" | "completed" | "cancelled"
-      triage_action_type:
-        | "acknowledge"
-        | "snooze"
-        | "close"
-        | "reopen"
-        | "manual_flag"
-        | "clear_manual_flag"
-        | "add_note"
-      uncertainty_profile: "off" | "qualitative" | "mixed"
       user_role: "patient" | "clinician" | "nurse" | "admin"
       validation_status: "pass" | "flag" | "fail"
       workup_status: "needs_more_data" | "ready_for_review"
@@ -4164,14 +3673,10 @@ export const Constants = {
   },
   public: {
     Enums: {
-      assertiveness_level: ["conservative", "balanced", "direct"],
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
-      audience_type: ["patient", "clinician"],
-      consultation_type: ["first", "follow_up"],
       diagnosis_run_status: ["queued", "running", "completed", "failed"],
       funnel_version_status: ["draft", "published", "archived"],
-      intake_status: ["draft", "active", "superseded", "archived"],
       notification_status: [
         "scheduled",
         "sent",
@@ -4221,7 +3726,6 @@ export const Constants = {
       report_status: ["pending", "generating", "completed", "failed"],
       review_status: ["PENDING", "APPROVED", "REJECTED", "CHANGES_REQUESTED"],
       safety_action: ["PASS", "FLAG", "BLOCK", "UNKNOWN"],
-      safety_rule_version_status: ["draft", "active", "archived"],
       shipment_status: [
         "ordered",
         "shipped",
@@ -4247,19 +3751,10 @@ export const Constants = {
         "closed",
       ],
       task_status: ["pending", "in_progress", "completed", "cancelled"],
-      triage_action_type: [
-        "acknowledge",
-        "snooze",
-        "close",
-        "reopen",
-        "manual_flag",
-        "clear_manual_flag",
-        "add_note",
-      ],
-      uncertainty_profile: ["off", "qualitative", "mixed"],
       user_role: ["patient", "clinician", "nurse", "admin"],
       validation_status: ["pass", "flag", "fail"],
       workup_status: ["needs_more_data", "ready_for_review"],
     },
   },
 } as const
+
