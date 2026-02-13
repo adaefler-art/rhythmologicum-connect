@@ -79,6 +79,14 @@ const nextConfig: NextConfig = {
         source: '/api/admin/navigation',
         destination: '/api/admin/navigation',
       },
+      {
+        source: '/api/admin/safety-rules/:path*',
+        destination: '/api/admin/safety-rules/:path*',
+      },
+      {
+        source: '/api/admin/safety-rules',
+        destination: '/api/admin/safety-rules',
+      },
     ]
     if (!engineBaseUrl) {
       return baseRules
