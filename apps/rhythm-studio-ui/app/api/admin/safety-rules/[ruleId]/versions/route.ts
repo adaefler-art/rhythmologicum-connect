@@ -45,13 +45,15 @@ export async function POST(
       return notFoundResponse('Safety rule')
     }
 
-    const { data: latestVersion, error: latestError } = await admin
+    const latestQuery = admin
       .from('safety_rule_versions' as any)
       .select('id, version, logic_json, defaults')
       .eq('rule_id', rule.id)
       .order('version', { ascending: false })
       .limit(1)
-      .maybeSingle()
+      .maybeSingle() as any
+
+    const { data: latestVersion, error: latestError } = await latestQuery
 
     if (latestError) {
       return databaseErrorResponse('Failed to read safety rule versions.')
