@@ -78,6 +78,130 @@ export interface AnamnesisSectionProps {
   errorEvidenceCode?: string
 }
 
+type EvidenceExcerpt = {
+  text: string
+  source: 'chat' | 'intake'
+  refId: string
+}
+
+type TriggeredRuleUi = {
+  ruleId: string
+  title: string
+  level: string
+  shortReason: string
+  excerpts: EvidenceExcerpt[]
+  allEvidenceRefs: string[]
+}
+
+const MAX_EXCERPT_LENGTH = 220
+const MAX_RULE_EXCERPTS = 3
+
+const clampExcerpt = (value: string, max = MAX_EXCERPT_LENGTH) =>
+  value.length > max ? `${value.slice(0, max).trim()}…` : value
+
+const buildIntakeExcerpts = (structuredIntakeData: Record<string, unknown> | null) => {
+  if (!structuredIntakeData) return [] as EvidenceExcerpt[]
+  const excerpts: EvidenceExcerpt[] = []
+
+  const pushExcerpt = (text: string | undefined, refId: string) => {
+    if (!text) return
+    const trimmed = text.trim()
+    if (!trimmed) return
+    excerpts.push({ text: clampExcerpt(trimmed), source: 'intake', refId })
+  }
+
+  pushExcerpt(
+    typeof structuredIntakeData.chief_complaint === 'string'
+      ? structuredIntakeData.chief_complaint
+      : undefined,
+    'intake:chief_complaint',
+  )
+  pushExcerpt(
+    typeof structuredIntakeData.narrative_summary === 'string'
+      ? structuredIntakeData.narrative_summary
+      : undefined,
+    'intake:narrative_summary',
+  )
+
+  const hpi = structuredIntakeData.history_of_present_illness
+  if (hpi && typeof hpi === 'object') {
+    const record = hpi as Record<string, unknown>
+    pushExcerpt(
+      typeof record.onset === 'string' ? record.onset : undefined,
+      'intake:hpi:onset',
+    )
+    pushExcerpt(
+      typeof record.duration === 'string' ? record.duration : undefined,
+      'intake:hpi:duration',
+    )
+    pushExcerpt(
+      typeof record.course === 'string' ? record.course : undefined,
+      'intake:hpi:course',
+    )
+  }
+
+  const arrayFields: Array<{ key: string; label: string }> = [
+    { key: 'relevant_negatives', label: 'intake:relevant_negatives' },
+    { key: 'past_medical_history', label: 'intake:past_medical_history' },
+    { key: 'medication', label: 'intake:medication' },
+    { key: 'psychosocial_factors', label: 'intake:psychosocial_factors' },
+    { key: 'uncertainties', label: 'intake:uncertainties' },
+  ]
+
+  arrayFields.forEach(({ key, label }) => {
+    const value = structuredIntakeData[key]
+    if (!Array.isArray(value)) return
+    const first = value.find((item) => typeof item === 'string' && item.trim()) as string | undefined
+    pushExcerpt(first, label)
+  })
+
+  return excerpts
+}
+
+const resolveEvidenceRefs = (params: {
+  refIds: string[]
+  structuredIntakeData: Record<string, unknown> | null
+}): EvidenceExcerpt[] => {
+  const { refIds, structuredIntakeData } = params
+  const resolved: EvidenceExcerpt[] = []
+
+  const evidenceRefsRaw = structuredIntakeData?.evidence_refs
+  const evidenceMap = new Map<string, EvidenceExcerpt>()
+  if (Array.isArray(evidenceRefsRaw)) {
+    evidenceRefsRaw.forEach((entry) => {
+      if (!entry || typeof entry !== 'object') return
+      const record = entry as { ref?: unknown; text?: unknown; source?: unknown }
+      if (typeof record.ref === 'string' && typeof record.text === 'string') {
+        evidenceMap.set(record.ref, {
+          text: clampExcerpt(record.text),
+          source: record.source === 'chat' ? 'chat' : 'intake',
+          refId: record.ref,
+        })
+      }
+    })
+  }
+
+  refIds.forEach((refId) => {
+    if (!refId) return
+    const mapped = evidenceMap.get(refId)
+    if (mapped) {
+      resolved.push(mapped)
+      return
+    }
+    resolved.push({
+      text: 'Evidence reference not resolvable',
+      source: 'intake',
+      refId,
+    })
+  })
+
+  if (resolved.length === 0) {
+    return buildIntakeExcerpts(structuredIntakeData).slice(0, MAX_RULE_EXCERPTS)
+  }
+
+  return resolved
+}
+
 /**
  * Displays patient anamnesis entries with add/edit/archive capabilities
  */
@@ -655,6 +779,28 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const policyResult = safetyEvaluation?.policy_result as SafetyPolicyResult | undefined
   const overrideInfo = safetyEvaluation?.override as SafetyOverride | null | undefined
   const triggeredRules = safetyEvaluation?.triggered_rules as SafetyTriggeredRule[] | undefined
+  const triggeredRuleUi: TriggeredRuleUi[] = Array.isArray(triggeredRules)
+    ? triggeredRules.map((rule) => {
+        const ruleId = rule.rule_id
+        const evidenceRefs = Array.isArray(rule.evidence_message_ids)
+          ? rule.evidence_message_ids
+          : []
+        const excerpts = resolveEvidenceRefs({
+          refIds: evidenceRefs,
+          structuredIntakeData: structuredIntakeData as Record<string, unknown> | null,
+        }).slice(0, MAX_RULE_EXCERPTS)
+        const shortReason = typeof rule.rationale === 'string' ? rule.rationale : ''
+
+        return {
+          ruleId,
+          title: ruleId,
+          level: rule.severity,
+          shortReason,
+          excerpts,
+          allEvidenceRefs: evidenceRefs,
+        }
+      })
+    : []
 
   const handleOverrideSave = async () => {
     if (!latestIntake) return
@@ -773,19 +919,33 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 </div>
               </div>
             )}
-            {Array.isArray(triggeredRules) && triggeredRules.length > 0 && (
+            {triggeredRuleUi.length > 0 && (
               <div className="rounded-lg border border-slate-200 p-3">
                 <p className="text-xs font-semibold text-slate-600 mb-2">Triggered Rules</p>
-                <div className="space-y-2">
-                  {triggeredRules.map((rule, index) => (
-                    <div key={`rule-${index}`} className="text-xs text-slate-600">
-                      <div className="font-semibold">
-                        {rule.rule_id} · Level {rule.severity}
+                <div className="space-y-3">
+                  {triggeredRuleUi.map((rule) => (
+                    <div key={rule.ruleId} className="rounded-md border border-slate-100 p-2">
+                      <div className="text-xs font-semibold text-slate-700">
+                        {rule.title} · Level {rule.level}
                       </div>
-                      {rule.evidence_message_ids && rule.evidence_message_ids.length > 0 && (
-                        <div>Evidence: {rule.evidence_message_ids.join(', ')}</div>
+                      {rule.shortReason && (
+                        <div className="text-xs text-slate-600 mt-1">{rule.shortReason}</div>
                       )}
-                      {rule.rationale && <div>{rule.rationale}</div>}
+                      <div className="mt-1 space-y-1">
+                        {rule.excerpts.map((excerpt) => (
+                          <div key={`${rule.ruleId}-${excerpt.refId}`} className="text-xs text-slate-600">
+                            <span className="font-semibold">{excerpt.source}:</span> {excerpt.text}
+                          </div>
+                        ))}
+                      </div>
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-slate-500">
+                          Show details
+                        </summary>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Evidence refs: {rule.allEvidenceRefs.join(', ') || 'n/a'}
+                        </div>
+                      </details>
                     </div>
                   ))}
                 </div>
