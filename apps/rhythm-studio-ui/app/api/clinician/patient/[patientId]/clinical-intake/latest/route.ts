@@ -215,6 +215,58 @@ export async function GET(_request: Request, context: RouteContext) {
       foundCount = userIdResult.count
     }
 
+    if (!intake) {
+      const adminPatientIdResult = await fetchLatestIntake({
+        supabase: admin,
+        column: 'patient_id',
+        value: resolution.patientProfileId,
+      })
+
+      if (adminPatientIdResult.error) {
+        console.error(
+          '[clinician/patient/clinical-intake/latest] Admin intake error:',
+          adminPatientIdResult.error,
+        )
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
+          },
+          { status: 500 },
+        )
+      }
+
+      usedFilter = { column: 'patient_id', value: resolution.patientProfileId }
+      intake = adminPatientIdResult.intake
+      foundCount = adminPatientIdResult.count
+    }
+
+    if (!intake && resolution.patientUserId) {
+      const adminUserIdResult = await fetchLatestIntake({
+        supabase: admin,
+        column: 'user_id',
+        value: resolution.patientUserId,
+      })
+
+      if (adminUserIdResult.error) {
+        console.error(
+          '[clinician/patient/clinical-intake/latest] Admin intake error:',
+          adminUserIdResult.error,
+        )
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
+          },
+          { status: 500 },
+        )
+      }
+
+      usedFilter = { column: 'user_id', value: resolution.patientUserId }
+      intake = adminUserIdResult.intake
+      foundCount = adminUserIdResult.count
+    }
+
     return NextResponse.json({
       success: true,
       intake,

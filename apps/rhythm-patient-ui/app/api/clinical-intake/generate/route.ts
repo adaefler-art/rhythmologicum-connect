@@ -235,6 +235,8 @@ function appendSafetySummary(summary: string, safetyLine: string) {
  */
 async function saveIntake(
   userId: string,
+  patientProfileId: string | null,
+  organizationId: string | null,
   structuredData: StructuredIntakeData,
   clinicalSummary: string,
   messageIds: string[],
@@ -246,6 +248,8 @@ async function saveIntake(
       .from('clinical_intakes')
       .insert({
         user_id: userId,
+        patient_id: patientProfileId,
+        organization_id: organizationId,
         status: 'draft',
         structured_data: structuredData,
         clinical_summary: clinicalSummary,
@@ -298,6 +302,22 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       )
     }
+
+    const { data: patientProfile, error: profileError } = await supabase
+      .from('patient_profiles')
+      .select('id, organization_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (profileError) {
+      console.warn('[clinical-intake/generate] Failed to resolve patient profile', {
+        error: profileError.message,
+        userId: user.id,
+      })
+    }
+
+    const patientProfileId = patientProfile?.id ?? null
+    const organizationId = patientProfile?.organization_id ?? null
 
     // Parse request body
     const body = (await req.json()) as GenerateIntakeRequest
@@ -410,7 +430,7 @@ export async function POST(req: NextRequest) {
       policy_version: flag.policy_version,
     }))
 
-    const policy = loadSafetyPolicy({ organizationId: null, funnelId: null })
+    const policy = loadSafetyPolicy({ organizationId, funnelId: null })
     const policyResult = applySafetyPolicy({ triggeredRules, policy })
     const effective = getEffectiveSafetyState({ policyResult, override: null })
 
@@ -429,6 +449,8 @@ export async function POST(req: NextRequest) {
     // Save to database
     const intake = await saveIntake(
       user.id,
+      patientProfileId,
+      organizationId,
       result.structuredData,
       clinicalSummary,
       messages.map((m) => m.id),
