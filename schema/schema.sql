@@ -294,6 +294,16 @@ COMMENT ON TYPE "public"."safety_action" IS 'V05-I05.6: Safety check recommended
 
 
 
+CREATE TYPE "public"."safety_rule_version_status" AS ENUM (
+    'draft',
+    'active',
+    'archived'
+);
+
+
+ALTER TYPE "public"."safety_rule_version_status" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."shipment_status" AS ENUM (
     'ordered',
     'shipped',
@@ -5009,6 +5019,34 @@ COMMENT ON COLUMN "public"."safety_check_results"."evaluation_key_hash" IS 'Hash
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."safety_rule_versions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "rule_id" "uuid" NOT NULL,
+    "version" integer NOT NULL,
+    "status" "public"."safety_rule_version_status" DEFAULT 'draft'::"public"."safety_rule_version_status" NOT NULL,
+    "logic_json" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "defaults" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "change_reason" "text" NOT NULL,
+    "created_by" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "safety_rule_versions_version_check" CHECK (("version" > 0))
+);
+
+
+ALTER TABLE "public"."safety_rule_versions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."safety_rules" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "key" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."safety_rules" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."shipment_events" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "shipment_id" "uuid" NOT NULL,
@@ -5930,6 +5968,26 @@ ALTER TABLE ONLY "public"."safety_check_results"
 
 ALTER TABLE ONLY "public"."safety_check_results"
     ADD CONSTRAINT "safety_check_results_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."safety_rule_versions"
+    ADD CONSTRAINT "safety_rule_versions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."safety_rule_versions"
+    ADD CONSTRAINT "safety_rule_versions_rule_version_unique" UNIQUE ("rule_id", "version");
+
+
+
+ALTER TABLE ONLY "public"."safety_rules"
+    ADD CONSTRAINT "safety_rules_key_unique" UNIQUE ("key");
+
+
+
+ALTER TABLE ONLY "public"."safety_rules"
+    ADD CONSTRAINT "safety_rules_pkey" PRIMARY KEY ("id");
 
 
 
@@ -7033,6 +7091,10 @@ CREATE INDEX "patient_state_user_id_idx" ON "public"."patient_state" USING "btre
 
 
 
+CREATE UNIQUE INDEX "safety_rule_versions_active_unique" ON "public"."safety_rule_versions" USING "btree" ("rule_id") WHERE ("status" = 'active'::"public"."safety_rule_version_status");
+
+
+
 CREATE INDEX "tasks_assigned_to_user_id_idx" ON "public"."tasks" USING "btree" ("assigned_to_user_id") WHERE ("assigned_to_user_id" IS NOT NULL);
 
 
@@ -7649,6 +7711,11 @@ ALTER TABLE ONLY "public"."risk_bundles"
 
 ALTER TABLE ONLY "public"."risk_bundles"
     ADD CONSTRAINT "risk_bundles_job_id_fkey" FOREIGN KEY ("job_id") REFERENCES "public"."processing_jobs"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."safety_rule_versions"
+    ADD CONSTRAINT "safety_rule_versions_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "public"."safety_rules"("id") ON DELETE CASCADE;
 
 
 
@@ -8934,6 +9001,40 @@ CREATE POLICY "safety_check_results_update_service" ON "public"."safety_check_re
 
 
 
+ALTER TABLE "public"."safety_rule_versions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "safety_rule_versions_modify_admin" ON "public"."safety_rule_versions" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "safety_rule_versions_select_admin" ON "public"."safety_rule_versions" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+ALTER TABLE "public"."safety_rules" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "safety_rules_modify_admin" ON "public"."safety_rules" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "safety_rules_select_admin" ON "public"."safety_rules" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
 ALTER TABLE "public"."shipment_events" ENABLE ROW LEVEL SECURITY;
 
 
@@ -9967,6 +10068,18 @@ GRANT ALL ON TABLE "public"."safety_check_results" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."safety_rule_versions" TO "anon";
+GRANT ALL ON TABLE "public"."safety_rule_versions" TO "authenticated";
+GRANT ALL ON TABLE "public"."safety_rule_versions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."safety_rules" TO "anon";
+GRANT ALL ON TABLE "public"."safety_rules" TO "authenticated";
+GRANT ALL ON TABLE "public"."safety_rules" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."shipment_events" TO "anon";
 GRANT ALL ON TABLE "public"."shipment_events" TO "authenticated";
 GRANT ALL ON TABLE "public"."shipment_events" TO "service_role";
@@ -10051,119 +10164,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
-CREATE TYPE "public"."safety_rule_version_status" AS ENUM (
-    'draft',
-    'active',
-    'archived'
-);
-
-
-ALTER TYPE "public"."safety_rule_version_status" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."safety_rules" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "key" "text" NOT NULL,
-    "title" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "safety_rules_key_unique" UNIQUE ("key")
-);
-
-
-ALTER TABLE "public"."safety_rules" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."safety_rule_versions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "rule_id" "uuid" NOT NULL,
-    "version" integer NOT NULL,
-    "status" "public"."safety_rule_version_status" DEFAULT 'draft'::"public"."safety_rule_version_status" NOT NULL,
-    "logic_json" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "defaults" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "change_reason" "text" NOT NULL,
-    "created_by" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "safety_rule_versions_rule_version_unique" UNIQUE ("rule_id", "version"),
-    CONSTRAINT "safety_rule_versions_version_check" CHECK (("version" > 0))
-);
-
-
-ALTER TABLE "public"."safety_rule_versions" OWNER TO "postgres";
-
-
-ALTER TABLE "public"."safety_rules" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."safety_rule_versions" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE UNIQUE INDEX "safety_rule_versions_active_unique" ON "public"."safety_rule_versions" USING "btree" ("rule_id") WHERE ("status" = 'active'::"public"."safety_rule_version_status");
-
-
-ALTER TABLE ONLY "public"."safety_rules"
-    ADD CONSTRAINT "safety_rules_pkey" PRIMARY KEY ("id");
-
-
-ALTER TABLE ONLY "public"."safety_rule_versions"
-    ADD CONSTRAINT "safety_rule_versions_pkey" PRIMARY KEY ("id");
-
-
-ALTER TABLE ONLY "public"."safety_rule_versions"
-    ADD CONSTRAINT "safety_rule_versions_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "public"."safety_rules"("id") ON DELETE CASCADE;
-
-
-DROP POLICY IF EXISTS "safety_rules_select_admin" ON "public"."safety_rules";
-CREATE POLICY "safety_rules_select_admin" ON "public"."safety_rules" FOR SELECT TO "authenticated" USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  );
-
-
-DROP POLICY IF EXISTS "safety_rules_modify_admin" ON "public"."safety_rules";
-CREATE POLICY "safety_rules_modify_admin" ON "public"."safety_rules" FOR ALL TO "authenticated" USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  );
-
-
-DROP POLICY IF EXISTS "safety_rule_versions_select_admin" ON "public"."safety_rule_versions";
-CREATE POLICY "safety_rule_versions_select_admin" ON "public"."safety_rule_versions" FOR SELECT TO "authenticated" USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  );
-
-
-DROP POLICY IF EXISTS "safety_rule_versions_modify_admin" ON "public"."safety_rule_versions";
-CREATE POLICY "safety_rule_versions_modify_admin" ON "public"."safety_rule_versions" FOR ALL TO "authenticated" USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  ) WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE id = auth.uid()
-      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
-    )
-  );
 
 
 
