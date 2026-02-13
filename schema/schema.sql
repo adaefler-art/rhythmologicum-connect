@@ -99,6 +99,16 @@ COMMENT ON TYPE "public"."audience_type" IS 'Issue 5: Target audience for consul
 
 
 
+CREATE TYPE "public"."clinical_reasoning_config_status" AS ENUM (
+    'draft',
+    'active',
+    'archived'
+);
+
+
+ALTER TYPE "public"."clinical_reasoning_config_status" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."consultation_type" AS ENUM (
     'first',
     'follow_up'
@@ -2879,6 +2889,21 @@ COMMENT ON COLUMN "public"."clinical_intakes"."policy_override" IS 'Clinician po
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."clinical_reasoning_configs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "version" integer NOT NULL,
+    "status" "public"."clinical_reasoning_config_status" DEFAULT 'draft'::"public"."clinical_reasoning_config_status" NOT NULL,
+    "config_json" "jsonb" NOT NULL,
+    "change_reason" "text" NOT NULL,
+    "created_by" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "clinical_reasoning_configs_version_positive" CHECK (("version" > 0))
+);
+
+
+ALTER TABLE "public"."clinical_reasoning_configs" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."clinician_patient_assignments" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "organization_id" "uuid" NOT NULL,
@@ -5612,6 +5637,16 @@ ALTER TABLE ONLY "public"."clinical_intakes"
 
 
 
+ALTER TABLE ONLY "public"."clinical_reasoning_configs"
+    ADD CONSTRAINT "clinical_reasoning_configs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."clinical_reasoning_configs"
+    ADD CONSTRAINT "clinical_reasoning_configs_version_unique" UNIQUE ("version");
+
+
+
 ALTER TABLE ONLY "public"."clinician_patient_assignments"
     ADD CONSTRAINT "clinician_patient_assignments_organization_id_clinician_use_key" UNIQUE ("organization_id", "clinician_user_id", "patient_user_id");
 
@@ -6084,6 +6119,10 @@ CREATE INDEX "clinical_intakes_user_id_idx" ON "public"."clinical_intakes" USING
 
 
 CREATE INDEX "clinical_intakes_user_status_idx" ON "public"."clinical_intakes" USING "btree" ("user_id", "status");
+
+
+
+CREATE UNIQUE INDEX "clinical_reasoning_configs_single_active" ON "public"."clinical_reasoning_configs" USING "btree" ("status") WHERE ("status" = 'active'::"public"."clinical_reasoning_config_status");
 
 
 
@@ -8481,6 +8520,23 @@ CREATE POLICY "clinical_intakes_patient_update" ON "public"."clinical_intakes" F
 
 
 
+ALTER TABLE "public"."clinical_reasoning_configs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "clinical_reasoning_configs_modify_admin" ON "public"."clinical_reasoning_configs" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
+CREATE POLICY "clinical_reasoning_configs_select_admin" ON "public"."clinical_reasoning_configs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users"
+  WHERE (("users"."id" = "auth"."uid"()) AND (("users"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['admin'::"text", 'clinician'::"text"]))))));
+
+
+
 ALTER TABLE "public"."clinician_patient_assignments" ENABLE ROW LEVEL SECURITY;
 
 
@@ -9777,6 +9833,12 @@ GRANT ALL ON TABLE "public"."calculated_results" TO "service_role";
 GRANT ALL ON TABLE "public"."clinical_intakes" TO "anon";
 GRANT ALL ON TABLE "public"."clinical_intakes" TO "authenticated";
 GRANT ALL ON TABLE "public"."clinical_intakes" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."clinical_reasoning_configs" TO "anon";
+GRANT ALL ON TABLE "public"."clinical_reasoning_configs" TO "authenticated";
+GRANT ALL ON TABLE "public"."clinical_reasoning_configs" TO "service_role";
 
 
 
