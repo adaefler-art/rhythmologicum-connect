@@ -28,11 +28,13 @@ export async function POST(
     const { versionId } = await params
     const admin = createAdminSupabaseClient()
 
-    const { data: version, error: versionError } = await admin
+    const versionQuery = admin
       .from('safety_rule_versions' as any)
       .select('id, rule_id, version, status, logic_json, defaults, change_reason, safety_rules ( key )')
       .eq('id', versionId)
-      .maybeSingle()
+      .maybeSingle() as any
+
+    const { data: version, error: versionError } = await versionQuery
 
     if (versionError) {
       return databaseErrorResponse('Failed to load safety rule version.')
