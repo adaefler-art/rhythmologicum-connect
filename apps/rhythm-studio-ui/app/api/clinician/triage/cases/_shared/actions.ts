@@ -123,7 +123,7 @@ async function recordAction(
 	payload: Record<string, unknown>,
 	requestId: string,
 ): Promise<{ success: true; action: any } | { success: false; response: NextResponse }> {
-	const insertPayload: TablesInsert<'triage_case_actions'> = {
+	const insertPayload: any = {
 		created_by: userId,
 		patient_id: assessment.patient_id,
 		assessment_id: assessment.id,

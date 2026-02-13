@@ -94,13 +94,13 @@ export async function POST(
 			// R-E78.4-030: Idempotency check
 			checkIdempotency: async (supabase, _assessment) => {
 				// Check for most recent flag or clear action
-				const { data: actions } = await supabase
-					.from('triage_case_actions')
+				const { data: actions } = (await supabase
+					.from('triage_case_actions' as any)
 					.select('*')
 					.eq('assessment_id', caseId)
 					.in('action_type', ['manual_flag', 'clear_manual_flag'])
 					.order('created_at', { ascending: false })
-					.limit(1)
+					.limit(1)) as { data: any }
 
 				if (actions && actions.length > 0) {
 					const latestAction = actions[0]
