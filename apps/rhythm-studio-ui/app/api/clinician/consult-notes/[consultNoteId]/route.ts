@@ -75,7 +75,7 @@ export async function GET(
 
     // Fetch consult note
     const { data: consultNote, error: queryError } = await supabase
-      .from('consult_notes')
+      .from('consult_notes' as any)
       .select('*')
       .eq('id', consultNoteId)
       .single()
