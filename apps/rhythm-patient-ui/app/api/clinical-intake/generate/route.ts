@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/llm/prompts'
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
@@ -27,6 +28,7 @@ import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
 import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'
+import { loadActiveSafetyRuleOverrides } from '@/lib/cre/safety/safetyRuleVersions'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
@@ -412,11 +414,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    let ruleOverrides = {}
+    try {
+      const admin = createAdminSupabaseClient()
+      ruleOverrides = await loadActiveSafetyRuleOverrides({ supabase: admin })
+    } catch (error) {
+      console.warn('[clinical-intake/generate] Failed to load safety rule versions', {
+        error: String(error),
+      })
+    }
+
     const safetyResult = evaluateRedFlags({
       structuredData: result.structuredData,
       verbatimChatMessages: messages
         .filter((message) => message.role === 'user')
         .map((message) => ({ id: message.id, content: message.content })),
+      ruleOverrides,
     })
 
     const triggeredRules = (safetyResult.triggered_rules ?? []).filter((rule) => rule.verified)

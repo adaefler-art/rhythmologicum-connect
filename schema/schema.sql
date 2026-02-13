@@ -10053,6 +10053,119 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
 
 
+CREATE TYPE "public"."safety_rule_version_status" AS ENUM (
+    'draft',
+    'active',
+    'archived'
+);
+
+
+ALTER TYPE "public"."safety_rule_version_status" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."safety_rules" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "key" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "safety_rules_key_unique" UNIQUE ("key")
+);
+
+
+ALTER TABLE "public"."safety_rules" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."safety_rule_versions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "rule_id" "uuid" NOT NULL,
+    "version" integer NOT NULL,
+    "status" "public"."safety_rule_version_status" DEFAULT 'draft'::"public"."safety_rule_version_status" NOT NULL,
+    "logic_json" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "defaults" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "change_reason" "text" NOT NULL,
+    "created_by" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "safety_rule_versions_rule_version_unique" UNIQUE ("rule_id", "version"),
+    CONSTRAINT "safety_rule_versions_version_check" CHECK (("version" > 0))
+);
+
+
+ALTER TABLE "public"."safety_rule_versions" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."safety_rules" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."safety_rule_versions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE UNIQUE INDEX "safety_rule_versions_active_unique" ON "public"."safety_rule_versions" USING "btree" ("rule_id") WHERE ("status" = 'active'::"public"."safety_rule_version_status");
+
+
+ALTER TABLE ONLY "public"."safety_rules"
+    ADD CONSTRAINT "safety_rules_pkey" PRIMARY KEY ("id");
+
+
+ALTER TABLE ONLY "public"."safety_rule_versions"
+    ADD CONSTRAINT "safety_rule_versions_pkey" PRIMARY KEY ("id");
+
+
+ALTER TABLE ONLY "public"."safety_rule_versions"
+    ADD CONSTRAINT "safety_rule_versions_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "public"."safety_rules"("id") ON DELETE CASCADE;
+
+
+DROP POLICY IF EXISTS "safety_rules_select_admin" ON "public"."safety_rules";
+CREATE POLICY "safety_rules_select_admin" ON "public"."safety_rules" FOR SELECT TO "authenticated" USING (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  );
+
+
+DROP POLICY IF EXISTS "safety_rules_modify_admin" ON "public"."safety_rules";
+CREATE POLICY "safety_rules_modify_admin" ON "public"."safety_rules" FOR ALL TO "authenticated" USING (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  ) WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  );
+
+
+DROP POLICY IF EXISTS "safety_rule_versions_select_admin" ON "public"."safety_rule_versions";
+CREATE POLICY "safety_rule_versions_select_admin" ON "public"."safety_rule_versions" FOR SELECT TO "authenticated" USING (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  );
+
+
+DROP POLICY IF EXISTS "safety_rule_versions_modify_admin" ON "public"."safety_rule_versions";
+CREATE POLICY "safety_rule_versions_modify_admin" ON "public"."safety_rule_versions" FOR ALL TO "authenticated" USING (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  ) WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM auth.users
+      WHERE id = auth.uid()
+      AND (raw_app_meta_data->>'role' IN ('admin', 'clinician'))
+    )
+  );
+
+
 
 
 

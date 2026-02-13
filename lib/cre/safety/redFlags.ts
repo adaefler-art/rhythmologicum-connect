@@ -4,12 +4,12 @@
 
 import {
   CLINICAL_RED_FLAG,
-  detectClinicalRedFlags,
   type ClinicalRedFlag,
 } from '@/lib/triage/redFlagCatalog'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import { evaluateSafetyRules } from '@/lib/cre/safety/rules/evaluate'
 import { RED_FLAG_PATTERNS } from '@/lib/triage/redFlagCatalog'
+import type { RuleDefaults, RuleLogicConfig } from '@/lib/cre/safety/ruleConfig'
 
 export type EscalationLevel = 'A' | 'B' | 'C'
 
@@ -93,6 +93,13 @@ type RuleTuning = {
   exclusion_mode?: 'always' | 'only_if_unqualified'
   a_level_requires_any_of?: QualifierGroup[]
 }
+
+type RuleOverrideConfig = {
+  logic: RuleLogicConfig
+  defaults?: RuleDefaults
+}
+
+export type SafetyRuleOverrides = Record<string, RuleOverrideConfig>
 
 const SAFETY_POLICY_VERSION = '2.1'
 
@@ -406,12 +413,25 @@ const evaluateRuleTuning = (params: {
   }
 }
 
+const deriveRuleTuning = (ruleId: string, override?: RuleLogicConfig): RuleTuning | undefined => {
+  if (!override) return RULE_TUNING[ruleId]
+
+  return {
+    requires_any_of: override.qualifiers?.requires_any_of,
+    requires_all_of: override.qualifiers?.requires_all_of,
+    exclusions: override.exclusions,
+    exclusion_mode: override.exclusion_mode,
+    a_level_requires_any_of: override.a_level_requires_any_of,
+  }
+}
+
 export function evaluateRedFlags(params: {
   structuredData: StructuredIntakeData
   verbatimChatMessages?: Array<{ id: string; content: string }>
   intakeId?: string
+  ruleOverrides?: SafetyRuleOverrides
 }): SafetyEvaluation {
-  const { structuredData, verbatimChatMessages, intakeId } = params
+  const { structuredData, verbatimChatMessages, intakeId, ruleOverrides } = params
 
   const textParts: string[] = []
   const pushText = (value?: unknown) => {
@@ -448,7 +468,6 @@ export function evaluateRedFlags(params: {
   })
 
   const normalizedText = normalizeText(textParts.join(' '))
-  const detected = detectClinicalRedFlags(normalizedText)
 
   const findings: RedFlagFinding[] = []
   const triggeredRules: SafetyEvaluation['triggered_rules'] = []
@@ -498,12 +517,20 @@ export function evaluateRedFlags(params: {
     return { evidence, explicitMatch }
   }
 
-  detected.forEach((flag) => {
-    const rule = RULES[flag]
+  const ruleMatches = new Map<ClinicalRedFlag, boolean>()
+  const ruleEntries = Object.entries(RULES) as Array<[ClinicalRedFlag, RuleMeta]>
+
+  ruleEntries.forEach(([flag, rule]) => {
     if (!rule) return
-    const patterns = RED_FLAG_PATTERNS[flag] ?? []
+    const override = ruleOverrides?.[rule.rule_id]
+    const patterns = override?.logic?.patterns?.length
+      ? override.logic.patterns
+      : (RED_FLAG_PATTERNS[flag] ?? [])
+    const matched = patterns.length > 0 ? matchPatterns(normalizedText, patterns) : false
+    ruleMatches.set(flag, matched)
+    if (!matched) return
     const { evidence: baseEvidence, explicitMatch } = buildChatEvidence(patterns)
-    const tuning = RULE_TUNING[rule.rule_id]
+    const tuning = deriveRuleTuning(rule.rule_id, override?.logic)
     const tuningResult = evaluateRuleTuning({
       chatMap,
       tuning,
@@ -512,9 +539,10 @@ export function evaluateRedFlags(params: {
     })
     const evidence = dedupeEvidence([...baseEvidence, ...tuningResult.evidence])
     const verified = evidence.length > 0
-    const allowA = rule.level !== 'A' || (verified && explicitMatch && tuningResult.aLevelQualified)
-    const downgraded = rule.level === 'A' && !allowA
-    const severity = downgraded ? 'B' : rule.level
+    const ruleLevel = override?.defaults?.level_default ?? rule.level
+    const allowA = ruleLevel !== 'A' || (verified && explicitMatch && tuningResult.aLevelQualified)
+    const downgraded = ruleLevel === 'A' && !allowA
+    const severity = downgraded ? 'B' : ruleLevel
     const unverified = !verified || !explicitMatch || !tuningResult.qualified
     const displayLevel = unverified ? 'needs_review' : severity
 
@@ -550,7 +578,8 @@ export function evaluateRedFlags(params: {
     : undefined
   const durationMinutes = extractDurationMinutes(typeof durationText === 'string' ? durationText : undefined)
 
-  if (detected.includes(CLINICAL_RED_FLAG.CHEST_PAIN) && durationMinutes !== null && durationMinutes >= 20) {
+  const chestPainDetected = ruleMatches.get(CLINICAL_RED_FLAG.CHEST_PAIN) ?? false
+  if (chestPainDetected && durationMinutes !== null && durationMinutes >= 20) {
     const durationEvidence = (() => {
       const evidence: Array<{ source: 'chat'; source_id: string; excerpt: string }> = []
       chatMap.forEach((content, messageId) => {
