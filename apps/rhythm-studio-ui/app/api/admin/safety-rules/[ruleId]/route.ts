@@ -29,7 +29,7 @@ export async function GET(
       .from('safety_rules' as any)
       .select('id, key, title, created_at')
       .eq(isUuid(ruleId) ? 'id' : 'key', ruleId)
-      .maybeSingle()
+      .maybeSingle() as any
 
     const { data: rule, error: ruleError } = await ruleQuery
 
