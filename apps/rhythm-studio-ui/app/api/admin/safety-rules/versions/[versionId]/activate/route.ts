@@ -65,17 +65,17 @@ export async function POST(
       })
     }
 
-    const { data: activeVersions, error: activeError } = await admin
+    const { data: activeVersions, error: activeError } = (await admin
       .from('safety_rule_versions' as any)
       .select('id, status')
       .eq('rule_id', version.rule_id)
-      .eq('status', 'active')
+      .eq('status', 'active')) as any
 
     if (activeError) {
       return databaseErrorResponse('Failed to load active safety rule version.')
     }
 
-    const activeIds = (activeVersions ?? []).map((entry) => entry.id)
+    const activeIds = ((activeVersions ?? []) as any[]).map((entry) => entry.id)
 
     if (activeIds.length > 0) {
       const { error: archiveError } = await admin
