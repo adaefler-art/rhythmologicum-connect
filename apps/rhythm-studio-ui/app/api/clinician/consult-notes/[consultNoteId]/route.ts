@@ -74,11 +74,11 @@ export async function GET(
     }
 
     // Fetch consult note
-    const { data: consultNote, error: queryError } = await supabase
+    const { data: consultNote, error: queryError } = (await supabase
       .from('consult_notes' as any)
       .select('*')
       .eq('id', consultNoteId)
-      .single()
+      .single()) as { data: any; error: any }
 
     if (queryError) {
       if (queryError.code === 'PGRST116') {
