@@ -1,5 +1,24 @@
 # Zusammenfassung der Änderungen
 
+## Navigation Update - Admin Tools (2026-02-13)
+
+### Was wurde ergänzt?
+
+- Menüpunkt **Reasoning Config** für `clinician` und `admin` (`/clinician/admin/reasoning-config`)
+- Menüpunkt **Safety Rules** für `clinician` und `admin` (`/clinician/admin/safety-rules`)
+
+### Technische Umsetzung
+
+- Fallback-Navigation erweitert in `lib/utils/roleBasedRouting.ts`
+- DB-gesteuerte Navigation per Migration ergänzt:
+  - `supabase/migrations/20260213170500_add_reasoning_config_navigation_item.sql`
+  - `supabase/migrations/20260213174000_add_safety_rules_navigation_item.sql`
+
+### Hinweis Deployment
+
+- Die neuen Menüpunkte sind in der UI sofort über die Fallback-Navigation sichtbar.
+- Für persistente, DB-gesteuerte Navigation müssen die beiden Migrationen in der Zielumgebung ausgeführt sein.
+
 ## 🎉 V0.4 - Production-Ready Release (2025-12-14)
 
 **Release-Status:** ✅ Production-Ready  
