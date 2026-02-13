@@ -2864,6 +2864,7 @@ COMMENT ON COLUMN "public"."clinical_intakes"."trigger_reason" IS 'Reason for in
 COMMENT ON COLUMN "public"."clinical_intakes"."last_updated_from_messages" IS 'Array of message IDs that triggered this update';
 
 
+
 COMMENT ON COLUMN "public"."clinical_intakes"."policy_override" IS 'Clinician policy override metadata (override_level/action, reason, created_by, created_at).';
 
 
@@ -7759,6 +7760,10 @@ CREATE POLICY "Admins can update org consult notes" ON "public"."consult_notes" 
 
 
 
+CREATE POLICY "Admins can update org intakes" ON "public"."clinical_intakes" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role"))) WITH CHECK ((("organization_id" IS NOT NULL) AND ("public"."current_user_role"("organization_id") = 'admin'::"public"."user_role")));
+
+
+
 CREATE POLICY "Admins can update own org settings" ON "public"."organizations" FOR UPDATE USING (("public"."current_user_role"("id") = 'admin'::"public"."user_role")) WITH CHECK (("public"."current_user_role"("id") = 'admin'::"public"."user_role"));
 
 
@@ -7913,6 +7918,14 @@ CREATE POLICY "Clinicians can update anamnesis entries for assigned patients" ON
    FROM ("public"."clinician_patient_assignments" "cpa"
      JOIN "public"."patient_profiles" "pp" ON (("pp"."user_id" = "cpa"."patient_user_id")))
   WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("pp"."id" = "anamnesis_entries"."patient_id") AND ("cpa"."organization_id" = "anamnesis_entries"."organization_id")))));
+
+
+
+CREATE POLICY "Clinicians can update patient intake safety" ON "public"."clinical_intakes" FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "clinical_intakes"."user_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."clinician_patient_assignments" "cpa"
+  WHERE (("cpa"."clinician_user_id" = "auth"."uid"()) AND ("cpa"."patient_user_id" = "clinical_intakes"."user_id")))));
 
 
 
