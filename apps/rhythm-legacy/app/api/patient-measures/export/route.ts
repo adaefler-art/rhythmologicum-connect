@@ -64,10 +64,18 @@ async function fetchUserConsents(
  * Transforms consent records for export
  */
 function transformConsentsForExport(consents: ConsentRecord[]): ConsentExport[] {
-  return consents.map(({ id, ...rest }) => ({
-    consent_id: id,
-    ...rest,
-  }))
+  return consents.map((consent) => {
+    if (!consent) {
+      throw new Error('Expected object, got undefined')
+    }
+
+    const { id, ...rest } = consent
+
+    return {
+      consent_id: id,
+      ...rest,
+    }
+  })
 }
 
 export async function GET(req: Request) {

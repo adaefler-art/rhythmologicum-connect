@@ -147,4 +147,40 @@ describe('POST /api/admin/reasoning-config/versions', () => {
       version: 3,
     })
   })
+
+  it('returns 500 when insert returns no data', async () => {
+    const readBuilder = createBuilder()
+    readBuilder.maybeSingle.mockResolvedValue({
+      data: { version: 2, config_json: { foo: 'bar' } },
+      error: null,
+    })
+
+    const insertBuilder = createBuilder()
+    insertBuilder.single.mockResolvedValue({
+      data: null,
+      error: null,
+    })
+
+    const fromMock = jest
+      .fn()
+      .mockImplementationOnce(() => readBuilder)
+      .mockImplementationOnce(() => insertBuilder)
+
+    ;(createAdminSupabaseClient as jest.Mock).mockReturnValue({ from: fromMock })
+
+    const response = await POST(
+      new Request('http://localhost/api/admin/reasoning-config/versions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ change_reason: 'test' }),
+      }),
+    )
+
+    expect(response.status).toBe(500)
+
+    const json = await response.json()
+    expect(json.success).toBe(false)
+    expect(json.code).toBe('DATABASE_ERROR')
+    expect(json.message).toBe('Insert returned no data')
+  })
 })

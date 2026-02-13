@@ -163,18 +163,36 @@ export async function POST(request: Request) {
       .single()) as unknown as { data: unknown; error: unknown }
 
     if (insertError) {
-      console.error(
-        'DB error creating reasoning draft in POST /api/admin/reasoning-config/versions',
-        insertError,
-      )
+      console.error('draft insert error', insertError)
       const dbError = toSupabaseError(insertError)
-      return databaseError(dbError?.message || 'Failed to create reasoning config draft.', insertError)
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'DATABASE_ERROR',
+          message: dbError?.message || 'Failed to create reasoning config draft.',
+          details: insertError,
+        },
+        { status: 500 },
+      )
     }
+
+    if (!inserted) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'DATABASE_ERROR',
+          message: 'Insert returned no data',
+        },
+        { status: 500 },
+      )
+    }
+
+    const insertedRecord = inserted as { id: string; version: number }
 
     return successResponse(
       {
-        versionId: (inserted as { id: string }).id,
-        version: (inserted as { version: number }).version,
+        versionId: insertedRecord.id,
+        version: insertedRecord.version,
       },
       201,
     )
