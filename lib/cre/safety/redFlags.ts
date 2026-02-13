@@ -81,6 +81,19 @@ type RuleMeta = {
   title: string
 }
 
+type QualifierGroup = {
+  id: string
+  patterns: string[]
+}
+
+type RuleTuning = {
+  requires_any_of?: QualifierGroup[]
+  requires_all_of?: QualifierGroup[]
+  exclusions?: string[]
+  exclusion_mode?: 'always' | 'only_if_unqualified'
+  a_level_requires_any_of?: QualifierGroup[]
+}
+
 const SAFETY_POLICY_VERSION = '2.1'
 
 const RULES: Record<ClinicalRedFlag, RuleMeta> = {
@@ -164,6 +177,64 @@ const CONTRADICTION_PATTERNS: Record<string, string[]> = {
   SUICIDAL_IDEATION: ['kein suizid', 'keine suizidgedanken', 'no suicidal'],
 }
 
+const CHEST_PAIN_QUALIFIERS: QualifierGroup[] = [
+  { id: 'acute', patterns: ['akut'] },
+  { id: 'sudden', patterns: ['plötzlich'] },
+  { id: 'new', patterns: ['neu'] },
+  { id: 'exertion', patterns: ['belastung'] },
+  { id: 'exertion_alt', patterns: ['anstrengung'] },
+  { id: 'exertion_stairs', patterns: ['treppe'] },
+  { id: 'dyspnea', patterns: ['atemnot'] },
+  { id: 'dyspnea_alt', patterns: ['luftnot'] },
+  { id: 'syncope', patterns: ['ohnmacht'] },
+  { id: 'syncope_alt', patterns: ['synkope'] },
+  { id: 'radiation_arm', patterns: ['ausstrahl', 'arm'] },
+  { id: 'radiation_jaw', patterns: ['ausstrahl', 'kiefer'] },
+  { id: 'radiation_back', patterns: ['ausstrahl', 'rucken'] },
+  { id: 'rest_pain', patterns: ['in ruhe'] },
+]
+
+const PALPITATIONS_QUALIFIERS: QualifierGroup[] = [
+  { id: 'syncope', patterns: ['synkope'] },
+  { id: 'syncope_alt', patterns: ['ohnmacht'] },
+  { id: 'syncope_alt2', patterns: ['umgekippt'] },
+  { id: 'chest_pain', patterns: ['brustschmerz'] },
+  { id: 'dyspnea', patterns: ['atemnot'] },
+  { id: 'dyspnea_alt', patterns: ['luftnot'] },
+  { id: 'persistent', patterns: ['anhaltend', 'stark'] },
+  { id: 'persistent_alt', patterns: ['dauerhaft', 'stark'] },
+]
+
+const PALPITATIONS_EXCLUSIONS = ['panik', 'angst', 'nervos', 'stress', 'aufgeregt']
+
+const SUICIDAL_A_QUALIFIERS: QualifierGroup[] = [
+  { id: 'intent', patterns: ['ich will', 'umbringen'] },
+  { id: 'intent_alt', patterns: ['ich will', 'sterben'] },
+  { id: 'intent_alt2', patterns: ['ich bringe', 'um'] },
+  { id: 'intent_alt3', patterns: ['ich werde', 'umbringen'] },
+  { id: 'plan', patterns: ['plan', 'suizid'] },
+  { id: 'prep', patterns: ['vorbereitung', 'suizid'] },
+  { id: 'means', patterns: ['habe', 'tabletten'] },
+  { id: 'means_alt', patterns: ['habe', 'pillen'] },
+  { id: 'means_alt2', patterns: ['habe', 'messer'] },
+]
+
+const RULE_TUNING: Record<string, RuleTuning> = {
+  'SFTY-2.1-R-CHEST-PAIN': {
+    requires_any_of: CHEST_PAIN_QUALIFIERS,
+    exclusions: CONTRADICTION_PATTERNS.CHEST_PAIN,
+    exclusion_mode: 'always',
+  },
+  'SFTY-2.1-R-SEVERE-PALPITATIONS': {
+    requires_any_of: PALPITATIONS_QUALIFIERS,
+    exclusions: PALPITATIONS_EXCLUSIONS,
+    exclusion_mode: 'only_if_unqualified',
+  },
+  'SFTY-2.1-R-SUICIDAL-IDEATION': {
+    a_level_requires_any_of: SUICIDAL_A_QUALIFIERS,
+  },
+}
+
 const normalizeText = (value: string) => value.toLowerCase().trim()
 
 const clampExcerpt = (value: string, max = 220) =>
@@ -235,6 +306,105 @@ const getStructuredFieldValue = (structuredData: StructuredIntakeData, field: st
 
 const matchPatterns = (value: string, patterns: readonly string[]) =>
   patterns.some((pattern) => value.includes(pattern))
+
+const dedupeEvidence = (items: Array<{ source: 'chat'; source_id: string; excerpt: string }>) => {
+  const seen = new Set<string>()
+  const result: Array<{ source: 'chat'; source_id: string; excerpt: string }> = []
+
+  items.forEach((item) => {
+    const key = `${item.source}:${item.source_id}`
+    if (seen.has(key)) return
+    seen.add(key)
+    result.push(item)
+  })
+
+  return result
+}
+
+const evaluateRuleTuning = (params: {
+  chatMap: Map<string, string>
+  tuning?: RuleTuning
+  buildEvidence: (messageId: string) => { ok: boolean; excerpt?: string }
+}) => {
+  const { chatMap, tuning, buildEvidence } = params
+  if (!tuning) {
+    return { qualified: true, aLevelQualified: true, evidence: [] as Array<{ source: 'chat'; source_id: string; excerpt: string }> }
+  }
+
+  const matchGroup = (content: string, group: QualifierGroup) =>
+    group.patterns.every((pattern) => content.includes(pattern))
+
+  const collectEvidenceForGroups = (groups: QualifierGroup[] | undefined) => {
+    if (!groups || groups.length === 0) return { matched: false, evidence: [] as Array<{ source: 'chat'; source_id: string; excerpt: string }> }
+    const evidence: Array<{ source: 'chat'; source_id: string; excerpt: string }> = []
+    let matched = false
+
+    chatMap.forEach((content, messageId) => {
+      const normalized = normalizeText(content)
+      groups.forEach((group) => {
+        if (matchGroup(normalized, group)) {
+          const verified = buildEvidence(messageId)
+          if (verified.ok && verified.excerpt) {
+            evidence.push({ source: 'chat', source_id: messageId, excerpt: verified.excerpt })
+            matched = true
+          }
+        }
+      })
+    })
+
+    return { matched, evidence: dedupeEvidence(evidence) }
+  }
+
+  const anyOf = collectEvidenceForGroups(tuning.requires_any_of)
+  const allOfGroups = tuning.requires_all_of ?? []
+  const allOf = allOfGroups.length > 0
+    ? allOfGroups.every((group) => {
+        let groupMatched = false
+        chatMap.forEach((content, messageId) => {
+          const normalized = normalizeText(content)
+          if (group.patterns.every((pattern) => normalized.includes(pattern))) {
+            const verified = buildEvidence(messageId)
+            if (verified.ok && verified.excerpt) {
+              groupMatched = true
+            }
+          }
+        })
+        return groupMatched
+      })
+    : true
+
+  const aLevel = collectEvidenceForGroups(tuning.a_level_requires_any_of)
+
+  const hasExclusion = tuning.exclusions?.some((pattern) => {
+    let matched = false
+    chatMap.forEach((content) => {
+      if (normalizeText(content).includes(pattern)) {
+        matched = true
+      }
+    })
+    return matched
+  }) ?? false
+
+  let qualified = true
+  if (tuning.requires_any_of && !anyOf.matched) qualified = false
+  if (tuning.requires_all_of && !allOf) qualified = false
+
+  if (hasExclusion) {
+    if (tuning.exclusion_mode === 'only_if_unqualified') {
+      if (!qualified) {
+        qualified = false
+      }
+    } else {
+      qualified = false
+    }
+  }
+
+  return {
+    qualified,
+    aLevelQualified: tuning.a_level_requires_any_of ? aLevel.matched : qualified,
+    evidence: dedupeEvidence([...anyOf.evidence, ...aLevel.evidence]),
+  }
+}
 
 export function evaluateRedFlags(params: {
   structuredData: StructuredIntakeData
@@ -332,12 +502,20 @@ export function evaluateRedFlags(params: {
     const rule = RULES[flag]
     if (!rule) return
     const patterns = RED_FLAG_PATTERNS[flag] ?? []
-    const { evidence, explicitMatch } = buildChatEvidence(patterns)
+    const { evidence: baseEvidence, explicitMatch } = buildChatEvidence(patterns)
+    const tuning = RULE_TUNING[rule.rule_id]
+    const tuningResult = evaluateRuleTuning({
+      chatMap,
+      tuning,
+      buildEvidence: (messageId) =>
+        verifyEvidence({ source: 'chat', source_id: messageId }, { chatMap, structuredData, intakeId }),
+    })
+    const evidence = dedupeEvidence([...baseEvidence, ...tuningResult.evidence])
     const verified = evidence.length > 0
-    const allowA = rule.level !== 'A' || (verified && explicitMatch)
+    const allowA = rule.level !== 'A' || (verified && explicitMatch && tuningResult.aLevelQualified)
     const downgraded = rule.level === 'A' && !allowA
     const severity = downgraded ? 'B' : rule.level
-    const unverified = !verified || !explicitMatch
+    const unverified = !verified || !explicitMatch || !tuningResult.qualified
     const displayLevel = unverified ? 'needs_review' : severity
 
     triggeredRules?.push({
@@ -352,7 +530,7 @@ export function evaluateRedFlags(params: {
       policy_version: SAFETY_POLICY_VERSION,
     })
 
-    if (verified && explicitMatch) {
+    if (verified && explicitMatch && tuningResult.qualified) {
       findings.push({
         id: rule.id,
         rule_id: rule.rule_id,

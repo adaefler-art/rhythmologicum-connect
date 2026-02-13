@@ -24,6 +24,49 @@ describe('CRE safety evaluator', () => {
     expect(result.red_flags.every((flag) => flag.policy_version === '2.1')).toBe(true)
   })
 
+  it('does not flag chest pain without qualifiers', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Brustschmerzen seit gestern',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-1b',
+          content: 'Ich habe seit gestern Brustschmerzen, es ist unangenehm.',
+        },
+      ],
+    })
+
+    const rule = result.triggered_rules?.find(
+      (entry) => entry.rule_id === 'SFTY-2.1-R-CHEST-PAIN',
+    )
+
+    expect(result.escalation_level).toBeNull()
+    expect(result.red_flags.some((flag) => flag.id === 'CHEST_PAIN')).toBe(false)
+    expect(rule?.level).toBe('needs_review')
+    expect(rule?.verified).toBe(false)
+  })
+
+  it('flags chest pain with qualifiers as Level B', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Akute Brustschmerzen mit Ausstrahlung in den Arm',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-1c',
+          content: 'Akute Brustschmerzen mit Ausstrahlung in den Arm.',
+        },
+      ],
+    })
+
+    expect(result.escalation_level).toBe('B')
+    expect(result.red_flags.some((flag) => flag.id === 'CHEST_PAIN')).toBe(true)
+    expect(result.rule_ids).toEqual(expect.arrayContaining(['SFTY-2.1-R-CHEST-PAIN']))
+  })
+
   it('flags palpitations with syncope as Level B', () => {
     const result = evaluateRedFlags({
       structuredData: {
@@ -48,7 +91,31 @@ describe('CRE safety evaluator', () => {
     expect(result.red_flags.every((flag) => Boolean(flag.rule_id))).toBe(true)
   })
 
-  it('flags suicidal ideation as Level A', () => {
+  it('does not flag palpitations without qualifiers', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Herzrasen vor Angst',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-2b',
+          content: 'Ich habe Herzrasen vor Angst und Stress.',
+        },
+      ],
+    })
+
+    const rule = result.triggered_rules?.find(
+      (entry) => entry.rule_id === 'SFTY-2.1-R-SEVERE-PALPITATIONS',
+    )
+
+    expect(result.escalation_level).toBeNull()
+    expect(result.red_flags.some((flag) => flag.id === 'SEVERE_PALPITATIONS')).toBe(false)
+    expect(rule?.level).toBe('needs_review')
+    expect(rule?.verified).toBe(false)
+  })
+
+  it('downgrades passive suicidal ideation to Level B', () => {
     const result = evaluateRedFlags({
       structuredData: {
         status: 'draft',
@@ -57,12 +124,12 @@ describe('CRE safety evaluator', () => {
       verbatimChatMessages: [
         {
           id: 'msg-3',
-          content: 'Ich habe Suizidgedanken.',
+          content: 'Ich habe Suizidgedanken und fuehle mich hoffnungslos.',
         },
       ],
     })
 
-    expect(result.escalation_level).toBe('A')
+    expect(result.escalation_level).toBe('B')
     expect(result.red_flags.some((flag) => flag.id === 'SUICIDAL_IDEATION')).toBe(true)
     expect(result.rule_ids).toEqual(expect.arrayContaining(['SFTY-2.1-R-SUICIDAL-IDEATION']))
     expect(
@@ -71,6 +138,27 @@ describe('CRE safety evaluator', () => {
           Array.isArray(flag.evidence_message_ids) || flag.evidence_message_ids === undefined,
       ),
     ).toBe(true)
+  })
+
+  it('flags active suicidal intent as Level A', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Ich will mich umbringen',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-3b',
+          content: 'Ich will mich umbringen.',
+        },
+      ],
+    })
+
+    const flag = result.red_flags.find((entry) => entry.id === 'SUICIDAL_IDEATION')
+
+    expect(result.escalation_level).toBe('A')
+    expect(flag?.level).toBe('A')
+    expect(result.rule_ids).toEqual(expect.arrayContaining(['SFTY-2.1-R-SUICIDAL-IDEATION']))
   })
 
   it('downgrades A-level rules when evidence is not verifiable', () => {

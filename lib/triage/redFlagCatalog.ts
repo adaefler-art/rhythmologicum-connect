@@ -167,6 +167,8 @@ export const RED_FLAG_PATTERNS: Record<ClinicalRedFlag, readonly string[]> = {
   ],
   [CLINICAL_RED_FLAG.SEVERE_PALPITATIONS]: [
     // German
+    'herzrasen',
+    'herzklopfen',
     'herzrasen extrem',
     'herz rast unkontrolliert',
     'herzrhythmusstörung',
