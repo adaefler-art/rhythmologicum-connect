@@ -89,7 +89,7 @@ export const validateHardStopSafety = (params: {
   }
 
   if (Array.isArray(logic.intake_evidence_fields)) {
-    const allowed = new Set(ALLOWED_INTAKE_EVIDENCE_FIELDS)
+    const allowed = new Set<string>(ALLOWED_INTAKE_EVIDENCE_FIELDS)
     const invalid = logic.intake_evidence_fields.filter((field) => !allowed.has(field))
     if (invalid.length > 0) {
       errors.push('Intake evidence fields must be whitelisted.')
