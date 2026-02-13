@@ -245,8 +245,8 @@ export async function PATCH(
 
     const renderedMarkdown = renderConsultNoteMarkdown(content)
 
-    const { data: updatedNote, error: updateError } = await supabase
-      .from('consult_notes')
+    const { data: updatedNote, error: updateError } = (await supabase
+      .from('consult_notes' as any)
       .update({
         content: content as unknown as Json,
         rendered_markdown: renderedMarkdown,
@@ -255,7 +255,7 @@ export async function PATCH(
       })
       .eq('id', consultNoteId)
       .select('*')
-      .single()
+      .single()) as { data: any; error: any }
 
     if (updateError) {
       console.error('[consult-notes] Update error', {
