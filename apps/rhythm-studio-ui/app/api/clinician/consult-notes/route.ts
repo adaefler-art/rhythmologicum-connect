@@ -155,11 +155,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ConsultNo
     }
 
     // Insert into database
-    const { data: consultNote, error: insertError } = await supabase
-      .from('consult_notes')
+    const { data: consultNote, error: insertError } = (await supabase
+      .from('consult_notes' as any)
       .insert(insertPayload)
       .select()
-      .single()
+      .single()) as { data: any; error: any }
 
     if (insertError) {
       console.error('[consult-notes] Database insert error', {
@@ -288,13 +288,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ConsultNot
 
     // Query consult notes with pagination
     const offset = (page - 1) * perPage
-    const { data: consultNotes, error: queryError, count } = await supabase
-      .from('consult_notes')
+    const { data: consultNotes, error: queryError, count } = (await supabase
+      .from('consult_notes' as any)
       .select('*', { count: 'exact' })
       .eq('patient_id', patientId)
       .eq('is_archived', false)
       .order('created_at', { ascending: false })
-      .range(offset, offset + perPage - 1)
+      .range(offset, offset + perPage - 1)) as { data: any; error: any; count: any }
 
     if (queryError) {
       console.error('[consult-notes] Database query error', {
@@ -321,7 +321,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ConsultNot
       total: count,
     })
 
-    const normalizedConsultNotes = (consultNotes || []).map((note) => ({
+    const normalizedConsultNotes = (consultNotes || []).map((note: any) => ({
       ...note,
       content: note.content as unknown as ConsultNoteContent,
       metadata: note.metadata ? (note.metadata as Record<string, unknown>) : undefined,

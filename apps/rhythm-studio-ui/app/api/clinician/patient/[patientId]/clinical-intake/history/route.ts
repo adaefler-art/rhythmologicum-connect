@@ -72,8 +72,8 @@ const fetchIntakeHistory = async (params: {
 }) => {
   const { supabase, column, value, limit } = params
 
-  const { data, error } = await supabase
-    .from('clinical_intakes')
+  const { data, error } = (await supabase
+    .from('clinical_intakes' as any)
     .select(
       `
         id,
@@ -92,7 +92,7 @@ const fetchIntakeHistory = async (params: {
     .eq(column, value)
     .order('version_number', { ascending: false })
     .order('updated_at', { ascending: false })
-    .limit(limit)
+    .limit(limit)) as { data: any; error: any }
 
   return { data: (data ?? []) as unknown as IntakeRecord[], error }
 }

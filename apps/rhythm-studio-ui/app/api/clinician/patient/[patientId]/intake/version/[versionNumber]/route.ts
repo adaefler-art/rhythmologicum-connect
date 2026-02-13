@@ -61,8 +61,8 @@ const fetchIntakeVersion = async (params: {
 }) => {
   const { supabase, column, value, versionNumber } = params
 
-  const { data, error } = await supabase
-    .from('clinical_intakes')
+  const { data, error } = (await supabase
+    .from('clinical_intakes' as any)
     .select(
       `
         id,
@@ -81,7 +81,7 @@ const fetchIntakeVersion = async (params: {
     .eq(column, value)
     .eq('version_number', versionNumber)
     .limit(1)
-    .maybeSingle()
+    .maybeSingle()) as { data: any; error: any }
 
   return { data: (data ?? null) as IntakeRecord | null, error }
 }

@@ -82,11 +82,11 @@ export async function GET(
     }
 
     // Fetch version history
-    const { data: versions, error: queryError } = await supabase
-      .from('consult_note_versions')
+    const { data: versions, error: queryError } = (await supabase
+      .from('consult_note_versions' as any)
       .select('*')
       .eq('consult_note_id', consultNoteId)
-      .order('version_number', { ascending: false })
+      .order('version_number', { ascending: false })) as { data: any; error: any }
 
     if (queryError) {
       console.error('[consult-notes/versions] Database query error', {
@@ -113,7 +113,7 @@ export async function GET(
       versionCount: versions?.length || 0,
     })
 
-    const typedVersions: ConsultNoteVersion[] = (versions || []).map((version) => {
+    const typedVersions: ConsultNoteVersion[] = (versions || []).map((version: any) => {
       const metadata = version.metadata
       const normalizedMetadata =
         metadata && typeof metadata === 'object' && !Array.isArray(metadata)

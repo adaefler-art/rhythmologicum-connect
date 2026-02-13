@@ -92,11 +92,11 @@ export async function POST(request: Request, context: RouteContext) {
     const overrideAction = overrideActionRaw === 'none' ? null : overrideActionRaw
     const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
 
-    const { data: intakeRecord, error: intakeError } = await supabase
-      .from('clinical_intakes')
+    const { data: intakeRecord, error: intakeError } = (await supabase
+      .from('clinical_intakes' as any)
       .select('id, user_id, patient_id, organization_id, structured_data')
       .eq('id', intakeId)
-      .maybeSingle()
+      .maybeSingle()) as { data: any; error: any }
 
     if (intakeError) {
       console.error('[clinical-intake/policy-override] Intake fetch error:', intakeError)

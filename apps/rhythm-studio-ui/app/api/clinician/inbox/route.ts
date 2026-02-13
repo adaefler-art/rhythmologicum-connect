@@ -84,18 +84,18 @@ export async function GET() {
       (profiles ?? []).map((profile) => [profile.user_id, profile]),
     )
 
-    const { data: intakeRows, error: intakeError } = await supabase
-      .from('clinical_intakes')
+    const { data: intakeRows, error: intakeError } = (await supabase
+      .from('clinical_intakes' as any)
       .select('user_id, updated_at')
       .in('user_id', patientUserIds)
-      .order('updated_at', { ascending: false })
+      .order('updated_at', { ascending: false })) as { data: any; error: any }
 
     if (intakeError) {
       console.error('[clinician/inbox] Intake error:', intakeError)
     }
 
     const latestIntakeByUserId = new Map<string, string>()
-    ;(intakeRows ?? []).forEach((row) => {
+    ;(intakeRows ?? []).forEach((row: any) => {
       if (!latestIntakeByUserId.has(row.user_id)) {
         latestIntakeByUserId.set(row.user_id, row.updated_at)
       }

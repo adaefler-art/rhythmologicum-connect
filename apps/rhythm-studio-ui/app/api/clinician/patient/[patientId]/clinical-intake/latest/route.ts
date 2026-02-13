@@ -69,8 +69,8 @@ const fetchLatestIntake = async (params: {
 }) => {
   const { supabase, column, value } = params
 
-  const { data: intake, error } = await supabase
-    .from('clinical_intakes')
+  const { data: intake, error } = (await supabase
+    .from('clinical_intakes' as any)
     .select(
       `
         id,
@@ -90,12 +90,12 @@ const fetchLatestIntake = async (params: {
     .order('version_number', { ascending: false })
     .order('updated_at', { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle()) as { data: any; error: any }
 
-  const { count } = await supabase
-    .from('clinical_intakes')
+  const { count } = (await supabase
+    .from('clinical_intakes' as any)
     .select('id', { count: 'exact', head: true })
-    .eq(column, value)
+    .eq(column, value)) as { count: any }
 
   return {
     intake: mapIntake((intake ?? null) as IntakeRecord | null),
