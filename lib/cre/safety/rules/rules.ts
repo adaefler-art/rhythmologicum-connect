@@ -34,7 +34,10 @@ const extractDurationMinutes = (value: string | undefined) => {
   return null
 }
 
-const buildEvidenceText = (structuredData: StructuredIntakeData, evidenceText?: string) => {
+const buildEvidenceText = (
+  structuredData: StructuredIntakeData,
+  verbatimChatMessages?: Array<{ id: string; content: string }>,
+) => {
   const textParts: string[] = []
 
   const pushText = (value?: unknown) => {
@@ -66,17 +69,21 @@ const buildEvidenceText = (structuredData: StructuredIntakeData, evidenceText?: 
   pushArray(structuredData.psychosocial_factors)
   pushArray(structuredData.uncertainties)
 
-  if (evidenceText) pushText(evidenceText)
+  verbatimChatMessages?.forEach((message) => {
+    if (typeof message.content === 'string' && message.content.trim()) {
+      textParts.push(message.content.trim())
+    }
+  })
 
   return normalizeText(textParts.join(' '))
 }
 
 export const buildSafetyContext = (params: {
   structuredData: StructuredIntakeData
-  evidenceText?: string
+  verbatimChatMessages?: Array<{ id: string; content: string }>
 }): SafetyRuleContext => {
-  const { structuredData, evidenceText } = params
-  const normalizedText = buildEvidenceText(structuredData, evidenceText)
+  const { structuredData, verbatimChatMessages } = params
+  const normalizedText = buildEvidenceText(structuredData, verbatimChatMessages)
   const detected = detectClinicalRedFlags(normalizedText)
   const durationMinutes = extractDurationMinutes(structuredData.history_of_present_illness?.duration)
 

@@ -10,8 +10,10 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { env } from '@/lib/env'
-import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
-import type { SafetyEvaluation, SafetyTriggeredRule } from '@/lib/types/clinicalIntake'
+import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
+import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
+import { setPolicyOverride } from '@/lib/cre/safety/overridePersistence'
+import type { PolicyOverride, SafetyEvaluation } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
 type RouteContext = {
@@ -24,6 +26,7 @@ type IntakeRecord = {
   version_number: number
   clinical_summary: string | null
   structured_data: Record<string, unknown>
+  policy_override?: PolicyOverride | null
   trigger_reason: string | null
   last_updated_from_messages: string[] | null
   created_at: string
@@ -40,6 +43,7 @@ const mapIntake = (intake: IntakeRecord | null) =>
         version_number: intake.version_number,
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
+        policy_override: intake.policy_override ?? null,
         trigger_reason: intake.trigger_reason,
         last_updated_from_messages: intake.last_updated_from_messages,
         created_at: intake.created_at,
@@ -74,6 +78,7 @@ const fetchLatestIntake = async (params: {
         version_number,
         clinical_summary,
         structured_data,
+        policy_override,
         trigger_reason,
         last_updated_from_messages,
         created_at,
@@ -190,6 +195,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
     let intake = patientIdResult.intake
     let foundCount = patientIdResult.count
+    let intakeRecord = patientIdResult.record
 
     if (!intake && resolution.patientUserId) {
       const userIdResult = await fetchLatestIntake({
@@ -212,6 +218,7 @@ export async function GET(_request: Request, context: RouteContext) {
       }
 
       intake = userIdResult.intake
+      intakeRecord = userIdResult.record
       foundCount = userIdResult.count
     }
 
@@ -238,6 +245,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
       usedFilter = { column: 'patient_id', value: resolution.patientProfileId }
       intake = adminPatientIdResult.intake
+      intakeRecord = adminPatientIdResult.record
       foundCount = adminPatientIdResult.count
     }
 
@@ -264,7 +272,29 @@ export async function GET(_request: Request, context: RouteContext) {
 
       usedFilter = { column: 'user_id', value: resolution.patientUserId }
       intake = adminUserIdResult.intake
+      intakeRecord = adminUserIdResult.record
       foundCount = adminUserIdResult.count
+    }
+
+    if (intake && intakeRecord) {
+      const policy = loadSafetyPolicy({
+        organizationId: intakeRecord.organization_id ?? null,
+        funnelId: null,
+      })
+      const { safety } = buildEffectiveSafety({
+        structuredData: intakeRecord.structured_data,
+        policyOverride: intakeRecord.policy_override ?? null,
+        policy,
+      })
+
+      intake = {
+        ...intake,
+        structured_data: {
+          ...intakeRecord.structured_data,
+          safety,
+        },
+        policy_override: intakeRecord.policy_override ?? null,
+      }
     }
 
     return NextResponse.json({
@@ -365,16 +395,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     const chatActionOverride = body?.chatActionOverride ?? null
     const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
 
-    if (!reason) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: ErrorCode.INVALID_INPUT, message: 'Override reason is required' },
-        },
-        { status: 400 },
-      )
-    }
-
 
     const patientIdResult = await fetchLatestIntake({
       supabase,
@@ -426,83 +446,36 @@ export async function PATCH(request: Request, context: RouteContext) {
       )
     }
 
-    const structured = intakeRecord.structured_data as Record<string, unknown>
-    const safety = (structured?.safety as SafetyEvaluation | undefined) ?? {
-      red_flag_present: false,
-      escalation_level: null,
-      red_flags: [],
-    }
+    const structured = (intakeRecord.structured_data ?? {}) as Record<string, unknown>
+    const overrideResult = await setPolicyOverride({
+      supabase,
+      intakeId: intakeRecord.id,
+      organizationId: intakeRecord.organization_id ?? null,
+      structuredData: structured,
+      overrideLevel: levelOverride,
+      overrideAction: chatActionOverride,
+      reason,
+      updatedBy: { id: user.id, email: user.email ?? null },
+    })
 
-    const triggeredRules: SafetyTriggeredRule[] = safety.triggered_rules ??
-      safety.red_flags?.map((flag) => ({
-        rule_id: flag.rule_id,
-        severity: flag.level,
-        rationale: flag.rationale,
-        evidence_message_ids: flag.evidence_message_ids,
-        policy_version: flag.policy_version,
-      })) ?? []
-
-    const policy = loadSafetyPolicy({ organizationId: intakeRecord.organization_id ?? null, funnelId: null })
-    const policyResult = safety.policy_result ?? applySafetyPolicy({ triggeredRules, policy })
-    const override = levelOverride || chatActionOverride
-      ? {
-          level_override: levelOverride,
-          chat_action_override: chatActionOverride,
-          reason,
-          by_user_id: user.id,
-          at: new Date().toISOString(),
-        }
-      : null
-    const effective = getEffectiveSafetyState({ policyResult, override })
-
-    const nextSafety: SafetyEvaluation = {
-      ...safety,
-      triggered_rules: triggeredRules,
-      policy_result: policyResult,
-      override,
-      effective_level: effective.escalationLevel,
-      effective_action: effective.chatAction,
-    }
-
-    const { data: updated, error: updateError } = await supabase
-      .from('clinical_intakes')
-      .update({
-        structured_data: ({
-          ...structured,
-          safety: nextSafety,
-        } as unknown as Json),
-        updated_by: user.id,
-      })
-      .eq('id', intakeRecord.id)
-      .select(
-        `
-          id,
-          status,
-          version_number,
-          clinical_summary,
-          structured_data,
-          trigger_reason,
-          last_updated_from_messages,
-          created_at,
-          updated_at
-        `,
-      )
-      .single()
-
-    if (updateError) {
-      console.error('[clinician/patient/clinical-intake/latest] Update error:', updateError)
+    if (!overrideResult.ok) {
+      const isValidation = overrideResult.error === 'Invalid override values' ||
+        overrideResult.error === 'Override reason is required'
       return NextResponse.json(
         {
           success: false,
-          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to update intake override' },
+          error: {
+            code: isValidation ? ErrorCode.INVALID_INPUT : ErrorCode.DATABASE_ERROR,
+            message: overrideResult.error ?? 'Failed to update intake override',
+          },
         },
-        { status: 500 },
+        { status: isValidation ? 400 : 500 },
       )
     }
 
     return NextResponse.json({
       success: true,
-      intake: mapIntake((updated ?? null) as IntakeRecord | null),
+      intake: mapIntake((overrideResult.data?.updated ?? null) as IntakeRecord | null),
     })
   } catch (err) {
     console.error('[clinician/patient/clinical-intake/latest] Unexpected error:', err)

@@ -30,8 +30,13 @@ describe('Safety policy engine', () => {
 
   const rule = (rule_id: string, severity: EscalationLevel): SafetyTriggeredRule => ({
     rule_id,
+    title: 'Test rule',
+    level: severity,
+    short_reason: 'test',
+    evidence: [],
+    verified: true,
+    unverified: false,
     severity,
-    rationale: 'test',
     policy_version: '2.1',
   })
 

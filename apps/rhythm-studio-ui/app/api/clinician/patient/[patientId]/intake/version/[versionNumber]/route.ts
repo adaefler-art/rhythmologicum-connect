@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
+import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
+import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
+import type { PolicyOverride } from '@/lib/types/clinicalIntake'
 
 type RouteContext = {
   params: Promise<{ patientId: string; versionNumber: string }>
@@ -14,10 +17,12 @@ type IntakeRecord = {
   version_number: number
   clinical_summary: string | null
   structured_data: Record<string, unknown>
+  policy_override?: PolicyOverride | null
   trigger_reason: string | null
   last_updated_from_messages: string[] | null
   created_at: string
   updated_at: string
+  organization_id?: string | null
 }
 
 const mapIntake = (intake: IntakeRecord | null) =>
@@ -29,6 +34,7 @@ const mapIntake = (intake: IntakeRecord | null) =>
         version_number: intake.version_number,
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
+        policy_override: intake.policy_override ?? null,
         trigger_reason: intake.trigger_reason,
         last_updated_from_messages: intake.last_updated_from_messages,
         created_at: intake.created_at,
@@ -64,10 +70,12 @@ const fetchIntakeVersion = async (params: {
         version_number,
         clinical_summary,
         structured_data,
+        policy_override,
         trigger_reason,
         last_updated_from_messages,
         created_at,
-        updated_at
+        updated_at,
+        organization_id
       `,
     )
     .eq(column, value)
@@ -252,9 +260,22 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    const policy = loadSafetyPolicy({ organizationId: intake.organization_id ?? null, funnelId: null })
+    const { safety } = buildEffectiveSafety({
+      structuredData: intake.structured_data,
+      policyOverride: intake.policy_override ?? null,
+      policy,
+    })
+
     return NextResponse.json({
       success: true,
-      intake: mapIntake(intake),
+      intake: {
+        ...mapIntake(intake),
+        structured_data: {
+          ...intake.structured_data,
+          safety,
+        },
+      },
     })
   } catch (err) {
     console.error('[clinician/patient/intake/version] Unexpected error:', err)

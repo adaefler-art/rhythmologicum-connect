@@ -26,6 +26,7 @@ import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
 import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
+import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
@@ -411,30 +412,19 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const evidenceText = messages
-      .filter((message) => message.role === 'user')
-      .map((message) => message.content)
-      .join(' ')
-
     const safetyResult = evaluateRedFlags({
       structuredData: result.structuredData,
-      evidenceText,
-      evidenceMessageIds: messages.map((m) => m.id),
+      verbatimChatMessages: messages
+        .filter((message) => message.role === 'user')
+        .map((message) => ({ id: message.id, content: message.content })),
     })
 
-    const triggeredRules = safetyResult.red_flags.map((flag) => ({
-      rule_id: flag.rule_id,
-      severity: flag.level,
-      rationale: flag.rationale,
-      evidence_message_ids: flag.evidence_message_ids,
-      policy_version: flag.policy_version,
-    }))
+    const triggeredRules = (safetyResult.triggered_rules ?? []).filter((rule) => rule.verified)
 
     const policy = loadSafetyPolicy({ organizationId, funnelId: null })
     const policyResult = applySafetyPolicy({ triggeredRules, policy })
     const effective = getEffectiveSafetyState({ policyResult, override: null })
 
-    safetyResult.triggered_rules = triggeredRules
     safetyResult.policy_result = policyResult
     safetyResult.override = null
     safetyResult.effective_action = effective.chatAction
@@ -447,7 +437,7 @@ export async function POST(req: NextRequest) {
     const clinicalSummary = appendSafetySummary(result.clinicalSummary, safetyLine)
 
     // Save to database
-    const intake = await saveIntake(
+    let intake = await saveIntake(
       user.id,
       patientProfileId,
       organizationId,
@@ -469,6 +459,38 @@ export async function POST(req: NextRequest) {
         } satisfies GenerateIntakeResponse,
         { status: 500 }
       )
+    }
+
+    const updatedTriggeredRules = attachIntakeEvidenceAfterSave({
+      intakeId: intake.id,
+      structuredData: result.structuredData,
+      triggeredRules: safetyResult.triggered_rules ?? [],
+    })
+
+    if (updatedTriggeredRules.length > 0) {
+      const updatedSafety = {
+        ...safetyResult,
+        triggered_rules: updatedTriggeredRules,
+      }
+      result.structuredData.safety = updatedSafety
+
+      const { data: updated, error: updateError } = await supabase
+        .from('clinical_intakes')
+        .update({
+          structured_data: result.structuredData,
+        })
+        .eq('id', intake.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.warn('[clinical-intake/generate] Failed to attach intake evidence', {
+          intakeId: intake.id,
+          error: updateError.message,
+        })
+      } else if (updated) {
+        intake = updated as ClinicalIntake
+      }
     }
 
     console.log('[clinical-intake/generate] Intake generated successfully', {

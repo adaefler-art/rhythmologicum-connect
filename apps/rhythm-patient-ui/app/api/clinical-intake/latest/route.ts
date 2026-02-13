@@ -17,6 +17,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
+import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
+import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { logError } from '@/lib/logging/logger'
 import type { GetIntakeResponse, ClinicalIntake } from '@/lib/types/clinicalIntake'
@@ -30,6 +32,7 @@ const mapIntake = (intake: ClinicalIntake | null) =>
         version_number: intake.version_number,
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
+        policy_override: intake.policy_override ?? null,
         trigger_reason: intake.trigger_reason,
         created_at: intake.created_at,
         updated_at: intake.updated_at,
@@ -101,7 +104,24 @@ export async function GET(req: NextRequest) {
     }
 
     const intake = data as ClinicalIntake | null
-    const mapped = mapIntake(intake)
+    let mapped = mapIntake(intake)
+
+    if (intake && mapped) {
+      const policy = loadSafetyPolicy({ organizationId: intake.organization_id ?? null, funnelId: null })
+      const { safety } = buildEffectiveSafety({
+        structuredData: intake.structured_data as Record<string, unknown>,
+        policyOverride: intake.policy_override ?? null,
+        policy,
+      })
+
+      mapped = {
+        ...mapped,
+        structured_data: {
+          ...(intake.structured_data as Record<string, unknown>),
+          safety,
+        },
+      }
+    }
 
     console.log('[clinical-intake/latest] Request completed', {
       userId: user.id,
@@ -113,7 +133,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        intake,
+        intake: mapped,
       },
     } satisfies GetIntakeResponse)
   } catch (error) {

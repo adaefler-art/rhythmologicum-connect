@@ -9,7 +9,7 @@ export type SafetyRuleEvaluation = {
 
 export const evaluateSafetyRules = (params: {
   structuredData: StructuredIntakeData
-  evidenceText?: string
+  verbatimChatMessages?: Array<{ id: string; content: string }>
 }): SafetyRuleEvaluation => {
   const context = buildSafetyContext(params)
 

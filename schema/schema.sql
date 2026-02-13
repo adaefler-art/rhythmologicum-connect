@@ -2824,6 +2824,7 @@ CREATE TABLE IF NOT EXISTS "public"."clinical_intakes" (
     "created_by" "uuid",
     "updated_by" "uuid",
     "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "policy_override" "jsonb",
     CONSTRAINT "clinical_intakes_structured_data_not_empty" CHECK (("structured_data" <> '{}'::"jsonb")),
     CONSTRAINT "clinical_intakes_version_positive" CHECK (("version_number" > 0))
 );
@@ -2861,6 +2862,9 @@ COMMENT ON COLUMN "public"."clinical_intakes"."trigger_reason" IS 'Reason for in
 
 
 COMMENT ON COLUMN "public"."clinical_intakes"."last_updated_from_messages" IS 'Array of message IDs that triggered this update';
+
+
+COMMENT ON COLUMN "public"."clinical_intakes"."policy_override" IS 'Clinician policy override metadata (override_level/action, reason, created_by, created_at).';
 
 
 

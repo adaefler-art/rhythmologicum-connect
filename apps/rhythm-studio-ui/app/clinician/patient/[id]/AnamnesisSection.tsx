@@ -186,13 +186,7 @@ const resolveEvidenceRefs = (params: {
     const mapped = evidenceMap.get(refId)
     if (mapped) {
       resolved.push(mapped)
-      return
     }
-    resolved.push({
-      text: 'Evidence reference not resolvable',
-      source: 'intake',
-      refId,
-    })
   })
 
   if (resolved.length === 0) {
@@ -222,6 +216,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [overrideReason, setOverrideReason] = useState('')
   const [overrideSaving, setOverrideSaving] = useState(false)
   const [overrideError, setOverrideError] = useState<string | null>(null)
+  const [isOverrideEditing, setIsOverrideEditing] = useState(false)
 
   const [consultNotes, setConsultNotes] = useState<ConsultNote[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -336,6 +331,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setOverrideLevel((override?.level_override as EscalationLevel) ?? 'none')
     setOverrideAction((override?.chat_action_override as ChatAction) ?? 'none')
     setOverrideReason(override?.reason ?? '')
+    setIsOverrideEditing(Boolean(!override))
   }, [latestClinicalIntake])
 
   const buildConsultNoteContent = (noteText: string): ConsultNoteContent => {
@@ -777,34 +773,59 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const intakeUpdatedAt = latestIntake?.updated_at
   const showDebug = env.NODE_ENV !== 'production'
   const policyResult = safetyEvaluation?.policy_result as SafetyPolicyResult | undefined
+  const effectiveLevel = safetyEvaluation?.effective_level ?? policyResult?.escalation_level ?? null
+  const effectiveAction = safetyEvaluation?.effective_action ?? policyResult?.chat_action ?? 'none'
   const overrideInfo = safetyEvaluation?.override as SafetyOverride | null | undefined
   const triggeredRules = safetyEvaluation?.triggered_rules as SafetyTriggeredRule[] | undefined
   const triggeredRuleUi: TriggeredRuleUi[] = Array.isArray(triggeredRules)
     ? triggeredRules.map((rule) => {
-        const ruleId = rule.rule_id
-        const evidenceRefs = Array.isArray(rule.evidence_message_ids)
-          ? rule.evidence_message_ids
+        const legacyRule = rule as unknown as Record<string, unknown>
+        const ruleId = typeof rule.rule_id === 'string' ? rule.rule_id : ''
+        const title = typeof rule.title === 'string' && rule.title.trim() ? rule.title : ruleId
+        const level = (typeof rule.level === 'string'
+          ? rule.level
+          : (legacyRule.severity as string) || 'C') as EscalationLevel | 'needs_review'
+        const shortReason =
+          typeof rule.short_reason === 'string'
+            ? rule.short_reason
+            : typeof legacyRule.rationale === 'string'
+              ? legacyRule.rationale
+              : ''
+        const evidenceItems = Array.isArray(rule.evidence)
+          ? rule.evidence
           : []
-        const excerpts = resolveEvidenceRefs({
-          refIds: evidenceRefs,
-          structuredIntakeData: structuredIntakeData as Record<string, unknown> | null,
-        }).slice(0, MAX_RULE_EXCERPTS)
-        const shortReason = typeof rule.rationale === 'string' ? rule.rationale : ''
+        const evidenceRefs = Array.isArray((legacyRule as { evidence_message_ids?: unknown }).evidence_message_ids)
+          ? (legacyRule as { evidence_message_ids?: string[] }).evidence_message_ids ?? []
+          : []
+        const excerpts = evidenceItems.length > 0
+          ? evidenceItems
+              .filter((item) => typeof item.excerpt === 'string' && item.excerpt.trim())
+              .map((item) => ({
+                refId: item.source_id,
+                source: item.source,
+                text: item.excerpt,
+              }))
+              .slice(0, MAX_RULE_EXCERPTS)
+          : resolveEvidenceRefs({
+              refIds: evidenceRefs,
+              structuredIntakeData: structuredIntakeData as Record<string, unknown> | null,
+            }).slice(0, MAX_RULE_EXCERPTS)
 
         return {
           ruleId,
-          title: ruleId,
-          level: rule.severity,
+          title,
+          level,
           shortReason,
           excerpts,
-          allEvidenceRefs: evidenceRefs,
+          allEvidenceRefs: evidenceItems.map((item) => item.source_id).concat(evidenceRefs),
         }
       })
     : []
 
   const handleOverrideSave = async () => {
     if (!latestIntake) return
-    if (!overrideReason.trim()) {
+    const shouldRequireReason = overrideLevel !== 'none' || overrideAction !== 'none'
+    if (shouldRequireReason && !overrideReason.trim()) {
       setOverrideError('Bitte einen Grund fuer die Uebersteuerung angeben.')
       return
     }
@@ -814,17 +835,18 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
     try {
       const payload = {
-        levelOverride: overrideLevel === 'none' ? null : overrideLevel,
-        chatActionOverride: overrideAction === 'none' ? null : overrideAction,
+        override_level: overrideLevel === 'none' ? null : overrideLevel,
+        override_action: overrideAction === 'none' ? null : overrideAction,
         reason: overrideReason.trim(),
       }
 
-      const { error } = await updateClinicalIntakeOverride(patientId, payload)
+      const { error } = await updateClinicalIntakeOverride(patientId, latestIntake.id, payload)
       if (error) {
         throw new Error(error.message || 'Fehler beim Speichern der Uebersteuerung')
       }
 
       await loadLatestClinicalIntake()
+      setIsOverrideEditing(false)
     } catch (err) {
       setOverrideError(err instanceof Error ? err.message : 'Fehler beim Speichern')
     } finally {
@@ -951,12 +973,17 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 </div>
               </div>
             )}
-            {policyResult && (
+            {(policyResult || effectiveLevel || effectiveAction) && (
               <div className="rounded-lg border border-slate-200 p-3">
-                <p className="text-xs font-semibold text-slate-600 mb-2">Policy Result</p>
+                <p className="text-xs font-semibold text-slate-600 mb-2">Effective Policy Result</p>
                 <p className="text-xs text-slate-600">
-                  Level: {policyResult.escalation_level ?? 'None'} · Action: {policyResult.chat_action}
+                  Level: {effectiveLevel ?? 'None'} · Action: {effectiveAction}
                 </p>
+                {policyResult && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Policy: {policyResult.escalation_level ?? 'None'} · {policyResult.chat_action}
+                  </p>
+                )}
               </div>
             )}
             <div className="rounded-lg border border-slate-200 p-3">
@@ -966,44 +993,62 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   Override von {overrideInfo.by_user_id} am {formatDate(overrideInfo.at)} — {overrideInfo.reason}
                 </p>
               )}
-              <div className="grid gap-3 md:grid-cols-2">
-                <FormField label="Level">
-                  <select
-                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
-                    value={overrideLevel}
-                    onChange={(event) => setOverrideLevel(event.target.value as EscalationLevel | 'none')}
+              {overrideInfo && !isOverrideEditing && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsOverrideEditing(true)}
+                >
+                  Override aendern
+                </Button>
+              )}
+              {(!overrideInfo || isOverrideEditing) && (
+                <>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <FormField label="Level">
+                      <select
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                        value={overrideLevel}
+                        onChange={(event) => setOverrideLevel(event.target.value as EscalationLevel | 'none')}
+                      >
+                        <option value="none">Kein Override</option>
+                        <option value="A">Level A</option>
+                        <option value="B">Level B</option>
+                        <option value="C">Level C</option>
+                      </select>
+                    </FormField>
+                    <FormField label="Chat Action">
+                      <select
+                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
+                        value={overrideAction}
+                        onChange={(event) => setOverrideAction(event.target.value as ChatAction | 'none')}
+                      >
+                        <option value="none">Kein Override</option>
+                        <option value="warn">Warn</option>
+                        <option value="require_confirm">Require Confirm</option>
+                        <option value="hard_stop">Hard Stop</option>
+                      </select>
+                    </FormField>
+                  </div>
+                  <FormField label="Begruendung" required={overrideLevel !== 'none' || overrideAction !== 'none'}>
+                    <Textarea
+                      value={overrideReason}
+                      onChange={(event) => setOverrideReason(event.target.value)}
+                      rows={3}
+                      placeholder="Grund fuer die Uebersteuerung..."
+                    />
+                  </FormField>
+                  {overrideError && <Alert variant="error">{overrideError}</Alert>}
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleOverrideSave}
+                    disabled={overrideSaving}
                   >
-                    <option value="none">Kein Override</option>
-                    <option value="A">Level A</option>
-                    <option value="B">Level B</option>
-                    <option value="C">Level C</option>
-                  </select>
-                </FormField>
-                <FormField label="Chat Action">
-                  <select
-                    className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
-                    value={overrideAction}
-                    onChange={(event) => setOverrideAction(event.target.value as ChatAction | 'none')}
-                  >
-                    <option value="none">Kein Override</option>
-                    <option value="warn">Warn</option>
-                    <option value="require_confirm">Require Confirm</option>
-                    <option value="hard_stop">Hard Stop</option>
-                  </select>
-                </FormField>
-              </div>
-              <FormField label="Begruendung" required>
-                <Textarea
-                  value={overrideReason}
-                  onChange={(event) => setOverrideReason(event.target.value)}
-                  rows={3}
-                  placeholder="Grund fuer die Uebersteuerung..."
-                />
-              </FormField>
-              {overrideError && <Alert variant="error">{overrideError}</Alert>}
-              <Button variant="primary" size="sm" onClick={handleOverrideSave} disabled={overrideSaving}>
-                {overrideSaving ? 'Speichern…' : 'Override speichern'}
-              </Button>
+                    {overrideSaving ? 'Speichern…' : 'Override speichern'}
+                  </Button>
+                </>
+              )}
             </div>
             {showDebug && structuredIntakeDisplay && (
               <details className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">

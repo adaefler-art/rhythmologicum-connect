@@ -28,9 +28,18 @@ export interface RedFlagFinding {
 
 export interface SafetyTriggeredRule {
   rule_id: string
-  severity: EscalationLevel
-  rationale: string
-  evidence_message_ids?: string[]
+  title: string
+  level: EscalationLevel | 'needs_review'
+  short_reason: string
+  evidence: Array<{
+    source: 'chat' | 'intake'
+    source_id: string
+    excerpt: string
+    field_path?: string
+  }>
+  verified: boolean
+  unverified?: boolean
+  severity?: EscalationLevel
   policy_version: string
 }
 
@@ -50,12 +59,22 @@ export interface SafetyOverride {
   at: string
 }
 
+export interface PolicyOverride {
+  override_level: EscalationLevel | null
+  override_action?: ChatAction | null
+  reason: string
+  created_by: string
+  created_by_email?: string | null
+  created_at: string
+}
+
 export interface SafetyEvaluation {
   red_flag_present: boolean
   escalation_level: EscalationLevel | null
   red_flags: RedFlagFinding[]
   triggered_rules?: SafetyTriggeredRule[]
   policy_result?: SafetyPolicyResult
+  effective_policy_result?: SafetyPolicyResult
   override?: SafetyOverride | null
   effective_level?: EscalationLevel | null
   effective_action?: ChatAction
@@ -133,6 +152,9 @@ export interface ClinicalIntake {
   
   // Metadata
   metadata: Record<string, unknown>
+
+  // Clinician policy override audit
+  policy_override?: PolicyOverride | null
 }
 
 // ============================================================================

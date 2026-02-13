@@ -493,9 +493,10 @@ export const getClinicalIntakeVersion = (patientId: string, versionNumber: numbe
 
 export const updateClinicalIntakeOverride = (
   patientId: string,
+  intakeId: string,
   payload: {
-    levelOverride?: string | null
-    chatActionOverride?: string | null
+    override_level?: string | null
+    override_action?: string | null
     reason: string
   },
 ) =>
@@ -503,8 +504,8 @@ export const updateClinicalIntakeOverride = (
     success?: boolean
     intake?: Record<string, unknown> | null
   }>({
-    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,
-    method: 'PATCH',
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/${intakeId}/policy-override`,
+    method: 'POST',
     body: payload,
     routeContext: 'patient-detail',
     patientId,

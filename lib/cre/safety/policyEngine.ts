@@ -92,7 +92,10 @@ export const applySafetyPolicy = (params: {
 
   triggeredRules.forEach((rule) => {
     const override = policy.rules[rule.rule_id]
-    const level = override?.escalationLevel ?? policy.defaults.escalationBySeverity[rule.severity]
+    const severity =
+      rule.severity ??
+      (rule.level === 'A' || rule.level === 'B' || rule.level === 'C' ? rule.level : 'B')
+    const level = override?.escalationLevel ?? policy.defaults.escalationBySeverity[severity]
     const action = override?.chatAction ?? policy.defaults.chatActionBySeverity[level]
 
     if (getLevelRank(level) > getLevelRank(effectiveLevel)) {
