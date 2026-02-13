@@ -47,8 +47,8 @@ export async function GET() {
       )
     }
 
-    const { data, error } = await supabase
-      .from('clinical_intakes')
+    const { data, error } = (await supabase
+      .from('clinical_intakes' as any)
       .select(
         'id, status, version_number, clinical_summary, structured_data, trigger_reason, created_at, updated_at',
       )
@@ -56,7 +56,7 @@ export async function GET() {
       .order('version_number', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(1)
-      .maybeSingle()
+      .maybeSingle()) as unknown as { data: IntakeRecord | null; error: { message: string } | null }
 
     if (error) {
       console.error('[patient/intake/latest] Query error', error)

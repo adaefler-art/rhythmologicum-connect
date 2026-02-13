@@ -1,0 +1,167 @@
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
+import type { ClinicalReasoningConfig } from './config'
+import type { ClinicalReasoningPack, ReasoningLikelihood } from '@/lib/types/clinicalIntake'
+
+const likelihoodWeight: Record<ReasoningLikelihood, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+}
+
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+const hasTerm = (text: string, term: string) => normalize(text).includes(normalize(term))
+
+const escalateLikelihood = (base: ReasoningLikelihood, steps: number): ReasoningLikelihood => {
+  const order: ReasoningLikelihood[] = ['low', 'medium', 'high']
+  const current = order.indexOf(base)
+  const next = Math.max(0, Math.min(order.length - 1, current + steps))
+  return order[next]
+}
+
+const gatherTextContext = (structuredData: StructuredIntakeData) => {
+  const parts: string[] = []
+
+  if (structuredData.chief_complaint) parts.push(structuredData.chief_complaint)
+
+  const hpi = structuredData.history_of_present_illness
+  if (hpi) {
+    if (hpi.onset) parts.push(hpi.onset)
+    if (hpi.duration) parts.push(hpi.duration)
+    if (hpi.course) parts.push(hpi.course)
+    parts.push(...(hpi.associated_symptoms ?? []))
+    parts.push(...(hpi.relieving_factors ?? []))
+    parts.push(...(hpi.aggravating_factors ?? []))
+  }
+
+  parts.push(...(structuredData.relevant_negatives ?? []))
+  parts.push(...(structuredData.past_medical_history ?? []))
+  parts.push(...(structuredData.medication ?? []))
+  parts.push(...(structuredData.psychosocial_factors ?? []))
+  parts.push(...(structuredData.uncertainties ?? []))
+
+  return parts.join(' | ')
+}
+
+const getVerifiedRedFlagCount = (structuredData: StructuredIntakeData) => {
+  const triggered = structuredData.safety?.triggered_rules ?? []
+  return triggered.filter((rule) => rule.verified === true).length
+}
+
+const estimateChronicitySignal = (structuredData: StructuredIntakeData) => {
+  const duration = structuredData.history_of_present_illness?.duration
+  if (!duration) return 0
+
+  const normalized = normalize(duration)
+  if (/jahr|monate|monat|wochen|woche/.test(normalized)) return 2
+  if (/tage|tag/.test(normalized)) return 1
+  return 0
+}
+
+const estimateAnxietySignal = (structuredData: StructuredIntakeData) => {
+  const context = gatherTextContext(structuredData)
+  const markers = ['angst', 'panik', 'nervos', 'anxiety', 'panic']
+  return markers.some((marker) => hasTerm(context, marker)) ? 1 : 0
+}
+
+export const generateReasoningPack = (
+  intake: StructuredIntakeData,
+  activeReasoningConfig: ClinicalReasoningConfig,
+): ClinicalReasoningPack => {
+  const evidenceText = gatherTextContext(intake)
+  const verifiedRedFlags = getVerifiedRedFlagCount(intake)
+  const chronicitySignal = estimateChronicitySignal(intake)
+  const anxietySignal = estimateAnxietySignal(intake)
+
+  const rawRiskScore =
+    verifiedRedFlags * activeReasoningConfig.risk_weighting.red_flag_weight +
+    chronicitySignal * activeReasoningConfig.risk_weighting.chronicity_weight +
+    anxietySignal * activeReasoningConfig.risk_weighting.anxiety_modifier
+
+  const boundedRiskScore = Math.max(0, Number(rawRiskScore.toFixed(2)))
+  const riskLevel: ReasoningLikelihood =
+    boundedRiskScore >= 7 ? 'high' : boundedRiskScore >= 3 ? 'medium' : 'low'
+
+  const differentials = activeReasoningConfig.differential_templates
+    .map((template) => {
+      const matchedTriggers = template.trigger_terms.filter((term) => hasTerm(evidenceText, term))
+      if (matchedTriggers.length === 0) return null
+
+      const missingRequired = (template.required_terms ?? []).some((term) => !hasTerm(evidenceText, term))
+      if (missingRequired) return null
+
+      const hasExclusion = (template.exclusions ?? []).some((term) => hasTerm(evidenceText, term))
+      if (hasExclusion) return null
+
+      const likelihoodStep = riskLevel === 'high' ? 1 : 0
+      const likelihood = escalateLikelihood(template.base_likelihood, likelihoodStep)
+
+      return {
+        label: template.label,
+        likelihood,
+        matched_triggers: matchedTriggers,
+        base_likelihood: template.base_likelihood,
+      }
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .sort((a, b) => {
+      const likelihoodDelta = likelihoodWeight[b.likelihood] - likelihoodWeight[a.likelihood]
+      if (likelihoodDelta !== 0) return likelihoodDelta
+      return b.matched_triggers.length - a.matched_triggers.length
+    })
+
+  const differentialLabels = new Set(differentials.map((entry) => entry.label.toLowerCase()))
+
+  const openQuestions = activeReasoningConfig.open_question_templates
+    .filter((template) => differentialLabels.has(template.condition_label.toLowerCase()))
+    .flatMap((template) =>
+      template.questions.map((question) => ({
+        condition_label: template.condition_label,
+        text: question.text,
+        priority: question.priority,
+      })),
+    )
+    .sort((a, b) => a.priority - b.priority)
+
+  const recommendedNextSteps: string[] = []
+  if (riskLevel === 'high') {
+    recommendedNextSteps.push('Zeitnahe klinische Priorisierung und unmittelbare Red-Flag-Abklaerung.')
+  } else if (riskLevel === 'medium') {
+    recommendedNextSteps.push('Gezielte zeitnahe Verlaufsklaerung und differenzialdiagnostische Vertiefung.')
+  } else {
+    recommendedNextSteps.push('Strukturierte ambulante Abklaerung und Symptomverlauf dokumentieren.')
+  }
+
+  if (verifiedRedFlags > 0) {
+    recommendedNextSteps.push('Verifizierte Red Flags priorisiert erneut pruefen und dokumentieren.')
+  }
+
+  if (openQuestions.length > 0) {
+    recommendedNextSteps.push('Priorisierte offene Fragen im naechsten Kontakt systematisch klaeren.')
+  }
+
+  const uncertainties = [...(intake.uncertainties ?? [])]
+  if (differentials.length === 0) {
+    uncertainties.push('Keine Differentialdiagnose konnte auf konfigurierte Trigger-Terms zurueckgefuehrt werden.')
+  }
+
+  return {
+    risk_estimation: {
+      score: boundedRiskScore,
+      level: riskLevel,
+      components: {
+        verified_red_flags: verifiedRedFlags,
+        chronicity_signal: chronicitySignal,
+        anxiety_signal: anxietySignal,
+      },
+    },
+    differentials,
+    open_questions: openQuestions,
+    recommended_next_steps: recommendedNextSteps,
+    uncertainties,
+  }
+}

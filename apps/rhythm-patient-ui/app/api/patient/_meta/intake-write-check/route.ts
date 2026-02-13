@@ -24,14 +24,17 @@ export async function GET() {
       )
     }
 
-    const { data: latestIntake, error: latestError } = await supabase
-      .from('clinical_intakes')
+    const { data: latestIntake, error: latestError } = (await supabase
+      .from('clinical_intakes' as any)
       .select('id, version_number, created_at, updated_at')
       .eq('user_id', user.id)
       .order('version_number', { ascending: false })
       .order('updated_at', { ascending: false })
       .limit(1)
-      .maybeSingle()
+      .maybeSingle()) as unknown as {
+      data: { id: string; version_number: number; created_at: string; updated_at: string } | null
+      error: { message: string } | null
+    }
 
     if (latestError) {
       return NextResponse.json(
@@ -47,11 +50,14 @@ export async function GET() {
     }
 
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const { count: recentCount, error: countError } = await supabase
-      .from('clinical_intakes')
+    const { count: recentCount, error: countError } = (await supabase
+      .from('clinical_intakes' as any)
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .gte('created_at', cutoff)
+      .gte('created_at', cutoff)) as unknown as {
+      count: number | null
+      error: { message: string } | null
+    }
 
     if (countError) {
       return NextResponse.json(

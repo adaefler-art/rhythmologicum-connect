@@ -21,7 +21,7 @@ import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { logError } from '@/lib/logging/logger'
-import type { GetIntakeResponse, ClinicalIntake } from '@/lib/types/clinicalIntake'
+import type { ClinicalIntake } from '@/lib/types/clinicalIntake'
 
 const mapIntake = (intake: ClinicalIntake | null) =>
   intake
@@ -39,6 +39,17 @@ const mapIntake = (intake: ClinicalIntake | null) =>
         last_updated_from_messages: intake.last_updated_from_messages,
       }
     : null
+
+type LatestIntakeResponse = {
+  success: boolean
+  data?: {
+    intake: ReturnType<typeof mapIntake>
+  }
+  error?: {
+    code: string
+    message: string
+  }
+}
 
 /**
  * GET /api/clinical-intake/latest
@@ -62,7 +73,7 @@ export async function GET(req: NextRequest) {
             code: 'UNAUTHORIZED',
             message: 'Authentication required',
           },
-        } satisfies GetIntakeResponse,
+        } satisfies LatestIntakeResponse,
         { status: 401 }
       )
     }
@@ -74,7 +85,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch latest intake for user
     const { data, error } = await supabase
-      .from('clinical_intakes')
+      .from('clinical_intakes' as any)
       .select('*')
       .eq('user_id', user.id)
       .order('version_number', { ascending: false })
@@ -98,7 +109,7 @@ export async function GET(req: NextRequest) {
             code: 'QUERY_ERROR',
             message: 'Failed to fetch intake',
           },
-        } satisfies GetIntakeResponse,
+        } satisfies LatestIntakeResponse,
         { status: 500 }
       )
     }
@@ -109,7 +120,7 @@ export async function GET(req: NextRequest) {
     if (intake && mapped) {
       const policy = loadSafetyPolicy({ organizationId: intake.organization_id ?? null, funnelId: null })
       const { safety } = buildEffectiveSafety({
-        structuredData: intake.structured_data as Record<string, unknown>,
+        structuredData: intake.structured_data as unknown as Record<string, unknown>,
         policyOverride: intake.policy_override ?? null,
         policy,
       })
@@ -117,7 +128,7 @@ export async function GET(req: NextRequest) {
       mapped = {
         ...mapped,
         structured_data: {
-          ...(intake.structured_data as Record<string, unknown>),
+          ...intake.structured_data,
           safety,
         },
       }
@@ -135,7 +146,7 @@ export async function GET(req: NextRequest) {
       data: {
         intake: mapped,
       },
-    } satisfies GetIntakeResponse)
+    } satisfies LatestIntakeResponse)
   } catch (error) {
     console.error('[clinical-intake/latest] Unexpected error', {
       error: String(error),
@@ -155,7 +166,7 @@ export async function GET(req: NextRequest) {
           code: 'INTERNAL_ERROR',
           message: 'An unexpected error occurred',
         },
-      } satisfies GetIntakeResponse,
+      } satisfies LatestIntakeResponse,
       { status: 500 }
     )
   }

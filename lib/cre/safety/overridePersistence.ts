@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { buildEffectiveSafety, validatePolicyOverride } from '@/lib/cre/safety/overrideHelpers'
+import { loadActiveClinicalReasoningConfig } from '@/lib/cre/reasoning/configStore'
+import { generateReasoningPack } from '@/lib/cre/reasoning/engine'
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { EscalationLevel, ChatAction, PolicyOverride, SafetyEvaluation } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
@@ -61,13 +64,23 @@ export const setPolicyOverride = async (params: {
     policy,
   })
 
+  const nextStructuredData = {
+    ...structuredData,
+    safety,
+  } as StructuredIntakeData
+
+  const activeReasoning = await loadActiveClinicalReasoningConfig({ supabase })
+  if (activeReasoning) {
+    nextStructuredData.reasoning = generateReasoningPack(
+      nextStructuredData,
+      activeReasoning.config_json,
+    )
+  }
+
   const { data: updated, error: updateError } = await supabase
     .from('clinical_intakes')
     .update({
-      structured_data: ({
-        ...structuredData,
-        safety,
-      } as unknown as Json),
+      structured_data: (nextStructuredData as unknown as Json),
       policy_override: policyOverride,
       updated_by: updatedBy.id,
     })

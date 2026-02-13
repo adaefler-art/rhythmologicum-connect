@@ -104,6 +104,33 @@ export interface HistoryOfPresentIllness {
   aggravating_factors?: string[]
 }
 
+export type ReasoningLikelihood = 'low' | 'medium' | 'high'
+
+export interface ClinicalReasoningPack {
+  risk_estimation: {
+    score: number
+    level: ReasoningLikelihood
+    components: {
+      verified_red_flags: number
+      chronicity_signal: number
+      anxiety_signal: number
+    }
+  }
+  differentials: Array<{
+    label: string
+    likelihood: ReasoningLikelihood
+    matched_triggers: string[]
+    base_likelihood: ReasoningLikelihood
+  }>
+  open_questions: Array<{
+    condition_label: string
+    text: string
+    priority: 1 | 2 | 3
+  }>
+  recommended_next_steps: string[]
+  uncertainties: string[]
+}
+
 export interface StructuredIntakeData {
   status: 'draft'
   chief_complaint?: string
@@ -116,6 +143,7 @@ export interface StructuredIntakeData {
   uncertainties?: string[]
   last_updated_from_messages?: string[]
   safety?: SafetyEvaluation
+  reasoning?: ClinicalReasoningPack
 }
 
 // ============================================================================

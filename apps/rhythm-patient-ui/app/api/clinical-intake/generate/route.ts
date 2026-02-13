@@ -29,6 +29,8 @@ import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redF
 import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'
 import { loadActiveSafetyRuleOverrides } from '@/lib/cre/safety/safetyRuleVersions'
+import { generateReasoningPack } from '@/lib/cre/reasoning/engine'
+import { loadActiveClinicalReasoningConfig } from '@/lib/cre/reasoning/configStore'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
@@ -248,7 +250,7 @@ async function saveIntake(
 ): Promise<ClinicalIntake | null> {
   try {
     const { data, error } = await supabase
-      .from('clinical_intakes')
+      .from('clinical_intakes' as any)
       .insert({
         user_id: userId,
         patient_id: patientProfileId,
@@ -306,11 +308,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { data: patientProfile, error: profileError } = await supabase
+    const { data: patientProfile, error: profileError } = (await supabase
       .from('patient_profiles')
       .select('id, organization_id')
       .eq('user_id', user.id)
-      .maybeSingle()
+      .maybeSingle()) as unknown as {
+      data: { id: string; organization_id: string | null } | null
+      error: { message: string } | null
+    }
 
     if (profileError) {
       console.warn('[clinical-intake/generate] Failed to resolve patient profile', {
@@ -415,8 +420,8 @@ export async function POST(req: NextRequest) {
     }
 
     let ruleOverrides = {}
+    const admin = createAdminSupabaseClient()
     try {
-      const admin = createAdminSupabaseClient()
       ruleOverrides = await loadActiveSafetyRuleOverrides({ supabase: admin })
     } catch (error) {
       console.warn('[clinical-intake/generate] Failed to load safety rule versions', {
@@ -445,6 +450,25 @@ export async function POST(req: NextRequest) {
 
     result.structuredData.safety = safetyResult
     result.structuredData.red_flags = safetyResult.red_flags.map((flag) => flag.id)
+
+    const activeReasoning = await loadActiveClinicalReasoningConfig({ supabase: admin })
+    if (!activeReasoning) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'REASONING_CONFIG_MISSING',
+            message: 'No active clinical reasoning config found',
+          },
+        } satisfies GenerateIntakeResponse,
+        { status: 503 },
+      )
+    }
+
+    result.structuredData.reasoning = generateReasoningPack(
+      result.structuredData,
+      activeReasoning.config_json,
+    )
 
     const safetyLine = formatSafetySummaryLine(safetyResult)
     const clinicalSummary = appendSafetySummary(result.clinicalSummary, safetyLine)
@@ -486,9 +510,13 @@ export async function POST(req: NextRequest) {
         triggered_rules: updatedTriggeredRules,
       }
       result.structuredData.safety = updatedSafety
+      result.structuredData.reasoning = generateReasoningPack(
+        result.structuredData,
+        activeReasoning.config_json,
+      )
 
       const { data: updated, error: updateError } = await supabase
-        .from('clinical_intakes')
+        .from('clinical_intakes' as any)
         .update({
           structured_data: result.structuredData,
         })
@@ -502,7 +530,7 @@ export async function POST(req: NextRequest) {
           error: updateError.message,
         })
       } else if (updated) {
-        intake = updated as ClinicalIntake
+        intake = updated as unknown as ClinicalIntake
       }
     }
 
