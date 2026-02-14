@@ -109,6 +109,52 @@ type TriggeredRuleUi = {
 
 const MAX_EXCERPT_LENGTH = 220
 const MAX_RULE_EXCERPTS = 3
+const REVIEW_STATUSES = ['draft', 'in_review', 'approved', 'needs_more_info', 'rejected'] as const
+
+const isReviewStatus = (
+  value: unknown,
+): value is ClinicalIntakeReviewRecord['status'] =>
+  typeof value === 'string' &&
+  (REVIEW_STATUSES as readonly string[]).includes(value)
+
+const parseClinicalIntakeReviewRecord = (
+  value: unknown,
+): ClinicalIntakeReviewRecord | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+
+  const record = value as Record<string, unknown>
+  const { id, intake_id, status, review_notes, requested_items, reviewed_by, is_current, created_at, updated_at } =
+    record
+
+  if (
+    typeof id !== 'string' ||
+    typeof intake_id !== 'string' ||
+    !isReviewStatus(status) ||
+    (review_notes !== null && typeof review_notes !== 'string') ||
+    (requested_items !== null &&
+      requested_items !== undefined &&
+      (!Array.isArray(requested_items) ||
+        requested_items.some((item) => typeof item !== 'string'))) ||
+    typeof reviewed_by !== 'string' ||
+    typeof is_current !== 'boolean' ||
+    typeof created_at !== 'string' ||
+    typeof updated_at !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    intake_id,
+    status,
+    review_notes,
+    requested_items: Array.isArray(requested_items) ? requested_items : null,
+    reviewed_by,
+    is_current,
+    created_at,
+    updated_at,
+  }
+}
 
 const clampExcerpt = (value: string, max = MAX_EXCERPT_LENGTH) =>
   value.length > max ? `${value.slice(0, max).trim()}…` : value
@@ -301,8 +347,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         throw new Error(error.message || 'Fehler beim Laden des Reviews')
       }
 
-      const currentReview = (data?.review_state || null) as ClinicalIntakeReviewRecord | null
-      const audit = (data?.audit || []) as ClinicalIntakeReviewRecord[]
+      const currentReview = parseClinicalIntakeReviewRecord(data?.review_state)
+      const audit = Array.isArray(data?.audit)
+        ? data.audit
+            .map((item) => parseClinicalIntakeReviewRecord(item))
+            .filter((item): item is ClinicalIntakeReviewRecord => item !== null)
+        : []
 
       setReviewState(currentReview)
       setReviewAudit(audit)
@@ -953,8 +1003,12 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         throw new Error(error.message || 'Fehler beim Speichern des Reviews')
       }
 
-      const currentReview = (data?.review_state || null) as ClinicalIntakeReviewRecord | null
-      const audit = (data?.audit || []) as ClinicalIntakeReviewRecord[]
+      const currentReview = parseClinicalIntakeReviewRecord(data?.review_state)
+      const audit = Array.isArray(data?.audit)
+        ? data.audit
+            .map((item) => parseClinicalIntakeReviewRecord(item))
+            .filter((item): item is ClinicalIntakeReviewRecord => item !== null)
+        : []
       setReviewState(currentReview)
       setReviewAudit(audit)
       setReviewStatusDraft(currentReview?.status ?? status)
