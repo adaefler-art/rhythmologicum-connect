@@ -1,40 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-
-type ReviewStatus = 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
-
-type IntakeLatestResponse = {
-  success: boolean
-  intake: {
-    version_number: number
-    updated_at: string
-    structured_data?: {
-      safety?: {
-        effective_policy_result?: {
-          escalation_level?: string | null
-          level?: string | null
-        }
-      }
-      followup?: {
-        next_questions?: unknown[]
-      }
-    }
-    review_state?: {
-      status: ReviewStatus
-      requested_items: string[] | null
-    } | null
-  } | null
-}
-
-type ReviewStatusResponse = {
-  success: boolean
-  review: {
-    status: ReviewStatus
-    requested_items: string[]
-    updated_at: string
-  } | null
-}
+import { useMemo } from 'react'
+import { usePatientData, type ReviewStatus } from '@/lib/hooks/usePatientData'
 
 const toGermanDate = (value?: string | null) => {
   if (!value) return '—'
@@ -64,66 +31,7 @@ const toReviewLabel = (status: ReviewStatus | null) => {
 }
 
 export default function PatientDashboardPage() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [intake, setIntake] = useState<IntakeLatestResponse['intake']>(null)
-  const [review, setReview] = useState<ReviewStatusResponse['review']>(null)
-
-  useEffect(() => {
-    let active = true
-
-    const load = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const [intakeResponse, reviewResponse] = await Promise.all([
-          fetch('/api/patient/intake/latest', { cache: 'no-store' }),
-          fetch('/api/patient/review/status', { cache: 'no-store' }),
-        ])
-
-        const intakeJson = (await intakeResponse.json()) as IntakeLatestResponse
-        const reviewJson = (await reviewResponse.json()) as ReviewStatusResponse
-
-        if (!active) return
-
-        if (!intakeResponse.ok || !intakeJson.success) {
-          throw new Error('Intake konnte nicht geladen werden.')
-        }
-
-        const safeReview =
-          reviewResponse.ok && reviewJson.success
-            ? reviewJson.review
-            : intakeJson.intake?.review_state
-              ? {
-                  status: intakeJson.intake.review_state.status,
-                  requested_items: Array.isArray(intakeJson.intake.review_state.requested_items)
-                    ? intakeJson.intake.review_state.requested_items
-                    : [],
-                  updated_at: intakeJson.intake.updated_at,
-                }
-              : null
-
-        setIntake(intakeJson.intake)
-        setReview(safeReview)
-      } catch (err) {
-        if (!active) return
-        setError(err instanceof Error ? err.message : 'Dashboard konnte nicht geladen werden.')
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const openFollowupCount = useMemo(() => {
-    const raw = intake?.structured_data?.followup?.next_questions
-    return Array.isArray(raw) ? raw.length : 0
-  }, [intake])
+  const { loading, error, intake, review, openFollowupCount } = usePatientData()
 
   const reviewStatus = review?.status ?? null
 
@@ -144,8 +52,8 @@ export default function PatientDashboardPage() {
     null
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-sky-50 via-slate-50 to-slate-100 px-4 py-6">
-      <div className="mx-auto w-full max-w-3xl space-y-4">
+    <main className="min-h-screen bg-linear-to-b from-sky-50 via-slate-50 to-slate-100">
+      <div className="page-container dashboard-layout">
         <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
 
         {loading && (
@@ -160,7 +68,7 @@ export default function PatientDashboardPage() {
 
         {!loading && !error && (
           <>
-            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
+            <section className="dashboard-card">
               <h2 className="text-lg font-semibold text-slate-900">Status</h2>
               <dl className="mt-3 space-y-3 text-sm text-slate-700">
                 <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
@@ -184,12 +92,12 @@ export default function PatientDashboardPage() {
               </dl>
             </section>
 
-            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
+            <section className="dashboard-card">
               <h2 className="text-lg font-semibold text-slate-900">Nächster Schritt</h2>
               <p className="mt-2 w-full text-sm text-slate-700 wrap-break-word">{nextStep}</p>
             </section>
 
-            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
+            <section className="dashboard-card">
               <h2 className="text-lg font-semibold text-slate-900">Anforderungen / Uploads</h2>
 
               {requestedItems.length > 0 ? (

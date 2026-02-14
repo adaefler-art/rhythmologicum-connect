@@ -301,6 +301,49 @@ body {
   transition: background-color 150ms ease, color 150ms ease;
 }
 
+.page-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+.dashboard-card {
+  width: 100%;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 0.75rem;
+  background-color: var(--color-bg-light);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.settings-page {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.settings-card {
+  width: 100%;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 0.75rem;
+  background-color: var(--color-bg-light);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.settings-card-wide {
+  grid-column: 1 / -1;
+}
+
 /* 
  * Global Form Field Styling
  * Provides consistent form field styling with dark mode support
