@@ -1022,6 +1022,16 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const handleExportIntake = (format: 'pdf' | 'json') => {
+    if (!latestIntake?.id) return
+
+    const url = `/api/clinician/patient/${patientId}/clinical-intake/${latestIntake.id}/export/${format}`
+
+    if (typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <>
       <Card padding="lg" shadow="md" className="mb-6">
@@ -1056,14 +1066,30 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   )}
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => fetchIntakeHistory()}
-                disabled={isIntakeHistoryLoading}
-              >
-                {isIntakeHistoryLoading ? 'Laedt…' : 'History'}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fetchIntakeHistory()}
+                  disabled={isIntakeHistoryLoading}
+                >
+                  {isIntakeHistoryLoading ? 'Laedt…' : 'History'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleExportIntake('pdf')}
+                >
+                  Export PDF
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleExportIntake('json')}
+                >
+                  Export JSON
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
