@@ -2419,37 +2419,58 @@ export type Database = {
       }
       patient_profiles: {
         Row: {
+          birth_date: string | null
           birth_year: number | null
+          communication_preference: string | null
+          consent_contact_for_followup: boolean
+          consent_data_processing: boolean
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           first_name: string | null
           full_name: string | null
           id: string
           last_name: string | null
           onboarding_status: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_language: string | null
           preferred_name: string | null
           sex: string | null
           user_id: string
         }
         Insert: {
+          birth_date?: string | null
           birth_year?: number | null
+          communication_preference?: string | null
+          consent_contact_for_followup?: boolean
+          consent_data_processing?: boolean
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           first_name?: string | null
           full_name?: string | null
           id?: string
           last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_language?: string | null
           preferred_name?: string | null
           sex?: string | null
           user_id: string
         }
         Update: {
+          birth_date?: string | null
           birth_year?: number | null
+          communication_preference?: string | null
+          consent_contact_for_followup?: boolean
+          consent_data_processing?: boolean
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           first_name?: string | null
           full_name?: string | null
           id?: string
           last_name?: string | null
           onboarding_status?: Database["public"]["Enums"]["onboarding_status_enum"]
+          preferred_language?: string | null
           preferred_name?: string | null
           sex?: string | null
           user_id?: string
