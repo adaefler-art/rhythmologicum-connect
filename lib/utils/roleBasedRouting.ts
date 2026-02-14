@@ -171,6 +171,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       active: pathname?.startsWith('/admin/navigation') ?? false,
     },
     {
+      href: '/admin/users',
+      label: 'Benutzer',
+      active: pathname?.startsWith('/admin/users') ?? false,
+    },
+    {
       href: '/clinician/admin/reasoning-config',
       label: 'Reasoning Config',
       active: pathname?.startsWith('/clinician/admin/reasoning-config') ?? false,
@@ -391,6 +396,15 @@ export async function fetchNavItemsForRole(
           false,
       }
     }).filter(Boolean) as RoleNavItem[]
+
+    // Ensure admin user management is reachable even if DB nav config is outdated
+    if (role === 'admin' && !navItems.some((item) => item.href === '/admin/users')) {
+      navItems.push({
+        href: '/admin/users',
+        label: 'Benutzer',
+        active: pathname?.startsWith('/admin/users') ?? false,
+      })
+    }
 
     // If we got items from DB, return them
     if (navItems.length > 0) {
