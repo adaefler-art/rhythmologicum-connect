@@ -160,46 +160,46 @@ export default function PatientDashboardPage() {
 
         {!loading && !error && (
           <>
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
               <h2 className="text-lg font-semibold text-slate-900">Status</h2>
-              <dl className="mt-3 grid gap-2 text-sm text-slate-700">
-                <div className="flex items-center justify-between gap-3">
+              <dl className="mt-3 space-y-3 text-sm text-slate-700">
+                <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
                   <dt className="font-medium">Intake</dt>
-                  <dd>
+                  <dd className="m-0 wrap-break-word">
                     Version {intake?.version_number ?? '—'} · zuletzt {toGermanDate(intake?.updated_at)}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
                   <dt className="font-medium">Safety</dt>
-                  <dd className="text-right">{toFriendlySafetyLevel(safetyLevel)}</dd>
+                  <dd className="m-0 wrap-break-word">{toFriendlySafetyLevel(safetyLevel)}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
                   <dt className="font-medium">Review</dt>
-                  <dd>{toReviewLabel(reviewStatus)}</dd>
+                  <dd className="m-0 wrap-break-word">{toReviewLabel(reviewStatus)}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                <div className="grid gap-1 sm:grid-cols-[140px_1fr] sm:gap-3">
                   <dt className="font-medium">Follow-up</dt>
-                  <dd>{openFollowupCount} offene Frage(n)</dd>
+                  <dd className="m-0 wrap-break-word">{openFollowupCount} offene Frage(n)</dd>
                 </div>
               </dl>
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
               <h2 className="text-lg font-semibold text-slate-900">Nächster Schritt</h2>
-              <p className="mt-2 text-sm text-slate-700">{nextStep}</p>
+              <p className="mt-2 w-full text-sm text-slate-700 wrap-break-word">{nextStep}</p>
             </section>
 
-            <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <section className="w-full rounded-xl border border-slate-200 bg-white p-4">
               <h2 className="text-lg font-semibold text-slate-900">Anforderungen / Uploads</h2>
 
               {requestedItems.length > 0 ? (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700 wrap-break-word">
                   {requestedItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-slate-600">Aktuell keine angeforderten Dokumente/Befunde.</p>
+                <p className="mt-2 text-sm text-slate-600 wrap-break-word">Aktuell keine angeforderten Dokumente/Befunde.</p>
               )}
 
               <button
