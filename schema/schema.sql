@@ -99,6 +99,18 @@ COMMENT ON TYPE "public"."audience_type" IS 'Issue 5: Target audience for consul
 
 
 
+CREATE TYPE "public"."clinical_intake_review_status" AS ENUM (
+    'draft',
+    'in_review',
+    'approved',
+    'needs_more_info',
+    'rejected'
+);
+
+
+ALTER TYPE "public"."clinical_intake_review_status" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."clinical_reasoning_config_status" AS ENUM (
     'draft',
     'active',
@@ -2283,6 +2295,19 @@ $$;
 ALTER FUNCTION "public"."update_anamnesis_entries_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."update_clinical_intake_review_timestamp"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_clinical_intake_review_timestamp"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."update_clinical_intake_timestamp"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2825,6 +2850,22 @@ COMMENT ON COLUMN "public"."calculated_results"."computed_at" IS 'V05-I01.3: Whe
 
 COMMENT ON COLUMN "public"."calculated_results"."inputs_hash" IS 'V05-I01.3: SHA256 hash of normalized inputs for detecting equivalent runs';
 
+
+
+CREATE TABLE IF NOT EXISTS "public"."clinical_intake_reviews" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "intake_id" "uuid" NOT NULL,
+    "status" "public"."clinical_intake_review_status" DEFAULT 'draft'::"public"."clinical_intake_review_status" NOT NULL,
+    "review_notes" "text",
+    "requested_items" "jsonb",
+    "reviewed_by" "text" NOT NULL,
+    "is_current" boolean DEFAULT true NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."clinical_intake_reviews" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."clinical_intakes" (
@@ -5632,6 +5673,11 @@ ALTER TABLE ONLY "public"."calculated_results"
 
 
 
+ALTER TABLE ONLY "public"."clinical_intake_reviews"
+    ADD CONSTRAINT "clinical_intake_reviews_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."clinical_intakes"
     ADD CONSTRAINT "clinical_intakes_pkey" PRIMARY KEY ("id");
 
@@ -6091,6 +6137,18 @@ CREATE INDEX "amy_chat_messages_user_id_created_at_idx" ON "public"."amy_chat_me
 
 
 CREATE INDEX "assessments_funnel_id_idx" ON "public"."assessments" USING "btree" ("funnel_id");
+
+
+
+CREATE INDEX "clinical_intake_reviews_created_at_idx" ON "public"."clinical_intake_reviews" USING "btree" ("created_at" DESC);
+
+
+
+CREATE UNIQUE INDEX "clinical_intake_reviews_current_unique" ON "public"."clinical_intake_reviews" USING "btree" ("intake_id") WHERE ("is_current" = true);
+
+
+
+CREATE INDEX "clinical_intake_reviews_intake_id_idx" ON "public"."clinical_intake_reviews" USING "btree" ("intake_id");
 
 
 
@@ -7170,6 +7228,10 @@ CREATE OR REPLACE TRIGGER "audit_reassessment_rules_trigger" AFTER INSERT OR DEL
 
 
 
+CREATE OR REPLACE TRIGGER "clinical_intake_reviews_update_timestamp" BEFORE UPDATE ON "public"."clinical_intake_reviews" FOR EACH ROW EXECUTE FUNCTION "public"."update_clinical_intake_review_timestamp"();
+
+
+
 CREATE OR REPLACE TRIGGER "clinical_intakes_update_timestamp" BEFORE UPDATE ON "public"."clinical_intakes" FOR EACH ROW EXECUTE FUNCTION "public"."update_clinical_intake_timestamp"();
 
 
@@ -7371,6 +7433,11 @@ ALTER TABLE ONLY "public"."calculated_results"
 
 ALTER TABLE ONLY "public"."calculated_results"
     ADD CONSTRAINT "calculated_results_funnel_version_id_fkey" FOREIGN KEY ("funnel_version_id") REFERENCES "public"."funnel_versions"("id");
+
+
+
+ALTER TABLE ONLY "public"."clinical_intake_reviews"
+    ADD CONSTRAINT "clinical_intake_reviews_intake_id_fkey" FOREIGN KEY ("intake_id") REFERENCES "public"."clinical_intakes"("id") ON DELETE CASCADE;
 
 
 
@@ -8503,6 +8570,25 @@ ALTER TABLE "public"."audit_log" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."calculated_results" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."clinical_intake_reviews" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "clinical_intake_reviews_modify_clinician_admin" ON "public"."clinical_intake_reviews" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "auth"."users" "au"
+  WHERE (("au"."id" = "auth"."uid"()) AND (("au"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['clinician'::"text", 'admin'::"text"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "auth"."users" "au"
+  WHERE (("au"."id" = "auth"."uid"()) AND (("au"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['clinician'::"text", 'admin'::"text"]))))));
+
+
+
+CREATE POLICY "clinical_intake_reviews_select_clinician_or_owner" ON "public"."clinical_intake_reviews" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."clinical_intakes" "ci"
+  WHERE (("ci"."id" = "clinical_intake_reviews"."intake_id") AND (("ci"."user_id" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+           FROM "auth"."users" "au"
+          WHERE (("au"."id" = "auth"."uid"()) AND (("au"."raw_app_meta_data" ->> 'role'::"text") = ANY (ARRAY['clinician'::"text", 'admin'::"text"]))))))))));
+
 
 
 ALTER TABLE "public"."clinical_intakes" ENABLE ROW LEVEL SECURITY;
@@ -9665,6 +9751,12 @@ GRANT ALL ON FUNCTION "public"."update_anamnesis_entries_updated_at"() TO "servi
 
 
 
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_review_timestamp"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_review_timestamp"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_clinical_intake_review_timestamp"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_clinical_intake_timestamp"() TO "service_role";
@@ -9827,6 +9919,12 @@ GRANT ALL ON TABLE "public"."audit_log" TO "service_role";
 GRANT ALL ON TABLE "public"."calculated_results" TO "anon";
 GRANT ALL ON TABLE "public"."calculated_results" TO "authenticated";
 GRANT ALL ON TABLE "public"."calculated_results" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."clinical_intake_reviews" TO "anon";
+GRANT ALL ON TABLE "public"."clinical_intake_reviews" TO "authenticated";
+GRANT ALL ON TABLE "public"."clinical_intake_reviews" TO "service_role";
 
 
 
