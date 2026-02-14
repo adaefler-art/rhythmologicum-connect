@@ -1,4 +1,8 @@
-import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
+import {
+  appendAskedQuestionIds,
+  generateFollowupQuestions,
+  mergeClinicianRequestedItemsIntoFollowup,
+} from '@/lib/cre/followup/generator'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
 
 describe('followup generator', () => {
@@ -92,5 +96,90 @@ describe('followup generator', () => {
     expect(generated.next_questions.length).toBeGreaterThan(0)
     expect(generated.next_questions.every((entry) => entry.source === 'gap_rule')).toBe(true)
     expect(generated.next_questions.some((entry) => entry.id === 'gap:chief-complaint')).toBe(false)
+  })
+
+  it('merges clinician requested items with dedupe and keeps max-3 in next_questions', () => {
+    const structuredData = {
+      status: 'draft' as const,
+      followup: {
+        next_questions: [
+          {
+            id: 'reasoning:foo:bar',
+            question: 'Wie ist der Verlauf?',
+            why: 'Offene Frage',
+            priority: 2 as const,
+            source: 'reasoning' as const,
+          },
+        ],
+        asked_question_ids: [],
+        last_generated_at: '2026-02-14T00:00:00.000Z',
+      },
+    }
+
+    const merged = mergeClinicianRequestedItemsIntoFollowup({
+      structuredData,
+      requestedItems: ['Bitte aktuelle Medikation nennen', 'Bitte aktuelle Medikation nennen', 'Seit wann?', 'Trigger?'],
+      now: new Date('2026-02-14T10:00:00.000Z'),
+    })
+
+    const followup = merged.followup
+    expect(followup).toBeDefined()
+    expect(followup?.next_questions.length).toBe(3)
+    expect(followup?.queue?.length).toBeGreaterThanOrEqual(1)
+
+    const ids = (followup?.next_questions ?? []).map((entry) => entry.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect((followup?.next_questions ?? []).every((entry) => entry.source === 'clinician_request')).toBe(true)
+  })
+
+  it('prioritizes clinician_request over reasoning and gap_rule in generated followups', () => {
+    const structuredData = {
+      status: 'draft' as const,
+      chief_complaint: '',
+      history_of_present_illness: {},
+      reasoning: {
+        risk_estimation: {
+          score: 3,
+          level: 'medium' as const,
+          components: {
+            verified_red_flags: 0,
+            chronicity_signal: 1,
+            anxiety_signal: 1,
+          },
+        },
+        differentials: [],
+        open_questions: [
+          {
+            condition_label: 'General',
+            text: 'Wann genau traten die Symptome auf?',
+            priority: 1 as const,
+          },
+        ],
+        recommended_next_steps: [],
+        uncertainties: [],
+      },
+      followup: {
+        next_questions: [
+          {
+            id: 'clinician-request:bitte-medikation-erganzen',
+            question: 'Bitte Medikation ergaenzen?',
+            why: 'Rueckfrage aus aerztlicher Pruefung',
+            priority: 1 as const,
+            source: 'clinician_request' as const,
+          },
+        ],
+        queue: [],
+        asked_question_ids: [],
+        last_generated_at: '2026-02-14T00:00:00.000Z',
+      },
+    }
+
+    const generated = generateFollowupQuestions({
+      structuredData,
+      now: new Date('2026-02-14T12:00:00.000Z'),
+    })
+
+    expect(generated.next_questions.length).toBeGreaterThan(0)
+    expect(generated.next_questions[0].source).toBe('clinician_request')
   })
 })

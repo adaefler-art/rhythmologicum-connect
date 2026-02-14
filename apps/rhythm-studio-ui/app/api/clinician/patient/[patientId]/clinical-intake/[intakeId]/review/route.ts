@@ -4,6 +4,9 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { validateClinicalIntakeReviewInput } from '@/lib/clinicalIntake/reviewWorkflow'
+import { mergeClinicianRequestedItemsIntoFollowup } from '@/lib/cre/followup/generator'
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
+import type { Json } from '@/lib/types/supabase'
 
 type RouteContext = {
   params: Promise<{ patientId: string; intakeId: string }>
@@ -116,7 +119,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const { data: intake, error: intakeError } = (await admin
       .from('clinical_intakes' as any)
-      .select('id, user_id, patient_id')
+      .select('id, user_id, patient_id, structured_data')
       .eq('id', intakeId)
       .maybeSingle()) as { data: any; error: any }
 
@@ -166,6 +169,40 @@ export async function POST(request: Request, context: RouteContext) {
         },
         { status: 400 },
       )
+    }
+
+    if (validation.data.status === 'needs_more_info' && validation.data.requested_items?.length) {
+      const structuredData =
+        intake.structured_data && typeof intake.structured_data === 'object'
+          ? (intake.structured_data as StructuredIntakeData)
+          : ({ status: 'draft' } as StructuredIntakeData)
+
+      const mergedStructuredData = mergeClinicianRequestedItemsIntoFollowup({
+        structuredData,
+        requestedItems: validation.data.requested_items,
+      })
+
+      const { error: intakeUpdateError } = (await admin
+        .from('clinical_intakes' as any)
+        .update({
+          structured_data: mergedStructuredData as unknown as Json,
+          updated_by: user.id,
+        })
+        .eq('id', intakeId)) as { error: any }
+
+      if (intakeUpdateError) {
+        console.error('[clinical-intake/review] Failed to update intake followup:', intakeUpdateError)
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: ErrorCode.DATABASE_ERROR,
+              message: 'Failed to persist clinician followup requests',
+            },
+          },
+          { status: 500 },
+        )
+      }
     }
 
     const { error: clearCurrentError } = (await admin

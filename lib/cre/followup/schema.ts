@@ -5,11 +5,16 @@ export const clinicalFollowupQuestionSchema = z.object({
   question: z.string().min(1),
   why: z.string().min(1),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  source: z.union([z.literal('reasoning'), z.literal('gap_rule')]),
+  source: z.union([
+    z.literal('reasoning'),
+    z.literal('gap_rule'),
+    z.literal('clinician_request'),
+  ]),
 })
 
 export const clinicalFollowupSchema = z.object({
   next_questions: z.array(clinicalFollowupQuestionSchema),
+  queue: z.array(clinicalFollowupQuestionSchema).optional(),
   asked_question_ids: z.array(z.string().min(1)),
   last_generated_at: z.string().min(1),
 })

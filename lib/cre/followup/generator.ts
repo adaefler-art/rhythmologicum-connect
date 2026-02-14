@@ -7,6 +7,13 @@ import type {
 type FollowupCandidate = ClinicalFollowupQuestion
 
 const MAX_NEXT_QUESTIONS = 3
+const CLINICIAN_REQUEST_WHY = 'Rueckfrage aus aerztlicher Pruefung'
+
+const SOURCE_PRIORITY: Record<ClinicalFollowupQuestion['source'], number> = {
+  clinician_request: 0,
+  reasoning: 1,
+  gap_rule: 2,
+}
 
 const normalizeText = (value: string) =>
   value
@@ -23,6 +30,7 @@ const buildReasoningQuestionId = (conditionLabel: string, text: string) => {
 }
 
 const buildGapRuleQuestionId = (ruleId: string) => `gap:${ruleId}`
+const buildClinicianRequestQuestionId = (text: string) => `clinician-request:${normalizeText(text)}`
 
 const getString = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 
@@ -122,12 +130,78 @@ const dedupeCandidates = (candidates: FollowupCandidate[]) => {
 
   for (const candidate of candidates) {
     if (!candidate.question.trim()) continue
-    if (!byId.has(candidate.id)) {
+    const existing = byId.get(candidate.id)
+    if (!existing) {
+      byId.set(candidate.id, candidate)
+      continue
+    }
+
+    if (SOURCE_PRIORITY[candidate.source] < SOURCE_PRIORITY[existing.source]) {
       byId.set(candidate.id, candidate)
     }
   }
 
   return Array.from(byId.values())
+}
+
+const mapRequestedItemsToClinicianQuestions = (requestedItems: string[]): FollowupCandidate[] => {
+  const seen = new Set<string>()
+
+  return requestedItems
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const question = item.endsWith('?') ? item : `${item}?`
+      const id = buildClinicianRequestQuestionId(item)
+
+      return {
+        id,
+        question,
+        why: CLINICIAN_REQUEST_WHY,
+        priority: 1 as const,
+        source: 'clinician_request' as const,
+      }
+    })
+    .filter((candidate) => {
+      if (seen.has(candidate.id)) return false
+      seen.add(candidate.id)
+      return true
+    })
+}
+
+export const mergeClinicianRequestedItemsIntoFollowup = (params: {
+  structuredData: StructuredIntakeData
+  requestedItems: string[]
+  now?: Date
+}): StructuredIntakeData => {
+  const now = params.now ?? new Date()
+  const existingFollowup = params.structuredData.followup
+  const askedIds = new Set(existingFollowup?.asked_question_ids ?? [])
+
+  const existingCandidates = [
+    ...(existingFollowup?.next_questions ?? []),
+    ...(existingFollowup?.queue ?? []),
+  ]
+
+  const clinicianCandidates = mapRequestedItemsToClinicianQuestions(params.requestedItems)
+
+  const merged = dedupeCandidates([...clinicianCandidates, ...existingCandidates])
+    .filter((candidate) => !askedIds.has(candidate.id))
+    .sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority
+      if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
+      return a.id.localeCompare(b.id)
+    })
+
+  return {
+    ...params.structuredData,
+    followup: {
+      next_questions: merged.slice(0, MAX_NEXT_QUESTIONS),
+      queue: merged.slice(MAX_NEXT_QUESTIONS),
+      asked_question_ids: Array.from(askedIds),
+      last_generated_at: now.toISOString(),
+    },
+  }
 }
 
 export const generateFollowupQuestions = (params: {
@@ -139,20 +213,29 @@ export const generateFollowupQuestions = (params: {
 
   const existingFollowup = structuredData.followup
   const askedIds = new Set(existingFollowup?.asked_question_ids ?? [])
+  const queuedClinicianCandidates = [
+    ...(existingFollowup?.next_questions ?? []),
+    ...(existingFollowup?.queue ?? []),
+  ].filter((candidate) => candidate.source === 'clinician_request')
 
   const reasoningCandidates = buildReasoningCandidates(structuredData)
   const gapRuleCandidates = buildGapRuleCandidates(structuredData)
 
-  const allCandidates = dedupeCandidates([...reasoningCandidates, ...gapRuleCandidates])
+  const allCandidates = dedupeCandidates([
+    ...queuedClinicianCandidates,
+    ...reasoningCandidates,
+    ...gapRuleCandidates,
+  ])
     .filter((candidate) => !askedIds.has(candidate.id))
     .sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority
-      if (a.source !== b.source) return a.source === 'reasoning' ? -1 : 1
+      if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
       return a.id.localeCompare(b.id)
     })
 
   return {
     next_questions: allCandidates.slice(0, MAX_NEXT_QUESTIONS),
+    queue: allCandidates.slice(MAX_NEXT_QUESTIONS),
     asked_question_ids: Array.from(askedIds),
     last_generated_at: now.toISOString(),
   }
@@ -174,6 +257,7 @@ export const appendAskedQuestionIds = (params: {
     ...params.structuredData,
     followup: {
       next_questions: params.structuredData.followup?.next_questions ?? [],
+      queue: params.structuredData.followup?.queue ?? [],
       asked_question_ids: Array.from(existingAsked),
       last_generated_at: params.structuredData.followup?.last_generated_at ?? new Date().toISOString(),
     },

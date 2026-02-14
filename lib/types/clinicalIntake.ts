@@ -136,11 +136,12 @@ export interface ClinicalFollowupQuestion {
   question: string
   why: string
   priority: 1 | 2 | 3
-  source: 'reasoning' | 'gap_rule'
+  source: 'reasoning' | 'gap_rule' | 'clinician_request'
 }
 
 export interface ClinicalFollowup {
   next_questions: ClinicalFollowupQuestion[]
+  queue?: ClinicalFollowupQuestion[]
   asked_question_ids: string[]
   last_generated_at: string
 }
