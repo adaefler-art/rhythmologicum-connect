@@ -37,7 +37,9 @@ export async function POST(
 
     const { versionId } = await params
     const admin = createAdminSupabaseClient()
-    const fromUnknown = admin.from as unknown as (relation: string) => UntypedQueryBuilder
+    const fromUnknown = admin.from.bind(admin) as unknown as (
+      relation: string,
+    ) => UntypedQueryBuilder
 
     const { data: version, error: versionError } = (await fromUnknown(
       'clinical_reasoning_configs',
