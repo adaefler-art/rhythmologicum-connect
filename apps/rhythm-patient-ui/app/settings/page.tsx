@@ -165,11 +165,11 @@ export default function SettingsPage() {
         )}
 
         {!loading && (
-          <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+          <section className="w-full space-y-4 rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-lg font-semibold text-slate-900">Profil & Konto</h2>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1 text-sm">
+              <label className="block space-y-1 text-sm">
                 <span className="text-slate-700">Vorname</span>
                 <input
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 />
               </label>
 
-              <label className="space-y-1 text-sm">
+              <label className="block space-y-1 text-sm">
                 <span className="text-slate-700">Nachname</span>
                 <input
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
@@ -188,7 +188,7 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <label className="space-y-1 text-sm">
+            <label className="block space-y-1 text-sm">
               <span className="text-slate-700">Geburtsdatum (optional)</span>
               <input
                 type="date"
@@ -199,7 +199,7 @@ export default function SettingsPage() {
             </label>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1 text-sm">
+              <label className="block space-y-1 text-sm">
                 <span className="text-slate-700">E-Mail</span>
                 <input
                   type="email"
@@ -209,7 +209,7 @@ export default function SettingsPage() {
                 />
               </label>
 
-              <label className="space-y-1 text-sm">
+              <label className="block space-y-1 text-sm">
                 <span className="text-slate-700">Telefon</span>
                 <input
                   className="w-full rounded-md border border-slate-300 px-3 py-2"
@@ -219,7 +219,7 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <label className="space-y-1 text-sm">
+            <label className="block space-y-1 text-sm">
               <span className="text-slate-700">Bevorzugte Sprache</span>
               <select
                 className="w-full rounded-md border border-slate-300 px-3 py-2"
@@ -253,7 +253,7 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <label className="space-y-1 text-sm">
+            <label className="block space-y-1 text-sm">
               <span className="text-slate-700">Kommunikationspräferenz</span>
               <select
                 className="w-full rounded-md border border-slate-300 px-3 py-2"
