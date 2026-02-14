@@ -17,6 +17,10 @@ type UntypedQueryBuilder = {
   single: () => Promise<unknown>
 }
 
+type UntypedAdminClient = {
+  from: (relation: string) => UntypedQueryBuilder
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ versionId: string }> },
@@ -33,14 +37,10 @@ export async function PATCH(
     }
 
     const { versionId } = await params
-    const admin = createAdminSupabaseClient()
-    const fromUnknown = admin.from.bind(admin) as unknown as (
-      relation: string,
-    ) => UntypedQueryBuilder
+    const admin = createAdminSupabaseClient() as unknown as UntypedAdminClient
 
-    const { data: version, error: versionError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: version, error: versionError } = (await admin
+      .from('clinical_reasoning_configs')
       .select('id, status')
       .eq('id', versionId)
       .maybeSingle()) as unknown as {
@@ -80,9 +80,8 @@ export async function PATCH(
       return validationErrorResponse('No changes provided.')
     }
 
-    const { data: updated, error: updateError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: updated, error: updateError } = (await admin
+      .from('clinical_reasoning_configs')
       .update(updatePayload)
       .eq('id', versionId)
       .select('id, version, status, config_json, change_reason, created_by, created_at')

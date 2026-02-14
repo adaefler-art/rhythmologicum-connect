@@ -19,6 +19,10 @@ type UntypedQueryBuilder = {
   single: () => Promise<unknown>
 }
 
+type UntypedAdminClient = {
+  from: (relation: string) => UntypedQueryBuilder
+}
+
 type SupabaseErrorLike = {
   message?: string
   details?: string | null
@@ -115,17 +119,15 @@ export async function POST(request: Request) {
       return misconfiguredError('SUPABASE_SERVICE_ROLE_KEY is not configured on the server.')
     }
 
-    const admin = createAdminSupabaseClient()
-    const fromUnknown = admin.from as unknown as (relation: string) => UntypedQueryBuilder
+    const admin = createAdminSupabaseClient() as unknown as UntypedAdminClient
 
     const createdBy = (user.id || user.email || '').trim()
     if (!createdBy) {
       return validationError('Unable to resolve clinician identity for created_by.')
     }
 
-    const { data: activeVersion, error: activeVersionError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: activeVersion, error: activeVersionError } = (await admin
+      .from('clinical_reasoning_configs')
       .select('version, config_json')
       .eq('status', 'active')
       .order('version', { ascending: false })
@@ -149,9 +151,8 @@ export async function POST(request: Request) {
 
     const nextVersion = (activeVersion?.version ?? 0) + 1
 
-    const { data: inserted, error: insertError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: inserted, error: insertError } = (await admin
+      .from('clinical_reasoning_configs')
       .insert({
         version: nextVersion,
         status: 'draft',

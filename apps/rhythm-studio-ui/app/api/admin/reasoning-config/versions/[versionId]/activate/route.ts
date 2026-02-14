@@ -20,6 +20,10 @@ type UntypedQueryBuilder = {
   insert: (values: unknown) => Promise<unknown>
 }
 
+type UntypedAdminClient = {
+  from: (relation: string) => UntypedQueryBuilder
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ versionId: string }> },
@@ -36,14 +40,10 @@ export async function POST(
     }
 
     const { versionId } = await params
-    const admin = createAdminSupabaseClient()
-    const fromUnknown = admin.from.bind(admin) as unknown as (
-      relation: string,
-    ) => UntypedQueryBuilder
+    const admin = createAdminSupabaseClient() as unknown as UntypedAdminClient
 
-    const { data: version, error: versionError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: version, error: versionError } = (await admin
+      .from('clinical_reasoning_configs')
       .select('id, version, status, config_json')
       .eq('id', versionId)
       .maybeSingle()) as unknown as {
@@ -77,9 +77,8 @@ export async function POST(
       })
     }
 
-    const { data: activeVersions, error: activeError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: activeVersions, error: activeError } = (await admin
+      .from('clinical_reasoning_configs')
       .select('id')
       .eq('status', 'active')) as unknown as {
       data: Array<{ id: string }> | null
@@ -93,7 +92,8 @@ export async function POST(
     const activeIds = ((activeVersions ?? []) as Array<{ id: string }>).map((entry) => entry.id)
 
     if (activeIds.length > 0) {
-      const { error: archiveError } = (await fromUnknown('clinical_reasoning_configs')
+      const { error: archiveError } = (await admin
+        .from('clinical_reasoning_configs')
         .update({ status: 'archived' })
         .in('id', activeIds)) as { error: unknown }
 
@@ -102,9 +102,8 @@ export async function POST(
       }
     }
 
-    const { data: activated, error: activateError } = (await fromUnknown(
-      'clinical_reasoning_configs',
-    )
+    const { data: activated, error: activateError } = (await admin
+      .from('clinical_reasoning_configs')
       .update({ status: 'active', change_reason: body.change_reason.trim() })
       .eq('id', versionId)
       .select('id, version, status, config_json, change_reason, created_by, created_at')
@@ -114,7 +113,7 @@ export async function POST(
       return databaseErrorResponse('Failed to activate reasoning config version.')
     }
 
-    await fromUnknown('operational_settings_audit').insert({
+    await admin.from('operational_settings_audit').insert({
       table_name: 'clinical_reasoning_configs',
       record_id: versionId,
       operation: 'UPDATE',
