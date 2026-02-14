@@ -80,6 +80,14 @@ const nextConfig: NextConfig = {
         destination: '/api/admin/navigation',
       },
       {
+        source: '/api/admin/reasoning-config/:path*',
+        destination: '/api/admin/reasoning-config/:path*',
+      },
+      {
+        source: '/api/admin/reasoning-config',
+        destination: '/api/admin/reasoning-config',
+      },
+      {
         source: '/api/admin/safety-rules/:path*',
         destination: '/api/admin/safety-rules/:path*',
       },
