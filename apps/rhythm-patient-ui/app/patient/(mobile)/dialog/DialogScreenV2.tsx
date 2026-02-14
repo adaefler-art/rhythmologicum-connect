@@ -46,6 +46,9 @@ interface StubbedMessage {
 type IntakeEntry = {
   id: string
   content: Record<string, unknown>
+  review_state?: {
+    status?: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+  } | null
   created_at: string
   updated_at?: string | null
   version_number?: number | null
@@ -252,6 +255,7 @@ export function DialogScreenV2() {
   const [latestClinicalIntakeId, setLatestClinicalIntakeId] = useState<string | null>(null)
   const [activeFollowupQuestion, setActiveFollowupQuestion] = useState<FollowupQuestion | null>(null)
   const [followupAnsweredCount, setFollowupAnsweredCount] = useState(0)
+  const [hasOpenReviewRequest, setHasOpenReviewRequest] = useState(false)
   const [intakePersistence, setIntakePersistence] = useState<IntakePersistenceStatus>({
     runId: null,
     createAttempted: false,
@@ -359,6 +363,7 @@ export function DialogScreenV2() {
       if (!isMounted) return
 
       setLatestClinicalIntakeId(latestIntake?.id ?? null)
+      setHasOpenReviewRequest(latestIntake?.review_state?.status === 'needs_more_info')
 
       const safety = latestIntake ? getSafetyFromContent(latestIntake.content) : null
       setSafetyStatus(safety)
@@ -566,6 +571,9 @@ export function DialogScreenV2() {
             uuid?: string
             structured_data?: Record<string, unknown>
             clinical_summary?: string | null
+            review_state?: {
+              status?: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+            } | null
             updated_at?: string | null
             version_number?: number | null
             created_at?: string
@@ -583,6 +591,7 @@ export function DialogScreenV2() {
       return {
         id: intake.id || intake.uuid || 'unknown',
         content,
+        review_state: intake.review_state ?? null,
         created_at: intake.created_at || intake.updated_at || new Date().toISOString(),
         updated_at: intake.updated_at ?? null,
         version_number: intake.version_number ?? null,
@@ -1130,6 +1139,7 @@ export function DialogScreenV2() {
           if (regenerateResponse.ok && regeneratePayload?.success) {
             const refreshedIntake = await fetchLatestIntake()
             setLatestClinicalIntakeId(refreshedIntake?.id ?? null)
+            setHasOpenReviewRequest(refreshedIntake?.review_state?.status === 'needs_more_info')
             setSafetyStatus(refreshedIntake ? getSafetyFromContent(refreshedIntake.content) : null)
 
             if (refreshedIntake?.id) {
@@ -1229,6 +1239,15 @@ export function DialogScreenV2() {
               <p className="mt-1">
                 {safetyBannerText ||
                   'Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer medizinischen Fachperson besprochen wird. Bitte nutzen Sie jetzt einen direkten Kontaktweg (z.B. telefonische Beratung oder Notfallnummer). Der Chat ist vorerst pausiert.'}
+              </p>
+            </div>
+          )}
+
+          {hasOpenReviewRequest && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+              <p className="font-semibold">Aerztliche Rueckfrage offen</p>
+              <p className="mt-1">
+                Zu Ihrem letzten Intake wurden zusaetzliche Informationen angefragt.
               </p>
             </div>
           )}

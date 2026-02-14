@@ -13,6 +13,13 @@ type IntakeRecord = {
   updated_at: string
 }
 
+type IntakeReviewState = {
+  status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+  review_notes: string | null
+  requested_items: string[] | null
+  updated_at: string
+}
+
 const mapIntake = (intake: IntakeRecord | null) =>
   intake
     ? {
@@ -23,6 +30,7 @@ const mapIntake = (intake: IntakeRecord | null) =>
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
         trigger_reason: intake.trigger_reason,
+        review_state: null as IntakeReviewState | null,
         created_at: intake.created_at,
         updated_at: intake.updated_at,
       }
@@ -69,9 +77,42 @@ export async function GET() {
       )
     }
 
+    const intake = (data ?? null) as IntakeRecord | null
+    const mapped = mapIntake(intake)
+
+    if (intake?.id && mapped) {
+      const { data: reviewData, error: reviewError } = (await supabase
+        .from('clinical_intake_reviews' as any)
+        .select('status, review_notes, requested_items, updated_at')
+        .eq('intake_id', intake.id)
+        .eq('is_current', true)
+        .maybeSingle()) as {
+        data: {
+          status: IntakeReviewState['status']
+          review_notes: string | null
+          requested_items: string[] | null
+          updated_at: string
+        } | null
+        error: { message: string } | null
+      }
+
+      if (reviewError) {
+        console.error('[patient/intake/latest] Review query error', reviewError)
+      } else if (reviewData) {
+        mapped.review_state = {
+          status: reviewData.status,
+          review_notes: reviewData.review_notes,
+          requested_items: Array.isArray(reviewData.requested_items)
+            ? reviewData.requested_items
+            : null,
+          updated_at: reviewData.updated_at,
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      intake: mapIntake((data ?? null) as IntakeRecord | null),
+      intake: mapped,
     })
   } catch (err) {
     console.error('[patient/intake/latest] Unexpected error', err)

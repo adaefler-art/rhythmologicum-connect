@@ -29,6 +29,8 @@ import {
   getClinicalIntakeLatest,
   getClinicalIntakeHistory,
   updateClinicalIntakeOverride,
+  getClinicalIntakeReviewLatest,
+  updateClinicalIntakeReview,
 } from '@/lib/fetchClinician'
 import type { ConsultNote, ConsultNoteContent, ConsultNoteVersion } from '@/lib/types/consultNote'
 import type {
@@ -64,6 +66,18 @@ export interface ClinicalIntakeRecord {
   structured_data: Record<string, unknown>
   trigger_reason: string | null
   last_updated_from_messages: string[] | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ClinicalIntakeReviewRecord {
+  id: string
+  intake_id: string
+  status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+  review_notes: string | null
+  requested_items: string[] | null
+  reviewed_by: string
+  is_current: boolean
   created_at: string
   updated_at: string
 }
@@ -217,6 +231,16 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [overrideSaving, setOverrideSaving] = useState(false)
   const [overrideError, setOverrideError] = useState<string | null>(null)
   const [isOverrideEditing, setIsOverrideEditing] = useState(false)
+  const [reviewState, setReviewState] = useState<ClinicalIntakeReviewRecord | null>(null)
+  const [reviewAudit, setReviewAudit] = useState<ClinicalIntakeReviewRecord[]>([])
+  const [reviewStatusDraft, setReviewStatusDraft] = useState<
+    'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+  >('in_review')
+  const [reviewNotes, setReviewNotes] = useState('')
+  const [requestedItemsText, setRequestedItemsText] = useState('')
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewSaving, setReviewSaving] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
 
   const [consultNotes, setConsultNotes] = useState<ConsultNote[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -249,10 +273,49 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
       const intake = (data?.intake || null) as ClinicalIntakeRecord | null
       setLatestClinicalIntake(intake)
+
+      if (!intake?.id) {
+        setReviewState(null)
+        setReviewAudit([])
+      }
     } catch (err) {
       console.error('[AnamnesisSection] Intake fetch error:', err)
       setIntakeError('Fehler beim Laden des Intakes')
       setLatestClinicalIntake(null)
+    }
+  }, [patientId])
+
+  const loadClinicalIntakeReview = useCallback(async (intakeId: string | null) => {
+    if (!intakeId) {
+      setReviewState(null)
+      setReviewAudit([])
+      return
+    }
+
+    setReviewLoading(true)
+    setReviewError(null)
+
+    try {
+      const { data, error } = await getClinicalIntakeReviewLatest(patientId, intakeId)
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Laden des Reviews')
+      }
+
+      const currentReview = (data?.review_state || null) as ClinicalIntakeReviewRecord | null
+      const audit = (data?.audit || []) as ClinicalIntakeReviewRecord[]
+
+      setReviewState(currentReview)
+      setReviewAudit(audit)
+      setReviewStatusDraft(currentReview?.status ?? 'in_review')
+      setReviewNotes(currentReview?.review_notes ?? '')
+      setRequestedItemsText((currentReview?.requested_items || []).join('\n'))
+    } catch (err) {
+      console.error('[AnamnesisSection] Review fetch error:', err)
+      setReviewError(err instanceof Error ? err.message : 'Fehler beim Laden des Reviews')
+      setReviewState(null)
+      setReviewAudit([])
+    } finally {
+      setReviewLoading(false)
     }
   }, [patientId])
 
@@ -333,6 +396,10 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setOverrideReason(override?.reason ?? '')
     setIsOverrideEditing(Boolean(!override))
   }, [latestClinicalIntake])
+
+  useEffect(() => {
+    void loadClinicalIntakeReview(latestClinicalIntake?.id ?? null)
+  }, [latestClinicalIntake?.id, loadClinicalIntakeReview])
 
   const buildConsultNoteContent = (noteText: string): ConsultNoteContent => {
     const nowIso = new Date().toISOString()
@@ -854,6 +921,53 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const getReviewStatusBadge = (status: ClinicalIntakeReviewRecord['status']) => {
+    if (status === 'approved') return { label: 'Approved', variant: 'success' as const }
+    if (status === 'rejected') return { label: 'Rejected', variant: 'danger' as const }
+    if (status === 'needs_more_info') return { label: 'Needs more info', variant: 'warning' as const }
+    if (status === 'in_review') return { label: 'In review', variant: 'secondary' as const }
+    return { label: 'Draft', variant: 'secondary' as const }
+  }
+
+  const saveReviewState = async (
+    status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected',
+  ) => {
+    if (!latestIntake?.id) return
+
+    const requestedItems = requestedItemsText
+      .split(/\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    setReviewSaving(true)
+    setReviewError(null)
+
+    try {
+      const { data, error } = await updateClinicalIntakeReview(patientId, latestIntake.id, {
+        status,
+        review_notes: reviewNotes,
+        requested_items: requestedItems,
+      })
+
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Speichern des Reviews')
+      }
+
+      const currentReview = (data?.review_state || null) as ClinicalIntakeReviewRecord | null
+      const audit = (data?.audit || []) as ClinicalIntakeReviewRecord[]
+      setReviewState(currentReview)
+      setReviewAudit(audit)
+      setReviewStatusDraft(currentReview?.status ?? status)
+      setReviewNotes(currentReview?.review_notes ?? reviewNotes)
+      setRequestedItemsText((currentReview?.requested_items || requestedItems).join('\n'))
+    } catch (err) {
+      console.error('[AnamnesisSection] Review save error:', err)
+      setReviewError(err instanceof Error ? err.message : 'Fehler beim Speichern des Reviews')
+    } finally {
+      setReviewSaving(false)
+    }
+  }
+
   return (
     <>
       <Card padding="lg" shadow="md" className="mb-6">
@@ -986,6 +1100,97 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 )}
               </div>
             )}
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-semibold text-slate-600 mb-2">Review</p>
+              {reviewLoading ? (
+                <p className="text-xs text-slate-500">Review wird geladen…</p>
+              ) : (
+                <>
+                  {reviewState ? (
+                    <div className="mb-2 flex items-center gap-2">
+                      <Badge variant={getReviewStatusBadge(reviewState.status).variant} size="sm">
+                        {getReviewStatusBadge(reviewState.status).label}
+                      </Badge>
+                      <span className="text-xs text-slate-500">
+                        Letztes Update: {formatDate(reviewState.updated_at)}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="mb-2 text-xs text-slate-500">Noch kein Review gesetzt.</p>
+                  )}
+
+                  <FormField label="Review notes">
+                    <Textarea
+                      value={reviewNotes}
+                      onChange={(event) => setReviewNotes(event.target.value)}
+                      rows={3}
+                      placeholder="Review notes..."
+                    />
+                  </FormField>
+
+                  <FormField label="Requested items (bei Request more info)">
+                    <Textarea
+                      value={requestedItemsText}
+                      onChange={(event) => setRequestedItemsText(event.target.value)}
+                      rows={3}
+                      placeholder="Ein fehlendes Item pro Zeile"
+                    />
+                  </FormField>
+
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={reviewSaving}
+                      onClick={() => void saveReviewState('in_review')}
+                    >
+                      In Review
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={reviewSaving}
+                      onClick={() => void saveReviewState('approved')}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={reviewSaving}
+                      onClick={() => void saveReviewState('needs_more_info')}
+                    >
+                      Request more info
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      disabled={reviewSaving}
+                      onClick={() => void saveReviewState('rejected')}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+
+                  {reviewError && <Alert variant="error">{reviewError}</Alert>}
+
+                  {reviewAudit.length > 0 && (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs text-slate-500">
+                        Audit ({reviewAudit.length})
+                      </summary>
+                      <div className="mt-2 space-y-1">
+                        {reviewAudit.map((entry) => (
+                          <div key={entry.id} className="text-xs text-slate-600">
+                            {formatDate(entry.created_at)} · {entry.status} · {entry.reviewed_by.slice(0, 8)}…
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </>
+              )}
+            </div>
             <div className="rounded-lg border border-slate-200 p-3">
               <p className="text-xs font-semibold text-slate-600 mb-2">Override</p>
               {overrideInfo && (

@@ -511,6 +511,39 @@ export const updateClinicalIntakeOverride = (
     patientId,
   })
 
+export const getClinicalIntakeReviewLatest = (patientId: string, intakeId: string) =>
+  requestClinicianJson<{
+    success?: boolean
+    review_state?: Record<string, unknown> | null
+    audit?: Array<Record<string, unknown>>
+  }>({
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/review/latest?intakeId=${encodeURIComponent(intakeId)}`,
+    method: 'GET',
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
+export const updateClinicalIntakeReview = (
+  patientId: string,
+  intakeId: string,
+  payload: {
+    status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
+    review_notes?: string
+    requested_items?: string[]
+  },
+) =>
+  requestClinicianJson<{
+    success?: boolean
+    review_state?: Record<string, unknown> | null
+    audit?: Array<Record<string, unknown>>
+  }>({
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/${intakeId}/review`,
+    method: 'POST',
+    body: payload,
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
 export const postAnamnesis = (patientId: string, body: Record<string, unknown>) =>
   requestClinicianJson<{ success?: boolean }>({
     endpoint: `/api/clinician/patient/${patientId}/anamnesis`,
