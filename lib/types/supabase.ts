@@ -468,6 +468,50 @@ export type Database = {
           },
         ]
       }
+      clinical_intake_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          intake_id: string
+          is_current: boolean
+          requested_items: Json | null
+          review_notes: string | null
+          reviewed_by: string
+          status: Database["public"]["Enums"]["clinical_intake_review_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intake_id: string
+          is_current?: boolean
+          requested_items?: Json | null
+          review_notes?: string | null
+          reviewed_by: string
+          status?: Database["public"]["Enums"]["clinical_intake_review_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intake_id?: string
+          is_current?: boolean
+          requested_items?: Json | null
+          review_notes?: string | null
+          reviewed_by?: string
+          status?: Database["public"]["Enums"]["clinical_intake_review_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_intake_reviews_intake_id_fkey"
+            columns: ["intake_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_intakes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_intakes: {
         Row: {
           chat_session_id: string | null
@@ -3980,6 +4024,12 @@ export type Database = {
       assessment_state: "draft" | "in_progress" | "completed" | "archived"
       assessment_status: "in_progress" | "completed"
       audience_type: "patient" | "clinician"
+      clinical_intake_review_status:
+        | "draft"
+        | "in_review"
+        | "approved"
+        | "needs_more_info"
+        | "rejected"
       clinical_reasoning_config_status: "draft" | "active" | "archived"
       consultation_type: "first" | "follow_up"
       diagnosis_run_status: "queued" | "running" | "completed" | "failed"
@@ -4199,6 +4249,13 @@ export const Constants = {
       assessment_state: ["draft", "in_progress", "completed", "archived"],
       assessment_status: ["in_progress", "completed"],
       audience_type: ["patient", "clinician"],
+      clinical_intake_review_status: [
+        "draft",
+        "in_review",
+        "approved",
+        "needs_more_info",
+        "rejected",
+      ],
       clinical_reasoning_config_status: ["draft", "active", "archived"],
       consultation_type: ["first", "follow_up"],
       diagnosis_run_status: ["queued", "running", "completed", "failed"],
