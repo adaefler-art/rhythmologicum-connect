@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card, Button } from '@/lib/ui/mobile-v2'
 import { MessageCircle, Shield, Clock, Heart, ChevronRight } from '@/lib/ui/mobile-v2/icons'
+import { DashboardCards } from '@/components/patient/DashboardCards'
 
 export default function PatientEntryScreen() {
   const router = useRouter()
@@ -80,6 +81,11 @@ export default function PatientEntryScreen() {
           <p className="text-xs text-slate-500 text-center">
             Sie koennen jederzeit pausieren oder das Gespraech beenden
           </p>
+
+          <section className="space-y-3 pt-2">
+            <h2 className="text-lg font-semibold text-slate-900">Ihr Status</h2>
+            <DashboardCards />
+          </section>
         </div>
       </div>
     </div>

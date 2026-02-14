@@ -35,9 +35,9 @@ export const PATIENT_MOBILE_MENU_ITEMS: PatientMobileMenuItem[] = [
     enabled: true,
   },
   {
-    id: 'patient-record',
-    label: 'Patient Record',
-    href: CANONICAL_ROUTES.ANAMNESE_TIMELINE,
+    id: 'profile',
+    label: 'Mein Profil',
+    href: CANONICAL_ROUTES.PROFILE,
     order: 2,
     enabled: true,
   },
