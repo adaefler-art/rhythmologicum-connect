@@ -4296,18 +4296,19 @@ CREATE TABLE IF NOT EXISTS "public"."patient_profiles" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "full_name" "text",
     "birth_year" integer,
-  "birth_date" date,
     "sex" "text",
     "onboarding_status" "public"."onboarding_status_enum" DEFAULT 'not_started'::"public"."onboarding_status_enum" NOT NULL,
     "first_name" "text",
     "last_name" "text",
-  "preferred_name" "text",
-  "contact_email" "text",
-  "contact_phone" "text",
-  "preferred_language" "text",
-  "consent_data_processing" boolean DEFAULT false NOT NULL,
-  "consent_contact_for_followup" boolean DEFAULT false NOT NULL,
-  "communication_preference" "text"
+    "preferred_name" "text",
+    "birth_date" "date",
+    "contact_email" "text",
+    "contact_phone" "text",
+    "preferred_language" "text",
+    "consent_data_processing" boolean DEFAULT false NOT NULL,
+    "consent_contact_for_followup" boolean DEFAULT false NOT NULL,
+    "communication_preference" "text",
+    CONSTRAINT "patient_profiles_communication_preference_check" CHECK ((("communication_preference" IS NULL) OR ("communication_preference" = ANY (ARRAY['email'::"text", 'sms'::"text"]))))
 );
 
 
@@ -6106,11 +6107,6 @@ ALTER TABLE ONLY "public"."triage_sessions"
 
 ALTER TABLE ONLY "public"."patient_profiles"
     ADD CONSTRAINT "unique_user_profile" UNIQUE ("user_id");
-
-
-
-ALTER TABLE ONLY "public"."patient_profiles"
-  ADD CONSTRAINT "patient_profiles_communication_preference_check" CHECK ((("communication_preference" IS NULL) OR ("communication_preference" = ANY (ARRAY['email'::"text", 'sms'::"text"]))));
 
 
 
