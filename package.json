@@ -66,6 +66,7 @@
     "verify:narrow-box": "node scripts/guard-no-narrow-screens.mjs",
     "verify:legacy": "node scripts/verify-legacy-ghosting.mjs",
     "verify:diagnosis:smoke": "node scripts/verify/verify-diagnosis-smoke.mjs",
+    "cre:coherence": "tsx scripts/cre/run-coherence-battery.ts",
     "check:assistant-identity": "node scripts/ci/check-assistant-config.mjs",
     "db:typegen": "pwsh -File scripts/db/typegen.ps1 -Generate",
     "db:typegen:verify": "pwsh -File scripts/db/typegen.ps1 -Verify",
@@ -133,6 +134,7 @@
     "supabase": "2.63.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3",
     "undici": "^7.16.0"
   },

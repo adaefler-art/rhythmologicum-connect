@@ -1,0 +1,38 @@
+{
+  "id": "S01",
+  "title": "Anxiety/Panic with palpitations (no A)",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe seit gestern Herzrasen bei Panik und Stress." },
+    { "id": "m2", "content": "Kein Brustschmerz, keine Ohnmacht, keine Atemnot." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Herzrasen bei Angst",
+    "history_of_present_illness": {
+      "onset": "gestern",
+      "duration": "5 Minuten",
+      "course": "episodisch",
+      "associated_symptoms": ["Nervosität"]
+    },
+    "relevant_negatives": ["Kein Brustschmerz", "Keine Ohnmacht"],
+    "psychosocial_factors": ["Stress"],
+    "medication": ["keine"]
+  },
+  "expected": {
+    "safety": {
+      "effective_level": null,
+      "effective_action": "none",
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "reasoning": {
+      "risk_level": "low"
+    },
+    "followup": {
+      "min_next_questions": 1
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -49,7 +49,12 @@ const gatherTextContext = (structuredData: StructuredIntakeData) => {
 
 const getVerifiedRedFlagCount = (structuredData: StructuredIntakeData) => {
   const triggered = structuredData.safety?.triggered_rules ?? []
-  return triggered.filter((rule) => rule.verified === true).length
+  return triggered.filter((rule) => {
+    if (rule.verified !== true) return false
+
+    const severity = rule.severity ?? rule.level
+    return severity === 'A' || severity === 'B'
+  }).length
 }
 
 const estimateChronicitySignal = (structuredData: StructuredIntakeData) => {
@@ -68,6 +73,31 @@ const estimateAnxietySignal = (structuredData: StructuredIntakeData) => {
   return markers.some((marker) => hasTerm(context, marker)) ? 1 : 0
 }
 
+const getEffectiveSafetyLevel = (structuredData: StructuredIntakeData) => {
+  const safety = structuredData.safety
+  if (!safety) return null
+
+  return (
+    safety.effective_level ??
+    safety.effective_policy_result?.escalation_level ??
+    safety.policy_result?.escalation_level ??
+    safety.escalation_level ??
+    null
+  )
+}
+
+const hasHardRiskMarkers = (evidenceText: string) => {
+  const markers = [
+    'brustschmerz seit 30',
+    'ich will mich umbringen',
+    'habe einen plan',
+    'starke atemnot',
+    'cannot breathe',
+  ]
+
+  return markers.some((marker) => hasTerm(evidenceText, marker))
+}
+
 export const generateReasoningPack = (
   intake: StructuredIntakeData,
   activeReasoningConfig: ClinicalReasoningConfig,
@@ -83,8 +113,15 @@ export const generateReasoningPack = (
     anxietySignal * activeReasoningConfig.risk_weighting.anxiety_modifier
 
   const boundedRiskScore = Math.max(0, Number(rawRiskScore.toFixed(2)))
-  const riskLevel: ReasoningLikelihood =
+  let riskLevel: ReasoningLikelihood =
     boundedRiskScore >= 7 ? 'high' : boundedRiskScore >= 3 ? 'medium' : 'low'
+
+  const effectiveSafetyLevel = getEffectiveSafetyLevel(intake)
+  if (effectiveSafetyLevel === 'A') {
+    riskLevel = 'high'
+  } else if (riskLevel === 'high' && verifiedRedFlags === 0 && !hasHardRiskMarkers(evidenceText)) {
+    riskLevel = 'medium'
+  }
 
   const differentials = activeReasoningConfig.differential_templates
     .map((template) => {

@@ -95,7 +95,12 @@ export const applySafetyPolicy = (params: {
     const severity =
       rule.severity ??
       (rule.level === 'A' || rule.level === 'B' || rule.level === 'C' ? rule.level : 'B')
-    const level = override?.escalationLevel ?? policy.defaults.escalationBySeverity[severity]
+    const baseLevel = policy.defaults.escalationBySeverity[severity]
+    const overrideLevel = override?.escalationLevel
+    const level =
+      overrideLevel && getLevelRank(overrideLevel) <= getLevelRank(baseLevel)
+        ? overrideLevel
+        : baseLevel
     const action = override?.chatAction ?? policy.defaults.chatActionBySeverity[level]
 
     if (getLevelRank(level) > getLevelRank(effectiveLevel)) {
@@ -108,6 +113,13 @@ export const applySafetyPolicy = (params: {
       effectiveBanner = override?.patientBannerText ?? policy.defaults.patientBannerTextByAction[action]
     }
   })
+
+  const maxAllowedAction =
+    effectiveLevel === 'None' ? 'none' : policy.defaults.chatActionBySeverity[effectiveLevel]
+  if (getActionRank(effectiveAction) > getActionRank(maxAllowedAction)) {
+    effectiveAction = maxAllowedAction
+    effectiveBanner = policy.defaults.patientBannerTextByAction[maxAllowedAction]
+  }
 
   return {
     policy_version: policy.version,

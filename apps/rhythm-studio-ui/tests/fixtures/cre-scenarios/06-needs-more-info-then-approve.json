@@ -1,0 +1,60 @@
+{
+  "id": "S06",
+  "title": "needs_more_info -> patient answers -> re-gen -> approve",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe Schwindel und Müdigkeit." },
+    { "id": "m2", "content": "Seit wann genau weiß ich nicht." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Schwindel",
+    "history_of_present_illness": {
+      "onset": "unklar"
+    },
+    "medication": [],
+    "psychosocial_factors": []
+  },
+  "review_flow": {
+    "steps": [
+      {
+        "status": "needs_more_info",
+        "review_notes": "Bitte zeitlichen Verlauf und Medikation ergänzen.",
+        "requested_items": [
+          "Seit wann bestehen die Beschwerden genau",
+          "Bitte aktuelle Medikation ergänzen"
+        ],
+        "apply_patient_patch_after": true
+      },
+      {
+        "status": "approved",
+        "review_notes": "Ergänzungen sind vollständig und plausibel."
+      }
+    ],
+    "patient_patch": {
+      "history_of_present_illness": {
+        "onset": "seit 4 Tagen",
+        "duration": "mehrere Stunden",
+        "course": "fluktuierend"
+      },
+      "medication": ["Bisoprolol 2.5 mg"],
+      "psychosocial_factors": ["Schlafmangel"]
+    }
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "review": {
+      "transitions": ["needs_more_info", "approved"],
+      "final_status": "approved"
+    },
+    "followup": {
+      "min_next_questions": 0
+    },
+    "export": {
+      "pdf_magic": true,
+      "current_review_status": "approved"
+    }
+  }
+}

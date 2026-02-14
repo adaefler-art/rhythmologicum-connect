@@ -1,0 +1,35 @@
+{
+  "id": "S03",
+  "title": "Suicidal ideation negated (must never be A)",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe keine Suizidgedanken." },
+    { "id": "m2", "content": "Ich will mir nichts antun und habe keinen Plan." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Erschöpfung",
+    "history_of_present_illness": {
+      "onset": "seit 3 Wochen",
+      "duration": "täglich",
+      "course": "schwankend"
+    },
+    "relevant_negatives": ["Keine Suizidgedanken"],
+    "psychosocial_factors": ["Beruflicher Druck"],
+    "uncertainties": ["Belastung unklar"]
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "reasoning": {
+      "risk_level": "low"
+    },
+    "followup": {
+      "min_next_questions": 1
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

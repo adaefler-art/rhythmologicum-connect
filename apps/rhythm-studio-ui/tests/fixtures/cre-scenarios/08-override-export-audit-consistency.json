@@ -1,0 +1,39 @@
+{
+  "id": "S08",
+  "title": "Override set -> export/audit consistency",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe manchmal Herzrasen bei Belastung." },
+    { "id": "m2", "content": "Kein Brustschmerz und keine Ohnmacht." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Belastungsabhängiges Herzklopfen",
+    "history_of_present_illness": {
+      "onset": "seit 2 Wochen",
+      "duration": "5-10 Minuten",
+      "course": "intermittierend"
+    },
+    "relevant_negatives": ["Kein Brustschmerz"],
+    "medication": ["keine"]
+  },
+  "override": {
+    "override_level": "C",
+    "override_action": "require_confirm",
+    "reason": "HITL Override nach Gesamtbild",
+    "created_by": "clinician-1",
+    "created_by_email": "clinician@example.com",
+    "created_at": "2026-02-14T12:00:00.000Z"
+  },
+  "expected": {
+    "safety": {
+      "effective_level": "C",
+      "effective_action": "require_confirm"
+    },
+    "export": {
+      "pdf_magic": true,
+      "expect_policy_override": true,
+      "policy_override_level": "C",
+      "policy_override_action": "require_confirm"
+    }
+  }
+}

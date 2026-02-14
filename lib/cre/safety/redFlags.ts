@@ -243,6 +243,8 @@ const RULE_TUNING: Record<string, RuleTuning> = {
 }
 
 const normalizeText = (value: string) => value.toLowerCase().trim()
+const NEGATION_PREFIXES = ['kein', 'keine', 'keinen', 'keinem', 'keiner', 'nicht', 'no']
+
 
 const clampExcerpt = (value: string, max = 220) =>
   value.length > max ? `${value.slice(0, max).trim()}…` : value
@@ -314,6 +316,9 @@ const getStructuredFieldValue = (structuredData: StructuredIntakeData, field: st
 const matchPatterns = (value: string, patterns: readonly string[]) =>
   patterns.some((pattern) => value.includes(pattern))
 
+const hasNegationPhrase = (value: string, negationPhrases: readonly string[]) =>
+  negationPhrases.some((phrase) => value.includes(phrase))
+
 const dedupeEvidence = (items: Array<{ source: 'chat'; source_id: string; excerpt: string }>) => {
   const seen = new Set<string>()
   const result: Array<{ source: 'chat'; source_id: string; excerpt: string }> = []
@@ -332,14 +337,18 @@ const evaluateRuleTuning = (params: {
   chatMap: Map<string, string>
   tuning?: RuleTuning
   buildEvidence: (messageId: string) => { ok: boolean; excerpt?: string }
+  excludedMessageIds?: Set<string>
 }) => {
-  const { chatMap, tuning, buildEvidence } = params
+  const { chatMap, tuning, buildEvidence, excludedMessageIds } = params
   if (!tuning) {
     return { qualified: true, aLevelQualified: true, evidence: [] as Array<{ source: 'chat'; source_id: string; excerpt: string }> }
   }
 
   const matchGroup = (content: string, group: QualifierGroup) =>
-    group.patterns.every((pattern) => content.includes(pattern))
+    group.patterns.every((pattern) => {
+      if (!content.includes(pattern)) return false
+      return !NEGATION_PREFIXES.some((prefix) => content.includes(`${prefix} ${pattern}`))
+    })
 
   const collectEvidenceForGroups = (groups: QualifierGroup[] | undefined) => {
     if (!groups || groups.length === 0) return { matched: false, evidence: [] as Array<{ source: 'chat'; source_id: string; excerpt: string }> }
@@ -347,6 +356,7 @@ const evaluateRuleTuning = (params: {
     let matched = false
 
     chatMap.forEach((content, messageId) => {
+      if (excludedMessageIds?.has(messageId)) return
       const normalized = normalizeText(content)
       groups.forEach((group) => {
         if (matchGroup(normalized, group)) {
@@ -368,6 +378,7 @@ const evaluateRuleTuning = (params: {
     ? allOfGroups.every((group) => {
         let groupMatched = false
         chatMap.forEach((content, messageId) => {
+          if (excludedMessageIds?.has(messageId)) return
           const normalized = normalizeText(content)
           if (group.patterns.every((pattern) => normalized.includes(pattern))) {
             const verified = buildEvidence(messageId)
@@ -480,13 +491,23 @@ export function evaluateRedFlags(params: {
     }
   })
 
-  const buildChatEvidence = (patterns: readonly string[]) => {
+  const buildChatEvidence = (params: {
+    patterns: readonly string[]
+    negationPhrases?: readonly string[]
+  }) => {
     const evidence: Array<{ source: 'chat'; source_id: string; excerpt: string }> = []
     let explicitMatch = false
+    const excludedMessageIds = new Set<string>()
+
+    const negationPhrases = params.negationPhrases ?? []
 
     chatMap.forEach((content, messageId) => {
       const normalized = normalizeText(content)
-      if (matchPatterns(normalized, patterns)) {
+      if (negationPhrases.length > 0 && hasNegationPhrase(normalized, negationPhrases)) {
+        excludedMessageIds.add(messageId)
+        return
+      }
+      if (matchPatterns(normalized, params.patterns)) {
         const verified = verifyEvidence({ source: 'chat', source_id: messageId }, { chatMap, structuredData, intakeId })
         if (verified.ok && verified.excerpt) {
           evidence.push({ source: 'chat', source_id: messageId, excerpt: verified.excerpt })
@@ -495,7 +516,7 @@ export function evaluateRedFlags(params: {
       }
     })
 
-    return { evidence, explicitMatch }
+    return { evidence, explicitMatch, excludedMessageIds }
   }
 
   const buildChatEvidenceForText = (texts: string[]) => {
@@ -526,14 +547,22 @@ export function evaluateRedFlags(params: {
     const patterns = override?.logic?.patterns?.length
       ? override.logic.patterns
       : (RED_FLAG_PATTERNS[flag] ?? [])
+    const negationPhrases = override?.exclusions?.length
+      ? override.exclusions
+      : (CONTRADICTION_PATTERNS[rule.id] ?? [])
     const matched = patterns.length > 0 ? matchPatterns(normalizedText, patterns) : false
     ruleMatches.set(flag, matched)
     if (!matched) return
-    const { evidence: baseEvidence, explicitMatch } = buildChatEvidence(patterns)
+    const {
+      evidence: baseEvidence,
+      explicitMatch,
+      excludedMessageIds,
+    } = buildChatEvidence({ patterns, negationPhrases })
     const tuning = deriveRuleTuning(rule.rule_id, override?.logic)
     const tuningResult = evaluateRuleTuning({
       chatMap,
       tuning,
+      excludedMessageIds,
       buildEvidence: (messageId) =>
         verifyEvidence({ source: 'chat', source_id: messageId }, { chatMap, structuredData, intakeId }),
     })
@@ -628,7 +657,20 @@ export function evaluateRedFlags(params: {
   if (Array.isArray(uncertainties) && uncertainties.length >= 2 && escalation === null) {
     const uncertaintyTexts = uncertainties.filter((entry): entry is string => typeof entry === 'string')
     const { evidence: uncertaintyEvidence } = buildChatEvidenceForText(uncertaintyTexts)
-    const verified = uncertaintyEvidence.length > 0
+    const hasIntakeEvidence = uncertaintyTexts.length > 0
+    const mergedEvidence: SafetyTriggeredRule['evidence'] = uncertaintyEvidence.length > 0
+      ? uncertaintyEvidence
+      : hasIntakeEvidence
+        ? [
+            {
+              source: 'intake',
+              source_id: intakeId ?? 'structured-intake',
+              excerpt: uncertaintyTexts[0] ?? 'Mehrere Unsicherheiten',
+            },
+          ]
+        : []
+
+    const verified = mergedEvidence.length > 0
     const unverified = !verified
 
     triggeredRules?.push({
@@ -636,7 +678,7 @@ export function evaluateRedFlags(params: {
       title: 'Mehrere Unsicherheiten',
       level: unverified ? 'needs_review' : 'C',
       short_reason: 'Mehrere Unsicherheiten erfordern gezielte Sicherheitsfragen.',
-      evidence: uncertaintyEvidence,
+      evidence: mergedEvidence,
       verified,
       unverified,
       severity: 'C',

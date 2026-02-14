@@ -61,4 +61,92 @@ describe('reasoning engine', () => {
     expect(first.differentials[0]?.label).toBe('Panic-like autonomic episode')
     expect(first.differentials[0]?.matched_triggers.length).toBeGreaterThan(0)
   })
+
+  it('forces reasoning risk to high when effective safety level is A', () => {
+    const input = {
+      status: 'draft' as const,
+      chief_complaint: 'Unspezifische Beschwerden',
+      history_of_present_illness: {
+        duration: 'seit 2 Tagen',
+      },
+      safety: {
+        red_flag_present: true,
+        escalation_level: 'A' as const,
+        effective_level: 'A' as const,
+        red_flags: [],
+        triggered_rules: [
+          {
+            rule_id: 'SFTY-2.1-R-SUICIDAL-IDEATION',
+            title: 'Suizidale Gedanken',
+            level: 'A' as const,
+            short_reason: 'test',
+            evidence: [{ source: 'chat' as const, source_id: 'm1', excerpt: 'ich will mich umbringen' }],
+            verified: true,
+            policy_version: 'v1',
+          },
+        ],
+      },
+    }
+
+    const result = generateReasoningPack(input, config)
+    expect(result.risk_estimation.level).toBe('high')
+  })
+
+  it('does not remain high without verified red flags and without hard markers', () => {
+    const highWeightConfig: ClinicalReasoningConfig = {
+      ...config,
+      risk_weighting: {
+        red_flag_weight: 10,
+        chronicity_weight: 4,
+        anxiety_modifier: 4,
+      },
+    }
+
+    const input = {
+      status: 'draft' as const,
+      chief_complaint: 'Ich fuehle mich angespannt',
+      history_of_present_illness: {
+        duration: 'seit monaten',
+      },
+      safety: {
+        red_flag_present: false,
+        escalation_level: null,
+        effective_level: null,
+        red_flags: [],
+        triggered_rules: [],
+      },
+    }
+
+    const result = generateReasoningPack(input, highWeightConfig)
+    expect(result.risk_estimation.level).toBe('medium')
+  })
+
+  it('keeps low risk for verified C-only safety findings', () => {
+    const input = {
+      status: 'draft' as const,
+      chief_complaint: 'Unspezifisches Unwohlsein',
+      safety: {
+        red_flag_present: false,
+        escalation_level: 'C' as const,
+        effective_level: 'C' as const,
+        red_flags: [],
+        triggered_rules: [
+          {
+            rule_id: 'SFTY-2.1-R-UNCERTAINTY-2PLUS',
+            title: 'Mehrere Unsicherheiten',
+            level: 'C' as const,
+            severity: 'C' as const,
+            short_reason: 'test',
+            evidence: [{ source: 'intake' as const, source_id: 'intake-1', excerpt: 'unklar' }],
+            verified: true,
+            policy_version: 'v1',
+          },
+        ],
+      },
+      uncertainties: ['Zeitlicher Zusammenhang unklar', 'Trigger unklar'],
+    }
+
+    const result = generateReasoningPack(input, config)
+    expect(result.risk_estimation.level).toBe('low')
+  })
 })

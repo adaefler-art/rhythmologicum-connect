@@ -115,6 +115,24 @@ describe('CRE safety evaluator', () => {
     expect(rule?.verified).toBe(false)
   })
 
+  it('does not treat negated dyspnea as palpitations qualifier', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Herzrasen bei Angst',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-2c',
+          content: 'Herzrasen bei Panik, aber keine Atemnot.',
+        },
+      ],
+    })
+
+    expect(result.escalation_level).toBeNull()
+    expect(result.red_flags.some((flag) => flag.id === 'SEVERE_PALPITATIONS')).toBe(false)
+  })
+
   it('downgrades passive suicidal ideation to Level B', () => {
     const result = evaluateRedFlags({
       structuredData: {
@@ -251,5 +269,64 @@ describe('CRE safety evaluator', () => {
       expect(chatIds).toContain(sourceId)
       expect(sourceId.startsWith('intake:')).toBe(false)
     })
+  })
+
+  it('does not escalate A for explicitly negated cardio/respiratory flags', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Herzrasen bei Angst',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-neg-1',
+          content: 'Keine Ohnmacht und keine Atemnot. Kein Brustschmerz.',
+        },
+      ],
+    })
+
+    expect(result.escalation_level).toBeNull()
+    expect(result.red_flags.length).toBe(0)
+  })
+
+  it('keeps passive SI at B when intent/plan/means are negated', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Ich moechte nicht mehr leben',
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-si-1',
+          content: 'Ich moechte nicht mehr leben, habe aber keinen Plan und keine Mittel.',
+        },
+      ],
+    })
+
+    expect(result.escalation_level).toBe('B')
+    const suicidal = result.red_flags.find((entry) => entry.id === 'SUICIDAL_IDEATION')
+    expect(suicidal?.level).toBe('B')
+  })
+
+  it('escalates to C for multiple uncertainties with intake-only evidence', () => {
+    const result = evaluateRedFlags({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Unspezifische Beschwerden',
+        uncertainties: ['Zeitlicher Zusammenhang unklar', 'Trigger unklar'],
+      },
+      verbatimChatMessages: [
+        {
+          id: 'msg-u-1',
+          content: 'Ich weiss nicht genau, wann es anfing.',
+        },
+      ],
+    })
+
+    expect(result.escalation_level).toBe('C')
+    const uncertaintyRule = result.triggered_rules?.find(
+      (entry) => entry.rule_id === 'SFTY-2.1-R-UNCERTAINTY-2PLUS',
+    )
+    expect(uncertaintyRule?.verified).toBe(true)
   })
 })

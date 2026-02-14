@@ -1,0 +1,47 @@
+{
+  "id": "S07",
+  "title": "Upload required -> request_more_info creates clinician follow-up",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe einen alten Arztbrief, aber gerade nicht dabei." },
+    { "id": "m2", "content": "Beschwerden bestehen seit Wochen." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Belastungsdyspnoe leicht",
+    "history_of_present_illness": {
+      "onset": "seit Wochen",
+      "duration": "täglich",
+      "course": "gleichbleibend"
+    },
+    "medication": ["keine"],
+    "psychosocial_factors": ["Berufsstress"]
+  },
+  "review_flow": {
+    "steps": [
+      {
+        "status": "needs_more_info",
+        "review_notes": "Upload des letzten Arztbriefs erforderlich.",
+        "requested_items": ["Bitte laden Sie den letzten Arztbrief hoch"]
+      }
+    ]
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "review": {
+      "transitions": ["needs_more_info"],
+      "final_status": "needs_more_info"
+    },
+    "followup": {
+      "min_next_questions": 1,
+      "must_include_substrings": ["arztbrief"],
+      "required_sources": ["clinician_request"]
+    },
+    "export": {
+      "pdf_magic": true,
+      "current_review_status": "needs_more_info"
+    }
+  }
+}

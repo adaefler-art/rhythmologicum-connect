@@ -73,4 +73,30 @@ describe('Safety policy engine', () => {
     expect(result.escalation_level).toBeNull()
     expect(result.chat_action).toBe('none')
   })
+
+  it('does not elevate downgraded B severity to A via policy override', () => {
+    const policy = {
+      ...buildPolicy(),
+      rules: {
+        ...buildPolicy().rules,
+        'SFTY-2.1-R-SUICIDAL-IDEATION': {
+          escalationLevel: 'A',
+          chatAction: 'hard_stop',
+        },
+      },
+    }
+    const result = applySafetyPolicy({
+      triggeredRules: [
+        {
+          ...rule('SFTY-2.1-R-SUICIDAL-IDEATION', 'B'),
+          level: 'B',
+          severity: 'B',
+        },
+      ],
+      policy,
+    })
+
+    expect(result.escalation_level).toBe('B')
+    expect(result.chat_action).toBe('warn')
+  })
 })

@@ -1,0 +1,36 @@
+{
+  "id": "S02",
+  "title": "Chest pain negated (no A)",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe aktuell keinen Brustschmerz." },
+    { "id": "m2", "content": "No chest pain, eher Verspannung im Nacken." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Nackenverspannung",
+    "history_of_present_illness": {
+      "onset": "seit 2 Tagen",
+      "duration": "stundenweise",
+      "course": "unverändert"
+    },
+    "relevant_negatives": ["Kein Brustschmerz", "Keine Dyspnoe"],
+    "medication": ["Ibuprofen bei Bedarf"]
+  },
+  "expected": {
+    "safety": {
+      "effective_level": null,
+      "effective_action": "none",
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "reasoning": {
+      "risk_level": "low"
+    },
+    "followup": {
+      "min_next_questions": 1
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

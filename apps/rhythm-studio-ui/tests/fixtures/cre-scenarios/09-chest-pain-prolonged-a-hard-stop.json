@@ -1,0 +1,35 @@
+{
+  "id": "S09",
+  "title": "Chest pain >=20 minutes with qualifying evidence (A/hard_stop)",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe akuten Brustschmerz seit 30 Minuten mit Atemnot." },
+    { "id": "m2", "content": "Die Schmerzen strahlen in den linken Arm aus." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Akuter Brustschmerz",
+    "history_of_present_illness": {
+      "onset": "plötzlich",
+      "duration": "30 Minuten",
+      "course": "progredient",
+      "associated_symptoms": ["Atemnot"]
+    },
+    "relevant_negatives": [],
+    "medication": []
+  },
+  "expected": {
+    "safety": {
+      "effective_level": "A",
+      "effective_action": "hard_stop"
+    },
+    "reasoning": {
+      "risk_level": "high"
+    },
+    "followup": {
+      "min_next_questions": 0
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -1,0 +1,55 @@
+name: Coherence CI
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/cre/**'
+      - 'apps/rhythm-studio-ui/tests/fixtures/cre-scenarios/**'
+      - 'lib/cre/**'
+      - 'lib/clinicalIntake/**'
+      - '.github/workflows/coherence-ci.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [ main ]
+    paths:
+      - 'scripts/cre/**'
+      - 'apps/rhythm-studio-ui/tests/fixtures/cre-scenarios/**'
+      - 'lib/cre/**'
+      - 'lib/clinicalIntake/**'
+      - '.github/workflows/coherence-ci.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coherence:
+    runs-on: ubuntu-latest
+    env:
+      CRE_COHERENCE_MODE: mock
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Run coherence battery
+        run: npm run cre:coherence
+
+      - name: Upload coherence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coherence-report
+          path: docs/cre/coherence/latest.md
+          if-no-files-found: error
