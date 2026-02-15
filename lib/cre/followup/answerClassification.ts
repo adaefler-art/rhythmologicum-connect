@@ -28,7 +28,8 @@ const UNCLEAR_PATTERNS = [
   /^kann ich nicht sagen$/,
 ]
 
-const YES_NO_ONLY = /^(ja|nein|yes|no|jap|nope)$/
+const YES_ONLY = /^(ja|yes|jap|yep|yeah)$/
+const NO_ONLY = /^(nein|no|nope)$/
 
 const PRIOR_CONTEXT_REFERENCE_PATTERNS = [
   /(bereits|schon)\s+(genannt|angegeben)/,
@@ -78,6 +79,7 @@ export const classifyFollowupAnswer = (params: {
   if (!rawAnswer) return 'unclear'
 
   const answer = normalize(rawAnswer)
+  const normalizedShortAnswer = answer.replace(/[.!?,;:]+$/g, '').trim()
 
   if (rawAnswer.length < 2 || UNCLEAR_PATTERNS.some((pattern) => pattern.test(answer))) {
     return 'unclear'
@@ -100,7 +102,8 @@ export const classifyFollowupAnswer = (params: {
   }
 
   if (context === 'medication') {
-    if (YES_NO_ONLY.test(answer)) return 'partial'
+    if (NO_ONLY.test(normalizedShortAnswer)) return 'answered'
+    if (YES_ONLY.test(normalizedShortAnswer)) return 'partial'
     if (hasMedicationSignal(answer) || hasNoneSignal(answer) || noneMapped || medicationMapped) {
       return 'answered'
     }
@@ -108,7 +111,7 @@ export const classifyFollowupAnswer = (params: {
     return 'unclear'
   }
 
-  if (YES_NO_ONLY.test(answer)) return 'partial'
+  if (YES_ONLY.test(normalizedShortAnswer) || NO_ONLY.test(normalizedShortAnswer)) return 'partial'
 
   if (answer.length < 6) return 'partial'
 

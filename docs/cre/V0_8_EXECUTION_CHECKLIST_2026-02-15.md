@@ -135,3 +135,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-15 12:34:21 (lokal): Follow-up-Sackgasse behoben, indem Antworten wie „bereits genannt/in den Daten“ als beantwortet klassifiziert, gegen Re-Ask-Loops abgesichert, mit Regressionstests verifiziert und auf `main` gepusht wurden.
 - 2026-02-15 12:41:13 (lokal): Klassifikationslogik erweitert, sodass Formulierungen wie „Du kennst meine Medikation bereits“ als beantwortet erkannt und mit Regressionstest gegen erneute Re-Ask-Loops abgesichert werden.
 - 2026-02-15 12:56:30 (lokal): Produktive Frageformulierung verbessert, indem Follow-up-Prompts im Dialog entdoppelt/saniert und generische Partial-Rueckfragen im Backend auf klare, nicht-echoende Sprache umgestellt wurden.
+- 2026-02-15 13:04:14 (lokal): Medikationslogik korrigiert, sodass eine negative Kurzantwort wie „nein“ als beantwortet gilt und keine unsinnige Detail-Rueckfrage zu konkreten Mitteln mehr ausloest.
