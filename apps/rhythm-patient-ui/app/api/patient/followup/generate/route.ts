@@ -13,6 +13,7 @@ const requestSchema = z
     intakeId: z.string().uuid().optional(),
     asked_question_id: z.string().min(1).optional(),
     asked_question_ids: z.array(z.string().min(1)).optional(),
+    asked_answer_text: z.string().min(1).optional(),
   })
   .refine((value) => Boolean(value.patientId || value.intakeId), {
     message: 'patientId or intakeId is required',
@@ -60,6 +61,63 @@ const looksLikeUploadQuestionId = (questionId: string) => {
     normalized.includes('hochlad') ||
     normalized.includes('arztbrief')
   )
+}
+
+const asStringArray = (value: unknown) =>
+  Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+    : []
+
+const applyAskedAnswerToStructuredData = (params: {
+  structuredData: StructuredIntakeData
+  askedQuestionIds: string[]
+  answerText?: string
+}): StructuredIntakeData => {
+  const answer = params.answerText?.trim()
+  if (!answer || params.askedQuestionIds.length === 0) {
+    return params.structuredData
+  }
+
+  const next = { ...params.structuredData }
+  const hpi = { ...(next.history_of_present_illness ?? {}) }
+
+  for (const questionId of params.askedQuestionIds) {
+    if (questionId === 'gap:chief-complaint') {
+      next.chief_complaint = answer
+    }
+
+    if (questionId === 'gap:onset') {
+      hpi.onset = answer
+    }
+
+    if (questionId === 'gap:duration') {
+      hpi.duration = answer
+    }
+
+    if (questionId === 'gap:course') {
+      hpi.course = answer
+    }
+
+    if (questionId === 'gap:medication') {
+      const medication = asStringArray(next.medication)
+      if (!medication.includes(answer)) {
+        next.medication = [...medication, answer]
+      }
+    }
+
+    if (questionId === 'gap:psychosocial') {
+      const psychosocial = asStringArray(next.psychosocial_factors)
+      if (!psychosocial.includes(answer)) {
+        next.psychosocial_factors = [...psychosocial, answer]
+      }
+    }
+  }
+
+  if (Object.keys(hpi).length > 0) {
+    next.history_of_present_illness = hpi
+  }
+
+  return next
 }
 
 export async function POST(req: Request) {
@@ -215,6 +273,11 @@ export async function POST(req: Request) {
     }
 
     let structuredData = intakeRecord.structured_data as unknown as StructuredIntakeData
+    structuredData = applyAskedAnswerToStructuredData({
+      structuredData,
+      askedQuestionIds,
+      answerText: body.asked_answer_text,
+    })
 
     if (askedQuestionIds.length > 0) {
       structuredData = appendAskedQuestionIds({

@@ -79,7 +79,7 @@ type FollowupQuestion = {
   question: string
   why: string
   priority: 1 | 2 | 3
-  source: 'reasoning' | 'gap_rule'
+  source: 'reasoning' | 'gap_rule' | 'clinician_request'
 }
 
 type SpeechRecognitionInstance = {
@@ -159,6 +159,27 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   return `Wie geht es Ihnen heute mit ${topic}?`
 }
 
+const buildFollowupPrompt = (params: {
+  question: FollowupQuestion
+  latestIntake: IntakeEntry | null
+}) => {
+  const { question, latestIntake } = params
+  const structured = latestIntake ? getStructuredDataFromContent(latestIntake.content) : null
+  const chiefComplaint =
+    structured && typeof structured.chief_complaint === 'string' && structured.chief_complaint.trim()
+      ? structured.chief_complaint.trim()
+      : null
+
+  const reason = question.why?.trim()
+  const contextPrefix = chiefComplaint ? `Bezug: ${chiefComplaint}. ` : ''
+
+  if (reason) {
+    return `${contextPrefix}${question.question}\n\nWarum ich das frage: ${reason}.`
+  }
+
+  return `${contextPrefix}${question.question}`
+}
+
 const getStructuredDataFromContent = (content: Record<string, unknown>) => {
   const structuredData = content?.structured_data
   if (structuredData && typeof structuredData === 'object' && !Array.isArray(structuredData)) {
@@ -196,8 +217,12 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
       const item = entry as Record<string, unknown>
       const priority: 1 | 2 | 3 =
         item.priority === 1 || item.priority === 2 || item.priority === 3 ? item.priority : 3
-      const source: 'reasoning' | 'gap_rule' =
-        item.source === 'reasoning' ? 'reasoning' : 'gap_rule'
+      const source: 'reasoning' | 'gap_rule' | 'clinician_request' =
+        item.source === 'reasoning'
+          ? 'reasoning'
+          : item.source === 'clinician_request'
+            ? 'clinician_request'
+            : 'gap_rule'
 
       return {
         id: typeof item.id === 'string' ? item.id : '',
@@ -311,13 +336,18 @@ export function DialogScreenV2() {
     })
   }
 
-  const generateFollowup = async (params: { intakeId: string; askedQuestionId?: string }) => {
+  const generateFollowup = async (params: {
+    intakeId: string
+    askedQuestionId?: string
+    askedAnswerText?: string
+  }) => {
     const response = await fetch('/api/patient/followup/generate', {
       method: 'POST',
       headers: getRequestHeaders(),
       body: JSON.stringify({
         intakeId: params.intakeId,
         asked_question_id: params.askedQuestionId,
+        asked_answer_text: params.askedAnswerText,
       }),
     })
 
@@ -344,6 +374,53 @@ export function DialogScreenV2() {
     }
   }
 
+  async function syncIntakeDebugMeta(latestIntake?: IntakeEntry | null) {
+    try {
+      const [latest, checkResponse] = await Promise.all([
+        latestIntake !== undefined ? Promise.resolve(latestIntake) : fetchLatestIntake(),
+        fetch('/api/patient/_meta/intake-write-check', {
+          headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
+        }),
+      ])
+
+      const checkPayload = await checkResponse.json().catch(() => null)
+      const latestIntakeId = latest?.id ?? (typeof checkPayload?.latestIntakeId === 'string' ? checkPayload.latestIntakeId : null)
+      const latestVersionNumber =
+        typeof latest?.version_number === 'number'
+          ? latest.version_number
+          : typeof checkPayload?.latestVersionNumber === 'number'
+            ? checkPayload.latestVersionNumber
+            : null
+
+      setIntakePersistence((prev) => ({
+        ...prev,
+        latestIntakeEntryId:
+          typeof checkPayload?.latestIntakeEntryId === 'string'
+            ? checkPayload.latestIntakeEntryId
+            : latestIntakeId,
+        recentIntakeCount:
+          typeof checkPayload?.recentIntakeCount === 'number'
+            ? checkPayload.recentIntakeCount
+            : prev.recentIntakeCount,
+        latestVersionCount:
+          typeof checkPayload?.latestVersionCount === 'number'
+            ? checkPayload.latestVersionCount
+            : latestVersionNumber,
+      }))
+
+      if (latestIntakeId) {
+        setLatestClinicalIntakeId(latestIntakeId)
+      }
+
+      const narrative = latest ? getIntakeNarrative(latest.content) : null
+      if (narrative) {
+        setLastSummary(trimText(narrative, 200))
+      }
+    } catch (err) {
+      console.error('[DialogScreenV2] Failed to sync intake debug metadata', err)
+    }
+  }
+
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!isChatEnabled) return
@@ -364,6 +441,7 @@ export function DialogScreenV2() {
 
       setLatestClinicalIntakeId(latestIntake?.id ?? null)
       setHasOpenReviewRequest(latestIntake?.review_state?.status === 'needs_more_info')
+      void syncIntakeDebugMeta(latestIntake)
 
       const safety = latestIntake ? getSafetyFromContent(latestIntake.content) : null
       setSafetyStatus(safety)
@@ -380,7 +458,10 @@ export function DialogScreenV2() {
           {
             id: `assistant-${Date.now()}`,
             sender: 'assistant',
-            text: intakeFollowup.next_questions[0].question,
+            text: buildFollowupPrompt({
+              question: intakeFollowup.next_questions[0],
+              latestIntake,
+            }),
             timestamp: buildTimestamp(),
           },
         ])
@@ -396,7 +477,10 @@ export function DialogScreenV2() {
               {
                 id: `assistant-${Date.now()}`,
                 sender: 'assistant',
-                text: generatedFollowup.nextQuestions[0].question,
+                text: buildFollowupPrompt({
+                  question: generatedFollowup.nextQuestions[0],
+                  latestIntake,
+                }),
                 timestamp: buildTimestamp(),
               },
             ])
@@ -999,12 +1083,12 @@ export function DialogScreenV2() {
 
   const verifyIntakeWrite = async () => {
     try {
-      if (!intakeEntryId) return
       setIntakePersistence((prev) => ({
         ...prev,
-        entryId: prev.entryId ?? intakeEntryId,
-        latestIntakeEntryId: intakeEntryId,
+        entryId: intakeEntryId ? prev.entryId ?? intakeEntryId : prev.entryId,
       }))
+
+      await syncIntakeDebugMeta()
     } catch (err) {
       console.error('[DialogScreenV2] Intake write check failed', err)
     }
@@ -1030,6 +1114,7 @@ export function DialogScreenV2() {
       }
 
       setManualIntakeStatus('ok')
+      await syncIntakeDebugMeta()
       void verifyIntakeWrite()
     } catch (err) {
       console.error('[DialogScreenV2] Manual intake generation failed', err)
@@ -1107,6 +1192,7 @@ export function DialogScreenV2() {
           const followupResult = await generateFollowup({
             intakeId: latestClinicalIntakeId,
             askedQuestionId: currentFollowupQuestion.id,
+            askedAnswerText: trimmed,
           })
 
           setLatestClinicalIntakeId(followupResult.intakeId)
@@ -1123,7 +1209,9 @@ export function DialogScreenV2() {
           if (followupResult.nextQuestions.length > 0 && answeredCount < 3) {
             const nextQuestion = followupResult.nextQuestions[0]
             setActiveFollowupQuestion(nextQuestion)
-            appendAssistantMessage(nextQuestion.question)
+            appendAssistantMessage(
+              buildFollowupPrompt({ question: nextQuestion, latestIntake: null }),
+            )
             return
           }
 
@@ -1149,7 +1237,12 @@ export function DialogScreenV2() {
                 if (!refreshedFollowup.blocked && refreshedFollowup.nextQuestions.length > 0) {
                   const nextQuestion = refreshedFollowup.nextQuestions[0]
                   setActiveFollowupQuestion(nextQuestion)
-                  appendAssistantMessage(nextQuestion.question)
+                  appendAssistantMessage(
+                    buildFollowupPrompt({
+                      question: nextQuestion,
+                      latestIntake: refreshedIntake,
+                    }),
+                  )
                 }
               } catch (followupError) {
                 console.warn('[DialogScreenV2] Followup refresh after regeneration failed', followupError)
