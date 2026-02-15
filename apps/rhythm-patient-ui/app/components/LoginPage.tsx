@@ -166,6 +166,20 @@ export default function LoginPage() {
     }
   }, [])
 
+  const redirectAuthenticatedUser = async () => {
+    await syncServerSession()
+
+    const resolved = await resolveRole()
+    if (resolved.kind === 'unauthenticated') return
+
+    const role = resolved.kind === 'fallback_patient' ? 'patient' : resolved.value.role
+    const target = await resolvePostLoginRedirect(role)
+    if (target) {
+      router.replace(target)
+      router.refresh()
+    }
+  }
+
   useEffect(() => {
     const loadVersionInfo = async () => {
       try {
@@ -202,6 +216,8 @@ export default function LoginPage() {
 
         if (error) {
           setError('Login fehlgeschlagen. Bitte prüfen Sie Ihre Daten.')
+        } else {
+          await redirectAuthenticatedUser()
         }
       } else {
         const { error } = await supabase.auth.signUp({
