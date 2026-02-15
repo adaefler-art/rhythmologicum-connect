@@ -197,6 +197,52 @@ const derivePartialQuestionText = (askedQuestionText?: string) => {
   return 'Koennen Sie das bitte mit einem kurzen konkreten Detail praezisieren?'
 }
 
+const normalizeQuestionForCompare = (value?: string) =>
+  (value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[.!?,;:]+$/g, '')
+    .trim()
+
+const removeAskedQuestionEcho = (params: {
+  followup: NonNullable<StructuredIntakeData['followup']>
+  askedQuestionIds: string[]
+  askedQuestionText?: string
+}) => {
+  if (params.askedQuestionIds.length === 0) return params.followup
+
+  const askedIdSet = new Set(params.askedQuestionIds.map((entry) => entry.trim()).filter(Boolean))
+  const askedTextNormalized = normalizeQuestionForCompare(params.askedQuestionText)
+
+  const shouldKeep = (entry: { id: string; question: string }) => {
+    const id = entry.id.trim()
+    if (id && askedIdSet.has(id)) {
+      return false
+    }
+
+    if (askedTextNormalized) {
+      const questionNormalized = normalizeQuestionForCompare(entry.question)
+      if (questionNormalized && questionNormalized === askedTextNormalized) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  const nextQuestions = (params.followup.next_questions ?? []).filter(shouldKeep)
+  const queue = (params.followup.queue ?? []).filter(shouldKeep)
+
+  return {
+    ...params.followup,
+    next_questions: nextQuestions,
+    queue,
+  }
+}
+
 const prependTargetedQuestion = (params: {
   followup: NonNullable<StructuredIntakeData['followup']>
   questionId: string
@@ -611,6 +657,12 @@ export async function POST(req: Request) {
         })
       }
     }
+
+    followupWithClarification = removeAskedQuestionEcho({
+      followup: followupWithClarification,
+      askedQuestionIds,
+      askedQuestionText: body.asked_question_text,
+    })
 
     const nextStructuredData: StructuredIntakeData = {
       ...structuredData,

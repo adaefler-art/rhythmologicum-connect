@@ -1375,15 +1375,23 @@ export function DialogScreenV2() {
                 const refreshedFollowup = await generateFollowup({ intakeId: refreshedIntake.id })
                 setLatestClinicalIntakeId(refreshedFollowup.intakeId)
                 if (!refreshedFollowup.blocked && refreshedFollowup.nextQuestions.length > 0) {
-                  const nextQuestion = refreshedFollowup.nextQuestions[0]
-                  setActiveFollowupQuestion(nextQuestion)
-                  appendAssistantMessage(
-                    buildFollowupPrompt({
-                      question: nextQuestion,
-                      latestIntake: refreshedIntake,
-                      activeObjectiveCount: refreshedFollowup.activeObjectiveCount,
-                    }),
-                  )
+                  const nextQuestion = pickDistinctNextFollowupQuestion({
+                    currentQuestion: currentFollowupQuestion,
+                    candidates: refreshedFollowup.nextQuestions,
+                  })
+
+                  if (nextQuestion) {
+                    setActiveFollowupQuestion(nextQuestion)
+                    appendAssistantMessage(
+                      buildFollowupPrompt({
+                        question: nextQuestion,
+                        latestIntake: refreshedIntake,
+                        activeObjectiveCount: refreshedFollowup.activeObjectiveCount,
+                      }),
+                    )
+                  } else {
+                    setActiveFollowupQuestion(null)
+                  }
                 }
               } catch (followupError) {
                 console.warn('[DialogScreenV2] Followup refresh after regeneration failed', followupError)
