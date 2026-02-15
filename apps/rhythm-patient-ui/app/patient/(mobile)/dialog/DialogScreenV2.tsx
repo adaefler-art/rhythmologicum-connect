@@ -188,17 +188,21 @@ const buildFollowupPrompt = (params: {
   const reason = question.why?.trim()
   const cleanedQuestion = sanitizeFollowupQuestionText(question.question)
   const lead = includeIntro
-    ? 'Ich habe noch eine kurze Rueckfrage, um Ihre Angaben zu vervollstaendigen.'
+    ? 'Ich habe eine kurze Rueckfrage zu Ihrer Anamnese.'
     : null
 
   const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
+  const isStandardGapQuestion = question.source === 'gap_rule' && /^gap:/.test(question.id)
   const contextPrefix = shortChiefComplaint
-    ? `Zum Thema "${shortChiefComplaint}" noch eine kurze Frage: `
-    : 'Eine kurze Rueckfrage zur Anamnese: '
+    ? `Zum Thema "${shortChiefComplaint}": `
+    : 'Kurze Rueckfrage: '
 
-  const politeQuestion = questionAlreadyContainsContext(cleanedQuestion)
-    ? cleanedQuestion
-    : `${contextPrefix}${cleanedQuestion || question.question}`
+  const directQuestion = cleanedQuestion || question.question
+
+  const politeQuestion =
+    isStandardGapQuestion || questionAlreadyContainsContext(directQuestion)
+      ? directQuestion
+      : `${contextPrefix}${directQuestion}`
 
   const technicalReason =
     reason &&
