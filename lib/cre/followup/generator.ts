@@ -32,6 +32,17 @@ const buildReasoningQuestionId = (conditionLabel: string, text: string) => {
 const buildGapRuleQuestionId = (ruleId: string) => `gap:${ruleId}`
 const buildClinicianRequestQuestionId = (text: string) => `clinician-request:${normalizeText(text)}`
 
+const getFollowupLifecycle = (structuredData: StructuredIntakeData) => {
+  const lifecycle = structuredData.followup?.lifecycle
+  return {
+    state: lifecycle?.state ?? 'active',
+    completed_question_ids: lifecycle?.completed_question_ids ?? [],
+    skipped_question_ids: lifecycle?.skipped_question_ids ?? [],
+    resumed_at: lifecycle?.resumed_at ?? null,
+    completed_at: lifecycle?.completed_at ?? null,
+  } as const
+}
+
 const getString = (value: unknown) => (typeof value === 'string' ? value.trim() : '')
 
 const getStringList = (value: unknown) =>
@@ -176,7 +187,12 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
 }): StructuredIntakeData => {
   const now = params.now ?? new Date()
   const existingFollowup = params.structuredData.followup
-  const askedIds = new Set(existingFollowup?.asked_question_ids ?? [])
+  const lifecycle = getFollowupLifecycle(params.structuredData)
+  const askedIds = new Set([
+    ...(existingFollowup?.asked_question_ids ?? []),
+    ...lifecycle.completed_question_ids,
+    ...lifecycle.skipped_question_ids,
+  ])
 
   const existingCandidates = [
     ...(existingFollowup?.next_questions ?? []),
@@ -200,6 +216,10 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
       queue: merged.slice(MAX_NEXT_QUESTIONS),
       asked_question_ids: Array.from(askedIds),
       last_generated_at: now.toISOString(),
+      lifecycle: {
+        ...lifecycle,
+        state: 'needs_review',
+      },
     },
   }
 }
@@ -212,7 +232,29 @@ export const generateFollowupQuestions = (params: {
   const now = params.now ?? new Date()
 
   const existingFollowup = structuredData.followup
-  const askedIds = new Set(existingFollowup?.asked_question_ids ?? [])
+  const lifecycle = getFollowupLifecycle(structuredData)
+
+  if (lifecycle.state === 'completed') {
+    return {
+      next_questions: [],
+      queue: [],
+      asked_question_ids: Array.from(
+        new Set([
+          ...(existingFollowup?.asked_question_ids ?? []),
+          ...lifecycle.completed_question_ids,
+          ...lifecycle.skipped_question_ids,
+        ]),
+      ),
+      last_generated_at: now.toISOString(),
+      lifecycle,
+    }
+  }
+
+  const askedIds = new Set([
+    ...(existingFollowup?.asked_question_ids ?? []),
+    ...lifecycle.completed_question_ids,
+    ...lifecycle.skipped_question_ids,
+  ])
   const queuedClinicianCandidates = [
     ...(existingFollowup?.next_questions ?? []),
     ...(existingFollowup?.queue ?? []),
@@ -238,6 +280,11 @@ export const generateFollowupQuestions = (params: {
     queue: allCandidates.slice(MAX_NEXT_QUESTIONS),
     asked_question_ids: Array.from(askedIds),
     last_generated_at: now.toISOString(),
+    lifecycle: {
+      ...lifecycle,
+      state: allCandidates.length === 0 ? 'completed' : 'active',
+      completed_at: allCandidates.length === 0 ? now.toISOString() : lifecycle.completed_at,
+    },
   }
 }
 
@@ -246,6 +293,7 @@ export const appendAskedQuestionIds = (params: {
   askedQuestionIds: string[]
 }): StructuredIntakeData => {
   const existingAsked = new Set(params.structuredData.followup?.asked_question_ids ?? [])
+  const lifecycle = getFollowupLifecycle(params.structuredData)
 
   for (const id of params.askedQuestionIds) {
     if (typeof id === 'string' && id.trim()) {
@@ -260,6 +308,72 @@ export const appendAskedQuestionIds = (params: {
       queue: params.structuredData.followup?.queue ?? [],
       asked_question_ids: Array.from(existingAsked),
       last_generated_at: params.structuredData.followup?.last_generated_at ?? new Date().toISOString(),
+      lifecycle,
+    },
+  }
+}
+
+export const transitionFollowupLifecycle = (params: {
+  structuredData: StructuredIntakeData
+  action: 'resume' | 'skip' | 'complete'
+  questionId?: string
+  now?: Date
+}): StructuredIntakeData => {
+  const now = params.now ?? new Date()
+  const existing = params.structuredData.followup
+  const lifecycle = getFollowupLifecycle(params.structuredData)
+  const nextQuestions = [...(existing?.next_questions ?? [])]
+  const queue = [...(existing?.queue ?? [])]
+  const askedIds = new Set(existing?.asked_question_ids ?? [])
+  const completedIds = new Set(lifecycle.completed_question_ids)
+  const skippedIds = new Set(lifecycle.skipped_question_ids)
+
+  if ((params.action === 'skip' || params.action === 'complete') && !params.questionId?.trim()) {
+    return params.structuredData
+  }
+
+  const questionId = params.questionId?.trim()
+  if (questionId) {
+    askedIds.add(questionId)
+    const filterById = (item: ClinicalFollowupQuestion) => item.id !== questionId
+    const filteredNext = nextQuestions.filter(filterById)
+    const filteredQueue = queue.filter(filterById)
+    nextQuestions.length = 0
+    queue.length = 0
+    nextQuestions.push(...filteredNext)
+    queue.push(...filteredQueue)
+  }
+
+  if (params.action === 'skip' && questionId) {
+    skippedIds.add(questionId)
+  }
+
+  if (params.action === 'complete' && questionId) {
+    completedIds.add(questionId)
+  }
+
+  const hasRemaining = nextQuestions.length + queue.length > 0
+  const nextState =
+    params.action === 'resume'
+      ? 'active'
+      : hasRemaining
+        ? 'active'
+        : 'completed'
+
+  return {
+    ...params.structuredData,
+    followup: {
+      next_questions: nextQuestions,
+      queue,
+      asked_question_ids: Array.from(askedIds),
+      last_generated_at: now.toISOString(),
+      lifecycle: {
+        state: nextState,
+        completed_question_ids: Array.from(completedIds),
+        skipped_question_ids: Array.from(skippedIds),
+        resumed_at: params.action === 'resume' ? now.toISOString() : lifecycle.resumed_at,
+        completed_at: nextState === 'completed' ? now.toISOString() : null,
+      },
     },
   }
 }

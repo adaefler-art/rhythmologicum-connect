@@ -5,6 +5,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { fetchIntakeAndReviewAudit } from '@/lib/clinicalIntake/exportPayload'
 import { mapIntakeToFhir } from '@/lib/interop/fhir/mapIntakeToFhir'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 
 type RouteContext = {
   params: Promise<{ patientId: string; intakeId: string }>
@@ -111,6 +112,7 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const intake = loadResult.intake
+    const requestIdHeader = _request.headers.get('x-request-id')
 
     if (intake.user_id !== resolution.patientUserId && intake.patient_id !== resolution.patientProfileId) {
       return NextResponse.json(
@@ -122,8 +124,44 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    const currentReview = loadResult.reviewAudit.find((row) => row.is_current) ?? loadResult.reviewAudit[0]
+    if (!currentReview || currentReview.status !== 'approved') {
+      await trackEvent({
+        patientId: intake.patient_id,
+        intakeId,
+        eventType: 'export_gate_denied',
+        requestId: requestIdHeader ? `${requestIdHeader}:export_gate_denied` : null,
+        payload: {
+          format: 'fhir',
+          review_status: currentReview?.status ?? 'none',
+        },
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.FORBIDDEN,
+            message: 'Export requires approved clinician sign-off.',
+          },
+        },
+        { status: 409 },
+      )
+    }
+
     const bundle = mapIntakeToFhir({ intake })
     const filename = `intake-fhir-${intake.id}-v${intake.version_number}.json`
+
+    await trackEvent({
+      patientId: intake.patient_id,
+      intakeId,
+      eventType: 'export_gate_passed',
+      requestId: requestIdHeader ? `${requestIdHeader}:export_gate_passed` : null,
+      payload: {
+        format: 'fhir',
+        review_status: currentReview.status,
+      },
+    })
 
     return NextResponse.json(
       {

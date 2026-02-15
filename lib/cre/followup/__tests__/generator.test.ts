@@ -2,6 +2,7 @@ import {
   appendAskedQuestionIds,
   generateFollowupQuestions,
   mergeClinicianRequestedItemsIntoFollowup,
+  transitionFollowupLifecycle,
 } from '@/lib/cre/followup/generator'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
 
@@ -181,5 +182,62 @@ describe('followup generator', () => {
 
     expect(generated.next_questions.length).toBeGreaterThan(0)
     expect(generated.next_questions[0].source).toBe('clinician_request')
+  })
+
+  it('transitions lifecycle via skip and complete without repeating asked questions', () => {
+    const structuredData = {
+      status: 'draft' as const,
+      followup: {
+        next_questions: [
+          {
+            id: 'gap:onset',
+            question: 'Seit wann bestehen die Beschwerden?',
+            why: 'Beginn fehlt',
+            priority: 1 as const,
+            source: 'gap_rule' as const,
+          },
+        ],
+        queue: [
+          {
+            id: 'gap:duration',
+            question: 'Wie lange dauern die Beschwerden?',
+            why: 'Dauer fehlt',
+            priority: 2 as const,
+            source: 'gap_rule' as const,
+          },
+        ],
+        asked_question_ids: [],
+        last_generated_at: '2026-02-14T00:00:00.000Z',
+      },
+    }
+
+    const afterSkip = transitionFollowupLifecycle({
+      structuredData,
+      action: 'skip',
+      questionId: 'gap:onset',
+      now: new Date('2026-02-14T10:00:00.000Z'),
+    })
+
+    expect(afterSkip.followup?.asked_question_ids).toContain('gap:onset')
+    expect(afterSkip.followup?.lifecycle?.skipped_question_ids).toContain('gap:onset')
+
+    const afterComplete = transitionFollowupLifecycle({
+      structuredData: afterSkip,
+      action: 'complete',
+      questionId: 'gap:duration',
+      now: new Date('2026-02-14T10:01:00.000Z'),
+    })
+
+    expect(afterComplete.followup?.asked_question_ids).toContain('gap:duration')
+    expect(afterComplete.followup?.lifecycle?.completed_question_ids).toContain('gap:duration')
+    expect(afterComplete.followup?.lifecycle?.state).toBe('completed')
+
+    const regenerated = generateFollowupQuestions({
+      structuredData: afterComplete,
+      now: new Date('2026-02-14T10:02:00.000Z'),
+    })
+
+    expect(regenerated.next_questions).toHaveLength(0)
+    expect(regenerated.queue ?? []).toHaveLength(0)
   })
 })

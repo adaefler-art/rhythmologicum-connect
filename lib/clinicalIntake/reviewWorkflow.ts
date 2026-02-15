@@ -12,6 +12,27 @@ export const ClinicalIntakeReviewStatusSchema = z.enum(CLINICAL_INTAKE_REVIEW_ST
 
 export type ClinicalIntakeReviewStatus = z.infer<typeof ClinicalIntakeReviewStatusSchema>
 
+const ALLOWED_REVIEW_TRANSITIONS: Record<
+  ClinicalIntakeReviewStatus | 'none',
+  ClinicalIntakeReviewStatus[]
+> = {
+  none: ['draft', 'in_review'],
+  draft: ['draft', 'in_review'],
+  in_review: ['in_review', 'needs_more_info', 'approved', 'rejected'],
+  needs_more_info: ['needs_more_info', 'in_review'],
+  approved: ['approved'],
+  rejected: ['rejected'],
+}
+
+export const getAllowedClinicalIntakeReviewTransitions = (
+  fromStatus: ClinicalIntakeReviewStatus | null,
+) => ALLOWED_REVIEW_TRANSITIONS[fromStatus ?? 'none']
+
+export const isAllowedClinicalIntakeReviewTransition = (params: {
+  fromStatus: ClinicalIntakeReviewStatus | null
+  toStatus: ClinicalIntakeReviewStatus
+}) => getAllowedClinicalIntakeReviewTransitions(params.fromStatus).includes(params.toStatus)
+
 const RequestedItemsSchema = z
   .array(z.string().trim().min(1))
   .transform((items) => items.map((item) => item.trim()).filter(Boolean))

@@ -40,10 +40,10 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
 | CRE-E2-03 | 10-W/OPQRST Pflichtmodul | P1 | M | done | CRE-E1-01 |
 | CRE-E2-04 | Ganzheitliche Anamnese + Completeness Score | P1 | L | done | CRE-E2-03 |
 | CRE-E2-05 | Teach-Back + Explizite Negativa | P1 | S-M | done | CRE-E2-03 |
-| CRE-E3-01 | Reasoning-Paket auf Zielmodell | P1 | M | todo | CRE-E1-01, CRE-E2-02 |
-| CRE-E3-02 | GP-Adapter v1 produktivisieren | P1 | M | todo | CRE-E3-01 |
-| CRE-E3-03 | HITL/HIC Gates End-to-End | P1 | M | todo | CRE-E1-03 |
-| CRE-E3-04 | Follow-up-Loop + Version Chain hardening | P2 | M | todo | CRE-E3-01 |
+| CRE-E3-01 | Reasoning-Paket auf Zielmodell | P1 | M | done | CRE-E1-01, CRE-E2-02 |
+| CRE-E3-02 | GP-Adapter v1 produktivisieren | P1 | M | done | CRE-E3-01 |
+| CRE-E3-03 | HITL/HIC Gates End-to-End | P1 | M | done | CRE-E1-03 |
+| CRE-E3-04 | Follow-up-Loop + Version Chain hardening | P2 | M | done | CRE-E3-01 |
 | CRE-E4-01 | Clinical Language Normalization (CSN) v1 | P2 | L | todo | CRE-E1-01 |
 | CRE-E4-02 | Export/FHIR-Lücken schließen | P2 | M | todo | CRE-E3-03 |
 | CRE-E4-03 | Klinische Validierung Phase I/II | P3 | L | todo | CRE-E2-01, CRE-E3-03 |
@@ -151,53 +151,53 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
   - [x] Teach-Back im Workflow sichtbar
   - [x] Negativa als Evidenz (nicht fehlend) vorhanden
 
-### [ ] CRE-E3-01 — Reasoning-Paket auf Zielmodell
-- **Status**: todo
+### [x] CRE-E3-01 — Reasoning-Paket auf Zielmodell
+- **Status**: done
 - **Owner**: Backend
 - **Ziel**: Reasoning strukturell auf Canvas-Zielmodell bringen.
 - **Tasks**:
-  - [ ] Differentials/Open Questions/Next Steps angleichen
-  - [ ] Unsicherheiten + Widersprüche formal ausgeben
-  - [ ] Safety-Priorität technisch absichern
+  - [x] Differentials/Open Questions/Next Steps angleichen
+  - [x] Unsicherheiten + Widersprüche formal ausgeben
+  - [x] Safety-Priorität technisch absichern
 - **Akzeptanzkriterien**:
-  - [ ] Output entspricht SSOT-Schema
-  - [ ] Konflikte/Unsicherheiten maschinenlesbar vorhanden
+  - [x] Output entspricht SSOT-Schema
+  - [x] Konflikte/Unsicherheiten maschinenlesbar vorhanden
 
-### [ ] CRE-E3-02 — GP-Adapter v1 produktivisieren
-- **Status**: todo
+### [x] CRE-E3-02 — GP-Adapter v1 produktivisieren
+- **Status**: done
 - **Owner**: Med + Backend
 - **Ziel**: Adapter für Allgemeinmedizin mit konservativer Safety-Strategie.
 - **Tasks**:
-  - [ ] Priors/Fragebibliothek definieren
-  - [ ] Schwellenwerte für Eskalation konfigurieren
-  - [ ] GP-Kurzanamnese-Template bereitstellen
+  - [x] Priors/Fragebibliothek definieren
+  - [x] Schwellenwerte für Eskalation konfigurieren
+  - [x] GP-Kurzanamnese-Template bereitstellen
 - **Akzeptanzkriterien**:
-  - [ ] Adapter-Parameter versioniert
-  - [ ] GP-Leitsymptomcluster abgedeckt
+  - [x] Adapter-Parameter versioniert
+  - [x] GP-Leitsymptomcluster abgedeckt
 
-### [ ] CRE-E3-03 — HITL/HIC Gates End-to-End
-- **Status**: todo
+### [x] CRE-E3-03 — HITL/HIC Gates End-to-End
+- **Status**: done
 - **Owner**: Backend + Studio UI
 - **Ziel**: Draft → Review → Sign-off als harte Workflow-Regel.
 - **Tasks**:
-  - [ ] Statusübergänge in APIs erzwingen
-  - [ ] UI-Gates inkl. Berechtigungsprüfung integrieren
-  - [ ] Audit-Logs für Gate-Entscheidungen ergänzen
+  - [x] Statusübergänge in APIs erzwingen
+  - [x] UI-Gates inkl. Berechtigungsprüfung integrieren
+  - [x] Audit-Logs für Gate-Entscheidungen ergänzen
 - **Akzeptanzkriterien**:
-  - [ ] Export/klinische Nutzung nur nach Sign-off
-  - [ ] Gate-Events vollständig auditierbar
+  - [x] Export/klinische Nutzung nur nach Sign-off
+  - [x] Gate-Events vollständig auditierbar
 
-### [ ] CRE-E3-04 — Follow-up-Loop + Version Chain hardening
-- **Status**: todo
+### [x] CRE-E3-04 — Follow-up-Loop + Version Chain hardening
+- **Status**: done
 - **Owner**: Patient UI + Backend
 - **Ziel**: Deterministischer Follow-up-Lebenszyklus mit robuster Versionierung.
 - **Tasks**:
-  - [ ] Queue-/Asked-ID-Logik härten
-  - [ ] Resume/Skip/Complete sauber modellieren
-  - [ ] E2E-Abdeckung erweitern
+  - [x] Queue-/Asked-ID-Logik härten
+  - [x] Resume/Skip/Complete sauber modellieren
+  - [x] E2E-Abdeckung erweitern
 - **Akzeptanzkriterien**:
-  - [ ] Keine Wiederholfragen bei beantworteten IDs
-  - [ ] Versionstransitionen nachvollziehbar und testbar
+  - [x] Keine Wiederholfragen bei beantworteten IDs
+  - [x] Versionstransitionen nachvollziehbar und testbar
 
 ### [ ] CRE-E4-01 — Clinical Language Normalization (CSN) v1
 - **Status**: todo

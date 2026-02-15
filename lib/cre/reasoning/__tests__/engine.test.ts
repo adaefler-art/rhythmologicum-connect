@@ -60,6 +60,9 @@ describe('reasoning engine', () => {
     expect(second).toEqual(first)
     expect(first.differentials[0]?.label).toBe('Panic-like autonomic episode')
     expect(first.differentials[0]?.matched_triggers.length).toBeGreaterThan(0)
+    expect(first.adapter?.domain).toBe('gp')
+    expect(first.uncertainty_items).toBeDefined()
+    expect(first.safety_alignment).toBeDefined()
   })
 
   it('forces reasoning risk to high when effective safety level is A', () => {
@@ -90,6 +93,7 @@ describe('reasoning engine', () => {
 
     const result = generateReasoningPack(input, config)
     expect(result.risk_estimation.level).toBe('high')
+    expect(result.safety_alignment?.blocked_by_safety).toBe(true)
   })
 
   it('does not remain high without verified red flags and without hard markers', () => {
@@ -148,5 +152,26 @@ describe('reasoning engine', () => {
 
     const result = generateReasoningPack(input, config)
     expect(result.risk_estimation.level).toBe('low')
+  })
+
+  it('emits machine-readable conflicts when safety contradictions are present', () => {
+    const input = {
+      status: 'draft' as const,
+      chief_complaint: 'Unspezifische Beschwerden',
+      safety: {
+        red_flag_present: false,
+        escalation_level: 'C' as const,
+        effective_level: 'C' as const,
+        contradictions_present: true,
+        red_flags: [],
+        triggered_rules: [],
+      },
+      explicit_negatives: [{ text: 'kein Brustschmerz', category: 'symptom' as const, source: 'manual' as const }],
+    }
+
+    const result = generateReasoningPack(input, config)
+    expect(result.conflicts?.some((entry) => entry.code === 'safety_contradictions_present')).toBe(
+      true,
+    )
   })
 })

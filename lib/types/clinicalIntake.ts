@@ -106,6 +106,8 @@ export interface HistoryOfPresentIllness {
 
 export type ReasoningLikelihood = 'low' | 'medium' | 'high'
 
+export type ReasoningIssueSeverity = 'low' | 'medium' | 'high'
+
 export interface ClinicalReasoningPack {
   risk_estimation: {
     score: number
@@ -129,6 +131,31 @@ export interface ClinicalReasoningPack {
   }>
   recommended_next_steps: string[]
   uncertainties: string[]
+  uncertainty_items?: Array<{
+    code: string
+    message: string
+    severity: ReasoningIssueSeverity
+  }>
+  conflicts?: Array<{
+    code: string
+    message: string
+    severity: ReasoningIssueSeverity
+    related_fields: string[]
+  }>
+  safety_alignment?: {
+    blocked_by_safety: boolean
+    effective_level: EscalationLevel | null
+    rationale: string
+  }
+  adapter?: {
+    domain: 'gp'
+    version: string
+    escalation_thresholds: {
+      high: number
+      medium: number
+    }
+    short_anamnesis_template: string[]
+  }
 }
 
 export interface ClinicalFollowupQuestion {
@@ -144,6 +171,13 @@ export interface ClinicalFollowup {
   queue?: ClinicalFollowupQuestion[]
   asked_question_ids: string[]
   last_generated_at: string
+  lifecycle?: {
+    state: 'active' | 'needs_review' | 'completed'
+    completed_question_ids: string[]
+    skipped_question_ids: string[]
+    resumed_at?: string | null
+    completed_at?: string | null
+  }
 }
 
 export type MandatoryIntakeAnswer = {

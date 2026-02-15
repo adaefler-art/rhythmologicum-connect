@@ -17,6 +17,15 @@ export const clinicalFollowupSchema = z.object({
   queue: z.array(clinicalFollowupQuestionSchema).optional(),
   asked_question_ids: z.array(z.string().min(1)),
   last_generated_at: z.string().min(1),
+  lifecycle: z
+    .object({
+      state: z.union([z.literal('active'), z.literal('needs_review'), z.literal('completed')]),
+      completed_question_ids: z.array(z.string().min(1)),
+      skipped_question_ids: z.array(z.string().min(1)),
+      resumed_at: z.string().nullable().optional(),
+      completed_at: z.string().nullable().optional(),
+    })
+    .optional(),
 })
 
 export const validateClinicalFollowup = (value: unknown) => {

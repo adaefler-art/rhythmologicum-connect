@@ -7,6 +7,7 @@ import {
   buildClinicalIntakeExportPayload,
   fetchIntakeAndReviewAudit,
 } from '@/lib/clinicalIntake/exportPayload'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 
 type RouteContext = {
   params: Promise<{ patientId: string; intakeId: string }>
@@ -113,6 +114,7 @@ export async function GET(_request: Request, context: RouteContext) {
     }
 
     const intake = loadResult.intake
+    const requestIdHeader = _request.headers.get('x-request-id')
 
     if (intake.user_id !== resolution.patientUserId && intake.patient_id !== resolution.patientProfileId) {
       return NextResponse.json(
@@ -124,9 +126,45 @@ export async function GET(_request: Request, context: RouteContext) {
       )
     }
 
+    const currentReview = loadResult.reviewAudit.find((row) => row.is_current) ?? loadResult.reviewAudit[0]
+    if (!currentReview || currentReview.status !== 'approved') {
+      await trackEvent({
+        patientId: intake.patient_id,
+        intakeId,
+        eventType: 'export_gate_denied',
+        requestId: requestIdHeader ? `${requestIdHeader}:export_gate_denied` : null,
+        payload: {
+          format: 'json',
+          review_status: currentReview?.status ?? 'none',
+        },
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.FORBIDDEN,
+            message: 'Export requires approved clinician sign-off.',
+          },
+        },
+        { status: 409 },
+      )
+    }
+
     const payload = buildClinicalIntakeExportPayload({
       intake,
       reviewAudit: loadResult.reviewAudit,
+    })
+
+    await trackEvent({
+      patientId: intake.patient_id,
+      intakeId,
+      eventType: 'export_gate_passed',
+      requestId: requestIdHeader ? `${requestIdHeader}:export_gate_passed` : null,
+      payload: {
+        format: 'json',
+        review_status: currentReview.status,
+      },
     })
 
     const filename = `intake-summary-${payload.metadata.patient_ref}-v${payload.metadata.intake_version}.json`

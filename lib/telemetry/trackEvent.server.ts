@@ -12,6 +12,9 @@ export const PATIENT_EVENT_TYPES = [
   'hard_stop_triggered',
   'override_set',
   'review_created',
+  'review_transition_denied',
+  'export_gate_denied',
+  'export_gate_passed',
   'upload_requested',
   'upload_received',
 ] as const

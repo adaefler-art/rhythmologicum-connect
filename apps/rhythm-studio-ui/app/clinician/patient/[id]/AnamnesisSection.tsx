@@ -979,6 +979,21 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     return { label: 'Draft', variant: 'secondary' as const }
   }
 
+  const getAllowedReviewTransitions = (
+    fromStatus: ClinicalIntakeReviewRecord['status'] | null,
+  ): ClinicalIntakeReviewRecord['status'][] => {
+    const map: Record<string, ClinicalIntakeReviewRecord['status'][]> = {
+      none: ['draft', 'in_review'],
+      draft: ['draft', 'in_review'],
+      in_review: ['in_review', 'needs_more_info', 'approved', 'rejected'],
+      needs_more_info: ['needs_more_info', 'in_review'],
+      approved: ['approved'],
+      rejected: ['rejected'],
+    }
+
+    return map[fromStatus ?? 'none']
+  }
+
   const saveReviewState = async (
     status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected',
   ) => {
@@ -1032,6 +1047,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const isReviewApproved = reviewState?.status === 'approved'
+  const allowedTransitions = getAllowedReviewTransitions(reviewState?.status ?? null)
+
   return (
     <>
       <Card padding="lg" shadow="md" className="mb-6">
@@ -1079,6 +1097,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   variant="secondary"
                   size="sm"
                   onClick={() => handleExportIntake('pdf')}
+                  disabled={!isReviewApproved}
                 >
                   Export PDF
                 </Button>
@@ -1086,11 +1105,17 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   variant="secondary"
                   size="sm"
                   onClick={() => handleExportIntake('json')}
+                  disabled={!isReviewApproved}
                 >
                   Export JSON
                 </Button>
               </div>
             </div>
+            {!isReviewApproved && (
+              <p className="text-xs text-amber-700">
+                Export ist erst nach clinician sign-off (Review: Approved) verfuegbar.
+              </p>
+            )}
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
             </p>
@@ -1221,7 +1246,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     <Button
                       variant="secondary"
                       size="sm"
-                      disabled={reviewSaving}
+                      disabled={reviewSaving || !allowedTransitions.includes('in_review')}
                       onClick={() => void saveReviewState('in_review')}
                     >
                       In Review
@@ -1229,7 +1254,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     <Button
                       variant="primary"
                       size="sm"
-                      disabled={reviewSaving}
+                      disabled={reviewSaving || !allowedTransitions.includes('approved')}
                       onClick={() => void saveReviewState('approved')}
                     >
                       Approve
@@ -1237,7 +1262,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     <Button
                       variant="secondary"
                       size="sm"
-                      disabled={reviewSaving}
+                      disabled={reviewSaving || !allowedTransitions.includes('needs_more_info')}
                       onClick={() => void saveReviewState('needs_more_info')}
                     >
                       Request more info
@@ -1245,7 +1270,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                     <Button
                       variant="danger"
                       size="sm"
-                      disabled={reviewSaving}
+                      disabled={reviewSaving || !allowedTransitions.includes('rejected')}
                       onClick={() => void saveReviewState('rejected')}
                     >
                       Reject

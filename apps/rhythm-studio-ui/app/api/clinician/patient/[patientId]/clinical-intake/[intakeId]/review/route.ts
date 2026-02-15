@@ -3,7 +3,10 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
-import { validateClinicalIntakeReviewInput } from '@/lib/clinicalIntake/reviewWorkflow'
+import {
+  isAllowedClinicalIntakeReviewTransition,
+  validateClinicalIntakeReviewInput,
+} from '@/lib/clinicalIntake/reviewWorkflow'
 import { mergeClinicianRequestedItemsIntoFollowup } from '@/lib/cre/followup/generator'
 import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
@@ -30,6 +33,10 @@ type IntakeRecord = {
   user_id: string
   patient_id: string | null
   structured_data: Json | null
+}
+
+type CurrentReviewRow = {
+  status: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
 }
 
 type DbError = { message: string } | null
@@ -166,6 +173,24 @@ export async function POST(request: Request, context: RouteContext) {
       )
     }
 
+    const { data: currentReviewRow, error: currentReviewError } = (await admin
+      .from('clinical_intake_reviews')
+      .select('status')
+      .eq('intake_id', intakeId)
+      .eq('is_current', true)
+      .maybeSingle()) as { data: CurrentReviewRow | null; error: DbError }
+
+    if (currentReviewError) {
+      console.error('[clinical-intake/review] Current review lookup error:', currentReviewError)
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to load review state' },
+        },
+        { status: 500 },
+      )
+    }
+
     if (intake.user_id !== resolution.patientUserId && intake.patient_id !== resolution.patientProfileId) {
       return NextResponse.json(
         {
@@ -190,6 +215,36 @@ export async function POST(request: Request, context: RouteContext) {
           },
         },
         { status: 400 },
+      )
+    }
+
+    const transitionAllowed = isAllowedClinicalIntakeReviewTransition({
+      fromStatus: currentReviewRow?.status ?? null,
+      toStatus: validation.data.status,
+    })
+
+    if (!transitionAllowed) {
+      const requestIdHeader = request.headers.get('x-request-id')
+      await trackEvent({
+        patientId: intake.patient_id,
+        intakeId,
+        eventType: 'review_transition_denied',
+        requestId: requestIdHeader ? `${requestIdHeader}:review_transition_denied` : null,
+        payload: {
+          from_status: currentReviewRow?.status ?? null,
+          to_status: validation.data.status,
+        },
+      })
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: ErrorCode.VALIDATION_FAILED,
+            message: `Invalid review transition from ${currentReviewRow?.status ?? 'none'} to ${validation.data.status}.`,
+          },
+        },
+        { status: 409 },
       )
     }
 
