@@ -170,6 +170,27 @@ const normalizeFollowupQuestionForCompare = (value?: string) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+const isSameFollowupQuestion = (left?: FollowupQuestion | null, right?: FollowupQuestion | null) => {
+  if (!left || !right) return false
+
+  const sameId =
+    typeof left.id === 'string' &&
+    typeof right.id === 'string' &&
+    left.id.trim().length > 0 &&
+    left.id.trim() === right.id.trim()
+
+  if (sameId) return true
+
+  const leftNormalized = normalizeFollowupQuestionForCompare(left.question)
+  const rightNormalized = normalizeFollowupQuestionForCompare(right.question)
+  return Boolean(leftNormalized && rightNormalized && leftNormalized === rightNormalized)
+}
+
+const pickDistinctNextFollowupQuestion = (params: {
+  currentQuestion: FollowupQuestion
+  candidates: FollowupQuestion[]
+}) => params.candidates.find((entry) => !isSameFollowupQuestion(entry, params.currentQuestion)) ?? null
+
 const questionAlreadyContainsContext = (value: string) =>
   /^(zum\s+thema|eine\s+kurze\s+rueckfrage\s+zur\s+anamnese)/i.test(value.trim())
 
@@ -1312,7 +1333,17 @@ export function DialogScreenV2() {
           setFollowupAnsweredCount(answeredCount)
 
           if (followupResult.nextQuestions.length > 0 && answeredCount < 3) {
-            const nextQuestion = followupResult.nextQuestions[0]
+            const nextQuestion = pickDistinctNextFollowupQuestion({
+              currentQuestion: currentFollowupQuestion,
+              candidates: followupResult.nextQuestions,
+            })
+
+            if (!nextQuestion) {
+              setActiveFollowupQuestion(null)
+              setFollowupAnsweredCount(0)
+              return
+            }
+
             setActiveFollowupQuestion(nextQuestion)
             appendAssistantMessage(
               buildFollowupPrompt({
@@ -1363,7 +1394,45 @@ export function DialogScreenV2() {
           setFollowupAnsweredCount(0)
           return
         } catch (followupLoopError) {
-          console.warn('[DialogScreenV2] Followup loop failed, fallback to normal chat', followupLoopError)
+          console.warn('[DialogScreenV2] Followup loop failed, trying followup-only recovery', followupLoopError)
+
+          try {
+            const recoveryFollowup = await generateFollowup({ intakeId: latestClinicalIntakeId })
+            setLatestClinicalIntakeId(recoveryFollowup.intakeId)
+
+            if (recoveryFollowup.blocked) {
+              setActiveFollowupQuestion(null)
+              setFollowupAnsweredCount(0)
+              return
+            }
+
+            if (recoveryFollowup.nextQuestions.length > 0) {
+              const nextQuestion = pickDistinctNextFollowupQuestion({
+                currentQuestion: currentFollowupQuestion,
+                candidates: recoveryFollowup.nextQuestions,
+              })
+
+              if (nextQuestion) {
+                setActiveFollowupQuestion(nextQuestion)
+                appendAssistantMessage(
+                  buildFollowupPrompt({
+                    question: nextQuestion,
+                    latestIntake: null,
+                    activeObjectiveCount: recoveryFollowup.activeObjectiveCount,
+                  }),
+                )
+              } else {
+                setActiveFollowupQuestion(null)
+              }
+            }
+
+            setFollowupAnsweredCount(0)
+            return
+          } catch (followupRecoveryError) {
+            console.warn('[DialogScreenV2] Followup recovery failed', followupRecoveryError)
+            setSendError('Es gab ein technisches Problem bei der Folgefrage. Bitte senden Sie kurz erneut.')
+            return
+          }
         }
       }
 
