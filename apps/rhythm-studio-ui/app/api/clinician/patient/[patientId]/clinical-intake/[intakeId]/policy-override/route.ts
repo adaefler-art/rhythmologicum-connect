@@ -4,6 +4,7 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { setPolicyOverride } from '@/lib/cre/safety/overridePersistence'
+import { trackEvent } from '@/lib/telemetry/trackEvent'
 
 type RouteContext = {
   params: Promise<{ patientId: string; intakeId: string }>
@@ -158,6 +159,20 @@ export async function POST(request: Request, context: RouteContext) {
         { status: isValidation ? 400 : 500 },
       )
     }
+
+    await trackEvent({
+      patientId: intakeRecord.patient_id,
+      intakeId: intakeRecord.id,
+      eventType: 'override_set',
+      requestId: request.headers.get('x-request-id')
+        ? `${request.headers.get('x-request-id')}:override_set`
+        : null,
+      payload: {
+        override_level: overrideLevel,
+        override_action: overrideAction,
+        has_reason: reason.length > 0,
+      },
+    })
 
     return NextResponse.json({
       success: true,

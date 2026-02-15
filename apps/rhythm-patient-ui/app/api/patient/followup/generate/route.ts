@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
+import { trackEvent } from '@/lib/telemetry/trackEvent'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
@@ -52,6 +53,15 @@ const getAskedQuestionIds = (body: z.infer<typeof requestSchema>) => {
   return Array.from(new Set(all.map((item) => item.trim()).filter(Boolean)))
 }
 
+const looksLikeUploadQuestionId = (questionId: string) => {
+  const normalized = questionId.toLowerCase()
+  return (
+    normalized.includes('upload') ||
+    normalized.includes('hochlad') ||
+    normalized.includes('arztbrief')
+  )
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await createServerSupabaseClient()
@@ -91,6 +101,7 @@ export async function POST(req: Request) {
     const body = parseResult.data
 
     const askedQuestionIds = getAskedQuestionIds(body)
+    const requestIdHeader = req.headers.get('x-request-id')
 
     let intakeRecord: IntakeRecord | null = null
 
@@ -263,6 +274,80 @@ export async function POST(req: Request) {
         { status: 500 },
       )
     }
+
+    const eventPromises: Array<Promise<string | null>> = []
+
+    if (askedQuestionIds.length > 0) {
+      eventPromises.push(
+        trackEvent({
+          patientId: intakeRecord.patient_id,
+          intakeId: intakeRecord.id,
+          eventType: 'followup_answered',
+          requestId: requestIdHeader ? `${requestIdHeader}:followup_answered` : null,
+          payload: {
+            answered_count: askedQuestionIds.length,
+          },
+        }),
+      )
+
+      if (askedQuestionIds.some(looksLikeUploadQuestionId)) {
+        eventPromises.push(
+          trackEvent({
+            patientId: intakeRecord.patient_id,
+            intakeId: intakeRecord.id,
+            eventType: 'upload_received',
+            requestId: requestIdHeader ? `${requestIdHeader}:upload_received` : null,
+            payload: {
+              source: 'followup_answered',
+            },
+          }),
+        )
+      }
+    }
+
+    if (blocked) {
+      eventPromises.push(
+        trackEvent({
+          patientId: intakeRecord.patient_id,
+          intakeId: intakeRecord.id,
+          eventType: 'hard_stop_triggered',
+          requestId: requestIdHeader ? `${requestIdHeader}:hard_stop` : null,
+          payload: {
+            source: 'followup_generate',
+          },
+        }),
+      )
+    }
+
+    const nextQuestions = followupValidation.value.next_questions ?? []
+    if (nextQuestions.length > 0) {
+      eventPromises.push(
+        trackEvent({
+          patientId: intakeRecord.patient_id,
+          intakeId: intakeRecord.id,
+          eventType: 'followup_question_shown',
+          requestId: requestIdHeader ? `${requestIdHeader}:followup_shown` : null,
+          payload: {
+            shown_count: nextQuestions.length,
+            first_question_id: nextQuestions[0]?.id ?? null,
+          },
+        }),
+      )
+    } else {
+      eventPromises.push(
+        trackEvent({
+          patientId: intakeRecord.patient_id,
+          intakeId: intakeRecord.id,
+          eventType: 'followup_skipped',
+          requestId: requestIdHeader ? `${requestIdHeader}:followup_skipped` : null,
+          payload: {
+            blocked,
+          },
+        }),
+      )
+    }
+
+    await Promise.allSettled(eventPromises)
 
     return NextResponse.json({
       success: true,

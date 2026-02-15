@@ -5,6 +5,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { validateClinicalIntakeReviewInput } from '@/lib/clinicalIntake/reviewWorkflow'
 import { mergeClinicianRequestedItemsIntoFollowup } from '@/lib/cre/followup/generator'
+import { trackEvent } from '@/lib/telemetry/trackEvent'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
@@ -23,6 +24,15 @@ type ReviewRecord = {
   created_at: string
   updated_at: string
 }
+
+type IntakeRecord = {
+  id: string
+  user_id: string
+  patient_id: string | null
+  structured_data: Json | null
+}
+
+type DbError = { message: string } | null
 
 const getUserRole = (user: {
   app_metadata?: Record<string, unknown>
@@ -49,6 +59,18 @@ const normalizeReview = (record: ReviewRecord | null) => {
     created_at: record.created_at,
     updated_at: record.updated_at,
   }
+}
+
+const hasUploadKeyword = (items: string[] | null | undefined) => {
+  if (!Array.isArray(items) || items.length === 0) return false
+  return items.some((item) => {
+    const normalized = item.toLowerCase()
+    return (
+      normalized.includes('upload') ||
+      normalized.includes('hochlad') ||
+      normalized.includes('arztbrief')
+    )
+  })
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -118,10 +140,10 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const { data: intake, error: intakeError } = (await admin
-      .from('clinical_intakes' as any)
+      .from('clinical_intakes')
       .select('id, user_id, patient_id, structured_data')
       .eq('id', intakeId)
-      .maybeSingle()) as { data: any; error: any }
+      .maybeSingle()) as { data: IntakeRecord | null; error: DbError }
 
     if (intakeError) {
       console.error('[clinical-intake/review] Intake lookup error:', intakeError)
@@ -173,8 +195,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     if (validation.data.status === 'needs_more_info' && validation.data.requested_items?.length) {
       const structuredData =
-        intake.structured_data && typeof intake.structured_data === 'object'
-          ? (intake.structured_data as StructuredIntakeData)
+        intake.structured_data &&
+        typeof intake.structured_data === 'object' &&
+        !Array.isArray(intake.structured_data)
+          ? (intake.structured_data as unknown as StructuredIntakeData)
           : ({ status: 'draft' } as StructuredIntakeData)
 
       const mergedStructuredData = mergeClinicianRequestedItemsIntoFollowup({
@@ -183,12 +207,12 @@ export async function POST(request: Request, context: RouteContext) {
       })
 
       const { error: intakeUpdateError } = (await admin
-        .from('clinical_intakes' as any)
+        .from('clinical_intakes')
         .update({
           structured_data: mergedStructuredData as unknown as Json,
           updated_by: user.id,
         })
-        .eq('id', intakeId)) as { error: any }
+        .eq('id', intakeId)) as { error: DbError }
 
       if (intakeUpdateError) {
         console.error('[clinical-intake/review] Failed to update intake followup:', intakeUpdateError)
@@ -206,10 +230,10 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const { error: clearCurrentError } = (await admin
-      .from('clinical_intake_reviews' as any)
+      .from('clinical_intake_reviews')
       .update({ is_current: false })
       .eq('intake_id', intakeId)
-      .eq('is_current', true)) as { error: any }
+      .eq('is_current', true)) as { error: DbError }
 
     if (clearCurrentError) {
       console.error('[clinical-intake/review] Failed to clear current review:', clearCurrentError)
@@ -223,7 +247,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const { data: insertedReview, error: insertError } = (await admin
-      .from('clinical_intake_reviews' as any)
+      .from('clinical_intake_reviews')
       .insert({
         intake_id: intakeId,
         status: validation.data.status,
@@ -233,7 +257,7 @@ export async function POST(request: Request, context: RouteContext) {
         is_current: true,
       })
       .select('id, intake_id, status, review_notes, requested_items, reviewed_by, is_current, created_at, updated_at')
-      .single()) as { data: ReviewRecord | null; error: any }
+      .single()) as { data: ReviewRecord | null; error: DbError }
 
     if (insertError || !insertedReview) {
       console.error('[clinical-intake/review] Insert error:', insertError)
@@ -247,11 +271,11 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const { data: auditRows, error: auditError } = (await admin
-      .from('clinical_intake_reviews' as any)
+      .from('clinical_intake_reviews')
       .select('id, intake_id, status, review_notes, requested_items, reviewed_by, is_current, created_at, updated_at')
       .eq('intake_id', intakeId)
       .order('created_at', { ascending: false })
-      .limit(20)) as { data: ReviewRecord[] | null; error: any }
+      .limit(20)) as { data: ReviewRecord[] | null; error: DbError }
 
     if (auditError) {
       console.error('[clinical-intake/review] Audit lookup error:', auditError)
@@ -263,6 +287,49 @@ export async function POST(request: Request, context: RouteContext) {
         { status: 500 },
       )
     }
+
+    const requestIdHeader = request.headers.get('x-request-id')
+    const eventPromises: Array<Promise<string | null>> = [
+      trackEvent({
+        patientId: intake.patient_id,
+        intakeId,
+        eventType: 'review_created',
+        requestId: requestIdHeader ? `${requestIdHeader}:review_created` : null,
+        payload: {
+          status: validation.data.status,
+        },
+      }),
+    ]
+
+    if (validation.data.status === 'needs_more_info' && hasUploadKeyword(validation.data.requested_items)) {
+      eventPromises.push(
+        trackEvent({
+          patientId: intake.patient_id,
+          intakeId,
+          eventType: 'upload_requested',
+          requestId: requestIdHeader ? `${requestIdHeader}:upload_requested` : null,
+          payload: {
+            source: 'review_requested_items',
+          },
+        }),
+      )
+    }
+
+    if (validation.data.status === 'approved' || validation.data.status === 'rejected') {
+      eventPromises.push(
+        trackEvent({
+          patientId: intake.patient_id,
+          intakeId,
+          eventType: 'session_end',
+          requestId: requestIdHeader ? `${requestIdHeader}:session_end` : null,
+          payload: {
+            review_status: validation.data.status,
+          },
+        }),
+      )
+    }
+
+    await Promise.allSettled(eventPromises)
 
     return NextResponse.json({
       success: true,

@@ -25,6 +25,7 @@ import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/l
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
+import { trackEvent } from '@/lib/telemetry/trackEvent'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
 import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'
@@ -330,6 +331,7 @@ export async function POST(req: NextRequest) {
     // Parse request body
     const body = (await req.json()) as GenerateIntakeRequest
     const { messageIds, triggerReason = 'manual', force = false } = body
+    const requestIdHeader = req.headers.get('x-request-id')
 
     console.log('[clinical-intake/generate] Request received', {
       userId: user.id,
@@ -539,6 +541,51 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       correlationId,
     })
+
+    const eventPromises: Array<Promise<string | null>> = []
+
+    if (triggerReason === 'manual') {
+      eventPromises.push(
+        trackEvent({
+          patientId: patientProfileId,
+          intakeId: intake.id,
+          eventType: 'session_start',
+          requestId: requestIdHeader ? `${requestIdHeader}:session_start` : null,
+          payload: {
+            trigger_reason: triggerReason,
+          },
+        }),
+      )
+    } else {
+      eventPromises.push(
+        trackEvent({
+          patientId: patientProfileId,
+          intakeId: intake.id,
+          eventType: 'intake_regen_triggered',
+          requestId: requestIdHeader ? `${requestIdHeader}:intake_regen` : null,
+          payload: {
+            trigger_reason: triggerReason,
+          },
+        }),
+      )
+    }
+
+    if (effective.chatAction === 'hard_stop' || effective.escalationLevel === 'A') {
+      eventPromises.push(
+        trackEvent({
+          patientId: patientProfileId,
+          intakeId: intake.id,
+          eventType: 'hard_stop_triggered',
+          requestId: requestIdHeader ? `${requestIdHeader}:hard_stop` : null,
+          payload: {
+            effective_level: effective.escalationLevel,
+            effective_action: effective.chatAction,
+          },
+        }),
+      )
+    }
+
+    await Promise.allSettled(eventPromises)
 
     return NextResponse.json({
       success: true,

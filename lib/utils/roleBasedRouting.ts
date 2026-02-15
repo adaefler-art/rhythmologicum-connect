@@ -120,6 +120,11 @@ export function getClinicianNavItems(pathname: string): RoleNavItem[] {
       label: 'Safety Rules',
       active: pathname?.startsWith('/clinician/admin/safety-rules') ?? false,
     },
+    {
+      href: '/clinician/admin/metrics',
+      label: 'Metrics',
+      active: pathname?.startsWith('/clinician/admin/metrics') ?? false,
+    },
   ]
 }
 
@@ -184,6 +189,11 @@ export function getAdminNavItems(pathname: string): RoleNavItem[] {
       href: '/clinician/admin/safety-rules',
       label: 'Safety Rules',
       active: pathname?.startsWith('/clinician/admin/safety-rules') ?? false,
+    },
+    {
+      href: '/clinician/admin/metrics',
+      label: 'Metrics',
+      active: pathname?.startsWith('/clinician/admin/metrics') ?? false,
     },
     {
       href: '/admin/dev/endpoints',
@@ -403,6 +413,17 @@ export async function fetchNavItemsForRole(
         href: '/admin/users',
         label: 'Benutzer',
         active: pathname?.startsWith('/admin/users') ?? false,
+      })
+    }
+
+    if (
+      (role === 'admin' || role === 'clinician') &&
+      !navItems.some((item) => item.href === '/clinician/admin/metrics')
+    ) {
+      navItems.push({
+        href: '/clinician/admin/metrics',
+        label: 'Metrics',
+        active: pathname?.startsWith('/clinician/admin/metrics') ?? false,
       })
     }
 
