@@ -256,6 +256,13 @@ const setupMockBackend = async (page: Page, state: ReturnType<typeof createMockS
   })
 }
 
+const bootstrapDialogIntake = async (page: Page) => {
+  const manualTrigger = page.getByRole('button', { name: 'Generate Intake (Dev)' })
+  if ((await manualTrigger.count()) > 0) {
+    await manualTrigger.first().click()
+  }
+}
+
 test.describe('patient followup loop @patient-followup', () => {
   test('runs deterministic followup loop in mock mode', async ({ page }) => {
     test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
@@ -275,6 +282,7 @@ test.describe('patient followup loop @patient-followup', () => {
     })
 
     await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
     await expect(page.getByText(seedFollowupQuestions[0].question).first()).toBeVisible()
 
     await page
@@ -319,6 +327,7 @@ test.describe('patient followup loop @patient-followup', () => {
     await setupMockBackend(page, state)
 
     await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
     await expect(page.getByText(/Sicherheits-Hinweis \(Level A\)/).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Senden' })).toBeDisabled()
 

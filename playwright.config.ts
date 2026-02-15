@@ -7,11 +7,19 @@ const baseURL =
     ? env.PATIENT_BASE_URL || 'http://127.0.0.1:3001'
     : env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
 const reuseExistingServer = env.NODE_ENV !== 'test'
+const isTestRuntime = env.NODE_ENV === 'test'
+const webServerCommand =
+  appTarget === 'patient'
+    ? isTestRuntime
+      ? 'npm run dev:patient'
+      : 'npm run start:patient'
+    : 'npm run start:studio'
 const webServerEnv = {
   NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key',
   NEXT_PUBLIC_FEATURE_AMY_CHAT_ENABLED: 'true',
   SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY || 'test-service-role-key',
+  ENGINE_BASE_URL: env.ENGINE_BASE_URL || 'http://127.0.0.1:3002',
   PORT: appTarget === 'patient' ? '3001' : '3000',
   NODE_ENV: 'test',
 }
@@ -30,7 +38,7 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    command: appTarget === 'patient' ? 'npm run start:patient' : 'npm run start:studio',
+    command: webServerCommand,
     url: baseURL,
     reuseExistingServer,
     timeout: 120_000,
