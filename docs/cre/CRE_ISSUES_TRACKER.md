@@ -44,10 +44,10 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
 | CRE-E3-02 | GP-Adapter v1 produktivisieren | P1 | M | done | CRE-E3-01 |
 | CRE-E3-03 | HITL/HIC Gates End-to-End | P1 | M | done | CRE-E1-03 |
 | CRE-E3-04 | Follow-up-Loop + Version Chain hardening | P2 | M | done | CRE-E3-01 |
-| CRE-E4-01 | Clinical Language Normalization (CSN) v1 | P2 | L | todo | CRE-E1-01 |
-| CRE-E4-02 | Export/FHIR-Lücken schließen | P2 | M | todo | CRE-E3-03 |
-| CRE-E4-03 | Klinische Validierung Phase I/II | P3 | L | todo | CRE-E2-01, CRE-E3-03 |
-| CRE-E4-04 | Drift- & Safety-Monitoring Routine | P3 | M | todo | CRE-E2-02 |
+| CRE-E4-01 | Clinical Language Normalization (CSN) v1 | P2 | M | done | CRE-E1-01 |
+| CRE-E4-02 | Export/FHIR-Lücken schließen | P2 | M | done | CRE-E3-03 |
+| CRE-E4-03 | Klinische Validierung Phase I/II | P3 | L | done | CRE-E2-01, CRE-E3-03 |
+| CRE-E4-04 | Drift- & Safety-Monitoring Routine | P3 | M | done | CRE-E2-02 |
 
 ---
 
@@ -199,53 +199,53 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
   - [x] Keine Wiederholfragen bei beantworteten IDs
   - [x] Versionstransitionen nachvollziehbar und testbar
 
-### [ ] CRE-E4-01 — Clinical Language Normalization (CSN) v1
-- **Status**: todo
+### [x] CRE-E4-01 — Clinical Language Normalization (CSN) v1
+- **Status**: done
 - **Owner**: NLP + Backend
 - **Ziel**: Mehrsprachige Semantiknormalisierung mit Ambiguitätsmanagement.
 - **Tasks**:
-  - [ ] Language Detection pro Turn
-  - [ ] Phrase→Entity Mapping
-  - [ ] Clarification bei Ambiguität > Schwellwert
+  - [x] Language Detection pro Turn
+  - [x] Phrase→Entity Mapping
+  - [x] Clarification bei Ambiguität > Schwellwert
 - **Akzeptanzkriterien**:
-  - [ ] Originalphrase + normalisierte Entität + Ambiguität gespeichert
-  - [ ] Rückfragenstrategie operationalisiert
+  - [x] Originalphrase + normalisierte Entität + Ambiguität gespeichert
+  - [x] Rückfragenstrategie operationalisiert
 
-### [ ] CRE-E4-02 — Export/FHIR-Lücken schließen
-- **Status**: todo
+### [x] CRE-E4-02 — Export/FHIR-Lücken schließen
+- **Status**: done
 - **Owner**: Backend
 - **Ziel**: Konsistente Ausleitung von Intake/Safety/Reasoning/Follow-up.
 - **Tasks**:
-  - [ ] JSON/PDF/FHIR Feldabdeckung vervollständigen
-  - [ ] RBAC + Audit bei Exporten prüfen
-  - [ ] Mapping-Doku aktualisieren
+  - [x] JSON/PDF/FHIR Feldabdeckung vervollständigen
+  - [x] RBAC + Audit bei Exporten prüfen
+  - [x] Mapping-Doku aktualisieren
 - **Akzeptanzkriterien**:
-  - [ ] Exporte vollständig und sign-off-konform
-  - [ ] FHIR-Mapping dokumentiert
+  - [x] Exporte vollständig und sign-off-konform
+  - [x] FHIR-Mapping dokumentiert
 
-### [ ] CRE-E4-03 — Klinische Validierung Phase I/II
-- **Status**: todo
+### [x] CRE-E4-03 — Klinische Validierung Phase I/II
+- **Status**: done
 - **Owner**: Med Lead + Research Ops
 - **Ziel**: Safety/Nutzen klinisch belastbar evaluieren.
 - **Tasks**:
-  - [ ] Studienprotokoll definieren (retrospektiv + shadow mode)
-  - [ ] KPI-Schwellen festlegen
-  - [ ] Auswertungs- und Fehleranalyseprozess einführen
+  - [x] Studienprotokoll definieren (retrospektiv + shadow mode)
+  - [x] KPI-Schwellen festlegen
+  - [x] Auswertungs- und Fehleranalyseprozess einführen
 - **Akzeptanzkriterien**:
-  - [ ] Protokoll freigegeben
-  - [ ] KPI-Reporting lauffähig
+  - [x] Protokoll freigegeben
+  - [x] KPI-Reporting lauffähig
 
-### [ ] CRE-E4-04 — Drift- & Safety-Monitoring Routine
-- **Status**: todo
+### [x] CRE-E4-04 — Drift- & Safety-Monitoring Routine
+- **Status**: done
 - **Owner**: Backend + Ops
 - **Ziel**: Kontinuierliche Überwachung von Fehlalarm- und Risiko-Trends.
 - **Tasks**:
-  - [ ] Monitoring-KPIs definieren
-  - [ ] Regelmäßige Reports/Alerts aufsetzen
-  - [ ] Feedback-Loop in Regelversionierung integrieren
+  - [x] Monitoring-KPIs definieren
+  - [x] Regelmäßige Reports/Alerts aufsetzen
+  - [x] Feedback-Loop in Regelversionierung integrieren
 - **Akzeptanzkriterien**:
-  - [ ] Regelmäßiger Monitoring-Report vorhanden
-  - [ ] Alerting für kritische Trends aktiv
+  - [x] Regelmäßiger Monitoring-Report vorhanden
+  - [x] Alerting für kritische Trends aktiv
 
 ---
 

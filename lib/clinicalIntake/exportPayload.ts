@@ -97,6 +97,96 @@ export type ClinicalIntakeExportPayload = {
     evidence_refs: string[]
     message_refs: string[]
   }
+  reasoning: {
+    risk_estimation: {
+      score: number | null
+      level: string | null
+      components: {
+        verified_red_flags: number | null
+        chronicity_signal: number | null
+        anxiety_signal: number | null
+      }
+    }
+    differentials: Array<{
+      label: string
+      likelihood: string
+      matched_triggers: string[]
+    }>
+    open_questions: Array<{
+      condition_label: string
+      text: string
+      priority: number | null
+    }>
+    recommended_next_steps: string[]
+    uncertainties: string[]
+    uncertainty_items: Array<{
+      code: string
+      message: string
+      severity: string
+    }>
+    conflicts: Array<{
+      code: string
+      message: string
+      severity: string
+      related_fields: string[]
+    }>
+    safety_alignment: {
+      blocked_by_safety: boolean
+      effective_level: string | null
+      rationale: string | null
+    }
+    adapter: {
+      domain: string | null
+      version: string | null
+    }
+  }
+  followup: {
+    next_questions: Array<{
+      id: string
+      question: string
+      why: string
+      priority: number | null
+      source: string | null
+    }>
+    queue: Array<{
+      id: string
+      question: string
+      why: string
+      priority: number | null
+      source: string | null
+    }>
+    asked_question_ids: string[]
+    lifecycle: {
+      state: string | null
+      completed_question_ids: string[]
+      skipped_question_ids: string[]
+      resumed_at: string | null
+      completed_at: string | null
+    }
+  }
+  language_normalization: {
+    version: string | null
+    turns: Array<{
+      turn_id: string
+      detected_language: string
+      original_phrase: string
+      ambiguity_score: number | null
+      clarification_required: boolean
+      clarification_prompt: string | null
+      mapped_entities: Array<{
+        entity_type: string
+        canonical: string
+        source_phrase: string
+        confidence: number | null
+      }>
+    }>
+    pending_clarifications: Array<{
+      turn_id: string
+      prompt: string
+      ambiguity_score: number | null
+      created_at: string | null
+    }>
+  }
   audit: {
     reviewer_identities: string[]
     intake_created_at: string
@@ -109,6 +199,16 @@ const getText = (value: unknown) => (typeof value === 'string' ? value.trim() : 
 const getStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : []
+
+const getNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+
+const getBoolean = (value: unknown): boolean => value === true
+
+const toObjectArray = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item))
     : []
 
 const getEvidenceRefs = (structuredData: Record<string, unknown>) => {
@@ -249,6 +349,40 @@ export const buildClinicalIntakeExportPayload = (params: {
       : null
 
   const currentReview = reviewAudit.find((row) => row.is_current) ?? reviewAudit[0] ?? null
+  const reasoning =
+    structuredData.reasoning && typeof structuredData.reasoning === 'object' && !Array.isArray(structuredData.reasoning)
+      ? (structuredData.reasoning as Record<string, unknown>)
+      : {}
+  const followup =
+    structuredData.followup && typeof structuredData.followup === 'object' && !Array.isArray(structuredData.followup)
+      ? (structuredData.followup as Record<string, unknown>)
+      : {}
+  const followupLifecycle =
+    followup.lifecycle && typeof followup.lifecycle === 'object' && !Array.isArray(followup.lifecycle)
+      ? (followup.lifecycle as Record<string, unknown>)
+      : {}
+  const languageNormalization =
+    structuredData.language_normalization &&
+    typeof structuredData.language_normalization === 'object' &&
+    !Array.isArray(structuredData.language_normalization)
+      ? (structuredData.language_normalization as Record<string, unknown>)
+      : {}
+  const riskEstimation =
+    reasoning.risk_estimation && typeof reasoning.risk_estimation === 'object' && !Array.isArray(reasoning.risk_estimation)
+      ? (reasoning.risk_estimation as Record<string, unknown>)
+      : {}
+  const riskComponents =
+    riskEstimation.components && typeof riskEstimation.components === 'object' && !Array.isArray(riskEstimation.components)
+      ? (riskEstimation.components as Record<string, unknown>)
+      : {}
+  const safetyAlignment =
+    reasoning.safety_alignment && typeof reasoning.safety_alignment === 'object' && !Array.isArray(reasoning.safety_alignment)
+      ? (reasoning.safety_alignment as Record<string, unknown>)
+      : {}
+  const adapter =
+    reasoning.adapter && typeof reasoning.adapter === 'object' && !Array.isArray(reasoning.adapter)
+      ? (reasoning.adapter as Record<string, unknown>)
+      : {}
 
   const payload: ClinicalIntakeExportPayload = {
     metadata: {
@@ -298,6 +432,96 @@ export const buildClinicalIntakeExportPayload = (params: {
       message_refs: Array.isArray(intake.last_updated_from_messages)
         ? intake.last_updated_from_messages.filter((item) => typeof item === 'string')
         : [],
+    },
+    reasoning: {
+      risk_estimation: {
+        score: getNumber(riskEstimation.score),
+        level: getText(riskEstimation.level) || null,
+        components: {
+          verified_red_flags: getNumber(riskComponents.verified_red_flags),
+          chronicity_signal: getNumber(riskComponents.chronicity_signal),
+          anxiety_signal: getNumber(riskComponents.anxiety_signal),
+        },
+      },
+      differentials: toObjectArray(reasoning.differentials).map((entry) => ({
+        label: getText(entry.label),
+        likelihood: getText(entry.likelihood),
+        matched_triggers: getStringArray(entry.matched_triggers),
+      })),
+      open_questions: toObjectArray(reasoning.open_questions).map((entry) => ({
+        condition_label: getText(entry.condition_label),
+        text: getText(entry.text),
+        priority: getNumber(entry.priority),
+      })),
+      recommended_next_steps: getStringArray(reasoning.recommended_next_steps),
+      uncertainties: getStringArray(reasoning.uncertainties),
+      uncertainty_items: toObjectArray(reasoning.uncertainty_items).map((entry) => ({
+        code: getText(entry.code),
+        message: getText(entry.message),
+        severity: getText(entry.severity),
+      })),
+      conflicts: toObjectArray(reasoning.conflicts).map((entry) => ({
+        code: getText(entry.code),
+        message: getText(entry.message),
+        severity: getText(entry.severity),
+        related_fields: getStringArray(entry.related_fields),
+      })),
+      safety_alignment: {
+        blocked_by_safety: getBoolean(safetyAlignment.blocked_by_safety),
+        effective_level: getText(safetyAlignment.effective_level) || null,
+        rationale: getText(safetyAlignment.rationale) || null,
+      },
+      adapter: {
+        domain: getText(adapter.domain) || null,
+        version: getText(adapter.version) || null,
+      },
+    },
+    followup: {
+      next_questions: toObjectArray(followup.next_questions).map((entry) => ({
+        id: getText(entry.id),
+        question: getText(entry.question),
+        why: getText(entry.why),
+        priority: getNumber(entry.priority),
+        source: getText(entry.source) || null,
+      })),
+      queue: toObjectArray(followup.queue).map((entry) => ({
+        id: getText(entry.id),
+        question: getText(entry.question),
+        why: getText(entry.why),
+        priority: getNumber(entry.priority),
+        source: getText(entry.source) || null,
+      })),
+      asked_question_ids: getStringArray(followup.asked_question_ids),
+      lifecycle: {
+        state: getText(followupLifecycle.state) || null,
+        completed_question_ids: getStringArray(followupLifecycle.completed_question_ids),
+        skipped_question_ids: getStringArray(followupLifecycle.skipped_question_ids),
+        resumed_at: getText(followupLifecycle.resumed_at) || null,
+        completed_at: getText(followupLifecycle.completed_at) || null,
+      },
+    },
+    language_normalization: {
+      version: getText(languageNormalization.version) || null,
+      turns: toObjectArray(languageNormalization.turns).map((entry) => ({
+        turn_id: getText(entry.turn_id),
+        detected_language: getText(entry.detected_language),
+        original_phrase: getText(entry.original_phrase),
+        ambiguity_score: getNumber(entry.ambiguity_score),
+        clarification_required: getBoolean(entry.clarification_required),
+        clarification_prompt: getText(entry.clarification_prompt) || null,
+        mapped_entities: toObjectArray(entry.mapped_entities).map((entity) => ({
+          entity_type: getText(entity.entity_type),
+          canonical: getText(entity.canonical),
+          source_phrase: getText(entity.source_phrase),
+          confidence: getNumber(entity.confidence),
+        })),
+      })),
+      pending_clarifications: toObjectArray(languageNormalization.pending_clarifications).map((entry) => ({
+        turn_id: getText(entry.turn_id),
+        prompt: getText(entry.prompt),
+        ambiguity_score: getNumber(entry.ambiguity_score),
+        created_at: getText(entry.created_at) || null,
+      })),
     },
     audit: {
       reviewer_identities: Array.from(new Set(reviewAudit.map((record) => record.reviewed_by))).filter(

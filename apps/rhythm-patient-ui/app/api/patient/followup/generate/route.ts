@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
 import { trackEvent } from '@/lib/telemetry/trackEvent.server'
+import { normalizeClinicalLanguageTurn } from '@/lib/cre/language/normalization'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
@@ -118,6 +119,41 @@ const applyAskedAnswerToStructuredData = (params: {
   }
 
   return next
+}
+
+const prependClarificationQuestion = (params: {
+  followup: NonNullable<StructuredIntakeData['followup']>
+  clarificationPrompt: string
+  turnId: string
+}) => {
+  const clarificationId = `csn:clarify:${params.turnId}`
+  const alreadyAsked = (params.followup.asked_question_ids ?? []).includes(clarificationId)
+  const alreadyInQueue = [
+    ...(params.followup.next_questions ?? []),
+    ...(params.followup.queue ?? []),
+  ].some((entry) => entry.id === clarificationId)
+
+  if (alreadyAsked || alreadyInQueue) {
+    return params.followup
+  }
+
+  const clarificationQuestion = {
+    id: clarificationId,
+    question: params.clarificationPrompt,
+    why: 'Ambigue Formulierung muss klinisch praezisiert werden',
+    priority: 1 as const,
+    source: 'gap_rule' as const,
+  }
+
+  const nextQuestions = [clarificationQuestion, ...(params.followup.next_questions ?? [])]
+  const trimmedNext = nextQuestions.slice(0, 3)
+  const overflow = nextQuestions.slice(3)
+
+  return {
+    ...params.followup,
+    next_questions: trimmedNext,
+    queue: [...overflow, ...(params.followup.queue ?? [])],
+  }
 }
 
 export async function POST(req: Request) {
@@ -279,6 +315,14 @@ export async function POST(req: Request) {
       answerText: body.asked_answer_text,
     })
 
+    const normalizationTurnId = askedQuestionIds[0] ?? `turn_${Date.now()}`
+    const normalizationResult = normalizeClinicalLanguageTurn({
+      structuredData,
+      turnId: normalizationTurnId,
+      phrase: body.asked_answer_text ?? '',
+    })
+    structuredData = normalizationResult.structuredData
+
     if (askedQuestionIds.length > 0) {
       structuredData = appendAskedQuestionIds({
         structuredData,
@@ -311,9 +355,18 @@ export async function POST(req: Request) {
       )
     }
 
+    const followupWithClarification =
+      normalizationResult.clarificationPrompt && followupValidation.value
+        ? prependClarificationQuestion({
+            followup: followupValidation.value,
+            clarificationPrompt: normalizationResult.clarificationPrompt,
+            turnId: normalizationTurnId,
+          })
+        : followupValidation.value
+
     const nextStructuredData: StructuredIntakeData = {
       ...structuredData,
-      followup: followupValidation.value,
+      followup: followupWithClarification,
     }
 
     const { error: updateError } = await supabase
@@ -382,7 +435,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const nextQuestions = followupValidation.value.next_questions ?? []
+    const nextQuestions = followupWithClarification.next_questions ?? []
     if (nextQuestions.length > 0) {
       eventPromises.push(
         trackEvent({
@@ -416,9 +469,11 @@ export async function POST(req: Request) {
       success: true,
       data: {
         intake_id: intakeRecord.id,
-        followup: followupValidation.value,
-        next_questions: followupValidation.value.next_questions,
+        followup: followupWithClarification,
+        next_questions: followupWithClarification.next_questions,
         blocked,
+        language_normalization: normalizationResult.turn,
+        clarification_prompt: normalizationResult.clarificationPrompt,
       },
     })
   } catch (error) {

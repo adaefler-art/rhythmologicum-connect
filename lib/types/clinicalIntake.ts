@@ -256,6 +256,32 @@ export interface StructuredIntakeData {
   explicit_negatives?: ExplicitNegative[]
   teach_back?: TeachBackBlock
   completeness?: IntakeCompleteness
+  language_normalization?: {
+    version: string
+    turns: Array<{
+      turn_id: string
+      source: 'patient'
+      detected_language: 'de' | 'en' | 'mixed' | 'unknown'
+      original_phrase: string
+      mapped_entities: Array<{
+        entity_type: 'symptom' | 'medication' | 'duration' | 'intensity' | 'other'
+        canonical: string
+        source_phrase: string
+        confidence: number
+      }>
+      ambiguity_score: number
+      clarification_required: boolean
+      clarification_prompt?: string
+      created_at: string
+    }>
+    pending_clarifications?: Array<{
+      turn_id: string
+      prompt: string
+      ambiguity_score: number
+      created_at: string
+    }>
+    last_updated_at: string
+  }
 }
 
 // ============================================================================

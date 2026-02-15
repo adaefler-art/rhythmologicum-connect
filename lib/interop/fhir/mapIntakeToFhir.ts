@@ -124,6 +124,81 @@ const deriveRecommendedNextSteps = (structured: Record<string, unknown>): string
   return []
 }
 
+const deriveReasoningRiskObservation = (structured: Record<string, unknown>) => {
+  const reasoning = isRecord(structured.reasoning) ? structured.reasoning : null
+  if (!reasoning) return null
+
+  const risk = isRecord(reasoning.risk_estimation) ? reasoning.risk_estimation : null
+  if (!risk) return null
+
+  const score = typeof risk.score === 'number' ? risk.score : null
+  const level = toText(risk.level) || null
+
+  if (score === null && !level) return null
+
+  return {
+    score,
+    level,
+  }
+}
+
+const deriveSafetyObservation = (structured: Record<string, unknown>) => {
+  const safety = isRecord(structured.safety) ? structured.safety : null
+  if (!safety) return null
+
+  const effectiveLevel =
+    toText((isRecord(safety.effective_policy_result) ? safety.effective_policy_result.escalation_level : null)) ||
+    toText(safety.effective_level) ||
+    toText(safety.escalation_level)
+
+  const effectiveAction =
+    toText((isRecord(safety.effective_policy_result) ? safety.effective_policy_result.chat_action : null)) ||
+    toText(safety.effective_action)
+
+  if (!effectiveLevel && !effectiveAction) return null
+
+  return {
+    effectiveLevel: effectiveLevel || null,
+    effectiveAction: effectiveAction || null,
+  }
+}
+
+const deriveFollowupQuestions = (structured: Record<string, unknown>) => {
+  const followup = isRecord(structured.followup) ? structured.followup : null
+  if (!followup) return [] as string[]
+
+  const next = Array.isArray(followup.next_questions) ? followup.next_questions : []
+  const queue = Array.isArray(followup.queue) ? followup.queue : []
+
+  return [...next, ...queue]
+    .filter((entry) => isRecord(entry))
+    .map((entry) => toText(entry.question))
+    .filter(Boolean)
+    .slice(0, 6)
+}
+
+const deriveLanguageNormalizationSummary = (structured: Record<string, unknown>) => {
+  const normalization = isRecord(structured.language_normalization)
+    ? structured.language_normalization
+    : null
+  if (!normalization) return null
+
+  const turns = Array.isArray(normalization.turns)
+    ? normalization.turns.filter((entry) => isRecord(entry)).slice(-3)
+    : []
+
+  if (turns.length === 0) return null
+
+  return turns
+    .map((turn) => {
+      const language = toText(turn.detected_language) || 'unknown'
+      const phrase = toText(turn.original_phrase)
+      const ambiguity = typeof turn.ambiguity_score === 'number' ? turn.ambiguity_score : null
+      return `${language}: ${phrase}${ambiguity !== null ? ` (ambiguity ${ambiguity})` : ''}`
+    })
+    .join(' | ')
+}
+
 const baseUrl = 'urn:rhythmologicum:fhir-like'
 
 export const mapIntakeToFhir = (params: {
@@ -209,12 +284,82 @@ export const mapIntakeToFhir = (params: {
     },
   }))
 
+  const followupServiceRequests: FhirLikeResource[] = deriveFollowupQuestions(structured).map(
+    (question, index) => ({
+      resourceType: 'ServiceRequest',
+      id: `service-request-followup-${index + 1}`,
+      status: 'active',
+      intent: 'proposal',
+      priority: 'routine',
+      subject: { reference: `Patient/${patientId}` },
+      authoredOn: generatedAt,
+      code: {
+        text: `Follow-up question: ${question}`,
+      },
+    }),
+  )
+
+  const reasoningRisk = deriveReasoningRiskObservation(structured)
+  const reasoningObservation: FhirLikeResource[] = reasoningRisk
+    ? [
+        {
+          resourceType: 'Observation',
+          id: 'obs-reasoning-risk',
+          status: 'final',
+          category: [{ text: 'clinical-reasoning' }],
+          code: { text: 'Reasoning risk estimation' },
+          subject: { reference: `Patient/${patientId}` },
+          effectiveDateTime: generatedAt,
+          valueString:
+            reasoningRisk.score !== null
+              ? `score=${reasoningRisk.score}; level=${reasoningRisk.level ?? 'n/a'}`
+              : `level=${reasoningRisk.level ?? 'n/a'}`,
+        },
+      ]
+    : []
+
+  const safetyObservationData = deriveSafetyObservation(structured)
+  const safetyObservations: FhirLikeResource[] = safetyObservationData
+    ? [
+        {
+          resourceType: 'Observation',
+          id: 'obs-safety-effective-state',
+          status: 'final',
+          category: [{ text: 'safety' }],
+          code: { text: 'Effective safety state' },
+          subject: { reference: `Patient/${patientId}` },
+          effectiveDateTime: generatedAt,
+          valueString: `level=${safetyObservationData.effectiveLevel ?? 'n/a'}; action=${safetyObservationData.effectiveAction ?? 'n/a'}`,
+        },
+      ]
+    : []
+
+  const normalizationSummary = deriveLanguageNormalizationSummary(structured)
+  const normalizationObservations: FhirLikeResource[] = normalizationSummary
+    ? [
+        {
+          resourceType: 'Observation',
+          id: 'obs-language-normalization',
+          status: 'final',
+          category: [{ text: 'language-normalization' }],
+          code: { text: 'Clinical language normalization summary' },
+          subject: { reference: `Patient/${patientId}` },
+          effectiveDateTime: generatedAt,
+          valueString: normalizationSummary,
+        },
+      ]
+    : []
+
   const allResources: FhirLikeResource[] = [
     patient,
     ...symptomObservations,
     ...vitalObservations,
     ...conditions,
     ...serviceRequests,
+    ...followupServiceRequests,
+    ...reasoningObservation,
+    ...safetyObservations,
+    ...normalizationObservations,
   ]
 
   return {
