@@ -562,7 +562,8 @@ export async function POST(req: Request) {
           trackEvent({
             patientId: intakeRecord.patient_id,
             intakeId: intakeRecord.id,
-            eventType: 'followup_resolved',
+            eventType:
+              'followup_resolved' as unknown as Parameters<typeof trackEvent>[0]['eventType'],
             requestId: requestIdHeader ? `${requestIdHeader}:followup_resolved` : null,
             payload: {
               question_count: askedQuestionIds.length,
@@ -577,7 +578,8 @@ export async function POST(req: Request) {
           trackEvent({
             patientId: intakeRecord.patient_id,
             intakeId: intakeRecord.id,
-            eventType: 'followup_clarification_needed',
+            eventType:
+              'followup_clarification_needed' as unknown as Parameters<typeof trackEvent>[0]['eventType'],
             requestId: requestIdHeader ? `${requestIdHeader}:followup_clarification_needed` : null,
             payload: {
               question_count: askedQuestionIds.length,
