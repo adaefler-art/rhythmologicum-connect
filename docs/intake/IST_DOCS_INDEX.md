@@ -7,7 +7,7 @@ Inventory of documentation that describes patient record, intake-adjacent flows,
 | Doc | Relevant claims | Evidence |
 | --- | --- | --- |
 | docs/api/ENDPOINT_CATALOG.md | Deterministic list of API routes and access categories (includes anamnesis, consult notes, funnels, patient-measures, amy chat). | [docs/api/ENDPOINT_CATALOG.md](docs/api/ENDPOINT_CATALOG.md) |
-| docs/API_ROUTE_OWNERSHIP.md | Ownership + auth expectations for API routes (funnels runtime, consent, patient-measures export). | [docs/API_ROUTE_OWNERSHIP.md](docs/API_ROUTE_OWNERSHIP.md) |
+| docs/api/API_ROUTE_OWNERSHIP.md | Ownership + auth expectations for API routes (funnels runtime, consent, patient-measures export). | [docs/api/API_ROUTE_OWNERSHIP.md](docs/api/API_ROUTE_OWNERSHIP.md) |
 | docs/_archive_0_3/JSON_EXPORT.md | JSON export format for patient measures + consents; names `/api/patient-measures/export`. | [docs/_archive_0_3/JSON_EXPORT.md](docs/_archive_0_3/JSON_EXPORT.md) |
 | docs/_archive_0_3/B2_IMPLEMENTATION.md | `patient_measures` schema + stress report flow persists measures and export coverage. | [docs/_archive_0_3/B2_IMPLEMENTATION.md](docs/_archive_0_3/B2_IMPLEMENTATION.md) |
 | docs/_archive_0_3/CLINICIAN_AUTH.md | Clinician auth flow and RLS overview for protected data access. | [docs/_archive_0_3/CLINICIAN_AUTH.md](docs/_archive_0_3/CLINICIAN_AUTH.md) |

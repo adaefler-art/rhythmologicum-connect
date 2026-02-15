@@ -2,7 +2,7 @@
 
 ## Scope and sources
 - API inventory base: [docs/api/ENDPOINT_CATALOG.md](docs/api/ENDPOINT_CATALOG.md)
-- Route ownership notes: [docs/API_ROUTE_OWNERSHIP.md](docs/API_ROUTE_OWNERSHIP.md)
+- Route ownership notes: [docs/api/API_ROUTE_OWNERSHIP.md](docs/api/API_ROUTE_OWNERSHIP.md)
 - Runtime route files (primary app): [apps/rhythm-patient-ui/app/api](apps/rhythm-patient-ui/app/api), [apps/rhythm-studio-ui/app/api](apps/rhythm-studio-ui/app/api)
 
 ## Routing notes

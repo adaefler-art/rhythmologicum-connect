@@ -51,7 +51,7 @@ Risks:
 Proceed with Plan A. It reuses existing versioning, RLS, and UI, requires only a small schema update, and keeps intake data co-located with other patient record entries.
 
 ## Consistency check (docs vs runtime)
-- Endpoint method mismatch for patient export: API ownership doc lists `POST /api/patient-measures/export`, but the route is implemented as GET. Evidence: [docs/API_ROUTE_OWNERSHIP.md](docs/API_ROUTE_OWNERSHIP.md), [apps/rhythm-patient-ui/app/api/patient-measures/export/route.ts](apps/rhythm-patient-ui/app/api/patient-measures/export/route.ts)
+- Endpoint method mismatch for patient export: API ownership doc lists `POST /api/patient-measures/export`, but the route is implemented as GET. Evidence: [docs/api/API_ROUTE_OWNERSHIP.md](docs/api/API_ROUTE_OWNERSHIP.md), [apps/rhythm-patient-ui/app/api/patient-measures/export/route.ts](apps/rhythm-patient-ui/app/api/patient-measures/export/route.ts)
 - Access pattern mismatch for history: endpoint catalog lists patient access for `/api/patient-measures/history`, but the handler uses an admin client and requires `patientId` query param (clinician-style access). Evidence: [docs/api/ENDPOINT_CATALOG.md](docs/api/ENDPOINT_CATALOG.md), [apps/rhythm-patient-ui/app/api/patient-measures/history/route.ts](apps/rhythm-patient-ui/app/api/patient-measures/history/route.ts)
 - Canonical patient state exists but is separate from record/intake tables; intake should not write to `patient_state` unless explicitly designed for it. Evidence: [schema/schema.sql](schema/schema.sql), [apps/rhythm-patient-ui/app/api/patient/state/route.ts](apps/rhythm-patient-ui/app/api/patient/state/route.ts)
 

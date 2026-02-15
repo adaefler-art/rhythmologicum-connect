@@ -11,7 +11,7 @@ Status: **v0.5 released (pending tag v0.5.0)**
 - Dev setup: [docs/dev/DEV_SETUP.md](docs/dev/DEV_SETUP.md)
 - Verify endpoints: [docs/dev/VERIFY_ENDPOINTS.md](docs/dev/VERIFY_ENDPOINTS.md)
 - **Funnel System (E74):** [docs/funnels/README.md](docs/funnels/README.md) - Canonical schema, validation, publishing
-- **Rules vs Checks Matrix:** [docs/RULES_VS_CHECKS_MATRIX.md](docs/RULES_VS_CHECKS_MATRIX.md) - Complete rule-check alignment
+- **Rules vs Checks Matrix:** [docs/matrices/RULES_VS_CHECKS_MATRIX.md](docs/matrices/RULES_VS_CHECKS_MATRIX.md) - Complete rule-check alignment
 
 ## Getting Started
 
