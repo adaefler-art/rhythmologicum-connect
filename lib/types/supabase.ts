@@ -2314,6 +2314,51 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          intake_id: string | null
+          patient_id: string | null
+          payload: Json
+          request_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          intake_id?: string | null
+          patient_id?: string | null
+          payload?: Json
+          request_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          intake_id?: string | null
+          patient_id?: string | null
+          payload?: Json
+          request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_events_intake_id_fkey"
+            columns: ["intake_id"]
+            isOneToOne: false
+            referencedRelation: "clinical_intakes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_events_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patient_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_funnels: {
         Row: {
           active_version_id: string | null
