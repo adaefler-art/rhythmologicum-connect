@@ -102,6 +102,7 @@ type RuleOverrideConfig = {
 export type SafetyRuleOverrides = Record<string, RuleOverrideConfig>
 
 const SAFETY_POLICY_VERSION = '2.1'
+const RED_FLAG_MATRIX_VERSION = '2026-02-15-v2'
 
 const RULES: Record<ClinicalRedFlag, RuleMeta> = {
   [CLINICAL_RED_FLAG.CHEST_PAIN]: {
@@ -472,6 +473,12 @@ export function evaluateRedFlags(params: {
   pushArray((structuredData as { medication?: unknown }).medication)
   pushArray((structuredData as { psychosocial_factors?: unknown }).psychosocial_factors)
   pushArray((structuredData as { uncertainties?: unknown }).uncertainties)
+  pushArray(
+    (structuredData as { explicit_negatives?: Array<{ text?: string }> }).explicit_negatives?.map(
+      (entry) => entry.text,
+    ),
+  )
+  pushText((structuredData as { teach_back?: { summary?: string } }).teach_back?.summary)
   verbatimChatMessages?.forEach((message) => {
     if (typeof message.content === 'string' && message.content.trim()) {
       textParts.push(message.content.trim())
@@ -706,15 +713,23 @@ export function evaluateRedFlags(params: {
   }
 
   const relevantNegatives = (structuredData as { relevant_negatives?: unknown }).relevant_negatives
-  const contradictions = Array.isArray(relevantNegatives)
-    ? relevantNegatives.some((entry) => {
+  const explicitNegatives = (
+    structuredData as { explicit_negatives?: Array<{ text?: string }> }
+  ).explicit_negatives
+  const allNegatives = [
+    ...(Array.isArray(relevantNegatives) ? relevantNegatives : []),
+    ...(Array.isArray(explicitNegatives)
+      ? explicitNegatives.map((entry) => entry?.text).filter((entry): entry is string => !!entry)
+      : []),
+  ]
+
+  const contradictions = allNegatives.some((entry) => {
         if (typeof entry !== 'string') return false
         const normalized = normalizeText(entry)
         return findings.some((flag) =>
           CONTRADICTION_PATTERNS[flag.id]?.some((pattern) => normalized.includes(pattern))
         )
       })
-    : false
 
   if (contradictions && escalation !== 'A') {
     escalation = 'B'
@@ -737,6 +752,7 @@ export function evaluateRedFlags(params: {
     safety_questions: escalation === 'C' ? SAFETY_QUESTIONS_LEVEL_C : undefined,
     quality: {
       confidence: Array.isArray(uncertainties) && uncertainties.length > 0 ? 'low' : 'medium',
+      notes: [`red_flag_matrix_version:${RED_FLAG_MATRIX_VERSION}`],
     },
   }
 }

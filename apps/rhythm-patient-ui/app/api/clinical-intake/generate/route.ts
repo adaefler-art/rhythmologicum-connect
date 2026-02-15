@@ -32,6 +32,7 @@ import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'
 import { loadActiveSafetyRuleOverrides } from '@/lib/cre/safety/safetyRuleVersions'
 import { generateReasoningPack } from '@/lib/cre/reasoning/engine'
 import { loadActiveClinicalReasoningConfig } from '@/lib/cre/reasoning/configStore'
+import { enrichStructuredIntakeData } from '@/lib/cre/intake/enrichment'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
 import type {
   GenerateIntakeRequest,
@@ -425,6 +426,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    result.structuredData = enrichStructuredIntakeData(result.structuredData)
+
     let ruleOverrides = {}
     const admin = createAdminSupabaseClient()
     try {
@@ -472,10 +475,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const safetySnapshot = result.structuredData.safety
+
     result.structuredData.reasoning = generateReasoningPack(
       result.structuredData,
       activeReasoning.config_json,
     )
+    result.structuredData.safety = safetySnapshot
 
     const safetyLine = formatSafetySummaryLine(safetyResult)
     const clinicalSummary = appendSafetySummary(result.clinicalSummary, safetyLine)
@@ -518,10 +524,12 @@ export async function POST(req: NextRequest) {
         triggered_rules: updatedTriggeredRules,
       }
       result.structuredData.safety = updatedSafety
+      const updatedSafetySnapshot = result.structuredData.safety
       result.structuredData.reasoning = generateReasoningPack(
         result.structuredData,
         activeReasoning.config_json,
       )
+      result.structuredData.safety = updatedSafetySnapshot
 
       const { data: updated, error: updateError } = await supabase
         .from('clinical_intakes' as any)

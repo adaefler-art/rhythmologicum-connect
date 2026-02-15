@@ -146,6 +146,62 @@ export interface ClinicalFollowup {
   last_generated_at: string
 }
 
+export type MandatoryIntakeAnswer = {
+  value: string | null
+  state: 'answered' | 'unanswered'
+}
+
+export interface TenWModule {
+  was: MandatoryIntakeAnswer
+  wo: MandatoryIntakeAnswer
+  wann: MandatoryIntakeAnswer
+  wie: MandatoryIntakeAnswer
+  wie_stark: MandatoryIntakeAnswer
+  wohin: MandatoryIntakeAnswer
+  wie_lange: MandatoryIntakeAnswer
+  wodurch: MandatoryIntakeAnswer
+  welche: MandatoryIntakeAnswer
+  warum: MandatoryIntakeAnswer
+}
+
+export interface OPQRSTModule {
+  onset: MandatoryIntakeAnswer
+  provocation: MandatoryIntakeAnswer
+  palliation: MandatoryIntakeAnswer
+  quality: MandatoryIntakeAnswer
+  region_radiation: MandatoryIntakeAnswer
+  severity: MandatoryIntakeAnswer
+  timing: MandatoryIntakeAnswer
+}
+
+export interface BackgroundAnamnesis {
+  past_medical_history: string[]
+  medications: string[]
+  allergies: string[]
+  family_history: string[]
+  social_history: string[]
+  review_of_systems: string[]
+}
+
+export interface ExplicitNegative {
+  text: string
+  category: 'symptom' | 'safety' | 'other'
+  source: 'llm' | 'teach_back' | 'manual'
+}
+
+export interface TeachBackBlock {
+  summary: string
+  confirmed: boolean
+  missing_points?: string[]
+}
+
+export interface IntakeCompleteness {
+  score: number
+  answered_fields: number
+  total_fields: number
+  missing_fields: string[]
+}
+
 export interface StructuredIntakeData {
   status: 'draft'
   chief_complaint?: string
@@ -160,6 +216,12 @@ export interface StructuredIntakeData {
   safety?: SafetyEvaluation
   reasoning?: ClinicalReasoningPack
   followup?: ClinicalFollowup
+  ten_w?: TenWModule
+  opqrst?: OPQRSTModule
+  background_anamnesis?: BackgroundAnamnesis
+  explicit_negatives?: ExplicitNegative[]
+  teach_back?: TeachBackBlock
+  completeness?: IntakeCompleteness
 }
 
 // ============================================================================

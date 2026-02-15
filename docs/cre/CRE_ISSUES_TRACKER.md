@@ -35,11 +35,11 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
 | CRE-E1-01 | Canonical CRE Spec (SSOT) | P0 | M | done | - |
 | CRE-E1-02 | Capability Gap Map (Ist vs Soll) | P0 | M | done | CRE-E1-01 |
 | CRE-E1-03 | API-Konvention harmonisieren | P0 | S-M | done | CRE-E1-01 |
-| CRE-E2-01 | Red-Flag-Matrix finalisieren | P1 | M | todo | CRE-E1-01 |
-| CRE-E2-02 | Deterministische Safety-Regeln je Domäne | P1 | M-L | todo | CRE-E2-01 |
-| CRE-E2-03 | 10-W/OPQRST Pflichtmodul | P1 | M | todo | CRE-E1-01 |
-| CRE-E2-04 | Ganzheitliche Anamnese + Completeness Score | P1 | L | todo | CRE-E2-03 |
-| CRE-E2-05 | Teach-Back + Explizite Negativa | P1 | S-M | todo | CRE-E2-03 |
+| CRE-E2-01 | Red-Flag-Matrix finalisieren | P1 | M | done | CRE-E1-01 |
+| CRE-E2-02 | Deterministische Safety-Regeln je Domäne | P1 | M-L | done | CRE-E2-01 |
+| CRE-E2-03 | 10-W/OPQRST Pflichtmodul | P1 | M | done | CRE-E1-01 |
+| CRE-E2-04 | Ganzheitliche Anamnese + Completeness Score | P1 | L | done | CRE-E2-03 |
+| CRE-E2-05 | Teach-Back + Explizite Negativa | P1 | S-M | done | CRE-E2-03 |
 | CRE-E3-01 | Reasoning-Paket auf Zielmodell | P1 | M | todo | CRE-E1-01, CRE-E2-02 |
 | CRE-E3-02 | GP-Adapter v1 produktivisieren | P1 | M | todo | CRE-E3-01 |
 | CRE-E3-03 | HITL/HIC Gates End-to-End | P1 | M | todo | CRE-E1-03 |
@@ -91,65 +91,65 @@ Quelle: `docs/cre/IMPLEMENTATION_BACKLOG_2026-02-15.md`
   - [x] CRE-Endpunkte liefern konsistentes Envelope
   - [x] Kompatibilität mit bestehenden Clients sichergestellt
 
-### [ ] CRE-E2-01 — Red-Flag-Matrix finalisieren
-- **Status**: todo
+### [x] CRE-E2-01 — Red-Flag-Matrix finalisieren
+- **Status**: done
 - **Owner**: Med Lead + Safety + Backend
 - **Ziel**: Verbindliche A/B/C-Eskalationsmatrix je Flag.
 - **Tasks**:
-  - [ ] GP-Core-Red-Flags konsolidieren
-  - [ ] Hard Stop vs Priority Review definieren
-  - [ ] Versionierung + Audit-Referenzen ergänzen
+  - [x] GP-Core-Red-Flags konsolidieren
+  - [x] Hard Stop vs Priority Review definieren
+  - [x] Versionierung + Audit-Referenzen ergänzen
 - **Akzeptanzkriterien**:
-  - [ ] Jede Red Flag hat genau eine Eskalationsstufe
-  - [ ] Matrix ist versioniert und dokumentiert
+  - [x] Jede Red Flag hat genau eine Eskalationsstufe
+  - [x] Matrix ist versioniert und dokumentiert
 
-### [ ] CRE-E2-02 — Deterministische Safety-Regeln je Domäne
-- **Status**: todo
+### [x] CRE-E2-02 — Deterministische Safety-Regeln je Domäne
+- **Status**: done
 - **Owner**: Backend
 - **Ziel**: Ausbau des regelbasierten Safety-Layers ohne probabilistische Entschärfung.
 - **Tasks**:
-  - [ ] Regelsets GP/Core/Cardio/Neuro/7S ergänzen
-  - [ ] Rule IDs + Check IDs erweitern
-  - [ ] Unit-Tests für Positiv/Negativ/Konflikte
+  - [x] Regelsets GP/Core/Cardio/Neuro/7S ergänzen
+  - [x] Rule IDs + Check IDs erweitern
+  - [x] Unit-Tests für Positiv/Negativ/Konflikte
 - **Akzeptanzkriterien**:
-  - [ ] Neue Regeln testabgedeckt
-  - [ ] Safety kann nicht durch Reasoning überschrieben werden
+  - [x] Neue Regeln testabgedeckt
+  - [x] Safety kann nicht durch Reasoning überschrieben werden
 
-### [ ] CRE-E2-03 — 10-W/OPQRST Pflichtmodul
-- **Status**: todo
+### [x] CRE-E2-03 — 10-W/OPQRST Pflichtmodul
+- **Status**: done
 - **Owner**: Patient UI + Backend
 - **Ziel**: Standardisierte symptombezogene Erhebung als Pflichtstruktur.
 - **Tasks**:
-  - [ ] 10-W-Felder erzwingen oder bewusst als unbeantwortet markieren
-  - [ ] OPQRST-Mapping persistieren
-  - [ ] Quality-Validierung erweitern
+  - [x] 10-W-Felder erzwingen oder bewusst als unbeantwortet markieren
+  - [x] OPQRST-Mapping persistieren
+  - [x] Quality-Validierung erweitern
 - **Akzeptanzkriterien**:
-  - [ ] 10-W strukturiert im Intake vorhanden
-  - [ ] OPQRST konsistent im Output
+  - [x] 10-W strukturiert im Intake vorhanden
+  - [x] OPQRST konsistent im Output
 
-### [ ] CRE-E2-04 — Ganzheitliche Anamnese + Completeness Score
-- **Status**: todo
+### [x] CRE-E2-04 — Ganzheitliche Anamnese + Completeness Score
+- **Status**: done
 - **Owner**: Patient UI + Backend
 - **Ziel**: PMH/Meds/Allergien/FH/SH/ROS vollständig strukturieren.
 - **Tasks**:
-  - [ ] Module für Hintergrundanamnese ergänzen
-  - [ ] `evidence_items`-Provenance je Abschnitt absichern
-  - [ ] Completeness Score berechnen und speichern
+  - [x] Module für Hintergrundanamnese ergänzen
+  - [x] `evidence_items`-Provenance je Abschnitt absichern
+  - [x] Completeness Score berechnen und speichern
 - **Akzeptanzkriterien**:
-  - [ ] Strukturierte Blöcke inkl. Provenance vorhanden
-  - [ ] Completeness Score im Paket verfügbar
+  - [x] Strukturierte Blöcke inkl. Provenance vorhanden
+  - [x] Completeness Score im Paket verfügbar
 
-### [ ] CRE-E2-05 — Teach-Back + Explizite Negativa
-- **Status**: todo
+### [x] CRE-E2-05 — Teach-Back + Explizite Negativa
+- **Status**: done
 - **Owner**: Patient UI + Backend
 - **Ziel**: Sicherheitsrelevante Rückbestätigung und Negativa systematisch erfassen.
 - **Tasks**:
-  - [ ] Teach-Back-Block am Intake-Ende integrieren
-  - [ ] Negativa explizit speichern
-  - [ ] Konsum in Safety/Reasoning sicherstellen
+  - [x] Teach-Back-Block am Intake-Ende integrieren
+  - [x] Negativa explizit speichern
+  - [x] Konsum in Safety/Reasoning sicherstellen
 - **Akzeptanzkriterien**:
-  - [ ] Teach-Back im Workflow sichtbar
-  - [ ] Negativa als Evidenz (nicht fehlend) vorhanden
+  - [x] Teach-Back im Workflow sichtbar
+  - [x] Negativa als Evidenz (nicht fehlend) vorhanden
 
 ### [ ] CRE-E3-01 — Reasoning-Paket auf Zielmodell
 - **Status**: todo

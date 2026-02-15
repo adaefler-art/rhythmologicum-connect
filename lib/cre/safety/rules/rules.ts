@@ -68,6 +68,8 @@ const buildEvidenceText = (
   pushArray(structuredData.medication)
   pushArray(structuredData.psychosocial_factors)
   pushArray(structuredData.uncertainties)
+  pushArray(structuredData.explicit_negatives?.map((entry) => entry.text))
+  pushText(structuredData.teach_back?.summary)
 
   verbatimChatMessages?.forEach((message) => {
     if (typeof message.content === 'string' && message.content.trim()) {
@@ -164,8 +166,68 @@ const UNCERTAINTY_RULES: SafetyRuleDefinition[] = [
   },
 ]
 
+const DOMAIN_RULES: SafetyRuleDefinition[] = [
+  {
+    id: 'SFTY-2.2-R-CORE-CHEST-DYSPNEA',
+    description: 'Core safety: chest pain combined with dyspnea escalates immediately.',
+    severity: 'A',
+    predicate: (context) =>
+      context.detectedFlags.has(CLINICAL_RED_FLAG.CHEST_PAIN) &&
+      context.detectedFlags.has(CLINICAL_RED_FLAG.SEVERE_DYSPNEA),
+  },
+  {
+    id: 'SFTY-2.2-R-CARDIO-PALP-SYNCOPE',
+    description: 'Cardio safety: palpitations with syncope require priority review.',
+    severity: 'B',
+    predicate: (context) =>
+      context.detectedFlags.has(CLINICAL_RED_FLAG.SEVERE_PALPITATIONS) &&
+      context.detectedFlags.has(CLINICAL_RED_FLAG.SYNCOPE),
+  },
+  {
+    id: 'SFTY-2.2-R-NEURO-ACUTE-DEFICIT',
+    description: 'Neuro safety: acute neurological indicators must hard-stop.',
+    severity: 'A',
+    predicate: (context) => context.detectedFlags.has(CLINICAL_RED_FLAG.ACUTE_NEUROLOGICAL),
+  },
+  {
+    id: 'SFTY-2.2-R-GP-RED-FLAG-UNCERTAINTY',
+    description: 'GP safety: red flags plus uncertainty require at least priority review.',
+    severity: 'B',
+    predicate: (context) =>
+      context.detectedFlags.size > 0 && (context.structuredData.uncertainties?.length ?? 0) >= 2,
+  },
+  {
+    id: 'SFTY-2.2-R-7S-SLEEP-FAILURE',
+    description: '7S safety: prolonged severe sleep breakdown with psychosocial stress.',
+    severity: 'B',
+    predicate: (context) =>
+      /schlaflos|schlafstoer|insomni/i.test(context.evidenceText) &&
+      /7\s*tage|eine\s*woche|mehr\s*als\s*7\s*tage/i.test(context.evidenceText) &&
+      /stress|ueberlast|erschoepf|tagesversagen/i.test(context.evidenceText),
+  },
+  {
+    id: 'SFTY-2.2-R-CORE-CONTRADICTION',
+    description: 'Core safety: contradiction between explicit negatives and detected red flags.',
+    severity: 'B',
+    predicate: (context) => {
+      const negatives = context.structuredData.relevant_negatives ?? []
+      if (negatives.length === 0) return false
+      const joined = normalizeText(negatives.join(' '))
+
+      return (
+        (context.detectedFlags.has(CLINICAL_RED_FLAG.CHEST_PAIN) && /kein\s+brustschmerz/.test(joined)) ||
+        (context.detectedFlags.has(CLINICAL_RED_FLAG.SYNCOPE) &&
+          /(keine\s+ohnmacht|keine\s+synkope)/.test(joined)) ||
+        (context.detectedFlags.has(CLINICAL_RED_FLAG.SEVERE_DYSPNEA) &&
+          /(keine\s+atemnot|keine\s+luftnot)/.test(joined))
+      )
+    },
+  },
+]
+
 export const SAFETY_RULES: SafetyRuleDefinition[] = [
   ...RED_FLAG_RULES,
   ...TIME_DYNAMICS_RULES,
   ...UNCERTAINTY_RULES,
+  ...DOMAIN_RULES,
 ]
