@@ -183,10 +183,18 @@ const buildFollowupPrompt = (params: {
 
   const politeQuestion = `${contextPrefix}${question.question}`
 
+  const technicalReason =
+    reason &&
+    /teilantwort|ambig|klassifikation|kontradik|klar|fehl|praezis|präzis|loop|state-machine/i.test(
+      reason,
+    )
+
   const reasonLine = reason
     ? question.source === 'clinician_request'
       ? 'Hinweis: Diese Rueckfrage wurde aerztlich angefordert.'
-      : `Ziel: ${reason}.`
+      : technicalReason
+        ? null
+        : `Ziel: ${reason}.`
     : null
 
   if (lead && reasonLine) {
@@ -289,6 +297,7 @@ export function DialogScreenV2() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [dictationError, setDictationError] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
   const [intakeEntryId, setIntakeEntryId] = useState<string | null>(null)
@@ -336,6 +345,10 @@ export function DialogScreenV2() {
   const autosaveAbortRef = useRef<AbortController | null>(null)
   const isDictatingRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   const appendAssistantMessage = (text: string) => {
     const assistantMessage: StubbedMessage = {
@@ -1337,6 +1350,14 @@ export function DialogScreenV2() {
 
   const isSendDisabled = !isChatEnabled || isSending || isSafetyBlocked || input.trim().length === 0
   const isDictationDisabled = !isChatEnabled || isSending || isSafetyBlocked
+
+  if (!isHydrated) {
+    return (
+      <div className="w-full overflow-x-hidden">
+        <div className="flex min-h-[calc(100dvh-56px)] flex-col overflow-hidden" />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full overflow-x-hidden">

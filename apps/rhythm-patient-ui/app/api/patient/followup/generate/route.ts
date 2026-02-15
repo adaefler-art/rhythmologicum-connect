@@ -91,25 +91,25 @@ const shouldSuppressClarificationPrompt = (params: {
 const derivePartialQuestionText = (askedQuestionText?: string) => {
   const text = askedQuestionText?.trim()
   if (!text) {
-    return 'Danke, ich brauche noch ein kurzes konkretes Detail, damit ich Ihre Angabe klinisch korrekt einordnen kann.'
+    return 'Ich brauche noch ein kurzes konkretes Detail, damit ich Ihre Angabe korrekt einordnen kann.'
   }
 
   const lowered = text.toLowerCase()
 
   if (/medik|medication|nahrungserga|supplement/.test(lowered)) {
-    return 'Danke. Koennen Sie bitte die konkreten Mittel (Name und falls moeglich Dosierung) kurz angeben?'
+    return 'Koennen Sie bitte die konkreten Mittel (Name und falls moeglich Dosierung) kurz angeben?'
   }
 
   if (/seit wann|onset|beginn/.test(lowered)) {
-    return 'Danke. Koennen Sie bitte den Beginn zeitlich genauer einordnen (z.B. heute, seit 3 Tagen, seit 2 Wochen)?'
+    return 'Koennen Sie bitte den Beginn zeitlich genauer einordnen (z.B. heute, seit 3 Tagen, seit 2 Wochen)?'
   }
 
   if (/wie lange|dauer|duration/.test(lowered)) {
-    return 'Danke. Koennen Sie bitte die typische Dauer pro Episode kurz angeben?'
+    return 'Koennen Sie bitte die typische Dauer pro Episode kurz angeben?'
   }
 
   if (/verlauf|course|verbessert|verschlechtert/.test(lowered)) {
-    return 'Danke. Koennen Sie bitte den Verlauf konkretisieren (eher besser, schlechter oder gleichbleibend)?'
+    return 'Koennen Sie bitte den Verlauf konkretisieren (eher besser, schlechter oder gleichbleibend)?'
   }
 
   return `${text} Bitte mit einem kurzen konkreten Detail.`
