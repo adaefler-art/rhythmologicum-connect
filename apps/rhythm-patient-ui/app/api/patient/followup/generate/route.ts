@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
+import {
+  classifyFollowupAnswer,
+  type FollowupAnswerClassification,
+} from '@/lib/cre/followup/answerClassification'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
 import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 import { normalizeClinicalLanguageTurn } from '@/lib/cre/language/normalization'
@@ -70,33 +74,14 @@ const asStringArray = (value: unknown) =>
     ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
 
-const hasFollowupContext = (askedQuestionIds: string[], askedQuestionText?: string) => {
-  const text = `${askedQuestionIds.join(' ')} ${askedQuestionText ?? ''}`.toLowerCase()
-  return /chief-complaint|symptom|onset|duration|course|medik|medication|nahrungserga|psych|stress|schlaf|verlauf|belastung/.test(
-    text,
-  )
-}
-
-const hasInformativeAnswer = (answerText?: string) => {
-  const answer = answerText?.trim().toLowerCase() ?? ''
-  if (!answer) return false
-  if (answer.length < 3) return false
-  if (/^(weiss nicht|weiß nicht|keine ahnung|unbekannt|kann ich nicht sagen)$/.test(answer)) {
-    return false
-  }
-  return true
-}
-
 const shouldSuppressClarificationPrompt = (params: {
   askedQuestionIds: string[]
-  askedQuestionText?: string
-  askedAnswerText?: string
   clarificationPrompt: string | null
+  answerClassification: FollowupAnswerClassification
 }) => {
   if (!params.clarificationPrompt) return false
   if (params.askedQuestionIds.length === 0) return false
-  if (!hasFollowupContext(params.askedQuestionIds, params.askedQuestionText)) return false
-  return hasInformativeAnswer(params.askedAnswerText)
+  return params.answerClassification === 'answered' || params.answerClassification === 'partial'
 }
 
 const applyAskedAnswerToStructuredData = (params: {
@@ -418,11 +403,17 @@ export async function POST(req: Request) {
       )
     }
 
-    const suppressClarificationPrompt = shouldSuppressClarificationPrompt({
+    const answerClassification = classifyFollowupAnswer({
       askedQuestionIds,
       askedQuestionText: body.asked_question_text,
-      askedAnswerText: body.asked_answer_text,
+      answerText: body.asked_answer_text,
+      normalizationTurn: normalizationResult.turn,
+    })
+
+    const suppressClarificationPrompt = shouldSuppressClarificationPrompt({
+      askedQuestionIds,
       clarificationPrompt: normalizationResult.clarificationPrompt,
+      answerClassification,
     })
 
     const followupWithClarification =
@@ -472,6 +463,8 @@ export async function POST(req: Request) {
           requestId: requestIdHeader ? `${requestIdHeader}:followup_answered` : null,
           payload: {
             answered_count: askedQuestionIds.length,
+            answer_classification: answerClassification,
+            clarification_suppressed: suppressClarificationPrompt,
           },
         }),
       )
@@ -544,6 +537,8 @@ export async function POST(req: Request) {
         blocked,
         language_normalization: normalizationResult.turn,
         clarification_prompt: normalizationResult.clarificationPrompt,
+        answer_classification: answerClassification,
+        clarification_suppressed: suppressClarificationPrompt,
       },
     })
   } catch (error) {

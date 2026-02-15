@@ -219,6 +219,8 @@ describe('POST /api/patient/followup/generate', () => {
     const json = await response.json()
     expect(json?.success).toBe(true)
     expect(Array.isArray(json?.data?.next_questions)).toBe(true)
+    expect(json?.data?.answer_classification).toBe('answered')
+    expect(json?.data?.clarification_suppressed).toBe(true)
 
     const clarificationInResponse = (json?.data?.next_questions ?? []).some((entry: { id?: string }) =>
       String(entry.id ?? '').startsWith('csn:clarify:'),

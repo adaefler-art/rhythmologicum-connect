@@ -73,8 +73,13 @@ Statuswerte:
 ### Issues
 - [ ] CRE-NV4-01 Gesprächsleitfaden v2 für PAT umsetzen
 - [ ] CRE-NV4-02 Follow-up Orchestrierung v2 (Anti-Repeat + Kontext)
-- [ ] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
+- [~] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
 - [ ] CRE-NV4-04 Clinician Review UX Beschleunigung
+
+#### NV4-03 Fortschritt
+- [x] Deterministische Answer-Klassifikation (`answered|partial|unclear|contradiction`) im Follow-up-Backend integriert
+- [ ] State-Machine-Transitions auf Basis der Klassifikation vollständig verdrahten
+- [ ] Golden-Set Regressionen für Klassifikationspfade vollständig abdecken
 
 ### Exit-Check
 - [ ] Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
