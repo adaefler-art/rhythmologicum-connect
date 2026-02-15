@@ -107,3 +107,6 @@ Zweck:
 3. CRE-NV3-01 bis CRE-NV3-03
 4. CRE-NV4-01 bis CRE-NV4-03
 5. CRE-NV5-01 bis CRE-NV5-03
+
+## Operatives Tracking
+- Abarbeitungs-Checkliste: `V0_8_EXECUTION_CHECKLIST_2026-02-15.md`
