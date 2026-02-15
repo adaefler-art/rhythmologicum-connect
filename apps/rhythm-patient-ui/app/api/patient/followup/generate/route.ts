@@ -70,6 +70,35 @@ const asStringArray = (value: unknown) =>
     ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
 
+const hasFollowupContext = (askedQuestionIds: string[], askedQuestionText?: string) => {
+  const text = `${askedQuestionIds.join(' ')} ${askedQuestionText ?? ''}`.toLowerCase()
+  return /chief-complaint|symptom|onset|duration|course|medik|medication|nahrungserga|psych|stress|schlaf|verlauf|belastung/.test(
+    text,
+  )
+}
+
+const hasInformativeAnswer = (answerText?: string) => {
+  const answer = answerText?.trim().toLowerCase() ?? ''
+  if (!answer) return false
+  if (answer.length < 3) return false
+  if (/^(weiss nicht|weiß nicht|keine ahnung|unbekannt|kann ich nicht sagen)$/.test(answer)) {
+    return false
+  }
+  return true
+}
+
+const shouldSuppressClarificationPrompt = (params: {
+  askedQuestionIds: string[]
+  askedQuestionText?: string
+  askedAnswerText?: string
+  clarificationPrompt: string | null
+}) => {
+  if (!params.clarificationPrompt) return false
+  if (params.askedQuestionIds.length === 0) return false
+  if (!hasFollowupContext(params.askedQuestionIds, params.askedQuestionText)) return false
+  return hasInformativeAnswer(params.askedAnswerText)
+}
+
 const applyAskedAnswerToStructuredData = (params: {
   structuredData: StructuredIntakeData
   askedQuestionIds: string[]
@@ -389,8 +418,15 @@ export async function POST(req: Request) {
       )
     }
 
+    const suppressClarificationPrompt = shouldSuppressClarificationPrompt({
+      askedQuestionIds,
+      askedQuestionText: body.asked_question_text,
+      askedAnswerText: body.asked_answer_text,
+      clarificationPrompt: normalizationResult.clarificationPrompt,
+    })
+
     const followupWithClarification =
-      normalizationResult.clarificationPrompt && followupValidation.value
+      normalizationResult.clarificationPrompt && !suppressClarificationPrompt && followupValidation.value
         ? prependClarificationQuestion({
             followup: followupValidation.value,
             clarificationPrompt: normalizationResult.clarificationPrompt,

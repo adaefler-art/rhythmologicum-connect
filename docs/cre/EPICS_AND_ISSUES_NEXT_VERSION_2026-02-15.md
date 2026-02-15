@@ -46,7 +46,8 @@ Zweck:
 | CRE-NV3-03 | CRE-NV3 | Monitoring-Review Routine etablieren (`/api/admin/metrics/cre-monitoring`) | P1 | S-M | planned | CRE-NV3-01 |
 | CRE-NV4-01 | CRE-NV4 | Gesprächsleitfaden v2 für PAT umsetzen | P1 | M | planned | CRE-NV2-02, CRE-NV3-01 |
 | CRE-NV4-02 | CRE-NV4 | Follow-up Orchestrierung v2 (Anti-Repeat + Kontext) | P1 | M | planned | CRE-NV1-04, CRE-NV3-01 |
-| CRE-NV4-03 | CRE-NV4 | Clinician Review UX Beschleunigung | P1 | M | planned | CRE-NV3-01 |
+| CRE-NV4-03 | CRE-NV4 | Follow-up State-Machine + Answer-Klassifikation (systemisch) | P0 | M-L | planned | CRE-NV1-04, CRE-NV2-04, CRE-NV3-01 |
+| CRE-NV4-04 | CRE-NV4 | Clinician Review UX Beschleunigung | P1 | M | planned | CRE-NV3-01 |
 | CRE-NV5-01 | CRE-NV5 | Release-Readiness Report erstellen | P0 | S-M | planned | CRE-NV3-02, CRE-NV4-02 |
 | CRE-NV5-02 | CRE-NV5 | Go/No-Go Gate mit dokumentiertem Risikoentscheid | P0 | S | planned | CRE-NV5-01 |
 | CRE-NV5-03 | CRE-NV5 | Staged Rollout + Rollback Playbook finalisieren | P0 | S-M | planned | CRE-NV5-02 |
@@ -77,6 +78,8 @@ Zweck:
 ### CRE-NV4 — Workflow & UX Refinement
 - **Exit-Kriterien**:
   - Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
+  - `clarification_loop_rate` sinkt signifikant ggü. Wave-5-Baseline
+  - `resolved_followup_rate` stabil im Zielkorridor
   - `patient_dialog_dropoff_rate` verbessert ggü. Wave-6-Baseline
   - Positive qualitative UX-Rückmeldung klinisch dokumentiert
 
@@ -93,6 +96,8 @@ Zweck:
 - `golden_set_pass_rate`
 - `critical_defects_open`
 - `followup_repeat_question_rate`
+- `clarification_loop_rate`
+- `resolved_followup_rate`
 - `patient_dialog_success_rate`
 - `patient_dialog_dropoff_rate`
 - `patient_ui_blocker_open`
@@ -105,7 +110,7 @@ Zweck:
 1. CRE-NV1-01 bis CRE-NV1-04
 2. CRE-NV2-01 bis CRE-NV2-05 (parallel zu NV1)
 3. CRE-NV3-01 bis CRE-NV3-03
-4. CRE-NV4-01 bis CRE-NV4-03
+4. CRE-NV4-01 bis CRE-NV4-04
 5. CRE-NV5-01 bis CRE-NV5-03
 
 ## Operatives Tracking

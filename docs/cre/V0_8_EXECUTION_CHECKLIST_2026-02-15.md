@@ -18,6 +18,7 @@ Statuswerte:
 - [ ] KPI-Baselines erhoben und dokumentiert
 - [ ] Weekly Review-Terminserie aktiv
 - [ ] Go/No-Go Template vorbereitet
+- [x] Hotfix: Clarification-Loop Suppression bei beantworteten Follow-up-Fragen aktiv
 
 ---
 
@@ -72,10 +73,13 @@ Statuswerte:
 ### Issues
 - [ ] CRE-NV4-01 Gesprächsleitfaden v2 für PAT umsetzen
 - [ ] CRE-NV4-02 Follow-up Orchestrierung v2 (Anti-Repeat + Kontext)
-- [ ] CRE-NV4-03 Clinician Review UX Beschleunigung
+- [ ] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
+- [ ] CRE-NV4-04 Clinician Review UX Beschleunigung
 
 ### Exit-Check
 - [ ] Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
+- [ ] `clarification_loop_rate` signifikant ggü. Wave-5-Baseline reduziert
+- [ ] `resolved_followup_rate` im Zielkorridor stabil
 - [ ] `patient_dialog_dropoff_rate` ggü. Wave-6-Baseline verbessert
 - [ ] Positive qualitative UX-Rückmeldung klinisch dokumentiert
 
