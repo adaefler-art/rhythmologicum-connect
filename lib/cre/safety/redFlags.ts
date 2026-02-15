@@ -547,8 +547,8 @@ export function evaluateRedFlags(params: {
     const patterns = override?.logic?.patterns?.length
       ? override.logic.patterns
       : (RED_FLAG_PATTERNS[flag] ?? [])
-    const negationPhrases = override?.exclusions?.length
-      ? override.exclusions
+    const negationPhrases = override?.logic?.exclusions?.length
+      ? override.logic.exclusions
       : (CONTRADICTION_PATTERNS[rule.id] ?? [])
     const matched = patterns.length > 0 ? matchPatterns(normalizedText, patterns) : false
     ruleMatches.set(flag, matched)
@@ -658,7 +658,12 @@ export function evaluateRedFlags(params: {
     const uncertaintyTexts = uncertainties.filter((entry): entry is string => typeof entry === 'string')
     const { evidence: uncertaintyEvidence } = buildChatEvidenceForText(uncertaintyTexts)
     const hasIntakeEvidence = uncertaintyTexts.length > 0
-    const mergedEvidence: SafetyTriggeredRule['evidence'] = uncertaintyEvidence.length > 0
+    const mergedEvidence: Array<{
+      source: 'chat' | 'intake'
+      source_id: string
+      excerpt: string
+      field_path?: string
+    }> = uncertaintyEvidence.length > 0
       ? uncertaintyEvidence
       : hasIntakeEvidence
         ? [
