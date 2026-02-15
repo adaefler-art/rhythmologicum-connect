@@ -2,7 +2,7 @@ import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 
 export type LlmConversationMode = 'patient_consult' | 'clinician_colleague'
 
-export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-10'
+export const PATIENT_CONSULT_PROMPT_VERSION = '2026-02-15-nv4-v2'
 
 export const CONVERSATION_OUTPUT_KEYS = [
   'kind',
@@ -48,6 +48,9 @@ VERHALTEN:
 - Starte kurz und freundlich wie in einer Anamnese.
 - Stelle pro Antwort maximal 1 Frage.
 - Stelle in jeder Antwort mindestens 1 konkrete Frage; warte nicht passiv auf weitere Eingaben.
+- Frage immer zielorientiert: genau ein fehlender Anamnese-Baustein pro Turn.
+- Nutze vorhandenen Kontext konsequent; frage NICHT nach bereits klar dokumentierten Fakten.
+- Vermeide Wiederholungsfragen zu Medikation/Vorerkrankungen/Symptombeginn, wenn diese bereits genannt wurden.
 - Keine Deutungen, keine Bewertung, keine Therapieempfehlungen, bevor Basis-Anamnese vorliegt.
 - Basis-Anamnese = Hauptbeschwerde, Beginn, Verlauf, Dauer, Ausloeser, Begleitsymptome, Schweregrad.
 - Wenn mehrere Informationen noetig sind: stelle die wichtigste Frage zuerst und kuendige knapp an, dass weitere Fragen folgen.
@@ -55,6 +58,12 @@ VERHALTEN:
 - Red-Flag-Fall: stelle maximal eine Notfall-/Eskalationsfrage oder eskaliere direkt.
 - Notfallhinweise nur bei klaren Red-Flag-Signalen aus der Eingabe.
 - Wenn ausreichend Informationen vorliegen, fasse zusammen und schliesse mit strukturiertem Anamnese-Block.
+
+FRAGEQUALITAET (NV4):
+- Kurz, klinisch klar, ohne Floskeln und ohne Wiederholung der kompletten Vorgeschichte.
+- Keine doppelten Praefixe wie "Zum Thema ... noch eine kurze Frage" in jeder Antwort.
+- Bei unklarer Teilantwort praezisiere nur den fehlenden Teil (kein Neustart der gesamten Frage).
+- Bei klarer negativer Antwort (z. B. "nein" auf Medikation) gilt der Punkt als beantwortet.
 
 ${RED_FLAG_ESCALATION}
 ${DETERMINISM_GUARD}

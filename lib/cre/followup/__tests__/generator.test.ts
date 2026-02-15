@@ -75,6 +75,45 @@ describe('followup generator', () => {
     expect(validation.ok).toBe(true)
   })
 
+  it('maps clinician requested items to objective ids', () => {
+    const merged = mergeClinicianRequestedItemsIntoFollowup({
+      structuredData: {
+        status: 'draft',
+      },
+      requestedItems: ['Onset genau klären'],
+      now: new Date('2026-02-14T10:00:00.000Z'),
+    })
+
+    const onsetQuestion = merged.followup?.next_questions.find(
+      (question) => question.source === 'clinician_request',
+    )
+
+    expect(onsetQuestion).toBeDefined()
+    expect(onsetQuestion?.objective_id).toBe('objective:onset')
+  })
+
+  it('filters clinician requested items whose objective is already resolved', () => {
+    const merged = mergeClinicianRequestedItemsIntoFollowup({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Migräne',
+        history_of_present_illness: {
+          onset: 'vor drei Monaten',
+          course: 'zunehmende Frequenz',
+        },
+        medication: ['keine'],
+      },
+      requestedItems: ['Onset genauer erfragen'],
+      now: new Date('2026-02-14T10:00:00.000Z'),
+    })
+
+    const clinicianOnset = [
+      ...(merged.followup?.next_questions ?? []),
+      ...(merged.followup?.queue ?? []),
+    ].find((question) => question.source === 'clinician_request')
+
+    expect(clinicianOnset).toBeUndefined()
+  })
   it('falls back to gap rules when reasoning is missing', () => {
     const structuredData = {
       status: 'draft' as const,

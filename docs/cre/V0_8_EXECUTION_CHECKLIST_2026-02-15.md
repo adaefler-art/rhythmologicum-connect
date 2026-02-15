@@ -71,18 +71,18 @@ Statuswerte:
 ## CRE-NV4 — Workflow & UX Refinement (Woche 6-8)
 
 ### Issues
-- [ ] CRE-NV4-01 Gesprächsleitfaden v2 für PAT umsetzen
-- [ ] CRE-NV4-02 Follow-up Orchestrierung v2 (Anti-Repeat + Kontext)
-- [~] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
-- [ ] CRE-NV4-04 Clinician Review UX Beschleunigung
-- [~] CRE-NV4-05 Objective/Slot-Modell für Anamnese-Steuerung einführen
+- [x] CRE-NV4-01 Gesprächsleitfaden v2 für PAT umsetzen
+- [x] CRE-NV4-02 Follow-up Orchestrierung v2 (Anti-Repeat + Kontext)
+- [x] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
+- [x] CRE-NV4-04 Clinician Review UX Beschleunigung
+- [x] CRE-NV4-05 Objective/Slot-Modell für Anamnese-Steuerung einführen
 
 #### NV4-03 Fortschritt
 - [x] Deterministische Answer-Klassifikation (`answered|partial|unclear|contradiction`) im Follow-up-Backend integriert
 - [x] State-Machine-Transitions auf Basis der Klassifikation verdrahtet (`answered/partial` => advance, `unclear/contradiction` => klären)
 - [x] KPI-Hooks fuer `clarification_loop_rate` und `resolved_followup_rate` integriert
 - [x] Objective-/Slot-Metadaten (`objectives`, `active_objective_ids`) im Follow-up-Generator integriert
-- [ ] Golden-Set Regressionen für Klassifikationspfade vollständig abdecken
+- [x] Golden-Set Regressionen für Klassifikationspfade vollständig abdecken
 
 ### Exit-Check
 - [ ] Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
@@ -144,3 +144,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-15 13:42:58 (lokal): CRE-Komponenten-Interaktionsschema als Architekturübersicht erstellt, inklusive Laufzeitfluss zwischen Dialog, Intake, Safety, Reasoning, Follow-up, Persistenz und HITL.
 - 2026-02-15 13:53:26 (lokal): v0.8-Roadmap strukturell angepasst, indem NV4 um ein Objective/Slot-Steuerungsmodell mit klaren Issues, Exit-Kriterien und KPIs für re-ask-freie Anamneseplanung erweitert wurde.
 - 2026-02-15 14:04:02 (lokal): Signifikanter NV4-Block umgesetzt, indem Follow-up auf objective/slot-basierte Steuerung (active_objective_ids + safety-aware objective status) umgestellt und im Dialog als sichtbarer Anamnese-Fortschritt eingeblendet wurde.
+- 2026-02-15 14:22:10 (lokal): NV4 finalisiert, indem PAT-Leitfaden v2 aktiviert, Clinician-Requests auf Objective-Slots gemappt/gefiltert (keine Re-Ask bei gelösten Zielen), zielgerichtete Regressionstests ergänzt und Clinician-Review per Schnell-Einfügen offener Anamneseziele beschleunigt wurde.

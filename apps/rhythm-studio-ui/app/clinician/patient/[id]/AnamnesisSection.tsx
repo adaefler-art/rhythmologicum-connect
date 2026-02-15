@@ -218,6 +218,41 @@ const buildIntakeExcerpts = (structuredIntakeData: Record<string, unknown> | nul
   return excerpts
 }
 
+const OBJECTIVE_REQUEST_TEXT: Record<string, string> = {
+  'objective:chief-complaint': 'Bitte Hauptanliegen/Leitsymptom präzisieren',
+  'objective:onset': 'Bitte Beginn/erstes Auftreten zeitlich klären',
+  'objective:duration': 'Bitte Dauer/Frequenz genauer erfassen',
+  'objective:course': 'Bitte Verlauf (stabil/verschlechtert/gebessert) konkretisieren',
+  'objective:medication': 'Bitte aktuelle Medikation/NEM vollständig erfassen',
+  'objective:psychosocial': 'Bitte psychosoziale Belastungsfaktoren ergänzen',
+}
+
+const getObjectiveRequestedItemSuggestions = (structuredIntakeData: Record<string, unknown> | null) => {
+  if (!structuredIntakeData) return [] as string[]
+
+  const followup = structuredIntakeData.followup
+  if (!followup || typeof followup !== 'object' || Array.isArray(followup)) return [] as string[]
+
+  const followupRecord = followup as Record<string, unknown>
+  const activeObjectiveIds = Array.isArray(followupRecord.active_objective_ids)
+    ? followupRecord.active_objective_ids.filter((id): id is string => typeof id === 'string')
+    : []
+  const objectiveStatuses = Array.isArray(followupRecord.objectives)
+    ? followupRecord.objectives
+        .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object' && !Array.isArray(entry))
+        .filter((entry) => entry.status === 'missing')
+        .map((entry) => entry.id)
+        .filter((id): id is string => typeof id === 'string')
+    : []
+
+  const candidateIds = objectiveStatuses.length > 0 ? objectiveStatuses : activeObjectiveIds
+
+  return Array.from(new Set(candidateIds))
+    .map((id) => OBJECTIVE_REQUEST_TEXT[id])
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .slice(0, 3)
+}
+
 const resolveEvidenceRefs = (params: {
   refIds: string[]
   structuredIntakeData: Record<string, unknown> | null
@@ -1049,6 +1084,19 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
 
   const isReviewApproved = reviewState?.status === 'approved'
   const allowedTransitions = getAllowedReviewTransitions(reviewState?.status ?? null)
+  const suggestedRequestedItems = getObjectiveRequestedItemSuggestions(
+    structuredIntakeData as Record<string, unknown> | null,
+  )
+
+  const appendRequestedItem = (value: string) => {
+    const current = requestedItemsText
+      .split(/\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+    if (current.includes(value)) return
+    setRequestedItemsText([...current, value].join('\n'))
+  }
 
   return (
     <>
@@ -1241,6 +1289,24 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                       placeholder="Ein fehlendes Item pro Zeile"
                     />
                   </FormField>
+
+                  {suggestedRequestedItems.length > 0 && (
+                    <div className="mt-2">
+                      <p className="mb-1 text-xs text-slate-500">Schnell einfügen aus offenen Anamnesezielen:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestedRequestedItems.map((item) => (
+                          <Button
+                            key={item}
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => appendRequestedItem(item)}
+                          >
+                            {item}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Button

@@ -145,6 +145,31 @@ const OBJECTIVE_SLOTS: ObjectiveSlotDefinition[] = [
   },
 ]
 
+const inferObjectiveIdFromText = (value: string): string | null => {
+  const normalized = normalizeText(value)
+
+  if (/chief|hauptanliegen|hauptsymptom|leitsymptom/.test(normalized)) {
+    return 'objective:chief-complaint'
+  }
+  if (/onset|beginn|seit-wann/.test(normalized)) {
+    return 'objective:onset'
+  }
+  if (/duration|dauer|wie-lange/.test(normalized)) {
+    return 'objective:duration'
+  }
+  if (/course|verlauf|verbessert|verschlechtert/.test(normalized)) {
+    return 'objective:course'
+  }
+  if (/medik|medication|nahrungserga|supplement/.test(normalized)) {
+    return 'objective:medication'
+  }
+  if (/psycho|stress|alltag|schlaf|belastung/.test(normalized)) {
+    return 'objective:psychosocial'
+  }
+
+  return null
+}
+
 const deriveObjectiveStatus = (params: {
   slot: ObjectiveSlotDefinition
   structuredData: StructuredIntakeData
@@ -277,6 +302,7 @@ const mapRequestedItemsToClinicianQuestions = (requestedItems: string[]): Follow
         why: CLINICIAN_REQUEST_WHY,
         priority: 1 as const,
         source: 'clinician_request' as const,
+        objective_id: inferObjectiveIdFromText(item) ?? undefined,
       }
     })
     .filter((candidate) => {
@@ -310,6 +336,10 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
 
   const merged = dedupeCandidates([...clinicianCandidates, ...existingCandidates])
     .filter((candidate) => !askedIds.has(candidate.id))
+    .filter((candidate) => {
+      if (!candidate.objective_id) return true
+      return objectiveSnapshot.activeObjectiveIds.includes(candidate.objective_id)
+    })
     .sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority
       if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
@@ -402,6 +432,10 @@ export const generateFollowupQuestions = (params: {
     ...gapRuleCandidates,
   ])
     .filter((candidate) => !askedIds.has(candidate.id))
+    .filter((candidate) => {
+      if (!candidate.objective_id) return true
+      return objectiveSnapshot.activeObjectiveIds.includes(candidate.objective_id)
+    })
     .sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority
       if (a.source !== b.source) return SOURCE_PRIORITY[a.source] - SOURCE_PRIORITY[b.source]
