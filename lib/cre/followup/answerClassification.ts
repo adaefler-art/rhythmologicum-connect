@@ -30,6 +30,14 @@ const UNCLEAR_PATTERNS = [
 
 const YES_NO_ONLY = /^(ja|nein|yes|no|jap|nope)$/
 
+const PRIOR_CONTEXT_REFERENCE_PATTERNS = [
+  /(bereits|schon)\s+(genannt|angegeben)/,
+  /habe\s+ich\s+(bereits|schon)\s+(genannt|angegeben)/,
+  /(steht|siehe)\s+.*(daten|anamnese|oben)/,
+  /already\s+(mentioned|provided|stated)/,
+  /as\s+(mentioned|stated)/,
+]
+
 const inferContext = (askedQuestionIds: string[], askedQuestionText?: string) => {
   const text = normalize(`${askedQuestionIds.join(' ')} ${askedQuestionText ?? ''}`)
 
@@ -48,6 +56,9 @@ const hasMedicationSignal = (answer: string) =>
 
 const hasNoneSignal = (answer: string) =>
   /keine medikamente|nehme nichts|none|no medication|nichts/.test(answer)
+
+const hasPriorContextReference = (answer: string) =>
+  PRIOR_CONTEXT_REFERENCE_PATTERNS.some((pattern) => pattern.test(answer))
 
 const mappedCanonicals = (normalizationTurn: NormalizationTurnLike) =>
   new Set(
@@ -81,6 +92,10 @@ export const classifyFollowupAnswer = (params: {
 
   if ((hasNoneSignal(answer) && hasMedicationSignal(answer)) || (noneMapped && medicationMapped)) {
     return 'contradiction'
+  }
+
+  if (params.askedQuestionIds.length > 0 && hasPriorContextReference(answer)) {
+    return 'answered'
   }
 
   if (context === 'medication') {

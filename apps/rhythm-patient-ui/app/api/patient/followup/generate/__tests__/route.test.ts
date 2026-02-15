@@ -340,6 +340,98 @@ describe('POST /api/patient/followup/generate', () => {
     expect(hasTargetedPartialQuestion).toBe(true)
   })
 
+  it('does not re-ask partial follow-up when user references already provided data', async () => {
+    const queryBuilder = {
+      _mode: 'select' as 'select' | 'update',
+      select: jest.fn(function select() {
+        this._mode = 'select'
+        return this
+      }),
+      update: jest.fn(function update() {
+        this._mode = 'update'
+        return this
+      }),
+      eq: jest.fn(function eq() {
+        return this
+      }),
+      order: jest.fn(function order() {
+        return this
+      }),
+      limit: jest.fn(function limit() {
+        return this
+      }),
+      maybeSingle: jest.fn(async function maybeSingle() {
+        if (this._mode === 'select') {
+          return {
+            data: {
+              id: '11111111-1111-4111-8111-111111111111',
+              user_id: '22222222-2222-4222-8222-222222222222',
+              patient_id: '33333333-3333-4333-8333-333333333333',
+              structured_data: {
+                status: 'draft',
+                followup: {
+                  next_questions: [
+                    {
+                      id: 'gap:medication',
+                      question:
+                        'Nehmen Sie aktuell Medikamente oder relevante Nahrungsergaenzungsmittel ein?',
+                      why: 'Medikationskontext fehlt',
+                      priority: 1,
+                      source: 'gap_rule',
+                    },
+                  ],
+                  queue: [],
+                  asked_question_ids: [],
+                  last_generated_at: '2026-02-15T10:00:00.000Z',
+                },
+                medication: [],
+              },
+            },
+            error: null,
+          }
+        }
+
+        return { data: null, error: null }
+      }),
+    }
+
+    const supabase = {
+      auth: {
+        getUser: jest.fn(async () => ({
+          data: { user: { id: '22222222-2222-4222-8222-222222222222' } },
+          error: null,
+        })),
+      },
+      from: jest.fn(() => queryBuilder),
+    }
+
+    createServerSupabaseClient.mockResolvedValue(supabase)
+
+    const request = new Request('http://localhost/api/patient/followup/generate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        intakeId: '11111111-1111-4111-8111-111111111111',
+        asked_question_id: 'gap:medication',
+        asked_question_text:
+          'Nehmen Sie aktuell Medikamente oder relevante Nahrungsergaenzungsmittel ein?',
+        asked_answer_text: 'Bitte schaue in den Daten nach, ich habe das bereits genannt',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(200)
+
+    const json = await response.json()
+    expect(json?.success).toBe(true)
+    expect(json?.data?.answer_classification).toBe('answered')
+
+    const hasTargetedPartialQuestion = (json?.data?.next_questions ?? []).some(
+      (entry: { id?: string }) => String(entry.id ?? '').startsWith('followup:partial:'),
+    )
+    expect(hasTargetedPartialQuestion).toBe(false)
+  })
+
   it('keeps clarification for contradiction answers and does not suppress prompt', async () => {
     normalizeClinicalLanguageTurn.mockImplementation(
       ({ structuredData }: { structuredData: Record<string, unknown> }) => ({

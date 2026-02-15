@@ -27,6 +27,17 @@ describe('classifyFollowupAnswer', () => {
     expect(result).toBe('partial')
   })
 
+  it('classifies already-provided reference answer as answered', () => {
+    const result = classifyFollowupAnswer({
+      askedQuestionIds: ['gap:medication'],
+      askedQuestionText: 'Nehmen Sie aktuell Medikamente?',
+      answerText: 'Bitte schauen Sie in den Daten nach, ich habe das bereits genannt.',
+      normalizationTurn: null,
+    })
+
+    expect(result).toBe('answered')
+  })
+
   it('classifies empty/unknown answer as unclear', () => {
     expect(
       classifyFollowupAnswer({
