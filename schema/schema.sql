@@ -4236,6 +4236,21 @@ COMMENT ON COLUMN "public"."organizations"."settings" IS 'Organization-specific 
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."patient_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "patient_id" "uuid",
+    "intake_id" "uuid",
+    "event_type" "text" NOT NULL,
+    "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "request_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "patient_events_event_type_check" CHECK (("event_type" = ANY (ARRAY['session_start'::"text", 'session_end'::"text", 'followup_question_shown'::"text", 'followup_answered'::"text", 'followup_skipped'::"text", 'intake_regen_triggered'::"text", 'hard_stop_triggered'::"text", 'override_set'::"text", 'review_created'::"text", 'upload_requested'::"text", 'upload_received'::"text"])))
+);
+
+
+ALTER TABLE "public"."patient_events" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."patient_funnels" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "patient_id" "uuid" NOT NULL,
@@ -5910,6 +5925,11 @@ ALTER TABLE ONLY "public"."organizations"
 
 
 
+ALTER TABLE ONLY "public"."patient_events"
+    ADD CONSTRAINT "patient_events_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."patient_funnels"
     ADD CONSTRAINT "patient_funnels_pkey" PRIMARY KEY ("id");
 
@@ -6780,6 +6800,22 @@ CREATE INDEX "idx_organizations_slug" ON "public"."organizations" USING "btree" 
 
 
 
+CREATE INDEX "idx_patient_events_created_at" ON "public"."patient_events" USING "btree" ("created_at" DESC);
+
+
+
+CREATE INDEX "idx_patient_events_event_type_created_at" ON "public"."patient_events" USING "btree" ("event_type", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_patient_events_intake_created_at" ON "public"."patient_events" USING "btree" ("intake_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_patient_events_patient_created_at" ON "public"."patient_events" USING "btree" ("patient_id", "created_at" DESC);
+
+
+
 CREATE INDEX "idx_patient_funnels_funnel_id" ON "public"."patient_funnels" USING "btree" ("funnel_id");
 
 
@@ -7217,6 +7253,10 @@ CREATE INDEX "tasks_organization_id_idx" ON "public"."tasks" USING "btree" ("org
 
 
 CREATE UNIQUE INDEX "uq_diagnosis_artifacts_run_type" ON "public"."diagnosis_artifacts" USING "btree" ("run_id", "artifact_type");
+
+
+
+CREATE UNIQUE INDEX "uq_patient_events_request_id" ON "public"."patient_events" USING "btree" ("request_id") WHERE ("request_id" IS NOT NULL);
 
 
 
@@ -7735,6 +7775,16 @@ ALTER TABLE ONLY "public"."notifications"
 
 ALTER TABLE ONLY "public"."operational_settings_audit"
     ADD CONSTRAINT "operational_settings_audit_changed_by_fkey" FOREIGN KEY ("changed_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."patient_events"
+    ADD CONSTRAINT "patient_events_intake_id_fkey" FOREIGN KEY ("intake_id") REFERENCES "public"."clinical_intakes"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."patient_events"
+    ADD CONSTRAINT "patient_events_patient_id_fkey" FOREIGN KEY ("patient_id") REFERENCES "public"."patient_profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -8936,6 +8986,19 @@ ALTER TABLE "public"."operational_settings_audit" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."patient_events" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "patient_events_insert_authenticated" ON "public"."patient_events" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() IS NOT NULL));
+
+
+
+CREATE POLICY "patient_events_select_own_or_staff" ON "public"."patient_events" FOR SELECT TO "authenticated" USING (((EXISTS ( SELECT 1
+   FROM "public"."patient_profiles" "pp"
+  WHERE (("pp"."id" = "patient_events"."patient_id") AND ("pp"."user_id" = "auth"."uid"())))) OR (("auth"."jwt"() ->> 'role'::"text") = ANY (ARRAY['clinician'::"text", 'admin'::"text", 'nurse'::"text"]))));
+
+
+
 ALTER TABLE "public"."patient_funnels" ENABLE ROW LEVEL SECURITY;
 
 
@@ -10119,6 +10182,12 @@ GRANT ALL ON TABLE "public"."operational_settings_audit" TO "service_role";
 GRANT ALL ON TABLE "public"."organizations" TO "anon";
 GRANT ALL ON TABLE "public"."organizations" TO "authenticated";
 GRANT ALL ON TABLE "public"."organizations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."patient_events" TO "anon";
+GRANT ALL ON TABLE "public"."patient_events" TO "authenticated";
+GRANT ALL ON TABLE "public"."patient_events" TO "service_role";
 
 
 
