@@ -164,6 +164,21 @@ export interface ClinicalFollowupQuestion {
   why: string
   priority: 1 | 2 | 3
   source: 'reasoning' | 'gap_rule' | 'clinician_request'
+  objective_id?: string
+}
+
+export type ClinicalFollowupObjectiveStatus =
+  | 'missing'
+  | 'answered'
+  | 'verified'
+  | 'blocked_by_safety'
+
+export interface ClinicalFollowupObjective {
+  id: string
+  label: string
+  field_path: string
+  status: ClinicalFollowupObjectiveStatus
+  rationale: string
 }
 
 export interface ClinicalFollowup {
@@ -171,6 +186,8 @@ export interface ClinicalFollowup {
   queue?: ClinicalFollowupQuestion[]
   asked_question_ids: string[]
   last_generated_at: string
+  objectives?: ClinicalFollowupObjective[]
+  active_objective_ids?: string[]
   lifecycle?: {
     state: 'active' | 'needs_review' | 'completed'
     completed_question_ids: string[]

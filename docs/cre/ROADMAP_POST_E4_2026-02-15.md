@@ -95,14 +95,23 @@ Leitprinzipien:
 - Follow-up Orchestrierung v2:
   - harte Anti-Repeat-Regeln
   - bessere Kontextweitergabe bei `clinician_request`
+  - Objective/Slot-Modell als führender Steuerungskern (fehlend/beantwortet/verifiziert/blocked_by_safety)
+  - slot-basierte Frageplanung statt textbasierter Re-Ask-Entscheidungen
 - Clinician UX Verbesserungen:
   - schnellere Review-Entscheidung
   - klarere Evidenzpfade
 
 ### Exit-Kriterien
 - Reduktion der Wiederholfragen um >= 50% ggü. Wave-5-Baseline
+- 0 Re-Ask auf bereits geschlossene Objective-Slots im Golden-Set
+- Follow-up-Planung ist über stabile `objective_id` nachvollziehbar (nicht über Fragetext)
 - Positive klinische UX-Rückmeldung (qualitatives Review)
 - `patient_dialog_dropoff_rate` verbessert ggü. Wave-6-Baseline
+
+### Zusätzliche KPIs (Wave 7)
+- `objective_slot_closure_rate`
+- `objective_reask_violation_count`
+- `followup_goal_coverage_rate`
 
 ---
 

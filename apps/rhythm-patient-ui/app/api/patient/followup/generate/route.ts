@@ -78,6 +78,34 @@ const asStringArray = (value: unknown) =>
     ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
 
+const NO_MEDICATION_SIGNAL = /^(nein|no|none|keine(\s+medikamente)?|nehme\s+nichts)$/i
+const YES_MEDICATION_SIGNAL = /^(ja|yes|jap|yep|yeah)$/i
+
+const resolveObjectiveIdFromQuestionId = (questionId: string) => {
+  const normalized = questionId.toLowerCase()
+  if (normalized.includes('chief-complaint')) return 'objective:chief-complaint'
+  if (normalized.includes('onset')) return 'objective:onset'
+  if (normalized.includes('duration')) return 'objective:duration'
+  if (normalized.includes('course')) return 'objective:course'
+  if (normalized.includes('medication') || normalized.includes('medik')) return 'objective:medication'
+  if (normalized.includes('psychosocial') || normalized.includes('stress') || normalized.includes('schlaf')) {
+    return 'objective:psychosocial'
+  }
+  return null
+}
+
+const isObjectiveStillMissing = (params: {
+  followup: NonNullable<StructuredIntakeData['followup']>
+  objectiveId: string | null
+}) => {
+  if (!params.objectiveId) return true
+
+  const objective = (params.followup.objectives ?? []).find((entry) => entry.id === params.objectiveId)
+  if (!objective) return true
+
+  return objective.status === 'missing' || objective.status === 'blocked_by_safety'
+}
+
 const shouldSuppressClarificationPrompt = (params: {
   askedQuestionIds: string[]
   clarificationPrompt: string | null
@@ -200,7 +228,11 @@ const applyAskedAnswerToStructuredData = (params: {
 
     if (questionId === 'gap:medication') {
       const medication = asStringArray(next.medication)
-      if (!medication.includes(answer)) {
+      if (NO_MEDICATION_SIGNAL.test(answer)) {
+        if (!medication.includes('none_reported')) {
+          next.medication = [...medication, 'none_reported']
+        }
+      } else if (!YES_MEDICATION_SIGNAL.test(answer) && !medication.includes(answer)) {
         next.medication = [...medication, answer]
       }
     }
@@ -215,7 +247,11 @@ const applyAskedAnswerToStructuredData = (params: {
 
   if (inferMedicationContext()) {
     const medication = asStringArray(next.medication)
-    if (!medication.includes(answer)) {
+    if (NO_MEDICATION_SIGNAL.test(answer)) {
+      if (!medication.includes('none_reported')) {
+        next.medication = [...medication, 'none_reported']
+      }
+    } else if (!YES_MEDICATION_SIGNAL.test(answer) && !medication.includes(answer)) {
       next.medication = [...medication, answer]
     }
   }
@@ -504,13 +540,22 @@ export async function POST(req: Request) {
         : followupValidation.value
 
     if (answerClassification === 'partial' && askedQuestionIds.length > 0) {
-      const partialQuestionId = `followup:partial:${askedQuestionIds[0]}`
-      followupWithClarification = prependTargetedQuestion({
-        followup: followupWithClarification,
-        questionId: partialQuestionId,
-        questionText: derivePartialQuestionText(body.asked_question_text),
-        why: 'Teilantwort erkannt; klinisches Detail fehlt',
-      })
+      const objectiveId = resolveObjectiveIdFromQuestionId(askedQuestionIds[0])
+
+      if (
+        isObjectiveStillMissing({
+          followup: followupWithClarification,
+          objectiveId,
+        })
+      ) {
+        const partialQuestionId = `followup:partial:${askedQuestionIds[0]}`
+        followupWithClarification = prependTargetedQuestion({
+          followup: followupWithClarification,
+          questionId: partialQuestionId,
+          questionText: derivePartialQuestionText(body.asked_question_text),
+          why: 'Teilantwort erkannt; klinisches Detail fehlt',
+        })
+      }
     }
 
     const nextStructuredData: StructuredIntakeData = {

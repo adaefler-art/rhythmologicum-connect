@@ -10,6 +10,20 @@ export const clinicalFollowupQuestionSchema = z.object({
     z.literal('gap_rule'),
     z.literal('clinician_request'),
   ]),
+  objective_id: z.string().min(1).optional(),
+})
+
+export const clinicalFollowupObjectiveSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  field_path: z.string().min(1),
+  status: z.union([
+    z.literal('missing'),
+    z.literal('answered'),
+    z.literal('verified'),
+    z.literal('blocked_by_safety'),
+  ]),
+  rationale: z.string().min(1),
 })
 
 export const clinicalFollowupSchema = z.object({
@@ -17,6 +31,8 @@ export const clinicalFollowupSchema = z.object({
   queue: z.array(clinicalFollowupQuestionSchema).optional(),
   asked_question_ids: z.array(z.string().min(1)),
   last_generated_at: z.string().min(1),
+  objectives: z.array(clinicalFollowupObjectiveSchema).optional(),
+  active_objective_ids: z.array(z.string().min(1)).optional(),
   lifecycle: z
     .object({
       state: z.union([z.literal('active'), z.literal('needs_review'), z.literal('completed')]),

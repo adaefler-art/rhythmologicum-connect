@@ -81,6 +81,7 @@ type FollowupQuestion = {
   why: string
   priority: 1 | 2 | 3
   source: 'reasoning' | 'gap_rule' | 'clinician_request'
+  objective_id?: string
 }
 
 type SpeechRecognitionInstance = {
@@ -177,8 +178,9 @@ const buildFollowupPrompt = (params: {
   question: FollowupQuestion
   latestIntake: IntakeEntry | null
   includeIntro?: boolean
+  activeObjectiveCount?: number | null
 }) => {
-  const { question, latestIntake, includeIntro = false } = params
+  const { question, latestIntake, includeIntro = false, activeObjectiveCount = null } = params
   const structured = latestIntake ? getStructuredDataFromContent(latestIntake.content) : null
   const chiefComplaint =
     structured && typeof structured.chief_complaint === 'string' && structured.chief_complaint.trim()
@@ -188,7 +190,9 @@ const buildFollowupPrompt = (params: {
   const reason = question.why?.trim()
   const cleanedQuestion = sanitizeFollowupQuestionText(question.question)
   const lead = includeIntro
-    ? 'Ich habe eine kurze Rueckfrage zu Ihrer Anamnese.'
+    ? activeObjectiveCount && activeObjectiveCount > 0
+      ? `Ich habe noch ${activeObjectiveCount} offene Anamnese-Punkte. Ich starte mit der wichtigsten Frage.`
+      : 'Ich habe eine kurze Rueckfrage zu Ihrer Anamnese.'
     : null
 
   const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
@@ -264,6 +268,9 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
 
   const record = followup as Record<string, unknown>
   const nextQuestionsRaw = Array.isArray(record.next_questions) ? record.next_questions : []
+  const activeObjectiveIds = Array.isArray(record.active_objective_ids)
+    ? record.active_objective_ids.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+    : []
   const nextQuestions: FollowupQuestion[] = nextQuestionsRaw
     .filter((entry) => typeof entry === 'object' && entry !== null && !Array.isArray(entry))
     .map((entry) => {
@@ -283,12 +290,14 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
         why: typeof item.why === 'string' ? item.why : '',
         priority,
         source,
+        objective_id: typeof item.objective_id === 'string' ? item.objective_id : undefined,
       }
     })
     .filter((entry) => entry.id && entry.question)
 
   return {
     next_questions: nextQuestions,
+    active_objective_count: activeObjectiveIds.length,
   }
 }
 
@@ -431,6 +440,9 @@ export function DialogScreenV2() {
       nextQuestions,
       intakeId,
       blocked: Boolean(payload?.data?.blocked),
+      activeObjectiveCount: Array.isArray(payload?.data?.followup?.active_objective_ids)
+        ? payload.data.followup.active_objective_ids.length
+        : null,
     }
   }
 
@@ -522,6 +534,7 @@ export function DialogScreenV2() {
               question: intakeFollowup.next_questions[0],
               latestIntake,
               includeIntro: true,
+              activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
             }),
             timestamp: buildTimestamp(),
           },
@@ -542,6 +555,7 @@ export function DialogScreenV2() {
                   question: generatedFollowup.nextQuestions[0],
                   latestIntake,
                   includeIntro: true,
+                  activeObjectiveCount: generatedFollowup.activeObjectiveCount,
                 }),
                 timestamp: buildTimestamp(),
               },
@@ -1273,7 +1287,11 @@ export function DialogScreenV2() {
             const nextQuestion = followupResult.nextQuestions[0]
             setActiveFollowupQuestion(nextQuestion)
             appendAssistantMessage(
-              buildFollowupPrompt({ question: nextQuestion, latestIntake: null }),
+              buildFollowupPrompt({
+                question: nextQuestion,
+                latestIntake: null,
+                activeObjectiveCount: followupResult.activeObjectiveCount,
+              }),
             )
             return
           }
@@ -1304,6 +1322,7 @@ export function DialogScreenV2() {
                     buildFollowupPrompt({
                       question: nextQuestion,
                       latestIntake: refreshedIntake,
+                      activeObjectiveCount: refreshedFollowup.activeObjectiveCount,
                     }),
                   )
                 }

@@ -48,6 +48,7 @@ Zweck:
 | CRE-NV4-02 | CRE-NV4 | Follow-up Orchestrierung v2 (Anti-Repeat + Kontext) | P1 | M | planned | CRE-NV1-04, CRE-NV3-01 |
 | CRE-NV4-03 | CRE-NV4 | Follow-up State-Machine + Answer-Klassifikation (systemisch) | P0 | M-L | planned | CRE-NV1-04, CRE-NV2-04, CRE-NV3-01 |
 | CRE-NV4-04 | CRE-NV4 | Clinician Review UX Beschleunigung | P1 | M | planned | CRE-NV3-01 |
+| CRE-NV4-05 | CRE-NV4 | Objective/Slot-Modell für Anamnese-Steuerung einführen | P0 | L | planned | CRE-NV4-03 |
 | CRE-NV5-01 | CRE-NV5 | Release-Readiness Report erstellen | P0 | S-M | planned | CRE-NV3-02, CRE-NV4-02 |
 | CRE-NV5-02 | CRE-NV5 | Go/No-Go Gate mit dokumentiertem Risikoentscheid | P0 | S | planned | CRE-NV5-01 |
 | CRE-NV5-03 | CRE-NV5 | Staged Rollout + Rollback Playbook finalisieren | P0 | S-M | planned | CRE-NV5-02 |
@@ -80,6 +81,8 @@ Zweck:
   - Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
   - `clarification_loop_rate` sinkt signifikant ggü. Wave-5-Baseline
   - `resolved_followup_rate` stabil im Zielkorridor
+  - `objective_reask_violation_count = 0` im Golden-Set
+  - slot-basierte Steuerung (`objective_id`) in Follow-up-Planung aktiv
   - `patient_dialog_dropoff_rate` verbessert ggü. Wave-6-Baseline
   - Positive qualitative UX-Rückmeldung klinisch dokumentiert
 
@@ -98,6 +101,9 @@ Zweck:
 - `followup_repeat_question_rate`
 - `clarification_loop_rate`
 - `resolved_followup_rate`
+- `objective_slot_closure_rate`
+- `objective_reask_violation_count`
+- `followup_goal_coverage_rate`
 - `patient_dialog_success_rate`
 - `patient_dialog_dropoff_rate`
 - `patient_ui_blocker_open`

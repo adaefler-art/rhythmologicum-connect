@@ -97,6 +97,10 @@ describe('followup generator', () => {
     expect(generated.next_questions.length).toBeGreaterThan(0)
     expect(generated.next_questions.every((entry) => entry.source === 'gap_rule')).toBe(true)
     expect(generated.next_questions.some((entry) => entry.id === 'gap:chief-complaint')).toBe(false)
+    expect(Array.isArray(generated.objectives)).toBe(true)
+    expect(Array.isArray(generated.active_objective_ids)).toBe(true)
+    expect(generated.active_objective_ids).toContain('objective:onset')
+    expect(generated.active_objective_ids).toContain('objective:medication')
   })
 
   it('merges clinician requested items with dedupe and keeps max-3 in next_questions', () => {

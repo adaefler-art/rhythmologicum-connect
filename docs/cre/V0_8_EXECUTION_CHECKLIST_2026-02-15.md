@@ -75,17 +75,21 @@ Statuswerte:
 - [ ] CRE-NV4-02 Follow-up Orchestrierung v2 (Anti-Repeat + Kontext)
 - [~] CRE-NV4-03 Follow-up State-Machine + Answer-Klassifikation (systemisch)
 - [ ] CRE-NV4-04 Clinician Review UX Beschleunigung
+- [~] CRE-NV4-05 Objective/Slot-Modell für Anamnese-Steuerung einführen
 
 #### NV4-03 Fortschritt
 - [x] Deterministische Answer-Klassifikation (`answered|partial|unclear|contradiction`) im Follow-up-Backend integriert
 - [x] State-Machine-Transitions auf Basis der Klassifikation verdrahtet (`answered/partial` => advance, `unclear/contradiction` => klären)
 - [x] KPI-Hooks fuer `clarification_loop_rate` und `resolved_followup_rate` integriert
+- [x] Objective-/Slot-Metadaten (`objectives`, `active_objective_ids`) im Follow-up-Generator integriert
 - [ ] Golden-Set Regressionen für Klassifikationspfade vollständig abdecken
 
 ### Exit-Check
 - [ ] Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
 - [ ] `clarification_loop_rate` signifikant ggü. Wave-5-Baseline reduziert
 - [ ] `resolved_followup_rate` im Zielkorridor stabil
+- [ ] `objective_reask_violation_count = 0` im Golden-Set
+- [ ] Slot-basierte Follow-up-Planung über `objective_id` aktiv
 - [ ] `patient_dialog_dropoff_rate` ggü. Wave-6-Baseline verbessert
 - [ ] Positive qualitative UX-Rückmeldung klinisch dokumentiert
 
@@ -137,3 +141,6 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-15 12:56:30 (lokal): Produktive Frageformulierung verbessert, indem Follow-up-Prompts im Dialog entdoppelt/saniert und generische Partial-Rueckfragen im Backend auf klare, nicht-echoende Sprache umgestellt wurden.
 - 2026-02-15 13:04:14 (lokal): Medikationslogik korrigiert, sodass eine negative Kurzantwort wie „nein“ als beantwortet gilt und keine unsinnige Detail-Rueckfrage zu konkreten Mitteln mehr ausloest.
 - 2026-02-15 13:05:39 (lokal): PAT-Einstiegs- und Follow-up-Microcopy gestrafft, sodass Standard-Gap-Fragen direkt und ohne redundanten Themenvorspann gestellt werden.
+- 2026-02-15 13:42:58 (lokal): CRE-Komponenten-Interaktionsschema als Architekturübersicht erstellt, inklusive Laufzeitfluss zwischen Dialog, Intake, Safety, Reasoning, Follow-up, Persistenz und HITL.
+- 2026-02-15 13:53:26 (lokal): v0.8-Roadmap strukturell angepasst, indem NV4 um ein Objective/Slot-Steuerungsmodell mit klaren Issues, Exit-Kriterien und KPIs für re-ask-freie Anamneseplanung erweitert wurde.
+- 2026-02-15 14:04:02 (lokal): Signifikanter NV4-Block umgesetzt, indem Follow-up auf objective/slot-basierte Steuerung (active_objective_ids + safety-aware objective status) umgestellt und im Dialog als sichtbarer Anamnese-Fortschritt eingeblendet wurde.

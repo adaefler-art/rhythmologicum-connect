@@ -432,6 +432,97 @@ describe('POST /api/patient/followup/generate', () => {
     expect(hasTargetedPartialQuestion).toBe(false)
   })
 
+  it('does not ask medication gap again after concrete medication list answer', async () => {
+    const queryBuilder = {
+      _mode: 'select' as 'select' | 'update',
+      select: jest.fn(function select() {
+        this._mode = 'select'
+        return this
+      }),
+      update: jest.fn(function update() {
+        this._mode = 'update'
+        return this
+      }),
+      eq: jest.fn(function eq() {
+        return this
+      }),
+      order: jest.fn(function order() {
+        return this
+      }),
+      limit: jest.fn(function limit() {
+        return this
+      }),
+      maybeSingle: jest.fn(async function maybeSingle() {
+        if (this._mode === 'select') {
+          return {
+            data: {
+              id: '11111111-1111-4111-8111-111111111111',
+              user_id: '22222222-2222-4222-8222-222222222222',
+              patient_id: '33333333-3333-4333-8333-333333333333',
+              structured_data: {
+                status: 'draft',
+                followup: {
+                  next_questions: [
+                    {
+                      id: 'followup:partial:gap:medication',
+                      question:
+                        'Koennen Sie bitte die konkreten Mittel (Name und falls moeglich Dosierung) kurz angeben?',
+                      why: 'Teilantwort erkannt; klinisches Detail fehlt',
+                      priority: 1,
+                      source: 'gap_rule',
+                    },
+                  ],
+                  queue: [],
+                  asked_question_ids: ['gap:medication'],
+                  last_generated_at: '2026-02-15T10:00:00.000Z',
+                },
+                medication: [],
+              },
+            },
+            error: null,
+          }
+        }
+
+        return { data: null, error: null }
+      }),
+    }
+
+    const supabase = {
+      auth: {
+        getUser: jest.fn(async () => ({
+          data: { user: { id: '22222222-2222-4222-8222-222222222222' } },
+          error: null,
+        })),
+      },
+      from: jest.fn(() => queryBuilder),
+    }
+
+    createServerSupabaseClient.mockResolvedValue(supabase)
+
+    const request = new Request('http://localhost/api/patient/followup/generate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        intakeId: '11111111-1111-4111-8111-111111111111',
+        asked_question_id: 'followup:partial:gap:medication',
+        asked_question_text:
+          'Koennen Sie bitte die konkreten Mittel (Name und falls moeglich Dosierung) kurz angeben?',
+        asked_answer_text: 'Omega 3, B12, Magnesium',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(200)
+
+    const json = await response.json()
+    expect(json?.success).toBe(true)
+
+    const hasMedicationGapQuestion = (json?.data?.next_questions ?? []).some(
+      (entry: { id?: string }) => String(entry.id ?? '') === 'gap:medication',
+    )
+    expect(hasMedicationGapQuestion).toBe(false)
+  })
+
   it('does not re-ask partial follow-up when user references already provided data', async () => {
     const queryBuilder = {
       _mode: 'select' as 'select' | 'update',
