@@ -362,6 +362,7 @@ export function DialogScreenV2() {
   const generateFollowup = async (params: {
     intakeId: string
     askedQuestionId?: string
+    askedQuestionText?: string
     askedAnswerText?: string
   }) => {
     const response = await fetch('/api/patient/followup/generate', {
@@ -370,6 +371,7 @@ export function DialogScreenV2() {
       body: JSON.stringify({
         intakeId: params.intakeId,
         asked_question_id: params.askedQuestionId,
+        asked_question_text: params.askedQuestionText,
         asked_answer_text: params.askedAnswerText,
       }),
     })
@@ -1217,6 +1219,7 @@ export function DialogScreenV2() {
           const followupResult = await generateFollowup({
             intakeId: latestClinicalIntakeId,
             askedQuestionId: currentFollowupQuestion.id,
+            askedQuestionText: currentFollowupQuestion.question,
             askedAnswerText: trimmed,
           })
 

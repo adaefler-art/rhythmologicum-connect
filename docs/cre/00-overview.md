@@ -20,3 +20,7 @@ Clinical Reasoning Engine (CRE) is the deterministic, auditable layer that turns
 - A diagnosis engine.
 - A replacement for clinician review.
 - A safety oracle based on LLM outputs.
+
+## Planning
+
+- Current implementation and delivery roadmap: `ROADMAP_POST_E4_2026-02-15.md`

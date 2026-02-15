@@ -14,6 +14,7 @@ const requestSchema = z
     intakeId: z.string().uuid().optional(),
     asked_question_id: z.string().min(1).optional(),
     asked_question_ids: z.array(z.string().min(1)).optional(),
+    asked_question_text: z.string().min(1).optional(),
     asked_answer_text: z.string().min(1).optional(),
   })
   .refine((value) => Boolean(value.patientId || value.intakeId), {
@@ -72,6 +73,7 @@ const asStringArray = (value: unknown) =>
 const applyAskedAnswerToStructuredData = (params: {
   structuredData: StructuredIntakeData
   askedQuestionIds: string[]
+  askedQuestionText?: string
   answerText?: string
 }): StructuredIntakeData => {
   const answer = params.answerText?.trim()
@@ -81,6 +83,23 @@ const applyAskedAnswerToStructuredData = (params: {
 
   const next = { ...params.structuredData }
   const hpi = { ...(next.history_of_present_illness ?? {}) }
+  const askedQuestionText = params.askedQuestionText?.trim().toLowerCase() ?? ''
+
+  const inferMedicationContext = () => {
+    if (params.askedQuestionIds.some((id) => id === 'gap:medication')) return true
+    if (params.askedQuestionIds.some((id) => /medik|medication|supplement|nahrungserga/.test(id.toLowerCase()))) {
+      return true
+    }
+    return /medik|medication|nahrungserga|supplement/.test(askedQuestionText)
+  }
+
+  const inferPsychosocialContext = () => {
+    if (params.askedQuestionIds.some((id) => id === 'gap:psychosocial')) return true
+    if (params.askedQuestionIds.some((id) => /psycho|stress|alltag|schlaf/.test(id.toLowerCase()))) {
+      return true
+    }
+    return /stress|alltag|schlaf|belastung|psycho/.test(askedQuestionText)
+  }
 
   for (const questionId of params.askedQuestionIds) {
     if (questionId === 'gap:chief-complaint') {
@@ -111,6 +130,20 @@ const applyAskedAnswerToStructuredData = (params: {
       if (!psychosocial.includes(answer)) {
         next.psychosocial_factors = [...psychosocial, answer]
       }
+    }
+  }
+
+  if (inferMedicationContext()) {
+    const medication = asStringArray(next.medication)
+    if (!medication.includes(answer)) {
+      next.medication = [...medication, answer]
+    }
+  }
+
+  if (inferPsychosocialContext()) {
+    const psychosocial = asStringArray(next.psychosocial_factors)
+    if (!psychosocial.includes(answer)) {
+      next.psychosocial_factors = [...psychosocial, answer]
     }
   }
 
@@ -312,6 +345,7 @@ export async function POST(req: Request) {
     structuredData = applyAskedAnswerToStructuredData({
       structuredData,
       askedQuestionIds,
+      askedQuestionText: body.asked_question_text,
       answerText: body.asked_answer_text,
     })
 

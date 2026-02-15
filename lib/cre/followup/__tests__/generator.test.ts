@@ -184,6 +184,60 @@ describe('followup generator', () => {
     expect(generated.next_questions[0].source).toBe('clinician_request')
   })
 
+  it('deduplicates semantically identical questions across different IDs', () => {
+    const structuredData = {
+      status: 'draft' as const,
+      chief_complaint: '',
+      history_of_present_illness: {},
+      reasoning: {
+        risk_estimation: {
+          score: 2,
+          level: 'low' as const,
+          components: {
+            verified_red_flags: 0,
+            chronicity_signal: 0,
+            anxiety_signal: 0,
+          },
+        },
+        differentials: [],
+        open_questions: [
+          {
+            condition_label: 'General',
+            text: 'Nehmen Sie aktuell Medikamente oder relevante Nahrungsergaenzungsmittel ein?',
+            priority: 3 as const,
+          },
+        ],
+        recommended_next_steps: [],
+        uncertainties: [],
+      },
+      followup: {
+        next_questions: [
+          {
+            id: 'clinician-request:bitte-medikation-pruefen',
+            question: 'Nehmen Sie aktuell Medikamente oder relevante Nahrungsergaenzungsmittel ein?',
+            why: 'Rueckfrage aus aerztlicher Pruefung',
+            priority: 1 as const,
+            source: 'clinician_request' as const,
+          },
+        ],
+        queue: [],
+        asked_question_ids: [],
+        last_generated_at: '2026-02-15T00:00:00.000Z',
+      },
+    }
+
+    const generated = generateFollowupQuestions({
+      structuredData,
+      now: new Date('2026-02-15T12:00:00.000Z'),
+    })
+
+    const sameQuestionCount = generated.next_questions.filter((entry) =>
+      entry.question.includes('Medikamente oder relevante Nahrungsergaenzungsmittel'),
+    ).length
+
+    expect(sameQuestionCount).toBe(1)
+  })
+
   it('transitions lifecycle via skip and complete without repeating asked questions', () => {
     const structuredData = {
       status: 'draft' as const,

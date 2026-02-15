@@ -138,9 +138,21 @@ const buildGapRuleCandidates = (structuredData: StructuredIntakeData): FollowupC
 
 const dedupeCandidates = (candidates: FollowupCandidate[]) => {
   const byId = new Map<string, FollowupCandidate>()
+  const byQuestion = new Map<string, FollowupCandidate>()
 
   for (const candidate of candidates) {
-    if (!candidate.question.trim()) continue
+    const questionText = candidate.question.trim()
+    if (!questionText) continue
+
+    const normalizedQuestion = normalizeText(questionText)
+
+    const byQuestionExisting = byQuestion.get(normalizedQuestion)
+    if (!byQuestionExisting) {
+      byQuestion.set(normalizedQuestion, candidate)
+    } else if (SOURCE_PRIORITY[candidate.source] < SOURCE_PRIORITY[byQuestionExisting.source]) {
+      byQuestion.set(normalizedQuestion, candidate)
+    }
+
     const existing = byId.get(candidate.id)
     if (!existing) {
       byId.set(candidate.id, candidate)
@@ -152,7 +164,7 @@ const dedupeCandidates = (candidates: FollowupCandidate[]) => {
     }
   }
 
-  return Array.from(byId.values())
+  return Array.from(byQuestion.values())
 }
 
 const mapRequestedItemsToClinicianQuestions = (requestedItems: string[]): FollowupCandidate[] => {
