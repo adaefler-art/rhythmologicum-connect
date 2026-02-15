@@ -162,6 +162,14 @@ const sanitizeFollowupQuestionText = (value: string) => {
     .trim()
 }
 
+const normalizeFollowupQuestionForCompare = (value?: string) =>
+  sanitizeFollowupQuestionText(value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
 const questionAlreadyContainsContext = (value: string) =>
   /^(zum\s+thema|eine\s+kurze\s+rueckfrage\s+zur\s+anamnese)/i.test(value.trim())
 
@@ -427,8 +435,28 @@ export function DialogScreenV2() {
     }
 
     const nextQuestionsRaw = payload?.data?.next_questions
+    const askedQuestionId = params.askedQuestionId?.trim() ?? ''
+    const askedQuestionNormalized = normalizeFollowupQuestionForCompare(params.askedQuestionText)
+
     const nextQuestions = Array.isArray(nextQuestionsRaw)
-      ? (nextQuestionsRaw as FollowupQuestion[])
+      ? (nextQuestionsRaw as FollowupQuestion[]).filter((entry) => {
+          const entryId = typeof entry.id === 'string' ? entry.id.trim() : ''
+          const entryQuestionNormalized = normalizeFollowupQuestionForCompare(entry.question)
+
+          if (askedQuestionId && entryId === askedQuestionId) {
+            return false
+          }
+
+          if (
+            askedQuestionNormalized &&
+            entryQuestionNormalized &&
+            entryQuestionNormalized === askedQuestionNormalized
+          ) {
+            return false
+          }
+
+          return true
+        })
       : []
 
     const intakeId =
