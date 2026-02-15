@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge } from '@/lib/ui/mobile-v2'
 import { Bot, Mic, ChevronRight } from '@/lib/ui/mobile-v2/icons'
@@ -1328,6 +1329,15 @@ export function DialogScreenV2() {
     }
   }
 
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    event.preventDefault()
+    void handleSend()
+  }
+
+  const isSendDisabled = !isChatEnabled || isSending || isSafetyBlocked || input.trim().length === 0
+  const isDictationDisabled = !isChatEnabled || isSending || isSafetyBlocked
+
   return (
     <div className="w-full overflow-x-hidden">
       <div className="flex min-h-[calc(100dvh-56px)] flex-col overflow-hidden">
@@ -1459,66 +1469,62 @@ export function DialogScreenV2() {
                 rows={2}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={handleInputKeyDown}
                 disabled={!isChatEnabled || isSending || isSafetyBlocked}
                 className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
               />
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!isChatEnabled || isSending || isSafetyBlocked || input.trim().length === 0}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white transition-colors disabled:bg-slate-200 disabled:text-slate-400"
-                aria-label="Senden"
-              >
-                {isSending ? (
-                  <span className="text-xs">...</span>
-                ) : (
-                  <ChevronRight className="h-5 w-5" />
+              <div className="flex items-center justify-end gap-2 pb-1">
+                {isDictationSupported && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!recognitionRef.current) {
+                        setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
+                        return
+                      }
+                      setDictationError(null)
+                      if (isDictating) {
+                        if (dictationRestartTimeoutRef.current) {
+                          clearTimeout(dictationRestartTimeoutRef.current)
+                          dictationRestartTimeoutRef.current = null
+                        }
+                        recognitionRef.current.stop()
+                        setIsDictating(false)
+                      } else {
+                        recognitionRef.current.start()
+                        setIsDictating(true)
+                      }
+                    }}
+                    disabled={isDictationDisabled}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                      isDictating
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:bg-slate-50 disabled:text-slate-400'
+                    }`}
+                    aria-label={isDictating ? 'Diktat stoppen' : 'Diktat starten'}
+                  >
+                    <Mic className="h-3.5 w-3.5" />
+                    {isDictating && <span className="sr-only">Aufnahme laeuft</span>}
+                  </button>
                 )}
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-3 pt-2">
-              {isDictationSupported ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!recognitionRef.current) {
-                      setDictationError('Spracherkennung wird von diesem Browser nicht unterstuetzt.')
-                      return
-                    }
-                    setDictationError(null)
-                    if (isDictating) {
-                      if (dictationRestartTimeoutRef.current) {
-                        clearTimeout(dictationRestartTimeoutRef.current)
-                        dictationRestartTimeoutRef.current = null
-                      }
-                      recognitionRef.current.stop()
-                      setIsDictating(false)
-                    } else {
-                      recognitionRef.current.start()
-                      setIsDictating(true)
-                    }
-                  }}
-                  disabled={!isChatEnabled || isSending || isSafetyBlocked}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                    isDictating
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:bg-slate-50 disabled:text-slate-400'
-                  }`}
-                  aria-label={isDictating ? 'Diktat stoppen' : 'Diktat starten'}
+                  onClick={handleSend}
+                  disabled={isSendDisabled}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white transition-colors disabled:bg-slate-200 disabled:text-slate-400"
+                  aria-label="Senden"
                 >
-                  <Mic className="w-4 h-4" />
-                  {isDictating && (
-                    <span className="sr-only">Aufnahme laeuft</span>
-                  )}
+                  {isSending ? <span className="text-[10px]">...</span> : <ChevronRight className="h-4 w-4" />}
                 </button>
-              ) : (
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-2">
+              {!isDictationSupported && (
                 <span className="text-xs text-slate-500">
                   Diktat ist in diesem Browser nicht verfuegbar.
                 </span>
               )}
-              {dictationError && (
-                <span className="text-xs text-rose-700">{dictationError}</span>
-              )}
+              {dictationError && <span className="text-xs text-rose-700">{dictationError}</span>}
               {sendError && <span className="text-xs text-rose-700">{sendError}</span>}
             </div>
           </div>
