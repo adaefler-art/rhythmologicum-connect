@@ -146,7 +146,9 @@ export const classifyFollowupAnswer = (params: {
     return 'unclear'
   }
 
-  if (YES_ONLY.test(normalizedShortAnswer) || NO_ONLY.test(normalizedShortAnswer)) return 'partial'
+  if (YES_ONLY.test(normalizedShortAnswer) || isLikelyNegativeShortAnswer(normalizedShortAnswer)) {
+    return 'partial'
+  }
 
   if (answer.length < 6) return 'partial'
 
