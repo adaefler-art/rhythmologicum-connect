@@ -112,7 +112,7 @@ const derivePartialQuestionText = (askedQuestionText?: string) => {
     return 'Koennen Sie bitte den Verlauf konkretisieren (eher besser, schlechter oder gleichbleibend)?'
   }
 
-  return `${text} Bitte mit einem kurzen konkreten Detail.`
+  return 'Koennen Sie das bitte mit einem kurzen konkreten Detail praezisieren?'
 }
 
 const prependTargetedQuestion = (params: {

@@ -33,6 +33,7 @@ const YES_NO_ONLY = /^(ja|nein|yes|no|jap|nope)$/
 const PRIOR_CONTEXT_REFERENCE_PATTERNS = [
   /(bereits|schon)\s+(genannt|angegeben)/,
   /habe\s+ich\s+(bereits|schon)\s+(genannt|angegeben)/,
+  /(du|sie|ihr)\s+kennst?\s+.*(bereits|schon)/,
   /(steht|siehe)\s+.*(daten|anamnese|oben)/,
   /already\s+(mentioned|provided|stated)/,
   /as\s+(mentioned|stated)/,

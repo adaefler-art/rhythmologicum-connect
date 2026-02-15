@@ -151,6 +151,19 @@ const extractTopic = (narrative: string): string | null => {
   return trimText(firstLine, 80)
 }
 
+const sanitizeFollowupQuestionText = (value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+
+  return trimmed
+    .replace(/^(danke[.!]?\s*)+/i, '')
+    .replace(/^eine\s+kurze\s+rueckfrage\s+zur\s+anamnese:\s*/i, '')
+    .trim()
+}
+
+const questionAlreadyContainsContext = (value: string) =>
+  /^(zum\s+thema|eine\s+kurze\s+rueckfrage\s+zur\s+anamnese)/i.test(value.trim())
+
 const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   if (!latestIntake) return DEFAULT_OPENING_QUESTION
   const narrative = getIntakeNarrative(latestIntake.content)
@@ -173,15 +186,19 @@ const buildFollowupPrompt = (params: {
       : null
 
   const reason = question.why?.trim()
+  const cleanedQuestion = sanitizeFollowupQuestionText(question.question)
   const lead = includeIntro
-    ? 'Danke fuer Ihre bisherigen Angaben. Ich vervollstaendige jetzt Ihre Anamnese mit ein paar gezielten Fragen.'
+    ? 'Ich habe noch eine kurze Rueckfrage, um Ihre Angaben zu vervollstaendigen.'
     : null
 
-  const contextPrefix = chiefComplaint
-    ? `Zum Thema "${chiefComplaint}" noch eine kurze Frage: `
+  const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
+  const contextPrefix = shortChiefComplaint
+    ? `Zum Thema "${shortChiefComplaint}" noch eine kurze Frage: `
     : 'Eine kurze Rueckfrage zur Anamnese: '
 
-  const politeQuestion = `${contextPrefix}${question.question}`
+  const politeQuestion = questionAlreadyContainsContext(cleanedQuestion)
+    ? cleanedQuestion
+    : `${contextPrefix}${cleanedQuestion || question.question}`
 
   const technicalReason =
     reason &&

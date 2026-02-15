@@ -121,3 +121,17 @@ Statuswerte:
 - [ ] Release Notes final
 - [ ] Tag erstellt
 - [ ] GitHub Release veröffentlicht
+
+---
+
+## Change Log
+
+v0.7 wurde abgeschlossen (Tag/Release), v0.8-Planung und Checklistenstruktur stehen.
+Patient-UX-Fixes wurden umgesetzt (Login-Weiterleitung, Enter-send, kompakter/rechts ausgerichteter Input-Bereich, Redirect auf /patient/start).
+Follow-up-Logik wurde systemisch erweitert (Klassifikation answered|partial|unclear|contradiction, State-Transitions, Monitoring-KPIs).
+Deploy-Blocker (TypeScript Event-Union) wurde behoben und Build wieder stabilisiert.
+Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den Daten“ führt nicht mehr in Re-Ask-Loop), mit Regressionstests abgesichert und nach main gepusht (dfa7f865).
+
+- 2026-02-15 12:34:21 (lokal): Follow-up-Sackgasse behoben, indem Antworten wie „bereits genannt/in den Daten“ als beantwortet klassifiziert, gegen Re-Ask-Loops abgesichert, mit Regressionstests verifiziert und auf `main` gepusht wurden.
+- 2026-02-15 12:41:13 (lokal): Klassifikationslogik erweitert, sodass Formulierungen wie „Du kennst meine Medikation bereits“ als beantwortet erkannt und mit Regressionstest gegen erneute Re-Ask-Loops abgesichert werden.
+- 2026-02-15 12:56:30 (lokal): Produktive Frageformulierung verbessert, indem Follow-up-Prompts im Dialog entdoppelt/saniert und generische Partial-Rueckfragen im Backend auf klare, nicht-echoende Sprache umgestellt wurden.

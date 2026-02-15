@@ -38,6 +38,17 @@ describe('classifyFollowupAnswer', () => {
     expect(result).toBe('answered')
   })
 
+  it('classifies "du kennst ... bereits" medication reference as answered', () => {
+    const result = classifyFollowupAnswer({
+      askedQuestionIds: ['gap:medication'],
+      askedQuestionText: 'Nehmen Sie aktuell Medikamente?',
+      answerText: 'Du kennst meine Medikation bereits.',
+      normalizationTurn: null,
+    })
+
+    expect(result).toBe('answered')
+  })
+
   it('classifies empty/unknown answer as unclear', () => {
     expect(
       classifyFollowupAnswer({
