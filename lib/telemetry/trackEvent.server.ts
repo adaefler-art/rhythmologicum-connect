@@ -7,6 +7,8 @@ export const PATIENT_EVENT_TYPES = [
   'session_end',
   'followup_question_shown',
   'followup_answered',
+  'followup_clarification_needed',
+  'followup_resolved',
   'followup_skipped',
   'intake_regen_triggered',
   'hard_stop_triggered',
