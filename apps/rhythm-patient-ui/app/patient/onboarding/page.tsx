@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * Flow:
  * - If not authenticated → redirect to login
  * - If onboarding not started or in_progress → redirect to consent page
- * - If onboarding completed → redirect to dashboard
+ * - If onboarding completed → redirect to start page
  */
 export default async function OnboardingIndexPage() {
   const supabase = await createServerSupabaseClient()
@@ -34,9 +34,9 @@ export default async function OnboardingIndexPage() {
     .eq('user_id', user.id)
     .single()
 
-  // If onboarding is already completed, redirect to dashboard
+  // If onboarding is already completed, redirect to start page
   if (profile?.onboarding_status === 'completed') {
-    redirect('/patient/dashboard')
+    redirect('/patient/start')
   }
 
   // Otherwise, redirect to consent page (first step of onboarding)

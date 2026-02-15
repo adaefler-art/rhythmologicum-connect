@@ -58,8 +58,8 @@ export function ProfileClient() {
       })
 
       if (result.success) {
-        // E6.4.2 AC2: Redirect to dashboard after onboarding completion
-        router.push('/patient/dashboard')
+        // E6.4.2 AC2: Redirect to start page after onboarding completion
+        router.push('/patient/start')
       } else {
         setError(result.error || 'Fehler beim Speichern des Profils')
       }

@@ -21,8 +21,8 @@ describe('getPostLoginRedirect', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith('[AUTH_LANDING] role=clinician target=/clinician')
   })
 
-  it('redirects patient to /patient', () => {
-    expect(getPostLoginRedirect({ role: 'patient' })).toBe('/patient')
-    expect(consoleLogSpy).toHaveBeenCalledWith('[AUTH_LANDING] role=patient target=/patient')
+  it('redirects patient to /patient/start', () => {
+    expect(getPostLoginRedirect({ role: 'patient' })).toBe('/patient/start')
+    expect(consoleLogSpy).toHaveBeenCalledWith('[AUTH_LANDING] role=patient target=/patient/start')
   })
 })
