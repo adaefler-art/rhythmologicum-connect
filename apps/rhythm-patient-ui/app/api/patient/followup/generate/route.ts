@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
-import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
+import {
+  appendAskedQuestionIds,
+  generateFollowupQuestions,
+  transitionFollowupLifecycle,
+} from '@/lib/cre/followup/generator'
 import {
   classifyFollowupAnswer,
   type FollowupAnswerClassification,
@@ -82,6 +86,68 @@ const shouldSuppressClarificationPrompt = (params: {
   if (!params.clarificationPrompt) return false
   if (params.askedQuestionIds.length === 0) return false
   return params.answerClassification === 'answered' || params.answerClassification === 'partial'
+}
+
+const derivePartialQuestionText = (askedQuestionText?: string) => {
+  const text = askedQuestionText?.trim()
+  if (!text) {
+    return 'Danke, ich brauche noch ein kurzes konkretes Detail, damit ich Ihre Angabe klinisch korrekt einordnen kann.'
+  }
+
+  const lowered = text.toLowerCase()
+
+  if (/medik|medication|nahrungserga|supplement/.test(lowered)) {
+    return 'Danke. Koennen Sie bitte die konkreten Mittel (Name und falls moeglich Dosierung) kurz angeben?'
+  }
+
+  if (/seit wann|onset|beginn/.test(lowered)) {
+    return 'Danke. Koennen Sie bitte den Beginn zeitlich genauer einordnen (z.B. heute, seit 3 Tagen, seit 2 Wochen)?'
+  }
+
+  if (/wie lange|dauer|duration/.test(lowered)) {
+    return 'Danke. Koennen Sie bitte die typische Dauer pro Episode kurz angeben?'
+  }
+
+  if (/verlauf|course|verbessert|verschlechtert/.test(lowered)) {
+    return 'Danke. Koennen Sie bitte den Verlauf konkretisieren (eher besser, schlechter oder gleichbleibend)?'
+  }
+
+  return `${text} Bitte mit einem kurzen konkreten Detail.`
+}
+
+const prependTargetedQuestion = (params: {
+  followup: NonNullable<StructuredIntakeData['followup']>
+  questionId: string
+  questionText: string
+  why: string
+}) => {
+  const alreadyAsked = (params.followup.asked_question_ids ?? []).includes(params.questionId)
+  const alreadyQueued = [
+    ...(params.followup.next_questions ?? []),
+    ...(params.followup.queue ?? []),
+  ].some((entry) => entry.id === params.questionId)
+
+  if (alreadyAsked || alreadyQueued) {
+    return params.followup
+  }
+
+  const targetedQuestion = {
+    id: params.questionId,
+    question: params.questionText,
+    why: params.why,
+    priority: 1 as const,
+    source: 'gap_rule' as const,
+  }
+
+  const nextQuestions = [targetedQuestion, ...(params.followup.next_questions ?? [])]
+  const trimmedNext = nextQuestions.slice(0, 3)
+  const overflow = nextQuestions.slice(3)
+
+  return {
+    ...params.followup,
+    next_questions: trimmedNext,
+    queue: [...overflow, ...(params.followup.queue ?? [])],
+  }
 }
 
 const applyAskedAnswerToStructuredData = (params: {
@@ -371,11 +437,30 @@ export async function POST(req: Request) {
     })
     structuredData = normalizationResult.structuredData
 
-    if (askedQuestionIds.length > 0) {
+    const answerClassification = classifyFollowupAnswer({
+      askedQuestionIds,
+      askedQuestionText: body.asked_question_text,
+      answerText: body.asked_answer_text,
+      normalizationTurn: normalizationResult.turn,
+    })
+
+    const shouldAdvanceAnsweredQuestion =
+      askedQuestionIds.length > 0 &&
+      (answerClassification === 'answered' || answerClassification === 'partial')
+
+    if (shouldAdvanceAnsweredQuestion) {
       structuredData = appendAskedQuestionIds({
         structuredData,
         askedQuestionIds,
       })
+
+      for (const questionId of askedQuestionIds) {
+        structuredData = transitionFollowupLifecycle({
+          structuredData,
+          action: 'complete',
+          questionId,
+        })
+      }
     }
 
     const blocked = isFollowupBlockedBySafety(structuredData)
@@ -403,20 +488,13 @@ export async function POST(req: Request) {
       )
     }
 
-    const answerClassification = classifyFollowupAnswer({
-      askedQuestionIds,
-      askedQuestionText: body.asked_question_text,
-      answerText: body.asked_answer_text,
-      normalizationTurn: normalizationResult.turn,
-    })
-
     const suppressClarificationPrompt = shouldSuppressClarificationPrompt({
       askedQuestionIds,
       clarificationPrompt: normalizationResult.clarificationPrompt,
       answerClassification,
     })
 
-    const followupWithClarification =
+    let followupWithClarification =
       normalizationResult.clarificationPrompt && !suppressClarificationPrompt && followupValidation.value
         ? prependClarificationQuestion({
             followup: followupValidation.value,
@@ -424,6 +502,16 @@ export async function POST(req: Request) {
             turnId: normalizationTurnId,
           })
         : followupValidation.value
+
+    if (answerClassification === 'partial' && askedQuestionIds.length > 0) {
+      const partialQuestionId = `followup:partial:${askedQuestionIds[0]}`
+      followupWithClarification = prependTargetedQuestion({
+        followup: followupWithClarification,
+        questionId: partialQuestionId,
+        questionText: derivePartialQuestionText(body.asked_question_text),
+        why: 'Teilantwort erkannt; klinisches Detail fehlt',
+      })
+    }
 
     const nextStructuredData: StructuredIntakeData = {
       ...structuredData,
