@@ -38,6 +38,26 @@ describe('classifyFollowupAnswer', () => {
     expect(result).toBe('answered')
   })
 
+  it('classifies typo-like medication "nei" answer as answered', () => {
+    const result = classifyFollowupAnswer({
+      askedQuestionIds: ['gap:medication'],
+      askedQuestionText: 'Nehmen Sie Medikamente ein?',
+      answerText: 'nei',
+    })
+
+    expect(result).toBe('answered')
+  })
+
+  it('classifies medication "nope" answer as answered', () => {
+    const result = classifyFollowupAnswer({
+      askedQuestionIds: ['gap:medication'],
+      askedQuestionText: 'Nehmen Sie Medikamente ein?',
+      answerText: 'nope',
+    })
+
+    expect(result).toBe('answered')
+  })
+
   it('classifies already-provided reference answer as answered', () => {
     const result = classifyFollowupAnswer({
       askedQuestionIds: ['gap:medication'],

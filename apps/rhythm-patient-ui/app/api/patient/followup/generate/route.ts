@@ -78,8 +78,62 @@ const asStringArray = (value: unknown) =>
     ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
 
-const NO_MEDICATION_SIGNAL = /^(nein|no|none|keine(\s+medikamente)?|nehme\s+nichts)$/i
-const YES_MEDICATION_SIGNAL = /^(ja|yes|jap|yep|yeah)$/i
+const normalizeShortAnswer = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.!?,;:]+$/g, '')
+    .trim()
+
+const levenshteinDistance = (left: string, right: string) => {
+  if (left === right) return 0
+  if (!left.length) return right.length
+  if (!right.length) return left.length
+
+  const dp = Array.from({ length: left.length + 1 }, () => new Array(right.length + 1).fill(0))
+
+  for (let i = 0; i <= left.length; i += 1) dp[i][0] = i
+  for (let j = 0; j <= right.length; j += 1) dp[0][j] = j
+
+  for (let i = 1; i <= left.length; i += 1) {
+    for (let j = 1; j <= right.length; j += 1) {
+      const substitutionCost = left[i - 1] === right[j - 1] ? 0 : 1
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + substitutionCost,
+      )
+    }
+  }
+
+  return dp[left.length][right.length]
+}
+
+const NEGATIVE_SHORT_FORMS = ['nein', 'no', 'none', 'nope', 'nee']
+
+const isLikelyNegativeShortAnswer = (value: string) => {
+  if (!value) return false
+  if (NEGATIVE_SHORT_FORMS.includes(value)) return true
+  if (!/^[a-z]{2,6}$/.test(value)) return false
+  if (!value.startsWith('ne') && !value.startsWith('no')) return false
+
+  return NEGATIVE_SHORT_FORMS.some((canonical) => levenshteinDistance(value, canonical) <= 1)
+}
+
+const isNoMedicationAnswer = (value: string) => {
+  const normalized = normalizeShortAnswer(value)
+  return (
+    isLikelyNegativeShortAnswer(normalized) ||
+    /keine\s+medikamente|nehme\s+nichts|no\s+medication|none\s+reported|nichts/.test(normalized)
+  )
+}
+
+const isYesMedicationAnswer = (value: string) => {
+  const normalized = normalizeShortAnswer(value)
+  return /^(ja|yes|jap|yep|yeah)$/.test(normalized)
+}
 
 const resolveObjectiveIdFromQuestionId = (questionId: string) => {
   const normalized = questionId.toLowerCase()
@@ -228,11 +282,11 @@ const applyAskedAnswerToStructuredData = (params: {
 
     if (questionId === 'gap:medication') {
       const medication = asStringArray(next.medication)
-      if (NO_MEDICATION_SIGNAL.test(answer)) {
+      if (isNoMedicationAnswer(answer)) {
         if (!medication.includes('none_reported')) {
           next.medication = [...medication, 'none_reported']
         }
-      } else if (!YES_MEDICATION_SIGNAL.test(answer) && !medication.includes(answer)) {
+      } else if (!isYesMedicationAnswer(answer) && !medication.includes(answer)) {
         next.medication = [...medication, answer]
       }
     }
@@ -247,11 +301,11 @@ const applyAskedAnswerToStructuredData = (params: {
 
   if (inferMedicationContext()) {
     const medication = asStringArray(next.medication)
-    if (NO_MEDICATION_SIGNAL.test(answer)) {
+    if (isNoMedicationAnswer(answer)) {
       if (!medication.includes('none_reported')) {
         next.medication = [...medication, 'none_reported']
       }
-    } else if (!YES_MEDICATION_SIGNAL.test(answer) && !medication.includes(answer)) {
+    } else if (!isYesMedicationAnswer(answer) && !medication.includes(answer)) {
       next.medication = [...medication, answer]
     }
   }
