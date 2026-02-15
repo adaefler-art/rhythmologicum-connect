@@ -42,6 +42,7 @@ const mapIntake = (intake: ClinicalIntake | null) =>
 
 type LatestIntakeResponse = {
   success: boolean
+  requestId?: string
   data?: {
     intake: ReturnType<typeof mapIntake>
   }
