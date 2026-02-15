@@ -162,8 +162,9 @@ const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
 const buildFollowupPrompt = (params: {
   question: FollowupQuestion
   latestIntake: IntakeEntry | null
+  includeIntro?: boolean
 }) => {
-  const { question, latestIntake } = params
+  const { question, latestIntake, includeIntro = false } = params
   const structured = latestIntake ? getStructuredDataFromContent(latestIntake.content) : null
   const chiefComplaint =
     structured && typeof structured.chief_complaint === 'string' && structured.chief_complaint.trim()
@@ -171,13 +172,35 @@ const buildFollowupPrompt = (params: {
       : null
 
   const reason = question.why?.trim()
-  const contextPrefix = chiefComplaint ? `Bezug: ${chiefComplaint}. ` : ''
+  const lead = includeIntro
+    ? 'Danke fuer Ihre bisherigen Angaben. Ich vervollstaendige jetzt Ihre Anamnese mit ein paar gezielten Fragen.'
+    : null
 
-  if (reason) {
-    return `${contextPrefix}${question.question}\n\nWarum ich das frage: ${reason}.`
+  const contextPrefix = chiefComplaint
+    ? `Zum Thema "${chiefComplaint}" noch eine kurze Frage: `
+    : 'Eine kurze Rueckfrage zur Anamnese: '
+
+  const politeQuestion = `${contextPrefix}${question.question}`
+
+  const reasonLine = reason
+    ? question.source === 'clinician_request'
+      ? 'Hinweis: Diese Rueckfrage wurde aerztlich angefordert.'
+      : `Ziel: ${reason}.`
+    : null
+
+  if (lead && reasonLine) {
+    return `${lead}\n\n${politeQuestion}\n${reasonLine}`
   }
 
-  return `${contextPrefix}${question.question}`
+  if (lead) {
+    return `${lead}\n\n${politeQuestion}`
+  }
+
+  if (reasonLine) {
+    return `${politeQuestion}\n${reasonLine}`
+  }
+
+  return politeQuestion
 }
 
 const getStructuredDataFromContent = (content: Record<string, unknown>) => {
@@ -378,7 +401,7 @@ export function DialogScreenV2() {
     try {
       const [latest, checkResponse] = await Promise.all([
         latestIntake !== undefined ? Promise.resolve(latestIntake) : fetchLatestIntake(),
-        fetch('/api/patient/_meta/intake-write-check', {
+        fetch('/api/patient/meta/intake-write-check', {
           headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
         }),
       ])
@@ -461,6 +484,7 @@ export function DialogScreenV2() {
             text: buildFollowupPrompt({
               question: intakeFollowup.next_questions[0],
               latestIntake,
+              includeIntro: true,
             }),
             timestamp: buildTimestamp(),
           },
@@ -480,6 +504,7 @@ export function DialogScreenV2() {
                 text: buildFollowupPrompt({
                   question: generatedFollowup.nextQuestions[0],
                   latestIntake,
+                  includeIntro: true,
                 }),
                 timestamp: buildTimestamp(),
               },

@@ -70,13 +70,10 @@ export async function GET() {
 
     if (reviewError) {
       console.error('[patient/review/status] Review query error', reviewError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch review status' },
-        },
-        { status: 500 },
-      )
+      return NextResponse.json({
+        success: true,
+        review: null,
+      })
     }
 
     return NextResponse.json({
