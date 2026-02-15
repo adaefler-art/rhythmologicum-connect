@@ -10,6 +10,8 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 type EventType =
   | 'followup_question_shown'
   | 'followup_answered'
+  | 'followup_clarification_needed'
+  | 'followup_resolved'
   | 'upload_requested'
   | 'upload_received'
   | 'hard_stop_triggered'
@@ -129,11 +131,17 @@ export async function GET(request: Request) {
     const followupAnswered = events.filter((row) => row.event_type === 'followup_answered').length
     const uploadRequested = events.filter((row) => row.event_type === 'upload_requested').length
     const uploadReceived = events.filter((row) => row.event_type === 'upload_received').length
+    const clarificationNeeded = events.filter(
+      (row) => row.event_type === 'followup_clarification_needed',
+    ).length
+    const followupResolved = events.filter((row) => row.event_type === 'followup_resolved').length
     const hardStops = events.filter((row) => row.event_type === 'hard_stop_triggered').length
     const approved = reviews.filter((row) => row.status === 'approved').length
 
     const metrics = {
       cre_followup_yield: toRate(followupAnswered, followupShown),
+      clarification_loop_rate: toRate(clarificationNeeded, followupAnswered),
+      resolved_followup_rate: toRate(followupResolved, followupAnswered),
       cre_upload_completion_rate: toRate(uploadReceived, uploadRequested),
       cre_hard_stop_rate: toRate(hardStops, Math.max(1, reviews.length)),
       cre_review_approval_rate: toRate(approved, reviews.length),

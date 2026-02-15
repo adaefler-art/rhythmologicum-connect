@@ -79,6 +79,7 @@ Statuswerte:
 #### NV4-03 Fortschritt
 - [x] Deterministische Answer-Klassifikation (`answered|partial|unclear|contradiction`) im Follow-up-Backend integriert
 - [x] State-Machine-Transitions auf Basis der Klassifikation verdrahtet (`answered/partial` => advance, `unclear/contradiction` => klären)
+- [x] KPI-Hooks fuer `clarification_loop_rate` und `resolved_followup_rate` integriert
 - [ ] Golden-Set Regressionen für Klassifikationspfade vollständig abdecken
 
 ### Exit-Check

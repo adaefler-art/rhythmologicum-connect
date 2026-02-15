@@ -557,6 +557,36 @@ export async function POST(req: Request) {
         }),
       )
 
+      if (answerClassification === 'answered') {
+        eventPromises.push(
+          trackEvent({
+            patientId: intakeRecord.patient_id,
+            intakeId: intakeRecord.id,
+            eventType: 'followup_resolved',
+            requestId: requestIdHeader ? `${requestIdHeader}:followup_resolved` : null,
+            payload: {
+              question_count: askedQuestionIds.length,
+              answer_classification: answerClassification,
+            },
+          }),
+        )
+      }
+
+      if (answerClassification === 'unclear' || answerClassification === 'contradiction') {
+        eventPromises.push(
+          trackEvent({
+            patientId: intakeRecord.patient_id,
+            intakeId: intakeRecord.id,
+            eventType: 'followup_clarification_needed',
+            requestId: requestIdHeader ? `${requestIdHeader}:followup_clarification_needed` : null,
+            payload: {
+              question_count: askedQuestionIds.length,
+              answer_classification: answerClassification,
+            },
+          }),
+        )
+      }
+
       if (askedQuestionIds.some(looksLikeUploadQuestionId)) {
         eventPromises.push(
           trackEvent({

@@ -14,6 +14,7 @@ jest.mock('@/lib/db/supabase.server', () => ({
 
 const { createServerSupabaseClient } = require('@/lib/db/supabase.server')
 const { normalizeClinicalLanguageTurn } = require('@/lib/cre/language/normalization')
+const { trackEvent } = require('@/lib/telemetry/trackEvent.server')
 
 describe('POST /api/patient/followup/generate', () => {
   beforeEach(() => {
@@ -221,6 +222,13 @@ describe('POST /api/patient/followup/generate', () => {
     expect(Array.isArray(json?.data?.next_questions)).toBe(true)
     expect(json?.data?.answer_classification).toBe('answered')
     expect(json?.data?.clarification_suppressed).toBe(true)
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'followup_resolved',
+        payload: expect.objectContaining({ answer_classification: 'answered' }),
+      }),
+    )
 
     const clarificationInResponse = (json?.data?.next_questions ?? []).some((entry: { id?: string }) =>
       String(entry.id ?? '').startsWith('csn:clarify:'),
@@ -433,9 +441,122 @@ describe('POST /api/patient/followup/generate', () => {
     expect(json?.data?.answer_classification).toBe('contradiction')
     expect(json?.data?.clarification_suppressed).toBe(false)
 
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'followup_clarification_needed',
+        payload: expect.objectContaining({ answer_classification: 'contradiction' }),
+      }),
+    )
+
     const hasClarificationQuestion = (json?.data?.next_questions ?? []).some((entry: { id?: string }) =>
       String(entry.id ?? '').startsWith('csn:clarify:'),
     )
     expect(hasClarificationQuestion).toBe(true)
+  })
+
+  it('keeps clarification active for unclear answers', async () => {
+    normalizeClinicalLanguageTurn.mockImplementation(
+      ({ structuredData }: { structuredData: Record<string, unknown> }) => ({
+        structuredData,
+        turn: null,
+        clarificationPrompt:
+          'Ich moechte Ihre Angabe kurz praezisieren, damit die Anamnese korrekt bleibt.',
+      }),
+    )
+
+    const queryBuilder = {
+      _mode: 'select' as 'select' | 'update',
+      select: jest.fn(function select() {
+        this._mode = 'select'
+        return this
+      }),
+      update: jest.fn(function update() {
+        this._mode = 'update'
+        return this
+      }),
+      eq: jest.fn(function eq() {
+        return this
+      }),
+      order: jest.fn(function order() {
+        return this
+      }),
+      limit: jest.fn(function limit() {
+        return this
+      }),
+      maybeSingle: jest.fn(async function maybeSingle() {
+        if (this._mode === 'select') {
+          return {
+            data: {
+              id: '11111111-1111-4111-8111-111111111111',
+              user_id: '22222222-2222-4222-8222-222222222222',
+              patient_id: '33333333-3333-4333-8333-333333333333',
+              structured_data: {
+                status: 'draft',
+                followup: {
+                  next_questions: [
+                    {
+                      id: 'gap:onset',
+                      question: 'Seit wann bestehen die Beschwerden?',
+                      why: 'Beginn fehlt',
+                      priority: 1,
+                      source: 'gap_rule',
+                    },
+                  ],
+                  queue: [],
+                  asked_question_ids: [],
+                  last_generated_at: '2026-02-15T10:00:00.000Z',
+                },
+              },
+            },
+            error: null,
+          }
+        }
+
+        return { data: null, error: null }
+      }),
+    }
+
+    const supabase = {
+      auth: {
+        getUser: jest.fn(async () => ({
+          data: { user: { id: '22222222-2222-4222-8222-222222222222' } },
+          error: null,
+        })),
+      },
+      from: jest.fn(() => queryBuilder),
+    }
+
+    createServerSupabaseClient.mockResolvedValue(supabase)
+
+    const request = new Request('http://localhost/api/patient/followup/generate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        intakeId: '11111111-1111-4111-8111-111111111111',
+        asked_question_id: 'gap:onset',
+        asked_question_text: 'Seit wann bestehen die Beschwerden?',
+        asked_answer_text: 'weiß nicht',
+      }),
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(200)
+
+    const json = await response.json()
+    expect(json?.success).toBe(true)
+    expect(json?.data?.answer_classification).toBe('unclear')
+    expect(json?.data?.clarification_suppressed).toBe(false)
+
+    const hasClarificationQuestion = (json?.data?.next_questions ?? []).some((entry: { id?: string }) =>
+      String(entry.id ?? '').startsWith('csn:clarify:'),
+    )
+    expect(hasClarificationQuestion).toBe(true)
+
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'followup_clarification_needed',
+        payload: expect.objectContaining({ answer_classification: 'unclear' }),
+      }),
+    )
   })
 })
