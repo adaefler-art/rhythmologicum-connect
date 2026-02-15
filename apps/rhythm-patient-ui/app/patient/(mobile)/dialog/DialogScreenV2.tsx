@@ -1312,6 +1312,8 @@ export function DialogScreenV2() {
     try {
       if (currentFollowupQuestion && latestClinicalIntakeId && !isSafetyBlocked) {
         try {
+          let followupReplySent = false
+
           await persistUserAnswerToChat(trimmed)
 
           const followupResult = await generateFollowup({
@@ -1352,6 +1354,7 @@ export function DialogScreenV2() {
                 activeObjectiveCount: followupResult.activeObjectiveCount,
               }),
             )
+            followupReplySent = true
             return
           }
 
@@ -1389,6 +1392,7 @@ export function DialogScreenV2() {
                         activeObjectiveCount: refreshedFollowup.activeObjectiveCount,
                       }),
                     )
+                    followupReplySent = true
                   } else {
                     setActiveFollowupQuestion(null)
                   }
@@ -1399,12 +1403,20 @@ export function DialogScreenV2() {
             }
           }
 
+          if (!followupReplySent) {
+            appendAssistantMessage(
+              'Danke, ich habe das notiert. Ich mache mit der nächsten Anamnese-Frage weiter.',
+            )
+          }
+
           setFollowupAnsweredCount(0)
           return
         } catch (followupLoopError) {
           console.warn('[DialogScreenV2] Followup loop failed, trying followup-only recovery', followupLoopError)
 
           try {
+            let recoveryReplySent = false
+
             const recoveryFollowup = await generateFollowup({ intakeId: latestClinicalIntakeId })
             setLatestClinicalIntakeId(recoveryFollowup.intakeId)
 
@@ -1429,9 +1441,16 @@ export function DialogScreenV2() {
                     activeObjectiveCount: recoveryFollowup.activeObjectiveCount,
                   }),
                 )
+                recoveryReplySent = true
               } else {
                 setActiveFollowupQuestion(null)
               }
+            }
+
+            if (!recoveryReplySent) {
+              appendAssistantMessage(
+                'Danke, ich habe das notiert. Ich mache mit der nächsten Anamnese-Frage weiter.',
+              )
             }
 
             setFollowupAnsweredCount(0)
