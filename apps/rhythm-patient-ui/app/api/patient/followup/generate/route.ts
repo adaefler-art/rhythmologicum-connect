@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { appendAskedQuestionIds, generateFollowupQuestions } from '@/lib/cre/followup/generator'
 import { validateClinicalFollowup } from '@/lib/cre/followup/schema'
-import { trackEvent } from '@/lib/telemetry/trackEvent'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 

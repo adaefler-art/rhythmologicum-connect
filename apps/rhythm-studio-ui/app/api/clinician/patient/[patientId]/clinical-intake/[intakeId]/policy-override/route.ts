@@ -4,7 +4,7 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase.admin'
 import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { setPolicyOverride } from '@/lib/cre/safety/overridePersistence'
-import { trackEvent } from '@/lib/telemetry/trackEvent'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 
 type RouteContext = {
   params: Promise<{ patientId: string; intakeId: string }>

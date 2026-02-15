@@ -5,7 +5,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { validateClinicalIntakeReviewInput } from '@/lib/clinicalIntake/reviewWorkflow'
 import { mergeClinicianRequestedItemsIntoFollowup } from '@/lib/cre/followup/generator'
-import { trackEvent } from '@/lib/telemetry/trackEvent'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 

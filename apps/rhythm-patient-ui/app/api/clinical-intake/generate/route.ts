@@ -25,7 +25,7 @@ import { getClinicalIntakePrompt, CLINICAL_INTAKE_PROMPT_VERSION } from '@/lib/l
 import { getEngineEnv } from '@/lib/env'
 import { logError } from '@/lib/logging/logger'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
-import { trackEvent } from '@/lib/telemetry/trackEvent'
+import { trackEvent } from '@/lib/telemetry/trackEvent.server'
 import { evaluateRedFlags, formatSafetySummaryLine } from '@/lib/cre/safety/redFlags'
 import { applySafetyPolicy, getEffectiveSafetyState, loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { attachIntakeEvidenceAfterSave } from '@/lib/cre/safety/intakeEvidence'

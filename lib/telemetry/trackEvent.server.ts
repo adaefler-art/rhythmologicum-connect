@@ -27,6 +27,21 @@ type TrackEventInput = {
   createdAt?: string
 }
 
+type InsertResult = {
+  data: { id?: string } | null
+  error: { message: string; code?: string } | null
+}
+
+type UntypedAdminClient = {
+  from: (table: string) => {
+    insert: (values: Record<string, unknown>) => {
+      select: (columns: string) => {
+        single: () => Promise<InsertResult>
+      }
+    }
+  }
+}
+
 const sanitizePayload = (payload?: Record<string, unknown>) => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return {}
@@ -36,10 +51,10 @@ const sanitizePayload = (payload?: Record<string, unknown>) => {
 
 export async function trackEvent(input: TrackEventInput): Promise<string | null> {
   try {
-    const admin = createAdminSupabaseClient()
+    const admin = createAdminSupabaseClient() as unknown as UntypedAdminClient
 
     const { data, error } = await admin
-      .from('patient_events' as any)
+      .from('patient_events')
       .insert({
         patient_id: input.patientId ?? null,
         intake_id: input.intakeId ?? null,
@@ -52,7 +67,7 @@ export async function trackEvent(input: TrackEventInput): Promise<string | null>
       .single()
 
     if (error) {
-      if ((error as { code?: string }).code === '23505') {
+      if (error.code === '23505') {
         return null
       }
       console.warn('[telemetry/trackEvent] Failed to persist patient event', {
