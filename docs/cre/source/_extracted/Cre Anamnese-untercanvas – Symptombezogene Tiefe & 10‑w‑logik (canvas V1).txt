@@ -1,0 +1,79 @@
+🩺 CRE ANAMNESE-UNTERCANVAS – SYMPTOMBEZOGENE TIEFE & 10‑W‑LOGIK (CANVAS v1)
+Zweck dieses Unter-Canvas: maximale Sicherheit, Vollständigkeit und Adaptivität der symptombezogenen Anamnese innerhalb der CRE.
+Fokus: strukturierte Propädeutik, variable Tiefe, Red-Flag-Sensitivität, internationale Anschlussfähigkeit (OPQRST).
+1) Medizinisches Ziel der symptombezogenen Anamnese
+Die symptombezogene Anamnese soll: - das Leitsymptom vollständig, reproduzierbar und sicher erfassen - relevante Red Flags frühzeitig sichtbar machen - eine differenzialdiagnostische Einordnung vorbereiten, ohne Diagnosen zu stellen - ärztliche Denkprozesse antizipieren
+Leitprinzip: Lieber einmal zu viel strukturiert fragen als einmal zu wenig.
+2) Die 10‑W‑Logik als Grundgerüst (Pflichtmodul)
+Die CRE nutzt die 10‑W‑Fragen als universelles, domänenneutrales Fundament. Sie sind immer aktiv, unabhängig von Fachrichtung.
+2.1 Übersicht: 10‑W‑Fragen
+Was? – Art der Beschwerde (Leitsymptom)
+Wo? – Lokalisation
+Wann? – Beginn
+Wie? – Charakter
+Wie stark? – Intensität
+Wohin? – Ausstrahlung
+Wie lange? – Dauer / Verlauf
+Wodurch? – Auslöser / Linderung / Verstärkung
+Welche? – Begleitsymptome
+Warum? – Patientenvorstellung / Anlass
+3) OPQRST-Mapping (intern, standardisiert)
+Die CRE mappt jede 10‑W‑Antwort intern automatisch auf OPQRST‑Felder:
+➡️ Vorteil: internationale Vergleichbarkeit + strukturierte Datenbasis
+4) Einstellbare Anamnese-Tiefe (zentraler Sicherheitshebel)
+Die CRE erlaubt eine adaptive Tiefe der Anamnese:
+🔹 Level 1 – Basis (Triage / Kurzintake)
+10‑W‑Fragen in Kurzform
+Fokus: Red Flags erkennen
+Einsatz: Notfall‑Triage, Vorab‑Check
+🔹 Level 2 – Standard (Default)
+vollständige 10‑W‑Erhebung
+adaptive Rückfragen
+Einsatz: ambulante Erstvorstellung
+🔹 Level 3 – Vertieft (Sicherheitsmodus)
+zusätzliche Präzisierungen
+zeitliche Feinauflösung
+explizite Negativa
+Einsatz: unklare Symptome, Risikopatienten
+🔹 Level 4 – Expertenmodus
+differentialdiagnostisch fokussiert
+domänenspezifische Module (z. B. Kardio, Neuro)
+Einsatz: Spezialambulanzen, Studien
+5) Red‑Flag‑Integration in der 10‑W‑Logik
+Red Flags sind direkt an einzelne W‑Fragen gekoppelt:
+➡️ Triggern sofort Escalation Canvas (4).
+6) Explizite Negativa (Safety Feature)
+Die CRE fragt aktiv nach relevanten Negativa: - „Gab es Fieber?“ - „Gab es Bewusstseinsverlust?“
+Negativa werden als EvidenceItems dokumentiert (≠ fehlend).
+7) Sprachliche & kulturelle Anpassung
+Alltagssprache für alle W‑Fragen
+Cultural Symptom Normalizer aktiv
+Teach‑Back‑Loop nach Abschluss: > „Habe ich richtig verstanden, dass …?“
+8) Output der symptombezogenen Anamnese
+Ärztlich sichtbar
+strukturierte OPQRST‑Sektion
+narrative Zusammenfassung
+explizite Negativa
+Systemintern
+EvidenceItems pro W‑Frage
+Red‑Flag‑Triggerpunkte
+Hypothesen‑Input
+9) Typische Fehler, die dieses Canvas verhindert
+unvollständige Schmerzanamnese
+fehlende zeitliche Einordnung
+Übersehen von Ausstrahlung
+Missachtung der Patientenvorstellung („Warum heute?“)
+10) Beispiel (Kurz): Akuter Brustschmerz
+Was: drückender Schmerz
+Wo: retrosternal
+Wann: plötzlich seit 30 Min
+Wie: Druckgefühl
+Wie stark: 8/10
+Wohin: linker Arm
+Wie lange: anhaltend
+Wodurch: Belastung, keine Linderung
+Welche: Dyspnoe, Übelkeit
+Warum: Angst vor Herzinfarkt
+➡️ Hard Stop – sofortige Eskalation
+Status: Unter‑Canvas v1 – Sicherheitskritisches Kernmodul
+Beziehung: Ergänzt Canvas 2 (Intake Package) & Canvas 3 (Reasoning)

@@ -1,0 +1,113 @@
+📦 CRE INTAKE PACKAGE – DATENMODELL & SPEZIFIKATION (CANVAS v1)
+Zweck dieses Canvas: präzise Definition des standardisierten Outputs der CRE Intake Suite.
+Ziel: eindeutige Übergabeschnittstelle zwischen Intake/Reasoning und nachgelagerten Care‑Modulen (z. B. 7S, GP‑Companion, Spezialambulanzen).
+1. Designprinzipien
+Trennung von Erhebung und Entscheidung (Intake ≠ Therapie)
+Dualität: narrativ + strukturiert
+Fachübergreifend gültig (Kardiologie, Innere, GP, Neurologie etc.)
+FHIR‑anschlussfähig, aber pragmatisch
+Versioniert & auditierbar
+2. Paketstruktur (Top‑Level)
+ClinicalIntakePackage - metadata - patient_context - encounter - evidence_items - structured_history - narrative_history - symptom_short_summary - hypotheses_internal - red_flags - open_questions - routing_tags - quality_flags
+3. Metadata
+package_id (UUID)
+created_at (timestamp)
+locale / language
+cre_version
+ruleset_version
+model_version
+source_modalities (text | voice | video | passive | docs)
+signoff_status (draft | clinician_signed)
+4. Patient Context
+demographics (age_range, sex_at_birth, gender_optional)
+height_weight_optional
+known_conditions (patient‑reported)
+current_medications (name, dose, adherence_unknown)
+allergies (type, reaction)
+pregnancy_status_optional
+Hinweis: keine ICD‑Finalisierung, nur patient‑berichtete Angaben.
+5. Encounter
+chief_complaint (free text + normalized term)
+symptom_onset (date / relative)
+course (acute | subacute | chronic | episodic)
+setting (home | clinic | hospital | tele)
+urgency_self_reported
+6. Evidence Items (zentrales Element)
+Jedes Informationsteilchen ist ein EvidenceItem:
+evidence_id
+source (patient_statement | wearable | document | observation)
+entity_type (symptom | sign | measurement | context)
+entity_name (standardized term)
+value (text | numeric | coded)
+unit (if applicable)
+certainty (high | medium | low)
+timestamp
+➡️ Grundlage für Hypothesen, Timeline, Audit.
+7. Structured History (maschinenlesbar)
+7.1 HPI (OLDCARTS / OPQRST)
+location
+onset
+duration
+characteristics
+aggravating_factors
+relieving_factors
+timing
+severity
+7.2 ROS (Review of Systems)
+cardiovascular
+respiratory
+neurologic
+gastrointestinal
+endocrine
+psychiatric
+other
+7.3 PMH / PSH / FH / SH
+past_medical_history
+past_surgical_history
+family_history
+social_history (smoking, alcohol, activity, work)
+8. Narrative History (ärztlicher Fließtext)
+automatisch generierte, strukturierte HPI
+zusammenhängender Text (arztbrief‑fähig)
+klare Trennung von Fakten vs. Unsicherheiten
+9. Symptom‑basierte Kurzanamnese
+Leitsymptom
+Kernaussagen (≤ 5 Bulletpoints)
+zeitlicher Verlauf
+relevante Negativa
+aktuelle Dringlichkeit
+➡️ ideal für Triage, Erstkontakt, Notfall‑Übergaben.
+10. Hypothesen (intern, nicht patientensichtbar)
+Hypothesis Object - hypothesis_id - domain_tags (cardio, neuro, endo, psych, etc.) - evidence_supporting (list of evidence_ids) - evidence_contradicting - uncertainty_score - safety_weight - next_best_questions
+Wichtig: keine Ausgabe als Diagnose.
+11. Red Flags & Sicherheit
+red_flag_present (yes/no)
+red_flag_type (domain‑specific)
+escalation_level (hard_stop | priority_review)
+rationale (evidence references)
+12. Open Questions
+unanswered_key_questions
+inconsistencies_detected
+suggested_clarifications
+➡️ expliziter Mehrwert für den Arzt.
+13. Routing Tags
+suggested_domains (one or more)
+urgency_class
+care_module_candidates (e.g. 7S‑Syncope, GP‑General)
+14. Quality Flags
+data_completeness_score
+confidence_level
+contradictions_present
+recommended_additional_data (labs, monitoring)
+15. Übergabe & Nutzung
+Übergabe an Care‑Module nur nach clinician_signoff
+Export:
+FHIR resources
+PDF summary
+API JSON
+16. Nicht‑Ziele (klar ausgeschlossen)
+automatische Diagnose
+Therapie‑ oder Medikationsvorschläge
+Abrechnung / Pricing
+Status: Canvas v1 – bereit für API‑Design & Implementierung
+Nächster Schritt: Reasoning Canvas – Hypothesen & Unsicherheit

@@ -300,6 +300,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required',
@@ -348,6 +349,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'INSUFFICIENT_DATA',
             message: `Need at least ${INTAKE_TRIGGER_RULES.minMessagesForIntake} messages for intake generation`,
@@ -364,6 +366,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'ANTHROPIC_NOT_CONFIGURED',
             message: 'Anthropic API key not configured',
@@ -412,6 +415,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: result.errorCode,
             message: mapped.message,
@@ -458,6 +462,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'REASONING_CONFIG_MISSING',
             message: 'No active clinical reasoning config found',
@@ -491,6 +496,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'SAVE_FAILED',
             message: 'Failed to save clinical intake',
@@ -589,6 +595,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      requestId: correlationId,
       data: {
         intake,
         isNew: true,
@@ -609,6 +616,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
+        requestId: correlationId,
         error: {
           code: 'INTERNAL_ERROR',
           message: 'An unexpected error occurred',

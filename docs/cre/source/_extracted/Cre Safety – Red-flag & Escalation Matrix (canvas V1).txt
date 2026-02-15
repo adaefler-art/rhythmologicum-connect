@@ -1,0 +1,52 @@
+🚨 CRE SAFETY – RED-FLAG & ESCALATION MATRIX (CANVAS v1)
+Zweck dieses Canvas: Patientensicherheit als harte Systemlogik.
+Definition, wann die CRE autonom weiterarbeiten darf – und wann zwingend ein Mensch übernehmen muss.
+1) Sicherheitsprinzip (medizinisch & regulatorisch)
+Sicherheit hat Vorrang vor Vollständigkeit
+Lieber zu früh eskalieren als zu spät
+Red Flags werden nicht diagnostiziert, sondern erkannt und behandelt (Eskalation)
+Safety-Logik ist regelbasiert, nicht probabilistisch
+Dieses Canvas definiert die „Stop‑Lines“ des Systems.
+2) Eskalationsstufen (global)
+🔴 Level A – HARD STOP
+Definition: Weiterführung eines rein digitalen Prozesses ist nicht zulässig.
+Systemaktion: - sofortiger Abbruch des KI-Interviews - klare, nicht alarmistische Handlungsempfehlung - Dokumentation der Red Flag
+Beispiele: - akute Lebensgefahr - zeitkritische kardiale / neurologische Symptome
+🟠 Level B – PRIORITY REVIEW
+Definition: Weiterverarbeitung erlaubt, aber zwingende ärztliche Prüfung erforderlich.
+Systemaktion: - Interview kann abgeschlossen werden - Output als Draft markiert - ärztliche Review-Queue
+🟡 Level C – MONITORED CONTINUATION
+Definition: Keine akute Red Flag, aber erhöhte Aufmerksamkeit.
+Systemaktion: - gezielte Sicherheitsfragen - Kennzeichnung im Intake Package
+3) Domänenübergreifende Red Flags (GP‑Core)
+3.1 Kardio‑vaskulär
+3.2 Neurologisch
+3.3 Allgemein / Systemisch
+4) 7S‑spezifische Red‑Flag‑Erweiterungen (Beispiel)
+Rhythmologie
+Palpitation + Synkope → Level B
+neu auftretende Bradykardie <40/min + Symptome → A
+Synkope / Dysautonomie
+Synkope im Sitzen/Liegen → A
+Synkope mit Trauma → B
+Stress / Resilienz
+Suizidale Gedanken → A
+schwere Schlaflosigkeit >7 Tage + Tagesversagen → B
+5) Zeitdimension & Dynamik
+Red Flags können auftreten: - initial (State 0–1) - verzögert (State 3–4) - durch Widersprüche
+➡️ Red‑Flag‑Check ist iterativ, nicht einmalig.
+6) Umgang mit Unsicherheit
+niedrige Evidenz + hoher Safety Weight → Eskalation
+widersprüchliche Angaben → mindestens Level B
+7) Dokumentation & Audit
+Jede Eskalation erzeugt: - Zeitstempel - auslösende EvidenceItems - Eskalationslevel - Systemempfehlung
+8) Human‑in‑the‑Loop Gates
+9) Implementationshinweise
+Red‑Flag‑Regeln hart codiert
+keine Abschwächung durch ML
+Adapter können erweitern, nicht entschärfen
+10) MVP‑Set (Start)
+GP‑Core + Kardio + Neuro
+20–30 Red Flags initial
+Status: Canvas v1 – Sicherheitsfundament festgelegt
+Nächster Schritt: Domain‑Adapter‑Canvas (z. B. 7S‑Adapter oder GP‑Adapter)

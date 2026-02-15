@@ -1,0 +1,111 @@
+🧠 CRE REASONING – HYPOTHESEN & UNSICHERHEIT (CANVAS v1)
+Zweck dieses Canvas: Definition der klinischen Denklogik der CRE.
+Fokus: Hypothesenführung, Evidenzgewichtung, Unsicherheitsmanagement, Informationsgewinn, Safety‑Eskalation.
+Ergebnis: Implementierbarer Blueprint für Rules + ML/LLM‑Orchestrierung.
+1) Medizinisches Grundprinzip
+Die CRE arbeitet wie ein sehr guter Kliniker: - startet symptombasiert, nicht diagnosebasiert - exploriert breit, dann fokussiert - prüft Red Flags früh - hält mehrere Erklärungsmodelle parallel („differential set“) - reduziert Unsicherheit durch gezielte Nachfragen und Daten
+Leitmotiv: „Strukturieren statt Diagnostizieren“.
+2) Kernobjekte (Reasoning Data Model)
+2.1 EvidenceItem (aus Intake Package)
+Quelle, Zeitpunkt, Inhalt, Sicherheit
+2.2 ClinicalFinding (abgeleitet)
+normalisierte Zusammenfassung aus mehreren EvidenceItems
+Beispiel: „Belastungsabhängige Palpitationen, episodisch, seit 6 Wochen“
+2.3 Hypothesis (intern)
+Jede Hypothese ist ein Objekt mit: - H: Name (intern, nie patientensichtbar) - Domain Tags: (cardio, neuro, endo, psych …) - E+: stützende Evidenz (EvidenceIDs) - E−: widersprechende Evidenz - U: Unsicherheitsmaß (0–1) - S: Safety Weight (0–1) – höher = sicherheitskritisch - IG: erwarteter Informationsgewinn nächster Frage (0–1) - Qnext: Next‑Best‑Questions (max. 5) - Dnext: Next‑Best‑Data (z. B. RR, Holter, Labor)
+2.4 Differential Set
+Menge aktiver Hypothesen (typisch 5–20)
+Priorisierung = Funktion aus E+, E−, U, S
+3) Reasoning‑Ablauf (State Machine)
+State 0 – Intake Start
+Chief complaint
+Kontext (Alter, Setting)
+sofortiger Red‑Flag Screen (grob)
+State 1 – Open Exploration
+narrative Fragen: „Erzählen Sie…“
+Ziel: symptom space abdecken, Timeline erstellen
+State 2 – Structured Clarification
+OLDCARTS / OPQRST
+ROS‑Module, aber adaptiv (nur relevante Systeme)
+State 3 – Hypothesis Expansion
+Hypothesenbibliothek + priors (domänenabhängig)
+Generierung Differential Set
+Kennzeichnung sicherheitskritischer Hypothesen (S↑)
+State 4 – Hypothesis Testing
+Next‑Best‑Questions nach maximalem Informationsgewinn
+Konsistenzchecks, Widerspruchsauflösung
+State 5 – Data Planning (nicht Therapie)
+Empfehlung „Welche Daten fehlen?“ (als Vorschlag für Arzt/Workflow)
+z. B. Holter, RR‑Profil, Labor, Echo
+State 6 – Summarization
+narrative Anamnese
+strukturierte Anamnese
+Kurzanamnese
+Red‑Flags + offene Fragen
+Exit Criteria: definierte Mindestvollständigkeit oder Patient beendet.
+4) Evidenzgewichtung (E+, E−)
+4.1 Gewichtungsregeln
+Evidenz erhält Gewichte nach: - Quelle (objektiv > subjektiv) - Zeitnähe (aktuelles > altes) - Spezifität (spezifisch > unspezifisch) - Zuverlässigkeit (hoch > niedrig)
+Beispiel: - dokumentiertes EKG‑Ereignis > Patientenerzählung - Synkope mit Verletzung > „fast schwarz vor Augen“
+4.2 Negative Evidence (Relevante Negativa)
+explizite Negativa sind wertvoll (z. B. „kein Thoraxschmerz“)
+fehlende Information ≠ Negativ
+5) Unsicherheit (U) – explizit gemanagt
+5.1 Arten von Unsicherheit
+Datenunsicherheit: Messfehler, fehlende Daten
+Konzeptunsicherheit: unklare Symptombegriffe
+Konfliktunsicherheit: widersprüchliche Angaben
+5.2 Unsicherheitsreduktion
+definierte Clarification‑Prompts
+Rückfragen in Alltagssprache
+„Teach‑back“: kurze Wiederholung zur Validierung
+5.3 Output‑Regel
+U bleibt intern; nach außen werden „offene Fragen“ und „Empfehlung zusätzlicher Daten“ ausgegeben.
+6) Next‑Best‑Question (NBQ) – Informationsgewinn
+Ziel: mit minimalen Fragen maximal klären.
+6.1 NBQ‑Heuristik
+NBQ Score = IG × S × (1 − Burden) - IG: erwarteter Informationsgewinn - S: Safety Weight - Burden: Fragebelastung (komplex/privat/zeitaufwändig)
+6.2 Fragetypen
+Klärung der Zeitachse
+Trigger/Linderung
+Red‑Flag‑Abfrage
+Systemreview (adaptiv)
+Medikamenten-/Substanz‑Abfrage
+7) Safety Layer im Reasoning (Red Flags)
+7.1 Red‑Flag Trigger
+definierte Red‑Flags pro Domäne
+Erkennung früh (State 0–2) und iterativ
+7.2 Eskalationsstufen
+Hard Stop: sofortiger Hinweis + Arztkontakt erforderlich
+Priority Review: Output nur als Draft; Arzt muss prüfen
+7.3 Safety Overrides
+auch bei niedriger Evidenz kann S↑ eine Eskalation auslösen (Präventionsprinzip).
+8) Konsistenz- & Plausibilitätschecks
+zeitliche Widersprüche (z. B. „seit 2 Jahren“ und „seit 3 Monaten“)
+physiologische Unplausibilität (optional, vorsichtig)
+Medikamenteninteraktionen als Hinweis (nicht Empfehlung)
+Output: - „Inconsistencies_detected“ + konkrete Klärfragen
+9) Domänenneutralität & Adapter‑Einfluss
+9.1 Domänenneutraler Core
+Reasoning‑States 0–6 sind identisch
+9.2 Adapter‑Parameter
+priors für Hypothesenbibliothek
+Red‑Flag‑Set
+Fragebibliothek
+Output‑Templates
+10) Outputs aus dem Reasoning
+Hypothesenobjekte (intern)
+offene Fragen (extern)
+Red‑Flag‑Eskalation (extern)
+Datenplan (extern, als Vorschlag)
+11) Implementationshinweise (pragmatisch)
+Rules first (Sicherheit, Red Flags, Mindestfragen)
+LLM orchestriert Sprache, Zusammenfassung, Normalisierung
+probabilistische Layer optional (Bayes/ML) für priors/IG
+alles versioniert, auditierbar
+12) Offene Punkte für Iteration
+Mindestset an Pflichtfragen je Leitsymptom (GP‑MVP)
+Red‑Flag‑Matrix: Hard Stop vs. Priority Review
+Hypothesenbibliothek: initiale Domänen (GP + Cardio)
+Wie sichtbar sind offene Fragen für Patient vs. Arzt?
+Status: Canvas v1 – bereit zur Verfeinerung in Red‑Flag‑Matrix & Adapter‑Design

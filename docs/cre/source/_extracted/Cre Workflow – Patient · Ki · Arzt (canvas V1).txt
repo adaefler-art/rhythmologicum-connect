@@ -1,0 +1,59 @@
+🔄 CRE WORKFLOW – PATIENT · KI · ARZT (CANVAS v1)
+Zweck dieses Canvas: Darstellung des konkreten medizinischen Workflows zwischen Patient, Clinical Reasoning Engine (KI) und Arzt. Fokus: Human-in-the-Loop / Human-in-the-Lead praktisch und überprüfbar abgebildet.
+1) Grundprinzip des Workflows
+Der Workflow folgt einer klaren medizinischen Kaskade:
+Erheben → Strukturieren → Prüfen → Entscheiden → Weiterleiten
+Dabei gilt: - KI = strukturierende, vorbereitende Instanz - Arzt = entscheidende, verantwortliche Instanz - Patient = aktiver Informationsgeber
+2) Rollen & Verantwortlichkeiten
+🧑‍⚕️ Patient
+liefert Symptome, Kontext, Verlauf
+autorisiert Datennutzung
+beendet oder pausiert Prozesse
+🤖 CRE (KI-System)
+erhebt, strukturiert, prüft
+erkennt Red Flags
+erzeugt Draft-Outputs
+gibt keine Diagnosen/Therapien aus
+👨‍⚕️ Arzt
+prüft, priorisiert, entscheidet
+verantwortet klinische Nutzung
+gibt Sign-off oder eskaliert
+3) Workflow-Phasen (State-Based)
+Phase 0 – Start & Consent
+Patient: - informiertes Einverständnis - Wahl des Modus (aktiv / passiv / async)
+CRE: - Initiale Sicherheitsabfrage
+Phase 1 – Anamnese-Erhebung
+Patient ↔ CRE: - Active Interview / Async Intake - Dokumenten-Upload
+CRE intern: - Evidence Items - erste Hypothesen (intern) - iterativer Red-Flag-Check
+Phase 2 – Strukturierung & Reasoning
+CRE: - strukturierte + narrative Anamnese - Kurzanamnese - Red-Flag-Status - offene Fragen
+➡️ Alle Outputs = Draft
+Phase 3 – Ärztliche Prüfung (HITL)
+Arzt: - prüft Draft-Anamnese - validiert Inhalte - ergänzt / korrigiert - bewertet Red Flags
+Entscheidung: - ✔ Sign-off - 🔄 Rückfrage an CRE/Patient - 🚨 Eskalation
+Phase 4 – Sign-off & Nutzung
+Nach Sign-off: - Dokument wird klinisch nutzbar - Übergabe an: - Care-Module - Spezialadapter - externe Systeme (PDF/FHIR)
+Phase 5 – Weiterführung / Verlauf (optional)
+erneutes Intake bei Verlauf
+Vergleich mit Vorversionen
+Arzt bleibt führend
+4) Red-Flag-Eingriffe im Workflow
+5) Sign-off-Logik (klar geregelt)
+6) Typische Workflow-Varianten
+Variante A – Patient zuerst
+Patient → CRE → Arzt
+Variante B – Arztgespräch mit Silent Listener
+Patient ↔ Arzt + CRE
+Variante C – Asynchron
+Patient → CRE → Arzt (zeitversetzt)
+7) Sicherheits- & Audit-Aspekte
+jeder Schritt geloggt
+jede Version nachvollziehbar
+klare Verantwortungszuordnung
+8) Erfolgskriterien
+Zeitersparnis pro Arztkontakt
+Vollständigkeit der Anamnese
+Red-Flag-Quote korrekt erkannt
+hohe Akzeptanz bei Ärzten
+Status: Canvas v1 – operative HITL-Logik definiert
+Ergebnis: Workflow medizinisch, regulatorisch und technisch konsistent

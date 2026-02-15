@@ -5,6 +5,7 @@ import { ErrorCode } from '@/lib/api/responseTypes'
 import { resolvePatientIds } from '@/lib/patients/resolvePatientIds'
 import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import type { PolicyOverride } from '@/lib/types/clinicalIntake'
 
 type RouteContext = {
@@ -87,6 +88,7 @@ const fetchIntakeVersion = async (params: {
 }
 
 export async function GET(_request: Request, context: RouteContext) {
+  const correlationId = getCorrelationId()
   try {
     const { patientId, versionNumber } = await context.params
     const parsed = Number(versionNumber)
@@ -95,6 +97,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.INVALID_INPUT, message: 'Invalid intake version number' },
         },
         { status: 400 },
@@ -113,6 +116,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.UNAUTHORIZED, message: 'Authentication required' },
         },
         { status: 401 },
@@ -127,6 +131,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.FORBIDDEN, message: 'Clinician or admin role required' },
         },
         { status: 403 },
@@ -139,6 +144,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.NOT_FOUND, message: 'Patient not found' },
         },
         { status: 404 },
@@ -157,6 +163,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.FORBIDDEN, message: 'You do not have access to this patient' },
           },
           { status: 403 },
@@ -176,6 +183,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
         },
         { status: 500 },
@@ -197,6 +205,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
           },
           { status: 500 },
@@ -219,6 +228,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
           },
           { status: 500 },
@@ -241,6 +251,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch intake version' },
           },
           { status: 500 },
@@ -254,6 +265,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.NOT_FOUND, message: 'Intake version not found' },
         },
         { status: 404 },
@@ -269,11 +281,14 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      intake: {
-        ...mapIntake(intake),
-        structured_data: {
-          ...intake.structured_data,
-          safety,
+      requestId: correlationId,
+      data: {
+        intake: {
+          ...mapIntake(intake),
+          structured_data: {
+            ...intake.structured_data,
+            safety,
+          },
         },
       },
     })
@@ -282,6 +297,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
+        requestId: correlationId,
         error: { code: ErrorCode.INTERNAL_ERROR, message: 'An unexpected error occurred' },
       },
       { status: 500 },

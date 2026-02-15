@@ -1,0 +1,99 @@
+🧠 Clinical Reasoning Engine (CRE) – Architektur v1
+Ziel: universelles, fachrichtungsübergreifendes System für Anamnese-/Ingestion + klinische Strukturierung + Hypothesenführung ohne autonome Diagnose/Therapie. Kernprinzip: Human-in-the-Loop / Human-in-the-Lead auf Workflow-Ebene.
+0) Leitplanken (Nicht-Ziele)
+keine autonome Diagnose (keine „Sie haben …“ Aussagen)
+keine autonome Therapieänderung
+keine Notfall-/Triagesicherheit ohne definierte Red-Flag-Eskalation
+1) Systemüberblick (Schichtenmodell)
+1.1 Interfaces (Input-Schicht)
+A. Active Interview (Text / Voice / Video) - adaptives propädeutisches Interview
+B. Passive Listener (Arzt-Patient-Gespräch) - Echtzeit-Transkription + strukturelle Extraktion
+C. Asynchronous Intake (stufenweiser schriftlicher Dialog) - Etappenfragen, Uploads, Zeitachsen
+D. Document Ingestion - PDF/Scan/Foto: Arztbriefe, Labor, EKG-Reports - Strukturierung in medizinische Felder (Problem list, meds, diagnoses, labs)
+2) Core Engine (Reasoning-Schicht)
+2.1 Clinical Graph (Wissens- & Logik-Layer)
+Symptom Graph: Leitsymptom → Begleitsymptome → Trigger/Relief
+Red Flag Graph: Notfallkriterien je Domäne
+Differential Set: Hypothesenkandidaten (domänenabhängig)
+Testing Questions: klärende Fragen pro Hypothese
+Implementierbar als kombinierter: Rule Layer (Guidelines + Checklists) + probabilistischer Layer (Bayes/ML) + LLM-Dialoglayer.
+2.2 Hypothesis Manager (Kern-USP)
+Jede Hypothese ist ein Objekt mit: - H: Hypothesentitel (intern) - E+: stützende Evidenz (Aussagen, Messwerte, Dokumente) - E−: widersprechende Evidenz - U: Unsicherheit / Confidence - Q: offene Fragen (Next-best-questions) - S: Safety Weight (kritische Hypothesen höher gewichtet) -C: clinical domain tags (z.B. cardio, neuro, endo)
+2.3 Evidence Extractor
+extrahiert Entities: Symptome, Dauer, Intensität, Lokalisation, Verlauf
+extrahiert Meds, Allergien, PMH, FH, Social, ROS
+erstellt Zeitachsen (Timeline Engine)
+2.4 Clarification Orchestrator
+entscheidet pro Schritt:
+Offene Exploration vs. strukturierte Nachfragen
+welche Frage hat höchsten Informationsgewinn
+wann Abbruch/Eskalation
+3) Safety & Governance Layer (HITL/HIC)
+3.1 Red-Flag Sentinel
+domänen-/fachspezifische Red-Flags
+Triggers:
+STOP & ESCALATE (Notfallhinweis + Arztkontakt)
+PRIORITY REVIEW (in Arzt-Queue)
+3.2 Human-in-the-Loop Gates
+Gate 1: Clinical Summary Sign-off
+Gate 2: Symptom-based Short Summary Sign-off
+Gate 3: Any action recommendation sign-off
+Der Output ist ohne Sign-off „Draft“. Erst nach Review wird er „Clinical record“.
+3.3 Audit & Versioning
+jede Session: Model-Version, Prompt-Version, Ruleset-Version
+jede Änderung: Audit Trail
+4) Output Layer (ärztlich & patientenzentriert)
+4.1 Structured Medical Record (machine-readable)
+FHIR-ready:
+Condition candidates (nicht final), Observation, MedicationStatement
+QuestionnaireResponse
+4.2 Narrative HPI / Full History
+HPI nach OLDCARTS / OPQRST
+PMH/PSH, Meds, Allergies, FHx, SHx
+4.3 Symptom-based Short Summary
+Leitsymptom + Verlauf + Red flags + offene Punkte
+4.4 Open Questions List
+gezielte Restfragen für den Arzt
+4.5 Domain Routing
+Zuordnung zu Spezialpfaden (z.B. 7S-Säulen oder GP-Workflows)
+5) Domain Adapters (Verticals)
+5.1 Adapter-Prinzip
+gleicher Core (CRE)
+Adapter steuert:
+Red flags
+Hypothesis priors
+Fragebibliothek
+Output-Templates
+5.2 Beispiele
+7S-Adapter (Rhythmologicum)
+GP-Adapter (Allgemeinmedizin)
+Internal Medicine Adapter
+Neuro/Long-COVID Adapter
+6) Datenmodell (Minimal-Viable)
+Patient Context - demographics, language, comorbidities
+Encounter - chief complaint, start/end, modality
+Evidence Items - source, timestamp, entity type, value, certainty
+Hypotheses - H, E+/E−, U, Q, S, tags
+Outputs - narrative summary, structured record, short summary, open questions
+7) MVP-Umsetzung (technisch pragmatisch)
+7.1 MVP1 – Anamnese + Strukturierung
+Active Interview (Text)
+Document ingestion (PDF)
+Structured record + narrative
+7.2 MVP2 – Voice/Video + Passive Listener
+STT + speaker diarization
+Live-structuring + open questions
+7.3 MVP3 – Adapters + Safety Hardening
+Red-flag sentinel pro Domäne
+Sign-off gates + audit
+8) USP-Stack (kurz)
+Hypothesenobjekte mit Evidenz/Unsicherheit
+Red-flag Sentinel + HITL Gates
+Narrative + Structured Dual Output
+Domain Adapters (7S + GP etc.)
+9) Offene Designfragen (für die nächste Runde)
+Welche Output-Granularität soll der Arzt sehen (voll vs. komprimiert)?
+Welche Red-Flags sind „hard stop“ vs. „priority review“?
+Welche Dokumententypen zuerst (Arztbrief, Labor, EKG, Echo)?
+Welche Standards zuerst: FHIR only vs. parallel PDF export?
+Dieses Dokument ist als Architektur-Blueprint gedacht und kann direkt in User Stories, DB-Schema und Service-Design übersetzt werden.

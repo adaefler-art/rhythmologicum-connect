@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required',
@@ -105,6 +106,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: 'QUERY_ERROR',
             message: 'Failed to fetch intake',
@@ -143,6 +145,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      requestId: correlationId,
       data: {
         intake: mapped,
       },
@@ -162,6 +165,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
+        requestId: correlationId,
         error: {
           code: 'INTERNAL_ERROR',
           message: 'An unexpected error occurred',

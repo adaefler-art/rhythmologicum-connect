@@ -1,0 +1,61 @@
+🧪 CRE KLINISCHE VALIDIERUNG & EVIDENZ (CANVAS v1)
+Zweck dieses Canvas: Nachweis von Sicherheit, Nutzen und Leistungsfähigkeit der Clinical Reasoning Engine (CRE).
+Adressaten: Medizinische Leitung, Regulatorik (MDR/DSGVO), Klinische Partner, Investoren.
+1) Zielsetzung der Validierung
+Nachweis der Patientensicherheit (Red-Flag-Erkennung)
+Nachweis der klinischen Nützlichkeit (Zeitgewinn, Vollständigkeit)
+Nachweis der Nicht-Unterlegenheit gegenüber ärztlicher Erhebung
+Aufbau von Vertrauen bei Anwendern
+2) Validierungsdomänen (Was wird gemessen?)
+2.1 Safety
+Red-Flag-Sensitivität (Primär)
+False-Negative-Rate (kritisch)
+Zeit bis Eskalation
+2.2 Qualität der Anamnese
+Vollständigkeit (Checklisten-basiert)
+Relevanz (Anteil verwertbarer Informationen)
+Konsistenz (Widerspruchsrate)
+2.3 Effizienz
+Zeitersparnis pro Arztkontakt
+Reduktion von Nachfragen
+2.4 Akzeptanz
+Arztzufriedenheit (Likert)
+Patientenzufriedenheit
+3) Goldstandard & Ground Truth
+3.1 Ärztlicher Goldstandard
+Parallel erhobene ärztliche Anamnese
+unabhängige Doppelbewertung
+3.2 Konsensuspanel
+Senior Clinicians (GP + Spezialist)
+Blinded Review
+4) Studiendesigns (gestaffelt)
+Phase I – Retrospektiv (Offline)
+Datensätze historischer Fälle
+Simulation der CRE-Reasoning-Kette
+Phase II – Prospektiv (Shadow Mode)
+CRE läuft parallel, ohne Einfluss
+Vergleich mit ärztlicher Erhebung
+Phase III – Interventionsstudie
+CRE-gestützter Intake vs. Standard
+Primärer Endpunkt: Zeit + Safety
+5) KPIs & Schwellenwerte
+6) Subgruppen & Adapter-Validierung
+GP-Core
+Kardio / 7S
+Geriatrie (Sturz, Delir)
+Pädiatrie (Fremdanamnese)
+Psychiatrische Module
+7) Datensicherheit & Ethik
+Ethikvotum (prospektiv)
+DSGVO-konforme Pseudonymisierung
+Zweckbindung & Löschkonzepte
+8) Reporting & Publikation
+CONSORT-AI / STARD-AI
+Preprint + Peer Review
+Transparente Fehleranalyse
+9) Kontinuierliche Validierung (Post-Market)
+Drift-Monitoring
+Safety Alerts
+Physician Calibration Mode
+Status: Canvas v1 – Validierungsgrundlage definiert
+Nächster Schritt: Mehrsprachigkeit & Kultur-Canvas oder FHIR Resource Mapping

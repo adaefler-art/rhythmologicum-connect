@@ -317,7 +317,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         return
       }
 
-      const intake = (data?.intake || null) as ClinicalIntakeRecord | null
+      const intake = (data?.data?.intake || null) as ClinicalIntakeRecord | null
       setLatestClinicalIntake(intake)
 
       if (!intake?.id) {
@@ -804,7 +804,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
         throw new Error(error.message || 'Fehler beim Laden der Intake-Historie')
       }
 
-      setIntakeVersions((data?.intakes || []) as unknown as ClinicalIntakeRecord[])
+      setIntakeVersions((data?.data?.intakes || []) as unknown as ClinicalIntakeRecord[])
       setIsIntakeHistoryOpen(true)
     } catch (err) {
       console.error('[AnamnesisSection] Intake history error:', err)

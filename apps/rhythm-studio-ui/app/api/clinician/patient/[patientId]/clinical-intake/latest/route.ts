@@ -13,6 +13,7 @@ import { env } from '@/lib/env'
 import { loadSafetyPolicy } from '@/lib/cre/safety/policyEngine'
 import { buildEffectiveSafety } from '@/lib/cre/safety/overrideHelpers'
 import { setPolicyOverride } from '@/lib/cre/safety/overridePersistence'
+import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import type { PolicyOverride, SafetyEvaluation } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
 
@@ -106,6 +107,7 @@ const fetchLatestIntake = async (params: {
 }
 
 export async function GET(_request: Request, context: RouteContext) {
+  const correlationId = getCorrelationId()
   try {
     const { patientId } = await context.params
     const supabase = await createServerSupabaseClient()
@@ -120,6 +122,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.UNAUTHORIZED, message: 'Authentication required' },
         },
         { status: 401 },
@@ -134,6 +137,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.FORBIDDEN, message: 'Clinician or admin role required' },
         },
         { status: 403 },
@@ -146,6 +150,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.NOT_FOUND, message: 'Patient not found' },
         },
         { status: 404 },
@@ -164,6 +169,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.FORBIDDEN, message: 'You do not have access to this patient' },
           },
           { status: 403 },
@@ -187,6 +193,7 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
         },
         { status: 500 },
@@ -211,6 +218,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
           },
           { status: 500 },
@@ -237,6 +245,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
           },
           { status: 500 },
@@ -264,6 +273,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
           },
           { status: 500 },
@@ -299,24 +309,28 @@ export async function GET(_request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      intake,
-      _debug: debugEnabled
-        ? {
-            urlPatientId: patientId,
-            resolved: {
-              patientProfileId: resolution.patientProfileId,
-              userId: resolution.patientUserId ?? null,
-            },
-            usedFilter,
-            foundCount,
-          }
-        : undefined,
+      requestId: correlationId,
+      data: {
+        intake,
+        debug: debugEnabled
+          ? {
+              urlPatientId: patientId,
+              resolved: {
+                patientProfileId: resolution.patientProfileId,
+                userId: resolution.patientUserId ?? null,
+              },
+              usedFilter,
+              foundCount,
+            }
+          : undefined,
+      },
     })
   } catch (err) {
     console.error('[clinician/patient/clinical-intake/latest] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,
+        requestId: correlationId,
         error: { code: ErrorCode.INTERNAL_ERROR, message: 'An unexpected error occurred' },
       },
       { status: 500 },
@@ -325,6 +339,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const correlationId = getCorrelationId()
   try {
     const { patientId } = await context.params
     const supabase = await createServerSupabaseClient()
@@ -339,6 +354,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.UNAUTHORIZED, message: 'Authentication required' },
         },
         { status: 401 },
@@ -353,6 +369,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.FORBIDDEN, message: 'Clinician or admin role required' },
         },
         { status: 403 },
@@ -365,6 +382,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.NOT_FOUND, message: 'Patient not found' },
         },
         { status: 404 },
@@ -383,6 +401,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.FORBIDDEN, message: 'You do not have access to this patient' },
           },
           { status: 403 },
@@ -407,6 +426,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
         },
         { status: 500 },
@@ -427,6 +447,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             success: false,
+            requestId: correlationId,
             error: { code: ErrorCode.DATABASE_ERROR, message: 'Failed to fetch clinical intake' },
           },
           { status: 500 },
@@ -440,6 +461,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: { code: ErrorCode.NOT_FOUND, message: 'Intake not found' },
         },
         { status: 404 },
@@ -464,6 +486,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           success: false,
+          requestId: correlationId,
           error: {
             code: isValidation ? ErrorCode.INVALID_INPUT : ErrorCode.DATABASE_ERROR,
             message: overrideResult.error ?? 'Failed to update intake override',
@@ -475,13 +498,17 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      intake: mapIntake((overrideResult.data?.updated ?? null) as IntakeRecord | null),
+      requestId: correlationId,
+      data: {
+        intake: mapIntake((overrideResult.data?.updated ?? null) as IntakeRecord | null),
+      },
     })
   } catch (err) {
     console.error('[clinician/patient/clinical-intake/latest] Unexpected error:', err)
     return NextResponse.json(
       {
         success: false,
+        requestId: correlationId,
         error: { code: ErrorCode.INTERNAL_ERROR, message: 'An unexpected error occurred' },
       },
       { status: 500 },

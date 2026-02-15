@@ -1,0 +1,117 @@
+🧾 CRE ANAMNESE-UNTERCANVAS – GANZHEITLICHE STRUKTURIERTE ANAMNESE (CANVAS v1)
+Zweck dieses Unter-Canvas: vollständige, sichere und reproduzierbare Erfassung des Patienten als Ganzes – ergänzend zur symptombezogenen 10‑W‑Anamnese.
+Einsatz: stationäre Aufnahmen, komplexe internistische/allgemeinmedizinische Fälle, geriatrische & multimorbide Patient:innen.
+1) Medizinisches Ziel & Stellenwert
+Während die 10‑W‑Fragen das akute Leitsymptom strukturieren, beantwortet die ganzheitliche Anamnese die Frage:
+„In welchem biologischen, medizinischen und sozialen Kontext tritt dieses Symptom auf?“
+Sie dient der: - Risikoabschätzung - Erkennung verdeckter Ursachen - Vermeidung iatrogener Schäden - Vorbereitung sicherer Therapieentscheidungen (durch den Arzt)
+2) Trichter-Prinzip (Workflow-Logik)
+Offene Einstiegsfrage (narrativ)
+Symptombezogene Anamnese (10‑W / OPQRST – eigenes Unter‑Canvas)
+Strukturierte Hintergrundanamnese (dieses Canvas)
+Systemanamnese (ROS)
+Zusammenfassung & Validierung (Teach‑Back)
+3) Eigenanamnese (Vorerkrankungen)
+3.1 Chronische Erkrankungen
+Gezielte Abfrage, inkl. Beginn & Status: - arterielle Hypertonie - Diabetes mellitus - Herz‑/Gefäßerkrankungen - Lungenerkrankungen (Asthma, COPD) - Schilddrüsenerkrankungen - onkologische Erkrankungen - neurologische / psychische Erkrankungen
+➡️ Jede Erkrankung = EvidenceItem mit Zeitachse.
+3.2 Operationen & Prozeduren
+Art der OP
+Jahr
+relevante Komplikationen
+3.3 Krankenhausaufenthalte
+Zeitpunkt
+Anlass
+Dauer
+3.4 Relevante Infektionskrankheiten (kontextabhängig)
+z. B. Hepatitis, Tuberkulose, HIV, Endokarditis
+3.5 Impfstatus
+letzte Tetanus‑Impfung
+COVID‑/Influenza‑Status (falls relevant)
+4) Medikamentenanamnese (Hochrisikobereich)
+4.1 Dauermedikation
+Wirkstoff / Handelsname
+Dosis
+Einnahmeschema
+4.2 Bedarfsmedikation
+Indikation
+Häufigkeit
+4.3 Selbstmedikation & Supplemente
+pflanzliche Präparate
+Vitamine / Nahrungsergänzung
+4.4 Adhärenz / Verträglichkeit
+Einnahmeprobleme
+Nebenwirkungen
+➡️ Basis für Interaktions‑Hinweise (nicht Therapie!).
+5) Allergien & Unverträglichkeiten
+Medikamente (Art der Reaktion!)
+Kontrastmittel / Jod
+Nahrungsmittel
+Latex, Pflaster, Insektenstiche
+Systemregel: - echte Allergie ≠ Unverträglichkeit
+6) Vegetative Anamnese
+6.1 B‑Symptomatik (Red‑Flag‑relevant)
+Fieber
+Nachtschweiß (Wäschewechsel nötig?)
+ungewollter Gewichtsverlust (>10 % / 6 Monate)
+6.2 Appetit & Durst
+6.3 Verdauung
+Stuhlgang (Frequenz, Farbe, Blut)
+Konsistenz (Bristol‑Skala optional)
+6.4 Miktion
+Dysurie
+Pollakisurie
+Nykturie
+Urinfarbe
+6.5 Schlaf
+Schlafqualität
+Tagesmüdigkeit
+6.6 Gynäkologische Anamnese (falls zutreffend)
+letzte Regelblutung
+Zyklus
+Schwangerschaften
+Verhütung
+7) Genussmittelanamnese (Noxen)
+Neutral, mengenbasiert:
+7.1 Rauchen
+Zigaretten/Tag
+Dauer
+Pack‑Years (automatisch berechnet)
+7.2 Alkohol
+Häufigkeit
+Art
+Menge
+7.3 Drogen
+Cannabis
+Stimulanzien
+andere Substanzen
+8) Familienanamnese
+Eltern / Geschwister: lebend / verstorben (Ursache)
+familiäre Häufung von:
+Herzinfarkt (<60 J.)
+Schlaganfall
+Krebs (Darm, Brust, Prostata)
+Diabetes
+psychischen Erkrankungen
+9) Sozialanamnese
+Beruf & Belastungen
+Wohnsituation (allein, Treppen, Aufzug)
+Unterstützung (Angehörige, Pflege)
+➡️ relevant für Versorgungs‑ & Entlassplanung.
+10) Systemanamnese (Review of Systems – ROS)
+Kurze Abfrage „Kopf bis Fuß“: - Kopf/Hals: Kopfschmerz, Schwindel, Sehen/Hören - Thorax: Husten, Auswurf, Palpitationen - Abdomen: Sodbrennen, Blähungen - Bewegungsapparat: Gelenk‑/Rückenschmerzen - Haut: Ausschläge, Juckreiz
+11) Output & Integration
+Ärztlich sichtbar
+strukturierte Hintergrundanamnese
+zusammenfassender Textblock
+Red‑Flag‑Hinweise
+Systemintern
+EvidenceItems pro Abschnitt
+Hypothesen‑Support
+Quality‑ & Completeness‑Score
+12) Sicherheits‑ & Qualitätsmechanismen
+Pflichtfelder bei Hochrisiko‑Konstellationen
+adaptive Tiefe (z. B. Geriatrie)
+Teach‑Back‑Zusammenfassung am Ende
+Status: Unter‑Canvas v1 – Fundament für sichere, ganzheitliche Anamnese
+Beziehung: Ergänzt 10‑W‑Unter‑Canvas, Canvas 2 (Intake) & Canvas 3 (Reasoning)

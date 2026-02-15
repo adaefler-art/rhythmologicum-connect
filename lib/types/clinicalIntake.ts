@@ -224,6 +224,7 @@ export interface GenerateIntakeResponse {
     code: string
     message: string
   }
+  requestId?: string
 }
 
 export interface GetIntakeResponse {
@@ -235,6 +236,7 @@ export interface GetIntakeResponse {
     code: string
     message: string
   }
+  requestId?: string
 }
 
 // ============================================================================

@@ -1,0 +1,66 @@
+🌍 CRE MEHRSPRACHIGKEIT & KULTUR – CLINICAL LANGUAGE NORMALIZATION (CANVAS v1)
+Zweck dieses Canvas: Sicherstellung, dass die CRE sprach- und kulturübergreifend medizinisch korrekt erhebt, normalisiert und bewertet – ohne Bias, Bedeutungsverlust oder Sicherheitsrisiken. Fokus: klinische Semantik, Equity, Safety und Skalierbarkeit.
+1) Medizinisches Problem (WHY)
+Symptome sind sprachlich, kulturell und kontextuell geprägt.
+Direkte Übersetzung ≠ klinische Bedeutung.
+Fehlinterpretationen erhöhen False Negatives (Safety-Risiko).
+Beispiele: - „Herzschmerz“ (türk. Kontext) → somatische Stress-/Angst-Äquivalente - „Mir wird schwarz vor Augen“ → Präsynkope (nicht Sehstörung) - „A pressure like an elephant sitting on my chest“ → Thoraxschmerz (ACS-Relevanz)
+2) Designprinzipien
+Meaning first, words second
+Trennung von sprachlicher Oberfläche und klinischer Entität
+Kultur- und Literacy-sensitiv
+Safety-bias: unklare Begriffe → konservative Eskalation
+3) Architekturübersicht
+Input (Multilingual, Multimodal) → Language Detection → Cultural Context Inference → Symptom Phrase Parsing → Clinical Entity Normalization → EvidenceItem (standardisiert)
+4) Cultural Symptom Normalizer (CSN)
+4.1 Komponenten
+Language Detector (automatisch, pro Turn)
+Cultural Context Tags (Region, Herkunft, Dialekt optional)
+Phrase-to-Entity Mapper (Many-to-One)
+Ambiguity Resolver (Rückfragen)
+4.2 Output
+standardisierte klinische Entität (z. B. presyncope)
+Originalphrase (auditierbar)
+Ambiguitätsgrad
+5) Symptom-Äquivalenz-Logik
+5.1 Äquivalenztypen
+Direkte Entität: 1 Phrase → 1 Symptom
+Kulturelles Äquivalent: Phrase → anderes Leitsymptom
+Metaphorisch: Bildsprache → somatische Entität
+5.2 Beispiele
+6) Ambiguitäts- & Rückfrage-Strategie
+Ambiguität > Schwelle → Clarification Prompt
+Rückfragen in Alltagssprache
+Einsatz des Teach-Back Verification Loop
+Beispiel: > „Wenn Sie sagen ‚schwarz vor Augen‘ – sind Sie dabei umgekippt oder wurde Ihnen nur kurz schwindelig?“
+7) Health-Literacy Adaptive Complexity Scaling
+7.1 Literacy-Erkennung (heuristisch)
+Satzlänge
+Wortschatz
+Korrekturen / Rückfragen
+7.2 Anpassungen
+8) Mehrsprachige Safety-Logik
+Red-Flag-Fragen immer:
+sprachlich einfach
+mehrfach redundant formuliert
+kulturelle Vermeidung direkter Alarmbegriffe
+9) Dokumentation & Audit
+Originalphrase gespeichert
+Normalisierte Entität gespeichert
+Rückfragen dokumentiert
+Bestätigte Bedeutung markiert
+➡️ Grundlage für Evidence Provenance Tracker.
+10) Training & Wissensbasis
+kuratierte, klinisch annotierte Phrasenlisten
+kontinuierliche Erweiterung
+Physician Calibration Mode als Feedback-Quelle
+11) Validierung
+Vergleich: Muttersprachlicher Arzt vs. CRE
+KPI: Bedeutungsübereinstimmung
+Subgruppen: Migration, Alter, Bildungsgrad
+12) Abgrenzung
+keine automatische Übersetzung allein
+keine kulturelle Zuschreibung ohne Evidenz
+keine Diskriminierung / Profiling
+Status: Canvas v1 – Grundlage für globale Skalierung & Equity
+Nächster Schritt: FHIR Resource Mapping oder Pädiatrie-/Geriatrie-Adapter

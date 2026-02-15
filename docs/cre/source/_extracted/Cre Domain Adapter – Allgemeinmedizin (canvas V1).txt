@@ -1,0 +1,70 @@
+🩺 CRE DOMAIN ADAPTER – ALLGEMEINMEDIZIN (GP) (CANVAS v1)
+Zweck dieses Canvas: Spezifikation, wie die Clinical Reasoning Engine (CRE) im Kontext der Allgemeinmedizin / Inneren Medizin arbeitet. Der GP‑Adapter ist der Referenz‑Adapter, an dem sich alle weiteren Fach‑Adapter messen lassen müssen.
+1) Medizinischer Auftrag des GP‑Adapters
+Die Allgemeinmedizin ist: - unspezifisch, nicht organspezifisch - früh, nicht abschließend - langitudinal, nicht episodisch
+Der GP‑Adapter dient der: - strukturierten Ersteinordnung - sicheren Red‑Flag‑Erkennung - Vermeidung von Frühfixierung - Vorbereitung gezielter Weiterdiagnostik oder Überweisung
+2) Typische Leitsymptom‑Cluster (GP‑Realität)
+Der Adapter priorisiert Symptom‑Cluster, nicht Diagnosen:
+Müdigkeit / Leistungsabfall
+Schwindel / Benommenheit
+Palpitationen / Herzstolpern
+Dyspnoe / Belastungsintoleranz
+Thoraxbeschwerden (unklar)
+Synkope / Präsynkope
+Gewichtsveränderung
+Schlafstörungen
+diffuse Schmerzen
+„Ich fühle mich nicht richtig“
+3) Hypothesen‑Breite (explizit gewollt)
+Der GP‑Adapter hält bewusst viele parallele Hypothesen:
+kardial
+pulmonal
+neurologisch
+endokrin/metabolisch
+infektiös / inflammatorisch
+psychosomatisch
+medikamentös / toxisch
+Regel: keine frühe Ausschließung ohne Evidenz.
+4) Hypothesen‑Priors (Gewichtung)
+Im Vergleich zu Spezial‑Adaptern: - höhere Grund‑Unsicherheit (U↑) - breitere Differential Sets - höherer Safety Weight (S↑) bei unklaren Symptomen
+Beispiele: - Synkope → hohe kardiale + neurologische Priorität - Müdigkeit → metabolisch / endokrin früh mitdenken
+5) Red‑Flag‑Profil (GP‑spezifisch)
+Der GP‑Adapter ist konservativ: - niedrigere Schwelle für Eskalation - häufiger Level B (Priority Review)
+Beispiele: - neue Symptome bei >60 J. - bekannte Multimorbidität - Polypharmazie
+6) Frage‑ & Dialogstil
+6.1 Explorativ vor strukturiert
+lange narrative Phase
+offene Einstiegsfragen
+6.2 Schonende Strukturierung
+kurze strukturierte Blöcke
+Vermeidung medizinischer Fachbegriffe
+7) Time‑Awareness & Longitudinalität
+Der GP‑Adapter berücksichtigt explizit: - frühere CRE‑Intakes - zeitliche Veränderungen - Symptom‑Persistenz vs. Fluktuation
+➡️ zentrale Stärke gegenüber episodischen Systemen.
+8) Output‑Spezifika (GP‑relevant)
+8.1 Kurzanamnese (GP‑optimiert)
+Hauptproblem
+Zeitachse
+Red Flags (ja/nein)
+offene Kernfragen
+8.2 Strukturierte Empfehlung (nicht Therapie!)
+empfohlene nächste Datenerhebung
+Hinweise zur Überweisung (Fachrichtung)
+9) Abgrenzung zu Spezial‑Adaptern
+10) Typische Fehler, die der Adapter verhindern soll
+vorschnelle psychosomatische Etikettierung
+Übersehen von Red Flags
+unstrukturierte Dokumentation
+Verlust longitudinaler Information
+11) Implementationsparameter (für Devs)
+Hypothesenbibliothek: breit, nicht tief
+Red‑Flag‑Set: erweitert
+NBQ‑Schwelle: niedriger Informationsgewinn akzeptabel
+Output‑Templates: kurz & übersichtlich
+12) Erfolgskriterien
+Reduktion der Erhebungszeit
+erhöhte Vollständigkeit der Anamnese
+verbesserte Weiterleitungsqualität
+hohe Arztakzeptanz
+Status: Canvas v1 – Referenz‑Adapter für alle weiteren Domänen
+Nächster Schritt: 7S‑Adapter‑Canvas (Rhythmologicum‑Spezialisierung)

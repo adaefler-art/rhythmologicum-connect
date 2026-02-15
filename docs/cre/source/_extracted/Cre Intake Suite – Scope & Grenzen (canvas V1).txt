@@ -1,0 +1,76 @@
+🧠 CRE INTAKE SUITE – SCOPE & GRENZEN (CANVAS v1)
+Zweck dieses Canvas: klare, gemeinsame Definition, was die Clinical Reasoning Engine (CRE) im Intake-/Onboarding-Kontext ist – und was nicht.
+Zielgruppe: Medizin · Produkt · Software-Architektur · Regulatorik.
+1. Medizinischer Zweck (WHY)
+Die CRE Intake Suite dient der hochqualitativen, propädeutisch korrekten Erhebung und Strukturierung medizinischer Informationen.
+Sie unterstützt ärztliches Denken, ersetzt es nicht.
+Primäre Ziele: - strukturierte, reproduzierbare Anamnese - symptombasierte Kurzanamnese - sichere Erkennung kritischer Konstellationen (Red Flags) - Vorbereitung ärztlicher Entscheidungen - fachübergreifende Einsetzbarkeit
+2. Klinischer Funktionsumfang (WHAT – IN SCOPE)
+2.1 Anamnese & Ingestion
+strukturierte Leitsymptom-Erhebung
+zeitliche Einordnung (Onset, Verlauf, Progression)
+Trigger- und Linderungsfaktoren
+Begleit- und Systemsymptome (ROS)
+relevante Vor- und Begleiterkrankungen
+Medikation, Allergien, Familien- & Sozialanamnese
+2.2 Multimodale Erhebungsmodi
+Active Interview (Text, Sprache, Video)
+Asynchrones Intake (Etappen, Uploads)
+Passiver Zuhörer bei Arzt-Patienten-Interaktion
+Dokumenten-Ingestion (Arztbriefe, Befunde, Labor)
+2.3 Klinische Strukturierung
+Normalisierung freier Sprache in medizinische Entitäten
+Erstellung einer narrativen Anamnese (HPI + Gesamtanamnese)
+Erstellung einer strukturierten Anamnese (maschinenlesbar)
+Erstellung einer symptombasierten Kurzanamnese
+2.4 Hypothesenfunktion (intern)
+Hypothesen dienen ausschließlich der internen Strukturierung.
+Generierung möglicher Erklärungsmodelle (fachübergreifend)
+Gewichtung nach Evidenz, Unsicherheit und Sicherheit
+Ableitung gezielter Nachfragen
+Identifikation widersprüchlicher Informationen
+Wichtig: - keine Hypothesen werden als Diagnose ausgegeben - Hypothesen sind für den Patienten nicht sichtbar
+2.5 Red-Flag & Sicherheitslogik
+domänenübergreifende Red-Flag-Erkennung
+Eskalationsregeln:
+Hard Stop (Abbruch rein digitaler Nutzung)
+Priority Review (ärztliche Prüfung erforderlich)
+Dokumentation der Sicherheitsentscheidung
+3. Outputs der CRE Intake Suite (DELIVERABLES)
+3.1 Ärztliche Outputs
+vollständige strukturierte Anamnese
+narrative Anamnese (Fließtext)
+symptombasierte Kurzanamnese
+Liste offener Fragen / Unsicherheiten
+Red-Flag-Hinweise
+3.2 Systemische Outputs
+Clinical Intake Package (maschinenlesbar, FHIR-ready)
+Routing-Tags (Fachdomäne, Versorgungspfad)
+Audit- & Versionsmetadaten
+4. Was explizit NICHT Teil der CRE ist (OUT OF SCOPE)
+Diagnosestellung (keine ICD-Zuweisung)
+Therapieempfehlungen oder -änderungen
+Medikationsanpassungen
+Verlaufs- oder Langzeitbetreuung
+Abrechnung / Pricing / Tiers
+5. Human-in-the-Loop / Human-in-the-Lead
+alle Outputs sind initial Draft
+ärztliche Prüfung erforderlich für:
+Nutzung als klinisches Dokument
+Weiterleitung in Care-Module
+Sign-off-Status klar dokumentiert
+6. Regulatorische Einordnung (high level)
+Decision Support, keine autonome Entscheidung
+Dokumentations- & Strukturierungssystem
+Patientensicherheit durch Red-Flag-Eskalation
+7. Schnittstelle zu Care-Modulen & Tiers
+CRE erzeugt ein Clinical Intake Package
+Care-Module (z. B. 7S) konsumieren dieses Paket
+Tiers definieren erst nachgelagert den Betreuungsumfang
+8. Erfolgsparameter (medizinisch & qualitativ)
+Vollständigkeit der Anamnese
+Reduktion ärztlicher Erhebungszeit
+Red-Flag-Erkennungsrate
+Nutzerverständlichkeit
+Status: Canvas v1 – freigegeben zur gemeinsamen Iteration
+Nächster Schritt: Intake Package Spec (Datenmodell & Felder)
