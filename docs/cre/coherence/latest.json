@@ -1,0 +1,640 @@
+{
+  "generatedAt": "2026-02-15T05:36:41.973Z",
+  "mode": "mock",
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0
+  },
+  "results": [
+    {
+      "id": "S01",
+      "title": "Anxiety/Panic with palpitations (no A)",
+      "expected": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "forbid_level_a": true,
+          "forbid_hard_stop": true
+        },
+        "reasoning": {
+          "risk_level": "low"
+        },
+        "followup": {
+          "min_next_questions": 1
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": [
+            "SFTY-2.1-R-CHEST-PAIN:needs_review:unverified",
+            "SFTY-2.1-R-SYNCOPE:needs_review:unverified",
+            "SFTY-2.1-R-SEVERE-DYSPNEA:needs_review:unverified",
+            "SFTY-2.1-R-SEVERE-PALPITATIONS:needs_review:unverified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": [
+            "Panic-like autonomic episode"
+          ]
+        },
+        "followup": {
+          "next_questions_count": 2,
+          "next_questions": [
+            {
+              "id": "reasoning:panic-like-autonomic-episode:wann-treten-die-episoden-auf-und-wie-lange-dauern-sie",
+              "question": "Wann treten die Episoden auf und wie lange dauern sie?",
+              "why": "Panic-like autonomic episode",
+              "priority": 1,
+              "source": "reasoning"
+            },
+            {
+              "id": "reasoning:panic-like-autonomic-episode:gibt-es-ausloesende-situationen-oder-belastungen",
+              "question": "Gibt es ausloesende Situationen oder Belastungen?",
+              "why": "Panic-like autonomic episode",
+              "priority": 2,
+              "source": "reasoning"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S02",
+      "title": "Chest pain negated (no A)",
+      "expected": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "forbid_level_a": true,
+          "forbid_hard_stop": true
+        },
+        "reasoning": {
+          "risk_level": "low"
+        },
+        "followup": {
+          "min_next_questions": 1
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": [
+            "SFTY-2.1-R-CHEST-PAIN:needs_review:unverified",
+            "SFTY-2.1-R-SEVERE-DYSPNEA:needs_review:unverified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:psychosocial",
+              "question": "Gibt es derzeit Belastungen im Alltag, Schlaf oder Stress, die die Beschwerden beeinflussen könnten?",
+              "why": "Psychosoziale Einflussfaktoren fehlen",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S03",
+      "title": "Suicidal ideation negated (must never be A)",
+      "expected": {
+        "safety": {
+          "forbid_level_a": true,
+          "forbid_hard_stop": true
+        },
+        "reasoning": {
+          "risk_level": "low"
+        },
+        "followup": {
+          "min_next_questions": 1
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": [
+            "SFTY-2.1-R-SUICIDAL-IDEATION:needs_review:unverified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S04",
+      "title": "Passive suicidal ideation (B / needs review, no hard stop)",
+      "expected": {
+        "safety": {
+          "effective_level": "B",
+          "effective_action": "warn",
+          "forbid_hard_stop": true
+        },
+        "reasoning": {
+          "risk_level": "medium"
+        },
+        "followup": {
+          "min_next_questions": 1
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": "B",
+          "effective_action": "warn",
+          "triggered_rules": [
+            "SFTY-2.1-R-SUICIDAL-IDEATION:B:verified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "medium",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S05",
+      "title": "Active intent + plan + means (A/hard_stop with verified evidence)",
+      "expected": {
+        "safety": {
+          "effective_level": "A",
+          "effective_action": "hard_stop"
+        },
+        "reasoning": {
+          "risk_level": "high"
+        },
+        "followup": {
+          "min_next_questions": 0
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": "A",
+          "effective_action": "hard_stop",
+          "triggered_rules": [
+            "SFTY-2.1-R-SUICIDAL-IDEATION:A:verified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "high",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S06",
+      "title": "needs_more_info -> patient answers -> re-gen -> approve",
+      "expected": {
+        "safety": {
+          "forbid_level_a": true,
+          "forbid_hard_stop": true
+        },
+        "review": {
+          "transitions": [
+            "needs_more_info",
+            "approved"
+          ],
+          "final_status": "approved"
+        },
+        "followup": {
+          "min_next_questions": 0
+        },
+        "export": {
+          "pdf_magic": true,
+          "current_review_status": "approved"
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 2,
+          "next_questions": [
+            {
+              "id": "clinician-request:bitte-aktuelle-medikation-erganzen",
+              "question": "Bitte aktuelle Medikation ergänzen?",
+              "why": "Rueckfrage aus aerztlicher Pruefung",
+              "priority": 1,
+              "source": "clinician_request"
+            },
+            {
+              "id": "clinician-request:seit-wann-bestehen-die-beschwerden-genau",
+              "question": "Seit wann bestehen die Beschwerden genau?",
+              "why": "Rueckfrage aus aerztlicher Pruefung",
+              "priority": 1,
+              "source": "clinician_request"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [
+            "needs_more_info",
+            "approved"
+          ],
+          "final_status": "approved"
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": "approved",
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S07",
+      "title": "Upload required -> request_more_info creates clinician follow-up",
+      "expected": {
+        "safety": {
+          "forbid_level_a": true,
+          "forbid_hard_stop": true
+        },
+        "review": {
+          "transitions": [
+            "needs_more_info"
+          ],
+          "final_status": "needs_more_info"
+        },
+        "followup": {
+          "min_next_questions": 1,
+          "must_include_substrings": [
+            "arztbrief"
+          ],
+          "required_sources": [
+            "clinician_request"
+          ]
+        },
+        "export": {
+          "pdf_magic": true,
+          "current_review_status": "needs_more_info"
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": [
+            "SFTY-2.1-R-SEVERE-DYSPNEA:needs_review:unverified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "clinician-request:bitte-laden-sie-den-letzten-arztbrief-hoch",
+              "question": "Bitte laden Sie den letzten Arztbrief hoch?",
+              "why": "Rueckfrage aus aerztlicher Pruefung",
+              "priority": 1,
+              "source": "clinician_request"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [
+            "needs_more_info"
+          ],
+          "final_status": "needs_more_info"
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": "needs_more_info",
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S08",
+      "title": "Override set -> export/audit consistency",
+      "expected": {
+        "safety": {
+          "effective_level": "C",
+          "effective_action": "require_confirm"
+        },
+        "export": {
+          "pdf_magic": true,
+          "expect_policy_override": true,
+          "policy_override_level": "C",
+          "policy_override_action": "require_confirm"
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": "C",
+          "effective_action": "require_confirm",
+          "triggered_rules": [
+            "SFTY-2.1-R-CHEST-PAIN:needs_review:unverified",
+            "SFTY-2.1-R-SYNCOPE:needs_review:unverified",
+            "SFTY-2.1-R-SEVERE-PALPITATIONS:needs_review:unverified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:psychosocial",
+              "question": "Gibt es derzeit Belastungen im Alltag, Schlaf oder Stress, die die Beschwerden beeinflussen könnten?",
+              "why": "Psychosoziale Einflussfaktoren fehlen",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": "C",
+          "policy_override_action": "require_confirm",
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S09",
+      "title": "Chest pain >=20 minutes with qualifying evidence (A/hard_stop)",
+      "expected": {
+        "safety": {
+          "effective_level": "A",
+          "effective_action": "hard_stop"
+        },
+        "reasoning": {
+          "risk_level": "high"
+        },
+        "followup": {
+          "min_next_questions": 0
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": "A",
+          "effective_action": "hard_stop",
+          "triggered_rules": [
+            "SFTY-2.1-R-CHEST-PAIN:B:verified",
+            "SFTY-2.1-R-SEVERE-DYSPNEA:A:verified",
+            "SFTY-2.1-R-CHEST-PAIN-20M:A:verified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "high",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 2,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule"
+            },
+            {
+              "id": "gap:psychosocial",
+              "question": "Gibt es derzeit Belastungen im Alltag, Schlaf oder Stress, die die Beschwerden beeinflussen könnten?",
+              "why": "Psychosoziale Einflussfaktoren fehlen",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S10",
+      "title": "Multiple uncertainties -> C-level safety questions + follow-up",
+      "expected": {
+        "safety": {
+          "effective_level": "C",
+          "effective_action": "warn",
+          "forbid_hard_stop": true
+        },
+        "reasoning": {
+          "risk_level": "low"
+        },
+        "followup": {
+          "min_next_questions": 1
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": "C",
+          "effective_action": "warn",
+          "triggered_rules": [
+            "SFTY-2.1-R-UNCERTAINTY-2PLUS:C:verified"
+          ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 2,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule"
+            },
+            {
+              "id": "gap:psychosocial",
+              "question": "Gibt es derzeit Belastungen im Alltag, Schlaf oder Stress, die die Beschwerden beeinflussen könnten?",
+              "why": "Psychosoziale Einflussfaktoren fehlen",
+              "priority": 3,
+              "source": "gap_rule"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    }
+  ]
+}

@@ -133,8 +133,10 @@ const FIXTURE_DIR = path.join(
   'cre-scenarios',
 )
 const REPORT_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'coherence', 'latest.md')
+const REPORT_JSON_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'coherence', 'latest.json')
 const MODE = process.env.CRE_COHERENCE_MODE ?? 'mock'
 const DEBUG = process.env.CRE_COHERENCE_DEBUG === '1'
+const SHOULD_WRITE_MARKDOWN_REPORT = process.env.CI === 'true' || process.env.CRE_WRITE_LATEST_MD === '1'
 const NOW_ISO = '2026-02-14T12:00:00.000Z'
 const REVIEWER_ID = 'coherence-reviewer'
 
@@ -657,13 +659,37 @@ async function main() {
   }
 
   const markdown = renderMarkdown(results)
-  fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true })
-  fs.writeFileSync(REPORT_PATH, markdown, 'utf8')
+  const reportDir = path.dirname(REPORT_PATH)
+  fs.mkdirSync(reportDir, { recursive: true })
+
+  const jsonReport = {
+    generatedAt: new Date().toISOString(),
+    mode: MODE,
+    summary: {
+      total: results.length,
+      passed: results.filter((entry) => entry.passed).length,
+      failed: results.filter((entry) => !entry.passed).length,
+    },
+    results,
+  }
+
+  fs.writeFileSync(REPORT_JSON_PATH, JSON.stringify(jsonReport, null, 2), 'utf8')
+
+  if (SHOULD_WRITE_MARKDOWN_REPORT) {
+    fs.writeFileSync(REPORT_PATH, markdown, 'utf8')
+  }
 
   const failed = results.filter((entry) => !entry.passed)
 
   console.log(`CRE coherence battery complete: ${results.length - failed.length}/${results.length} passed`)
-  console.log(`Report: ${path.relative(REPO_ROOT, REPORT_PATH)}`)
+  if (SHOULD_WRITE_MARKDOWN_REPORT) {
+    console.log(`Report: ${path.relative(REPO_ROOT, REPORT_PATH)}`)
+  } else {
+    console.log(
+      `Markdown report not written (set CRE_WRITE_LATEST_MD=1 for local writes).`,
+    )
+  }
+  console.log(`Report JSON: ${path.relative(REPO_ROOT, REPORT_JSON_PATH)}`)
 
   if (failed.length > 0) {
     console.error('Coherence mismatches found:')
