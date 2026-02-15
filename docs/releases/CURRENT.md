@@ -1,46 +1,42 @@
 # Current Release Status
 
-**Last Updated:** 2025-12-30
+**Last Updated:** 2026-02-15
 
 ---
 
-## Current Version: v0.4
+## Current Version: v0.7
 
-**Status:** ✅ Production-Ready (Released 2025-12-14)  
-**Git Tag:** `v0.4.0`
+**Status:** ✅ Closed & Released (2026-02-15)  
+**Git Tag:** `v0.7`
 
 ### Documentation
 
-- [v0.4 Release Notes](v0.4/RELEASE.md)
-- [v0.4 Verdict (JSON)](v0.4/verdict.json)
-- [v0.4 Changelog](v0.4/changelog.md)
+- [v0.7 Release Notes](v0.7.md)
 
 ### Quick Links
 
-- Release Summary: `/RELEASE_NOTES_V0.4.0.md` (root)
-- Changes Log: `/CHANGES.md` (root, German)
-- Release Checklist: `/RELEASE_CHECKLIST_V0.4.0.md` (root)
+- CRE Roadmap (post-E4): `docs/cre/ROADMAP_POST_E4_2026-02-15.md`
+- Upcoming Version Epics/Issues: `docs/cre/EPICS_AND_ISSUES_NEXT_VERSION_2026-02-15.md`
 
 ---
 
-## Next Version: v0.5
+## Next Version: v0.8
 
-**Status:** 🔄 Planning Phase  
-**Target:** TBD
+**Status:** 🔄 Planning & Execution Start  
+**Target:** Nach Abschluss Wave 5-8
 
 ### Documentation
 
-- [v0.5 Release Plan](v0.5/RELEASE.md)
-- [v0.5 Verdict (JSON)](v0.5/verdict.json)
-- [v0.5 Backlog](v0.5/backlog.md)
+- [Post-E4 Roadmap](../cre/ROADMAP_POST_E4_2026-02-15.md)
+- [v0.8 Epics & Issues](../cre/EPICS_AND_ISSUES_NEXT_VERSION_2026-02-15.md)
 
 ### Focus Areas
 
-v0.5 will focus on:
-- Additional assessment funnels (Sleep, Recovery)
-- Enhanced content management features
-- Advanced reporting and analytics
-- Performance optimizations
+v0.8 will focus on:
+- Test härtung und Golden-Set Automatisierung
+- Patient UX/UI Testready und Dialogstabilität
+- Controlled Pilot (Shadow Mode) mit KPI-Gates
+- Readiness Gate, Go/No-Go und staged Rollout
 
 ---
 

@@ -37,6 +37,35 @@ Leitprinzipien:
 - `critical_defects_open`
 - `followup_repeat_question_rate`
 
+### Parallel-Track: Patient UX/UI Testready (Woche 1-2)
+
+### Deliverables
+- Definierter UX-State-Katalog für den Patient-Dialog:
+  - Initial/Loading
+  - Success/Next Question
+  - Validation Error
+  - Network/Server Error
+  - Hard-Stop/Safety Escalation
+- Konsistente, patientengerechte Microcopy für kritische Übergänge:
+  - Rückfragen nach Upload
+  - Unklare Antwort/Präzisierungsbedarf
+  - Abschluss + nächste Schritte
+- Testbarkeit in UI:
+  - stabile Selektoren für E2E-Flows
+  - deterministisches Verhalten bei Retry/Back/Reload
+- Mobile Readiness Check für relevante Viewports inkl. Scroll/Keyboard-Verhalten.
+
+### Exit-Kriterien
+- 100% Abdeckung der definierten UX-States in manuellen Testfällen
+- 0 offene P0/P1 UI-Bugs im Patient-Dialog
+- E2E-Smoketests für Kernpfad stabil in 3 konsekutiven Läufen
+- Kein kritischer Copy-Bruch in den Kernübergängen
+
+### KPIs
+- `patient_dialog_success_rate`
+- `patient_dialog_dropoff_rate`
+- `patient_ui_blocker_open`
+
 ---
 
 ## Wave 6 (Woche 3-5) — Controlled Pilot / Shadow Mode
@@ -73,6 +102,7 @@ Leitprinzipien:
 ### Exit-Kriterien
 - Reduktion der Wiederholfragen um >= 50% ggü. Wave-5-Baseline
 - Positive klinische UX-Rückmeldung (qualitatives Review)
+- `patient_dialog_dropoff_rate` verbessert ggü. Wave-6-Baseline
 
 ---
 
@@ -112,7 +142,7 @@ Leitprinzipien:
 
 ## Risiken & Gegenmaßnahmen
 
-- **Risikio: Überfitting auf Golden-Set**  
+- **Risiko: Überfitting auf Golden-Set**  
   Gegenmaßnahme: Rotierendes Holdout-Set + Shadow-Mode-Kontrolle.
 
 - **Risiko: Alert-Fatigue im Monitoring**  
@@ -131,3 +161,6 @@ Leitprinzipien:
 - **Wöchentlich**: CRE Monitoring Review (60 min)
 - **Zweiwöchentlich**: Med+BE+Product Decision Gate
 - **Am Ende jeder Wave**: formales Exit-Review mit dokumentiertem Ergebnis
+
+## Umsetzungsdokument
+- Detaillierte Epic/Issue-Liste für die kommende Version: `EPICS_AND_ISSUES_NEXT_VERSION_2026-02-15.md`

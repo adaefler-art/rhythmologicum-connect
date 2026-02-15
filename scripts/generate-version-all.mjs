@@ -16,17 +16,17 @@ const targets = [
   {
     app: 'rhythm-engine',
     outDir: join(ROOT, 'public'),
-    version: 'v0.6',
+    version: 'v0.8',
   },
   {
     app: 'rhythm-patient-ui',
     outDir: join(ROOT, 'apps', 'rhythm-patient-ui', 'public'),
-    version: 'v0.6',
+    version: 'v0.8',
   },
   {
     app: 'rhythm-studio-ui',
     outDir: join(ROOT, 'apps', 'rhythm-studio-ui', 'public'),
-    version: 'v0.6',
+    version: 'v0.8',
   },
 ]
 
