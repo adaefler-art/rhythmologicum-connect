@@ -385,6 +385,34 @@ test.describe('patient followup loop @patient-followup', () => {
       .toBe(0)
   })
 
+  test('is mobile-ready for viewport, scroll and keyboard input', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+
+    const state = createMockState({ blocked: false })
+    await setupMockBackend(page, state)
+
+    await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
+
+    const messageInput = page.locator('textarea[placeholder*="Ihre Nachricht"]:visible').first()
+    await expect(messageInput).toBeVisible()
+
+    await page.mouse.wheel(0, 1_000)
+    await messageInput.scrollIntoViewIfNeeded()
+    await expect(messageInput).toBeVisible()
+
+    await messageInput.click()
+    await page.keyboard.type('Seit gestern vor allem beim Treppensteigen.')
+    await expect(messageInput).toHaveValue(/Seit gestern/)
+    await page.keyboard.press('Enter')
+
+    await expect
+      .poll(() => state.askedQuestionIds.includes(seedFollowupQuestions[0].id), { timeout: 10_000 })
+      .toBe(true)
+  })
+
   test('runs live seeded flow when backend mode is live', async ({ page }) => {
     test.skip(backendMode !== 'live', 'Test only runs in live backend mode.')
     requireLiveEnv()
