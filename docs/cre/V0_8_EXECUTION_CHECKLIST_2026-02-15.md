@@ -144,10 +144,11 @@ Statuswerte:
 ### Issues
 - [~] CRE-NV5-01 Release-Readiness Report erstellen
 - [ ] CRE-NV5-02 Go/No-Go Gate mit dokumentiertem Risikoentscheid
-- [ ] CRE-NV5-03 Staged Rollout + Rollback Playbook finalisieren
+- [~] CRE-NV5-03 Staged Rollout + Rollback Playbook finalisieren
 
 #### NV5 Evidenzstand (laufend)
 - [x] Release-Readiness-Report als ausfüllbarer Draft mit Gate-/KPI-/Risiko-Sektionen vorbereitet (`docs/cre/NV5_RELEASE_READINESS_REPORT_DRAFT.md`)
+- [x] Staged-Rollout/Rollback-Playbook mit Phasen, Stop-/Rollback-Kriterien und Verantwortlichkeiten vorbereitet (`docs/cre/NV5_STAGED_ROLLOUT_ROLLBACK_PLAYBOOK.md`)
 - [~] Finale Befüllung mit Shadow-Mode-Istwerten und Sign-off steht aus
 
 ### Exit-Check
@@ -240,3 +241,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 14:44:00 (lokal): NV3-03 abgeschlossen, indem eine ausfüllbare Weekly-Monitoring-Review-Vorlage mit KPI-Snapshot, Alert-Priorisierung, Root-Cause/Maßnahmen, Owner/ETA und Risikoentscheid ergänzt wurde (`docs/cre/NV3_WEEKLY_MONITORING_REVIEW_TEMPLATE.md`).
 - 2026-02-16 14:53:00 (lokal): Meta-Gate KPI-Baselines auf in Arbeit gebracht, indem ein initialer Baseline-Snapshot aus Golden-Set/NV2/NV3-Evidenz erstellt und als Arbeitsgrundlage für die Shadow-Mode-Erstbefüllung dokumentiert wurde (`docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`).
 - 2026-02-16 15:03:00 (lokal): Meta-/NV5-Vorbereitung autonom weitergeführt, indem ein Weekly-Review-Cadence-Plan, ein Scope-Freeze-Decision-Packet und ein NV5-Readiness-Report-Draft ergänzt und in der Checklist als Evidenz verankert wurden (`docs/cre/V0_8_WEEKLY_REVIEW_CADENCE_PLAN.md`, `docs/cre/V0_8_SCOPE_FREEZE_DECISION_PACKET.md`, `docs/cre/NV5_RELEASE_READINESS_REPORT_DRAFT.md`).
+- 2026-02-16 15:12:00 (lokal): NV5-03 vorbereitet, indem ein Staged-Rollout/Rollback-Playbook mit Preflight/Canary/Ramp/Broad-Phasen, Stop-Kriterien, Rollback-Ablauf und Ownern ergänzt und in der Checklist verankert wurde (`docs/cre/NV5_STAGED_ROLLOUT_ROLLBACK_PLAYBOOK.md`).
