@@ -23,6 +23,12 @@ type EventType =
 type IntakeRow = { created_at: string }
 type ReviewRow = { created_at: string; status: string }
 type EventRow = { created_at: string; event_type: EventType }
+type ThresholdRow = {
+  kpi_key: string
+  warning_threshold: number | null
+  critical_threshold: number | null
+  target_threshold: number | null
+}
 type QueryError = { message: string } | null
 
 const DEFAULT_DAYS = 7
@@ -71,7 +77,7 @@ export async function GET(request: Request) {
     const now = new Date()
     const { startIso, dayKeys } = createDayRange(days, now)
 
-    const [intakesResult, reviewsResult, eventsResult] = await Promise.all([
+    const [intakesResult, reviewsResult, eventsResult, thresholdsResult] = await Promise.all([
       admin
         .from('clinical_intakes')
         .select('created_at')
@@ -87,6 +93,10 @@ export async function GET(request: Request) {
         .select('created_at, event_type')
         .gte('created_at', startIso)
         .order('created_at', { ascending: true }),
+      admin
+        .from('kpi_thresholds')
+        .select('kpi_key, warning_threshold, critical_threshold, target_threshold')
+        .eq('is_active', true),
     ])
 
     const typedIntakesResult = intakesResult as unknown as {
@@ -101,12 +111,22 @@ export async function GET(request: Request) {
       data: EventRow[] | null
       error: QueryError
     }
+    const typedThresholdsResult = thresholdsResult as unknown as {
+      data: ThresholdRow[] | null
+      error: QueryError
+    }
 
-    if (typedIntakesResult.error || typedReviewsResult.error || typedEventsResult.error) {
+    if (
+      typedIntakesResult.error ||
+      typedReviewsResult.error ||
+      typedEventsResult.error ||
+      typedThresholdsResult.error
+    ) {
       console.error('[admin/metrics] query failed', {
         intakesError: typedIntakesResult.error?.message,
         reviewsError: typedReviewsResult.error?.message,
         eventsError: typedEventsResult.error?.message,
+        thresholdsError: typedThresholdsResult.error?.message,
       })
       return databaseErrorResponse('Failed to load metrics.')
     }
@@ -114,6 +134,7 @@ export async function GET(request: Request) {
     const intakes = typedIntakesResult.data ?? []
     const reviews = typedReviewsResult.data ?? []
     const events = typedEventsResult.data ?? []
+    const thresholds = typedThresholdsResult.data ?? []
 
     const approvedCount = reviews.filter((row) => row.status === 'approved').length
     const hardStops = events.filter((row) => row.event_type === 'hard_stop_triggered').length
@@ -185,6 +206,7 @@ export async function GET(request: Request) {
       timeseries: {
         by_day: dayKeys.map((date) => byDayMap.get(date)!),
       },
+      thresholds,
     })
   } catch (err) {
     console.error('[admin/metrics] unexpected error', err)

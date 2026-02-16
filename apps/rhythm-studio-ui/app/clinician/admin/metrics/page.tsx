@@ -26,22 +26,12 @@ type MetricsResponse = {
       followup_answered: number
     }>
   }
-}
-
-type Threshold = {
-  id: string
-  kpi_key: string
-  name: string
-  description?: string | null
-  warning_threshold?: number | null
-  critical_threshold?: number | null
-  target_threshold?: number | null
-  unit?: string | null
-  metric_type?: 'percentage' | 'count' | 'duration' | 'score' | string
-}
-
-type ThresholdResponse = {
-  thresholds: Threshold[]
+  thresholds: Array<{
+    kpi_key: string
+    warning_threshold: number | null
+    critical_threshold: number | null
+    target_threshold: number | null
+  }>
 }
 
 type CardModel = {
@@ -86,7 +76,6 @@ export default function AdminMetricsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<MetricsResponse | null>(null)
-  const [thresholds, setThresholds] = useState<Threshold[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -95,13 +84,9 @@ export default function AdminMetricsPage() {
       setLoading(true)
       setError(null)
       try {
-        const [metricsResponse, thresholdsResponse] = await Promise.all([
-          fetch(`/api/admin/metrics?days=${days}`),
-          fetch('/api/admin/kpi-thresholds?active_only=true'),
-        ])
+        const metricsResponse = await fetch(`/api/admin/metrics?days=${days}`)
 
         const metricsJson = await metricsResponse.json().catch(() => null)
-        const thresholdsJson = await thresholdsResponse.json().catch(() => null)
 
         if (!metricsResponse.ok || !metricsJson?.success) {
           throw new Error(metricsJson?.error?.message || 'Failed to load metrics')
@@ -109,13 +94,6 @@ export default function AdminMetricsPage() {
 
         if (!cancelled) {
           setData(metricsJson.data as MetricsResponse)
-
-          if (thresholdsResponse.ok && thresholdsJson?.success) {
-            const thresholdData = (thresholdsJson.data as ThresholdResponse | undefined)?.thresholds ?? []
-            setThresholds(thresholdData)
-          } else {
-            setThresholds([])
-          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -139,7 +117,7 @@ export default function AdminMetricsPage() {
   const cards = useMemo(() => {
     if (!data) return []
 
-    const thresholdByKey = new Map(thresholds.map((entry) => [entry.kpi_key, entry]))
+    const thresholdByKey = new Map(data.thresholds.map((entry) => [entry.kpi_key, entry]))
 
     const referenceFromThreshold = (keys: string[], asRate: boolean, fallback: string) => {
       const threshold = keys.map((key) => thresholdByKey.get(key)).find(Boolean)
@@ -230,7 +208,7 @@ export default function AdminMetricsPage() {
     ]
 
     return models
-  }, [data, thresholds])
+  }, [data])
 
   return (
     <div className="space-y-6">
