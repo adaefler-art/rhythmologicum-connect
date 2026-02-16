@@ -17,7 +17,7 @@ Statuswerte:
 - [ ] Scope-Freeze für NV1-NV5 abgestimmt (Med + BE + Product)
 - [ ] KPI-Baselines erhoben und dokumentiert
 - [ ] Weekly Review-Terminserie aktiv
-- [ ] Go/No-Go Template vorbereitet
+- [x] Go/No-Go Template vorbereitet
 - [x] Hotfix: Clarification-Loop Suppression bei beantworteten Follow-up-Fragen aktiv
 
 ---
@@ -75,14 +75,20 @@ Statuswerte:
 ## CRE-NV3 — Controlled Pilot / Shadow Mode (Woche 3-5)
 
 ### Issues
-- [ ] CRE-NV3-01 Shadow-Mode Betrieb mit Fallvolumen starten
-- [ ] CRE-NV3-02 KPI-Thresholds kalibrieren
-- [ ] CRE-NV3-03 Monitoring-Review Routine etablieren
+- [~] CRE-NV3-01 Shadow-Mode Betrieb mit Fallvolumen starten
+- [~] CRE-NV3-02 KPI-Thresholds kalibrieren
+- [~] CRE-NV3-03 Monitoring-Review Routine etablieren
 
 ### Exit-Check
 - [ ] KPI-Stabilität über 2 Wochen
 - [ ] Kein unadressierter `critical` Alert
 - [ ] Klinisches Review bestätigt Alltagstauglichkeit
+
+#### NV3 Evidenzstand (laufend)
+- [x] Shadow-Mode Runbook mit Rollen, Fallvolumen-Ramp-up, Daily/Weekly-Ablauf und Eskalationslogik dokumentiert (`docs/cre/NV3_SHADOW_MODE_OPERATION_RUNBOOK.md`)
+- [x] KPI-Threshold-Kalibrierungsblatt mit Start-Schwellen, Baseline-Tabelle und Änderungsprotokoll erstellt (`docs/cre/NV3_KPI_THRESHOLD_CALIBRATION_2026-02-16.md`)
+- [x] Go/No-Go Entscheidungs-Template für v0.8 vorbereitet (`docs/cre/V0_8_GO_NO_GO_TEMPLATE.md`)
+- [~] Operative Durchführung (reale Fallvolumen-Läufe + 2-Wochen-Stabilitätsnachweis) ausstehend
 
 ---
 
@@ -219,3 +225,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 14:02:00 (lokal): NV2-01 abgeschlossen, indem ein dedizierter UX-State-Katalog für den Patient-Dialog mit State-Definitionen, erwarteten UX-Verhalten und Test-Mapping erstellt wurde (`docs/cre/PATIENT_DIALOG_UX_STATE_CATALOG_NV2.md`).
 - 2026-02-16 14:12:00 (lokal): NV2-Exit operationalisiert, indem eine abhakbare manuelle Testcheckliste für die offenen Restpunkte (Voice, Netzwerk/Retry, Accessibility, Copy-Review) ergänzt und mit dem UX-State-Katalog verlinkt wurde (`docs/cre/PATIENT_DIALOG_NV2_MANUAL_TEST_CHECKLIST.md`).
 - 2026-02-16 14:24:00 (lokal): NV1-01 abgeschlossen, indem das Golden-Set um sieben zusätzliche Regression-Fälle (S24-S30) auf 30 Szenarien erweitert und mit `npm run cre:golden-set` erfolgreich als 30/30 validiert wurde (Reports in `docs/cre/coherence/latest.(md|json)` und `docs/cre/golden-set/latest.(md|json)`).
+- 2026-02-16 14:36:00 (lokal): NV3-Start vorbereitet, indem ein operatives Shadow-Mode-Runbook, ein KPI-Threshold-Kalibrierungsblatt und ein v0.8 Go/No-Go-Template erstellt und in der Checklist als Evidenz verankert wurden (`docs/cre/NV3_SHADOW_MODE_OPERATION_RUNBOOK.md`, `docs/cre/NV3_KPI_THRESHOLD_CALIBRATION_2026-02-16.md`, `docs/cre/V0_8_GO_NO_GO_TEMPLATE.md`).
