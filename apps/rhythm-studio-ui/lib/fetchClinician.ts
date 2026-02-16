@@ -484,6 +484,25 @@ export const getClinicalIntakeHistory = (patientId: string, limit?: number) => {
   })
 }
 
+export const regenerateClinicalIntake = (
+  patientId: string,
+  payload?: {
+    focusHint?: string
+  },
+) =>
+  requestClinicianJson<{
+    success?: boolean
+    data?: {
+      intake?: Record<string, unknown> | null
+    }
+  }>({
+    endpoint: `/api/clinician/patient/${patientId}/clinical-intake/regenerate`,
+    method: 'POST',
+    body: payload ?? {},
+    routeContext: 'patient-detail',
+    patientId,
+  })
+
 export const getClinicalIntakeVersion = (patientId: string, versionNumber: number) =>
   requestClinicianJson<{
     success?: boolean

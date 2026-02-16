@@ -28,6 +28,7 @@ import {
   updateConsultNote,
   getClinicalIntakeLatest,
   getClinicalIntakeHistory,
+  regenerateClinicalIntake,
   updateClinicalIntakeOverride,
   getClinicalIntakeReviewLatest,
   updateClinicalIntakeReview,
@@ -304,6 +305,8 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const [isIntakeHistoryOpen, setIsIntakeHistoryOpen] = useState(false)
   const [isIntakeHistoryLoading, setIsIntakeHistoryLoading] = useState(false)
   const [intakeHistoryError, setIntakeHistoryError] = useState<string | null>(null)
+  const [isIntakeRegenerating, setIsIntakeRegenerating] = useState(false)
+  const [intakeRegenerateError, setIntakeRegenerateError] = useState<string | null>(null)
   const [intakeError, setIntakeError] = useState<string | null>(null)
   const [patientOrganizationId, setPatientOrganizationId] = useState<string | null>(null)
   const [overrideLevel, setOverrideLevel] = useState<EscalationLevel | 'none'>('none')
@@ -851,6 +854,27 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     }
   }
 
+  const handleRegenerateIntake = async () => {
+    setIntakeRegenerateError(null)
+    setIsIntakeRegenerating(true)
+
+    try {
+      const { error } = await regenerateClinicalIntake(patientId)
+      if (error) {
+        throw new Error(error.message || 'Fehler beim Regenerieren des Intakes')
+      }
+
+      await loadLatestClinicalIntake()
+    } catch (err) {
+      console.error('[AnamnesisSection] Intake regeneration error:', err)
+      setIntakeRegenerateError(
+        err instanceof Error ? err.message : 'Fehler beim Regenerieren des Intakes',
+      )
+    } finally {
+      setIsIntakeRegenerating(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Card padding="lg" shadow="md">
@@ -1136,6 +1160,14 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 <Button
                   variant="secondary"
                   size="sm"
+                  onClick={() => void handleRegenerateIntake()}
+                  disabled={isIntakeRegenerating}
+                >
+                  {isIntakeRegenerating ? 'Generiert…' : 'Intake neu generieren'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => fetchIntakeHistory()}
                   disabled={isIntakeHistoryLoading}
                 >
@@ -1163,6 +1195,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
               <p className="text-xs text-amber-700">
                 Export ist erst nach clinician sign-off (Review: Approved) verfuegbar.
               </p>
+            )}
+            {intakeRegenerateError && (
+              <p className="text-xs text-rose-700">{intakeRegenerateError}</p>
             )}
             <p className="text-xs text-amber-600 dark:text-amber-400">
               Automatisch generierte klinische Zusammenfassung – aerztlich zu pruefen.
