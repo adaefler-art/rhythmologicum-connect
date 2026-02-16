@@ -62,12 +62,13 @@ Statuswerte:
 
 #### NV2 Evidenzstand (laufend)
 - [x] UX-State-Katalog für Patient-Dialog finalisiert und mit State→Test-Mapping dokumentiert (`docs/cre/PATIENT_DIALOG_UX_STATE_CATALOG_NV2.md`)
+- [x] Manuelle NV2-Testcheckliste für offene Restpunkte (Voice, Netzwerk/Retry, Accessibility, Copy-Review) als abhakbares Artefakt ergänzt (`docs/cre/PATIENT_DIALOG_NV2_MANUAL_TEST_CHECKLIST.md`)
 - [x] Follow-up-Microcopy im Kernübergang harmonisiert ("Rueckfrage" → "Frage" in Lead/Prefix/Hinweis) und Sanitizing/Context-Detection kompatibel gehalten
 - [x] E2E-Selektor-Härtung im Follow-up-Dialog ergänzt (`Senden`-Button in Spec explizit auf `.first()` fixiert), um Strict-Locator-Ambiguität zu vermeiden
 - [x] Follow-up-Loop-Spec im Mock-Mode 3x konsekutiv stabil ausgeführt (`tests/e2e/patient-followup-loop.spec.ts`, je Lauf: 2 passed / 1 skipped)
 - [x] Deterministischer Back/Forward+Reload-Pfad im Follow-up als E2E ergänzt und grün verifiziert (`tests/e2e/patient-followup-loop.spec.ts`, 3 passed / 1 skipped)
 - [x] Mobiler Readiness-Pfad für kleinen Viewport + Scroll-Recovery + Keyboard-Submit (`Enter`) ergänzt und grün verifiziert (`tests/e2e/patient-followup-loop.spec.ts`, 4 passed / 1 skipped)
-- [~] Kernpfad-Stabilität größtenteils belegt; offene NV2-Restpunkte liegen primär bei manueller Vollabdeckung
+- [~] Kernpfad-Stabilität größtenteils belegt; finale NV2-Gates hängen an der Durchführung/Dokumentation der manuellen Checkliste
 
 ---
 
@@ -216,3 +217,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 13:37:00 (lokal): NV2-05 gestartet, indem ein mobiler Readiness-Test (kleiner Viewport, Scroll-Recovery, Keyboard-Submit via `Enter`) im Follow-up-Spec ergänzt und im Mock-Mode erfolgreich ausgeführt wurde (`tests/e2e/patient-followup-loop.spec.ts`).
 - 2026-02-16 13:49:00 (lokal): NV2-02 vorgezogen, indem Kern-Microcopy im Follow-up-Dialog auf konsistente "Frage"-Formulierungen harmonisiert und über den Mock-Mode-Spec mit sichtbarer Copy-Assertion regressionsgesichert wurde (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `tests/e2e/patient-followup-loop.spec.ts`).
 - 2026-02-16 14:02:00 (lokal): NV2-01 abgeschlossen, indem ein dedizierter UX-State-Katalog für den Patient-Dialog mit State-Definitionen, erwarteten UX-Verhalten und Test-Mapping erstellt wurde (`docs/cre/PATIENT_DIALOG_UX_STATE_CATALOG_NV2.md`).
+- 2026-02-16 14:12:00 (lokal): NV2-Exit operationalisiert, indem eine abhakbare manuelle Testcheckliste für die offenen Restpunkte (Voice, Netzwerk/Retry, Accessibility, Copy-Review) ergänzt und mit dem UX-State-Katalog verlinkt wurde (`docs/cre/PATIENT_DIALOG_NV2_MANUAL_TEST_CHECKLIST.md`).
