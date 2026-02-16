@@ -15,10 +15,14 @@ Statuswerte:
 ## Meta-Gates v0.8
 
 - [ ] Scope-Freeze für NV1-NV5 abgestimmt (Med + BE + Product)
-- [ ] KPI-Baselines erhoben und dokumentiert
+- [~] KPI-Baselines erhoben und dokumentiert
 - [ ] Weekly Review-Terminserie aktiv
 - [x] Go/No-Go Template vorbereitet
 - [x] Hotfix: Clarification-Loop Suppression bei beantworteten Follow-up-Fragen aktiv
+
+#### Meta Evidenzstand (laufend)
+- [x] Initialer KPI-Baseline-Snapshot aus aktuellen Golden-Set/NV2/NV3 Evidenzen dokumentiert (`docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`)
+- [~] Produktivnahe Shadow-Mode-Istwerte für finale Baseline-Freigabe noch offen
 
 ---
 
@@ -228,3 +232,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 14:24:00 (lokal): NV1-01 abgeschlossen, indem das Golden-Set um sieben zusätzliche Regression-Fälle (S24-S30) auf 30 Szenarien erweitert und mit `npm run cre:golden-set` erfolgreich als 30/30 validiert wurde (Reports in `docs/cre/coherence/latest.(md|json)` und `docs/cre/golden-set/latest.(md|json)`).
 - 2026-02-16 14:36:00 (lokal): NV3-Start vorbereitet, indem ein operatives Shadow-Mode-Runbook, ein KPI-Threshold-Kalibrierungsblatt und ein v0.8 Go/No-Go-Template erstellt und in der Checklist als Evidenz verankert wurden (`docs/cre/NV3_SHADOW_MODE_OPERATION_RUNBOOK.md`, `docs/cre/NV3_KPI_THRESHOLD_CALIBRATION_2026-02-16.md`, `docs/cre/V0_8_GO_NO_GO_TEMPLATE.md`).
 - 2026-02-16 14:44:00 (lokal): NV3-03 abgeschlossen, indem eine ausfüllbare Weekly-Monitoring-Review-Vorlage mit KPI-Snapshot, Alert-Priorisierung, Root-Cause/Maßnahmen, Owner/ETA und Risikoentscheid ergänzt wurde (`docs/cre/NV3_WEEKLY_MONITORING_REVIEW_TEMPLATE.md`).
+- 2026-02-16 14:53:00 (lokal): Meta-Gate KPI-Baselines auf in Arbeit gebracht, indem ein initialer Baseline-Snapshot aus Golden-Set/NV2/NV3-Evidenz erstellt und als Arbeitsgrundlage für die Shadow-Mode-Erstbefüllung dokumentiert wurde (`docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`).
