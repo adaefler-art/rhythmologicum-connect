@@ -50,15 +50,20 @@ Statuswerte:
 ### Issues
 - [ ] CRE-NV2-01 UX-State-Katalog finalisieren
 - [ ] CRE-NV2-02 Patient-Microcopy für Kernübergänge vereinheitlichen
-- [ ] CRE-NV2-03 Stabile E2E-Selektoren im Dialog ergänzen
+- [~] CRE-NV2-03 Stabile E2E-Selektoren im Dialog ergänzen
 - [ ] CRE-NV2-04 Retry/Back/Reload deterministisch absichern
 - [ ] CRE-NV2-05 Mobile Readiness Check (Viewport/Scroll/Keyboard)
 
 ### Exit-Check
 - [ ] 100% definierte UX-States in manuellen Testfällen abgedeckt
 - [ ] 0 offene P0/P1 UI-Bugs im Patient-Dialog
-- [ ] E2E-Smoke Kernpfad in 3 konsekutiven Läufen stabil
+- [~] E2E-Smoke Kernpfad in 3 konsekutiven Läufen stabil
 - [ ] Kein kritischer Copy-Bruch in Kernübergängen
+
+#### NV2 Evidenzstand (laufend)
+- [x] E2E-Selektor-Härtung im Follow-up-Dialog ergänzt (`Senden`-Button in Spec explizit auf `.first()` fixiert), um Strict-Locator-Ambiguität zu vermeiden
+- [x] Follow-up-Loop-Spec im Mock-Mode 3x konsekutiv stabil ausgeführt (`tests/e2e/patient-followup-loop.spec.ts`, je Lauf: 2 passed / 1 skipped)
+- [~] Kernpfad-Stabilität teilweise belegt; zusätzliche NV2-Szenarien (Retry/Back/Reload + Mobile) noch offen
 
 ---
 
@@ -202,3 +207,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 12:09:00 (lokal): Propädeutische Anamnese-Struktur als Wiedervorlage in v0.8 aufgenommen (Leitsymptom, OPQRST/10W, Red-Flags, PMH/Medikation/Allergien, Familien-/Sozialanamnese, systematische Follow-up-Lückensteuerung).
 - 2026-02-16 12:26:00 (lokal): Stabilitäts-Gate Schritt 1 umgesetzt, indem ein fokussierter E2E-Smoke-Test für die Erstaufnahme-CTA auf `/patient/start` ergänzt und in Mock-Mode erfolgreich ausgeführt wurde (`tests/e2e/patient-intake-start-cta.spec.ts`).
 - 2026-02-16 12:31:00 (lokal): Data-/Struktur-Gates Schritt 2+3 umgesetzt, indem Unit-Tests für die Erstaufnahme-Kontextableitung (`psychosocial_factors`) ergänzt und ein Block→Feld→PAT-Regel-Mapping als Draft dokumentiert wurden (`lib/clinicalIntake/__tests__/firstIntakeSociologicalContext.test.ts`, `docs/cre/PROPAEDEUTISCHE_ANAMNESE_MAPPING_V08_DRAFT.md`).
+- 2026-02-16 13:14:00 (lokal): NV2-03 weitergeführt, indem Dialog-Selektoren im Follow-up-E2E gehärtet (`Senden` auf `.first()`) und der Mock-Mode Follow-up-Loop 3x konsekutiv stabil verifiziert wurde (`tests/e2e/patient-followup-loop.spec.ts`).

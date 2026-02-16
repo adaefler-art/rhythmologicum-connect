@@ -289,7 +289,7 @@ test.describe('patient followup loop @patient-followup', () => {
       .getByPlaceholder(/Ihre Nachricht an/i)
       .first()
       .fill('Die Beschwerden treten vor allem abends auf.')
-    await page.getByRole('button', { name: 'Senden' }).click()
+    await page.getByRole('button', { name: 'Senden' }).first().click()
 
     await expect
       .poll(() => state.askedQuestionIds.length, { timeout: 10_000 })
@@ -329,7 +329,7 @@ test.describe('patient followup loop @patient-followup', () => {
     await page.goto('/patient/dialog')
     await bootstrapDialogIntake(page)
     await expect(page.getByText(/Sicherheits-Hinweis \(Level A\)/).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Senden' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Senden' }).first()).toBeDisabled()
 
     const followupJson = await page.evaluate(async (intakeId) => {
       const response = await fetch('/api/patient/followup/generate', {
