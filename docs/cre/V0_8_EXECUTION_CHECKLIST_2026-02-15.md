@@ -14,14 +14,16 @@ Statuswerte:
 
 ## Meta-Gates v0.8
 
-- [ ] Scope-Freeze für NV1-NV5 abgestimmt (Med + BE + Product)
+- [~] Scope-Freeze für NV1-NV5 abgestimmt (Med + BE + Product)
 - [~] KPI-Baselines erhoben und dokumentiert
-- [ ] Weekly Review-Terminserie aktiv
+- [~] Weekly Review-Terminserie aktiv
 - [x] Go/No-Go Template vorbereitet
 - [x] Hotfix: Clarification-Loop Suppression bei beantworteten Follow-up-Fragen aktiv
 
 #### Meta Evidenzstand (laufend)
 - [x] Initialer KPI-Baseline-Snapshot aus aktuellen Golden-Set/NV2/NV3 Evidenzen dokumentiert (`docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`)
+- [x] Scope-Freeze Decision Packet mit NV1-NV5 Scope-Grid und Freeze-Regeln vorbereitet (`docs/cre/V0_8_SCOPE_FREEZE_DECISION_PACKET.md`)
+- [x] Weekly-Review-Cadence-Plan mit Rhythmus, Agenda und Governance vorbereitet (`docs/cre/V0_8_WEEKLY_REVIEW_CADENCE_PLAN.md`)
 - [~] Produktivnahe Shadow-Mode-Istwerte für finale Baseline-Freigabe noch offen
 
 ---
@@ -140,9 +142,13 @@ Statuswerte:
 ## CRE-NV5 — Readiness Gate & Release (Woche 9-10)
 
 ### Issues
-- [ ] CRE-NV5-01 Release-Readiness Report erstellen
+- [~] CRE-NV5-01 Release-Readiness Report erstellen
 - [ ] CRE-NV5-02 Go/No-Go Gate mit dokumentiertem Risikoentscheid
 - [ ] CRE-NV5-03 Staged Rollout + Rollback Playbook finalisieren
+
+#### NV5 Evidenzstand (laufend)
+- [x] Release-Readiness-Report als ausfüllbarer Draft mit Gate-/KPI-/Risiko-Sektionen vorbereitet (`docs/cre/NV5_RELEASE_READINESS_REPORT_DRAFT.md`)
+- [~] Finale Befüllung mit Shadow-Mode-Istwerten und Sign-off steht aus
 
 ### Exit-Check
 - [ ] Keine offenen Safety-Kritiker
@@ -233,3 +239,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 14:36:00 (lokal): NV3-Start vorbereitet, indem ein operatives Shadow-Mode-Runbook, ein KPI-Threshold-Kalibrierungsblatt und ein v0.8 Go/No-Go-Template erstellt und in der Checklist als Evidenz verankert wurden (`docs/cre/NV3_SHADOW_MODE_OPERATION_RUNBOOK.md`, `docs/cre/NV3_KPI_THRESHOLD_CALIBRATION_2026-02-16.md`, `docs/cre/V0_8_GO_NO_GO_TEMPLATE.md`).
 - 2026-02-16 14:44:00 (lokal): NV3-03 abgeschlossen, indem eine ausfüllbare Weekly-Monitoring-Review-Vorlage mit KPI-Snapshot, Alert-Priorisierung, Root-Cause/Maßnahmen, Owner/ETA und Risikoentscheid ergänzt wurde (`docs/cre/NV3_WEEKLY_MONITORING_REVIEW_TEMPLATE.md`).
 - 2026-02-16 14:53:00 (lokal): Meta-Gate KPI-Baselines auf in Arbeit gebracht, indem ein initialer Baseline-Snapshot aus Golden-Set/NV2/NV3-Evidenz erstellt und als Arbeitsgrundlage für die Shadow-Mode-Erstbefüllung dokumentiert wurde (`docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`).
+- 2026-02-16 15:03:00 (lokal): Meta-/NV5-Vorbereitung autonom weitergeführt, indem ein Weekly-Review-Cadence-Plan, ein Scope-Freeze-Decision-Packet und ein NV5-Readiness-Report-Draft ergänzt und in der Checklist als Evidenz verankert wurden (`docs/cre/V0_8_WEEKLY_REVIEW_CADENCE_PLAN.md`, `docs/cre/V0_8_SCOPE_FREEZE_DECISION_PACKET.md`, `docs/cre/NV5_RELEASE_READINESS_REPORT_DRAFT.md`).
