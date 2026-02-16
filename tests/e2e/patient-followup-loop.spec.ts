@@ -346,6 +346,45 @@ test.describe('patient followup loop @patient-followup', () => {
     expect((followupJson.json?.data?.next_questions ?? []).length).toBe(0)
   })
 
+  test('remains deterministic across back/forward and reload', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const state = createMockState({ blocked: false })
+    await setupMockBackend(page, state)
+
+    await page.goto('/patient/start')
+    await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
+
+    const followupQuestion = page.getByText(seedFollowupQuestions[0].question).first()
+    await expect(followupQuestion).toBeVisible()
+
+    await page.goBack()
+    await expect(page).toHaveURL(/\/patient\/start/)
+
+    await page.goForward()
+    await expect(page).toHaveURL(/\/patient\/dialog/)
+    await expect(followupQuestion).toBeVisible()
+
+    await page.reload()
+    await expect(followupQuestion).toBeVisible()
+
+    await page
+      .getByPlaceholder(/Ihre Nachricht an/i)
+      .first()
+      .fill('Vor allem abends und unter Belastung.')
+    await page.getByRole('button', { name: 'Senden' }).first().click()
+
+    await expect
+      .poll(() => state.askedQuestionIds.includes(seedFollowupQuestions[0].id), { timeout: 10_000 })
+      .toBe(true)
+
+    await page.reload()
+    await expect
+      .poll(async () => page.getByText(seedFollowupQuestions[0].question).count(), { timeout: 10_000 })
+      .toBe(0)
+  })
+
   test('runs live seeded flow when backend mode is live', async ({ page }) => {
     test.skip(backendMode !== 'live', 'Test only runs in live backend mode.')
     requireLiveEnv()
