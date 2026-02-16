@@ -33,6 +33,10 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [pendingRoleByUserId, setPendingRoleByUserId] = useState<Record<string, UserRole>>({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
+  const [isCreatingUser, setIsCreatingUser] = useState(false)
+  const [newUserEmail, setNewUserEmail] = useState('')
+  const [newUserPassword, setNewUserPassword] = useState('')
+  const [newUserRole, setNewUserRole] = useState<UserRole>('patient')
 
   const loadUsers = async () => {
     try {
@@ -136,6 +140,47 @@ export default function AdminUsersPage() {
     }
   }
 
+  const createUser = async () => {
+    try {
+      setIsCreatingUser(true)
+      setError(null)
+
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUserEmail,
+          password: newUserPassword,
+          role: newUserRole,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        success: boolean
+        data?: { user?: AdminUserSummary }
+        error?: { message?: string }
+      }
+
+      if (!response.ok || !data.success || !data.data?.user) {
+        throw new Error(data.error?.message || 'Benutzer konnte nicht angelegt werden.')
+      }
+
+      setUsers((previous) => [data.data!.user!, ...previous])
+      setPendingRoleByUserId((previous) => ({
+        ...previous,
+        [data.data!.user!.id]: data.data!.user!.role ?? 'patient',
+      }))
+      setNewUserEmail('')
+      setNewUserPassword('')
+      setNewUserRole('patient')
+    } catch (caughtError) {
+      console.error('Error creating user:', caughtError)
+      setError(caughtError instanceof Error ? caughtError.message : 'Benutzer konnte nicht angelegt werden.')
+    } finally {
+      setIsCreatingUser(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-start justify-start py-12">
@@ -168,6 +213,48 @@ export default function AdminUsersPage() {
               placeholder="Suche nach E-Mail oder Rolle"
               className="w-full sm:w-80 rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
+          </div>
+
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+            <p className="mb-3 text-sm font-medium text-slate-700">Test-Benutzer anlegen</p>
+            <div className="grid gap-3 sm:grid-cols-4">
+              <input
+                type="email"
+                value={newUserEmail}
+                onChange={(event) => setNewUserEmail(event.target.value)}
+                placeholder="E-Mail"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+              <input
+                type="password"
+                value={newUserPassword}
+                onChange={(event) => setNewUserPassword(event.target.value)}
+                placeholder="Passwort (min. 8 Zeichen)"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+              <select
+                value={newUserRole}
+                onChange={(event) => setNewUserRole(event.target.value as UserRole)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              >
+                {ROLE_OPTIONS.map((roleOption) => (
+                  <option key={roleOption} value={roleOption}>
+                    {roleOption}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="secondary"
+                disabled={
+                  isCreatingUser ||
+                  newUserEmail.trim().length === 0 ||
+                  newUserPassword.trim().length < 8
+                }
+                onClick={createUser}
+              >
+                {isCreatingUser ? 'Legt an…' : 'Benutzer anlegen'}
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-md border border-slate-200">

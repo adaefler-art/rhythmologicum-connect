@@ -1,0 +1,9 @@
+{
+  "id": "A10",
+  "title": "Keyboard smash noise",
+  "message": "asdfasdfqwerqwer",
+  "expected": {
+    "label": "nonsense_noise",
+    "shouldRedirect": true
+  }
+}

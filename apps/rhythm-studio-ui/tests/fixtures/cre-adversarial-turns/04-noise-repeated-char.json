@@ -1,0 +1,9 @@
+{
+  "id": "A04",
+  "title": "Repeated character noise",
+  "message": "aaaaaaaaaaaaaaaaaaaa",
+  "expected": {
+    "label": "nonsense_noise",
+    "shouldRedirect": true
+  }
+}

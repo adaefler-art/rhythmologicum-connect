@@ -1,0 +1,9 @@
+{
+  "id": "A07",
+  "title": "Short ambiguous yes",
+  "message": "ja",
+  "expected": {
+    "label": "clinical_or_ambiguous",
+    "shouldRedirect": false
+  }
+}

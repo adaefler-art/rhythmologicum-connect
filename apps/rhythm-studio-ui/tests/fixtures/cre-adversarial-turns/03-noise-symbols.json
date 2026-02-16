@@ -1,0 +1,9 @@
+{
+  "id": "A03",
+  "title": "Pure symbol noise",
+  "message": "!!!!1111????%%%%",
+  "expected": {
+    "label": "nonsense_noise",
+    "shouldRedirect": true
+  }
+}

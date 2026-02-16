@@ -24,6 +24,12 @@ type UpdateRoleBody = {
   role?: UserRole
 }
 
+type CreateUserBody = {
+  email?: string
+  password?: string
+  role?: UserRole
+}
+
 const ALLOWED_ROLES: readonly UserRole[] = ['patient', 'clinician', 'admin', 'nurse']
 
 function getUserRole(user: {
@@ -163,5 +169,80 @@ export async function PATCH(request: Request) {
 
     console.error('PATCH /api/admin/users failed:', error)
     return internalErrorResponse('Rolle konnte nicht aktualisiert werden.')
+  }
+}
+
+export async function POST(request: Request) {
+  const { user, error } = await requireAuth()
+  if (error || !user) {
+    return error ?? internalErrorResponse('Authentifizierung fehlgeschlagen.')
+  }
+
+  if (!isAdmin(user)) {
+    return forbiddenResponse('Nur Administratoren dürfen Benutzer anlegen.')
+  }
+
+  let body: CreateUserBody
+  try {
+    body = await request.json()
+  } catch {
+    return validationErrorResponse('Ungültiger Request-Body.')
+  }
+
+  const email = body.email?.trim().toLowerCase()
+  const password = body.password?.trim()
+  const role = body.role
+
+  if (!email || !email.includes('@')) {
+    return validationErrorResponse('Eine gültige E-Mail ist erforderlich.')
+  }
+
+  if (!password || password.length < 8) {
+    return validationErrorResponse('Ein Passwort mit mindestens 8 Zeichen ist erforderlich.')
+  }
+
+  if (!role || !ALLOWED_ROLES.includes(role)) {
+    return validationErrorResponse('Eine gültige Rolle ist erforderlich.')
+  }
+
+  try {
+    const admin = createAdminSupabaseClient()
+    const { data, error: createError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: {
+        role,
+      },
+      user_metadata: {
+        role,
+      },
+    })
+
+    if (createError || !data?.user) {
+      const message = createError?.message ?? 'Benutzer konnte nicht angelegt werden.'
+      if (/already|exists|registered/i.test(message)) {
+        return validationErrorResponse('Ein Benutzer mit dieser E-Mail existiert bereits.')
+      }
+      return internalErrorResponse('Benutzer konnte nicht angelegt werden.')
+    }
+
+    const createdUser: AdminUserSummary = {
+      id: data.user.id,
+      email: data.user.email ?? null,
+      role: getUserRole(data.user),
+      created_at: data.user.created_at ?? null,
+      last_sign_in_at: data.user.last_sign_in_at ?? null,
+      is_disabled: Boolean(data.user.banned_until),
+    }
+
+    return successResponse({ user: createdUser })
+  } catch (caughtError) {
+    if (caughtError instanceof Error && caughtError.message.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+      return configurationErrorResponse('SUPABASE_SERVICE_ROLE_KEY ist nicht konfiguriert.')
+    }
+
+    console.error('POST /api/admin/users failed:', caughtError)
+    return internalErrorResponse('Benutzer konnte nicht angelegt werden.')
   }
 }

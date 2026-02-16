@@ -7,6 +7,10 @@ import { env, getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientConsultPrompt, PATIENT_CONSULT_PROMPT_VERSION } from '@/lib/llm/prompts'
+import {
+  assessTurnQuality,
+  buildGuardRedirectReply,
+} from '@/lib/cre/dialog/turnQualityGuard'
 
 /**
  * E73.8 — AMY Frontdesk Chat (LLM), ohne Steuerung
@@ -437,10 +441,21 @@ export async function POST(req: Request) {
 
     const context = contextParts.length > 0 ? contextParts.join('\n\n') : undefined
 
+    const turnQuality =
+      mode === 'default'
+        ? assessTurnQuality(message)
+        : {
+            label: 'clinical_or_ambiguous' as const,
+            shouldRedirect: false,
+            reason: `mode_${mode}`,
+          }
+
     console.log('[amy/chat] Processing chat request', {
       userId: user.id,
       messageLength: message.length,
       mode,
+      turnQualityLabel: turnQuality.label,
+      turnQualityReason: turnQuality.reason,
     })
 
     // Fetch chat history for context
@@ -452,6 +467,8 @@ export async function POST(req: Request) {
         ? null
         : await saveMessage(user.id, 'user', message, supabase, {
             correlationId,
+            turnQualityLabel: turnQuality.label,
+            turnQualityReason: turnQuality.reason,
           })
 
     if (mode === 'log_only') {
@@ -469,6 +486,37 @@ export async function POST(req: Request) {
           intakeSnapshot: undefined,
           messageId: userMessageId || 'temp-' + Date.now(),
           logged: true,
+        },
+      })
+    }
+
+    if (mode === 'default' && turnQuality.shouldRedirect) {
+      const guardReply = sanitizeAssistantReply(buildGuardRedirectReply(turnQuality))
+
+      const assistantMessageId = await saveMessage(user.id, 'assistant', guardReply, supabase, {
+        correlationId,
+        model: 'guard-v1',
+        promptVersion: PATIENT_CONSULT_PROMPT_VERSION,
+        mode,
+        guardTriggered: true,
+        guardLabel: turnQuality.label,
+      })
+
+      const totalDuration = Date.now() - requestStartTime
+      console.log('[amy/chat] Request completed with guard redirect', {
+        duration: `${totalDuration}ms`,
+        userMessageId,
+        assistantMessageId,
+        guardLabel: turnQuality.label,
+        correlationId,
+      })
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          reply: guardReply,
+          intakeSnapshot: undefined,
+          messageId: assistantMessageId || 'temp-' + Date.now(),
         },
       })
     }

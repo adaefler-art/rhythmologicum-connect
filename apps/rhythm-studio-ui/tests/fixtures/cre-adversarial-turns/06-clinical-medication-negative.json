@@ -1,0 +1,9 @@
+{
+  "id": "A06",
+  "title": "Clinical medication negative answer",
+  "message": "Nein, ich nehme aktuell keine Medikamente.",
+  "expected": {
+    "label": "clinical_or_ambiguous",
+    "shouldRedirect": false
+  }
+}

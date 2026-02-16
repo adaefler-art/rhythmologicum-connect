@@ -1,0 +1,9 @@
+{
+  "id": "A05",
+  "title": "Clinical chest pain turn",
+  "message": "Ich habe seit gestern Brustdruck und leichte Atemnot.",
+  "expected": {
+    "label": "clinical_or_ambiguous",
+    "shouldRedirect": false
+  }
+}

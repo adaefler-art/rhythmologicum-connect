@@ -1,0 +1,9 @@
+{
+  "id": "A09",
+  "title": "Clinical dizziness with duration",
+  "message": "Seit 4 Tagen ist mir morgens schwindelig.",
+  "expected": {
+    "label": "clinical_or_ambiguous",
+    "shouldRedirect": false
+  }
+}
