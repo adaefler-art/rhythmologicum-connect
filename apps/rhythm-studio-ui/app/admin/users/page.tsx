@@ -42,6 +42,19 @@ const ROLE_OPTIONS: UserRole[] = ['patient', 'clinician', 'nurse', 'admin']
 
 export const dynamic = 'force-dynamic'
 
+async function parseJsonSafe<T>(response: Response): Promise<T | null> {
+  const raw = await response.text()
+  if (!raw) {
+    return null
+  }
+
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null
+  }
+}
+
 export default function AdminUsersPage() {
   useActiveNavLabel('Benutzerverwaltung')
   const [loading, setLoading] = useState(true)
@@ -73,10 +86,10 @@ export default function AdminUsersPage() {
       setError(null)
 
       const response = await fetch('/api/admin/users', { cache: 'no-store' })
-      const data = (await response.json()) as UsersResponse
+      const data = await parseJsonSafe<UsersResponse>(response)
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'Benutzer konnten nicht geladen werden.')
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Benutzer konnten nicht geladen werden.')
       }
 
       const fetched = data.data?.users ?? []
@@ -192,14 +205,14 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ userId, role }),
       })
 
-      const data = (await response.json()) as {
+      const data = await parseJsonSafe<{
         success: boolean
         data?: { user?: AdminUserSummary }
         error?: { message?: string }
-      }
+      }>(response)
 
-      if (!response.ok || !data.success || !data.data?.user) {
-        throw new Error(data.error?.message || 'Rolle konnte nicht aktualisiert werden.')
+      if (!response.ok || !data?.success || !data.data?.user) {
+        throw new Error(data?.error?.message || 'Rolle konnte nicht aktualisiert werden.')
       }
 
       await loadUsers()
@@ -226,14 +239,14 @@ export default function AdminUsersPage() {
         }),
       })
 
-      const data = (await response.json()) as {
+      const data = await parseJsonSafe<{
         success: boolean
         data?: { user?: AdminUserSummary }
         error?: { message?: string }
-      }
+      }>(response)
 
-      if (!response.ok || !data.success || !data.data?.user) {
-        throw new Error(data.error?.message || 'Benutzer konnte nicht angelegt werden.')
+      if (!response.ok || !data?.success || !data.data?.user) {
+        throw new Error(data?.error?.message || 'Benutzer konnte nicht angelegt werden.')
       }
 
       await loadUsers()
@@ -265,17 +278,19 @@ export default function AdminUsersPage() {
       setDeletingUserId(userId)
       setError(null)
 
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch('/api/admin/users', {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
       })
 
-      const data = (await response.json()) as {
+      const data = await parseJsonSafe<{
         success: boolean
         error?: { message?: string }
-      }
+      }>(response)
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'Benutzer konnte nicht gelöscht werden.')
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Benutzer konnte nicht gelöscht werden.')
       }
 
       await loadUsers()
@@ -303,13 +318,13 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ patientUserId, clinicianUserId }),
       })
 
-      const data = (await response.json()) as {
+      const data = await parseJsonSafe<{
         success: boolean
         error?: { message?: string }
-      }
+      }>(response)
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'Arzt-Zuweisung konnte nicht gespeichert werden.')
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Arzt-Zuweisung konnte nicht gespeichert werden.')
       }
 
       setAssignmentsByPatientId((previous) => {
@@ -348,13 +363,13 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ patientUserId, clinicianUserId }),
       })
 
-      const data = (await response.json()) as {
+      const data = await parseJsonSafe<{
         success: boolean
         error?: { message?: string }
-      }
+      }>(response)
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || 'Arzt-Zuweisung konnte nicht entfernt werden.')
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error?.message || 'Arzt-Zuweisung konnte nicht entfernt werden.')
       }
 
       setAssignmentsByPatientId((previous) => ({
@@ -582,7 +597,9 @@ export default function AdminUsersPage() {
                 />
               </svg>
               <h2 className="text-xl font-semibold text-foreground">Benutzerverwaltung</h2>
-              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{error}</p>
+              <p className="w-full max-w-none wrap-break-word whitespace-normal text-sm text-muted-foreground sm:text-base">
+                {error}
+              </p>
               <Button variant="primary" onClick={loadUsers}>
                 Erneut versuchen
               </Button>

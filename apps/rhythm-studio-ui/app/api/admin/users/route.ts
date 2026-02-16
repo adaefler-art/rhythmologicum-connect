@@ -46,6 +46,7 @@ type UpsertAssignmentBody = {
 }
 
 type DeleteAssignmentBody = {
+  userId?: string
   patientUserId?: string
   clinicianUserId?: string
 }
@@ -659,11 +660,42 @@ export async function DELETE(request: Request) {
     return validationErrorResponse('Ungültiger Request-Body.')
   }
 
+  const userId = body.userId?.trim()
+
+  if (userId) {
+    if (userId === user.id) {
+      return validationErrorResponse('Sie können sich nicht selbst löschen.')
+    }
+
+    try {
+      const admin = createAdminSupabaseClient()
+
+      const { data: existing, error: existingError } = await admin.auth.admin.getUserById(userId)
+      if (existingError || !existing?.user) {
+        return validationErrorResponse('Benutzer nicht gefunden.')
+      }
+
+      const { error: deleteUserError } = await admin.auth.admin.deleteUser(userId)
+      if (deleteUserError) {
+        return internalErrorResponse('Benutzer konnte nicht gelöscht werden.')
+      }
+
+      return successResponse({ deleted: true, userId })
+    } catch (caughtError) {
+      if (caughtError instanceof Error && caughtError.message.includes('SUPABASE_SERVICE_ROLE_KEY')) {
+        return configurationErrorResponse('SUPABASE_SERVICE_ROLE_KEY ist nicht konfiguriert.')
+      }
+
+      console.error('DELETE /api/admin/users failed:', caughtError)
+      return internalErrorResponse('Benutzer konnte nicht gelöscht werden.')
+    }
+  }
+
   const patientUserId = body.patientUserId?.trim()
   const clinicianUserId = body.clinicianUserId?.trim()
 
   if (!patientUserId || !clinicianUserId) {
-    return validationErrorResponse('patientUserId und clinicianUserId sind erforderlich.')
+    return validationErrorResponse('Für Zuweisungslöschung sind patientUserId und clinicianUserId erforderlich.')
   }
 
   try {
