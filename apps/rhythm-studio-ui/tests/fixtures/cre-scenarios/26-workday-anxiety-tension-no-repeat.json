@@ -1,0 +1,29 @@
+{
+  "id": "S26",
+  "title": "Workday anxiety and tension should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Vor Meetings bin ich oft sehr angespannt und nervös." },
+    { "id": "m2", "content": "Nach Feierabend lässt es meist etwas nach." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Anspannung im Arbeitskontext",
+    "history_of_present_illness": {
+      "onset": "seit 3 Monaten",
+      "duration": "stundenweise",
+      "course": "situationsabhängig"
+    },
+    "medication": [],
+    "psychosocial_factors": ["hoher Leistungsdruck"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

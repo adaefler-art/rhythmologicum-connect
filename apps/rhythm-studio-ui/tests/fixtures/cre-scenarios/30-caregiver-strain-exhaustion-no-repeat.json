@@ -1,0 +1,29 @@
+{
+  "id": "S30",
+  "title": "Caregiver strain with exhaustion should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich pflege meine Mutter und bin seit Wochen dauerhaft erschöpft." },
+    { "id": "m2", "content": "Ich komme kaum zur Erholung." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Erschöpfung bei Pflegebelastung",
+    "history_of_present_illness": {
+      "onset": "seit 2 Monaten",
+      "duration": "täglich",
+      "course": "progredient"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Pflegeverantwortung", "geringe Erholungszeiten"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

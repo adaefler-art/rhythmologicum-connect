@@ -25,13 +25,13 @@ Statuswerte:
 ## CRE-NV1 — Test Härtung & Golden Set (Woche 1-2)
 
 ### Issues
-- [~] CRE-NV1-01 Golden-Set v1 definieren (30-50 Fälle)
+- [x] CRE-NV1-01 Golden-Set v1 definieren (30-50 Fälle)
 - [~] CRE-NV1-02 Golden-Set E2E Runner (batch + report)
 - [x] CRE-NV1-03 Defect-Triage-Template + Root-Cause-Tags
 - [x] CRE-NV1-04 Follow-up Repeat-Fragen Regression-Tests
 
 ### Exit-Check
-- [ ] `golden_set_pass_rate >= 0.95`
+- [x] `golden_set_pass_rate >= 0.95`
 - [ ] `critical_defects_open = 0`
 - [ ] Kritische Defects mit Fix + Regression-Test geschlossen
 
@@ -41,7 +41,7 @@ Statuswerte:
 - [x] KPI-Summary im JSON/Markdown enthalten (`golden_set_pass_rate`, `followup_repeat_question_rate`, `objective_reask_violation_count`)
 - [x] Defect-Triage-Template mit Root-Cause-Tags dokumentiert (`docs/cre/DEFECT_TRIAGE_TEMPLATE_NV1.md`)
 - [x] Repeat-Regression-Matrix + Variantenfälle (`nein|nei|nope`) dokumentiert (`docs/cre/golden-set/REPEAT_QUESTION_REGRESSION_MATRIX_NV1.md`)
-- [~] Golden-Set-Umfang aktuell 23 Fälle; Ausbau auf 30-50 Fälle ausstehend
+- [x] Golden-Set-Umfang auf 30 Fälle ausgebaut (S24-S30), Batch-Lauf grün (30/30)
 
 ---
 
@@ -218,3 +218,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 13:49:00 (lokal): NV2-02 vorgezogen, indem Kern-Microcopy im Follow-up-Dialog auf konsistente "Frage"-Formulierungen harmonisiert und über den Mock-Mode-Spec mit sichtbarer Copy-Assertion regressionsgesichert wurde (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `tests/e2e/patient-followup-loop.spec.ts`).
 - 2026-02-16 14:02:00 (lokal): NV2-01 abgeschlossen, indem ein dedizierter UX-State-Katalog für den Patient-Dialog mit State-Definitionen, erwarteten UX-Verhalten und Test-Mapping erstellt wurde (`docs/cre/PATIENT_DIALOG_UX_STATE_CATALOG_NV2.md`).
 - 2026-02-16 14:12:00 (lokal): NV2-Exit operationalisiert, indem eine abhakbare manuelle Testcheckliste für die offenen Restpunkte (Voice, Netzwerk/Retry, Accessibility, Copy-Review) ergänzt und mit dem UX-State-Katalog verlinkt wurde (`docs/cre/PATIENT_DIALOG_NV2_MANUAL_TEST_CHECKLIST.md`).
+- 2026-02-16 14:24:00 (lokal): NV1-01 abgeschlossen, indem das Golden-Set um sieben zusätzliche Regression-Fälle (S24-S30) auf 30 Szenarien erweitert und mit `npm run cre:golden-set` erfolgreich als 30/30 validiert wurde (Reports in `docs/cre/coherence/latest.(md|json)` und `docs/cre/golden-set/latest.(md|json)`).

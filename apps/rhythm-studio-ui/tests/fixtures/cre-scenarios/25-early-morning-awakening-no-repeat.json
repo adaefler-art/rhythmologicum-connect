@@ -1,0 +1,29 @@
+{
+  "id": "S25",
+  "title": "Early-morning awakening should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich wache gegen vier Uhr auf und kann nicht mehr einschlafen." },
+    { "id": "m2", "content": "Das passiert fast jede Nacht." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Frühes Erwachen",
+    "history_of_present_illness": {
+      "onset": "seit 1 Monat",
+      "duration": "jede Nacht",
+      "course": "zunehmend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["belastende Lebensphase"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

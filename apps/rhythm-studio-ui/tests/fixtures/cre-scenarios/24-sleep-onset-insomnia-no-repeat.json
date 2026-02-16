@@ -1,0 +1,29 @@
+{
+  "id": "S24",
+  "title": "Sleep-onset insomnia should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich brauche seit Wochen sehr lange, bis ich einschlafe." },
+    { "id": "m2", "content": "Tagsüber bin ich deshalb oft erschöpft." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Einschlafstörung",
+    "history_of_present_illness": {
+      "onset": "seit 6 Wochen",
+      "duration": "abends 1-2 Stunden",
+      "course": "anhaltend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["beruflicher Stress"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

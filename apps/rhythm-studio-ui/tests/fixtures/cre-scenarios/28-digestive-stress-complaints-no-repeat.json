@@ -1,0 +1,29 @@
+{
+  "id": "S28",
+  "title": "Digestive stress complaints should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Bei Stress bekomme ich oft Magenbeschwerden und Appetitverlust." },
+    { "id": "m2", "content": "An freien Tagen ist es deutlich besser." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Stressassoziierte Magenbeschwerden",
+    "history_of_present_illness": {
+      "onset": "seit 5 Wochen",
+      "duration": "mehrmals pro Woche",
+      "course": "fluktuierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["akuter Arbeitsstress"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -1,9 +1,9 @@
 # CRE Golden Set Report
 
-- Generated: 2026-02-15T20:36:47.008Z
+- Generated: 2026-02-16T16:19:37.553Z
 - Mode: mock (seed reasoning config, deterministic timestamps)
-- Scenarios: 23
-- Passed: 23
+- Scenarios: 30
+- Passed: 30
 - Failed: 0
 
 ## KPI Summary
@@ -39,6 +39,13 @@
 | S21 Concentration drop under workload should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
 | S22 Medication none stated explicitly should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
 | S23 Exercise-triggered palpitations should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S24 Sleep-onset insomnia should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S25 Early-morning awakening should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S26 Workday anxiety and tension should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S27 Low mood with social withdrawal should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S28 Digestive stress complaints should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S29 Weekend headache relief pattern should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
+| S30 Caregiver strain with exhaustion should keep follow-up deduplicated | - | Safety n/a/none<br>Review n/a<br>PDF ok | ✅ |
 
 ## Mismatch
 

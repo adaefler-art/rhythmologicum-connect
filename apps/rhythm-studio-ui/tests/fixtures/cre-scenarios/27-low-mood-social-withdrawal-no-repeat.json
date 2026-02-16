@@ -1,0 +1,29 @@
+{
+  "id": "S27",
+  "title": "Low mood with social withdrawal should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe wenig Antrieb und ziehe mich aktuell oft zurück." },
+    { "id": "m2", "content": "Treffen mit Freunden sage ich häufig ab." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Niedergeschlagene Stimmung",
+    "history_of_present_illness": {
+      "onset": "seit 2 Monaten",
+      "duration": "fast täglich",
+      "course": "persistierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["soziale Isolation"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

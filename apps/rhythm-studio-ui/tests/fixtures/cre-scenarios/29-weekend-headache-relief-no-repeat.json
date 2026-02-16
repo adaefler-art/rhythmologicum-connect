@@ -1,0 +1,29 @@
+{
+  "id": "S29",
+  "title": "Weekend headache relief pattern should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Unter der Woche habe ich häufiger drückende Kopfschmerzen." },
+    { "id": "m2", "content": "Am Wochenende ist es oft deutlich besser." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Wochentagsbetonte Kopfschmerzen",
+    "history_of_present_illness": {
+      "onset": "seit 3 Monaten",
+      "duration": "nachmittags",
+      "course": "wiederkehrend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["arbeitsbezogene Belastung"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

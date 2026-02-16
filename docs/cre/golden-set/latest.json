@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-02-15T20:36:47.010Z",
+  "generatedAt": "2026-02-16T16:19:37.555Z",
   "mode": "mock",
   "summary": {
-    "total": 23,
-    "passed": 23,
+    "total": 30,
+    "passed": 30,
     "failed": 0,
     "golden_set_pass_rate": 1,
     "followup_repeat_question_rate": 0,
@@ -1284,6 +1284,363 @@
           "triggered_rules": [
             "SFTY-2.1-R-SEVERE-PALPITATIONS:needs_review:unverified"
           ]
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S24",
+      "title": "Sleep-onset insomnia should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S25",
+      "title": "Early-morning awakening should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S26",
+      "title": "Workday anxiety and tension should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S27",
+      "title": "Low mood with social withdrawal should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S28",
+      "title": "Digestive stress complaints should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "medium",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S29",
+      "title": "Weekend headache relief pattern should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
+        },
+        "reasoning": {
+          "risk_level": "low",
+          "differential_labels": []
+        },
+        "followup": {
+          "next_questions_count": 1,
+          "next_questions": [
+            {
+              "id": "gap:medication",
+              "question": "Nehmen Sie aktuell Medikamente oder relevante Nahrungsergänzungsmittel ein?",
+              "why": "Medikationskontext fehlt",
+              "priority": 3,
+              "source": "gap_rule",
+              "objective_id": "objective:medication"
+            }
+          ]
+        },
+        "review": {
+          "transitions": [],
+          "final_status": null
+        },
+        "export": {
+          "policy_override_level": null,
+          "policy_override_action": null,
+          "current_review_status": null,
+          "pdf_magic": true,
+          "pdf_content_type": "application/pdf"
+        }
+      },
+      "mismatches": [],
+      "passed": true
+    },
+    {
+      "id": "S30",
+      "title": "Caregiver strain with exhaustion should keep follow-up deduplicated",
+      "expected": {
+        "followup": {
+          "min_next_questions": 0,
+          "forbid_duplicate_questions": true,
+          "forbid_duplicate_objective_ids": true
+        },
+        "export": {
+          "pdf_magic": true
+        }
+      },
+      "actual": {
+        "safety": {
+          "effective_level": null,
+          "effective_action": "none",
+          "triggered_rules": []
         },
         "reasoning": {
           "risk_level": "low",
