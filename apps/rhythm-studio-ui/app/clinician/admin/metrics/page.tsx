@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { Info } from 'lucide-react'
 import { Card, ErrorState, LoadingSpinner, PageHeader, SectionHeader } from '@/lib/ui'
 import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 
@@ -27,7 +28,56 @@ type MetricsResponse = {
   }
 }
 
+type Threshold = {
+  id: string
+  kpi_key: string
+  name: string
+  description?: string | null
+  warning_threshold?: number | null
+  critical_threshold?: number | null
+  target_threshold?: number | null
+  unit?: string | null
+  metric_type?: 'percentage' | 'count' | 'duration' | 'score' | string
+}
+
+type ThresholdResponse = {
+  thresholds: Threshold[]
+}
+
+type CardModel = {
+  id: string
+  label: string
+  value: string
+  definition: string
+  reference: string
+}
+
 const asPercent = (value: number) => `${(value * 100).toFixed(1)}%`
+
+const toThresholdDisplay = (value: number | null | undefined, asRate: boolean) => {
+  if (value === null || value === undefined) return null
+
+  if (asRate) {
+    const percent = value <= 1 ? value * 100 : value
+    return `${percent.toFixed(1)}%`
+  }
+
+  return Number.isInteger(value) ? String(value) : value.toFixed(2)
+}
+
+const InfoHint = ({ text }: { text: string }) => (
+  <span className="relative inline-flex items-center">
+    <span
+      className="group inline-flex cursor-help items-center rounded-full p-0.5 text-slate-300 hover:text-white"
+      aria-label={text}
+    >
+      <Info size={14} />
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-72 -translate-x-1/2 rounded-md border border-slate-700 bg-slate-900 p-2 text-xs normal-case text-slate-100 shadow-lg group-hover:block">
+        {text}
+      </span>
+    </span>
+  </span>
+)
 
 export default function AdminMetricsPage() {
   useActiveNavLabel('Metrics')
@@ -36,6 +86,7 @@ export default function AdminMetricsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<MetricsResponse | null>(null)
+  const [thresholds, setThresholds] = useState<Threshold[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -44,15 +95,27 @@ export default function AdminMetricsPage() {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch(`/api/admin/metrics?days=${days}`)
-        const json = await response.json().catch(() => null)
+        const [metricsResponse, thresholdsResponse] = await Promise.all([
+          fetch(`/api/admin/metrics?days=${days}`),
+          fetch('/api/admin/kpi-thresholds?active_only=true'),
+        ])
 
-        if (!response.ok || !json?.success) {
-          throw new Error(json?.error?.message || 'Failed to load metrics')
+        const metricsJson = await metricsResponse.json().catch(() => null)
+        const thresholdsJson = await thresholdsResponse.json().catch(() => null)
+
+        if (!metricsResponse.ok || !metricsJson?.success) {
+          throw new Error(metricsJson?.error?.message || 'Failed to load metrics')
         }
 
         if (!cancelled) {
-          setData(json.data as MetricsResponse)
+          setData(metricsJson.data as MetricsResponse)
+
+          if (thresholdsResponse.ok && thresholdsJson?.success) {
+            const thresholdData = (thresholdsJson.data as ThresholdResponse | undefined)?.thresholds ?? []
+            setThresholds(thresholdData)
+          } else {
+            setThresholds([])
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -75,35 +138,118 @@ export default function AdminMetricsPage() {
 
   const cards = useMemo(() => {
     if (!data) return []
-    return [
-      { label: 'Intakes', value: String(data.totals.intakes_total) },
-      { label: 'Reviews', value: String(data.totals.reviews_total) },
-      { label: 'Approved Rate', value: asPercent(data.totals.approved_rate) },
-      { label: 'Hard Stop Rate', value: asPercent(data.totals.hard_stop_rate) },
-      { label: 'Override Rate', value: asPercent(data.totals.override_rate) },
-      { label: 'Follow-up Yield', value: asPercent(data.totals.followup_yield) },
-      { label: 'Upload Completion', value: asPercent(data.totals.upload_completion_rate) },
+
+    const thresholdByKey = new Map(thresholds.map((entry) => [entry.kpi_key, entry]))
+
+    const referenceFromThreshold = (keys: string[], asRate: boolean, fallback: string) => {
+      const threshold = keys.map((key) => thresholdByKey.get(key)).find(Boolean)
+      if (!threshold) return fallback
+
+      const parts = [
+        threshold.target_threshold !== null && threshold.target_threshold !== undefined
+          ? `Ziel ${toThresholdDisplay(threshold.target_threshold, asRate)}`
+          : null,
+        threshold.warning_threshold !== null && threshold.warning_threshold !== undefined
+          ? `Warnung ${toThresholdDisplay(threshold.warning_threshold, asRate)}`
+          : null,
+        threshold.critical_threshold !== null && threshold.critical_threshold !== undefined
+          ? `Kritisch ${toThresholdDisplay(threshold.critical_threshold, asRate)}`
+          : null,
+      ].filter(Boolean)
+
+      if (parts.length === 0) return fallback
+      return parts.join(' · ')
+    }
+
+    const models: CardModel[] = [
+      {
+        id: 'intakes',
+        label: 'Intakes',
+        value: String(data.totals.intakes_total),
+        definition: 'Anzahl neu erzeugter Clinical-Intakes im gewählten Zeitfenster.',
+        reference: referenceFromThreshold(['cre_intakes_total', 'intakes_total'], false, 'Referenz: TBD'),
+      },
+      {
+        id: 'reviews',
+        label: 'Reviews',
+        value: String(data.totals.reviews_total),
+        definition: 'Anzahl angelegter Clinical-Intake-Reviews im gewählten Zeitfenster.',
+        reference: referenceFromThreshold(['cre_reviews_total', 'reviews_total'], false, 'Referenz: TBD'),
+      },
+      {
+        id: 'approved_rate',
+        label: 'Approved Rate',
+        value: asPercent(data.totals.approved_rate),
+        definition: 'Anteil abgeschlossener Reviews mit Status "approved".',
+        reference: referenceFromThreshold(
+          ['cre_review_approval_rate', 'approved_rate'],
+          true,
+          'Referenz: Ziel > 50% (initial)',
+        ),
+      },
+      {
+        id: 'hard_stop_rate',
+        label: 'Hard Stop Rate',
+        value: asPercent(data.totals.hard_stop_rate),
+        definition: 'Anteil Intakes mit ausgelöstem Hard-Stop-Safety-Ereignis.',
+        reference: referenceFromThreshold(
+          ['cre_hard_stop_rate', 'hard_stop_rate'],
+          true,
+          'Referenz: Warnung >= 30% (initial)',
+        ),
+      },
+      {
+        id: 'override_rate',
+        label: 'Override Rate',
+        value: asPercent(data.totals.override_rate),
+        definition: 'Anteil Intakes mit gesetztem Policy-Override durch Clinician/Admin.',
+        reference: referenceFromThreshold(['cre_override_rate', 'override_rate'], true, 'Referenz: TBD'),
+      },
+      {
+        id: 'followup_yield',
+        label: 'Follow-up Yield',
+        value: asPercent(data.totals.followup_yield),
+        definition: 'Anteil beantworteter Follow-up-Fragen relativ zu gezeigten Follow-ups.',
+        reference: referenceFromThreshold(
+          ['cre_followup_yield', 'followup_yield'],
+          true,
+          'Referenz: Ziel >= 60% (initial)',
+        ),
+      },
+      {
+        id: 'upload_completion',
+        label: 'Upload Completion',
+        value: asPercent(data.totals.upload_completion_rate),
+        definition: 'Anteil abgeschlossener Uploads relativ zu angefragten Uploads.',
+        reference: referenceFromThreshold(
+          ['cre_upload_completion_rate', 'upload_completion_rate'],
+          true,
+          'Referenz: Ziel >= 50% (initial)',
+        ),
+      },
     ]
-  }, [data])
+
+    return models
+  }, [data, thresholds])
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Studio Metrics"
-        description="KPI-Überblick für den Livetest (Events + Verlauf)."
+        description="KPI-Überblick mit Definitionen und Referenzwerten (falls unbekannt: TBD)."
       />
 
       <div className="flex gap-2">
         <button
           type="button"
-          className={`rounded-md border px-3 py-1 text-sm ${days === 7 ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'}`}
+          className={`rounded-md border px-3 py-1 text-sm ${days === 7 ? 'border-slate-500 bg-slate-900 text-white' : 'border-slate-600 bg-slate-800 text-slate-200'}`}
           onClick={() => setDays(7)}
         >
           Last 7 days
         </button>
         <button
           type="button"
-          className={`rounded-md border px-3 py-1 text-sm ${days === 30 ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'}`}
+          className={`rounded-md border px-3 py-1 text-sm ${days === 30 ? 'border-slate-500 bg-slate-900 text-white' : 'border-slate-600 bg-slate-800 text-slate-200'}`}
           onClick={() => setDays(30)}
         >
           Last 30 days
@@ -115,11 +261,15 @@ export default function AdminMetricsPage() {
 
       {!loading && !error && data ? (
         <>
-          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
-              <Card key={card.label} padding="md" shadow="sm">
-                <p className="text-xs text-slate-500">{card.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900">{card.value}</p>
+              <Card key={card.id} padding="md" shadow="sm">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-slate-100">{card.label}</p>
+                  <InfoHint text={card.definition} />
+                </div>
+                <p className="mt-2 text-3xl font-bold text-white">{card.value}</p>
+                <p className="mt-2 text-xs text-slate-200">{card.reference}</p>
               </Card>
             ))}
           </section>
@@ -127,9 +277,9 @@ export default function AdminMetricsPage() {
           <Card padding="md" shadow="sm">
             <SectionHeader title="Daily Trend" description={`Window: ${days} days`} />
             <div className="mt-3 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-full text-left text-sm text-slate-100">
                 <thead>
-                  <tr className="border-b text-xs uppercase tracking-wide text-slate-500">
+                  <tr className="border-b border-slate-700 text-xs uppercase tracking-wide text-slate-300">
                     <th className="px-2 py-2">Date</th>
                     <th className="px-2 py-2">Intakes</th>
                     <th className="px-2 py-2">Reviews</th>
@@ -141,14 +291,14 @@ export default function AdminMetricsPage() {
                 </thead>
                 <tbody>
                   {data.timeseries.by_day.map((row) => (
-                    <tr key={row.date} className="border-b last:border-b-0">
-                      <td className="px-2 py-2 font-medium">{row.date}</td>
-                      <td className="px-2 py-2">{row.intakes}</td>
-                      <td className="px-2 py-2">{row.reviews}</td>
-                      <td className="px-2 py-2">{row.hard_stops}</td>
-                      <td className="px-2 py-2">{row.overrides}</td>
-                      <td className="px-2 py-2">{row.followup_shown}</td>
-                      <td className="px-2 py-2">{row.followup_answered}</td>
+                    <tr key={row.date} className="border-b border-slate-800 odd:bg-slate-900/20 even:bg-slate-900/5 last:border-b-0">
+                      <td className="px-2 py-2 font-medium text-slate-100">{row.date}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.intakes}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.reviews}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.hard_stops}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.overrides}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.followup_shown}</td>
+                      <td className="px-2 py-2 text-slate-200">{row.followup_answered}</td>
                     </tr>
                   ))}
                 </tbody>
