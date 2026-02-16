@@ -349,6 +349,7 @@ export async function GET() {
     )
 
     return successResponse({
+      currentUserId: user.id,
       users,
       clinicians,
       assignmentsByPatientId,

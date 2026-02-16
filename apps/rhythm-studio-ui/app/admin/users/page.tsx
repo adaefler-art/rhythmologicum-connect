@@ -29,6 +29,7 @@ type AdminUserSummary = {
 type UsersResponse = {
   success: boolean
   data?: {
+    currentUserId: string
     users: AdminUserSummary[]
     clinicians: AdminUserSummary[]
     assignmentsByPatientId: Record<string, string[]>
@@ -45,6 +46,7 @@ export default function AdminUsersPage() {
   useActiveNavLabel('Benutzerverwaltung')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
   const [users, setUsers] = useState<AdminUserSummary[]>([])
   const [clinicians, setClinicians] = useState<AdminUserSummary[]>([])
   const [assignmentsByPatientId, setAssignmentsByPatientId] = useState<Record<string, string[]>>({})
@@ -57,6 +59,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [pendingRoleByUserId, setPendingRoleByUserId] = useState<Record<string, UserRole>>({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [assigningPatientId, setAssigningPatientId] = useState<string | null>(null)
   const [removingAssignmentKey, setRemovingAssignmentKey] = useState<string | null>(null)
   const [isCreatingUser, setIsCreatingUser] = useState(false)
@@ -80,7 +83,9 @@ export default function AdminUsersPage() {
       const fetchedClinicians = data.data?.clinicians ?? []
       const fetchedAssignments = data.data?.assignmentsByPatientId ?? {}
       const fetchedAssignableClinicians = data.data?.assignableCliniciansByPatientId ?? {}
+      const fetchedCurrentUserId = data.data?.currentUserId ?? ''
 
+      setCurrentUserId(fetchedCurrentUserId)
       setUsers(fetched)
       setClinicians(fetchedClinicians)
       setAssignmentsByPatientId(fetchedAssignments)
@@ -240,6 +245,45 @@ export default function AdminUsersPage() {
       setError(caughtError instanceof Error ? caughtError.message : 'Benutzer konnte nicht angelegt werden.')
     } finally {
       setIsCreatingUser(false)
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    if (!userId || userId === currentUserId) {
+      return
+    }
+
+    const targetUser = users.find((entry) => entry.id === userId)
+    const targetLabel = targetUser?.email ?? 'diesen Benutzer'
+    const confirmed = window.confirm(`Benutzer ${targetLabel} wirklich löschen?`)
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setDeletingUserId(userId)
+      setError(null)
+
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      })
+
+      const data = (await response.json()) as {
+        success: boolean
+        error?: { message?: string }
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || 'Benutzer konnte nicht gelöscht werden.')
+      }
+
+      await loadUsers()
+    } catch (caughtError) {
+      console.error('Error deleting user:', caughtError)
+      setError(caughtError instanceof Error ? caughtError.message : 'Benutzer konnte nicht gelöscht werden.')
+    } finally {
+      setDeletingUserId(null)
     }
   }
 
@@ -477,16 +521,28 @@ export default function AdminUsersPage() {
           const pendingRole = pendingRoleByUserId[entry.id] ?? 'patient'
           const hasRoleChange = pendingRole !== (entry.role ?? 'patient')
           const isSaving = savingUserId === entry.id
+          const isDeleting = deletingUserId === entry.id
+          const isSelf = currentUserId === entry.id
 
           return (
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!hasRoleChange || isSaving}
-              onClick={() => updateRole(entry.id)}
-            >
-              {isSaving ? 'Speichert…' : 'Rolle speichern'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!hasRoleChange || isSaving || isDeleting}
+                onClick={() => updateRole(entry.id)}
+              >
+                {isSaving ? 'Speichert…' : 'Rolle speichern'}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={isSelf || isDeleting || isSaving}
+                onClick={() => deleteUser(entry.id)}
+              >
+                {isDeleting ? 'Löscht…' : 'Benutzer löschen'}
+              </Button>
+            </div>
           )
         },
       },
