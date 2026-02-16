@@ -93,6 +93,7 @@ const baseEnvSchema = z.object({
 
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
+  CI: z.string().optional(),
   NEXT_PHASE: z.string().optional(),
 
   // Hosting provider (optional)
@@ -219,6 +220,7 @@ function getRawClientEnv() {
     NEXT_PUBLIC_PILOT_ENABLED: process.env.NEXT_PUBLIC_PILOT_ENABLED,
     NEXT_PUBLIC_PILOT_ENV: process.env.NEXT_PUBLIC_PILOT_ENV,
     NODE_ENV: process.env.NODE_ENV,
+    CI: process.env.CI,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
     VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
@@ -293,6 +295,7 @@ export type Env = {
   SUPABASE_URL?: string
   SUPABASE_SERVICE_KEY?: string
   NODE_ENV?: 'development' | 'production' | 'test'
+  CI?: string
   NEXT_PHASE?: string
   VERCEL_ENV?: string
   VERCEL_URL?: string
@@ -359,6 +362,7 @@ function getDefaultEnv(): Env {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
     NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test' | undefined,
+    CI: process.env.CI,
     NEXT_PHASE: process.env.NEXT_PHASE,
     VERCEL_ENV: process.env.VERCEL_ENV,
     VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
@@ -439,6 +443,7 @@ function parseScopedEnv<T extends z.ZodTypeAny>(schema: T, options: ParseOptions
       SUPABASE_URL: parsed.SUPABASE_URL,
       SUPABASE_SERVICE_KEY: parsed.SUPABASE_SERVICE_KEY,
       NODE_ENV: parsed.NODE_ENV,
+      CI: parsed.CI,
       NEXT_PHASE: parsed.NEXT_PHASE,
       VERCEL_ENV: parsed.VERCEL_ENV,
       VERCEL_GIT_COMMIT_SHA: parsed.VERCEL_GIT_COMMIT_SHA,

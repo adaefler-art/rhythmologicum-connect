@@ -6,7 +6,7 @@ const baseURL =
   appTarget === 'patient'
     ? env.PATIENT_BASE_URL || 'http://127.0.0.1:3001'
     : env.STUDIO_BASE_URL || 'http://127.0.0.1:3000'
-const isCiRuntime = process.env.CI === 'true' || process.env.CI === '1'
+const isCiRuntime = env.CI === 'true' || env.CI === '1'
 const reuseExistingServer = !isCiRuntime
 const isTestRuntime = env.NODE_ENV === 'test'
 const webServerCommand =
