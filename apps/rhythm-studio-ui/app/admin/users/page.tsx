@@ -1,7 +1,19 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Badge, Button, Card, ErrorState, LoadingSpinner, PageHeader } from '@/lib/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorState,
+  Input,
+  Label,
+  LoadingSpinner,
+  PageHeader,
+  Select,
+  Table,
+  type TableColumn,
+} from '@/lib/ui'
 import { useActiveNavLabel } from '@/lib/contexts/NavigationContext'
 
 type UserRole = 'patient' | 'clinician' | 'admin' | 'nurse'
@@ -181,6 +193,84 @@ export default function AdminUsersPage() {
     }
   }
 
+  const columns = useMemo<TableColumn<AdminUserSummary>[]>(
+    () => [
+      {
+        header: 'E-Mail',
+        accessor: (entry) => <span className="text-foreground">{entry.email ?? '—'}</span>,
+      },
+      {
+        header: 'Rolle',
+        accessor: (entry) => {
+          const pendingRole = pendingRoleByUserId[entry.id] ?? 'patient'
+          const isSaving = savingUserId === entry.id
+
+          return (
+            <div className="flex items-center gap-2">
+              <Badge variant={getRoleBadge(entry.role)}>{entry.role ?? 'patient'}</Badge>
+              <Select
+                value={pendingRole}
+                onChange={(event) =>
+                  setPendingRoleByUserId((previous) => ({
+                    ...previous,
+                    [entry.id]: event.target.value as UserRole,
+                  }))
+                }
+                selectSize="sm"
+                disabled={isSaving}
+                className="min-w-35"
+              >
+                {ROLE_OPTIONS.map((roleOption) => (
+                  <option key={roleOption} value={roleOption}>
+                    {roleOption}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )
+        },
+      },
+      {
+        header: 'Erstellt',
+        accessor: (entry) => <span className="text-muted-foreground">{formatDateTime(entry.created_at)}</span>,
+      },
+      {
+        header: 'Letzter Login',
+        accessor: (entry) => (
+          <span className="text-muted-foreground">{formatDateTime(entry.last_sign_in_at)}</span>
+        ),
+      },
+      {
+        header: 'Status',
+        accessor: (entry) => (
+          <Badge variant={entry.is_disabled ? 'danger' : 'success'}>
+            {entry.is_disabled ? 'Deaktiviert' : 'Aktiv'}
+          </Badge>
+        ),
+      },
+      {
+        header: 'Aktion',
+        accessor: (entry) => {
+          const pendingRole = pendingRoleByUserId[entry.id] ?? 'patient'
+          const hasRoleChange = pendingRole !== (entry.role ?? 'patient')
+          const isSaving = savingUserId === entry.id
+
+          return (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!hasRoleChange || isSaving}
+              onClick={() => updateRole(entry.id)}
+            >
+              {isSaving ? 'Speichert…' : 'Rolle speichern'}
+            </Button>
+          )
+        },
+      },
+    ],
+    [pendingRoleByUserId, savingUserId],
+  )
+
   if (loading) {
     return (
       <div className="flex items-start justify-start py-12">
@@ -204,45 +294,64 @@ export default function AdminUsersPage() {
         <div className="p-4 sm:p-6 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-slate-600">{filteredUsers.length} Benutzer gefunden</p>
+              <p className="text-sm text-muted-foreground">{filteredUsers.length} Benutzer gefunden</p>
             </div>
-            <input
+            <Input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Suche nach E-Mail oder Rolle"
-              className="w-full sm:w-80 rounded-md border border-slate-300 px-3 py-2 text-sm"
+              inputSize="sm"
+              className="w-full sm:w-80"
             />
           </div>
 
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-            <p className="mb-3 text-sm font-medium text-slate-700">Test-Benutzer anlegen</p>
-            <div className="grid gap-3 sm:grid-cols-4">
-              <input
-                type="email"
-                value={newUserEmail}
-                onChange={(event) => setNewUserEmail(event.target.value)}
-                placeholder="E-Mail"
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-              />
-              <input
-                type="password"
-                value={newUserPassword}
-                onChange={(event) => setNewUserPassword(event.target.value)}
-                placeholder="Passwort (min. 8 Zeichen)"
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-              />
-              <select
-                value={newUserRole}
-                onChange={(event) => setNewUserRole(event.target.value as UserRole)}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-              >
-                {ROLE_OPTIONS.map((roleOption) => (
-                  <option key={roleOption} value={roleOption}>
-                    {roleOption}
-                  </option>
-                ))}
-              </select>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="mb-3 text-sm font-medium text-foreground">Test-Benutzer anlegen</p>
+            <div className="grid gap-4 md:grid-cols-4 md:items-end">
+              <div className="space-y-2">
+                <Label size="sm" htmlFor="new-user-email">
+                  E-Mail
+                </Label>
+                <Input
+                  id="new-user-email"
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(event) => setNewUserEmail(event.target.value)}
+                  placeholder="E-Mail"
+                  inputSize="sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label size="sm" htmlFor="new-user-password">
+                  Passwort
+                </Label>
+                <Input
+                  id="new-user-password"
+                  type="password"
+                  value={newUserPassword}
+                  onChange={(event) => setNewUserPassword(event.target.value)}
+                  placeholder="Passwort (min. 8 Zeichen)"
+                  inputSize="sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label size="sm" htmlFor="new-user-role">
+                  Rolle
+                </Label>
+                <Select
+                  id="new-user-role"
+                  value={newUserRole}
+                  onChange={(event) => setNewUserRole(event.target.value as UserRole)}
+                  selectSize="sm"
+                >
+                  {ROLE_OPTIONS.map((roleOption) => (
+                    <option key={roleOption} value={roleOption}>
+                      {roleOption}
+                    </option>
+                  ))}
+                </Select>
+              </div>
               <Button
                 variant="secondary"
                 disabled={
@@ -251,92 +360,20 @@ export default function AdminUsersPage() {
                   newUserPassword.trim().length < 8
                 }
                 onClick={createUser}
+                className="h-11 md:self-end"
               >
                 {isCreatingUser ? 'Legt an…' : 'Benutzer anlegen'}
               </Button>
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-slate-200">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    E-Mail
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Rolle
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Erstellt
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Letzter Login
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Aktion
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {filteredUsers.map((entry) => {
-                  const pendingRole = pendingRoleByUserId[entry.id] ?? 'patient'
-                  const hasRoleChange = pendingRole !== (entry.role ?? 'patient')
-                  const isSaving = savingUserId === entry.id
-
-                  return (
-                    <tr key={entry.id}>
-                      <td className="px-4 py-3 text-sm text-slate-800">{entry.email ?? '—'}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={getRoleBadge(entry.role)}>{entry.role ?? 'patient'}</Badge>
-                          <select
-                            value={pendingRole}
-                            onChange={(event) =>
-                              setPendingRoleByUserId((previous) => ({
-                                ...previous,
-                                [entry.id]: event.target.value as UserRole,
-                              }))
-                            }
-                            className="rounded-md border border-slate-300 px-2 py-1 text-sm"
-                            disabled={isSaving}
-                          >
-                            {ROLE_OPTIONS.map((roleOption) => (
-                              <option key={roleOption} value={roleOption}>
-                                {roleOption}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{formatDateTime(entry.created_at)}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {formatDateTime(entry.last_sign_in_at)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        <Badge variant={entry.is_disabled ? 'danger' : 'success'}>
-                          {entry.is_disabled ? 'Deaktiviert' : 'Aktiv'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={!hasRoleChange || isSaving}
-                          onClick={() => updateRole(entry.id)}
-                        >
-                          {isSaving ? 'Speichert…' : 'Rolle speichern'}
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={columns}
+            data={filteredUsers}
+            keyExtractor={(entry) => entry.id}
+            striped
+            emptyMessage="Keine Benutzer gefunden"
+          />
         </div>
       </Card>
     </div>
