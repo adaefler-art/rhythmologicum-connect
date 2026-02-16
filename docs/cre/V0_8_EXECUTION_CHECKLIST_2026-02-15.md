@@ -49,7 +49,7 @@ Statuswerte:
 
 ### Issues
 - [ ] CRE-NV2-01 UX-State-Katalog finalisieren
-- [ ] CRE-NV2-02 Patient-Microcopy für Kernübergänge vereinheitlichen
+- [~] CRE-NV2-02 Patient-Microcopy für Kernübergänge vereinheitlichen
 - [~] CRE-NV2-03 Stabile E2E-Selektoren im Dialog ergänzen
 - [~] CRE-NV2-04 Retry/Back/Reload deterministisch absichern
 - [~] CRE-NV2-05 Mobile Readiness Check (Viewport/Scroll/Keyboard)
@@ -61,11 +61,12 @@ Statuswerte:
 - [ ] Kein kritischer Copy-Bruch in Kernübergängen
 
 #### NV2 Evidenzstand (laufend)
+- [x] Follow-up-Microcopy im Kernübergang harmonisiert ("Rueckfrage" → "Frage" in Lead/Prefix/Hinweis) und Sanitizing/Context-Detection kompatibel gehalten
 - [x] E2E-Selektor-Härtung im Follow-up-Dialog ergänzt (`Senden`-Button in Spec explizit auf `.first()` fixiert), um Strict-Locator-Ambiguität zu vermeiden
 - [x] Follow-up-Loop-Spec im Mock-Mode 3x konsekutiv stabil ausgeführt (`tests/e2e/patient-followup-loop.spec.ts`, je Lauf: 2 passed / 1 skipped)
 - [x] Deterministischer Back/Forward+Reload-Pfad im Follow-up als E2E ergänzt und grün verifiziert (`tests/e2e/patient-followup-loop.spec.ts`, 3 passed / 1 skipped)
 - [x] Mobiler Readiness-Pfad für kleinen Viewport + Scroll-Recovery + Keyboard-Submit (`Enter`) ergänzt und grün verifiziert (`tests/e2e/patient-followup-loop.spec.ts`, 4 passed / 1 skipped)
-- [~] Kernpfad-Stabilität größtenteils belegt; offene NV2-Restpunkte liegen primär bei UX-State-Katalog/Microcopy/Manueller Vollabdeckung
+- [~] Kernpfad-Stabilität größtenteils belegt; offene NV2-Restpunkte liegen primär bei UX-State-Katalog und manueller Vollabdeckung
 
 ---
 
@@ -212,3 +213,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 13:14:00 (lokal): NV2-03 weitergeführt, indem Dialog-Selektoren im Follow-up-E2E gehärtet (`Senden` auf `.first()`) und der Mock-Mode Follow-up-Loop 3x konsekutiv stabil verifiziert wurde (`tests/e2e/patient-followup-loop.spec.ts`).
 - 2026-02-16 13:24:00 (lokal): NV2-04 gestartet, indem ein deterministischer Back/Forward+Reload-Recovery-Test für den Follow-up-Dialog ergänzt und im Mock-Mode erfolgreich ausgeführt wurde (`tests/e2e/patient-followup-loop.spec.ts`).
 - 2026-02-16 13:37:00 (lokal): NV2-05 gestartet, indem ein mobiler Readiness-Test (kleiner Viewport, Scroll-Recovery, Keyboard-Submit via `Enter`) im Follow-up-Spec ergänzt und im Mock-Mode erfolgreich ausgeführt wurde (`tests/e2e/patient-followup-loop.spec.ts`).
+- 2026-02-16 13:49:00 (lokal): NV2-02 vorgezogen, indem Kern-Microcopy im Follow-up-Dialog auf konsistente "Frage"-Formulierungen harmonisiert und über den Mock-Mode-Spec mit sichtbarer Copy-Assertion regressionsgesichert wurde (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `tests/e2e/patient-followup-loop.spec.ts`).

@@ -159,6 +159,7 @@ const sanitizeFollowupQuestionText = (value: string) => {
   return trimmed
     .replace(/^(danke[.!]?\s*)+/i, '')
     .replace(/^eine\s+kurze\s+rueckfrage\s+zur\s+anamnese:\s*/i, '')
+    .replace(/^eine\s+kurze\s+frage\s+zur\s+anamnese:\s*/i, '')
     .trim()
 }
 
@@ -192,7 +193,9 @@ const pickDistinctNextFollowupQuestion = (params: {
 }) => params.candidates.find((entry) => !isSameFollowupQuestion(entry, params.currentQuestion)) ?? null
 
 const questionAlreadyContainsContext = (value: string) =>
-  /^(zum\s+thema|eine\s+kurze\s+rueckfrage\s+zur\s+anamnese)/i.test(value.trim())
+  /^(zum\s+thema|eine\s+kurze\s+rueckfrage\s+zur\s+anamnese|eine\s+kurze\s+frage\s+zur\s+anamnese)/i.test(
+    value.trim(),
+  )
 
 const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   if (!latestIntake) return DEFAULT_OPENING_QUESTION
@@ -221,14 +224,14 @@ const buildFollowupPrompt = (params: {
   const lead = includeIntro
     ? activeObjectiveCount && activeObjectiveCount > 0
       ? `Ich habe noch ${activeObjectiveCount} offene Anamnese-Punkte. Ich starte mit der wichtigsten Frage.`
-      : 'Ich habe eine kurze Rueckfrage zu Ihrer Anamnese.'
+      : 'Ich habe eine kurze Frage zu Ihrer Anamnese.'
     : null
 
   const shortChiefComplaint = chiefComplaint && chiefComplaint.length <= 90 ? chiefComplaint : null
   const isStandardGapQuestion = question.source === 'gap_rule' && /^gap:/.test(question.id)
   const contextPrefix = shortChiefComplaint
     ? `Zum Thema "${shortChiefComplaint}": `
-    : 'Kurze Rueckfrage: '
+    : 'Kurze Frage: '
 
   const directQuestion = cleanedQuestion || question.question
 
@@ -245,7 +248,7 @@ const buildFollowupPrompt = (params: {
 
   const reasonLine = reason
     ? question.source === 'clinician_request'
-      ? 'Hinweis: Diese Rueckfrage wurde aerztlich angefordert.'
+      ? 'Hinweis: Diese Frage wurde aerztlich angefordert.'
       : technicalReason
         ? null
         : `Ziel: ${reason}.`

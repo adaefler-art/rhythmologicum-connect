@@ -283,6 +283,9 @@ test.describe('patient followup loop @patient-followup', () => {
 
     await page.goto('/patient/dialog')
     await bootstrapDialogIntake(page)
+    await expect(
+      page.locator('p:has-text("Ich habe eine kurze Frage zu Ihrer Anamnese."):visible').first(),
+    ).toBeVisible()
     await expect(page.getByText(seedFollowupQuestions[0].question).first()).toBeVisible()
 
     await page
