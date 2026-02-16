@@ -17,6 +17,7 @@
  * Remove or don't include slugs to restrict them to admin-only.
  */
 export const PATIENT_REACHABLE_FUNNELS: readonly string[] = [
+  'first-intake-sociological-anamnesis',
   'stress-assessment',
   'cardiovascular-age',
   // Add more slugs as they become patient-ready:
@@ -37,4 +38,4 @@ export function isFunnelPatientReachable(slug: string): boolean {
  * Default funnel slug for new patient assessments
  * Used by NextStep resolver when patient hasn't started any funnel
  */
-export const DEFAULT_PATIENT_FUNNEL = 'stress-assessment' as const
+export const DEFAULT_PATIENT_FUNNEL = 'first-intake-sociological-anamnesis' as const

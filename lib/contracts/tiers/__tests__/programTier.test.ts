@@ -95,7 +95,7 @@ describe('Tier Contract Helper Functions', () => {
   describe('getRecommendedFunnels', () => {
     it('returns only recommended funnels', () => {
       const funnels = getRecommendedFunnels(TIER_1_ESSENTIAL)
-      expect(funnels).toEqual([FUNNEL_SLUG.STRESS_ASSESSMENT])
+      expect(funnels).toEqual([FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS])
     })
 
     it('returns multiple recommended funnels for Tier 2', () => {
@@ -114,6 +114,7 @@ describe('Tier Contract Helper Functions', () => {
   describe('getAllowedFunnels', () => {
     it('returns all funnels (recommended and non-recommended)', () => {
       const funnels = getAllowedFunnels(TIER_1_ESSENTIAL)
+      expect(funnels).toContain(FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS)
       expect(funnels).toContain(FUNNEL_SLUG.STRESS_ASSESSMENT)
     })
 
@@ -125,7 +126,12 @@ describe('Tier Contract Helper Functions', () => {
 
   describe('isFunnelAllowedInTier', () => {
     it('returns true for allowed funnel', () => {
-      expect(isFunnelAllowedInTier(TIER_1_ESSENTIAL, FUNNEL_SLUG.STRESS_ASSESSMENT)).toBe(true)
+      expect(
+        isFunnelAllowedInTier(
+          TIER_1_ESSENTIAL,
+          FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS,
+        ),
+      ).toBe(true)
     })
 
     it('returns false for non-allowed funnel', () => {
@@ -169,8 +175,10 @@ describe('Tier Contract Configurations', () => {
       expect(activePillars[0].key).toBe(PILLAR_KEY.MENTAL_HEALTH)
     })
 
-    it('includes stress assessment funnel', () => {
-      expect(TIER_1_ESSENTIAL.funnels[0].slug).toBe(FUNNEL_SLUG.STRESS_ASSESSMENT)
+    it('includes sociological intake as first recommended funnel', () => {
+      expect(TIER_1_ESSENTIAL.funnels[0].slug).toBe(
+        FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS,
+      )
       expect(TIER_1_ESSENTIAL.funnels[0].recommended).toBe(true)
     })
 

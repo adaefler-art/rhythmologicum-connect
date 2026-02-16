@@ -98,7 +98,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
     })
 
     it('should not trigger if workupState is not needs_more_data', () => {
@@ -113,7 +113,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
     })
 
     it('should prioritize workup over in-progress funnel', () => {
@@ -193,7 +193,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
     })
 
     it('should not trigger if inProgressFunnelSlug is null', () => {
@@ -209,7 +209,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should skip to rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
     })
   })
 
@@ -225,11 +225,11 @@ describe('E6.5.5: Next Step Resolver v1', () => {
       const result = resolveNextStep(input)
 
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
-      expect(result.nextStep.label).toBe('Stress-Assessment starten')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
+      expect(result.nextStep.label).toBe('Erstaufnahme starten')
     })
 
-    it('should default to stress-assessment funnel', () => {
+    it('should default to first-intake-sociological-anamnesis funnel', () => {
       const input = createDefaultResolverInput({
         onboardingStatus: 'completed',
         hasStartedAnyFunnel: false,
@@ -237,7 +237,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       const result = resolveNextStep(input)
 
-      expect(result.nextStep.target).toContain('stress-assessment')
+      expect(result.nextStep.target).toContain('first-intake-sociological-anamnesis')
     })
 
     it('should not trigger if patient has started any funnel', () => {
@@ -474,7 +474,7 @@ describe('E6.5.5: Next Step Resolver v1', () => {
 
       // Should trigger rule 4 (start_funnel)
       expect(result.nextStep.type).toBe('funnel')
-      expect(result.nextStep.target).toBe('/patient/assess/stress-assessment/flow')
+      expect(result.nextStep.target).toBe('/patient/assess/first-intake-sociological-anamnesis/flow')
     })
 
     it('should handle multiple competing priorities correctly', () => {

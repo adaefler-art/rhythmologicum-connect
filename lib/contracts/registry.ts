@@ -74,6 +74,7 @@ export type PillarKey = typeof PILLAR_KEY[keyof typeof PILLAR_KEY]
  * Legacy aliases are maintained for backward compatibility
  */
 export const FUNNEL_SLUG = {
+  FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS: 'first-intake-sociological-anamnesis',
   STRESS_ASSESSMENT: 'stress-assessment',
   CARDIOVASCULAR_AGE: 'cardiovascular-age',
   SLEEP_QUALITY: 'sleep-quality',

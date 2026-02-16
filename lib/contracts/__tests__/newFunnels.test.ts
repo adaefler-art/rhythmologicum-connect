@@ -13,6 +13,12 @@ import { FUNNEL_SLUG } from '@/lib/contracts/registry'
 
 describe('V05-I02.3 New Funnels', () => {
   describe('Funnel Slug Registry', () => {
+    it('should have first-intake-sociological-anamnesis slug defined', () => {
+      expect(FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS).toBe(
+        'first-intake-sociological-anamnesis',
+      )
+    })
+
     it('should have cardiovascular-age slug defined', () => {
       expect(FUNNEL_SLUG.CARDIOVASCULAR_AGE).toBe('cardiovascular-age')
     })

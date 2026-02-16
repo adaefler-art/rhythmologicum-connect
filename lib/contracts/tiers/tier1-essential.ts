@@ -5,7 +5,8 @@
  * Aligned with v0.5 stress/resilience flows.
  * 
  * **Patient Journey**:
- * - Initial stress assessment (stress-assessment funnel v1.0.0)
+ * - Initial sociological intake assessment
+ * - Follow-up stress assessment (stress-assessment funnel v1.0.0)
  * - Baseline data collection
  * - Limited touchpoints (self-assessment focused)
  * 
@@ -72,21 +73,27 @@ export const TIER_1_ESSENTIAL: ProgramTierContract = {
   
   funnels: [
     {
-      slug: FUNNEL_SLUG.STRESS_ASSESSMENT,
-      version: '1.0.0', // v0.5 stress funnel
+      slug: FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS,
+      version: '1.0.0',
       recommended: true,
       priority: 1,
+    },
+    {
+      slug: FUNNEL_SLUG.STRESS_ASSESSMENT,
+      version: '1.0.0', // v0.5 stress funnel
+      recommended: false,
+      priority: 2,
     },
   ],
   
   schedule: [
     {
       type: 'self_assessment' as const,
-      label: 'Initial Stress Assessment',
+      label: 'Erstaufnahme Soziologische Anamnese',
       dayOffset: 0,
       metadata: {
-        funnelSlug: FUNNEL_SLUG.STRESS_ASSESSMENT,
-        description: 'Baseline stress and resilience assessment',
+        funnelSlug: FUNNEL_SLUG.FIRST_INTAKE_SOCIOLOGICAL_ANAMNESIS,
+        description: 'Erstaufnahme zur sozialen Anamnese',
       },
     },
   ],

@@ -59,7 +59,7 @@ export type NextStepResolution = {
  * 1. If onboarding incomplete → complete_onboarding
  * 2. Else if workup needs_more_data → answer_followups
  * 3. Else if funnel in progress → resume_funnel
- * 4. Else if no funnel started → start_funnel (stress-assessment by default)
+ * 4. Else if no funnel started → start_funnel (first-intake-sociological-anamnesis by default)
  * 5. Else if red flag → escalation_offer
  * 6. Else → view_content (fallback)
  *
@@ -116,7 +116,7 @@ export function resolveNextStep(input: NextStepResolverInput): NextStepResolutio
       nextStep: {
         type: 'funnel',
         target: `/patient/assess/${DEFAULT_PATIENT_FUNNEL}/flow`,
-        label: 'Stress-Assessment starten',
+        label: 'Erstaufnahme starten',
       },
       rulesVersion: NEXT_STEP_RULES_VERSION,
     }
