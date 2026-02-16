@@ -131,6 +131,30 @@ Statuswerte:
 
 ---
 
+## Wiedervorlage — Propädeutische Anamnese-Struktur (später)
+
+Hinweis:
+- Dieser Block ist bewusst als spätere Vertiefung markiert und wird nach Stabilisierung der aktuellen v0.8-Gates fortgeführt.
+
+### Arbeitsstruktur (medizinisch + PAT-fähig)
+- [ ] Leitsymptom/Anliegen als Pflicht-Einstieg normieren
+- [ ] Aktuelle Beschwerden via OPQRST/10W als strukturierter Kernblock festlegen
+- [ ] Red-Flag/Sicherheitsblock mit klaren Eskalationskriterien binden
+- [ ] Vorerkrankungen + Medikation + Allergien als Pflichtfelder harmonisieren
+- [ ] Familien- und Sozialanamnese als getrennte, auswertbare Blöcke konsolidieren
+- [ ] Systemanamnese fokussiert pro Leitsymptom als optionalen Vertiefungsblock abbilden
+- [ ] PAT-Follow-up strikt auf Lückensteuerung (keine Re-Ask-Duplikate) an diese Struktur koppeln
+
+### Delivery-Gates
+- [ ] Funnel/Prompt/Output-Schema auf identische Blockreihenfolge gebracht
+- [ ] Mapping in `STRUCTURED_INTAKE` für alle Pflichtblöcke verifiziert
+- [ ] Klinische Lesbarkeit des Kurzbefunds im Review bestätigt
+
+Artefakt:
+- Draft-Mapping dokumentiert in `docs/cre/PROPAEDEUTISCHE_ANAMNESE_MAPPING_V08_DRAFT.md`.
+
+---
+
 ## Tracking-Rhythmus
 
 - [ ] Daily: 15min Defect-Triage durchgeführt
@@ -174,3 +198,7 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 10:12:03 (lokal): Scope-Anpassung PAT Dialog umgesetzt, indem ein Behavior Contract v1 (krankheitsbild-agnostische, arztähnliche Anamnese) dokumentiert und ein adversarial Turn-Quality-Guard für Boundary-Test/Nonsense im `/api/amy/chat` integriert wurde.
 - 2026-02-16 10:48:37 (lokal): Scope erweitert, indem ein adversarial Golden-Set Runner (`npm run cre:adversarial`) mit 10 Dialogfällen ergänzt, die Guard-Klassifikation gegen explizite "nur Test/keine echten Symptome"-Turns gehärtet und in der Studio-Benutzerverwaltung die Anlage neuer Testnutzer (E-Mail, Passwort, Rolle) serverseitig/admin-only freigeschaltet wurde.
 - 2026-02-16 11:32:00 (lokal): Erstaufnahme-Funnel erweitert, indem ein neues Assessment `first-intake-sociological-anamnesis` (V0.5 Catalog+Version mit soziologischen Anamnese-Fragen) per Migration angelegt, in Tier-1/Allowlist freigeschaltet und als Standard-Startfunnel im Patient-Flow (Resolver + Tests) verdrahtet wurde.
+- 2026-02-16 11:57:00 (lokal): Erstaufnahme im UI und PAT/Anamnese weiter integriert, indem auf `/patient/start` eine sichtbare Erstaufnahme-Box mit Start-CTA ergänzt sowie Erstaufnahme-Antworten als strukturierter Kontext in `/api/amy/chat` und `/api/clinical-intake/generate` eingebunden wurden.
+- 2026-02-16 12:09:00 (lokal): Propädeutische Anamnese-Struktur als Wiedervorlage in v0.8 aufgenommen (Leitsymptom, OPQRST/10W, Red-Flags, PMH/Medikation/Allergien, Familien-/Sozialanamnese, systematische Follow-up-Lückensteuerung).
+- 2026-02-16 12:26:00 (lokal): Stabilitäts-Gate Schritt 1 umgesetzt, indem ein fokussierter E2E-Smoke-Test für die Erstaufnahme-CTA auf `/patient/start` ergänzt und in Mock-Mode erfolgreich ausgeführt wurde (`tests/e2e/patient-intake-start-cta.spec.ts`).
+- 2026-02-16 12:31:00 (lokal): Data-/Struktur-Gates Schritt 2+3 umgesetzt, indem Unit-Tests für die Erstaufnahme-Kontextableitung (`psychosocial_factors`) ergänzt und ein Block→Feld→PAT-Regel-Mapping als Draft dokumentiert wurden (`lib/clinicalIntake/__tests__/firstIntakeSociologicalContext.test.ts`, `docs/cre/PROPAEDEUTISCHE_ANAMNESE_MAPPING_V08_DRAFT.md`).
