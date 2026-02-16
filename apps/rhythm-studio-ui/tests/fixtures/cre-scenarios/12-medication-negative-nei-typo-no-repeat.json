@@ -1,0 +1,33 @@
+{
+  "id": "S12",
+  "title": "Medication negative typo variant (nei) should not produce duplicate follow-up questions",
+  "conversation": [
+    { "id": "m1", "content": "Ich merke Unruhe und gelegentliche Palpitationen." },
+    { "id": "m2", "content": "Aktuelle Medikation? nei" }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Palpitationen",
+    "history_of_present_illness": {
+      "onset": "unklar",
+      "duration": "kurz",
+      "course": "intermittierend"
+    },
+    "medication": [],
+    "psychosocial_factors": []
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

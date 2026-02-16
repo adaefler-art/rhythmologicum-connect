@@ -58,6 +58,8 @@ type ScenarioFixture = {
       min_next_questions?: number
       required_sources?: Array<'reasoning' | 'gap_rule' | 'clinician_request'>
       must_include_substrings?: string[]
+      forbid_duplicate_questions?: boolean
+      forbid_duplicate_objective_ids?: boolean
     }
     review?: {
       transitions?: string[]
@@ -134,11 +136,68 @@ const FIXTURE_DIR = path.join(
 )
 const REPORT_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'coherence', 'latest.md')
 const REPORT_JSON_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'coherence', 'latest.json')
+const GOLDEN_REPORT_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'golden-set', 'latest.md')
+const GOLDEN_REPORT_JSON_PATH = path.join(REPO_ROOT, 'docs', 'cre', 'golden-set', 'latest.json')
 const MODE = process.env.CRE_COHERENCE_MODE ?? 'mock'
 const DEBUG = process.env.CRE_COHERENCE_DEBUG === '1'
-const SHOULD_WRITE_MARKDOWN_REPORT = process.env.CI === 'true' || process.env.CRE_WRITE_LATEST_MD === '1'
+const SHOULD_WRITE_MARKDOWN_REPORT = process.env.CRE_WRITE_LATEST_MD !== '0'
 const NOW_ISO = '2026-02-14T12:00:00.000Z'
 const REVIEWER_ID = 'coherence-reviewer'
+
+function normalizeQuestion(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildKpiSummary(results: ScenarioResult[]) {
+  const total = results.length
+  const passed = results.filter((entry) => entry.passed).length
+  const failed = total - passed
+
+  let scenariosWithRepeatQuestion = 0
+  let objectiveReaskViolationCount = 0
+
+  for (const result of results) {
+    const normalizedQuestions = new Set<string>()
+    const objectiveIds = new Set<string>()
+    let hasRepeat = false
+
+    for (const question of result.actual.followup.next_questions) {
+      const normalized = normalizeQuestion(question.question)
+      if (normalizedQuestions.has(normalized)) {
+        hasRepeat = true
+      } else {
+        normalizedQuestions.add(normalized)
+      }
+
+      if (question.objective_id) {
+        if (objectiveIds.has(question.objective_id)) {
+          objectiveReaskViolationCount += 1
+        } else {
+          objectiveIds.add(question.objective_id)
+        }
+      }
+    }
+
+    if (hasRepeat) {
+      scenariosWithRepeatQuestion += 1
+    }
+  }
+
+  return {
+    total,
+    passed,
+    failed,
+    golden_set_pass_rate: total > 0 ? Number((passed / total).toFixed(3)) : 0,
+    followup_repeat_question_rate:
+      total > 0 ? Number((scenariosWithRepeatQuestion / total).toFixed(3)) : 0,
+    objective_reask_violation_count: objectiveReaskViolationCount,
+  }
+}
 
 function readFixtures(): ScenarioFixture[] {
   const entries = fs
@@ -392,6 +451,30 @@ function validateScenario(
         mismatches.push(`followup question missing substring: ${substring}`)
       }
     }
+
+    if (expectFollowup.forbid_duplicate_questions) {
+      const seenQuestionTexts = new Set<string>()
+      for (const question of actual.followup.next_questions) {
+        const normalizedQuestion = normalizeQuestion(question.question)
+        if (seenQuestionTexts.has(normalizedQuestion)) {
+          mismatches.push(`followup duplicate question detected: ${question.question}`)
+          break
+        }
+        seenQuestionTexts.add(normalizedQuestion)
+      }
+    }
+
+    if (expectFollowup.forbid_duplicate_objective_ids) {
+      const seenObjectiveIds = new Set<string>()
+      for (const question of actual.followup.next_questions) {
+        if (!question.objective_id) continue
+        if (seenObjectiveIds.has(question.objective_id)) {
+          mismatches.push(`followup duplicate objective_id detected: ${question.objective_id}`)
+          break
+        }
+        seenObjectiveIds.add(question.objective_id)
+      }
+    }
   }
 
   const expectReview = expected.review
@@ -580,17 +663,22 @@ async function runScenario(fixture: ScenarioFixture): Promise<ScenarioResult> {
 
 function renderMarkdown(results: ScenarioResult[]): string {
   const generatedAt = new Date().toISOString()
-  const passed = results.filter((entry) => entry.passed).length
-  const failed = results.length - passed
+  const kpis = buildKpiSummary(results)
 
   const lines: string[] = []
-  lines.push('# Clinical Coherence Report')
+  lines.push('# CRE Golden Set Report')
   lines.push('')
   lines.push(`- Generated: ${generatedAt}`)
   lines.push(`- Mode: ${MODE} (seed reasoning config, deterministic timestamps)`)
-  lines.push(`- Scenarios: ${results.length}`)
-  lines.push(`- Passed: ${passed}`)
-  lines.push(`- Failed: ${failed}`)
+  lines.push(`- Scenarios: ${kpis.total}`)
+  lines.push(`- Passed: ${kpis.passed}`)
+  lines.push(`- Failed: ${kpis.failed}`)
+  lines.push('')
+  lines.push('## KPI Summary')
+  lines.push('')
+  lines.push(`- golden_set_pass_rate: ${kpis.golden_set_pass_rate}`)
+  lines.push(`- followup_repeat_question_rate: ${kpis.followup_repeat_question_rate}`)
+  lines.push(`- objective_reask_violation_count: ${kpis.objective_reask_violation_count}`)
   lines.push('')
   lines.push('## Scenario Matrix')
   lines.push('')
@@ -647,8 +735,8 @@ function renderMarkdown(results: ScenarioResult[]): string {
 
 async function main() {
   const fixtures = readFixtures()
-  if (fixtures.length < 8 || fixtures.length > 12) {
-    throw new Error(`Fixture count must be 8-12, found ${fixtures.length}`)
+  if (fixtures.length < 8 || fixtures.length > 60) {
+    throw new Error(`Fixture count must be 8-60, found ${fixtures.length}`)
   }
 
   const results: ScenarioResult[] = []
@@ -659,24 +747,23 @@ async function main() {
   }
 
   const markdown = renderMarkdown(results)
-  const reportDir = path.dirname(REPORT_PATH)
-  fs.mkdirSync(reportDir, { recursive: true })
+  fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true })
+  fs.mkdirSync(path.dirname(GOLDEN_REPORT_PATH), { recursive: true })
+  const kpis = buildKpiSummary(results)
 
   const jsonReport = {
     generatedAt: new Date().toISOString(),
     mode: MODE,
-    summary: {
-      total: results.length,
-      passed: results.filter((entry) => entry.passed).length,
-      failed: results.filter((entry) => !entry.passed).length,
-    },
+    summary: kpis,
     results,
   }
 
   fs.writeFileSync(REPORT_JSON_PATH, JSON.stringify(jsonReport, null, 2), 'utf8')
+  fs.writeFileSync(GOLDEN_REPORT_JSON_PATH, JSON.stringify(jsonReport, null, 2), 'utf8')
 
   if (SHOULD_WRITE_MARKDOWN_REPORT) {
     fs.writeFileSync(REPORT_PATH, markdown, 'utf8')
+    fs.writeFileSync(GOLDEN_REPORT_PATH, markdown, 'utf8')
   }
 
   const failed = results.filter((entry) => !entry.passed)
@@ -684,12 +771,14 @@ async function main() {
   console.log(`CRE coherence battery complete: ${results.length - failed.length}/${results.length} passed`)
   if (SHOULD_WRITE_MARKDOWN_REPORT) {
     console.log(`Report: ${path.relative(REPO_ROOT, REPORT_PATH)}`)
+    console.log(`Golden report: ${path.relative(REPO_ROOT, GOLDEN_REPORT_PATH)}`)
   } else {
     console.log(
       `Markdown report not written (set CRE_WRITE_LATEST_MD=1 for local writes).`,
     )
   }
   console.log(`Report JSON: ${path.relative(REPO_ROOT, REPORT_JSON_PATH)}`)
+  console.log(`Golden JSON: ${path.relative(REPO_ROOT, GOLDEN_REPORT_JSON_PATH)}`)
 
   if (failed.length > 0) {
     console.error('Coherence mismatches found:')

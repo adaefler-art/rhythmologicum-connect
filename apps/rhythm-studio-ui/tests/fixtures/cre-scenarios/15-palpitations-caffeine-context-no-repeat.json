@@ -1,0 +1,29 @@
+{
+  "id": "S15",
+  "title": "Palpitations with caffeine context should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe gelegentlich Herzklopfen." },
+    { "id": "m2", "content": "Es tritt vor allem nach viel Kaffee auf." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Gelegentliches Herzklopfen",
+    "history_of_present_illness": {
+      "onset": "seit 2 Wochen",
+      "duration": "einige Minuten",
+      "course": "intermittierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["hoher Koffeinkonsum"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

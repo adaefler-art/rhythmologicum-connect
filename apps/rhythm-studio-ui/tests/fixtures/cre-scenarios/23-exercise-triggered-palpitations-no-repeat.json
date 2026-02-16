@@ -1,0 +1,29 @@
+{
+  "id": "S23",
+  "title": "Exercise-triggered palpitations should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Beim Treppensteigen merke ich manchmal Herzklopfen." },
+    { "id": "m2", "content": "In Ruhe wird es meistens besser." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Belastungsabhängiges Herzklopfen",
+    "history_of_present_illness": {
+      "onset": "seit 2 Monaten",
+      "duration": "kurz bei Belastung",
+      "course": "situativ"
+    },
+    "medication": [],
+    "psychosocial_factors": ["körperliche Dekonditionierung"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

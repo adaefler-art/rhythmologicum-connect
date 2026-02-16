@@ -1,0 +1,29 @@
+{
+  "id": "S20",
+  "title": "Evening restlessness should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich bin abends sehr unruhig." },
+    { "id": "m2", "content": "Tagsüber ist es meist besser." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Abendliche Unruhe",
+    "history_of_present_illness": {
+      "onset": "seit 1 Monat",
+      "duration": "v. a. abends",
+      "course": "wiederkehrend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Schlafprobleme"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

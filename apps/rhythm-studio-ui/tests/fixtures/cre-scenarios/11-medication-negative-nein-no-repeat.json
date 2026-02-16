@@ -1,0 +1,33 @@
+{
+  "id": "S11",
+  "title": "Medication negative short answer (nein) should not produce duplicate follow-up questions",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe Herzstolpern und Stress." },
+    { "id": "m2", "content": "Nehmen Sie aktuell Medikamente? nein." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Herzstolpern",
+    "history_of_present_illness": {
+      "onset": "seit einigen Wochen",
+      "duration": "episodisch",
+      "course": "fluktuierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["beruflicher Stress"]
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "S14",
+  "title": "Stress + Schlafmangel with clarification should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich fühle mich seit Tagen sehr gestresst." },
+    { "id": "m2", "content": "Ich schlafe aktuell schlecht und wache oft auf." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Stress und schlechter Schlaf",
+    "history_of_present_illness": {
+      "onset": "seit 1 Woche",
+      "duration": "nahezu täglich",
+      "course": "konstant"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Arbeitsbelastung"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -25,15 +25,23 @@ Statuswerte:
 ## CRE-NV1 — Test Härtung & Golden Set (Woche 1-2)
 
 ### Issues
-- [ ] CRE-NV1-01 Golden-Set v1 definieren (30-50 Fälle)
-- [ ] CRE-NV1-02 Golden-Set E2E Runner (batch + report)
-- [ ] CRE-NV1-03 Defect-Triage-Template + Root-Cause-Tags
-- [ ] CRE-NV1-04 Follow-up Repeat-Fragen Regression-Tests
+- [~] CRE-NV1-01 Golden-Set v1 definieren (30-50 Fälle)
+- [~] CRE-NV1-02 Golden-Set E2E Runner (batch + report)
+- [x] CRE-NV1-03 Defect-Triage-Template + Root-Cause-Tags
+- [x] CRE-NV1-04 Follow-up Repeat-Fragen Regression-Tests
 
 ### Exit-Check
 - [ ] `golden_set_pass_rate >= 0.95`
 - [ ] `critical_defects_open = 0`
 - [ ] Kritische Defects mit Fix + Regression-Test geschlossen
+
+#### NV1 Evidenzstand (laufend)
+- [x] Runner über `npm run cre:golden-set` verfügbar und lokal ausführbar
+- [x] Report-Artefakte werden nach `docs/cre/golden-set/latest.md` und `docs/cre/golden-set/latest.json` geschrieben
+- [x] KPI-Summary im JSON/Markdown enthalten (`golden_set_pass_rate`, `followup_repeat_question_rate`, `objective_reask_violation_count`)
+- [x] Defect-Triage-Template mit Root-Cause-Tags dokumentiert (`docs/cre/DEFECT_TRIAGE_TEMPLATE_NV1.md`)
+- [x] Repeat-Regression-Matrix + Variantenfälle (`nein|nei|nope`) dokumentiert (`docs/cre/golden-set/REPEAT_QUESTION_REGRESSION_MATRIX_NV1.md`)
+- [~] Golden-Set-Umfang aktuell 23 Fälle; Ausbau auf 30-50 Fälle ausstehend
 
 ---
 
@@ -88,10 +96,23 @@ Statuswerte:
 - [ ] Wiederholfragen um >= 50% ggü. Wave-5-Baseline reduziert
 - [ ] `clarification_loop_rate` signifikant ggü. Wave-5-Baseline reduziert
 - [ ] `resolved_followup_rate` im Zielkorridor stabil
-- [ ] `objective_reask_violation_count = 0` im Golden-Set
-- [ ] Slot-basierte Follow-up-Planung über `objective_id` aktiv
+- [~] `objective_reask_violation_count = 0` im Golden-Set
+- [x] Slot-basierte Follow-up-Planung über `objective_id` aktiv
 - [ ] `patient_dialog_dropoff_rate` ggü. Wave-6-Baseline verbessert
 - [ ] Positive qualitative UX-Rückmeldung klinisch dokumentiert
+
+#### NV4 Exit-Check — Evidenzstand (fokussiert)
+- [x] Technischer Guard gegen unmittelbare Re-Ask-Echos in API + Dialog aktiv
+- [x] Typo-/Varianz-tolerante Negativ-Erkennung (`nein|nee|nope|nei` etc.) aktiv
+- [x] Follow-up bleibt im orchestrierten Pfad; kein unkontrollierter Chat-Fallback im Antwortturn
+- [~] Golden-Set-Nachweis für `objective_reask_violation_count = 0` lokal regressionsstabil, aber Wave-5-Batch-Report noch ausstehend
+- [ ] KPI-Nachweis gegen Baseline (`repeat_question_rate`, `clarification_loop_rate`, `resolved_followup_rate`) noch nicht final dokumentiert
+
+#### NV4 Exit-Check — Nächste Gates
+- [ ] Baseline-Referenz für Wave-5/6 fixieren und im Monitoring-Dokument verlinken
+- [ ] Golden-Set Batch-Lauf (30-50 Fälle) mit Report archivieren
+- [ ] KPI-Vergleichsreport (vorher/nachher) für Repeat/Clarification/Resolved erstellen
+- [ ] Klinisches Kurzreview (qualitatives Feedback) als Evidence-Notiz anhängen
 
 ---
 
@@ -145,3 +166,8 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-15 13:53:26 (lokal): v0.8-Roadmap strukturell angepasst, indem NV4 um ein Objective/Slot-Steuerungsmodell mit klaren Issues, Exit-Kriterien und KPIs für re-ask-freie Anamneseplanung erweitert wurde.
 - 2026-02-15 14:04:02 (lokal): Signifikanter NV4-Block umgesetzt, indem Follow-up auf objective/slot-basierte Steuerung (active_objective_ids + safety-aware objective status) umgestellt und im Dialog als sichtbarer Anamnese-Fortschritt eingeblendet wurde.
 - 2026-02-15 14:22:10 (lokal): NV4 finalisiert, indem PAT-Leitfaden v2 aktiviert, Clinician-Requests auf Objective-Slots gemappt/gefiltert (keine Re-Ask bei gelösten Zielen), zielgerichtete Regressionstests ergänzt und Clinician-Review per Schnell-Einfügen offener Anamneseziele beschleunigt wurde.
+- 2026-02-15 16:06:12 (lokal): NV4 Exit-Check fokussiert, indem Re-Ask-Kernpfad server- und clientseitig verhärtet, Negative-Intent-Erkennung für Tippfehler/Varianten erweitert und der Evidenzstand für verbleibende KPI-/Golden-Set-Gates explizit dokumentiert wurde.
+- 2026-02-15 16:18:44 (lokal): NV1 gestartet, indem der Coherence-Runner als Golden-Set-Entrypoint verdrahtet (`npm run cre:golden-set`), um KPI-Summary erweitert und dedizierte Reports unter `docs/cre/golden-set/latest.(md|json)` erzeugt wurden (lokal: 10/10 passed).
+- 2026-02-15 16:27:09 (lokal): NV1-03 abgeschlossen, indem ein standardisiertes Defect-Triage-Template mit Severity-Regeln, Root-Cause-Tag-Taxonomie und Evidence-/Regression-Checkliste unter `docs/cre/DEFECT_TRIAGE_TEMPLATE_NV1.md` ergänzt wurde.
+- 2026-02-15 16:36:18 (lokal): NV1-04 umgesetzt, indem Repeat-Fragen-Regressionen als Matrix dokumentiert, Golden-Set um Variantenfälle (`nein|nei|nope`) erweitert und Duplicate-Assertions (`forbid_duplicate_questions`, `forbid_duplicate_objective_ids`) im Runner verdrahtet wurden.
+- 2026-02-15 16:44:57 (lokal): NV1-01 weiter ausgebaut, indem Golden-Set um 10 zusätzliche Regression-Fälle (S14-S23) erweitert und der Batch-Lauf mit 23/23 erfolgreichen Szenarien verifiziert wurde.

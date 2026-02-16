@@ -1,0 +1,29 @@
+{
+  "id": "S18",
+  "title": "Fatigue with shift work context should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich fühle mich sehr erschöpft." },
+    { "id": "m2", "content": "Ich arbeite aktuell in wechselnden Schichten." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Erschöpfung",
+    "history_of_present_illness": {
+      "onset": "seit 3 Wochen",
+      "duration": "ganztägig",
+      "course": "konstant"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Schichtarbeit"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

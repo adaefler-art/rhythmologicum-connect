@@ -1,0 +1,29 @@
+{
+  "id": "S17",
+  "title": "Mild anxiety with breathing discomfort should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich bin seit Tagen sehr angespannt." },
+    { "id": "m2", "content": "Manchmal fühlt sich die Atmung flach an." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Anspannung",
+    "history_of_present_illness": {
+      "onset": "seit 5 Tagen",
+      "duration": "mehrere Stunden täglich",
+      "course": "fluktuierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Prüfungsstress"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

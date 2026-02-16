@@ -1,0 +1,33 @@
+{
+  "id": "S13",
+  "title": "Medication negative variant (nope) should not produce duplicate follow-up questions",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe seit Tagen inneres Zittern." },
+    { "id": "m2", "content": "Nehmen Sie Medikamente? nope" }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Inneres Zittern",
+    "history_of_present_illness": {
+      "onset": "seit 3 Tagen",
+      "duration": "mehrere Episoden pro Tag",
+      "course": "persistierend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Schlafmangel"]
+  },
+  "expected": {
+    "safety": {
+      "forbid_level_a": true,
+      "forbid_hard_stop": true
+    },
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

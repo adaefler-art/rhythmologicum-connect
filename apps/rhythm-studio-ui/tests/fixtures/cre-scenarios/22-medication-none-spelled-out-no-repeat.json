@@ -1,0 +1,29 @@
+{
+  "id": "S22",
+  "title": "Medication none stated explicitly should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe aktuell häufiger innere Anspannung." },
+    { "id": "m2", "content": "Ich nehme keine Medikamente." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Innere Anspannung",
+    "history_of_present_illness": {
+      "onset": "seit 6 Tagen",
+      "duration": "mehrfach täglich",
+      "course": "intermittierend"
+    },
+    "medication": [],
+    "psychosocial_factors": []
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

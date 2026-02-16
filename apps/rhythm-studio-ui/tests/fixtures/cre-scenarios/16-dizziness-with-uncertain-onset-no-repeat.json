@@ -1,0 +1,29 @@
+{
+  "id": "S16",
+  "title": "Dizziness with uncertain onset should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Mir ist immer wieder schwindelig." },
+    { "id": "m2", "content": "Seit wann genau kann ich nicht sagen." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Wiederkehrender Schwindel",
+    "history_of_present_illness": {
+      "onset": "unklar",
+      "duration": "kurze Episoden",
+      "course": "intermittierend"
+    },
+    "medication": [],
+    "psychosocial_factors": []
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 1,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "S19",
+  "title": "Stress-related headache pattern should keep follow-up deduplicated",
+  "conversation": [
+    { "id": "m1", "content": "Ich habe häufiger Spannungskopfschmerzen." },
+    { "id": "m2", "content": "Sie treten eher an Arbeitstagen auf." }
+  ],
+  "intake": {
+    "status": "draft",
+    "chief_complaint": "Spannungskopfschmerzen",
+    "history_of_present_illness": {
+      "onset": "seit 10 Tagen",
+      "duration": "1-2 Stunden",
+      "course": "wiederkehrend"
+    },
+    "medication": [],
+    "psychosocial_factors": ["Arbeitsstress"]
+  },
+  "expected": {
+    "followup": {
+      "min_next_questions": 0,
+      "forbid_duplicate_questions": true,
+      "forbid_duplicate_objective_ids": true
+    },
+    "export": {
+      "pdf_magic": true
+    }
+  }
+}

@@ -67,6 +67,7 @@
     "verify:legacy": "node scripts/verify-legacy-ghosting.mjs",
     "verify:diagnosis:smoke": "node scripts/verify/verify-diagnosis-smoke.mjs",
     "cre:coherence": "tsx scripts/cre/run-coherence-battery.ts",
+    "cre:golden-set": "tsx scripts/cre/run-coherence-battery.ts",
     "check:assistant-identity": "node scripts/ci/check-assistant-config.mjs",
     "db:typegen": "pwsh -File scripts/db/typegen.ps1 -Generate",
     "db:typegen:verify": "pwsh -File scripts/db/typegen.ps1 -Verify",
