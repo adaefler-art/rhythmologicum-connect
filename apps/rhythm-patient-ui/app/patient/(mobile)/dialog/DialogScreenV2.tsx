@@ -97,7 +97,8 @@ type SpeechRecognitionInstance = {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
 
-const DEFAULT_OPENING_QUESTION = 'Was kann ich heute fuer Sie tun?'
+const DEFAULT_OPENING_QUESTION =
+  'Kurz zum Ziel: Ich erfasse Ihre Beschwerden strukturiert fuer die aerztliche Einschaetzung. Was ist heute Ihr wichtigstes Anliegen?'
 const INTAKE_SESSION_KEY = 'intakeEntryId'
 const MAX_INTAKE_EVIDENCE = 10
 const MAX_INTAKE_OPEN_QUESTIONS = 5
@@ -200,10 +201,14 @@ const questionAlreadyContainsContext = (value: string) =>
 const buildOpeningQuestion = (latestIntake: IntakeEntry | null) => {
   if (!latestIntake) return DEFAULT_OPENING_QUESTION
   const narrative = getIntakeNarrative(latestIntake.content)
-  if (!narrative) return DEFAULT_OPENING_QUESTION
+  if (!narrative) {
+    return 'Kurz zum Stand: Wir haben bereits Vorinformationen. Damit wir abschliessen koennen, brauche ich noch die wichtigsten Aenderungen seit dem letzten Mal. Was ist seitdem neu?'
+  }
   const topic = extractTopic(narrative)
-  if (!topic) return DEFAULT_OPENING_QUESTION
-  return `Wie geht es Ihnen heute mit ${topic}?`
+  if (!topic) {
+    return 'Kurz zum Stand: Wir haben bereits Vorinformationen. Damit wir abschliessen koennen, brauche ich noch die wichtigsten Aenderungen seit dem letzten Mal. Was ist seitdem neu?'
+  }
+  return `Kurz zum Stand: Letztes Mal ging es um ${topic}. Damit wir vollstaendig sind, brauche ich noch die wichtigsten Aenderungen seitdem. Wie ist es aktuell?`
 }
 
 const buildFollowupPrompt = (params: {

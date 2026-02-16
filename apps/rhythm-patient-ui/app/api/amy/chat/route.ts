@@ -541,7 +541,8 @@ export async function POST(req: Request) {
     // Get LLM response
     const resumePrompt =
       'Du bist ein medizinischer Aufnahmeassistent. Schreibe fehlerfreies Deutsch.\n' +
-      'Formuliere 2-3 Saetze: kurze Begruessung, 1 Satz Kontext ("Letztes Mal ging es um ..."), 1 Frage ("Wie ist es heute ...?").\n' +
+      'Formuliere maximal 2-3 kurze Saetze: 1 Satz Stand ("Wo stehen wir"), 1 Satz was noch gebraucht wird, 1 kurze Frage nach dem aktuellen Stand.\n' +
+      'Wenn kein klarer Verlauf erkennbar ist, sage neutral, dass Vorinformationen vorliegen und was noch benoetigt wird.\n' +
       'Keine Zitate, keine Rohtexte, keine JSON-Ausgabe.'
 
     const rawReply = await getChatResponse(message, history, {
