@@ -27,7 +27,7 @@ type AssignmentSummary = {
   created_at: string
 }
 
-type UserPrimaryOrganizationMap = Record<string, string>
+type UserOrganizationMap = Record<string, string[]>
 
 type UpdateRoleBody = {
   userId?: string
@@ -79,7 +79,7 @@ function isPatientRole(role: UserRole | null): role is 'patient' {
   return role === 'patient'
 }
 
-async function getOrganizationIdForUser(
+async function getOrganizationIdsForUser(
   admin: ReturnType<typeof createAdminSupabaseClient>,
   userId: string,
   allowedRoles?: UserRole[],
@@ -94,13 +94,26 @@ async function getOrganizationIdForUser(
     query = query.in('role', allowedRoles)
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle()
+  const { data, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
-    return null
+    return [] as string[]
   }
 
-  return data?.organization_id ?? null
+  const uniqueOrganizationIds = Array.from(
+    new Set((data ?? []).map((entry) => entry.organization_id).filter(Boolean)),
+  )
+
+  return uniqueOrganizationIds
+}
+
+function intersects(left: string[], right: string[]) {
+  if (left.length === 0 || right.length === 0) {
+    return false
+  }
+
+  const rightSet = new Set(right)
+  return left.some((entry) => rightSet.has(entry))
 }
 
 export async function GET() {
@@ -145,7 +158,7 @@ export async function GET() {
     const clinicians = users.filter((entry) => isClinicianAssignableRole(entry.role))
     const clinicianUserIds = clinicians.map((entry) => entry.id)
 
-    let patientPrimaryOrgById: UserPrimaryOrganizationMap = {}
+    let patientOrgIdsByUserId: UserOrganizationMap = {}
     if (patientUserIds.length > 0) {
       const { data: patientMembershipRows, error: patientMembershipError } = await admin
         .from('user_org_membership')
@@ -159,10 +172,13 @@ export async function GET() {
         return internalErrorResponse('Patient-Organisationen konnten nicht geladen werden.')
       }
 
-      patientPrimaryOrgById = (patientMembershipRows ?? []).reduce<UserPrimaryOrganizationMap>(
+      patientOrgIdsByUserId = (patientMembershipRows ?? []).reduce<UserOrganizationMap>(
         (accumulator, row) => {
           if (!accumulator[row.user_id]) {
-            accumulator[row.user_id] = row.organization_id
+            accumulator[row.user_id] = []
+          }
+          if (!accumulator[row.user_id].includes(row.organization_id)) {
+            accumulator[row.user_id].push(row.organization_id)
           }
           return accumulator
         },
@@ -170,7 +186,7 @@ export async function GET() {
       )
     }
 
-    let clinicianPrimaryOrgById: UserPrimaryOrganizationMap = {}
+    let clinicianOrgIdsByUserId: UserOrganizationMap = {}
     if (clinicianUserIds.length > 0) {
       const { data: clinicianMembershipRows, error: clinicianMembershipError } = await admin
         .from('user_org_membership')
@@ -184,10 +200,13 @@ export async function GET() {
         return internalErrorResponse('Arzt-Organisationen konnten nicht geladen werden.')
       }
 
-      clinicianPrimaryOrgById = (clinicianMembershipRows ?? []).reduce<UserPrimaryOrganizationMap>(
+      clinicianOrgIdsByUserId = (clinicianMembershipRows ?? []).reduce<UserOrganizationMap>(
         (accumulator, row) => {
           if (!accumulator[row.user_id]) {
-            accumulator[row.user_id] = row.organization_id
+            accumulator[row.user_id] = []
+          }
+          if (!accumulator[row.user_id].includes(row.organization_id)) {
+            accumulator[row.user_id].push(row.organization_id)
           }
           return accumulator
         },
@@ -219,14 +238,11 @@ export async function GET() {
 
     const assignableCliniciansByPatientId = patientUserIds.reduce<Record<string, string[]>>(
       (accumulator, patientUserId) => {
-        const patientOrgId = patientPrimaryOrgById[patientUserId]
-        if (!patientOrgId) {
-          accumulator[patientUserId] = []
-          return accumulator
-        }
+        const patientOrgIds = patientOrgIdsByUserId[patientUserId] ?? []
 
         accumulator[patientUserId] = clinicianUserIds.filter(
-          (clinicianUserId) => clinicianPrimaryOrgById[clinicianUserId] === patientOrgId,
+          (clinicianUserId) =>
+            intersects(patientOrgIds, clinicianOrgIdsByUserId[clinicianUserId] ?? []),
         )
         return accumulator
       },
@@ -454,12 +470,14 @@ export async function PUT(request: Request) {
       return validationErrorResponse('clinicianUserId muss die Rolle clinician, nurse oder admin haben.')
     }
 
-    const [patientOrgId, clinicianOrgId] = await Promise.all([
-      getOrganizationIdForUser(admin, patientUserId, ['patient']),
-      getOrganizationIdForUser(admin, clinicianUserId, ['clinician', 'nurse', 'admin']),
+    const [patientOrgIds, clinicianOrgIds] = await Promise.all([
+      getOrganizationIdsForUser(admin, patientUserId, ['patient']),
+      getOrganizationIdsForUser(admin, clinicianUserId, ['clinician', 'nurse', 'admin']),
     ])
 
-    if (!patientOrgId || !clinicianOrgId || patientOrgId !== clinicianOrgId) {
+    const sharedOrgId = patientOrgIds.find((orgId) => clinicianOrgIds.includes(orgId))
+
+    if (!sharedOrgId) {
       return validationErrorResponse(
         'Patient und Arzt müssen in derselben aktiven Organisation sein.',
       )
@@ -469,7 +487,7 @@ export async function PUT(request: Request) {
       .from('clinician_patient_assignments')
       .upsert(
         {
-          organization_id: patientOrgId,
+          organization_id: sharedOrgId,
           clinician_user_id: clinicianUserId,
           patient_user_id: patientUserId,
           created_by: user.id,
@@ -524,21 +542,9 @@ export async function DELETE(request: Request) {
   try {
     const admin = createAdminSupabaseClient()
 
-    const [patientOrgId, clinicianOrgId] = await Promise.all([
-      getOrganizationIdForUser(admin, patientUserId, ['patient']),
-      getOrganizationIdForUser(admin, clinicianUserId, ['clinician', 'nurse', 'admin']),
-    ])
-
-    if (!patientOrgId || !clinicianOrgId || patientOrgId !== clinicianOrgId) {
-      return validationErrorResponse(
-        'Patient und Arzt müssen in derselben aktiven Organisation sein.',
-      )
-    }
-
     const { error: deleteError } = await admin
       .from('clinician_patient_assignments')
       .delete()
-      .eq('organization_id', patientOrgId)
       .eq('patient_user_id', patientUserId)
       .eq('clinician_user_id', clinicianUserId)
 
