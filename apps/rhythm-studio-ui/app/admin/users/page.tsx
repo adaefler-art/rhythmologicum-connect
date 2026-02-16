@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   Card,
-  ErrorState,
   Input,
   Label,
   LoadingSpinner,
@@ -33,6 +32,7 @@ type UsersResponse = {
     users: AdminUserSummary[]
     clinicians: AdminUserSummary[]
     assignmentsByPatientId: Record<string, string[]>
+    assignableCliniciansByPatientId: Record<string, string[]>
   }
   error?: { message?: string }
 }
@@ -48,6 +48,9 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserSummary[]>([])
   const [clinicians, setClinicians] = useState<AdminUserSummary[]>([])
   const [assignmentsByPatientId, setAssignmentsByPatientId] = useState<Record<string, string[]>>({})
+  const [assignableCliniciansByPatientId, setAssignableCliniciansByPatientId] = useState<
+    Record<string, string[]>
+  >({})
   const [pendingAssignmentClinicianByPatientId, setPendingAssignmentClinicianByPatientId] = useState<
     Record<string, string>
   >({})
@@ -76,11 +79,12 @@ export default function AdminUsersPage() {
       const fetched = data.data?.users ?? []
       const fetchedClinicians = data.data?.clinicians ?? []
       const fetchedAssignments = data.data?.assignmentsByPatientId ?? {}
-      const firstClinicianId = fetchedClinicians[0]?.id ?? ''
+      const fetchedAssignableClinicians = data.data?.assignableCliniciansByPatientId ?? {}
 
       setUsers(fetched)
       setClinicians(fetchedClinicians)
       setAssignmentsByPatientId(fetchedAssignments)
+      setAssignableCliniciansByPatientId(fetchedAssignableClinicians)
       setPendingRoleByUserId(
         fetched.reduce<Record<string, UserRole>>((accumulator, entry) => {
           accumulator[entry.id] = entry.role ?? 'patient'
@@ -88,13 +92,16 @@ export default function AdminUsersPage() {
         }, {}),
       )
       setPendingAssignmentClinicianByPatientId((previous) => {
-        const patientIds = fetched.filter((entry) => entry.role === 'patient').map((entry) => entry.id)
+        const patientIds = fetched
+          .filter((entry) => (entry.role ?? 'patient') === 'patient')
+          .map((entry) => entry.id)
         const next: Record<string, string> = {}
 
         for (const patientId of patientIds) {
+          const compatibleClinicianIds = fetchedAssignableClinicians[patientId] ?? []
           const previousValue = previous[patientId]
-          const isPreviousStillValid = fetchedClinicians.some((entry) => entry.id === previousValue)
-          next[patientId] = isPreviousStillValid ? previousValue : firstClinicianId
+          const isPreviousStillValid = compatibleClinicianIds.includes(previousValue)
+          next[patientId] = isPreviousStillValid ? previousValue : (compatibleClinicianIds[0] ?? '')
         }
 
         return next
@@ -379,11 +386,17 @@ export default function AdminUsersPage() {
       {
         header: 'Arzt / Gruppe',
         accessor: (entry) => {
-          if (entry.role !== 'patient') {
+          const effectiveRole: UserRole = entry.role ?? 'patient'
+
+          if (effectiveRole !== 'patient') {
             return <span className="text-muted-foreground">—</span>
           }
 
           const assignedClinicianIds = assignmentsByPatientId[entry.id] ?? []
+          const compatibleClinicianIds = assignableCliniciansByPatientId[entry.id] ?? []
+          const availableClinicianOptions = clinicianOptions.filter((option) =>
+            compatibleClinicianIds.includes(option.id),
+          )
           const selectedClinicianId = pendingAssignmentClinicianByPatientId[entry.id] ?? ''
           const isAssigning = assigningPatientId === entry.id
 
@@ -424,11 +437,13 @@ export default function AdminUsersPage() {
                   }
                   selectSize="sm"
                   className="min-w-44"
-                  disabled={clinicianOptions.length === 0 || isAssigning}
+                  disabled={availableClinicianOptions.length === 0 || isAssigning}
                 >
-                  {clinicianOptions.length === 0 && <option value="">Keine Ärzte verfügbar</option>}
-                  {clinicianOptions.length > 0 && <option value="">Arzt auswählen…</option>}
-                  {clinicianOptions.map((option) => (
+                  {availableClinicianOptions.length === 0 && (
+                    <option value="">Keine kompatiblen Ärzte (Organisation)</option>
+                  )}
+                  {availableClinicianOptions.length > 0 && <option value="">Arzt auswählen…</option>}
+                  {availableClinicianOptions.map((option) => (
                     <option
                       key={option.id}
                       value={option.id}
@@ -442,7 +457,7 @@ export default function AdminUsersPage() {
                   variant="secondary"
                   size="sm"
                   disabled={
-                    clinicianOptions.length === 0 ||
+                    availableClinicianOptions.length === 0 ||
                     !selectedClinicianId ||
                     assignedClinicianIds.includes(selectedClinicianId) ||
                     isAssigning
@@ -486,7 +501,40 @@ export default function AdminUsersPage() {
   }
 
   if (error) {
-    return <ErrorState title="Benutzerverwaltung" message={error} onRetry={loadUsers} />
+    return (
+      <div className="w-full space-y-6">
+        <PageHeader
+          title="Benutzerverwaltung"
+          description="Rollen und Kontostatus für Studio-Benutzer verwalten"
+        />
+
+        <Card>
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-col items-center gap-4 py-6 text-center">
+              <svg
+                className="h-14 w-14 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <h2 className="text-xl font-semibold text-foreground">Benutzerverwaltung</h2>
+              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{error}</p>
+              <Button variant="primary" onClick={loadUsers}>
+                Erneut versuchen
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (
