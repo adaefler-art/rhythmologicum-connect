@@ -201,4 +201,88 @@ describe('loadFunnelVersionWithClient - effective version resolution', () => {
     expect(mockClient.from).not.toHaveBeenCalledWith('funnel_version_pins')
     expect(funnelVersionsBuilder.eq).toHaveBeenCalledWith('id', 'version-default')
   })
+
+  it('loads legacy manifests even when schema_version is missing', async () => {
+    const funnelRow = {
+      id: 'funnel-legacy',
+      slug: 'first-intake-sociological-anamnesis',
+      title: 'Legacy Funnel',
+      pillar_id: null,
+      description: null,
+      is_active: true,
+      default_version_id: 'version-legacy',
+    }
+
+    const questionnaireConfig = createMinimalQuestionnaireConfig() as Record<string, unknown>
+    const contentManifest = createMinimalContentManifest({
+      pages: [
+        {
+          slug: 'intro',
+          title: 'Willkommen',
+          sections: [
+            {
+              key: 'hero',
+              type: 'hero',
+              content: {
+                title: 'Legacy Intake',
+              },
+            },
+          ],
+        },
+      ],
+    }) as Record<string, unknown>
+
+    delete questionnaireConfig.schema_version
+    delete contentManifest.schema_version
+
+    const versionLegacyRow = {
+      id: 'version-legacy',
+      funnel_id: 'funnel-legacy',
+      version: '1.0.0',
+      questionnaire_config: questionnaireConfig,
+      content_manifest: contentManifest,
+      algorithm_bundle_version: 'v1',
+      prompt_version: '1.0',
+      is_default: true,
+      rollout_percent: 100,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: null,
+    }
+
+    const funnelsCatalogBuilder = makeSingleBuilder({ data: funnelRow, error: null })
+
+    const funnelVersionsBuilder: any = {}
+    funnelVersionsBuilder.select = jest.fn(() => funnelVersionsBuilder)
+    funnelVersionsBuilder.eq = jest.fn((column: string, value: any) => {
+      funnelVersionsBuilder._lastEq = { column, value }
+      return funnelVersionsBuilder
+    })
+    funnelVersionsBuilder.single = jest.fn(() => {
+      const last = funnelVersionsBuilder._lastEq
+      if (last?.column === 'id' && last?.value === 'version-legacy') {
+        return Promise.resolve({ data: versionLegacyRow, error: null })
+      }
+      return Promise.resolve({ data: null, error: { message: 'Not found' } })
+    })
+
+    const mockClient: any = {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'funnels_catalog') return funnelsCatalogBuilder
+        if (table === 'funnel_versions') return funnelVersionsBuilder
+        throw new Error(`unexpected table: ${table}`)
+      }),
+    }
+
+    const result = await loadFunnelVersionWithClient(
+      mockClient,
+      'first-intake-sociological-anamnesis',
+    )
+
+    expect(result.id).toBe('version-legacy')
+    expect(result.manifest.questionnaire_config.schema_version).toBe('v1')
+    expect(result.manifest.content_manifest.schema_version).toBe('v1')
+  })
 })

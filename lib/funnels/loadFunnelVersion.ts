@@ -106,6 +106,22 @@ export class ManifestValidationError extends Error {
   }
 }
 
+function ensureSchemaVersionV1(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
+
+  const record = value as Record<string, unknown>
+  if ('schema_version' in record) {
+    return value
+  }
+
+  return {
+    schema_version: 'v1',
+    ...record,
+  }
+}
+
 // ============================================================
 // Supabase Client (Server-only)
 // ============================================================
@@ -348,8 +364,13 @@ export async function loadFunnelVersionWithClient(
  */
 function parseAndValidateFunnelVersion(row: FunnelVersionRow): LoadedFunnelVersion {
   try {
+    // Compatibility: some older seeded manifests omitted schema_version.
+    // Keep runtime loading resilient by normalizing to v1 prior to strict validation.
+    const questionnaireConfigRaw = ensureSchemaVersionV1(row.questionnaire_config)
+    const contentManifestRaw = ensureSchemaVersionV1(row.content_manifest)
+
     // E74.1: Validate questionnaire config with comprehensive validator
-    const questionnaireValidation = validateQuestionnaireConfigV1(row.questionnaire_config)
+    const questionnaireValidation = validateQuestionnaireConfigV1(questionnaireConfigRaw)
     if (!questionnaireValidation.valid) {
       throw new Error(
         `Questionnaire config validation failed:\n${formatValidationErrors(questionnaireValidation.errors)}`
@@ -357,7 +378,7 @@ function parseAndValidateFunnelVersion(row: FunnelVersionRow): LoadedFunnelVersi
     }
 
     // E74.1: Validate content manifest with comprehensive validator
-    const manifestValidation = validateContentManifestV1(row.content_manifest)
+    const manifestValidation = validateContentManifestV1(contentManifestRaw)
     if (!manifestValidation.valid) {
       throw new Error(
         `Content manifest validation failed:\n${formatValidationErrors(manifestValidation.errors)}`
@@ -365,8 +386,8 @@ function parseAndValidateFunnelVersion(row: FunnelVersionRow): LoadedFunnelVersi
     }
 
     // Parse with Zod for type safety (already validated)
-    const questionnaireConfig = parseQuestionnaireConfig(row.questionnaire_config)
-    const contentManifest = parseContentManifest(row.content_manifest)
+    const questionnaireConfig = parseQuestionnaireConfig(questionnaireConfigRaw)
+    const contentManifest = parseContentManifest(contentManifestRaw)
 
     // Construct complete manifest
     const manifest: FunnelPluginManifest = {
