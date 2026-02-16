@@ -19,6 +19,34 @@ export default function PatientEntryScreen() {
             </p>
           </header>
 
+          <Card className="border border-sky-200 bg-sky-50" padding="lg" shadow="sm">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-900">Erstaufnahme: Soziologische Anamnese</p>
+                  <p className="text-sm text-slate-700">
+                    Bitte starten Sie zuerst die Erstaufnahme. Ihre Angaben helfen PAT und der
+                    weiteren Anamnese.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
+                icon={<ChevronRight className="h-4 w-4" />}
+                iconPosition="right"
+                onClick={() => router.push('/patient/assess/first-intake-sociological-anamnesis/flow')}
+              >
+                Erstaufnahme starten
+              </Button>
+            </div>
+          </Card>
+
           <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">

@@ -7,6 +7,7 @@ import { env, getEngineEnv } from '@/lib/env'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { getPatientConsultPrompt, PATIENT_CONSULT_PROMPT_VERSION } from '@/lib/llm/prompts'
+import { getFirstIntakeSociologicalAssessmentContext } from '@/lib/clinicalIntake/firstIntakeSociologicalContext'
 import {
   assessTurnQuality,
   buildGuardRedirectReply,
@@ -437,6 +438,22 @@ export async function POST(req: Request) {
       contextParts.push(
         `STRUCTURED_INTAKE_DATA:\n${JSON.stringify(structuredIntakeData).slice(0, 1500)}`,
       )
+    }
+
+    if (mode === 'default') {
+      try {
+        const firstIntakeContext = await getFirstIntakeSociologicalAssessmentContext(user.id, supabase)
+        if (firstIntakeContext?.contextText) {
+          contextParts.push(
+            `ERSTAUFNAHME_SOZIOLOGISCHE_ANAMNESE:\n${firstIntakeContext.contextText.slice(0, 1800)}`,
+          )
+        }
+      } catch (error) {
+        console.warn('[amy/chat] Failed to load first-intake context', {
+          userId: user.id,
+          error: String(error),
+        })
+      }
     }
 
     const context = contextParts.length > 0 ? contextParts.join('\n\n') : undefined

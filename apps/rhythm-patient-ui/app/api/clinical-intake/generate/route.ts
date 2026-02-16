@@ -34,6 +34,10 @@ import { generateReasoningPack } from '@/lib/cre/reasoning/engine'
 import { loadActiveClinicalReasoningConfig } from '@/lib/cre/reasoning/configStore'
 import { enrichStructuredIntakeData } from '@/lib/cre/intake/enrichment'
 import { INTAKE_TRIGGER_RULES } from '@/lib/clinicalIntake/intakeTriggerRules'
+import {
+  getFirstIntakeSociologicalAssessmentContext,
+  mergePsychosocialFactors,
+} from '@/lib/clinicalIntake/firstIntakeSociologicalContext'
 import type {
   GenerateIntakeRequest,
   GenerateIntakeResponse,
@@ -107,7 +111,10 @@ type IntakeGenerationResult =
 /**
  * Generate clinical intake using LLM
  */
-async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<IntakeGenerationResult> {
+async function generateIntakeWithLLM(
+  messages: ChatMessage[],
+  additionalContext?: string,
+): Promise<IntakeGenerationResult> {
   const engineEnv = getEngineEnv()
   const anthropicApiKey = engineEnv.ANTHROPIC_API_KEY || engineEnv.ANTHROPIC_API_TOKEN
   const model = engineEnv.ANTHROPIC_MODEL ?? MODEL_FALLBACK
@@ -127,7 +134,11 @@ async function generateIntakeWithLLM(messages: ChatMessage[]): Promise<IntakeGen
       .join('\n\n')
 
     const systemPrompt = getClinicalIntakePrompt()
-    const userPrompt = `Hier ist die Patientenkonversation. Erstelle daraus einen strukturierten Clinical Intake:\n\n${conversationText}`
+    const extraContextBlock = additionalContext?.trim()
+      ? `\n\nZusatzkontext aus strukturierten Assessments:\n${additionalContext.trim()}`
+      : ''
+
+    const userPrompt = `Hier ist die Patientenkonversation. Erstelle daraus einen strukturierten Clinical Intake:\n\n${conversationText}${extraContextBlock}`
 
     console.log('[clinical-intake/generate] Generating intake', {
       model,
@@ -377,8 +388,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const firstIntakeContext = await getFirstIntakeSociologicalAssessmentContext(user.id, supabase)
+
     // Generate intake with LLM
-    const result = await generateIntakeWithLLM(messages)
+    const result = await generateIntakeWithLLM(messages, firstIntakeContext?.contextText)
 
     if (!result.ok) {
       const errorMap: Record<string, { status: number; message: string }> = {
@@ -427,6 +440,13 @@ export async function POST(req: NextRequest) {
     }
 
     result.structuredData = enrichStructuredIntakeData(result.structuredData)
+
+    if ((firstIntakeContext?.psychosocialFactors?.length || 0) > 0) {
+      result.structuredData.psychosocial_factors = mergePsychosocialFactors(
+        result.structuredData.psychosocial_factors,
+        firstIntakeContext!.psychosocialFactors,
+      )
+    }
 
     let ruleOverrides = {}
     const admin = createAdminSupabaseClient()
