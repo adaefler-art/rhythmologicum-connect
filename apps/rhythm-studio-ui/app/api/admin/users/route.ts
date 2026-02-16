@@ -116,6 +116,97 @@ function intersects(left: string[], right: string[]) {
   return left.some((entry) => rightSet.has(entry))
 }
 
+async function ensureActiveClinicianMembership(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  clinicianUserId: string,
+  organizationId: string,
+  role: 'clinician' | 'nurse' | 'admin',
+) {
+  const { data: existingMemberships, error: existingMembershipError } = await admin
+    .from('user_org_membership')
+    .select('id, role, is_active, created_at')
+    .eq('user_id', clinicianUserId)
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (existingMembershipError) {
+    return false
+  }
+
+  const existingMembership = existingMemberships?.[0]
+
+  if (existingMembership) {
+    if (existingMembership.is_active && existingMembership.role !== 'patient') {
+      return true
+    }
+
+    const { error: updateMembershipError } = await admin
+      .from('user_org_membership')
+      .update({
+        is_active: true,
+        role,
+      })
+      .eq('id', existingMembership.id)
+
+    return !updateMembershipError
+  }
+
+  const { error: insertMembershipError } = await admin.from('user_org_membership').insert({
+    user_id: clinicianUserId,
+    organization_id: organizationId,
+    role,
+    is_active: true,
+  })
+
+  return !insertMembershipError
+}
+
+async function ensureActivePatientMembership(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  patientUserId: string,
+  organizationId: string,
+) {
+  const { data: existingMemberships, error: existingMembershipError } = await admin
+    .from('user_org_membership')
+    .select('id, role, is_active, created_at')
+    .eq('user_id', patientUserId)
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (existingMembershipError) {
+    return false
+  }
+
+  const existingMembership = existingMemberships?.[0]
+
+  if (existingMembership) {
+    if (existingMembership.is_active && existingMembership.role === 'patient') {
+      return true
+    }
+
+    const { error: updateMembershipError } = await admin
+      .from('user_org_membership')
+      .update({
+        is_active: true,
+        role: 'patient',
+      })
+      .eq('id', existingMembership.id)
+
+    return !updateMembershipError
+  }
+
+  const { error: insertMembershipError } = await admin.from('user_org_membership').insert({
+    user_id: patientUserId,
+    organization_id: organizationId,
+    role: 'patient',
+    is_active: true,
+  })
+
+  return !insertMembershipError
+}
+
 export async function GET() {
   const { user, error } = await requireAuth()
   if (error || !user) {
@@ -240,10 +331,18 @@ export async function GET() {
       (accumulator, patientUserId) => {
         const patientOrgIds = patientOrgIdsByUserId[patientUserId] ?? []
 
-        accumulator[patientUserId] = clinicianUserIds.filter(
+        const compatibleClinicianIds = clinicianUserIds.filter(
           (clinicianUserId) =>
             intersects(patientOrgIds, clinicianOrgIdsByUserId[clinicianUserId] ?? []),
         )
+
+        accumulator[patientUserId] =
+          compatibleClinicianIds.length > 0
+            ? compatibleClinicianIds
+            : patientOrgIds.length > 0 || clinicianUserIds.length > 0
+            ? clinicianUserIds
+            : []
+
         return accumulator
       },
       {},
@@ -475,7 +574,34 @@ export async function PUT(request: Request) {
       getOrganizationIdsForUser(admin, clinicianUserId, ['clinician', 'nurse', 'admin']),
     ])
 
-    const sharedOrgId = patientOrgIds.find((orgId) => clinicianOrgIds.includes(orgId))
+    let sharedOrgId = patientOrgIds.find((orgId) => clinicianOrgIds.includes(orgId))
+
+    if (!sharedOrgId && patientOrgIds.length === 0 && clinicianOrgIds.length > 0) {
+      const targetClinicianOrgId = clinicianOrgIds[0]
+      const patientMembershipEnsured = await ensureActivePatientMembership(
+        admin,
+        patientUserId,
+        targetClinicianOrgId,
+      )
+
+      if (patientMembershipEnsured) {
+        sharedOrgId = targetClinicianOrgId
+      }
+    }
+
+    if (!sharedOrgId && patientOrgIds.length > 0) {
+      const targetPatientOrgId = patientOrgIds[0]
+      const membershipEnsured = await ensureActiveClinicianMembership(
+        admin,
+        clinicianUserId,
+        targetPatientOrgId,
+        clinicianRole,
+      )
+
+      if (membershipEnsured) {
+        sharedOrgId = targetPatientOrgId
+      }
+    }
 
     if (!sharedOrgId) {
       return validationErrorResponse(
