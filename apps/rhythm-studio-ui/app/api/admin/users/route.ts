@@ -27,6 +27,8 @@ type AssignmentSummary = {
   created_at: string
 }
 
+type UserPrimaryOrganizationMap = Record<string, string>
+
 type UpdateRoleBody = {
   userId?: string
   role?: UserRole
@@ -137,8 +139,61 @@ export async function GET() {
         return right - left
       })
 
-    const patientUserIds = users.filter((entry) => entry.role === 'patient').map((entry) => entry.id)
+    const patientUserIds = users
+      .filter((entry) => (entry.role ?? 'patient') === 'patient')
+      .map((entry) => entry.id)
     const clinicians = users.filter((entry) => isClinicianAssignableRole(entry.role))
+    const clinicianUserIds = clinicians.map((entry) => entry.id)
+
+    let patientPrimaryOrgById: UserPrimaryOrganizationMap = {}
+    if (patientUserIds.length > 0) {
+      const { data: patientMembershipRows, error: patientMembershipError } = await admin
+        .from('user_org_membership')
+        .select('user_id, organization_id, created_at')
+        .in('user_id', patientUserIds)
+        .eq('is_active', true)
+        .eq('role', 'patient')
+        .order('created_at', { ascending: false })
+
+      if (patientMembershipError) {
+        return internalErrorResponse('Patient-Organisationen konnten nicht geladen werden.')
+      }
+
+      patientPrimaryOrgById = (patientMembershipRows ?? []).reduce<UserPrimaryOrganizationMap>(
+        (accumulator, row) => {
+          if (!accumulator[row.user_id]) {
+            accumulator[row.user_id] = row.organization_id
+          }
+          return accumulator
+        },
+        {},
+      )
+    }
+
+    let clinicianPrimaryOrgById: UserPrimaryOrganizationMap = {}
+    if (clinicianUserIds.length > 0) {
+      const { data: clinicianMembershipRows, error: clinicianMembershipError } = await admin
+        .from('user_org_membership')
+        .select('user_id, organization_id, created_at')
+        .in('user_id', clinicianUserIds)
+        .eq('is_active', true)
+        .in('role', ['clinician', 'nurse', 'admin'])
+        .order('created_at', { ascending: false })
+
+      if (clinicianMembershipError) {
+        return internalErrorResponse('Arzt-Organisationen konnten nicht geladen werden.')
+      }
+
+      clinicianPrimaryOrgById = (clinicianMembershipRows ?? []).reduce<UserPrimaryOrganizationMap>(
+        (accumulator, row) => {
+          if (!accumulator[row.user_id]) {
+            accumulator[row.user_id] = row.organization_id
+          }
+          return accumulator
+        },
+        {},
+      )
+    }
 
     let assignments: AssignmentSummary[] = []
     if (patientUserIds.length > 0) {
@@ -162,7 +217,28 @@ export async function GET() {
       return accumulator
     }, {})
 
-    return successResponse({ users, clinicians, assignmentsByPatientId })
+    const assignableCliniciansByPatientId = patientUserIds.reduce<Record<string, string[]>>(
+      (accumulator, patientUserId) => {
+        const patientOrgId = patientPrimaryOrgById[patientUserId]
+        if (!patientOrgId) {
+          accumulator[patientUserId] = []
+          return accumulator
+        }
+
+        accumulator[patientUserId] = clinicianUserIds.filter(
+          (clinicianUserId) => clinicianPrimaryOrgById[clinicianUserId] === patientOrgId,
+        )
+        return accumulator
+      },
+      {},
+    )
+
+    return successResponse({
+      users,
+      clinicians,
+      assignmentsByPatientId,
+      assignableCliniciansByPatientId,
+    })
   } catch (error) {
     if (error instanceof Error && error.message.includes('SUPABASE_SERVICE_ROLE_KEY')) {
       return configurationErrorResponse('SUPABASE_SERVICE_ROLE_KEY ist nicht konfiguriert.')
