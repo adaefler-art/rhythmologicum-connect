@@ -29,7 +29,11 @@ type AdminUserSummary = {
 
 type UsersResponse = {
   success: boolean
-  data?: { users: AdminUserSummary[] }
+  data?: {
+    users: AdminUserSummary[]
+    clinicians: AdminUserSummary[]
+    assignmentsByPatientId: Record<string, string[]>
+  }
   error?: { message?: string }
 }
 
@@ -38,13 +42,20 @@ const ROLE_OPTIONS: UserRole[] = ['patient', 'clinician', 'nurse', 'admin']
 export const dynamic = 'force-dynamic'
 
 export default function AdminUsersPage() {
-  const navLabel = useActiveNavLabel('Benutzerverwaltung')
+  useActiveNavLabel('Benutzerverwaltung')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [users, setUsers] = useState<AdminUserSummary[]>([])
+  const [clinicians, setClinicians] = useState<AdminUserSummary[]>([])
+  const [assignmentsByPatientId, setAssignmentsByPatientId] = useState<Record<string, string[]>>({})
+  const [pendingAssignmentClinicianByPatientId, setPendingAssignmentClinicianByPatientId] = useState<
+    Record<string, string>
+  >({})
   const [search, setSearch] = useState('')
   const [pendingRoleByUserId, setPendingRoleByUserId] = useState<Record<string, UserRole>>({})
   const [savingUserId, setSavingUserId] = useState<string | null>(null)
+  const [assigningPatientId, setAssigningPatientId] = useState<string | null>(null)
+  const [removingAssignmentKey, setRemovingAssignmentKey] = useState<string | null>(null)
   const [isCreatingUser, setIsCreatingUser] = useState(false)
   const [newUserEmail, setNewUserEmail] = useState('')
   const [newUserPassword, setNewUserPassword] = useState('')
@@ -63,13 +74,31 @@ export default function AdminUsersPage() {
       }
 
       const fetched = data.data?.users ?? []
+      const fetchedClinicians = data.data?.clinicians ?? []
+      const fetchedAssignments = data.data?.assignmentsByPatientId ?? {}
+      const firstClinicianId = fetchedClinicians[0]?.id ?? ''
+
       setUsers(fetched)
+      setClinicians(fetchedClinicians)
+      setAssignmentsByPatientId(fetchedAssignments)
       setPendingRoleByUserId(
         fetched.reduce<Record<string, UserRole>>((accumulator, entry) => {
           accumulator[entry.id] = entry.role ?? 'patient'
           return accumulator
         }, {}),
       )
+      setPendingAssignmentClinicianByPatientId((previous) => {
+        const patientIds = fetched.filter((entry) => entry.role === 'patient').map((entry) => entry.id)
+        const next: Record<string, string> = {}
+
+        for (const patientId of patientIds) {
+          const previousValue = previous[patientId]
+          const isPreviousStillValid = fetchedClinicians.some((entry) => entry.id === previousValue)
+          next[patientId] = isPreviousStillValid ? previousValue : firstClinicianId
+        }
+
+        return next
+      })
     } catch (error) {
       console.error('Error loading users:', error)
       setError(error instanceof Error ? error.message : 'Fehler beim Laden der Benutzerverwaltung.')
@@ -117,6 +146,26 @@ export default function AdminUsersPage() {
     return 'default'
   }
 
+  const clinicianOptions = useMemo(
+    () =>
+      clinicians
+        .filter((entry) => entry.email)
+        .map((entry) => ({
+          id: entry.id,
+          label: entry.email!,
+        })),
+    [clinicians],
+  )
+
+  const clinicianEmailById = useMemo(
+    () =>
+      clinicians.reduce<Record<string, string>>((accumulator, entry) => {
+        accumulator[entry.id] = entry.email ?? 'Unbekannter Arzt'
+        return accumulator
+      }, {}),
+    [clinicians],
+  )
+
   const updateRole = async (userId: string) => {
     const role = pendingRoleByUserId[userId]
     if (!role) return
@@ -141,9 +190,7 @@ export default function AdminUsersPage() {
         throw new Error(data.error?.message || 'Rolle konnte nicht aktualisiert werden.')
       }
 
-      setUsers((previous) =>
-        previous.map((entry) => (entry.id === data.data?.user?.id ? data.data.user! : entry)),
-      )
+      await loadUsers()
     } catch (error) {
       console.error('Error updating role:', error)
       setError(error instanceof Error ? error.message : 'Rolle konnte nicht aktualisiert werden.')
@@ -177,11 +224,7 @@ export default function AdminUsersPage() {
         throw new Error(data.error?.message || 'Benutzer konnte nicht angelegt werden.')
       }
 
-      setUsers((previous) => [data.data!.user!, ...previous])
-      setPendingRoleByUserId((previous) => ({
-        ...previous,
-        [data.data!.user!.id]: data.data!.user!.role ?? 'patient',
-      }))
+      await loadUsers()
       setNewUserEmail('')
       setNewUserPassword('')
       setNewUserRole('patient')
@@ -193,8 +236,93 @@ export default function AdminUsersPage() {
     }
   }
 
-  const columns = useMemo<TableColumn<AdminUserSummary>[]>(
-    () => [
+  const assignClinician = async (patientUserId: string) => {
+    const clinicianUserId = pendingAssignmentClinicianByPatientId[patientUserId]
+    if (!clinicianUserId) {
+      return
+    }
+
+    try {
+      setAssigningPatientId(patientUserId)
+      setError(null)
+
+      const response = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientUserId, clinicianUserId }),
+      })
+
+      const data = (await response.json()) as {
+        success: boolean
+        error?: { message?: string }
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || 'Arzt-Zuweisung konnte nicht gespeichert werden.')
+      }
+
+      setAssignmentsByPatientId((previous) => {
+        const existing = previous[patientUserId] ?? []
+        if (existing.includes(clinicianUserId)) {
+          return previous
+        }
+
+        return {
+          ...previous,
+          [patientUserId]: [...existing, clinicianUserId],
+        }
+      })
+    } catch (caughtError) {
+      console.error('Error assigning clinician:', caughtError)
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Arzt-Zuweisung konnte nicht gespeichert werden.',
+      )
+    } finally {
+      setAssigningPatientId(null)
+    }
+  }
+
+  const removeClinicianAssignment = async (patientUserId: string, clinicianUserId: string) => {
+    const removalKey = `${patientUserId}:${clinicianUserId}`
+
+    try {
+      setRemovingAssignmentKey(removalKey)
+      setError(null)
+
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientUserId, clinicianUserId }),
+      })
+
+      const data = (await response.json()) as {
+        success: boolean
+        error?: { message?: string }
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || 'Arzt-Zuweisung konnte nicht entfernt werden.')
+      }
+
+      setAssignmentsByPatientId((previous) => ({
+        ...previous,
+        [patientUserId]: (previous[patientUserId] ?? []).filter((entry) => entry !== clinicianUserId),
+      }))
+    } catch (caughtError) {
+      console.error('Error removing clinician assignment:', caughtError)
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'Arzt-Zuweisung konnte nicht entfernt werden.',
+      )
+    } finally {
+      setRemovingAssignmentKey(null)
+    }
+  }
+
+  const columns: TableColumn<AdminUserSummary>[] = [
       {
         header: 'E-Mail',
         accessor: (entry) => <span className="text-foreground">{entry.email ?? '—'}</span>,
@@ -249,6 +377,86 @@ export default function AdminUsersPage() {
         ),
       },
       {
+        header: 'Arzt / Gruppe',
+        accessor: (entry) => {
+          if (entry.role !== 'patient') {
+            return <span className="text-muted-foreground">—</span>
+          }
+
+          const assignedClinicianIds = assignmentsByPatientId[entry.id] ?? []
+          const selectedClinicianId = pendingAssignmentClinicianByPatientId[entry.id] ?? ''
+          const isAssigning = assigningPatientId === entry.id
+
+          return (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {assignedClinicianIds.length === 0 && (
+                  <span className="text-xs text-muted-foreground">Kein Arzt zugewiesen</span>
+                )}
+                {assignedClinicianIds.map((clinicianUserId) => {
+                  const removeKey = `${entry.id}:${clinicianUserId}`
+                  const isRemoving = removingAssignmentKey === removeKey
+
+                  return (
+                    <div key={removeKey} className="flex items-center gap-1">
+                      <Badge variant="info">{clinicianEmailById[clinicianUserId] ?? 'Arzt'}</Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={isRemoving}
+                        onClick={() => removeClinicianAssignment(entry.id, clinicianUserId)}
+                      >
+                        {isRemoving ? 'Entfernt…' : 'Entfernen'}
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
+                <Select
+                  value={selectedClinicianId}
+                  onChange={(event) =>
+                    setPendingAssignmentClinicianByPatientId((previous) => ({
+                      ...previous,
+                      [entry.id]: event.target.value,
+                    }))
+                  }
+                  selectSize="sm"
+                  className="min-w-44"
+                  disabled={clinicianOptions.length === 0 || isAssigning}
+                >
+                  {clinicianOptions.length === 0 && <option value="">Keine Ärzte verfügbar</option>}
+                  {clinicianOptions.length > 0 && <option value="">Arzt auswählen…</option>}
+                  {clinicianOptions.map((option) => (
+                    <option
+                      key={option.id}
+                      value={option.id}
+                      disabled={assignedClinicianIds.includes(option.id)}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={
+                    clinicianOptions.length === 0 ||
+                    !selectedClinicianId ||
+                    assignedClinicianIds.includes(selectedClinicianId) ||
+                    isAssigning
+                  }
+                  onClick={() => assignClinician(entry.id)}
+                >
+                  {isAssigning ? 'Weist zu…' : 'Zuweisen'}
+                </Button>
+              </div>
+            </div>
+          )
+        },
+      },
+      {
         header: 'Aktion',
         accessor: (entry) => {
           const pendingRole = pendingRoleByUserId[entry.id] ?? 'patient'
@@ -267,9 +475,7 @@ export default function AdminUsersPage() {
           )
         },
       },
-    ],
-    [pendingRoleByUserId, savingUserId],
-  )
+    ]
 
   if (loading) {
     return (
