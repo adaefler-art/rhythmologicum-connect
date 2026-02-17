@@ -1477,11 +1477,24 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
             )}
           </div>
         ) : (
-          <div className="text-center py-6">
-            <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <div className="text-center py-6 space-y-3">
+            <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Noch kein Intake erfasst
             </p>
+            <div className="flex justify-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void handleRegenerateIntake()}
+                disabled={isIntakeRegenerating}
+              >
+                {isIntakeRegenerating ? 'Startet…' : 'Intake starten'}
+              </Button>
+            </div>
+            {intakeRegenerateError && (
+              <p className="text-xs text-rose-700">{intakeRegenerateError}</p>
+            )}
           </div>
         )}
       </Card>
