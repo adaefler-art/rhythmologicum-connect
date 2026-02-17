@@ -69,6 +69,7 @@ Statuswerte:
 #### NV2 Evidenzstand (laufend)
 - [x] UX-State-Katalog für Patient-Dialog finalisiert und mit State→Test-Mapping dokumentiert (`docs/cre/PATIENT_DIALOG_UX_STATE_CATALOG_NV2.md`)
 - [x] Manuelle NV2-Testcheckliste für offene Restpunkte (Voice, Netzwerk/Retry, Accessibility, Copy-Review) als abhakbares Artefakt ergänzt (`docs/cre/PATIENT_DIALOG_NV2_MANUAL_TEST_CHECKLIST.md`)
+- [x] NV2 Manual-Evidence-Log als strukturierte Vorlage für Testdurchführung, Defect-Register und Exit-Entscheid ergänzt (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_TEMPLATE.md`)
 - [x] Follow-up-Microcopy im Kernübergang harmonisiert ("Rueckfrage" → "Frage" in Lead/Prefix/Hinweis) und Sanitizing/Context-Detection kompatibel gehalten
 - [x] E2E-Selektor-Härtung im Follow-up-Dialog ergänzt (`Senden`-Button in Spec explizit auf `.first()` fixiert), um Strict-Locator-Ambiguität zu vermeiden
 - [x] Follow-up-Loop-Spec im Mock-Mode 3x konsekutiv stabil ausgeführt (`tests/e2e/patient-followup-loop.spec.ts`, je Lauf: 2 passed / 1 skipped)
@@ -130,6 +131,7 @@ Statuswerte:
 - [x] Follow-up bleibt im orchestrierten Pfad; kein unkontrollierter Chat-Fallback im Antwortturn
 - [~] Golden-Set-Nachweis für `objective_reask_violation_count = 0` lokal regressionsstabil, aber Wave-5-Batch-Report noch ausstehend
 - [ ] KPI-Nachweis gegen Baseline (`repeat_question_rate`, `clarification_loop_rate`, `resolved_followup_rate`) noch nicht final dokumentiert
+- [x] KPI-Vergleichsreport-Vorlage (Vorher/Nachher inkl. Baseline-Referenz und Gate-Votum) erstellt (`docs/cre/NV4_KPI_COMPARISON_REPORT_TEMPLATE.md`)
 
 #### NV4 Exit-Check — Nächste Gates
 - [ ] Baseline-Referenz für Wave-5/6 fixieren und im Monitoring-Dokument verlinken
@@ -247,3 +249,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-16 15:45:00 (lokal): Metrics-Network-Noise reduziert, indem KPI-Thresholds direkt über `/api/admin/metrics` mitgeliefert und der separate Frontend-Request auf `/api/admin/kpi-thresholds` entfernt wurde (vermeidet zusätzlichen 404-Call und vereinfacht die Datenladung).
 - 2026-02-16 16:02:00 (lokal): PAT-Startverhalten gestrafft, indem beim Erstbesuch eine kurze Zielerklaerung + Leitfrage angezeigt wird und bei Folgebesuchen ein kurzer "Wo stehen wir/was fehlt noch"-Kontext mit Anschlussfrage ausgegeben wird (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `apps/rhythm-patient-ui/app/api/amy/chat/route.ts`).
 - 2026-02-16 16:18:00 (lokal): Clinician-Intake um Regenerate-Aktion erweitert, indem im Patient-Record ein "Intake neu generieren"-Button ergänzt und ein abgesicherter Endpoint fuer die Neugenerierung aus Chatverlauf implementiert wurde (`apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/regenerate/route.ts`, `apps/rhythm-studio-ui/lib/fetchClinician.ts`).
+- 2026-02-17 09:18:00 (lokal): Offene NV2/NV4-Gates operationalisiert, indem eine NV2 Manual-Evidence-Log-Vorlage sowie ein NV4 KPI-Vergleichsreport-Template (Vorher/Nachher inkl. Baseline-/Gate-Struktur) erstellt und in der Checklist als Evidenz verlinkt wurden (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_TEMPLATE.md`, `docs/cre/NV4_KPI_COMPARISON_REPORT_TEMPLATE.md`).
