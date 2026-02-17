@@ -1302,48 +1302,7 @@ export function DialogScreenV2() {
 
           setActiveFollowupQuestion(null)
 
-          const regenerateResponse = await fetch('/api/clinical-intake/generate', {
-            method: 'POST',
-            headers: getRequestHeaders(),
-            body: JSON.stringify({ force: true, triggerReason: 'clarification' }),
-          })
-
-          const regeneratePayload = await regenerateResponse.json()
-          if (regenerateResponse.ok && regeneratePayload?.success) {
-            const refreshedIntake = await fetchLatestIntake()
-            setLatestClinicalIntakeId(refreshedIntake?.id ?? null)
-            setHasOpenReviewRequest(refreshedIntake?.review_state?.status === 'needs_more_info')
-            setSafetyStatus(refreshedIntake ? getSafetyFromContent(refreshedIntake.content) : null)
-
-            if (refreshedIntake?.id) {
-              try {
-                const refreshedFollowup = await generateFollowup({ intakeId: refreshedIntake.id })
-                setLatestClinicalIntakeId(refreshedFollowup.intakeId)
-                if (!refreshedFollowup.blocked && refreshedFollowup.nextQuestions.length > 0) {
-                  const nextQuestion = pickDistinctNextFollowupQuestion({
-                    currentQuestion: currentFollowupQuestion,
-                    candidates: refreshedFollowup.nextQuestions,
-                  })
-
-                  if (nextQuestion) {
-                    setActiveFollowupQuestion(nextQuestion)
-                    appendAssistantMessage(
-                      buildFollowupPrompt({
-                        question: nextQuestion,
-                        latestIntake: refreshedIntake,
-                        activeObjectiveCount: refreshedFollowup.activeObjectiveCount,
-                      }),
-                    )
-                    followupReplySent = true
-                  } else {
-                    setActiveFollowupQuestion(null)
-                  }
-                }
-              } catch (followupError) {
-                console.warn('[DialogScreenV2] Followup refresh after regeneration failed', followupError)
-              }
-            }
-          }
+          void syncIntakeDebugMeta()
 
           if (!followupReplySent) {
             appendAssistantMessage(FOLLOWUP_NO_NEXT_QUESTION_MESSAGE)
