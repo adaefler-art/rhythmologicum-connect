@@ -58,6 +58,7 @@ type ScenarioFixture = {
       min_next_questions?: number
       required_sources?: Array<'reasoning' | 'gap_rule' | 'clinician_request'>
       must_include_substrings?: string[]
+      forbid_substrings?: string[]
       forbid_duplicate_questions?: boolean
       forbid_duplicate_objective_ids?: boolean
     }
@@ -449,6 +450,12 @@ function validateScenario(
     for (const substring of expectFollowup.must_include_substrings ?? []) {
       if (!followupText.includes(substring.toLowerCase())) {
         mismatches.push(`followup question missing substring: ${substring}`)
+      }
+    }
+
+    for (const forbiddenSubstring of expectFollowup.forbid_substrings ?? []) {
+      if (followupText.includes(forbiddenSubstring.toLowerCase())) {
+        mismatches.push(`followup question contains forbidden substring: ${forbiddenSubstring}`)
       }
     }
 

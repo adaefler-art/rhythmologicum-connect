@@ -19,6 +19,12 @@
   "expected": {
     "followup": {
       "min_next_questions": 0,
+      "forbid_substrings": [
+        "diagnose",
+        "wahrscheinlichkeit",
+        "triage",
+        "differenzial"
+      ],
       "forbid_duplicate_questions": true,
       "forbid_duplicate_objective_ids": true
     },

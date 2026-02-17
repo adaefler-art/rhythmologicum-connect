@@ -73,13 +73,13 @@ Ziel:
 	- [x] API: Runtime-Status als einzige Wahrheit (`currentStep/currentQuestion`)
 	- [x] UI: Resume/Re-Entry strikt aus Server-State, nicht aus lokalem Verlauf
 	- [x] Tests: Reload/Back/Forward deterministisch ohne Re-Ask/Sprung
-- [~] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
+- [x] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
 	- [x] API: Objective-State-Transitions `missing/unclear/resolved` + Vollständigkeitscheck je Pflichtfeld
 	- [x] Datenmodell: strukturierte Zeitachse vollständig (`Beginn/Verlauf/Trigger/Dauer/Frequenz`)
 	- [x] Datenmodell: Medikation vollständig (`Name/Dosis/Einnahmefrequenz/Fotoupload`)
 	- [x] Datenmodell: Vorerkrankungen + Vorbefunde (Upload + Metadaten) verpflichtend integrieren
-	- [ ] UI: symptom-/prozessorientierte Sprache ohne nosologische oder interpretative Aussagen
-	- [ ] Tests: Golden-Set + E2E gegen objective_reask_violation und verbotene Sprachmuster
+	- [x] UI: symptom-/prozessorientierte Sprache ohne nosologische oder interpretative Aussagen
+	- [x] Tests: Golden-Set + E2E gegen objective_reask_violation und verbotene Sprachmuster
 
 #### UC1 Implementierungsdetail
 - [x] Technische Subtask-Zerlegung (API/UI/State/Test + Akzeptanzkriterien) dokumentiert (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`)
@@ -349,3 +349,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 12:18:00 (lokal): Use-Case-Track auf revised UC-Referenz ausgerichtet, indem verbindliche UC-Guardrails ergänzt, UC1/UC2/UC3-Tasks auf Scope-/Sprach-/Output-Regeln nachgeschärft und die neue Referenz `docs/cre/USE_CASE_REFERENCE_2026-02-17.md` als Steuerungsgrundlage verankert wurde.
 - 2026-02-17 12:42:00 (lokal): Propädeutische Anamnese-Struktur als verbindlichen UC1-UC3-Backbone in die aktive Planung überführt, inklusive PAT-Abarbeitungsauftrag, Delegationsstatus `delegated_to_physician` und HITL-Case-Checklist-Anforderung in der Arzt-UI.
 - 2026-02-17 13:18:00 (lokal): UC1-03 technisch vorgezogen, indem Objective-State-Transitions (`missing/unclear/resolved`) im Follow-up-Flow umgesetzt, UC1-Pflichtvollständigkeitscheck im Submit-Gate aktiviert, Datenmodell für Timeline/Medikation/Vorerkrankungen+Vorbefunde erweitert und mit fokussierten Unit-Regressionstests abgesichert wurden (`apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `apps/rhythm-patient-ui/app/api/patient/intake/submit/route.ts`, `lib/cre/followup/generator.ts`, `lib/clinicalIntake/uc1Completeness.ts`, `lib/cre/followup/__tests__/generator.test.ts`, `lib/clinicalIntake/__tests__/uc1Completeness.test.ts`, Commit `3ad0d1b7`).
+- 2026-02-17 13:44:00 (lokal): UC1-03 abgeschlossen, indem patientenseitige Follow-up-Texte gegen diagnostisch/interpretative Formulierungen gehärtet, Golden-Set um verbotene Follow-up-Substrings erweitert sowie ein fokussierter Mock-E2E-Guard gegen verbotene Sprache und Re-Ask-Verletzungen ergänzt und grün ausgeführt wurde (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `scripts/cre/run-coherence-battery.ts`, `apps/rhythm-studio-ui/tests/fixtures/cre-scenarios/14-stress-sleep-clarification-no-repeat.json`, `tests/e2e/patient-followup-loop.spec.ts`).

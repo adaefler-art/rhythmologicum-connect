@@ -1,6 +1,6 @@
 # CRE Golden Set Report
 
-- Generated: 2026-02-16T16:19:37.553Z
+- Generated: 2026-02-17T14:10:38.422Z
 - Mode: mock (seed reasoning config, deterministic timestamps)
 - Scenarios: 30
 - Passed: 30

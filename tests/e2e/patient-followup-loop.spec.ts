@@ -321,6 +321,11 @@ test.describe('patient followup loop @patient-followup', () => {
     expect(followupJson.status).toBe(200)
     expect(Array.isArray(followupJson.json?.data?.next_questions)).toBe(true)
     expect((followupJson.json?.data?.next_questions ?? []).length).toBeLessThanOrEqual(3)
+    expect(
+      (followupJson.json?.data?.next_questions ?? []).some(
+        (entry: { id?: string }) => String(entry.id ?? '') === seedFollowupQuestions[0].id,
+      ),
+    ).toBe(false)
   })
 
   test('shows blocked UI state when effective policy is A/hard_stop', async ({ page }) => {
@@ -414,6 +419,94 @@ test.describe('patient followup loop @patient-followup', () => {
     await expect
       .poll(() => state.askedQuestionIds.includes(seedFollowupQuestions[0].id), { timeout: 10_000 })
       .toBe(true)
+  })
+
+  test('sanitizes forbidden diagnostic wording in patient-visible followup text', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const state = createMockState({ blocked: false })
+
+    await page.route('**/api/**', async (route) => {
+      const request = route.request()
+      const url = new URL(request.url())
+      const method = request.method().toUpperCase()
+      const pathname = url.pathname
+
+      if (method === 'GET' && pathname === '/api/patient/intake/latest') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            intake: {
+              ...buildMockIntakePayload(state),
+              structured_data: {
+                ...buildMockIntakePayload(state).structured_data,
+                followup: {
+                  next_questions: [
+                    {
+                      id: 'reasoning:diag:wording',
+                      question: 'Klinisch spricht das fuer eine Diagnose, wie hoch ist die Wahrscheinlichkeit?',
+                      why: 'Interpretative Sprache aus Backend',
+                      priority: 1,
+                      source: 'reasoning',
+                    },
+                  ],
+                  asked_question_ids: [],
+                  last_generated_at: '2026-02-13T12:00:00.000Z',
+                },
+              },
+            },
+          }),
+        })
+      }
+
+      if (method === 'POST' && pathname === '/api/patient/followup/generate') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              intake_id: state.intakeId,
+              blocked: false,
+              followup: {
+                next_questions: [],
+                asked_question_ids: [],
+                last_generated_at: '2026-02-13T12:00:00.000Z',
+              },
+              next_questions: [],
+            },
+          }),
+        })
+      }
+
+      if (method === 'POST' && (pathname === '/api/amy/chat' || pathname === '/api/chat')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: { reply: 'Danke, ich habe das notiert.', messageId: 'msg-assistant' },
+          }),
+        })
+      }
+
+      return route.continue()
+    })
+
+    await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
+
+    await expect(
+      page
+        .getByText(
+          'Damit ich Ihre Angaben strukturiert vervollstaendigen kann: Welche Beschwerden stehen aktuell im Vordergrund und seit wann?',
+        )
+        .first(),
+    ).toBeVisible()
+
+    await expect(page.getByText(/diagnose|wahrscheinlichkeit|triage|differenzial/i)).toHaveCount(0)
   })
 
   test('runs live seeded flow when backend mode is live', async ({ page }) => {

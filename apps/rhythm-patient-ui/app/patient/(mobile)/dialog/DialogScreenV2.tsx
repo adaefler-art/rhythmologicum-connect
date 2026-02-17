@@ -185,6 +185,23 @@ const sanitizeFollowupQuestionText = (value: string) => {
     .trim()
 }
 
+const FORBIDDEN_PATIENT_LANGUAGE_PATTERNS: RegExp[] = [
+  /\bdiagnose\b/i,
+  /\bdifferenzial\w*\b/i,
+  /\btriage\b/i,
+  /\bwahrscheinlichkeit\b/i,
+  /\brisik\w*\b/i,
+  /\bverdacht\s+auf\b/i,
+  /\bhinweis\s+auf\b/i,
+  /\bklinisch\s+(spricht|passend|typisch)\b/i,
+]
+
+const containsForbiddenPatientLanguage = (value: string) =>
+  FORBIDDEN_PATIENT_LANGUAGE_PATTERNS.some((pattern) => pattern.test(value))
+
+const toNeutralProcessQuestion = () =>
+  'Damit ich Ihre Angaben strukturiert vervollstaendigen kann: Welche Beschwerden stehen aktuell im Vordergrund und seit wann?'
+
 const deriveCardiacHint = (technicalText: string) => {
   const normalized = technicalText
     .toLowerCase()
@@ -210,6 +227,10 @@ const deriveCardiacHint = (technicalText: string) => {
 const toPatientFriendlyFollowupQuestion = (value: string) => {
   const sanitized = sanitizeFollowupQuestionText(value)
   if (!sanitized) return ''
+
+  if (containsForbiddenPatientLanguage(sanitized)) {
+    return toNeutralProcessQuestion()
+  }
 
   const normalized = sanitized
     .toLowerCase()
@@ -272,6 +293,10 @@ const toPatientFriendlyFollowupQuestion = (value: string) => {
 const normalizeAssistantTextForPatient = (value: string) => {
   const sanitized = sanitizeFollowupQuestionText(value)
   if (!sanitized) return value
+
+  if (containsForbiddenPatientLanguage(sanitized)) {
+    return toNeutralProcessQuestion()
+  }
 
   const normalized = sanitized
     .toLowerCase()
