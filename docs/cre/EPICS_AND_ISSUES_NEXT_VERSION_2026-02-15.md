@@ -36,6 +36,11 @@ Zweck:
 | UC2 Waiting Room Fastpass | CRE-NV2, CRE-NV3, CRE-NV5 | 5-Minuten-Mindestdatensatz, unvollständiger Intake mit Open Loops |
 | UC3 Consult Mode Silent Listener | CRE-NV3, CRE-NV4, CRE-NV5 | Arztgeführtes Panel mit Captured/Missing/Unclear + Evidenzquellen |
 
+Gemeinsame Voraussetzung (alle Use-Cases):
+- Propaedeutische Anamnese-Struktur als einheitlicher Case-Backbone.
+- PAT arbeitet Strukturpunkte autonom ab; offene Punkte koennen als `delegated_to_physician` markiert werden.
+- Clinician-UI zeigt pro Patientenfall eine transparente HITL-Checkliste je Strukturblock.
+
 ### Use-Case Scope Guardrails (verbindlich)
 
 - Kein patient-facing Clinical Reasoning.
@@ -91,8 +96,14 @@ Zweck:
 | CRE-UC-GR-02 | UC1/2/3 | Output-Contracts ohne Ranking/Wahrscheinlichkeit/Risk/Triage härten | P0 | M | planned | CRE-NV4-03 |
 | CRE-UC-GR-03 | UC1/2/3 | Regressionstests für verbotene Aussagen (Patient + Clinician) | P0 | M | planned | CRE-UC-GR-01, CRE-UC-GR-02 |
 | CRE-UC-GR-04 | UC1/2/3 | Review-Gate: Scope-Verstoß blockiert Merge/Release | P0 | S | planned | CRE-UC-GR-03, CRE-NV5-02 |
+| CRE-UC-BASE-01 | UC1/2/3 | Propaedeutische Struktur als verbindlichen Backbone finalisieren | P0 | M | planned | CRE-NV4-05 |
+| CRE-UC-BASE-02 | UC1/2/3 | PAT-Abarbeitungslogik je Strukturblock + Open-Loop-Markierung | P0 | M | planned | CRE-UC-BASE-01, CRE-NV4-03 |
+| CRE-UC-BASE-03 | UC1/2/3 | Delegationsstatus `delegated_to_physician` im Datenmodell und Runtime | P0 | M | planned | CRE-UC-BASE-02 |
+| CRE-UC-BASE-04 | UC1/2/3 | Clinician HITL Case-Checklist UI pro Patientenfall | P0 | M | planned | CRE-UC-BASE-03, CRE-NV4-04 |
+| CRE-UC-BASE-05 | UC1/2/3 | Evidenz-/Audit-Nachvollziehbarkeit pro Checklist-Block | P1 | S-M | planned | CRE-UC-BASE-04, CRE-UC3-03 |
 | CRE-ROLL-01 | UC1/2/3 | KPI-/Go-No-Go-Matrix pro Use Case | P0 | S-M | planned | CRE-NV5-01 |
 | CRE-ROLL-02 | UC1/2/3 | Schulungs-/Betriebsrunbook pro Touchpoint | P1 | S-M | planned | CRE-NV5-03 |
+| CRE-ROLL-03 | UC1/2/3 | HITL-Case-Checklist-Transparenz als Rollout-Kriterium | P0 | S | planned | CRE-UC-BASE-04, CRE-NV5-01 |
 
 ---
 

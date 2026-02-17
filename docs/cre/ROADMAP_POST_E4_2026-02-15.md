@@ -32,6 +32,11 @@ Nicht verhandelbare Scope-Regeln (alle Waves, alle Use-Cases):
 - Keine Diagnose-/Therapie-/Diagnostikempfehlung
 - Keine patientenspezifische Interpretation
 
+Verbindliche Architekturregel (alle Waves, alle Use-Cases):
+- Die propaedeutische Anamnese-Struktur ist der gemeinsame Backbone fuer UC1-UC3.
+- PAT arbeitet diese Struktur pro Patientenfall autonom ab und delegiert offene Punkte gezielt an HITL.
+- Die Arzt-UI zeigt den Fallfortschritt als transparente Checkliste pro Strukturblock (`captured/missing/unclear/delegated_to_physician`).
+
 ## Ziele der nächsten 10 Wochen
 1. **Stabilität im Realbetrieb**: Follow-up/CSN/Review-Flow ohne Regressionen.
 2. **Klinische Nachvollziehbarkeit**: Export- und Auditpfade konsistent verifiziert.

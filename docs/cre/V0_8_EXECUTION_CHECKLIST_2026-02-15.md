@@ -49,6 +49,14 @@ Referenz:
 Ziel:
 - Use-Case-first Umsetzung für UC1/UC2/UC3 operativ abhakbar machen, ohne die NV1-NV5-Gates zu verlieren.
 - Erfüllung der harten Scope-Regeln: keine Diagnostik, keine Risikobewertung, keine patientenspezifische Interpretation.
+- Die propaedeutische Anamnese-Struktur ist verbindliche Arbeitsgrundlage in allen drei Use Cases.
+
+### Cross-Use-Case Foundation — Propädeutische Anamnese (Case Backbone)
+- [ ] CRE-UC-BASE-01 Struktur als gemeinsamen Backbone für UC1-UC3 finalisieren
+- [ ] CRE-UC-BASE-02 PAT arbeitet Strukturpunkte fallbezogen autonom ab (inkl. Open-Loop-Markierung)
+- [ ] CRE-UC-BASE-03 Delegationslogik `delegated_to_physician` für nicht autonom klärbare Punkte definieren
+- [ ] CRE-UC-BASE-04 Arzt-UI: Case-Checklist je Patient mit `captured/missing/unclear/delegated_to_physician`
+- [ ] CRE-UC-BASE-05 Tests/Evidenz: Fallfortschritt im HITL pro Strukturblock nachvollziehbar
 
 ### UC-Guardrails (verbindlich für UC1-UC3)
 - [ ] CRE-UC-GR-01 Prompt-/Copy-Linter gegen verbotene diagnostische Sprache aktivieren
@@ -94,6 +102,7 @@ Ziel:
 ### Rollout Enabler (übergreifend)
 - [ ] CRE-ROLL-01 KPI-/Go-No-Go-Matrix pro Use Case
 - [ ] CRE-ROLL-02 Schulungs-/Betriebsrunbook pro Touchpoint
+- [ ] CRE-ROLL-03 HITL-Case-Checklist-Transparenz in Clinician-UI inkl. Audit-Nachvollziehbarkeit
 
 ### Priorisierte Umsetzung (empfohlen)
 1. UC1 komplett (CRE-UC1-01..03)
@@ -238,10 +247,10 @@ Ziel:
 
 ---
 
-## Wiedervorlage — Propädeutische Anamnese-Struktur (später)
+## Basisbaustein — Propädeutische Anamnese-Struktur (verbindlich)
 
 Hinweis:
-- Dieser Block ist bewusst als spätere Vertiefung markiert und wird nach Stabilisierung der aktuellen v0.8-Gates fortgeführt.
+- Dieser Block ist ab jetzt die verbindliche Grundlage für UC1-UC3 und nicht mehr als reine Wiedervorlage geführt.
 
 ### Arbeitsstruktur (medizinisch + PAT-fähig)
 - [ ] Leitsymptom/Anliegen als Pflicht-Einstieg normieren
@@ -338,3 +347,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 11:27:00 (lokal): CRE-UC1-02 als umgesetzt markiert, indem Resume/Reload im Assessment-Flow auf Server-SSOT gehärtet, Runtime-Resume um beantwortete Step-Keys erweitert und eine Unit-Regression für Cursor-Resume ergänzt wurde (`apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx`, `lib/funnels/runtimeResume.ts`, `lib/funnels/__tests__/runtimeResume.test.ts`).
 - 2026-02-17 11:52:00 (lokal): CRE-UC1-01 als umgesetzt markiert, indem ein expliziter Abschluss-CTA im Patient-Dialog, ein idempotenter Submit-Endpoint mit Ownership-Guard und Post-Submit Read-only-UI inklusive Success/Error-Status ergänzt wurden (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `apps/rhythm-patient-ui/app/api/patient/intake/submit/route.ts`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
 - 2026-02-17 12:18:00 (lokal): Use-Case-Track auf revised UC-Referenz ausgerichtet, indem verbindliche UC-Guardrails ergänzt, UC1/UC2/UC3-Tasks auf Scope-/Sprach-/Output-Regeln nachgeschärft und die neue Referenz `docs/cre/USE_CASE_REFERENCE_2026-02-17.md` als Steuerungsgrundlage verankert wurde.
+- 2026-02-17 12:42:00 (lokal): Propädeutische Anamnese-Struktur als verbindlichen UC1-UC3-Backbone in die aktive Planung überführt, inklusive PAT-Abarbeitungsauftrag, Delegationsstatus `delegated_to_physician` und HITL-Case-Checklist-Anforderung in der Arzt-UI.

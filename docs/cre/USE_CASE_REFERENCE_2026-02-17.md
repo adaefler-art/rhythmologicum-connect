@@ -217,3 +217,23 @@ Nicht im Scope:
 
 Scope-Hinweis:
 - Sobald das System patientenspezifisch gewichtet oder empfiehlt, verlaesst es den definierten Scope.
+
+---
+
+## Verbindliche Arbeitsgrundlage fuer UC1-UC3
+
+Die propaedeutische Anamnese-Struktur ist die verbindliche Backbone-Struktur fuer alle drei Use Cases.
+
+PAT-Auftrag (autonom, intelligent, strukturbasiert):
+- PAT arbeitet die definierten Strukturpunkte pro Fall systematisch ab.
+- PAT sammelt moeglichst vollstaendige Informationen je Strukturblock.
+- PAT markiert fehlende/unklare Angaben als Open Loops.
+- PAT delegiert nicht autonom loesbare Punkte gezielt an die aerztliche Klaerung (HITL).
+
+HITL-Transparenzpflicht (Arzt-UI):
+- Der Fallfortschritt muss als Checkliste pro Patient transparent einsehbar sein.
+- Sichtbar je Strukturblock: `captured`, `missing`, `unclear`, `delegated_to_physician`.
+- Quellenbezug bleibt nachvollziehbar (Dialog/Upload/Gespraech inkl. Timestamp wenn verfuegbar).
+
+Hinweis:
+- Diese Checkliste bezieht sich auf den Patientenfall (Case Progress), nicht auf den Use-Case-Implementierungsstatus.
