@@ -8,6 +8,21 @@ Leitprinzipien:
 - Messbarkeit vor Annahmen
 - Kleine, reversible Releases
 
+## Update 2026-02-17 — Rollout use-case first
+
+Die operative Priorisierung läuft ab jetzt über drei Use-Cases:
+- **UC1** Pre-Visit Structured Capture (Home, asynchron)
+- **UC2** Waiting Room Fastpass (Tablet/Kiosk, minimal)
+- **UC3** Consult Mode Silent Listener (arztgeführt, Audio-first)
+
+Referenz für Gap-Analyse, Arbeitspakete und Rollout-Reihenfolge:
+- `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
+
+Die bestehende Wave-Struktur bleibt als Delivery-Rahmen erhalten und wird wie folgt zugeordnet:
+- **Wave 5-6**: UC1 Stabilisierung + Qualitätsgates
+- **Wave 6-7**: UC2 Fastpass + Minimum Dataset
+- **Wave 7-8**: UC3 Silent Listener + Readiness
+
 ## Ziele der nächsten 10 Wochen
 1. **Stabilität im Realbetrieb**: Follow-up/CSN/Review-Flow ohne Regressionen.
 2. **Klinische Nachvollziehbarkeit**: Export- und Auditpfade konsistent verifiziert.

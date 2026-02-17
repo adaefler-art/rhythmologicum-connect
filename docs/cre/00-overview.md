@@ -24,3 +24,4 @@ Clinical Reasoning Engine (CRE) is the deterministic, auditable layer that turns
 ## Planning
 
 - Current implementation and delivery roadmap: `ROADMAP_POST_E4_2026-02-15.md`
+- Rollout use-case plan (UC1/UC2/UC3): `ROLLOUT_USE_CASE_PLAN_2026-02-17.md`

@@ -2,6 +2,7 @@
 
 Quelle:
 - `docs/cre/ROADMAP_POST_E4_2026-02-15.md`
+- `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
 
 Zweck:
 - Ein einziges Planungsdokument für die **kommende Version** (post-E4).
@@ -25,6 +26,14 @@ Zweck:
 | CRE-NV3 | Controlled Pilot / Shadow Mode | Woche 3-5 | P1 | planned | KPI-stabiler Betrieb unter realen Bedingungen |
 | CRE-NV4 | Workflow & UX Refinement | Woche 6-8 | P1 | planned | Qualität der Dialogführung und Review-Effizienz erhöhen |
 | CRE-NV5 | Readiness Gate & Release | Woche 9-10 | P0 | planned | Go/No-Go Entscheidung und abgesicherter Rollout |
+
+### Use-Case Mapping (Rollout-Fokus)
+
+| Use Case | Primäre Epics | Kurzfokus |
+|---|---|---|
+| UC1 Pre-Visit Structured Capture | CRE-NV1, CRE-NV2, CRE-NV5 | Stabiler Pause/Resume + deterministischer Abschluss ohne Diagnoseausgabe |
+| UC2 Waiting Room Fastpass | CRE-NV2, CRE-NV3, CRE-NV5 | 5-Minuten-Mindestdatensatz, unvollständiger Intake mit Open Loops |
+| UC3 Consult Mode Silent Listener | CRE-NV3, CRE-NV4, CRE-NV5 | Arztgeführtes Panel mit Captured/Missing/Unclear + Evidenzquellen |
 
 ---
 
@@ -52,6 +61,25 @@ Zweck:
 | CRE-NV5-01 | CRE-NV5 | Release-Readiness Report erstellen | P0 | S-M | planned | CRE-NV3-02, CRE-NV4-02 |
 | CRE-NV5-02 | CRE-NV5 | Go/No-Go Gate mit dokumentiertem Risikoentscheid | P0 | S | planned | CRE-NV5-01 |
 | CRE-NV5-03 | CRE-NV5 | Staged Rollout + Rollback Playbook finalisieren | P0 | S-M | planned | CRE-NV5-02 |
+
+---
+
+## Add-on Issues (Use-Case Gaps, neu ab 2026-02-17)
+
+| ID | Use Case | Titel | Prio | Aufwand | Status | Abhängigkeiten |
+|---|---|---|---|---|---|---|
+| CRE-UC1-01 | UC1 | Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit) | P0 | M | planned | CRE-NV2-02, CRE-NV2-04 |
+| CRE-UC1-02 | UC1 | Pause/Resume als SSOT mit klarer Fortschrittsposition | P0 | M | planned | CRE-NV2-04 |
+| CRE-UC1-03 | UC1 | Open-Loop Qualitätsregeln pro Objective härten | P1 | M | planned | CRE-NV4-03, CRE-NV4-05 |
+| CRE-UC2-01 | UC2 | Fastpass Form-first UI (Tablet/Kiosk, no-audio) | P0 | M | planned | CRE-NV2-05 |
+| CRE-UC2-02 | UC2 | Minimum-Dataset Contract + Validierung | P0 | S-M | planned | CRE-UC2-01 |
+| CRE-UC2-03 | UC2 | UC2→UC1 Übergabe via QR/Deep-Link | P1 | S-M | planned | CRE-UC2-01, CRE-UC1-02 |
+| CRE-UC3-01 | UC3 | Consent/Recording-Status + Audit Events für Consult Mode | P0 | M | planned | CRE-NV3-03 |
+| CRE-UC3-02 | UC3 | Silent-Listener Clinician-Panel (Captured/Missing/Unclear) | P0 | M | planned | CRE-NV4-04, CRE-UC3-01 |
+| CRE-UC3-03 | UC3 | Evidenz-/Timestamp-Attribution im Intake | P1 | M | planned | CRE-UC3-02 |
+| CRE-UC3-04 | UC3 | Physician-directed Clarification Suggestions | P1 | M | planned | CRE-UC3-02 |
+| CRE-ROLL-01 | UC1/2/3 | KPI-/Go-No-Go-Matrix pro Use Case | P0 | S-M | planned | CRE-NV5-01 |
+| CRE-ROLL-02 | UC1/2/3 | Schulungs-/Betriebsrunbook pro Touchpoint | P1 | S-M | planned | CRE-NV5-03 |
 
 ---
 
