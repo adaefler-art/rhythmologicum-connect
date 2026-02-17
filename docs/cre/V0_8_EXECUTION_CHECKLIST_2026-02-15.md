@@ -85,12 +85,17 @@ Ziel:
 - [x] Technische Subtask-Zerlegung (API/UI/State/Test + Akzeptanzkriterien) dokumentiert (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`)
 
 ### UC2 — Waiting Room Fastpass
-- [ ] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio, Tap-first, große Targets)
+- [x] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio, Tap-first, große Targets)
 - [ ] CRE-UC2-02 Minimum-Dataset Contract + Validierung
 	- [ ] Pflichtset: Identität + Hauptanliegen + Hauptsymptom + Beginn + Medikation (ja/nein + Liste/Fotoupload) + Kurzskala
 	- [ ] Red-Flag-Prozessfragen nur als Vollständigkeitscheck, ohne Triage-/Dringlichkeitsausgabe
 	- [ ] Durchlaufzeit-Gate: 3-5 Minuten Zielpfad inkl. Markierung fehlender Felder
 - [ ] CRE-UC2-03 UC2→UC1 Übergabe via QR/Deep-Link (optional)
+
+#### UC2 Evidenzstand (laufend)
+- [x] Form-first Fastpass-Seite für Patient Mobile ergänzt (`/patient/fastpass`) inkl. no-audio Hinweis, große Tap-Targets und Abschluss-CTA
+- [x] Einstieg über Start-Hub ergänzt (`/patient/start` → `Fastpass starten`)
+- [x] E2E-Navigation Start→Fastpass im Mock-Mode ergänzt und grün verifiziert (`tests/e2e/patient-intake-start-cta.spec.ts`)
 
 ### UC3 — Consult Mode Silent Listener
 - [ ] CRE-UC3-01 Consent/Recording-Status + Audit Events

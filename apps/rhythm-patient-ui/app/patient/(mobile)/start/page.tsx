@@ -67,6 +67,33 @@ export default function PatientEntryScreen() {
           </Card>
 
           <Card className="border border-slate-200" padding="lg" shadow="sm">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-900">Wartezimmer-Fastpass</p>
+                  <p className="text-sm text-slate-600">
+                    Kurze Formular-Erfassung mit grossen Buttons (ohne Spracheingabe).
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="secondary"
+                size="lg"
+                fullWidth
+                icon={<ChevronRight className="h-4 w-4" />}
+                iconPosition="right"
+                onClick={() => router.push('/patient/fastpass')}
+              >
+                Fastpass starten
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="border border-slate-200" padding="lg" shadow="sm">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
