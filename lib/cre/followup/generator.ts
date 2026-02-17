@@ -7,6 +7,7 @@ import type {
 } from '@/lib/types/clinicalIntake'
 
 type FollowupCandidate = ClinicalFollowupQuestion
+type ObjectiveStateOverride = 'missing' | 'unclear' | 'resolved'
 
 const MAX_NEXT_QUESTIONS = 3
 const CLINICIAN_REQUEST_WHY = 'Rueckfrage aus aerztlicher Pruefung'
@@ -62,6 +63,29 @@ const getStringList = (value: unknown) =>
   Array.isArray(value)
     ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     : []
+
+const getDocumentList = (value: unknown) =>
+  Array.isArray(value)
+    ? value.filter(
+        (item) => typeof item === 'object' && item !== null && !Array.isArray(item),
+      )
+    : []
+
+const getObjectiveStateOverrides = (structuredData: StructuredIntakeData) => {
+  const raw = structuredData.followup?.objective_state_overrides
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {} as Record<string, ObjectiveStateOverride>
+  }
+
+  const next: Record<string, ObjectiveStateOverride> = {}
+  for (const [objectiveId, state] of Object.entries(raw)) {
+    if (state === 'missing' || state === 'unclear' || state === 'resolved') {
+      next[objectiveId] = state
+    }
+  }
+
+  return next
+}
 
 const isFollowupBlockedBySafety = (structuredData: StructuredIntakeData) => {
   const safety = structuredData.safety
@@ -124,6 +148,31 @@ const OBJECTIVE_SLOTS: ObjectiveSlotDefinition[] = [
     isFilled: (structuredData) => getString(structuredData.history_of_present_illness?.course).length > 0,
   },
   {
+    id: 'objective:trigger',
+    label: 'Beschwerde-Trigger',
+    fieldPath: 'structured_data.history_of_present_illness.trigger',
+    questionId: 'gap:trigger',
+    question: 'Gibt es erkennbare Ausloeser oder Trigger fuer die Beschwerden?',
+    why: 'Ausloeser/Trigger fehlen',
+    priority: 2,
+    isFilled: (structuredData) => {
+      const hpi = structuredData.history_of_present_illness
+      if (!hpi) return false
+      if (getString(hpi.trigger).length > 0) return true
+      return getStringList(hpi.aggravating_factors).length > 0 || getStringList(hpi.relieving_factors).length > 0
+    },
+  },
+  {
+    id: 'objective:frequency',
+    label: 'Beschwerdefrequenz',
+    fieldPath: 'structured_data.history_of_present_illness.frequency',
+    questionId: 'gap:frequency',
+    question: 'Wie haeufig treten die Beschwerden auf?',
+    why: 'Frequenz der Beschwerden fehlt',
+    priority: 2,
+    isFilled: (structuredData) => getString(structuredData.history_of_present_illness?.frequency).length > 0,
+  },
+  {
     id: 'objective:medication',
     label: 'Medikationsangaben',
     fieldPath: 'structured_data.medication',
@@ -132,6 +181,26 @@ const OBJECTIVE_SLOTS: ObjectiveSlotDefinition[] = [
     why: 'Medikationskontext fehlt',
     priority: 3,
     isFilled: (structuredData) => getStringList(structuredData.medication).length > 0,
+  },
+  {
+    id: 'objective:past-medical-history',
+    label: 'Vorerkrankungen',
+    fieldPath: 'structured_data.past_medical_history',
+    questionId: 'gap:past-medical-history',
+    question: 'Gibt es bekannte relevante Vorerkrankungen?',
+    why: 'Vorerkrankungen fehlen',
+    priority: 3,
+    isFilled: (structuredData) => getStringList(structuredData.past_medical_history).length > 0,
+  },
+  {
+    id: 'objective:prior-findings-upload',
+    label: 'Vorbefunde/Uploads',
+    fieldPath: 'structured_data.prior_findings_documents',
+    questionId: 'gap:prior-findings-upload',
+    question: 'Liegt ein Vorbefund oder Arztbrief vor, den Sie hochladen koennen?',
+    why: 'Vorbefunde/Upload fehlen',
+    priority: 3,
+    isFilled: (structuredData) => getDocumentList(structuredData.prior_findings_documents).length > 0,
   },
   {
     id: 'objective:psychosocial',
@@ -174,15 +243,21 @@ const deriveObjectiveStatus = (params: {
   slot: ObjectiveSlotDefinition
   structuredData: StructuredIntakeData
   blockedBySafety: boolean
+  objectiveOverrides: Record<string, ObjectiveStateOverride>
 }): ClinicalFollowupObjectiveStatus => {
   const filled = params.slot.isFilled(params.structuredData)
 
   if (filled) {
-    return 'answered'
+    return 'resolved'
   }
 
   if (params.blockedBySafety) {
     return 'blocked_by_safety'
+  }
+
+  const override = params.objectiveOverrides[params.slot.id]
+  if (override === 'unclear') {
+    return 'unclear'
   }
 
   return 'missing'
@@ -190,17 +265,21 @@ const deriveObjectiveStatus = (params: {
 
 const buildFollowupObjectives = (structuredData: StructuredIntakeData) => {
   const blockedBySafety = isFollowupBlockedBySafety(structuredData)
+  const objectiveOverrides = getObjectiveStateOverrides(structuredData)
 
   const objectives: ClinicalFollowupObjective[] = OBJECTIVE_SLOTS.map((slot) => {
     const status = deriveObjectiveStatus({
       slot,
       structuredData,
       blockedBySafety,
+      objectiveOverrides,
     })
 
     const rationale =
-      status === 'answered'
+      status === 'resolved' || status === 'answered' || status === 'verified'
         ? 'Objective ist in den vorliegenden Anamnesedaten bereits befüllt.'
+        : status === 'unclear'
+          ? 'Objective ist teilweise vorhanden, braucht aber noch Praezisierung.'
         : status === 'blocked_by_safety'
           ? 'Objective ist offen, aber durch aktiven Safety-Hard-Stop blockiert.'
           : slot.why
@@ -215,7 +294,7 @@ const buildFollowupObjectives = (structuredData: StructuredIntakeData) => {
   })
 
   const activeObjectiveIds = objectives
-    .filter((objective) => objective.status === 'missing')
+    .filter((objective) => objective.status === 'missing' || objective.status === 'unclear')
     .map((objective) => objective.id)
 
   return {
@@ -355,6 +434,7 @@ export const mergeClinicianRequestedItemsIntoFollowup = (params: {
       last_generated_at: now.toISOString(),
       objectives: objectiveSnapshot.objectives,
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+      objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       lifecycle: {
         ...lifecycle,
         state: 'needs_review',
@@ -388,6 +468,7 @@ export const generateFollowupQuestions = (params: {
       last_generated_at: now.toISOString(),
       objectives: objectiveSnapshot.objectives,
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+      objective_state_overrides: getObjectiveStateOverrides(structuredData),
       lifecycle,
     }
   }
@@ -406,6 +487,7 @@ export const generateFollowupQuestions = (params: {
       last_generated_at: now.toISOString(),
       objectives: objectiveSnapshot.objectives,
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+      objective_state_overrides: getObjectiveStateOverrides(structuredData),
       lifecycle: {
         ...lifecycle,
         state: 'active',
@@ -449,6 +531,7 @@ export const generateFollowupQuestions = (params: {
     last_generated_at: now.toISOString(),
     objectives: objectiveSnapshot.objectives,
     active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+    objective_state_overrides: getObjectiveStateOverrides(structuredData),
     lifecycle: {
       ...lifecycle,
       state: allCandidates.length === 0 ? 'completed' : 'active',
@@ -480,6 +563,7 @@ export const appendAskedQuestionIds = (params: {
       last_generated_at: params.structuredData.followup?.last_generated_at ?? new Date().toISOString(),
       objectives: objectiveSnapshot.objectives,
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+      objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       lifecycle,
     },
   }
@@ -542,6 +626,7 @@ export const transitionFollowupLifecycle = (params: {
       last_generated_at: now.toISOString(),
       objectives: objectiveSnapshot.objectives,
       active_objective_ids: objectiveSnapshot.activeObjectiveIds,
+      objective_state_overrides: getObjectiveStateOverrides(params.structuredData),
       lifecycle: {
         state: nextState,
         completed_question_ids: Array.from(completedIds),

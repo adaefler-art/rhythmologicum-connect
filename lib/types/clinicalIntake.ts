@@ -99,9 +99,24 @@ export interface HistoryOfPresentIllness {
   onset?: string
   duration?: string
   course?: string
+  trigger?: string
+  frequency?: string
   associated_symptoms?: string[]
   relieving_factors?: string[]
   aggravating_factors?: string[]
+}
+
+export interface MedicationEntry {
+  name: string
+  dosage: string
+  intake_frequency: string
+}
+
+export interface IntakeDocumentReference {
+  id?: string
+  name?: string
+  url?: string
+  uploaded_at?: string
 }
 
 export type ReasoningLikelihood = 'low' | 'medium' | 'high'
@@ -169,6 +184,8 @@ export interface ClinicalFollowupQuestion {
 
 export type ClinicalFollowupObjectiveStatus =
   | 'missing'
+  | 'unclear'
+  | 'resolved'
   | 'answered'
   | 'verified'
   | 'blocked_by_safety'
@@ -188,6 +205,7 @@ export interface ClinicalFollowup {
   last_generated_at: string
   objectives?: ClinicalFollowupObjective[]
   active_objective_ids?: string[]
+  objective_state_overrides?: Record<string, 'missing' | 'unclear' | 'resolved'>
   lifecycle?: {
     state: 'active' | 'needs_review' | 'completed'
     completed_question_ids: string[]
@@ -260,6 +278,9 @@ export interface StructuredIntakeData {
   relevant_negatives?: string[]
   past_medical_history?: string[]
   medication?: string[]
+  medication_entries?: MedicationEntry[]
+  medication_documents?: IntakeDocumentReference[]
+  prior_findings_documents?: IntakeDocumentReference[]
   psychosocial_factors?: string[]
   red_flags?: string[]
   uncertainties?: string[]

@@ -114,6 +114,32 @@ describe('followup generator', () => {
 
     expect(clinicianOnset).toBeUndefined()
   })
+
+  it('marks objective as unclear when override is present and keeps it active', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-14T00:00:00.000Z',
+          objective_state_overrides: {
+            'objective:medication': 'unclear',
+          },
+        },
+      },
+      now: new Date('2026-02-14T10:00:00.000Z'),
+    })
+
+    const medicationObjective = (generated.objectives ?? []).find(
+      (entry) => entry.id === 'objective:medication',
+    )
+
+    expect(medicationObjective?.status).toBe('unclear')
+    expect(generated.active_objective_ids).toContain('objective:medication')
+  })
+
   it('falls back to gap rules when reasoning is missing', () => {
     const structuredData = {
       status: 'draft' as const,

@@ -487,7 +487,7 @@ const buildCaseChecklistSnapshot = (params: {
   const checklistFromObjectives = objectives.map((objective) => ({
     id: objective.id,
     status:
-      objective.status === 'answered'
+      objective.status === 'answered' || objective.status === 'resolved' || objective.status === 'verified'
         ? 'captured'
         : objective.status === 'missing'
           ? 'missing'
@@ -1045,8 +1045,8 @@ export function DialogScreenV2() {
 
       const messagesRaw = Array.isArray(payload?.data?.messages) ? payload.data.messages : []
       return messagesRaw
-        .filter((entry) => typeof entry === 'object' && entry !== null)
-        .map((entry) => {
+        .filter((entry: unknown) => typeof entry === 'object' && entry !== null)
+        .map((entry: unknown) => {
           const item = entry as Record<string, unknown>
           return {
             id: typeof item.id === 'string' ? item.id : `msg-${Math.random().toString(36).slice(2)}`,
@@ -1074,8 +1074,8 @@ export function DialogScreenV2() {
 
       const assessmentsRaw = Array.isArray(payload?.data?.assessments) ? payload.data.assessments : []
       return assessmentsRaw
-        .filter((entry) => typeof entry === 'object' && entry !== null)
-        .map((entry) => {
+        .filter((entry: unknown) => typeof entry === 'object' && entry !== null)
+        .map((entry: unknown) => {
           const item = entry as Record<string, unknown>
           return {
             id: typeof item.id === 'string' ? item.id : '',
@@ -1084,7 +1084,7 @@ export function DialogScreenV2() {
             completedAt: typeof item.completedAt === 'string' ? item.completedAt : null,
           } as PatientAssessmentSummary
         })
-        .filter((entry) => entry.id)
+        .filter((entry: PatientAssessmentSummary) => entry.id)
     } catch (err) {
       console.warn('[DialogScreenV2] Failed to load patient assessments summary', err)
       return []

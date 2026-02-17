@@ -141,7 +141,15 @@ const resolveObjectiveIdFromQuestionId = (questionId: string) => {
   if (normalized.includes('onset')) return 'objective:onset'
   if (normalized.includes('duration')) return 'objective:duration'
   if (normalized.includes('course')) return 'objective:course'
+  if (normalized.includes('trigger')) return 'objective:trigger'
+  if (normalized.includes('frequency')) return 'objective:frequency'
   if (normalized.includes('medication') || normalized.includes('medik')) return 'objective:medication'
+  if (normalized.includes('past-medical-history') || normalized.includes('vorerkrank')) {
+    return 'objective:past-medical-history'
+  }
+  if (normalized.includes('prior-findings') || normalized.includes('arztbrief') || normalized.includes('upload')) {
+    return 'objective:prior-findings-upload'
+  }
   if (normalized.includes('psychosocial') || normalized.includes('stress') || normalized.includes('schlaf')) {
     return 'objective:psychosocial'
   }
@@ -164,8 +172,20 @@ const resolveObjectiveIdFromQuestionText = (questionText?: string) => {
   if (/verlauf|verbessert|verschlechtert|unveraendert|course/.test(normalized)) {
     return 'objective:course'
   }
+  if (/trigger|ausloeser|auslöser/.test(normalized)) {
+    return 'objective:trigger'
+  }
+  if (/haeufig|häufig|frequenz|frequency/.test(normalized)) {
+    return 'objective:frequency'
+  }
   if (/medik|medication|nahrungserga|supplement/.test(normalized)) {
     return 'objective:medication'
+  }
+  if (/vorerkrank|past medical/.test(normalized)) {
+    return 'objective:past-medical-history'
+  }
+  if (/vorbefund|arztbrief|upload|befund/.test(normalized)) {
+    return 'objective:prior-findings-upload'
   }
   if (/psycho|stress|alltag|schlaf|belastung/.test(normalized)) {
     return 'objective:psychosocial'
@@ -183,7 +203,79 @@ const isObjectiveStillMissing = (params: {
   const objective = (params.followup.objectives ?? []).find((entry) => entry.id === params.objectiveId)
   if (!objective) return true
 
-  return objective.status === 'missing' || objective.status === 'blocked_by_safety'
+  return (
+    objective.status === 'missing' ||
+    objective.status === 'unclear' ||
+    objective.status === 'blocked_by_safety'
+  )
+}
+
+const resolveObjectiveIdsFromAskedContext = (params: {
+  askedQuestionIds: string[]
+  askedQuestionText?: string
+}) => {
+  const ids = new Set<string>()
+
+  for (const questionId of params.askedQuestionIds) {
+    const objectiveId = resolveObjectiveIdFromQuestionId(questionId)
+    if (objectiveId) {
+      ids.add(objectiveId)
+    }
+  }
+
+  const objectiveIdFromText = resolveObjectiveIdFromQuestionText(params.askedQuestionText)
+  if (objectiveIdFromText) {
+    ids.add(objectiveIdFromText)
+  }
+
+  return Array.from(ids)
+}
+
+const applyObjectiveStateOverrides = (params: {
+  structuredData: StructuredIntakeData
+  objectiveIds: string[]
+  answerClassification: FollowupAnswerClassification
+}): StructuredIntakeData => {
+  if (params.objectiveIds.length === 0) {
+    return params.structuredData
+  }
+
+  const overrideState =
+    params.answerClassification === 'answered'
+      ? 'resolved'
+      : params.answerClassification === 'partial' ||
+          params.answerClassification === 'unclear' ||
+          params.answerClassification === 'contradiction'
+        ? 'unclear'
+        : null
+
+  if (!overrideState) {
+    return params.structuredData
+  }
+
+  const currentFollowup = params.structuredData.followup ?? {
+    next_questions: [],
+    asked_question_ids: [],
+    last_generated_at: new Date().toISOString(),
+  }
+
+  const currentOverridesRaw = currentFollowup.objective_state_overrides
+  const currentOverrides: Record<string, 'missing' | 'unclear' | 'resolved'> =
+    currentOverridesRaw && typeof currentOverridesRaw === 'object' && !Array.isArray(currentOverridesRaw)
+      ? { ...currentOverridesRaw }
+      : {}
+
+  for (const objectiveId of params.objectiveIds) {
+    currentOverrides[objectiveId] = overrideState
+  }
+
+  return {
+    ...params.structuredData,
+    followup: {
+      ...currentFollowup,
+      objective_state_overrides: currentOverrides,
+    },
+  }
 }
 
 const shouldSuppressClarificationPrompt = (params: {
@@ -318,19 +410,12 @@ const applyAskedAnswerToStructuredData = (params: {
   const next = { ...params.structuredData }
   const hpi = { ...(next.history_of_present_illness ?? {}) }
   const askedQuestionText = params.askedQuestionText?.trim().toLowerCase() ?? ''
-  const inferredObjectiveIds = new Set<string>()
-
-  for (const questionId of params.askedQuestionIds) {
-    const objectiveId = resolveObjectiveIdFromQuestionId(questionId)
-    if (objectiveId) {
-      inferredObjectiveIds.add(objectiveId)
-    }
-  }
-
-  const objectiveIdFromText = resolveObjectiveIdFromQuestionText(params.askedQuestionText)
-  if (objectiveIdFromText) {
-    inferredObjectiveIds.add(objectiveIdFromText)
-  }
+  const inferredObjectiveIds = new Set(
+    resolveObjectiveIdsFromAskedContext({
+      askedQuestionIds: params.askedQuestionIds,
+      askedQuestionText: params.askedQuestionText,
+    }),
+  )
 
   const hasObjective = (objectiveId: string) => inferredObjectiveIds.has(objectiveId)
 
@@ -367,6 +452,14 @@ const applyAskedAnswerToStructuredData = (params: {
       hpi.course = answer
     }
 
+    if (questionId === 'gap:trigger') {
+      hpi.trigger = answer
+    }
+
+    if (questionId === 'gap:frequency') {
+      hpi.frequency = answer
+    }
+
     if (questionId === 'gap:medication') {
       const medication = asStringArray(next.medication)
       if (isNoMedicationAnswer(answer)) {
@@ -400,6 +493,21 @@ const applyAskedAnswerToStructuredData = (params: {
 
   if (hasObjective('objective:course')) {
     hpi.course = answer
+  }
+
+  if (hasObjective('objective:trigger')) {
+    hpi.trigger = answer
+  }
+
+  if (hasObjective('objective:frequency')) {
+    hpi.frequency = answer
+  }
+
+  if (hasObjective('objective:past-medical-history')) {
+    const existingPmh = asStringArray(next.past_medical_history)
+    if (!existingPmh.includes(answer)) {
+      next.past_medical_history = [...existingPmh, answer]
+    }
   }
 
   if (hasObjective('objective:medication') || inferMedicationContext()) {
@@ -635,6 +743,17 @@ export async function POST(req: Request) {
       askedQuestionText: body.asked_question_text,
       answerText: body.asked_answer_text,
       normalizationTurn: normalizationResult.turn,
+    })
+
+    const objectiveIdsForAnsweredContext = resolveObjectiveIdsFromAskedContext({
+      askedQuestionIds,
+      askedQuestionText: body.asked_question_text,
+    })
+
+    structuredData = applyObjectiveStateOverrides({
+      structuredData,
+      objectiveIds: objectiveIdsForAnsweredContext,
+      answerClassification,
     })
 
     const shouldAdvanceAnsweredQuestion =

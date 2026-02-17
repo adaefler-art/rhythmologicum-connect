@@ -19,6 +19,8 @@ export const clinicalFollowupObjectiveSchema = z.object({
   field_path: z.string().min(1),
   status: z.union([
     z.literal('missing'),
+    z.literal('unclear'),
+    z.literal('resolved'),
     z.literal('answered'),
     z.literal('verified'),
     z.literal('blocked_by_safety'),
@@ -33,6 +35,12 @@ export const clinicalFollowupSchema = z.object({
   last_generated_at: z.string().min(1),
   objectives: z.array(clinicalFollowupObjectiveSchema).optional(),
   active_objective_ids: z.array(z.string().min(1)).optional(),
+  objective_state_overrides: z
+    .record(
+      z.string(),
+      z.union([z.literal('missing'), z.literal('unclear'), z.literal('resolved')]),
+    )
+    .optional(),
   lifecycle: z
     .object({
       state: z.union([z.literal('active'), z.literal('needs_review'), z.literal('completed')]),

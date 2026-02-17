@@ -10,6 +10,8 @@ import {
 import { withIdempotency } from '@/lib/api/idempotency'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import { trackEvent } from '@/lib/telemetry/trackEvent.server'
+import { getUc1MissingRequiredFields } from '@/lib/clinicalIntake/uc1Completeness'
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 
 type SubmitRequestBody = {
   intakeId?: string
@@ -20,6 +22,7 @@ type IntakeRow = {
   user_id: string
   status: 'draft' | 'active' | 'superseded' | 'archived'
   metadata: Record<string, unknown> | null
+  structured_data: StructuredIntakeData | null
 }
 
 /**
@@ -71,7 +74,7 @@ async function handleSubmit(
 
   let intakeQuery = supabase
     .from('clinical_intakes')
-    .select('id, user_id, status, metadata')
+    .select('id, user_id, status, metadata, structured_data')
     .eq('user_id', user.id)
 
   if (intakeId) {
@@ -90,6 +93,20 @@ async function handleSubmit(
 
   if (!intake) {
     return notFoundResponse('Intake', 'Kein uebermittelbarer Intake gefunden.', correlationId)
+  }
+
+  const missingRequiredFields = getUc1MissingRequiredFields(
+    (intake.structured_data ?? { status: 'draft' }) as StructuredIntakeData,
+  )
+
+  if (missingRequiredFields.length > 0) {
+    return invalidInputResponse(
+      'Intake unvollstaendig. Bitte fehlende Pflichtangaben ergaenzen.',
+      {
+        missing_fields: missingRequiredFields,
+      },
+      correlationId,
+    )
   }
 
   const submittedAt = new Date().toISOString()
