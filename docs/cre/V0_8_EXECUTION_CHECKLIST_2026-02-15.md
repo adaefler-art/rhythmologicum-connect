@@ -53,10 +53,10 @@ Ziel:
 	- [ ] API: idempotenter Submit-/Complete-Flow mit Ownership-Guard
 	- [ ] UI: explizite Abschluss-CTA mit Loading/Success/Error Zuständen
 	- [ ] Tests: API + E2E für Double-Submit-Schutz und Post-Submit Read-only
-- [ ] CRE-UC1-02 Pause/Resume als SSOT mit klarer Fortschrittsposition
-	- [ ] API: Runtime-Status als einzige Wahrheit (`currentStep/currentQuestion`)
-	- [ ] UI: Resume/Re-Entry strikt aus Server-State, nicht aus lokalem Verlauf
-	- [ ] Tests: Reload/Back/Forward deterministisch ohne Re-Ask/Sprung
+- [x] CRE-UC1-02 Pause/Resume als SSOT mit klarer Fortschrittsposition
+	- [x] API: Runtime-Status als einzige Wahrheit (`currentStep/currentQuestion`)
+	- [x] UI: Resume/Re-Entry strikt aus Server-State, nicht aus lokalem Verlauf
+	- [x] Tests: Reload/Back/Forward deterministisch ohne Re-Ask/Sprung
 - [ ] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
 	- [ ] API: Objective-State-Transitions und Priorisierung (`missing/unclear/resolved`)
 	- [ ] UI: neutrale Missing/Open-Loop-Hinweise ohne Diagnosewirkung
@@ -320,3 +320,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 10:39:00 (lokal): Roadmap auf Use-Case-first ausgerichtet, indem ein dedizierter UC1/UC2/UC3-Rolloutplan mit Gap-Analyse/Arbeitspaketen ergänzt und in Roadmap/Epics als Steuerungsreferenz verankert wurde (`docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`, `docs/cre/ROADMAP_POST_E4_2026-02-15.md`, `docs/cre/EPICS_AND_ISSUES_NEXT_VERSION_2026-02-15.md`).
 - 2026-02-17 10:48:00 (lokal): Use-Case Add-on Track in die v0.8-Checklist integriert, inklusive CRE-UC1/2/3- und CRE-ROLL-Tasks mit priorisierter Abarbeitungsreihenfolge (`docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
 - 2026-02-17 10:56:00 (lokal): UC1-Tickets (CRE-UC1-01..03) technisch heruntergebrochen, indem eine detaillierte API/UI/State/Test-Subtaskplanung mit Akzeptanzkriterien erstellt und in der Checklist direkt verlinkt wurde (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
+- 2026-02-17 11:27:00 (lokal): CRE-UC1-02 als umgesetzt markiert, indem Resume/Reload im Assessment-Flow auf Server-SSOT gehärtet, Runtime-Resume um beantwortete Step-Keys erweitert und eine Unit-Regression für Cursor-Resume ergänzt wurde (`apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx`, `lib/funnels/runtimeResume.ts`, `lib/funnels/__tests__/runtimeResume.test.ts`).

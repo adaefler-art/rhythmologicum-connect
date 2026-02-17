@@ -213,6 +213,7 @@ export async function GET(
 
     let totalSteps = 0
     let currentStep: Awaited<ReturnType<typeof getCurrentStep>> = null
+    let answeredQuestionKeysCurrentStep: string[] = []
 
     if (assessment.funnel_id) {
       const { data: steps, error: stepsError } = await supabase
@@ -303,6 +304,63 @@ export async function GET(
       return internalErrorResponse('Fehler beim Ermitteln des aktuellen Schritts.', correlationId)
     }
 
+    const { data: answeredRows, error: answeredRowsError } = await supabase
+      .from('assessment_answers')
+      .select('question_id')
+      .eq('assessment_id', assessmentId)
+
+    if (answeredRowsError) {
+      logDatabaseError(
+        { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` },
+        answeredRowsError,
+      )
+      return internalErrorResponse('Fehler beim Laden der beantworteten Fragen.', correlationId)
+    }
+
+    const answeredQuestionIds = new Set(
+      (answeredRows ?? [])
+        .map((row) => (typeof row.question_id === 'string' ? row.question_id : null))
+        .filter((value): value is string => Boolean(value && value.trim())),
+    )
+
+    if (assessment.funnel_id && currentStep.stepId) {
+      const { data: currentStepQuestions, error: currentStepQuestionsError } = await supabase
+        .from('funnel_step_questions')
+        .select('question_id, questions(key)')
+        .eq('funnel_step_id', currentStep.stepId)
+        .order('order_index', { ascending: true })
+
+      if (currentStepQuestionsError) {
+        logDatabaseError(
+          { userId: user.id, assessmentId, endpoint: `/api/funnels/${slug}/assessments/${assessmentId}` },
+          currentStepQuestionsError,
+        )
+        return internalErrorResponse('Fehler beim Laden der Step-Fragen.', correlationId)
+      }
+
+      answeredQuestionKeysCurrentStep = (currentStepQuestions ?? [])
+        .map((question) => {
+          const questionKey = Array.isArray(question.questions)
+            ? question.questions?.[0]?.key
+            : question.questions?.key
+
+          if (typeof questionKey === 'string' && questionKey.trim()) {
+            return {
+              responseKey: questionKey,
+              matchKeys: [questionKey, question.question_id],
+            }
+          }
+
+          return {
+            responseKey: question.question_id,
+            matchKeys: [question.question_id],
+          }
+        })
+        .filter((entry) => entry.responseKey)
+        .filter((entry) => entry.matchKeys.some((key) => answeredQuestionIds.has(key)))
+        .map((entry) => entry.responseKey)
+    }
+
     const completedSteps = currentStep.stepIndex
 
     await emitFunnelResumed({
@@ -328,6 +386,7 @@ export async function GET(
       },
       completedSteps,
       totalSteps,
+      answeredQuestionKeysCurrentStep,
     }
 
     return versionedSuccessResponse(responseData, PATIENT_ASSESSMENT_SCHEMA_VERSION, 200, correlationId)

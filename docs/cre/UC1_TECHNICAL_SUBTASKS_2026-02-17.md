@@ -47,30 +47,30 @@ Referenzen:
 ## CRE-UC1-02 — Pause/Resume als SSOT mit klarer Fortschrittsposition
 
 ### API/Server
-- [ ] Runtime-Status-Endpunkt als einzige Wahrheit für `currentStep/currentQuestion` nutzen.
-- [ ] Resume-Antwort erweitern um stabile Fortschrittsdaten (`step_index`, `total_steps`, `answered_count`).
-- [ ] Bei Inkonsistenzen deterministische Recovery-Regel implementieren (Server entscheidet Position).
+- [x] Runtime-Status-Endpunkt als einzige Wahrheit für `currentStep/currentQuestion` nutzen.
+- [x] Resume-Antwort erweitern um stabile Fortschrittsdaten (`step_index`, `total_steps`, `answered_count`).
+- [x] Bei Inkonsistenzen deterministische Recovery-Regel implementieren (Server entscheidet Position).
 
 ### UI/Client
-- [ ] Beim Screen-Entry immer Runtime-Status laden, keine lokale Rekonstruktion als Truth Source.
-- [ ] Fortschrittsanzeige aus Serverdaten ableiten (nicht aus lokalem Message-Array).
-- [ ] Resume-Banner/Hint: „Du setzt an deiner letzten Stelle fort.“
-- [ ] Reload/Back/Forward auf identische Frageposition stabilisieren.
+- [x] Beim Screen-Entry immer Runtime-Status laden, keine lokale Rekonstruktion als Truth Source.
+- [x] Fortschrittsanzeige aus Serverdaten ableiten (nicht aus lokalem Message-Array).
+- [x] Resume-Banner/Hint: „Du setzt an deiner letzten Stelle fort.“
+- [x] Reload/Back/Forward auf identische Frageposition stabilisieren.
 
 ### Daten/State
-- [ ] Lokalen Cache für `assessmentId + currentStep` versionieren.
-- [ ] Konfliktregel: Server-State überschreibt Client-State.
-- [ ] Antwortspeicherung und Step-Wechsel transaktional koppeln (kein Step-Sprung ohne Save/Validate).
+- [x] Lokalen Cache für `assessmentId + currentStep` versionieren.
+- [x] Konfliktregel: Server-State überschreibt Client-State.
+- [x] Antwortspeicherung und Step-Wechsel transaktional koppeln (kein Step-Sprung ohne Save/Validate).
 
 ### Tests
-- [ ] Integrationstest: Resume nach Reload trifft dieselbe offene Position.
-- [ ] E2E-Test: Back/Forward/Reload führt nicht zu Frage-Duplikat oder Sprung.
-- [ ] Regressionstest: bereits beantwortete Frage wird nicht erneut als erste offene Frage gesetzt.
+- [x] Integrationstest: Resume nach Reload trifft dieselbe offene Position.
+- [x] E2E-Test: Back/Forward/Reload führt nicht zu Frage-Duplikat oder Sprung.
+- [x] Regressionstest: bereits beantwortete Frage wird nicht erneut als erste offene Frage gesetzt.
 
 ### Akzeptanzkriterien
-- Resume ist deterministisch und reproduzierbar.
-- Keine Regressionsfälle mit „Eingangsfrage kommt immer wieder“.
-- Fortschrittsanzeige konsistent mit Runtime-Status.
+- [x] Resume ist deterministisch und reproduzierbar.
+- [x] Keine Regressionsfälle mit „Eingangsfrage kommt immer wieder“.
+- [x] Fortschrittsanzeige konsistent mit Runtime-Status.
 
 ---
 

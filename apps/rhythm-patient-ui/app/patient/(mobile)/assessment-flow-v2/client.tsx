@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useAssessmentResult } from '@/lib/hooks/useAssessmentResult'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 import { getAssessmentFlowExitRoute } from '../utils/navigation'
 import type { FunnelDefinition, QuestionDefinition } from '@/lib/types/funnel'
 import { isQuestionStep } from '@/lib/types/funnel'
+import { normalizeAnsweredKeys, resolveQuestionCursorFromRuntime } from '@/lib/funnels/runtimeResume'
 
 // ==========================================
 // TYPES
@@ -43,6 +44,13 @@ interface AssessmentQuestion {
   questionIndex: number
   options: AssessmentOption[]
   whyWeAsk: string
+}
+
+interface RuntimeStepSnapshot {
+  currentStepId: string
+  currentStepIndex: number
+  totalSteps: number
+  answeredQuestionKeysCurrentStep: string[]
 }
 
 
@@ -306,9 +314,10 @@ export default function AssessmentFlowV2Client({
   const [isLoading, setIsLoading] = useState(initialLoading)
   const [error, setError] = useState(hasError)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentQuestionCursor, setCurrentQuestionCursor] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string | number | boolean>>({})
   const [assessmentId, setAssessmentId] = useState<string | null>(null)
+  const [runtimeStepSnapshot, setRuntimeStepSnapshot] = useState<RuntimeStepSnapshot | null>(null)
   const [liveQuestions, setLiveQuestions] = useState<AssessmentQuestion[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
@@ -320,13 +329,16 @@ export default function AssessmentFlowV2Client({
   })
 
   const resolvedQuestions = mode === 'demo' ? __DEV_FIXTURE__QUESTIONS : questions ?? liveQuestions
-  const totalSteps = resolvedQuestions.length
-  const currentQuestion = resolvedQuestions[currentStep - 1]
-  const progressPercentage = totalSteps > 0
-    ? Math.round((currentStep / totalSteps) * 100)
+  const totalQuestions = resolvedQuestions.length
+  const currentQuestion = resolvedQuestions[currentQuestionCursor]
+  const progressPercentage = totalQuestions > 0
+    ? Math.round(((currentQuestionCursor + 1) / totalQuestions) * 100)
     : 0
   const selectedAnswer = currentQuestion ? answers[currentQuestion.id] : undefined
   const hasAnswer = selectedAnswer !== undefined && selectedAnswer !== null && selectedAnswer !== ''
+  const runtimeStepText = runtimeStepSnapshot
+    ? `Server-Schritt ${runtimeStepSnapshot.currentStepIndex + 1} von ${runtimeStepSnapshot.totalSteps}`
+    : null
   
   // I2.5: Use canonical navigation utility for deterministic exit
   const exitRoute = getAssessmentFlowExitRoute(mode)
@@ -349,6 +361,95 @@ export default function AssessmentFlowV2Client({
     pollInterval: 2000,
     pollTimeout: 30000,
   })
+
+  const buildRuntimeSnapshot = useCallback(
+    (payload: Record<string, unknown>): RuntimeStepSnapshot | null => {
+      const currentStep =
+        payload?.currentStep && typeof payload.currentStep === 'object'
+          ? (payload.currentStep as Record<string, unknown>)
+          : null
+
+      const currentStepId = typeof currentStep?.stepId === 'string' ? currentStep.stepId : null
+      const currentStepIndex =
+        typeof currentStep?.stepIndex === 'number' && Number.isFinite(currentStep.stepIndex)
+          ? currentStep.stepIndex
+          : null
+
+      if (!currentStepId || currentStepIndex === null) {
+        return null
+      }
+
+      const totalStepsRaw =
+        typeof payload?.totalSteps === 'number' && Number.isFinite(payload.totalSteps)
+          ? payload.totalSteps
+          : undefined
+
+      const totalSteps = totalStepsRaw && totalStepsRaw > 0
+        ? totalStepsRaw
+        : new Set(resolvedQuestions.map((question) => question.stepId)).size || 1
+
+      return {
+        currentStepId,
+        currentStepIndex,
+        totalSteps,
+        answeredQuestionKeysCurrentStep: normalizeAnsweredKeys(payload?.answeredQuestionKeysCurrentStep),
+      }
+    },
+    [resolvedQuestions],
+  )
+
+  const applyRuntimeSnapshot = useCallback(
+    (snapshot: RuntimeStepSnapshot) => {
+      setRuntimeStepSnapshot(snapshot)
+
+      const nextCursor = resolveQuestionCursorFromRuntime({
+        questions: resolvedQuestions,
+        stepId: snapshot.currentStepId,
+        stepIndex: snapshot.currentStepIndex,
+        answeredQuestionKeysCurrentStep: snapshot.answeredQuestionKeysCurrentStep,
+      })
+
+      setCurrentQuestionCursor(nextCursor)
+    },
+    [resolvedQuestions],
+  )
+
+  const refreshRuntimeFromServer = useCallback(
+    async (id: string): Promise<{ success: boolean; status?: string }> => {
+      const resumeResponse = await fetch(`/api/funnels/${slug}/assessments/${id}`, {
+        method: 'GET',
+      })
+
+      if (!resumeResponse.ok) {
+        const message = await readErrorMessage(
+          resumeResponse,
+          'Assessment konnte nicht geladen werden.',
+        )
+        throw new Error(message)
+      }
+
+      const resumePayload = await resumeResponse.json()
+      const resumeData = (resumePayload?.data ?? resumePayload) as Record<string, unknown>
+
+      if (!resumePayload?.success || !resumeData?.assessmentId) {
+        throw new Error(
+          (resumePayload?.error?.message as string | undefined) ??
+            'Assessment konnte nicht geladen werden.',
+        )
+      }
+
+      const snapshot = buildRuntimeSnapshot(resumeData)
+      if (snapshot) {
+        applyRuntimeSnapshot(snapshot)
+      }
+
+      return {
+        success: true,
+        status: typeof resumeData.status === 'string' ? resumeData.status : undefined,
+      }
+    },
+    [applyRuntimeSnapshot, buildRuntimeSnapshot, slug],
+  )
 
   const completeAssessment = async (id: string) => {
     const completeResponse = await fetch(
@@ -425,7 +526,7 @@ export default function AssessmentFlowV2Client({
         throw new Error('Antwort konnte nicht gespeichert werden.')
       }
 
-      const isLastQuestionInStep = isFinalQuestionInStep(resolvedQuestions, currentStep - 1)
+      const isLastQuestionInStep = isFinalQuestionInStep(resolvedQuestions, currentQuestionCursor)
       if (isLastQuestionInStep) {
         const validateResponse = await fetch(
           `/api/funnels/${slug}/assessments/${assessmentId}/steps/${currentQuestion.stepId}`,
@@ -449,10 +550,17 @@ export default function AssessmentFlowV2Client({
           setValidationMessage('Bitte beantworten Sie alle Pflichtfragen.')
           return
         }
+
+        const runtimeRefresh = await refreshRuntimeFromServer(assessmentId)
+        if (runtimeRefresh.status === 'completed') {
+          setShowResult(true)
+        }
+
+        return
       }
 
-      if (currentStep < totalSteps) {
-        setCurrentStep((prev) => prev + 1)
+      if (currentQuestionCursor < totalQuestions - 1) {
+        setCurrentQuestionCursor((prev) => prev + 1)
         return
       }
 
@@ -466,8 +574,8 @@ export default function AssessmentFlowV2Client({
   }
 
   const handleSkip = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1)
+    if (currentQuestionCursor < totalQuestions - 1) {
+      setCurrentQuestionCursor((prev) => prev + 1)
     } else {
       // Last question skipped - deterministic exit via canonical route
       router.push(exitRoute)
@@ -527,32 +635,15 @@ export default function AssessmentFlowV2Client({
         setLiveQuestions(mappedQuestions)
 
         if (assessmentIdFromQuery) {
-          const resumeResponse = await fetch(`/api/funnels/${slug}/assessments/${assessmentIdFromQuery}`, {
-            method: 'GET',
-          })
-
-          if (!resumeResponse.ok) {
-            const message = await readErrorMessage(
-              resumeResponse,
-              'Assessment konnte nicht geladen werden.',
-            )
-            throw new Error(message)
-          }
-
-          const resumePayload = await resumeResponse.json()
-          const resumeData = resumePayload?.data ?? resumePayload
-
-          if (!resumePayload?.success || !resumeData?.assessmentId) {
-            throw new Error(resumePayload?.error?.message ?? 'Assessment konnte nicht geladen werden.')
-          }
+          const runtimeRefresh = await refreshRuntimeFromServer(assessmentIdFromQuery)
 
           if (!isMounted) return
-          setAssessmentId(resumeData.assessmentId)
-          setCurrentStep((resumeData.currentStep?.stepIndex ?? 0) + 1)
+
+          setAssessmentId(assessmentIdFromQuery)
           setCompletionError(null)
           setIsLoading(false)
 
-          if (resumeData.status === 'completed') {
+          if (runtimeRefresh.status === 'completed') {
             setShowResult(true)
           }
 
@@ -586,14 +677,21 @@ export default function AssessmentFlowV2Client({
         }
 
         const startPayload = await startResponse.json()
-        const id = startPayload?.data?.assessmentId ?? startPayload?.assessmentId
+        const startData = (startPayload?.data ?? startPayload) as Record<string, unknown>
+        const id = typeof startData?.assessmentId === 'string' ? startData.assessmentId : null
         if (!id) {
           throw new Error(startPayload?.error?.message ?? 'Assessment konnte nicht gestartet werden.')
         }
 
+        const startSnapshot = buildRuntimeSnapshot(startData)
+
         if (!isMounted) return
         setAssessmentId(id)
-        setCurrentStep(1)
+        if (startSnapshot) {
+          applyRuntimeSnapshot(startSnapshot)
+        } else {
+          setCurrentQuestionCursor(0)
+        }
         setCompletionError(null)
         setIsLoading(false)
       } catch (err) {
@@ -610,7 +708,35 @@ export default function AssessmentFlowV2Client({
     return () => {
       isMounted = false
     }
-  }, [mode, slug, assessmentIdFromQuery, assessmentId])
+  }, [
+    mode,
+    slug,
+    assessmentIdFromQuery,
+    assessmentId,
+    applyRuntimeSnapshot,
+    buildRuntimeSnapshot,
+    refreshRuntimeFromServer,
+  ])
+
+  useEffect(() => {
+    if (mode !== 'live') return
+    if (!assessmentId) return
+
+    const syncOnPageShow = () => {
+      if (document.visibilityState === 'hidden') return
+      void refreshRuntimeFromServer(assessmentId).catch(() => {
+        // noop: keep current UI state if background refresh fails
+      })
+    }
+
+    window.addEventListener('pageshow', syncOnPageShow)
+    document.addEventListener('visibilitychange', syncOnPageShow)
+
+    return () => {
+      window.removeEventListener('pageshow', syncOnPageShow)
+      document.removeEventListener('visibilitychange', syncOnPageShow)
+    }
+  }, [assessmentId, mode, refreshRuntimeFromServer])
 
   // ==========================================
   // RESULT STATE
@@ -861,9 +987,14 @@ export default function AssessmentFlowV2Client({
       <div className="w-full space-y-6">
         {/* Header - Step Progress */}
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-[#1f2937]">
-            Step {currentStep} of {totalSteps}
-          </h1>
+          <div>
+            <h1 className="text-lg font-semibold text-[#1f2937]">
+              Step {currentQuestionCursor + 1} of {totalQuestions}
+            </h1>
+            {runtimeStepText && (
+              <p className="text-xs text-[#6b7280] mt-1">{runtimeStepText}</p>
+            )}
+          </div>
           {mode === 'demo' && (
             <Chip variant="neutral" size="sm">
               Demo data
@@ -960,11 +1091,11 @@ export default function AssessmentFlowV2Client({
             onClick={handleContinue}
             disabled={!hasAnswer || isSubmitting}
           >
-            {currentStep < totalSteps ? 'Continue' : 'Complete'}
+            {currentQuestionCursor < totalQuestions - 1 ? 'Continue' : 'Complete'}
           </Button>
         </div>
 
-        {completionError && currentStep >= totalSteps && (
+        {completionError && currentQuestionCursor >= totalQuestions - 1 && (
           <Button
             variant="primary"
             size="lg"

@@ -58,6 +58,7 @@ export const ResumeAssessmentResponseDataSchema = z.object({
   currentStep: CurrentStepSchema,
   completedSteps: z.number().int().nonnegative(),
   totalSteps: z.number().int().positive(),
+  answeredQuestionKeysCurrentStep: z.array(z.string()).optional(),
 })
 
 export type ResumeAssessmentResponseData = z.infer<typeof ResumeAssessmentResponseDataSchema>
