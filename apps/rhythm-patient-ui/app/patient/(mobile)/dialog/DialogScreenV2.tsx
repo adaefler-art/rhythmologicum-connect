@@ -1350,22 +1350,20 @@ export function DialogScreenV2() {
               candidates: followupResult.nextQuestions,
             })
 
-            if (!nextQuestion) {
-              setActiveFollowupQuestion(null)
-              setFollowupAnsweredCount(0)
+            if (nextQuestion) {
+              setActiveFollowupQuestion(nextQuestion)
+              appendAssistantMessage(
+                buildFollowupPrompt({
+                  question: nextQuestion,
+                  latestIntake: null,
+                  activeObjectiveCount: followupResult.activeObjectiveCount,
+                }),
+              )
+              followupReplySent = true
               return
             }
 
-            setActiveFollowupQuestion(nextQuestion)
-            appendAssistantMessage(
-              buildFollowupPrompt({
-                question: nextQuestion,
-                latestIntake: null,
-                activeObjectiveCount: followupResult.activeObjectiveCount,
-              }),
-            )
-            followupReplySent = true
-            return
+            setActiveFollowupQuestion(null)
           }
 
           setActiveFollowupQuestion(null)
