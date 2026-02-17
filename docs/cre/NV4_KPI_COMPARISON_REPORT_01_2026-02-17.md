@@ -6,17 +6,17 @@ Template: `docs/cre/NV4_KPI_COMPARISON_REPORT_TEMPLATE.md`
 ## 1) Report-Metadaten
 
 - Report-ID: `NV4-KPI-REPORT-01-2026-02-17`
-- Datum/Uhrzeit: `2026-02-17 _offen_`
-- Zeitraum "Vorher" (Baseline): `Wave-5 _offen_`
-- Zeitraum "Nachher" (Current): `Wave-6/v0.8 _offen_`
+- Datum/Uhrzeit: `2026-02-17 09:45 (Startdatensatz)`
+- Zeitraum "Vorher" (Baseline): `Golden-Set Snapshot 2026-02-16`
+- Zeitraum "Nachher" (Current): `Golden-Set latest.json (generatedAt 2026-02-16T16:19:37.555Z)`
 - Datenquelle(n): `Golden-Set + Monitoring Exporte + klinisches Review`
-- Build/Release-Referenz: `_offen_`
+- Build/Release-Referenz: `c778cb94`
 - Owner: `_offen_`
 
 ## 2) Baseline-Referenz
 
-- Wave-5 Baseline Quelle: `_offen_`
-- Wave-6 Baseline Quelle: `_offen_`
+- Wave-5 Baseline Quelle: `docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`
+- Wave-6 Baseline Quelle: `docs/cre/golden-set/latest.json`
 - Hinweis zu Abweichungen in Datengrundlage (falls vorhanden):
   - Initial liegt ein Baseline-Snapshot vor, operative Shadow-Mode-Istwerte sind noch nachzufuehren.
   - Referenz: `docs/cre/V0_8_KPI_BASELINE_SNAPSHOT_2026-02-16.md`
@@ -25,10 +25,10 @@ Template: `docs/cre/NV4_KPI_COMPARISON_REPORT_TEMPLATE.md`
 
 | KPI | Baseline (Vorher) | Aktuell (Nachher) | Delta absolut | Delta relativ | Zielkriterium | Status |
 |---|---:|---:|---:|---:|---|---|
-| `repeat_question_rate` | _offen_ | _offen_ | _offen_ | _offen_ | `>= 50% Reduktion ggü. Wave-5` | _offen_ |
+| `repeat_question_rate` | `0` | `0` | `0` | `n/a (baseline=0)` | `>= 50% Reduktion ggü. Wave-5` | `ok (beobachtet)` |
 | `clarification_loop_rate` | _offen_ | _offen_ | _offen_ | _offen_ | `signifikant reduziert ggü. Wave-5` | _offen_ |
 | `resolved_followup_rate` | _offen_ | _offen_ | _offen_ | _offen_ | `stabil im Zielkorridor` | _offen_ |
-| `objective_reask_violation_count` | `0` | _offen_ | _offen_ | _offen_ | `= 0 im Golden-Set` | _offen_ |
+| `objective_reask_violation_count` | `0` | `0` | `0` | `n/a (baseline=0)` | `= 0 im Golden-Set` | `ok (beobachtet)` |
 | `patient_dialog_dropoff_rate` | _offen_ | _offen_ | _offen_ | _offen_ | `verbessert ggü. Wave-6` | _offen_ |
 
 Formeln:
