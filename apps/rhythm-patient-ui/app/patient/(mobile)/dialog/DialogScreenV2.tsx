@@ -61,6 +61,20 @@ type IntakeEvidenceItem = {
   ref: string
 }
 
+type PersistedChatMessage = {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
+}
+
+type PatientAssessmentSummary = {
+  id: string
+  status: string
+  startedAt?: string | null
+  completedAt?: string | null
+}
+
 type IntakePersistenceStatus = {
   runId: string | null
   createAttempted: boolean
@@ -83,6 +97,11 @@ type FollowupQuestion = {
   priority: 1 | 2 | 3
   source: 'reasoning' | 'gap_rule' | 'clinician_request'
   objective_id?: string
+}
+
+type FollowupObjectiveSnapshot = {
+  id: string
+  status: string
 }
 
 type SpeechRecognitionInstance = {
@@ -166,6 +185,28 @@ const sanitizeFollowupQuestionText = (value: string) => {
     .trim()
 }
 
+const deriveCardiacHint = (technicalText: string) => {
+  const normalized = technicalText
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  const hasPalpitations = /herzstolper|unregelma(ß|ss)ig|rhythm/.test(normalized)
+  const hasPulse = /ruhepuls|puls/.test(normalized)
+
+  if (hasPalpitations && hasPulse) {
+    return 'Herzstolpern und einem erhoehten Ruhepuls'
+  }
+  if (hasPalpitations) {
+    return 'Herzstolpern'
+  }
+  if (hasPulse) {
+    return 'einem erhoehten Ruhepuls'
+  }
+
+  return 'koerperlichen Beschwerden im Herz-Kreislauf-Bereich'
+}
+
 const toPatientFriendlyFollowupQuestion = (value: string) => {
   const sanitized = sanitizeFollowupQuestionText(value)
   if (!sanitized) return ''
@@ -188,9 +229,10 @@ const toPatientFriendlyFollowupQuestion = (value: string) => {
   const hasCardiacContext = /kard|herz|puls|rhythm|herzstolper/.test(normalized)
 
   if (hasPsychContext && hasCardiacContext) {
+    const cardiacHint = deriveCardiacHint(sanitized)
     return [
-      'Sie haben im Moment viel Belastung durch Ihre berufliche Situation, das klingt sehr anstrengend.',
-      'Gleichzeitig hatten Sie auch von Herzstolpern und einem erhoehten Ruhepuls berichtet. Sind diese Beschwerden aktuell noch da?',
+      'Sie haben gerade viel Belastung geschildert, das klingt sehr anstrengend.',
+      `Zusaetzlich hatten Sie von ${cardiacHint} berichtet. Sind diese Beschwerden aktuell noch da?`,
     ].join('\n\n')
   }
 
@@ -389,9 +431,20 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
 
   const record = followup as Record<string, unknown>
   const nextQuestionsRaw = Array.isArray(record.next_questions) ? record.next_questions : []
+  const objectivesRaw = Array.isArray(record.objectives) ? record.objectives : []
   const activeObjectiveIds = Array.isArray(record.active_objective_ids)
     ? record.active_objective_ids.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
     : []
+  const objectives: FollowupObjectiveSnapshot[] = objectivesRaw
+    .filter((entry) => typeof entry === 'object' && entry !== null && !Array.isArray(entry))
+    .map((entry) => {
+      const item = entry as Record<string, unknown>
+      return {
+        id: typeof item.id === 'string' ? item.id : '',
+        status: typeof item.status === 'string' ? item.status : 'missing',
+      }
+    })
+    .filter((entry) => entry.id)
   const nextQuestions: FollowupQuestion[] = nextQuestionsRaw
     .filter((entry) => typeof entry === 'object' && entry !== null && !Array.isArray(entry))
     .map((entry) => {
@@ -419,6 +472,49 @@ const getFollowupFromContent = (content: Record<string, unknown>) => {
   return {
     next_questions: nextQuestions,
     active_objective_count: activeObjectiveIds.length,
+    objectives,
+  }
+}
+
+const buildCaseChecklistSnapshot = (params: {
+  latestIntake: IntakeEntry | null
+  assessments: PatientAssessmentSummary[]
+  history: PersistedChatMessage[]
+}) => {
+  const followup = params.latestIntake ? getFollowupFromContent(params.latestIntake.content) : null
+  const objectives = followup?.objectives ?? []
+
+  const checklistFromObjectives = objectives.map((objective) => ({
+    id: objective.id,
+    status:
+      objective.status === 'answered'
+        ? 'captured'
+        : objective.status === 'missing'
+          ? 'missing'
+          : objective.status === 'blocked_by_safety'
+            ? 'delegated_to_physician'
+            : 'unclear',
+  }))
+
+  const fallbackChecklist = checklistFromObjectives.length
+    ? checklistFromObjectives
+    : [
+        {
+          id: 'case:intake-completeness',
+          status: followup?.active_objective_count && followup.active_objective_count > 0 ? 'missing' : 'captured',
+        },
+      ]
+
+  return {
+    checklist: fallbackChecklist,
+    openChecklistCount: fallbackChecklist.filter((entry) => entry.status !== 'captured').length,
+    completedAssessments: params.assessments.filter((entry) => entry.status === 'completed').length,
+    inProgressAssessments: params.assessments.filter((entry) => entry.status === 'in_progress').length,
+    recentTurns: params.history.slice(-6).map((entry) => ({
+      role: entry.role,
+      content: entry.content.slice(0, 220),
+      created_at: entry.created_at,
+    })),
   }
 }
 
@@ -512,6 +608,20 @@ export function DialogScreenV2() {
 
     setChatMessages((prev) => [...prev, assistantMessage])
   }
+
+  const mapPersistedHistoryToChatMessages = (history: PersistedChatMessage[]): StubbedMessage[] =>
+    history
+      .filter((entry) => entry.role === 'assistant' || entry.role === 'user')
+      .slice(-12)
+      .map((entry) => ({
+        id: entry.id,
+        sender: entry.role === 'assistant' ? 'assistant' : 'user',
+        text: entry.role === 'assistant' ? normalizeAssistantTextForPatient(entry.content) : entry.content,
+        timestamp: new Date(entry.created_at).toLocaleTimeString('de-DE', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      }))
 
   const persistUserAnswerToChat = async (answer: string) => {
     await fetch('/api/amy/chat', {
@@ -650,7 +760,11 @@ export function DialogScreenV2() {
         }))
       }
 
-      const latestIntake = await fetchLatestIntake()
+      const [latestIntake, persistedHistory, assessments] = await Promise.all([
+        fetchLatestIntake(),
+        fetchPersistedChatHistory(),
+        fetchPatientAssessmentsSummary(),
+      ])
       if (!isMounted) return
 
       setLatestClinicalIntakeId(latestIntake?.id ?? null)
@@ -663,27 +777,36 @@ export function DialogScreenV2() {
       const localSafetyUiState = getSafetyUiState(safety)
 
       const intakeFollowup = latestIntake ? getFollowupFromContent(latestIntake.content) : null
+      const persistedHistoryMessages = mapPersistedHistoryToChatMessages(persistedHistory)
+      const hasPersistedConversation = persistedHistoryMessages.length > 0
+
+      if (hasPersistedConversation) {
+        setChatMessages(persistedHistoryMessages)
+      }
+
       if (
         !localSafetyUiState.blockChat &&
         intakeFollowup?.next_questions &&
         intakeFollowup.next_questions.length > 0
       ) {
         setActiveFollowupQuestion(intakeFollowup.next_questions[0])
-        setChatMessages([
-          {
-            id: `assistant-${Date.now()}`,
-            sender: 'assistant',
-            text: normalizeAssistantTextForPatient(
-              buildFollowupPrompt({
-              question: intakeFollowup.next_questions[0],
-              latestIntake,
-              includeIntro: true,
-              activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
-              }),
-            ),
-            timestamp: buildTimestamp(),
-          },
-        ])
+        if (!hasPersistedConversation) {
+          setChatMessages([
+            {
+              id: `assistant-${Date.now()}`,
+              sender: 'assistant',
+              text: normalizeAssistantTextForPatient(
+                buildFollowupPrompt({
+                  question: intakeFollowup.next_questions[0],
+                  latestIntake,
+                  includeIntro: true,
+                  activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
+                }),
+              ),
+              timestamp: buildTimestamp(),
+            },
+          ])
+        }
         return
       }
 
@@ -692,21 +815,23 @@ export function DialogScreenV2() {
           const generatedFollowup = await generateFollowup({ intakeId: latestIntake.id })
           if (!generatedFollowup.blocked && generatedFollowup.nextQuestions.length > 0) {
             setActiveFollowupQuestion(generatedFollowup.nextQuestions[0])
-            setChatMessages([
-              {
-                id: `assistant-${Date.now()}`,
-                sender: 'assistant',
-                text: normalizeAssistantTextForPatient(
-                  buildFollowupPrompt({
-                  question: generatedFollowup.nextQuestions[0],
-                  latestIntake,
-                  includeIntro: true,
-                  activeObjectiveCount: generatedFollowup.activeObjectiveCount,
-                  }),
-                ),
-                timestamp: buildTimestamp(),
-              },
-            ])
+            if (!hasPersistedConversation) {
+              setChatMessages([
+                {
+                  id: `assistant-${Date.now()}`,
+                  sender: 'assistant',
+                  text: normalizeAssistantTextForPatient(
+                    buildFollowupPrompt({
+                      question: generatedFollowup.nextQuestions[0],
+                      latestIntake,
+                      includeIntro: true,
+                      activeObjectiveCount: generatedFollowup.activeObjectiveCount,
+                    }),
+                  ),
+                  timestamp: buildTimestamp(),
+                },
+              ])
+            }
             return
           }
         } catch (followupError) {
@@ -714,18 +839,29 @@ export function DialogScreenV2() {
         }
       }
 
-      const resumeContext = buildResumeContext(latestIntake)
+      const caseChecklist = buildCaseChecklistSnapshot({
+        latestIntake,
+        assessments,
+        history: persistedHistory,
+      })
+
+      const resumeContext = buildResumeContext(latestIntake, {
+        caseChecklist,
+        assessments,
+      })
       const openingQuestion = resumeContext
         ? await fetchResumeStart(resumeContext)
         : buildOpeningQuestion(latestIntake)
-      setChatMessages([
-        {
-          id: `assistant-${Date.now()}`,
-          sender: 'assistant',
-          text: normalizeAssistantTextForPatient(openingQuestion),
-          timestamp: buildTimestamp(),
-        },
-      ])
+      if (!hasPersistedConversation) {
+        setChatMessages([
+          {
+            id: `assistant-${Date.now()}`,
+            sender: 'assistant',
+            text: normalizeAssistantTextForPatient(openingQuestion),
+            timestamp: buildTimestamp(),
+          },
+        ])
+      }
     }
 
     void initChat()
@@ -899,7 +1035,69 @@ export function DialogScreenV2() {
     }
   }
 
-  const buildResumeContext = (latestIntake: IntakeEntry | null) => {
+  const fetchPersistedChatHistory = async (): Promise<PersistedChatMessage[]> => {
+    try {
+      const response = await fetch('/api/amy/chat', {
+        headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.success) return []
+
+      const messagesRaw = Array.isArray(payload?.data?.messages) ? payload.data.messages : []
+      return messagesRaw
+        .filter((entry) => typeof entry === 'object' && entry !== null)
+        .map((entry) => {
+          const item = entry as Record<string, unknown>
+          return {
+            id: typeof item.id === 'string' ? item.id : `msg-${Math.random().toString(36).slice(2)}`,
+            role:
+              item.role === 'assistant' || item.role === 'user' || item.role === 'system'
+                ? item.role
+                : 'system',
+            content: typeof item.content === 'string' ? item.content : '',
+            created_at: typeof item.created_at === 'string' ? item.created_at : new Date().toISOString(),
+          } as PersistedChatMessage
+        })
+    } catch (err) {
+      console.warn('[DialogScreenV2] Failed to load persisted chat history', err)
+      return []
+    }
+  }
+
+  const fetchPatientAssessmentsSummary = async (): Promise<PatientAssessmentSummary[]> => {
+    try {
+      const response = await fetch('/api/patient/assessments?limit=10', {
+        headers: intakeRunIdRef.current ? { 'x-intake-run-id': intakeRunIdRef.current } : undefined,
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.success) return []
+
+      const assessmentsRaw = Array.isArray(payload?.data?.assessments) ? payload.data.assessments : []
+      return assessmentsRaw
+        .filter((entry) => typeof entry === 'object' && entry !== null)
+        .map((entry) => {
+          const item = entry as Record<string, unknown>
+          return {
+            id: typeof item.id === 'string' ? item.id : '',
+            status: typeof item.status === 'string' ? item.status : 'unknown',
+            startedAt: typeof item.startedAt === 'string' ? item.startedAt : null,
+            completedAt: typeof item.completedAt === 'string' ? item.completedAt : null,
+          } as PatientAssessmentSummary
+        })
+        .filter((entry) => entry.id)
+    } catch (err) {
+      console.warn('[DialogScreenV2] Failed to load patient assessments summary', err)
+      return []
+    }
+  }
+
+  const buildResumeContext = (
+    latestIntake: IntakeEntry | null,
+    params?: {
+      caseChecklist?: ReturnType<typeof buildCaseChecklistSnapshot>
+      assessments?: PatientAssessmentSummary[]
+    },
+  ) => {
     if (!latestIntake) return null
 
     const structuredData = getStructuredDataFromContent(latestIntake.content)
@@ -936,6 +1134,15 @@ export function DialogScreenV2() {
       narrativeSummary: narrativeSummary || undefined,
       openQuestions,
       lastUpdatedAt: latestIntake.updated_at ?? null,
+      caseChecklist: params?.caseChecklist?.checklist ?? [],
+      openChecklistCount: params?.caseChecklist?.openChecklistCount ?? 0,
+      assessmentSummary: {
+        completed: params?.caseChecklist?.completedAssessments ?? 0,
+        inProgress:
+          params?.caseChecklist?.inProgressAssessments ??
+          (params?.assessments ?? []).filter((entry) => entry.status === 'in_progress').length,
+      },
+      recentTurns: params?.caseChecklist?.recentTurns ?? [],
     }
   }
 
