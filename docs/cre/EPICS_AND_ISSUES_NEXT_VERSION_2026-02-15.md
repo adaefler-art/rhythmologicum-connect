@@ -2,6 +2,7 @@
 
 Quelle:
 - `docs/cre/ROADMAP_POST_E4_2026-02-15.md`
+- `docs/cre/USE_CASE_REFERENCE_2026-02-17.md`
 - `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
 
 Zweck:
@@ -34,6 +35,13 @@ Zweck:
 | UC1 Pre-Visit Structured Capture | CRE-NV1, CRE-NV2, CRE-NV5 | Stabiler Pause/Resume + deterministischer Abschluss ohne Diagnoseausgabe |
 | UC2 Waiting Room Fastpass | CRE-NV2, CRE-NV3, CRE-NV5 | 5-Minuten-Mindestdatensatz, unvollständiger Intake mit Open Loops |
 | UC3 Consult Mode Silent Listener | CRE-NV3, CRE-NV4, CRE-NV5 | Arztgeführtes Panel mit Captured/Missing/Unclear + Evidenzquellen |
+
+### Use-Case Scope Guardrails (verbindlich)
+
+- Kein patient-facing Clinical Reasoning.
+- Keine Ranking-/Wahrscheinlichkeits-/Risikologik.
+- Keine Diagnose-/Therapie-/Diagnostikempfehlung.
+- Keine patientenspezifische Interpretation.
 
 ---
 
@@ -70,14 +78,19 @@ Zweck:
 |---|---|---|---|---|---|---|
 | CRE-UC1-01 | UC1 | Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit) | P0 | M | planned | CRE-NV2-02, CRE-NV2-04 |
 | CRE-UC1-02 | UC1 | Pause/Resume als SSOT mit klarer Fortschrittsposition | P0 | M | planned | CRE-NV2-04 |
-| CRE-UC1-03 | UC1 | Open-Loop Qualitätsregeln pro Objective härten | P1 | M | planned | CRE-NV4-03, CRE-NV4-05 |
-| CRE-UC2-01 | UC2 | Fastpass Form-first UI (Tablet/Kiosk, no-audio) | P0 | M | planned | CRE-NV2-05 |
+| CRE-UC1-03 | UC1 | Open-Loop Qualitätsregeln + Vollständigkeitscheck pro Objective härten | P1 | M | planned | CRE-NV4-03, CRE-NV4-05 |
+| CRE-UC2-01 | UC2 | Fastpass Form-first UI (Tablet/Kiosk, no-audio, Tap-first) | P0 | M | planned | CRE-NV2-05 |
 | CRE-UC2-02 | UC2 | Minimum-Dataset Contract + Validierung | P0 | S-M | planned | CRE-UC2-01 |
-| CRE-UC2-03 | UC2 | UC2→UC1 Übergabe via QR/Deep-Link | P1 | S-M | planned | CRE-UC2-01, CRE-UC1-02 |
+| CRE-UC2-03 | UC2 | UC2→UC1 Übergabe via QR/Deep-Link (optional) | P1 | S-M | planned | CRE-UC2-01, CRE-UC1-02 |
 | CRE-UC3-01 | UC3 | Consent/Recording-Status + Audit Events für Consult Mode | P0 | M | planned | CRE-NV3-03 |
-| CRE-UC3-02 | UC3 | Silent-Listener Clinician-Panel (Captured/Missing/Unclear) | P0 | M | planned | CRE-NV4-04, CRE-UC3-01 |
-| CRE-UC3-03 | UC3 | Evidenz-/Timestamp-Attribution im Intake | P1 | M | planned | CRE-UC3-02 |
-| CRE-UC3-04 | UC3 | Physician-directed Clarification Suggestions | P1 | M | planned | CRE-UC3-02 |
+| CRE-UC3-02 | UC3 | Silent-Listener Clinician-Panel (nur Captured/Missing/Unclear) | P0 | M | planned | CRE-NV4-04, CRE-UC3-01 |
+| CRE-UC3-03 | UC3 | Evidenz-/Timestamp-Attribution im Intake (`source=conversation`) | P1 | M | planned | CRE-UC3-02 |
+| CRE-UC3-04 | UC3 | Physician-directed Clarification Suggestions (formal-strukturell) | P1 | M | planned | CRE-UC3-02 |
+| CRE-UC3-05 | UC3 | Scope-Gate im Consult Mode (keine Hypothesen/Diagnosen/Wahrscheinlichkeiten) | P0 | S-M | planned | CRE-UC3-02 |
+| CRE-UC-GR-01 | UC1/2/3 | Prompt-/Copy-Linter gegen diagnostische Sprache | P0 | S-M | planned | CRE-NV2-02 |
+| CRE-UC-GR-02 | UC1/2/3 | Output-Contracts ohne Ranking/Wahrscheinlichkeit/Risk/Triage härten | P0 | M | planned | CRE-NV4-03 |
+| CRE-UC-GR-03 | UC1/2/3 | Regressionstests für verbotene Aussagen (Patient + Clinician) | P0 | M | planned | CRE-UC-GR-01, CRE-UC-GR-02 |
+| CRE-UC-GR-04 | UC1/2/3 | Review-Gate: Scope-Verstoß blockiert Merge/Release | P0 | S | planned | CRE-UC-GR-03, CRE-NV5-02 |
 | CRE-ROLL-01 | UC1/2/3 | KPI-/Go-No-Go-Matrix pro Use Case | P0 | S-M | planned | CRE-NV5-01 |
 | CRE-ROLL-02 | UC1/2/3 | Schulungs-/Betriebsrunbook pro Touchpoint | P1 | S-M | planned | CRE-NV5-03 |
 
