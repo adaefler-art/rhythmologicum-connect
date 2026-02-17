@@ -1122,6 +1122,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
     setRequestedItemsText([...current, value].join('\n'))
   }
 
+  const intakeTriggerLabel = latestIntake ? 'Intake neu generieren' : 'Intake starten'
+  const intakeTriggerBusyLabel = latestIntake ? 'Generiert…' : 'Startet…'
+
   return (
     <>
       <Card padding="lg" shadow="md" className="mb-6">
@@ -1163,7 +1166,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                   onClick={() => void handleRegenerateIntake()}
                   disabled={isIntakeRegenerating}
                 >
-                  {isIntakeRegenerating ? 'Generiert…' : 'Intake neu generieren'}
+                  {isIntakeRegenerating ? intakeTriggerBusyLabel : intakeTriggerLabel}
                 </Button>
                 <Button
                   variant="secondary"
@@ -1489,7 +1492,7 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                 onClick={() => void handleRegenerateIntake()}
                 disabled={isIntakeRegenerating}
               >
-                {isIntakeRegenerating ? 'Startet…' : 'Intake starten'}
+                {isIntakeRegenerating ? intakeTriggerBusyLabel : intakeTriggerLabel}
               </Button>
             </div>
             {intakeRegenerateError && (
