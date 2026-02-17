@@ -184,6 +184,16 @@ const toPatientFriendlyFollowupQuestion = (value: string) => {
     return sanitized
   }
 
+  const hasPsychContext = /psych|nervos|angst|stress|belast|job|beruf/.test(normalized)
+  const hasCardiacContext = /kard|herz|puls|rhythm|herzstolper/.test(normalized)
+
+  if (hasPsychContext && hasCardiacContext) {
+    return [
+      'Sie haben im Moment viel Belastung durch Ihre berufliche Situation, das klingt sehr anstrengend.',
+      'Gleichzeitig hatten Sie auch von Herzstolpern und einem erhoehten Ruhepuls berichtet. Sind diese Beschwerden aktuell noch da?',
+    ].join('\n\n')
+  }
+
   const sentences = sanitized
     .split(/(?<=[?.!])\s+/)
     .map((entry) => entry.trim())
@@ -203,11 +213,14 @@ const toPatientFriendlyFollowupQuestion = (value: string) => {
     }
   }
 
-  if (/psych|nervos|angst|stress|belast/.test(normalized)) {
-    return 'Wie stark sind Ihre psychischen Beschwerden aktuell (z.B. Nervositaet, Angst oder innere Unruhe)?'
+  if (hasPsychContext) {
+    return [
+      'Sie haben gerade viel Belastung geschildert, das klingt sehr anstrengend.',
+      'Wie stark sind diese Beschwerden aktuell?',
+    ].join('\n\n')
   }
 
-  if (/kard|herz|puls|rhythm/.test(normalized)) {
+  if (hasCardiacContext) {
     return 'Bestehen Ihre Herzbeschwerden aktuell noch, und moechten Sie diese aerztlich abklaeren lassen?'
   }
 
@@ -303,7 +316,7 @@ const buildFollowupPrompt = (params: {
 
   const reasonLine = reason
     ? question.source === 'clinician_request'
-      ? 'Hinweis: Diese Frage wurde aerztlich angefordert.'
+      ? null
       : technicalReason
         ? null
         : `Ziel: ${reason}.`
