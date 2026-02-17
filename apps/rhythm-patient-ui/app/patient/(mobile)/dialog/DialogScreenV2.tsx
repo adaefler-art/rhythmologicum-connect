@@ -46,6 +46,7 @@ interface StubbedMessage {
 
 type IntakeEntry = {
   id: string
+  status?: 'draft' | 'active' | 'superseded' | 'archived' | null
   content: Record<string, unknown>
   review_state?: {
     status?: 'draft' | 'in_review' | 'approved' | 'needs_more_info' | 'rejected'
@@ -101,7 +102,6 @@ const DEFAULT_OPENING_QUESTION =
   'Kurz zum Ziel: Ich erfasse Ihre Beschwerden strukturiert fuer die aerztliche Einschaetzung. Was ist heute Ihr wichtigstes Anliegen?'
 const FOLLOWUP_NO_NEXT_QUESTION_MESSAGE =
   'Danke, ich habe das notiert. Aktuell habe ich keine weitere konkrete Rueckfrage. Gibt es seitdem neue oder veraenderte Beschwerden?'
-const INTAKE_SESSION_KEY = 'intakeEntryId'
 const MAX_INTAKE_EVIDENCE = 10
 const MAX_INTAKE_OPEN_QUESTIONS = 5
 const MAX_INTAKE_NARRATIVE_LENGTH = 1000
@@ -369,7 +369,7 @@ export function DialogScreenV2() {
   const [isHydrated, setIsHydrated] = useState(false)
   const [isDictating, setIsDictating] = useState(false)
   const [isDictationSupported, setIsDictationSupported] = useState(true)
-  const [intakeEntryId, setIntakeEntryId] = useState<string | null>(null)
+  const [intakeEntryId] = useState<string | null>(null)
   const [intakeEvidence, setIntakeEvidence] = useState<IntakeEvidenceItem[]>([])
   const [intakeQuestions, setIntakeQuestions] = useState<string[]>([])
   const [intakeNotes, setIntakeNotes] = useState<string[]>([])
@@ -379,6 +379,10 @@ export function DialogScreenV2() {
   const [isManualIntakeRunning, setIsManualIntakeRunning] = useState(false)
   const [manualIntakeStatus, setManualIntakeStatus] = useState<'ok' | 'error' | null>(null)
   const [manualIntakeError, setManualIntakeError] = useState<string | null>(null)
+  const [isSubmitRunning, setIsSubmitRunning] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'ok' | 'error' | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isIntakeSubmitted, setIsIntakeSubmitted] = useState(false)
   const [latestClinicalIntakeId, setLatestClinicalIntakeId] = useState<string | null>(null)
   const [activeFollowupQuestion, setActiveFollowupQuestion] = useState<FollowupQuestion | null>(null)
   const [followupAnsweredCount, setFollowupAnsweredCount] = useState(0)
@@ -404,9 +408,6 @@ export function DialogScreenV2() {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const dictationRestartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const intakeRunIdRef = useRef<string | null>(null)
-  const createInFlightRef = useRef(false)
-  const createDoneRef = useRef(false)
-  const createAbortRef = useRef<AbortController | null>(null)
   const autosaveDirtyRef = useRef(false)
   const autosaveTurnsRef = useRef(0)
   const autosaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -571,6 +572,7 @@ export function DialogScreenV2() {
       if (!isMounted) return
 
       setLatestClinicalIntakeId(latestIntake?.id ?? null)
+      setIsIntakeSubmitted(latestIntake?.status === 'active')
       setHasOpenReviewRequest(latestIntake?.review_state?.status === 'needs_more_info')
       void syncIntakeDebugMeta(latestIntake)
 
@@ -638,18 +640,6 @@ export function DialogScreenV2() {
           timestamp: buildTimestamp(),
         },
       ])
-
-      if (typeof window !== 'undefined') {
-        const storedEntryId = window.sessionStorage.getItem(INTAKE_SESSION_KEY)
-        if (storedEntryId) {
-          setIntakeEntryId(storedEntryId)
-          setIntakePersistence((prev) => ({
-            ...prev,
-            entryId: storedEntryId,
-          }))
-          createDoneRef.current = true
-        }
-      }
     }
 
     void initChat()
@@ -796,6 +786,7 @@ export function DialogScreenV2() {
             updated_at?: string | null
             version_number?: number | null
             created_at?: string
+            status?: 'draft' | 'active' | 'superseded' | 'archived'
           }
         | null
         | undefined
@@ -809,6 +800,7 @@ export function DialogScreenV2() {
 
       return {
         id: intake.id || intake.uuid || 'unknown',
+        status: intake.status ?? null,
         content,
         review_state: intake.review_state ?? null,
         created_at: intake.created_at || intake.updated_at || new Date().toISOString(),
@@ -883,89 +875,6 @@ export function DialogScreenV2() {
     } catch (err) {
       console.error('[DialogScreenV2] Resume start failed', err)
       return DEFAULT_OPENING_QUESTION
-    }
-  }
-
-  const createNewIntakeEntry = async (): Promise<string | null> => {
-    if (ANAMNESIS_INTAKE_WRITES_DISABLED) {
-      console.warn('[DialogScreenV2] Anamnesis intake writes are disabled')
-      return null
-    }
-    if (typeof window !== 'undefined') {
-      const storedEntryId = window.sessionStorage.getItem(INTAKE_SESSION_KEY)
-      if (storedEntryId) {
-        createDoneRef.current = true
-        setIntakeEntryId(storedEntryId)
-        setIntakePersistence((prev) => ({
-          ...prev,
-          entryId: storedEntryId,
-        }))
-        return storedEntryId
-      }
-    }
-
-    if (createInFlightRef.current || createDoneRef.current) {
-      return intakeEntryId
-    }
-
-    createInFlightRef.current = true
-    createAbortRef.current?.abort()
-    createAbortRef.current = new AbortController()
-
-    try {
-      setIntakePersistence((prev) => ({
-        ...prev,
-        createAttempted: true,
-        createFailed: false,
-      }))
-
-      const response = await fetch('/api/patient/anamnesis', {
-        method: 'POST',
-        headers: getRequestHeaders(),
-        signal: createAbortRef.current.signal,
-        body: JSON.stringify({
-          title: 'Intake',
-          entry_type: 'intake',
-          content: {
-            status: 'draft',
-          },
-        }),
-      })
-
-      const data = await response.json()
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.error?.message || 'Failed to create intake')
-      }
-
-      const entryId = data?.data?.entryId || data?.data?.entry?.id || null
-      createDoneRef.current = Boolean(entryId)
-      setIntakePersistence((prev) => ({
-        ...prev,
-        createOk: Boolean(entryId),
-        createFailed: !entryId,
-        entryId,
-      }))
-
-      if (entryId && typeof window !== 'undefined') {
-        window.sessionStorage.setItem(INTAKE_SESSION_KEY, entryId)
-      }
-
-      if (entryId) {
-        setIntakeEntryId(entryId)
-      }
-
-      void verifyIntakeWrite()
-      return entryId
-    } catch (err) {
-      console.error('[DialogScreenV2] Failed to create intake entry', err)
-      setIntakePersistence((prev) => ({
-        ...prev,
-        createOk: false,
-        createFailed: true,
-      }))
-      return null
-    } finally {
-      createInFlightRef.current = false
     }
   }
 
@@ -1104,52 +1013,6 @@ export function DialogScreenV2() {
     await persistIntakeSnapshot(buildSnapshotContent(), reason, options)
   }
 
-  const saveIntakeSnapshot = async () => {
-    if (ANAMNESIS_INTAKE_WRITES_DISABLED) {
-      console.warn('[DialogScreenV2] Anamnesis intake writes are disabled')
-      return
-    }
-    if (!intakeEntryId) return
-
-    try {
-      setIntakePersistence((prev) => ({
-        ...prev,
-        patchAttempted: true,
-        patchFailed: false,
-      }))
-
-      const response = await fetch(`/api/patient/anamnesis/${intakeEntryId}` , {
-        method: 'PATCH',
-        headers: getRequestHeaders(),
-        body: JSON.stringify({
-          title: 'Intake',
-          entry_type: 'intake',
-          content: buildSnapshotContent(),
-          change_reason: 'snapshot',
-        }),
-      })
-
-      const data = await response.json()
-      if (!response.ok || !data?.success) {
-        throw new Error(data?.error?.message || 'Failed to update intake')
-      }
-
-      setIntakePersistence((prev) => ({
-        ...prev,
-        patchOk: true,
-        patchFailed: false,
-        entryId: data?.data?.entryId || data?.data?.entry?.id || intakeEntryId,
-      }))
-      void verifyIntakeWrite()
-    } catch (err) {
-      console.error('[DialogScreenV2] Failed to update intake snapshot', err)
-      setIntakePersistence((prev) => ({
-        ...prev,
-        patchFailed: true,
-      }))
-    }
-  }
-
   const persistIntakeSnapshot = async (
     snapshot: Record<string, unknown>,
     reason: string,
@@ -1231,6 +1094,7 @@ export function DialogScreenV2() {
 
   const triggerManualIntake = async () => {
     if (isManualIntakeRunning) return
+    if (isIntakeSubmitted) return
 
     setIsManualIntakeRunning(true)
     setManualIntakeStatus(null)
@@ -1260,6 +1124,72 @@ export function DialogScreenV2() {
     }
   }
 
+  const submitIntakeExplicitly = async () => {
+    if (isSubmitRunning || isSending || isIntakeSubmitted || isSafetyBlocked) return
+
+    setIsSubmitRunning(true)
+    setSubmitStatus(null)
+    setSubmitError(null)
+    setSendError(null)
+
+    try {
+      const generateResponse = await fetch('/api/clinical-intake/generate', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ force: true, triggerReason: 'submit' }),
+      })
+
+      const generatePayload = await generateResponse.json()
+      if (!generateResponse.ok || !generatePayload?.success) {
+        throw new Error(generatePayload?.error?.message || 'Intake konnte nicht erstellt werden.')
+      }
+
+      const generatedIntakeId =
+        typeof generatePayload?.data?.intake?.id === 'string'
+          ? generatePayload.data.intake.id
+          : latestClinicalIntakeId
+
+      const submitResponse = await fetch('/api/patient/intake/submit', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify({ intakeId: generatedIntakeId }),
+      })
+
+      const submitPayload = await submitResponse.json()
+      if (!submitResponse.ok || !submitPayload?.success) {
+        throw new Error(submitPayload?.error?.message || 'Intake konnte nicht uebermittelt werden.')
+      }
+
+      setIsIntakeSubmitted(true)
+      setSubmitStatus('ok')
+      setActiveFollowupQuestion(null)
+      setFollowupAnsweredCount(0)
+
+      const confirmedIntakeId =
+        typeof submitPayload?.data?.intakeId === 'string'
+          ? submitPayload.data.intakeId
+          : generatedIntakeId
+
+      if (confirmedIntakeId) {
+        setLatestClinicalIntakeId(confirmedIntakeId)
+      }
+
+      appendAssistantMessage(
+        'Ihre Erfassung wurde uebermittelt. Danke. Wenn sich etwas aendert, koennen Sie spaeter eine Aktualisierung senden.',
+      )
+      await syncIntakeDebugMeta()
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Intake-Uebermittlung fehlgeschlagen. Bitte erneut versuchen.'
+      console.error('[DialogScreenV2] Explicit intake submit failed', err)
+      setSubmitStatus('error')
+      setSubmitError(message)
+      setSendError(message)
+    } finally {
+      setIsSubmitRunning(false)
+    }
+  }
+
   const collectEvidence = (text: string) => {
     const trimmed = trimText(text, 400)
     if (!trimmed) return
@@ -1285,6 +1215,10 @@ export function DialogScreenV2() {
 
   const handleSend = async () => {
     if (!isChatEnabled || isSending) return
+    if (isIntakeSubmitted) {
+      setSendError('Diese Erfassung wurde bereits uebermittelt. Bitte starten Sie bei Bedarf eine neue Aktualisierung.')
+      return
+    }
     if (isSafetyBlocked) {
       setSendError(
         safetyBannerText ||
@@ -1516,8 +1450,17 @@ export function DialogScreenV2() {
     void handleSend()
   }
 
-  const isSendDisabled = !isChatEnabled || isSending || isSafetyBlocked || input.trim().length === 0
-  const isDictationDisabled = !isChatEnabled || isSending || isSafetyBlocked
+  const isSendDisabled =
+    !isChatEnabled || isSending || isSafetyBlocked || isIntakeSubmitted || input.trim().length === 0
+  const isDictationDisabled = !isChatEnabled || isSending || isSafetyBlocked || isIntakeSubmitted
+  const canSubmitIntake =
+    isChatEnabled &&
+    !isSafetyBlocked &&
+    !isIntakeSubmitted &&
+    !isSending &&
+    !isSubmitRunning &&
+    !activeFollowupQuestion &&
+    chatMessages.length > 0
 
   if (!isHydrated) {
     return (
@@ -1559,6 +1502,15 @@ export function DialogScreenV2() {
               <p className="mt-1">
                 {safetyBannerText ||
                   'Ihre Angaben deuten auf eine Situation hin, die besser direkt mit einer medizinischen Fachperson besprochen wird. Bitte nutzen Sie jetzt einen direkten Kontaktweg (z.B. telefonische Beratung oder Notfallnummer). Der Chat ist vorerst pausiert.'}
+              </p>
+            </div>
+          )}
+
+          {isIntakeSubmitted && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-900">
+              <p className="font-semibold">Erfassung uebermittelt</p>
+              <p className="mt-1">
+                Ihre Angaben wurden gespeichert und zur weiteren aerztlichen Einschaetzung bereitgestellt.
               </p>
             </div>
           )}
@@ -1648,6 +1600,16 @@ export function DialogScreenV2() {
 
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur sm:px-6">
           <div className="rounded-3xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="mb-2 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => void submitIntakeExplicitly()}
+                disabled={!canSubmitIntake}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                {isSubmitRunning ? 'Uebermittle…' : 'Erfassung abschliessen'}
+              </button>
+            </div>
             <div className="flex items-end gap-2">
               <textarea
                 placeholder={
@@ -1715,6 +1677,12 @@ export function DialogScreenV2() {
               )}
               {dictationError && <span className="text-xs text-rose-700">{dictationError}</span>}
               {sendError && <span className="text-xs text-rose-700">{sendError}</span>}
+              {submitStatus === 'ok' && (
+                <span className="text-xs text-emerald-700">Erfassung erfolgreich uebermittelt.</span>
+              )}
+              {submitStatus === 'error' && submitError && (
+                <span className="text-xs text-rose-700">{submitError}</span>
+              )}
             </div>
           </div>
         </div>

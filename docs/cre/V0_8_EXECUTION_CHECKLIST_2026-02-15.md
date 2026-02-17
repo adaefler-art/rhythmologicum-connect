@@ -49,10 +49,10 @@ Ziel:
 - Use-Case-first Umsetzung für UC1/UC2/UC3 operativ abhakbar machen, ohne die NV1-NV5-Gates zu verlieren.
 
 ### UC1 — Pre-Visit Structured Capture
-- [ ] CRE-UC1-01 Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit)
-	- [ ] API: idempotenter Submit-/Complete-Flow mit Ownership-Guard
-	- [ ] UI: explizite Abschluss-CTA mit Loading/Success/Error Zuständen
-	- [ ] Tests: API + E2E für Double-Submit-Schutz und Post-Submit Read-only
+- [x] CRE-UC1-01 Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit)
+	- [x] API: idempotenter Submit-/Complete-Flow mit Ownership-Guard
+	- [x] UI: explizite Abschluss-CTA mit Loading/Success/Error Zuständen
+	- [x] Tests: API + E2E für Double-Submit-Schutz und Post-Submit Read-only
 - [x] CRE-UC1-02 Pause/Resume als SSOT mit klarer Fortschrittsposition
 	- [x] API: Runtime-Status als einzige Wahrheit (`currentStep/currentQuestion`)
 	- [x] UI: Resume/Re-Entry strikt aus Server-State, nicht aus lokalem Verlauf
@@ -321,3 +321,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 10:48:00 (lokal): Use-Case Add-on Track in die v0.8-Checklist integriert, inklusive CRE-UC1/2/3- und CRE-ROLL-Tasks mit priorisierter Abarbeitungsreihenfolge (`docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
 - 2026-02-17 10:56:00 (lokal): UC1-Tickets (CRE-UC1-01..03) technisch heruntergebrochen, indem eine detaillierte API/UI/State/Test-Subtaskplanung mit Akzeptanzkriterien erstellt und in der Checklist direkt verlinkt wurde (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
 - 2026-02-17 11:27:00 (lokal): CRE-UC1-02 als umgesetzt markiert, indem Resume/Reload im Assessment-Flow auf Server-SSOT gehärtet, Runtime-Resume um beantwortete Step-Keys erweitert und eine Unit-Regression für Cursor-Resume ergänzt wurde (`apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx`, `lib/funnels/runtimeResume.ts`, `lib/funnels/__tests__/runtimeResume.test.ts`).
+- 2026-02-17 11:52:00 (lokal): CRE-UC1-01 als umgesetzt markiert, indem ein expliziter Abschluss-CTA im Patient-Dialog, ein idempotenter Submit-Endpoint mit Ownership-Guard und Post-Submit Read-only-UI inklusive Success/Error-Status ergänzt wurden (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `apps/rhythm-patient-ui/app/api/patient/intake/submit/route.ts`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).

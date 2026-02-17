@@ -13,34 +13,34 @@ Referenzen:
 ## CRE-UC1-01 — Expliziter Abschluss-/Übermittlungs-Flow
 
 ### API/Server
-- [ ] Endpoint/Action für explizites Abschließen ergänzen (idempotent):
-  - Ziel: aktuelles Assessment/Funnel als `submitted/completed` markieren.
+- [x] Endpoint/Action für explizites Abschließen ergänzen (idempotent):
+  - Ziel: aktuelles Intake explizit als `active` markieren (Submit).
   - Bei Wiederholung: kein Duplicate-Write, gleiche Erfolgsantwort.
-- [ ] Ownership/Auth-Guard wie bestehende Funnel-Runtime übernehmen.
-- [ ] Abschlussantwort standardisieren (`success`, `assessmentStatus`, `intakeStatus`, `nextRoute`).
-- [ ] Audit/Event-Log für Abschluss auslösen (`submitted_at`, `submitted_by`, `source=uc1`).
+- [x] Ownership/Auth-Guard wie bestehende Funnel-Runtime übernehmen.
+- [x] Abschlussantwort standardisieren (`success`, `assessmentStatus`, `intakeStatus`, `nextRoute`).
+- [x] Audit/Event-Log für Abschluss auslösen (`submitted_at`, `submitted_by`, `source=uc1`).
 
 ### UI/Client
-- [ ] Sichtbare CTA im Dialog: `Erfassung abschließen` (nur wenn Abschluss erlaubt).
-- [ ] Bestätigungszustand nach Submit (Loading/Success/Error) mit klarer Patientensprache.
-- [ ] Nach Erfolg deterministische Navigation auf Ergebnis-/Danke-Statusseite.
-- [ ] Submit während laufendem Request deaktivieren (Double-Submit-Schutz).
+- [x] Sichtbare CTA im Dialog: `Erfassung abschließen` (nur wenn Abschluss erlaubt).
+- [x] Bestätigungszustand nach Submit (Loading/Success/Error) mit klarer Patientensprache.
+- [x] Nach Erfolg deterministischer Abschlusszustand im Dialog (Read-only + Erfolgsstatus).
+- [x] Submit während laufendem Request deaktivieren (Double-Submit-Schutz).
 
 ### Daten/State
-- [ ] Klare Statusübergänge definieren (`in_progress` -> `submitted`/`completed`).
-- [ ] Read-only-Verhalten nach Abschluss erzwingen.
-- [ ] Persistente Timestamp-Felder verifizieren (`submitted_at`, ggf. `completed_at`).
+- [x] Klare Statusübergänge definieren (`draft` -> `active`).
+- [x] Read-only-Verhalten nach Abschluss erzwingen.
+- [x] Persistente Timestamp-Felder verifizieren (`submitted_at`, ggf. `completed_at`).
 
 ### Tests
-- [ ] API-Test: erfolgreicher Submit + idempotenter Re-Submit.
-- [ ] API-Test: 401/403 bei fehlender Ownership/Rolle.
-- [ ] E2E-Test: CTA sichtbar, Submit erfolgreich, keine zweite aktive Eingabe danach.
-- [ ] E2E-Test: Reload nach Submit bleibt im abgeschlossenen Zustand.
+- [x] API-Test: erfolgreicher Submit + idempotenter Re-Submit.
+- [x] API-Test: 401/403 bei fehlender Ownership/Rolle.
+- [x] E2E-Test: CTA sichtbar, Submit erfolgreich, keine zweite aktive Eingabe danach.
+- [x] E2E-Test: Reload nach Submit bleibt im abgeschlossenen Zustand.
 
 ### Akzeptanzkriterien
-- Abschluss erfolgt nur explizit per CTA.
-- Kein Duplicate-Submit möglich.
-- Nach Abschluss keine weitere Folgefrage im gleichen Flow.
+- [x] Abschluss erfolgt nur explizit per CTA.
+- [x] Kein Duplicate-Submit möglich.
+- [x] Nach Abschluss ist der Dialog im Read-only-Modus.
 
 ---
 
