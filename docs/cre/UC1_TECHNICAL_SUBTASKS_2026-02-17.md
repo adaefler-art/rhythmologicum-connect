@@ -1,0 +1,119 @@
+# UC1 Technical Subtasks (CRE-UC1-01..03) — Stand 2026-02-17
+
+Zweck:
+- Die drei UC1-Tickets in umsetzbare technische Arbeitspakete zerlegen.
+- Fokus: API, UI, Daten-/State-Modell, Tests, klare Akzeptanzkriterien.
+
+Referenzen:
+- `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
+- `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`
+
+---
+
+## CRE-UC1-01 — Expliziter Abschluss-/Übermittlungs-Flow
+
+### API/Server
+- [ ] Endpoint/Action für explizites Abschließen ergänzen (idempotent):
+  - Ziel: aktuelles Assessment/Funnel als `submitted/completed` markieren.
+  - Bei Wiederholung: kein Duplicate-Write, gleiche Erfolgsantwort.
+- [ ] Ownership/Auth-Guard wie bestehende Funnel-Runtime übernehmen.
+- [ ] Abschlussantwort standardisieren (`success`, `assessmentStatus`, `intakeStatus`, `nextRoute`).
+- [ ] Audit/Event-Log für Abschluss auslösen (`submitted_at`, `submitted_by`, `source=uc1`).
+
+### UI/Client
+- [ ] Sichtbare CTA im Dialog: `Erfassung abschließen` (nur wenn Abschluss erlaubt).
+- [ ] Bestätigungszustand nach Submit (Loading/Success/Error) mit klarer Patientensprache.
+- [ ] Nach Erfolg deterministische Navigation auf Ergebnis-/Danke-Statusseite.
+- [ ] Submit während laufendem Request deaktivieren (Double-Submit-Schutz).
+
+### Daten/State
+- [ ] Klare Statusübergänge definieren (`in_progress` -> `submitted`/`completed`).
+- [ ] Read-only-Verhalten nach Abschluss erzwingen.
+- [ ] Persistente Timestamp-Felder verifizieren (`submitted_at`, ggf. `completed_at`).
+
+### Tests
+- [ ] API-Test: erfolgreicher Submit + idempotenter Re-Submit.
+- [ ] API-Test: 401/403 bei fehlender Ownership/Rolle.
+- [ ] E2E-Test: CTA sichtbar, Submit erfolgreich, keine zweite aktive Eingabe danach.
+- [ ] E2E-Test: Reload nach Submit bleibt im abgeschlossenen Zustand.
+
+### Akzeptanzkriterien
+- Abschluss erfolgt nur explizit per CTA.
+- Kein Duplicate-Submit möglich.
+- Nach Abschluss keine weitere Folgefrage im gleichen Flow.
+
+---
+
+## CRE-UC1-02 — Pause/Resume als SSOT mit klarer Fortschrittsposition
+
+### API/Server
+- [ ] Runtime-Status-Endpunkt als einzige Wahrheit für `currentStep/currentQuestion` nutzen.
+- [ ] Resume-Antwort erweitern um stabile Fortschrittsdaten (`step_index`, `total_steps`, `answered_count`).
+- [ ] Bei Inkonsistenzen deterministische Recovery-Regel implementieren (Server entscheidet Position).
+
+### UI/Client
+- [ ] Beim Screen-Entry immer Runtime-Status laden, keine lokale Rekonstruktion als Truth Source.
+- [ ] Fortschrittsanzeige aus Serverdaten ableiten (nicht aus lokalem Message-Array).
+- [ ] Resume-Banner/Hint: „Du setzt an deiner letzten Stelle fort.“
+- [ ] Reload/Back/Forward auf identische Frageposition stabilisieren.
+
+### Daten/State
+- [ ] Lokalen Cache für `assessmentId + currentStep` versionieren.
+- [ ] Konfliktregel: Server-State überschreibt Client-State.
+- [ ] Antwortspeicherung und Step-Wechsel transaktional koppeln (kein Step-Sprung ohne Save/Validate).
+
+### Tests
+- [ ] Integrationstest: Resume nach Reload trifft dieselbe offene Position.
+- [ ] E2E-Test: Back/Forward/Reload führt nicht zu Frage-Duplikat oder Sprung.
+- [ ] Regressionstest: bereits beantwortete Frage wird nicht erneut als erste offene Frage gesetzt.
+
+### Akzeptanzkriterien
+- Resume ist deterministisch und reproduzierbar.
+- Keine Regressionsfälle mit „Eingangsfrage kommt immer wieder“.
+- Fortschrittsanzeige konsistent mit Runtime-Status.
+
+---
+
+## CRE-UC1-03 — Open-Loop Qualitätsregeln pro Objective härten
+
+### API/Server
+- [ ] Objective-basierte Lückenregeln zentral definieren (`missing`, `unclear`, `resolved`).
+- [ ] Follow-up-Auswahl nur aus offenen Objectives; keine bereits gelösten Re-Ask.
+- [ ] Konsistente Priorisierung von Open-Loops (klinische Relevanz > Reihenfolge > Wiederholungsschutz).
+- [ ] Intake-Generierung um strukturierte Open-Loop-Metadaten erweitern.
+
+### UI/Client
+- [ ] Dialoghinweise für fehlende Informationen neutral und nicht-diagnostisch halten.
+- [ ] Optionaler Progress-Hinweis „offene Punkte verbleibend“ auf Objective-Basis.
+- [ ] Keine irreführenden Aussagen wie „nächste Frage“ ohne tatsächlichen nächsten Schritt.
+
+### Daten/State
+- [ ] Objective-Zustände versioniert persistieren (inkl. `resolved_at`, `resolution_source`).
+- [ ] Mapping Objective -> Frageknoten dokumentieren und stabil halten.
+
+### Tests
+- [ ] Unit-Tests für Objective-State-Transitions (`missing->resolved`, `unclear->resolved`).
+- [ ] Golden-Set-Regression: `objective_reask_violation_count = 0` bleibt stabil.
+- [ ] E2E-Szenario: unvollständige Angaben erzeugen Open-Loops, vollständige Angaben schließen sie.
+
+### Akzeptanzkriterien
+- Open-Loops sind nachvollziehbar, priorisiert und re-ask-frei.
+- Intake enthält verwertbare Missing/Unclear-Information je Objective.
+- Patientenkommunikation bleibt prozessbezogen, nicht diagnostisch.
+
+---
+
+## Empfohlene Umsetzungsreihenfolge (UC1, 2 Sprints)
+
+Sprint 1:
+1. CRE-UC1-02 (SSOT Resume)
+2. CRE-UC1-01 (expliziter Abschluss)
+
+Sprint 2:
+3. CRE-UC1-03 (Open-Loop Qualität)
+4. UC1 End-to-End Regression-Block
+
+## UC1 Gate vor Übergang zu UC2
+- [ ] Abschluss + Resume + Open-Loop Kriterien gemeinsam im Shadow-Mode-Slice bestanden
+- [ ] Keine P0/P1 Regression im Patient-Dialog
+- [ ] Klinisches Kurzfeedback zu Verständlichkeit der offenen Punkte dokumentiert
