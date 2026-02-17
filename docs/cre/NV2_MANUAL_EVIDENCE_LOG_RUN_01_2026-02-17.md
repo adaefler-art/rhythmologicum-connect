@@ -6,9 +6,9 @@ Template: `docs/cre/NV2_MANUAL_EVIDENCE_LOG_TEMPLATE.md`
 ## 1) Run-Metadaten
 
 - Run-ID: `NV2-RUN-01-2026-02-17`
-- Datum/Uhrzeit: `2026-02-17 _offen_`
+- Datum/Uhrzeit: `2026-02-17 09:45 (Startdatensatz)`
 - Testumgebung (local/staging/preview): `local`
-- Build/Commit: `_offen_`
+- Build/Commit: `c778cb94`
 - Durchfuehrende Person: `_offen_`
 - Rolle (Med/BE/QA/Product): `_offen_`
 
@@ -49,6 +49,7 @@ Template: `docs/cre/NV2_MANUAL_EVIDENCE_LOG_TEMPLATE.md`
 ## 5) Vorbefuellte Referenz-Evidenz (automatisiert)
 
 - E2E Follow-up Kernpfad stabilisiert: `tests/e2e/patient-followup-loop.spec.ts`
+- Golden-Set Summary (zuletzt): `docs/cre/golden-set/latest.json` (`passed=30/30`, `followup_repeat_question_rate=0`, `objective_reask_violation_count=0`)
 - Letzter dokumentierter Stand laut Checklist:
   - Selector-Haertung (`.first()`), Back/Reload-Pfad und Mobile-Readiness gruen
   - Mock-Mode Runs dokumentiert (4 passed / 1 skipped)
