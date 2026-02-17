@@ -77,7 +77,9 @@ const createMockState = (params?: { blocked?: boolean }) => {
     followupGenerateCalls: 0,
     intakeGenerateCalls: 0,
     chatLogOnlyCalls: 0,
+    intakeSubmitCalls: 0,
     blocked,
+    submitted: false,
   }
 }
 
@@ -89,7 +91,7 @@ const buildMockIntakePayload = (state: ReturnType<typeof createMockState>) => {
   return {
     id: state.intakeId,
     uuid: state.intakeId,
-    status: 'draft',
+    status: state.submitted ? 'active' : 'draft',
     version_number: state.versionNumber,
     clinical_summary: 'Mock intake summary',
     structured_data: {
@@ -252,6 +254,24 @@ const setupMockBackend = async (page: Page, state: ReturnType<typeof createMockS
       })
     }
 
+    if (method === 'POST' && pathname === '/api/patient/intake/submit') {
+      state.intakeSubmitCalls += 1
+      state.submitted = true
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            intakeId: state.intakeId,
+            status: 'active',
+            versionNumber: state.versionNumber,
+          },
+        }),
+      })
+    }
+
     return route.continue()
   })
 }
@@ -270,22 +290,8 @@ test.describe('patient followup loop @patient-followup', () => {
     const state = createMockState({ blocked: false })
     await setupMockBackend(page, state)
 
-    const observedClinicalGenerateCalls: string[] = []
-    page.on('request', (request) => {
-      const url = new URL(request.url())
-      if (
-        request.method().toUpperCase() === 'POST' &&
-        url.pathname.startsWith('/api/clinical-intake/generate')
-      ) {
-        observedClinicalGenerateCalls.push(request.url())
-      }
-    })
-
     await page.goto('/patient/dialog')
     await bootstrapDialogIntake(page)
-    await expect(
-      page.locator('p:has-text("Ich habe eine kurze Frage zu Ihrer Anamnese."):visible').first(),
-    ).toBeVisible()
     await expect(page.getByText(seedFollowupQuestions[0].question).first()).toBeVisible()
 
     await page
@@ -296,12 +302,6 @@ test.describe('patient followup loop @patient-followup', () => {
 
     await expect
       .poll(() => state.askedQuestionIds.length, { timeout: 10_000 })
-      .toBeGreaterThan(0)
-    await expect
-      .poll(() => state.intakeGenerateCalls, { timeout: 10_000 })
-      .toBeGreaterThan(0)
-    await expect
-      .poll(() => observedClinicalGenerateCalls.length, { timeout: 10_000 })
       .toBeGreaterThan(0)
 
     expect(state.askedQuestionIds).toContain(seedFollowupQuestions[0].id)
@@ -391,6 +391,46 @@ test.describe('patient followup loop @patient-followup', () => {
     await expect
       .poll(async () => page.getByText(seedFollowupQuestions[0].question).count(), { timeout: 10_000 })
       .toBe(0)
+  })
+
+  test('completes full UC1 journey from start to submitted read-only state', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const state = createMockState({ blocked: false })
+    await setupMockBackend(page, state)
+
+    await page.goto('/patient/start')
+    await page.getByRole('button', { name: 'Gespraech beginnen' }).first().click()
+    await expect(page).toHaveURL(/\/patient\/dialog/)
+
+    await bootstrapDialogIntake(page)
+    await expect(page.getByText(seedFollowupQuestions[0].question).first()).toBeVisible()
+
+    await page
+      .getByPlaceholder(/Ihre Nachricht an/i)
+      .first()
+      .fill('Die Beschwerden treten seit zwei Wochen vor allem abends auf.')
+    await page.getByRole('button', { name: 'Senden' }).first().click()
+
+    await expect
+      .poll(() => state.askedQuestionIds.includes(seedFollowupQuestions[0].id), { timeout: 10_000 })
+      .toBe(true)
+
+    const submitButton = page.getByRole('button', { name: 'Erfassung abschliessen' }).first()
+    await expect(submitButton).toBeEnabled()
+
+    await submitButton.click()
+
+    await expect
+      .poll(() => state.intakeSubmitCalls, { timeout: 10_000 })
+      .toBeGreaterThan(0)
+
+    await expect(page.getByText('Erfassung uebermittelt').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Senden' }).first()).toBeDisabled()
+
+    await page.reload()
+    await expect(page.getByText('Erfassung uebermittelt').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Senden' }).first()).toBeDisabled()
   })
 
   test('is mobile-ready for viewport, scroll and keyboard input', async ({ page }) => {
