@@ -28,6 +28,17 @@ Statuswerte:
 
 ---
 
+## Open Manual Gates (NV2-NV5)
+
+- [ ] NV2: A-D Manual-Checkliste vollständig durchführen und dokumentieren (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_RUN_01_2026-02-17.md`)
+- [ ] NV2: 0 offene P0/P1 UI-Bugs bestätigen + finalen Copy-Review signieren
+- [ ] NV3: Shadow-Mode mit realem Fallvolumen fahren und 2-Wochen-KPI-Stabilität nachweisen
+- [ ] NV3: Kein unadressierter `critical` Alert und klinisches Review zur Alltagstauglichkeit dokumentieren
+- [ ] NV4: Klinisches Kurzreview (qualitatives UX-Feedback) als Evidence-Notiz anhängen
+- [ ] NV5: Formales Go/No-Go mit dokumentiertem Risikoentscheid und Sign-off durchführen
+
+---
+
 ## CRE-NV1 — Test Härtung & Golden Set (Woche 1-2)
 
 ### Issues
@@ -255,3 +266,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 09:33:00 (lokal): NV2/NV4-Operationalisierung fortgeführt, indem je ein vorbefülltes Run-01-Artefakt für manuelle NV2-Evidence und NV4 KPI-Vergleich angelegt und in der Checklist verlinkt wurde (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_RUN_01_2026-02-17.md`, `docs/cre/NV4_KPI_COMPARISON_REPORT_01_2026-02-17.md`).
 - 2026-02-17 09:58:00 (lokal): NV1-NV4 konsolidiert, indem alle nicht-manuellen Checklist-Schritte auf erledigt gesetzt und verbleibende offene Punkte explizit auf manuelle/operative Gates eingegrenzt wurden.
 - 2026-02-17 10:07:00 (lokal): NV5 konsolidiert, indem nicht-manuelle Deliverables (Readiness-Report, Rollout/Rollback-Playbook) auf erledigt gesetzt und verbleibende offene Punkte explizit als manuelle/operative Gates markiert wurden.
+- 2026-02-17 10:14:00 (lokal): Kompakte Übersicht „Open Manual Gates (NV2-NV5)“ ergänzt, damit verbleibende manuelle/operative Restschritte zentral und teamlesbar am Dokumentanfang sichtbar sind.
