@@ -40,6 +40,42 @@ Statuswerte:
 
 ---
 
+## Use-Case Add-on Track (UC1-UC3)
+
+Referenz:
+- `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
+
+Ziel:
+- Use-Case-first Umsetzung für UC1/UC2/UC3 operativ abhakbar machen, ohne die NV1-NV5-Gates zu verlieren.
+
+### UC1 — Pre-Visit Structured Capture
+- [ ] CRE-UC1-01 Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit)
+- [ ] CRE-UC1-02 Pause/Resume als SSOT mit klarer Fortschrittsposition
+- [ ] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
+
+### UC2 — Waiting Room Fastpass
+- [ ] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio)
+- [ ] CRE-UC2-02 Minimum-Dataset Contract + Validierung
+- [ ] CRE-UC2-03 UC2→UC1 Übergabe via QR/Deep-Link
+
+### UC3 — Consult Mode Silent Listener
+- [ ] CRE-UC3-01 Consent/Recording-Status + Audit Events
+- [ ] CRE-UC3-02 Silent-Listener Clinician-Panel (Captured/Missing/Unclear)
+- [ ] CRE-UC3-03 Evidenz-/Timestamp-Attribution im Intake
+- [ ] CRE-UC3-04 Physician-directed Clarification Suggestions
+
+### Rollout Enabler (übergreifend)
+- [ ] CRE-ROLL-01 KPI-/Go-No-Go-Matrix pro Use Case
+- [ ] CRE-ROLL-02 Schulungs-/Betriebsrunbook pro Touchpoint
+
+### Priorisierte Umsetzung (empfohlen)
+1. UC1 komplett (CRE-UC1-01..03)
+2. UC2 Basis + Übergabe (CRE-UC2-01..03)
+3. UC3 Pilotfähig (CRE-UC3-01..04)
+4. Rollout Enabler finalisieren (CRE-ROLL-01..02)
+
+---
+
 ## CRE-NV1 — Test Härtung & Golden Set (Woche 1-2)
 
 ### Issues
@@ -270,3 +306,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 10:14:00 (lokal): Kompakte Übersicht „Open Manual Gates (NV2-NV5)“ ergänzt, damit verbleibende manuelle/operative Restschritte zentral und teamlesbar am Dokumentanfang sichtbar sind.
 - 2026-02-17 10:22:00 (lokal): 1-seitige Team-Ansicht für Daily/Weekly ergänzt, um offene manuelle NV2-NV5-Gates mit Owner/ETA/Status zentral zu tracken (`docs/cre/OPEN_MANUAL_GATES_DAILY_VIEW.md`).
 - 2026-02-17 10:39:00 (lokal): Roadmap auf Use-Case-first ausgerichtet, indem ein dedizierter UC1/UC2/UC3-Rolloutplan mit Gap-Analyse/Arbeitspaketen ergänzt und in Roadmap/Epics als Steuerungsreferenz verankert wurde (`docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`, `docs/cre/ROADMAP_POST_E4_2026-02-15.md`, `docs/cre/EPICS_AND_ISSUES_NEXT_VERSION_2026-02-15.md`).
+- 2026-02-17 10:48:00 (lokal): Use-Case Add-on Track in die v0.8-Checklist integriert, inklusive CRE-UC1/2/3- und CRE-ROLL-Tasks mit priorisierter Abarbeitungsreihenfolge (`docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
