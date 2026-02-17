@@ -1,0 +1,22 @@
+{
+  "name": "@rhythmologicum/rhythm-patient-ios",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "cap:sync": "cap sync",
+    "cap:add:ios": "cap add ios",
+    "ios:open": "cap open ios",
+    "ios:run": "cap run ios",
+    "doctor": "npx cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/core": "^7.1.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.1.0",
+    "@capacitor/ios": "^7.1.0",
+    "typescript": "^5.9.3"
+  }
+}
