@@ -148,6 +148,32 @@ const resolveObjectiveIdFromQuestionId = (questionId: string) => {
   return null
 }
 
+const resolveObjectiveIdFromQuestionText = (questionText?: string) => {
+  const normalized = questionText?.trim().toLowerCase()
+  if (!normalized) return null
+
+  if (/hauptanliegen|hauptsymptom|leitsymptom|wichtigstes anliegen|chief complaint/.test(normalized)) {
+    return 'objective:chief-complaint'
+  }
+  if (/seit wann|beginn|onset/.test(normalized)) {
+    return 'objective:onset'
+  }
+  if (/wie lange|dauer|duration/.test(normalized)) {
+    return 'objective:duration'
+  }
+  if (/verlauf|verbessert|verschlechtert|unveraendert|course/.test(normalized)) {
+    return 'objective:course'
+  }
+  if (/medik|medication|nahrungserga|supplement/.test(normalized)) {
+    return 'objective:medication'
+  }
+  if (/psycho|stress|alltag|schlaf|belastung/.test(normalized)) {
+    return 'objective:psychosocial'
+  }
+
+  return null
+}
+
 const isObjectiveStillMissing = (params: {
   followup: NonNullable<StructuredIntakeData['followup']>
   objectiveId: string | null
@@ -292,6 +318,21 @@ const applyAskedAnswerToStructuredData = (params: {
   const next = { ...params.structuredData }
   const hpi = { ...(next.history_of_present_illness ?? {}) }
   const askedQuestionText = params.askedQuestionText?.trim().toLowerCase() ?? ''
+  const inferredObjectiveIds = new Set<string>()
+
+  for (const questionId of params.askedQuestionIds) {
+    const objectiveId = resolveObjectiveIdFromQuestionId(questionId)
+    if (objectiveId) {
+      inferredObjectiveIds.add(objectiveId)
+    }
+  }
+
+  const objectiveIdFromText = resolveObjectiveIdFromQuestionText(params.askedQuestionText)
+  if (objectiveIdFromText) {
+    inferredObjectiveIds.add(objectiveIdFromText)
+  }
+
+  const hasObjective = (objectiveId: string) => inferredObjectiveIds.has(objectiveId)
 
   const inferMedicationContext = () => {
     if (params.askedQuestionIds.some((id) => id === 'gap:medication')) return true
@@ -345,7 +386,23 @@ const applyAskedAnswerToStructuredData = (params: {
     }
   }
 
-  if (inferMedicationContext()) {
+  if (hasObjective('objective:chief-complaint')) {
+    next.chief_complaint = answer
+  }
+
+  if (hasObjective('objective:onset')) {
+    hpi.onset = answer
+  }
+
+  if (hasObjective('objective:duration')) {
+    hpi.duration = answer
+  }
+
+  if (hasObjective('objective:course')) {
+    hpi.course = answer
+  }
+
+  if (hasObjective('objective:medication') || inferMedicationContext()) {
     const medication = asStringArray(next.medication)
     if (isNoMedicationAnswer(answer)) {
       if (!medication.includes('none_reported')) {
@@ -356,7 +413,7 @@ const applyAskedAnswerToStructuredData = (params: {
     }
   }
 
-  if (inferPsychosocialContext()) {
+  if (hasObjective('objective:psychosocial') || inferPsychosocialContext()) {
     const psychosocial = asStringArray(next.psychosocial_factors)
     if (!psychosocial.includes(answer)) {
       next.psychosocial_factors = [...psychosocial, answer]
