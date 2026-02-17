@@ -43,10 +43,18 @@ Statuswerte:
 ## Use-Case Add-on Track (UC1-UC3)
 
 Referenz:
-- `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
+- `docs/cre/USE_CASE_REFERENCE_2026-02-17.md`
+- Umsetzungssequenz: `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
 
 Ziel:
 - Use-Case-first Umsetzung für UC1/UC2/UC3 operativ abhakbar machen, ohne die NV1-NV5-Gates zu verlieren.
+- Erfüllung der harten Scope-Regeln: keine Diagnostik, keine Risikobewertung, keine patientenspezifische Interpretation.
+
+### UC-Guardrails (verbindlich für UC1-UC3)
+- [ ] CRE-UC-GR-01 Prompt-/Copy-Linter gegen verbotene diagnostische Sprache aktivieren
+- [ ] CRE-UC-GR-02 Output-Contracts härten (kein Ranking, keine Wahrscheinlichkeit, keine Risk/Triage-Felder)
+- [ ] CRE-UC-GR-03 Regressionstests für verbotene Aussagen in Patient- und Clinician-Ausgaben ergänzen
+- [ ] CRE-UC-GR-04 Review-Gate: Scope-Verstoß blockiert Merge/Release
 
 ### UC1 — Pre-Visit Structured Capture
 - [x] CRE-UC1-01 Abschluss-/Übermittlungs-Flow im Patient Dialog (explizit)
@@ -57,24 +65,31 @@ Ziel:
 	- [x] API: Runtime-Status als einzige Wahrheit (`currentStep/currentQuestion`)
 	- [x] UI: Resume/Re-Entry strikt aus Server-State, nicht aus lokalem Verlauf
 	- [x] Tests: Reload/Back/Forward deterministisch ohne Re-Ask/Sprung
-- [ ] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
-	- [ ] API: Objective-State-Transitions und Priorisierung (`missing/unclear/resolved`)
-	- [ ] UI: neutrale Missing/Open-Loop-Hinweise ohne Diagnosewirkung
-	- [ ] Tests: Golden-Set + E2E gegen objective_reask_violation
+- [~] CRE-UC1-03 Open-Loop Qualitätsregeln pro Objective härten
+	- [ ] API: Objective-State-Transitions `missing/unclear/resolved` + Vollständigkeitscheck je Pflichtfeld
+	- [ ] Datenmodell: strukturierte Zeitachse vollständig (`Beginn/Verlauf/Trigger/Dauer/Frequenz`)
+	- [ ] Datenmodell: Medikation vollständig (`Name/Dosis/Einnahmefrequenz/Fotoupload`)
+	- [ ] Datenmodell: Vorerkrankungen + Vorbefunde (Upload + Metadaten) verpflichtend integrieren
+	- [ ] UI: symptom-/prozessorientierte Sprache ohne nosologische oder interpretative Aussagen
+	- [ ] Tests: Golden-Set + E2E gegen objective_reask_violation und verbotene Sprachmuster
 
 #### UC1 Implementierungsdetail
 - [x] Technische Subtask-Zerlegung (API/UI/State/Test + Akzeptanzkriterien) dokumentiert (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`)
 
 ### UC2 — Waiting Room Fastpass
-- [ ] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio)
+- [ ] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio, Tap-first, große Targets)
 - [ ] CRE-UC2-02 Minimum-Dataset Contract + Validierung
-- [ ] CRE-UC2-03 UC2→UC1 Übergabe via QR/Deep-Link
+	- [ ] Pflichtset: Identität + Hauptanliegen + Hauptsymptom + Beginn + Medikation (ja/nein + Liste/Fotoupload) + Kurzskala
+	- [ ] Red-Flag-Prozessfragen nur als Vollständigkeitscheck, ohne Triage-/Dringlichkeitsausgabe
+	- [ ] Durchlaufzeit-Gate: 3-5 Minuten Zielpfad inkl. Markierung fehlender Felder
+- [ ] CRE-UC2-03 UC2→UC1 Übergabe via QR/Deep-Link (optional)
 
 ### UC3 — Consult Mode Silent Listener
 - [ ] CRE-UC3-01 Consent/Recording-Status + Audit Events
-- [ ] CRE-UC3-02 Silent-Listener Clinician-Panel (Captured/Missing/Unclear)
-- [ ] CRE-UC3-03 Evidenz-/Timestamp-Attribution im Intake
-- [ ] CRE-UC3-04 Physician-directed Clarification Suggestions
+- [ ] CRE-UC3-02 Silent-Listener Clinician-Panel (nur Captured/Missing/Unclear)
+- [ ] CRE-UC3-03 Evidenz-/Timestamp-Attribution im Intake (`source=conversation`)
+- [ ] CRE-UC3-04 Physician-directed Clarification Suggestions (formal-strukturell, nicht diagnostisch)
+- [ ] CRE-UC3-05 Scope-Gate im Consult Mode: keine Hypothesen, keine Differenzialdiagnosen, keine Wahrscheinlichkeiten
 
 ### Rollout Enabler (übergreifend)
 - [ ] CRE-ROLL-01 KPI-/Go-No-Go-Matrix pro Use Case
@@ -322,3 +337,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 10:56:00 (lokal): UC1-Tickets (CRE-UC1-01..03) technisch heruntergebrochen, indem eine detaillierte API/UI/State/Test-Subtaskplanung mit Akzeptanzkriterien erstellt und in der Checklist direkt verlinkt wurde (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
 - 2026-02-17 11:27:00 (lokal): CRE-UC1-02 als umgesetzt markiert, indem Resume/Reload im Assessment-Flow auf Server-SSOT gehärtet, Runtime-Resume um beantwortete Step-Keys erweitert und eine Unit-Regression für Cursor-Resume ergänzt wurde (`apps/rhythm-patient-ui/app/api/funnels/[slug]/assessments/[assessmentId]/route.ts`, `apps/rhythm-patient-ui/app/patient/(mobile)/assessment-flow-v2/client.tsx`, `lib/funnels/runtimeResume.ts`, `lib/funnels/__tests__/runtimeResume.test.ts`).
 - 2026-02-17 11:52:00 (lokal): CRE-UC1-01 als umgesetzt markiert, indem ein expliziter Abschluss-CTA im Patient-Dialog, ein idempotenter Submit-Endpoint mit Ownership-Guard und Post-Submit Read-only-UI inklusive Success/Error-Status ergänzt wurden (`apps/rhythm-patient-ui/app/patient/(mobile)/dialog/DialogScreenV2.tsx`, `apps/rhythm-patient-ui/app/api/patient/intake/submit/route.ts`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`).
+- 2026-02-17 12:18:00 (lokal): Use-Case-Track auf revised UC-Referenz ausgerichtet, indem verbindliche UC-Guardrails ergänzt, UC1/UC2/UC3-Tasks auf Scope-/Sprach-/Output-Regeln nachgeschärft und die neue Referenz `docs/cre/USE_CASE_REFERENCE_2026-02-17.md` als Steuerungsgrundlage verankert wurde.

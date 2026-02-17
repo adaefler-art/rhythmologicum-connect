@@ -166,6 +166,54 @@ const sanitizeFollowupQuestionText = (value: string) => {
     .trim()
 }
 
+const toPatientFriendlyFollowupQuestion = (value: string) => {
+  const sanitized = sanitizeFollowupQuestionText(value)
+  if (!sanitized) return ''
+
+  const normalized = sanitized
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  const looksTechnicalThirdPerson =
+    /\bder patient\b|\bstellt sich\b|\banamnese\b|\bklinisch\b|\babgeklart\b|\berwahnt\b/.test(
+      normalized,
+    )
+
+  if (!looksTechnicalThirdPerson) {
+    return sanitized
+  }
+
+  const sentences = sanitized
+    .split(/(?<=[?.!])\s+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  const lastQuestionSentence = [...sentences].reverse().find((entry) => entry.includes('?'))
+
+  if (lastQuestionSentence) {
+    const rewritten = lastQuestionSentence
+      .replace(/\bDer Patient\b/g, 'Sie')
+      .replace(/\bder Patient\b/g, 'Sie')
+      .replace(/\bsollen die\b/gi, 'moechten Sie die')
+      .replace(/\bwerden\?$/i, '?')
+      .trim()
+
+    if (rewritten.length > 0) {
+      return rewritten
+    }
+  }
+
+  if (/psych|nervos|angst|stress|belast/.test(normalized)) {
+    return 'Wie stark sind Ihre psychischen Beschwerden aktuell (z.B. Nervositaet, Angst oder innere Unruhe)?'
+  }
+
+  if (/kard|herz|puls|rhythm/.test(normalized)) {
+    return 'Bestehen Ihre Herzbeschwerden aktuell noch, und moechten Sie diese aerztlich abklaeren lassen?'
+  }
+
+  return 'Koennen Sie Ihre aktuellen Beschwerden bitte kurz in Ihren eigenen Worten beschreiben?'
+}
+
 const normalizeFollowupQuestionForCompare = (value?: string) =>
   sanitizeFollowupQuestionText(value ?? '')
     .toLowerCase()
@@ -240,7 +288,7 @@ const buildFollowupPrompt = (params: {
     ? `Zum Thema "${shortChiefComplaint}": `
     : 'Kurze Frage: '
 
-  const directQuestion = cleanedQuestion || question.question
+  const directQuestion = toPatientFriendlyFollowupQuestion(cleanedQuestion || question.question)
 
   const politeQuestion =
     isStandardGapQuestion || questionAlreadyContainsContext(directQuestion)
