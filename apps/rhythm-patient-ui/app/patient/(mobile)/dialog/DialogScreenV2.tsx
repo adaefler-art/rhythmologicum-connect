@@ -227,6 +227,27 @@ const toPatientFriendlyFollowupQuestion = (value: string) => {
   return 'Koennen Sie Ihre aktuellen Beschwerden bitte kurz in Ihren eigenen Worten beschreiben?'
 }
 
+const normalizeAssistantTextForPatient = (value: string) => {
+  const sanitized = sanitizeFollowupQuestionText(value)
+  if (!sanitized) return value
+
+  const normalized = sanitized
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  const looksTechnicalThirdPerson =
+    /\bder patient\b|\bstellt sich\b|\banamnese\b|\bklinisch\b|\bpriorisiert\b|\berwahnt\b/.test(
+      normalized,
+    )
+
+  if (!looksTechnicalThirdPerson) {
+    return value
+  }
+
+  return toPatientFriendlyFollowupQuestion(sanitized)
+}
+
 const normalizeFollowupQuestionForCompare = (value?: string) =>
   sanitizeFollowupQuestionText(value ?? '')
     .toLowerCase()
@@ -485,7 +506,7 @@ export function DialogScreenV2() {
     const assistantMessage: StubbedMessage = {
       id: `assistant-${Date.now()}`,
       sender: 'assistant',
-      text,
+      text: normalizeAssistantTextForPatient(text),
       timestamp: buildTimestamp(),
     }
 
@@ -652,12 +673,14 @@ export function DialogScreenV2() {
           {
             id: `assistant-${Date.now()}`,
             sender: 'assistant',
-            text: buildFollowupPrompt({
+            text: normalizeAssistantTextForPatient(
+              buildFollowupPrompt({
               question: intakeFollowup.next_questions[0],
               latestIntake,
               includeIntro: true,
               activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
-            }),
+              }),
+            ),
             timestamp: buildTimestamp(),
           },
         ])
@@ -673,12 +696,14 @@ export function DialogScreenV2() {
               {
                 id: `assistant-${Date.now()}`,
                 sender: 'assistant',
-                text: buildFollowupPrompt({
+                text: normalizeAssistantTextForPatient(
+                  buildFollowupPrompt({
                   question: generatedFollowup.nextQuestions[0],
                   latestIntake,
                   includeIntro: true,
                   activeObjectiveCount: generatedFollowup.activeObjectiveCount,
-                }),
+                  }),
+                ),
                 timestamp: buildTimestamp(),
               },
             ])
@@ -697,7 +722,7 @@ export function DialogScreenV2() {
         {
           id: `assistant-${Date.now()}`,
           sender: 'assistant',
-          text: openingQuestion,
+          text: normalizeAssistantTextForPatient(openingQuestion),
           timestamp: buildTimestamp(),
         },
       ])
