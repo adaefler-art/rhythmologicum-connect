@@ -40,7 +40,7 @@ try {
 }
 
 const config: CapacitorConfig = {
-  appId: 'com.rhythmologicum.connect.patient',
+  appId: 'com.pat.connect.patient',
   appName: 'Rhythmologicum Connect',
   webDir: 'www',
   bundledWebRuntime: false,
