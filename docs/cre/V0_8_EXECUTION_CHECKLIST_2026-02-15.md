@@ -146,14 +146,14 @@ Statuswerte:
 ## CRE-NV5 — Readiness Gate & Release (Woche 9-10)
 
 ### Issues
-- [~] CRE-NV5-01 Release-Readiness Report erstellen
+- [x] CRE-NV5-01 Release-Readiness Report erstellen
 - [ ] CRE-NV5-02 Go/No-Go Gate mit dokumentiertem Risikoentscheid
-- [~] CRE-NV5-03 Staged Rollout + Rollback Playbook finalisieren
+- [x] CRE-NV5-03 Staged Rollout + Rollback Playbook finalisieren
 
 #### NV5 Evidenzstand (laufend)
 - [x] Release-Readiness-Report als ausfüllbarer Draft mit Gate-/KPI-/Risiko-Sektionen vorbereitet (`docs/cre/NV5_RELEASE_READINESS_REPORT_DRAFT.md`)
 - [x] Staged-Rollout/Rollback-Playbook mit Phasen, Stop-/Rollback-Kriterien und Verantwortlichkeiten vorbereitet (`docs/cre/NV5_STAGED_ROLLOUT_ROLLBACK_PLAYBOOK.md`)
-- [~] Finale Befüllung mit Shadow-Mode-Istwerten und Sign-off steht aus
+- [~] Nur manuelle NV5-Gates offen: finale Befüllung mit Shadow-Mode-Istwerten, Risikoentscheid und Sign-off
 
 ### Exit-Check
 - [ ] Keine offenen Safety-Kritiker
@@ -254,3 +254,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 09:18:00 (lokal): Offene NV2/NV4-Gates operationalisiert, indem eine NV2 Manual-Evidence-Log-Vorlage sowie ein NV4 KPI-Vergleichsreport-Template (Vorher/Nachher inkl. Baseline-/Gate-Struktur) erstellt und in der Checklist als Evidenz verlinkt wurden (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_TEMPLATE.md`, `docs/cre/NV4_KPI_COMPARISON_REPORT_TEMPLATE.md`).
 - 2026-02-17 09:33:00 (lokal): NV2/NV4-Operationalisierung fortgeführt, indem je ein vorbefülltes Run-01-Artefakt für manuelle NV2-Evidence und NV4 KPI-Vergleich angelegt und in der Checklist verlinkt wurde (`docs/cre/NV2_MANUAL_EVIDENCE_LOG_RUN_01_2026-02-17.md`, `docs/cre/NV4_KPI_COMPARISON_REPORT_01_2026-02-17.md`).
 - 2026-02-17 09:58:00 (lokal): NV1-NV4 konsolidiert, indem alle nicht-manuellen Checklist-Schritte auf erledigt gesetzt und verbleibende offene Punkte explizit auf manuelle/operative Gates eingegrenzt wurden.
+- 2026-02-17 10:07:00 (lokal): NV5 konsolidiert, indem nicht-manuelle Deliverables (Readiness-Report, Rollout/Rollback-Playbook) auf erledigt gesetzt und verbleibende offene Punkte explizit als manuelle/operative Gates markiert wurden.
