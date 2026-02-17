@@ -99,6 +99,8 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
 
 const DEFAULT_OPENING_QUESTION =
   'Kurz zum Ziel: Ich erfasse Ihre Beschwerden strukturiert fuer die aerztliche Einschaetzung. Was ist heute Ihr wichtigstes Anliegen?'
+const FOLLOWUP_NO_NEXT_QUESTION_MESSAGE =
+  'Danke, ich habe das notiert. Aktuell habe ich keine weitere konkrete Rueckfrage. Gibt es seitdem neue oder veraenderte Beschwerden?'
 const INTAKE_SESSION_KEY = 'intakeEntryId'
 const MAX_INTAKE_EVIDENCE = 10
 const MAX_INTAKE_OPEN_QUESTIONS = 5
@@ -1412,9 +1414,7 @@ export function DialogScreenV2() {
           }
 
           if (!followupReplySent) {
-            appendAssistantMessage(
-              'Danke, ich habe das notiert. Ich mache mit der nächsten Anamnese-Frage weiter.',
-            )
+            appendAssistantMessage(FOLLOWUP_NO_NEXT_QUESTION_MESSAGE)
           }
 
           setFollowupAnsweredCount(0)
@@ -1456,9 +1456,7 @@ export function DialogScreenV2() {
             }
 
             if (!recoveryReplySent) {
-              appendAssistantMessage(
-                'Danke, ich habe das notiert. Ich mache mit der nächsten Anamnese-Frage weiter.',
-              )
+              appendAssistantMessage(FOLLOWUP_NO_NEXT_QUESTION_MESSAGE)
             }
 
             setFollowupAnsweredCount(0)
