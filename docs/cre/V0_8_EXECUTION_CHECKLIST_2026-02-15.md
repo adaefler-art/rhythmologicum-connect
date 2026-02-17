@@ -36,6 +36,7 @@ Statuswerte:
 - [ ] NV3: Kein unadressierter `critical` Alert und klinisches Review zur Alltagstauglichkeit dokumentieren
 - [ ] NV4: Klinisches Kurzreview (qualitatives UX-Feedback) als Evidence-Notiz anhängen
 - [ ] NV5: Formales Go/No-Go mit dokumentiertem Risikoentscheid und Sign-off durchführen
+- [x] Team-Daily-Kompaktansicht für offene Manual Gates erstellt (`docs/cre/OPEN_MANUAL_GATES_DAILY_VIEW.md`)
 
 ---
 
@@ -267,3 +268,4 @@ Aktuellster Fix: Sackgasse im Follow-up geschlossen („bereits genannt/in den D
 - 2026-02-17 09:58:00 (lokal): NV1-NV4 konsolidiert, indem alle nicht-manuellen Checklist-Schritte auf erledigt gesetzt und verbleibende offene Punkte explizit auf manuelle/operative Gates eingegrenzt wurden.
 - 2026-02-17 10:07:00 (lokal): NV5 konsolidiert, indem nicht-manuelle Deliverables (Readiness-Report, Rollout/Rollback-Playbook) auf erledigt gesetzt und verbleibende offene Punkte explizit als manuelle/operative Gates markiert wurden.
 - 2026-02-17 10:14:00 (lokal): Kompakte Übersicht „Open Manual Gates (NV2-NV5)“ ergänzt, damit verbleibende manuelle/operative Restschritte zentral und teamlesbar am Dokumentanfang sichtbar sind.
+- 2026-02-17 10:22:00 (lokal): 1-seitige Team-Ansicht für Daily/Weekly ergänzt, um offene manuelle NV2-NV5-Gates mit Owner/ETA/Status zentral zu tracken (`docs/cre/OPEN_MANUAL_GATES_DAILY_VIEW.md`).
