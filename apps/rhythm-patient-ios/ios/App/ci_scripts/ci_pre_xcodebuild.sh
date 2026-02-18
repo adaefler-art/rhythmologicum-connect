@@ -39,6 +39,9 @@ else
 	REPO_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
 fi
 
+APP_ROOT="${REPO_ROOT}/apps/rhythm-patient-ios"
+IOS_APP_ROOT="${APP_ROOT}/ios/App"
+
 echo "[ci_pre_xcodebuild][app-local] REPO_ROOT=${REPO_ROOT}"
 cd "${REPO_ROOT}"
 
@@ -61,13 +64,13 @@ if ! command -v pod >/dev/null 2>&1; then
 	exit 1
 fi
 
-if [[ ! -d "apps/rhythm-patient-ios/www" ]]; then
-	echo "[ci_pre_xcodebuild][app-local] ERROR: apps/rhythm-patient-ios/www missing"
+if [[ ! -d "${APP_ROOT}/www" ]]; then
+	echo "[ci_pre_xcodebuild][app-local] ERROR: ${APP_ROOT}/www missing"
 	exit 1
 fi
 
 echo "[ci_pre_xcodebuild][app-local] Running Capacitor sync"
-cd apps/rhythm-patient-ios
+cd "${APP_ROOT}"
 npx cap sync ios
 
 if [[ ! -d "ios/App/App/public" || ! -f "ios/App/App/config.xml" || ! -f "ios/App/App/capacitor.config.json" ]]; then
@@ -76,6 +79,6 @@ if [[ ! -d "ios/App/App/public" || ! -f "ios/App/App/config.xml" || ! -f "ios/Ap
 	exit 1
 fi
 
-cd apps/rhythm-patient-ios/ios/App
+cd "${IOS_APP_ROOT}"
 pod install
 echo "[ci_pre_xcodebuild][app-local] Done"
