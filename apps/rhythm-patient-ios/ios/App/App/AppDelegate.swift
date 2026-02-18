@@ -76,14 +76,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 private struct NativeChatConfig {
     let baseURL: URL
-    let authToken: String
 
     static var current: NativeChatConfig {
         let baseURLString = (Bundle.main.object(forInfoDictionaryKey: "NATIVE_CHAT_BASE_URL") as? String) ?? "https://rhythm-patient.vercel.app"
-        let authToken = (Bundle.main.object(forInfoDictionaryKey: "NATIVE_CHAT_AUTH_TOKEN") as? String) ?? ""
-
         let url = URL(string: baseURLString) ?? URL(string: "https://rhythm-patient.vercel.app")!
-        return NativeChatConfig(baseURL: url, authToken: authToken)
+        return NativeChatConfig(baseURL: url)
     }
 }
 
@@ -100,26 +97,42 @@ private struct ChatMessage: Identifiable, Codable {
     let createdAt: Date
 }
 
-private struct ChatSession: Codable {
+private struct PersistedChatMessage: Codable {
     let id: String
+    let role: ChatRole
+    let content: String
+    let created_at: String
 }
 
-private struct ChatMessageRequest: Codable {
-    let text: String
+private struct ChatHistoryData: Codable {
+    let messages: [PersistedChatMessage]
 }
 
-private struct ChatMessageResponse: Codable {
-    let message: ChatMessage
+private struct SendChatData: Codable {
+    let reply: String
+    let messageId: String
 }
 
-private struct ChatMessagesResponse: Codable {
-    let messages: [ChatMessage]
+private struct ChatApiError: Codable {
+    let code: String
+    let message: String
+}
+
+private struct ChatApiResponse<T: Codable>: Codable {
+    let success: Bool
+    let data: T?
+    let error: ChatApiError?
+}
+
+private struct SendChatRequest: Codable {
+    let message: String
 }
 
 private final class NativeChatAPIClient {
     private let config: NativeChatConfig
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
+    private let iso8601Parser = ISO8601DateFormatter()
 
     init(config: NativeChatConfig) {
         self.config = config
@@ -129,34 +142,10 @@ private final class NativeChatAPIClient {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
-    func createSession(completion: @escaping (Result<ChatSession, Error>) -> Void) {
-        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/mobile/chat/sessions"))
-        request.httpMethod = "POST"
-        applyCommonHeaders(to: &request)
-
-        URLSession.shared.dataTask(with: request) { data, _, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-
-            guard let data = data else {
-                completion(.failure(NativeChatError.emptyResponse))
-                return
-            }
-
-            do {
-                let session = try self.decoder.decode(ChatSession.self, from: data)
-                completion(.success(session))
-            } catch {
-                completion(.failure(error))
-            }
-        }.resume()
-    }
-
-    func loadMessages(sessionId: String, completion: @escaping (Result<[ChatMessage], Error>) -> Void) {
-        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/mobile/chat/sessions/\(sessionId)/messages"))
+    func loadMessages(completion: @escaping (Result<[ChatMessage], Error>) -> Void) {
+        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/amy/chat"))
         request.httpMethod = "GET"
+        request.httpShouldHandleCookies = true
         applyCommonHeaders(to: &request)
 
         URLSession.shared.dataTask(with: request) { data, _, error in
@@ -171,21 +160,28 @@ private final class NativeChatAPIClient {
             }
 
             do {
-                let response = try self.decoder.decode(ChatMessagesResponse.self, from: data)
-                completion(.success(response.messages))
+                let response = try self.decoder.decode(ChatApiResponse<ChatHistoryData>.self, from: data)
+                guard response.success, let payload = response.data else {
+                    completion(.failure(NativeChatError.apiFailure(response.error?.message ?? "History loading failed")))
+                    return
+                }
+
+                let mapped = payload.messages.compactMap(self.mapPersistedMessage)
+                completion(.success(mapped.sorted(by: { $0.createdAt < $1.createdAt })))
             } catch {
                 completion(.failure(error))
             }
         }.resume()
     }
 
-    func sendMessage(sessionId: String, text: String, completion: @escaping (Result<ChatMessage, Error>) -> Void) {
-        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/mobile/chat/sessions/\(sessionId)/messages"))
+    func sendMessage(text: String, completion: @escaping (Result<ChatMessage, Error>) -> Void) {
+        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/amy/chat"))
         request.httpMethod = "POST"
+        request.httpShouldHandleCookies = true
         applyCommonHeaders(to: &request)
 
         do {
-            request.httpBody = try encoder.encode(ChatMessageRequest(text: text))
+            request.httpBody = try encoder.encode(SendChatRequest(message: text))
         } catch {
             completion(.failure(error))
             return
@@ -203,47 +199,57 @@ private final class NativeChatAPIClient {
             }
 
             do {
-                let response = try self.decoder.decode(ChatMessageResponse.self, from: data)
-                completion(.success(response.message))
+                let response = try self.decoder.decode(ChatApiResponse<SendChatData>.self, from: data)
+                guard response.success, let payload = response.data else {
+                    completion(.failure(NativeChatError.apiFailure(response.error?.message ?? "Sending message failed")))
+                    return
+                }
+
+                let assistantMessage = ChatMessage(
+                    id: payload.messageId,
+                    role: .assistant,
+                    text: payload.reply,
+                    createdAt: Date()
+                )
+                completion(.success(assistantMessage))
             } catch {
                 completion(.failure(error))
             }
         }.resume()
     }
 
-    func completeSession(sessionId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/mobile/chat/sessions/\(sessionId)/complete"))
-        request.httpMethod = "POST"
-        applyCommonHeaders(to: &request)
-
-        URLSession.shared.dataTask(with: request) { _, _, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-
-            completion(.success(()))
-        }.resume()
-    }
-
     private func applyCommonHeaders(to request: inout URLRequest) {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if !config.authToken.isEmpty {
-            request.setValue("Bearer \(config.authToken)", forHTTPHeaderField: "Authorization")
+
+        if let cookies = HTTPCookieStorage.shared.cookies(for: config.baseURL), !cookies.isEmpty {
+            let headers = HTTPCookie.requestHeaderFields(with: cookies)
+            for (header, value) in headers {
+                request.setValue(value, forHTTPHeaderField: header)
+            }
         }
+    }
+
+    private func mapPersistedMessage(_ message: PersistedChatMessage) -> ChatMessage {
+        let parsedDate = iso8601Parser.date(from: message.created_at) ?? Date()
+        return ChatMessage(
+            id: message.id,
+            role: message.role,
+            text: message.content,
+            createdAt: parsedDate
+        )
     }
 }
 
 private enum NativeChatError: LocalizedError {
     case emptyResponse
-    case sessionNotReady
+    case apiFailure(String)
 
     var errorDescription: String? {
         switch self {
         case .emptyResponse:
             return "Leere API-Antwort erhalten."
-        case .sessionNotReady:
-            return "Chat-Session ist noch nicht bereit."
+        case .apiFailure(let message):
+            return message
         }
     }
 }
@@ -253,47 +259,27 @@ private final class NativeChatViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var isLoading: Bool = false
     @Published var errorText: String?
+    @Published var isBootstrapped: Bool = false
 
     private let apiClient: NativeChatAPIClient
-    private var sessionId: String?
 
     init(apiClient: NativeChatAPIClient) {
         self.apiClient = apiClient
     }
 
     func bootstrapIfNeeded() {
-        guard sessionId == nil, !isLoading else { return }
+        guard !isBootstrapped, !isLoading else { return }
         isLoading = true
         errorText = nil
 
-        apiClient.createSession { [weak self] result in
+        apiClient.loadMessages { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                switch result {
-                case .success(let session):
-                    self.sessionId = session.id
-                    self.loadMessages()
-                case .failure(let error):
-                    self.isLoading = false
-                    self.errorText = error.localizedDescription
-                }
-            }
-        }
-    }
-
-    func loadMessages() {
-        guard let sessionId = sessionId else {
-            errorText = NativeChatError.sessionNotReady.localizedDescription
-            return
-        }
-
-        apiClient.loadMessages(sessionId: sessionId) { [weak self] result in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
+                self.isBootstrapped = true
                 self.isLoading = false
                 switch result {
                 case .success(let loaded):
-                    self.messages = loaded.sorted(by: { $0.createdAt < $1.createdAt })
+                    self.messages = loaded
                 case .failure(let error):
                     self.errorText = error.localizedDescription
                 }
@@ -304,10 +290,6 @@ private final class NativeChatViewModel: ObservableObject {
     func sendMessage() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        guard let sessionId = sessionId else {
-            errorText = NativeChatError.sessionNotReady.localizedDescription
-            return
-        }
 
         inputText = ""
         isLoading = true
@@ -321,7 +303,7 @@ private final class NativeChatViewModel: ObservableObject {
         )
         messages.append(optimisticMessage)
 
-        apiClient.sendMessage(sessionId: sessionId, text: trimmed) { [weak self] result in
+        apiClient.sendMessage(text: trimmed) { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -329,24 +311,7 @@ private final class NativeChatViewModel: ObservableObject {
                 case .success(let assistantMessage):
                     self.messages.append(assistantMessage)
                 case .failure(let error):
-                    self.errorText = error.localizedDescription
-                }
-            }
-        }
-    }
-
-    func completeConversation() {
-        guard let sessionId = sessionId else {
-            errorText = NativeChatError.sessionNotReady.localizedDescription
-            return
-        }
-
-        isLoading = true
-        apiClient.completeSession(sessionId: sessionId) { [weak self] result in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                self.isLoading = false
-                if case .failure(let error) = result {
+                    self.messages.removeAll(where: { $0.id == optimisticMessage.id })
                     self.errorText = error.localizedDescription
                 }
             }
@@ -359,9 +324,35 @@ private struct NativeChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                Text("PAT Chat")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.blue)
+
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
+                        if viewModel.messages.isEmpty && !viewModel.isLoading {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("👋 Hallo! Ich bin PAT.")
+                                    .font(.body)
+                                    .foregroundColor(.secondary)
+                                Text("Ich kann Fragen zu Stress, Schlaf und Resilienz beantworten.")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 8)
+                        }
+
                         ForEach(viewModel.messages) { message in
                             HStack {
                                 if message.role == .assistant {
@@ -394,32 +385,61 @@ private struct NativeChatView: View {
             }
 
             HStack(spacing: 8) {
-                TextField("Ihre Nachricht an PAT...", text: $viewModel.inputText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                TextField("Nachricht schreiben...", text: $viewModel.inputText, axis: .vertical)
+                    .lineLimit(1...4)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                Button("Senden") {
+                Button {
                     viewModel.sendMessage()
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading
+                                ? Color.gray
+                                : Color.blue
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .disabled(viewModel.isLoading)
+                .disabled(viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isLoading)
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
 
-            Button("Erfassung abschliessen") {
-                viewModel.completeConversation()
-            }
-            .disabled(viewModel.isLoading)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
+            Text("Info-Chat • Keine Aktionen möglich")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 10)
         }
-        .navigationBarTitle("PAT", displayMode: .inline)
-        .overlay(
-            Group {
-                if viewModel.isLoading {
-                    ProgressView()
-                }
+        .navigationBarTitle("Chat", displayMode: .inline)
+        .overlay(alignment: .center) {
+            if viewModel.isLoading && viewModel.messages.isEmpty {
+                ProgressView()
+                    .padding(12)
+                    .background(Color(UIColor.systemBackground).opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-        )
+        }
+        .overlay(alignment: .bottomLeading) {
+            if viewModel.isLoading && !viewModel.messages.isEmpty {
+                HStack(spacing: 6) {
+                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                }
+                .padding(10)
+                .background(Color(UIColor.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.leading, 16)
+                .padding(.bottom, 78)
+            }
+        }
         .onAppear {
             viewModel.bootstrapIfNeeded()
         }
@@ -428,10 +448,10 @@ private struct NativeChatView: View {
     @ViewBuilder
     private func messageBubble(_ text: String, isAssistant: Bool) -> some View {
         Text(text)
-            .font(.body)
-            .foregroundColor(.primary)
+            .font(.system(size: 15))
+            .foregroundColor(isAssistant ? .primary : .white)
             .padding(12)
-            .background(isAssistant ? Color(UIColor.systemGray6) : Color(UIColor.systemBlue).opacity(0.15))
-            .cornerRadius(14)
+            .background(isAssistant ? Color(UIColor.systemGray6) : Color.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
