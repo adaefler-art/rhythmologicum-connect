@@ -643,20 +643,6 @@ export function DialogScreenV2() {
     })
   }
 
-  const mapPersistedHistoryToChatMessages = (history: PersistedChatMessage[]): StubbedMessage[] =>
-    history
-      .filter((entry) => entry.role === 'assistant' || entry.role === 'user')
-      .slice(-12)
-      .map((entry) => ({
-        id: entry.id,
-        sender: entry.role === 'assistant' ? 'assistant' : 'user',
-        text: entry.role === 'assistant' ? normalizeAssistantTextForPatient(entry.content) : entry.content,
-        timestamp: new Date(entry.created_at).toLocaleTimeString('de-DE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      }))
-
   const persistUserAnswerToChat = async (answer: string) => {
     await fetch('/api/amy/chat', {
       method: 'POST',
@@ -811,36 +797,27 @@ export function DialogScreenV2() {
       const localSafetyUiState = getSafetyUiState(safety)
 
       const intakeFollowup = latestIntake ? getFollowupFromContent(latestIntake.content) : null
-      const persistedHistoryMessages = mapPersistedHistoryToChatMessages(persistedHistory)
-      const hasPersistedConversation = persistedHistoryMessages.length > 0
-
-      if (hasPersistedConversation) {
-        setChatMessages(persistedHistoryMessages)
-      }
-
       if (
         !localSafetyUiState.blockChat &&
         intakeFollowup?.next_questions &&
         intakeFollowup.next_questions.length > 0
       ) {
         setActiveFollowupQuestion(intakeFollowup.next_questions[0])
-        if (!hasPersistedConversation) {
-          setChatMessages([
-            {
-              id: `assistant-${Date.now()}`,
-              sender: 'assistant',
-              text: normalizeAssistantTextForPatient(
-                buildFollowupPrompt({
-                  question: intakeFollowup.next_questions[0],
-                  latestIntake,
-                  includeIntro: true,
-                  activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
-                }),
-              ),
-              timestamp: buildTimestamp(),
-            },
-          ])
-        }
+        setChatMessages([
+          {
+            id: `assistant-${Date.now()}`,
+            sender: 'assistant',
+            text: normalizeAssistantTextForPatient(
+              buildFollowupPrompt({
+                question: intakeFollowup.next_questions[0],
+                latestIntake,
+                includeIntro: true,
+                activeObjectiveCount: intakeFollowup.active_objective_count ?? null,
+              }),
+            ),
+            timestamp: buildTimestamp(),
+          },
+        ])
         return
       }
 
@@ -849,23 +826,21 @@ export function DialogScreenV2() {
           const generatedFollowup = await generateFollowup({ intakeId: latestIntake.id })
           if (!generatedFollowup.blocked && generatedFollowup.nextQuestions.length > 0) {
             setActiveFollowupQuestion(generatedFollowup.nextQuestions[0])
-            if (!hasPersistedConversation) {
-              setChatMessages([
-                {
-                  id: `assistant-${Date.now()}`,
-                  sender: 'assistant',
-                  text: normalizeAssistantTextForPatient(
-                    buildFollowupPrompt({
-                      question: generatedFollowup.nextQuestions[0],
-                      latestIntake,
-                      includeIntro: true,
-                      activeObjectiveCount: generatedFollowup.activeObjectiveCount,
-                    }),
-                  ),
-                  timestamp: buildTimestamp(),
-                },
-              ])
-            }
+            setChatMessages([
+              {
+                id: `assistant-${Date.now()}`,
+                sender: 'assistant',
+                text: normalizeAssistantTextForPatient(
+                  buildFollowupPrompt({
+                    question: generatedFollowup.nextQuestions[0],
+                    latestIntake,
+                    includeIntro: true,
+                    activeObjectiveCount: generatedFollowup.activeObjectiveCount,
+                  }),
+                ),
+                timestamp: buildTimestamp(),
+              },
+            ])
             return
           }
         } catch (followupError) {
@@ -886,16 +861,14 @@ export function DialogScreenV2() {
       const openingQuestion = resumeContext
         ? await fetchResumeStart(resumeContext)
         : buildOpeningQuestion(latestIntake)
-      if (!hasPersistedConversation) {
-        setChatMessages([
-          {
-            id: `assistant-${Date.now()}`,
-            sender: 'assistant',
-            text: normalizeAssistantTextForPatient(openingQuestion),
-            timestamp: buildTimestamp(),
-          },
-        ])
-      }
+      setChatMessages([
+        {
+          id: `assistant-${Date.now()}`,
+          sender: 'assistant',
+          text: normalizeAssistantTextForPatient(openingQuestion),
+          timestamp: buildTimestamp(),
+        },
+      ])
     }
 
     void initChat()

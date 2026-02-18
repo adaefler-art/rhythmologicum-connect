@@ -73,6 +73,12 @@ const createMockState = (params?: { blocked?: boolean }) => {
     patientId: '11111111-1111-1111-1111-111111111111',
     intakeId: '22222222-2222-2222-2222-222222222222',
     askedQuestionIds: [] as string[],
+    persistedHistory: [] as Array<{
+      id: string
+      role: 'assistant' | 'user' | 'system'
+      content: string
+      created_at: string
+    }>,
     versionNumber: 1,
     followupGenerateCalls: 0,
     intakeGenerateCalls: 0,
@@ -165,6 +171,19 @@ const setupMockBackend = async (page: Page, state: ReturnType<typeof createMockS
         body: JSON.stringify({
           success: true,
           intake: buildMockIntakePayload(state),
+        }),
+      })
+    }
+
+    if (method === 'GET' && pathname === '/api/amy/chat') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            messages: state.persistedHistory,
+          },
         }),
       })
     }
@@ -459,6 +478,40 @@ test.describe('patient followup loop @patient-followup', () => {
     await expect
       .poll(() => state.askedQuestionIds.includes(seedFollowupQuestions[0].id), { timeout: 10_000 })
       .toBe(true)
+  })
+
+  test('starts clean without rendering persisted duplicate history', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const state = createMockState({ blocked: false })
+    state.persistedHistory = [
+      {
+        id: 'h1',
+        role: 'assistant',
+        content:
+          'Sie haben gerade viel Belastung geschildert, das klingt sehr anstrengend. Sind diese Beschwerden aktuell noch da?',
+        created_at: '2026-02-18T07:11:00.000Z',
+      },
+      {
+        id: 'h2',
+        role: 'assistant',
+        content:
+          'Sie haben gerade viel Belastung geschildert, das klingt sehr anstrengend. Sind diese Beschwerden aktuell noch da?',
+        created_at: '2026-02-18T07:11:01.000Z',
+      },
+    ]
+    await setupMockBackend(page, state)
+
+    await page.goto('/patient/dialog')
+    await bootstrapDialogIntake(page)
+
+    await expect(
+      page.getByText(
+        'Sie haben gerade viel Belastung geschildert, das klingt sehr anstrengend. Sind diese Beschwerden aktuell noch da?',
+      ),
+    ).toHaveCount(0)
+
+    await expect(page.getByText(seedFollowupQuestions[0].question).first()).toBeVisible()
   })
 
   test('sanitizes forbidden diagnostic wording in patient-visible followup text', async ({ page }) => {
