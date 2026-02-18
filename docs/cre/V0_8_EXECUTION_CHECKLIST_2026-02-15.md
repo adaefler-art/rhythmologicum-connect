@@ -85,6 +85,20 @@ Ziel:
 - [x] Technische Subtask-Zerlegung (API/UI/State/Test + Akzeptanzkriterien) dokumentiert (`docs/cre/UC1_TECHNICAL_SUBTASKS_2026-02-17.md`)
 - [x] Vollstaendige UC1 User-Journey (Start -> Dialog -> Follow-up -> expliziter Abschluss -> Read-only nach Reload) als E2E in Mock-Mode regressionsgesichert (`tests/e2e/patient-followup-loop.spec.ts`, `tests/e2e/patient-intake-start-cta.spec.ts`)
 
+#### UC1 E2E Fokusspur (inkl. Hybrid iOS)
+- [~] CRE-UC1-E2E-01 Vollständige UC1 Journey gegen produktionsnahe Backends (nicht nur Mock) als End-to-End-Nachweis fahren
+	- [ ] Lauf auf Staging mit realem Auth-/Session-Verhalten dokumentiert
+	- [ ] API-Latenz-/Retry-Verhalten in Evidence erfasst
+- [ ] CRE-UC1-IOS-01 Hybrid iOS Blackscreen-Ursache isolieren und beheben (Shell/WebView Startup)
+	- [ ] Startup-Pfad geprüft: `capacitor.config.ts` URL + Redirect nach `/patient/start|/patient/dashboard`
+	- [ ] Device-Log-Evidence (Xcode Console) in NV2 Evidence-Run referenziert
+- [ ] CRE-UC1-IOS-02 iOS Device-Smoketest für UC1 E2E grün
+	- [ ] Login -> Start -> Dialog -> Follow-up -> Abschluss -> Read-only nach Relaunch
+	- [ ] Deep-Link auf `/patient/**` öffnet App stabil und setzt Journey fort
+- [ ] CRE-UC1-IOS-03 iOS Release-Gate für UC1 definieren
+	- [ ] Klarer Go/No-Go Check für iOS-Hybrid in `OPEN_MANUAL_GATES_DAILY_VIEW.md`
+	- [ ] Owner/ETA und Rollback-Trigger für iOS-Shell dokumentiert
+
 ### UC2 — Waiting Room Fastpass
 - [x] CRE-UC2-01 Fastpass Form-first UI (Tablet/Kiosk, no-audio, Tap-first, große Targets)
 - [ ] CRE-UC2-02 Minimum-Dataset Contract + Validierung

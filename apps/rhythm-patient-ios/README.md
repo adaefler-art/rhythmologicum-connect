@@ -24,6 +24,14 @@ Set deployed patient UI base URL (no trailing slash):
 export PATIENT_BASE_URL="https://<your-deployed-patient-host>"
 ```
 
+Falls `PATIENT_BASE_URL` nicht gesetzt ist, verwendet die Shell als sicheren Fallback automatisch:
+
+```bash
+https://rhythm-patient.vercel.app
+```
+
+Damit wird ein Startup auf `example.invalid` (Black-Screen-Risiko) vermieden.
+
 `capacitor.config.ts` builds:
 
 - base: `PATIENT_BASE_URL`
