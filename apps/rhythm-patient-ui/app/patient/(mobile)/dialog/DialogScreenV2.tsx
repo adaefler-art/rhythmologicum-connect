@@ -10,6 +10,7 @@ import { flagEnabled } from '@/lib/env/flags'
 import { ASSISTANT_CONFIG } from '@/lib/config/assistant'
 import type { SafetyEvaluation } from '@/lib/types/clinicalIntake'
 import { getSafetyUiState } from '@/lib/cre/safety/policy'
+import { shouldSkipDuplicateAssistantMessage } from '@/lib/patients/assistantMessageDedup'
 
 /**
  * DialogScreenV2 Component (Issue 2 - Chat-First Dashboard)
@@ -624,14 +625,22 @@ export function DialogScreenV2() {
   }, [])
 
   const appendAssistantMessage = (text: string) => {
-    const assistantMessage: StubbedMessage = {
-      id: `assistant-${Date.now()}`,
-      sender: 'assistant',
-      text: normalizeAssistantTextForPatient(text),
-      timestamp: buildTimestamp(),
-    }
+    const normalizedText = normalizeAssistantTextForPatient(text)
 
-    setChatMessages((prev) => [...prev, assistantMessage])
+    setChatMessages((prev) => {
+      if (shouldSkipDuplicateAssistantMessage({ messages: prev, nextText: normalizedText })) {
+        return prev
+      }
+
+      const assistantMessage: StubbedMessage = {
+        id: `assistant-${Date.now()}`,
+        sender: 'assistant',
+        text: normalizedText,
+        timestamp: buildTimestamp(),
+      }
+
+      return [...prev, assistantMessage]
+    })
   }
 
   const mapPersistedHistoryToChatMessages = (history: PersistedChatMessage[]): StubbedMessage[] =>
