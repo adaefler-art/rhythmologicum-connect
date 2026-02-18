@@ -61,6 +61,21 @@ if ! command -v pod >/dev/null 2>&1; then
 	exit 1
 fi
 
+if [[ ! -d "apps/rhythm-patient-ios/www" ]]; then
+	echo "[ci_pre_xcodebuild][app-local] ERROR: apps/rhythm-patient-ios/www missing"
+	exit 1
+fi
+
+echo "[ci_pre_xcodebuild][app-local] Running Capacitor sync"
+cd apps/rhythm-patient-ios
+npx cap sync ios
+
+if [[ ! -d "ios/App/App/public" || ! -f "ios/App/App/config.xml" || ! -f "ios/App/App/capacitor.config.json" ]]; then
+	echo "[ci_pre_xcodebuild][app-local] ERROR: Capacitor generated files missing after sync"
+	ls -la ios/App/App || true
+	exit 1
+fi
+
 cd apps/rhythm-patient-ios/ios/App
 pod install
 echo "[ci_pre_xcodebuild][app-local] Done"
