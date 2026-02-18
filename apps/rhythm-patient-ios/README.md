@@ -6,6 +6,8 @@ Hybrid iOS shell for the deployed patient web UI.
 
 - Loads deployed patient UI in an iOS `WKWebView` via Capacitor `server.url`
 - Starts at `/patient/start` (UC1 entry)
+- Uses native iOS bottom tab navigation in shell (`Start`, `Chat`)
+- Opens native chat client via dedicated `Chat` tab (separate from web navigation)
 - Preserves cookie/session behavior by using the first-party deployed domain
 - Adds lightweight diagnostics via query marker + user-agent suffix (no PHI)
 - Supports deep links for `/patient/**` (Universal Links + custom scheme fallback)
@@ -36,7 +38,13 @@ Damit wird ein Startup auf `example.invalid` (Black-Screen-Risiko) vermieden.
 
 - base: `PATIENT_BASE_URL`
 - start route: `/patient/start`
-- full startup URL: `${PATIENT_BASE_URL}/patient/start?rc_platform=ios_shell`
+- full startup URL: `${PATIENT_BASE_URL}/patient/start?rc_platform=ios_shell&rc_native_shell_nav=1`
+
+Native shell behavior:
+
+- Web-App erkennt iOS Shell über `rc_native_shell_nav=1` und den User-Agent-Suffix
+- In der Shell wird die Web-Hamburger-Navigation ausgeblendet
+- Primäre Navigation erfolgt über das native Bottom-Tab-Menü
 
 ## 3) Generate iOS project
 
@@ -99,5 +107,6 @@ On real iOS device, verify:
 1. Login succeeds in webview
 2. Post-login lands on `/patient/start`
 3. Start assessment flow and complete normal step progression
-4. App relaunch keeps session as expected
-5. Open `/patient/**` universal link and confirm app opens in the shell
+4. Chat tab opens native chat screen (send + receive path visible)
+5. App relaunch keeps session as expected
+6. Open `/patient/**` universal link and confirm app opens in the shell

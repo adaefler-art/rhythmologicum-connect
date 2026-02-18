@@ -16,6 +16,7 @@ interface TopBarV2Props {
   showAvatar?: boolean
   showBell?: boolean
   showTitle?: boolean
+  showBurger?: boolean
 }
 
 /**
@@ -59,6 +60,7 @@ export function TopBarV2({
   showAvatar = false,
   showBell = false,
   showTitle = true,
+  showBurger = true,
 }: TopBarV2Props) {
   const router = useRouter()
 
@@ -141,7 +143,7 @@ export function TopBarV2({
 
         {/* Right Section */}
         <div className="flex items-center gap-2">
-          {variant === 'tab' && (
+          {variant === 'tab' && showBurger && (
             <button
               onClick={onBurgerClick}
               className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"

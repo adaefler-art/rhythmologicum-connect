@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { TopBarV2, type TopBarVariant } from './TopBarV2'
@@ -93,7 +93,21 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isNativeShellNav, setIsNativeShellNav] = useState(false)
   const isDialog = pathname?.startsWith('/patient/dialog')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const userAgent = window.navigator.userAgent || ''
+    const searchParams = new URLSearchParams(window.location.search)
+    const hasNativeFlag = searchParams.get('rc_native_shell_nav') === '1'
+    const isShellUserAgent = userAgent.includes('RhythmPatientiOSShell')
+
+    setIsNativeShellNav(hasNativeFlag || isShellUserAgent)
+  }, [])
 
   const variant = getTopBarVariant(pathname)
   const hideBottomNav = shouldHideBottomNav(pathname)
@@ -135,7 +149,7 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col transition-colors duration-150 w-full max-w-[100vw] overflow-x-hidden">
       {/* Hamburger Menu - Issue 2 */}
-      <HamburgerMenu isOpen={isMenuOpen} onClose={handleMenuClose} />
+      {!isNativeShellNav ? <HamburgerMenu isOpen={isMenuOpen} onClose={handleMenuClose} /> : null}
 
       {/* TopBar - Always visible on mobile */}
       <TopBarV2 
@@ -143,7 +157,8 @@ export function MobileShellV2({ children }: MobileShellV2Props) {
         title={title}
         showTitle={variant !== 'tab'}
         showBell={false}
-        onBurgerClick={() => setIsMenuOpen(true)}
+        showBurger={!isNativeShellNav}
+        onBurgerClick={!isNativeShellNav ? () => setIsMenuOpen(true) : undefined}
         onBackClick={variant === 'result' || pathname?.includes('/dialog') ? handleBackClick : undefined}
         onCloseClick={variant === 'flow' ? handleCloseClick : undefined}
       />

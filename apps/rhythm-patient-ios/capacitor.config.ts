@@ -16,9 +16,10 @@ const buildStartUrl = () => {
     const path = hasPath ? parsed.pathname.replace(/\/+$/, '') : DEFAULT_PATIENT_ROUTE
     parsed.pathname = path
     parsed.searchParams.set('rc_platform', 'ios_shell')
+    parsed.searchParams.set('rc_native_shell_nav', '1')
     return parsed.toString()
   } catch {
-    return `${DEFAULT_PATIENT_BASE_URL}${DEFAULT_PATIENT_ROUTE}?rc_platform=ios_shell`
+    return `${DEFAULT_PATIENT_BASE_URL}${DEFAULT_PATIENT_ROUTE}?rc_platform=ios_shell&rc_native_shell_nav=1`
   }
 }
 
