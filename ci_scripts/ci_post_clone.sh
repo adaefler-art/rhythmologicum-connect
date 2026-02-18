@@ -1,7 +1,9 @@
 #!/bin/sh
 set -euo pipefail
 
-REPO_ROOT="${CI_WORKSPACE:-$(git rev-parse --show-toplevel)}"
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+REPO_ROOT="${CI_WORKSPACE:-$(pwd)}"
 
 echo "[ci_post_clone] Using repo root: ${REPO_ROOT}"
 cd "${REPO_ROOT}"

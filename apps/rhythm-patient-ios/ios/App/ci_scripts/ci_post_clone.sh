@@ -1,5 +1,6 @@
 #!/bin/sh
 set -euo pipefail
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-"${REPO_ROOT}/ci_scripts/ci_post_clone.sh"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="${CI_WORKSPACE:-$(cd "$SCRIPT_DIR/../../../../.." && pwd)}"
+sh "${REPO_ROOT}/ci_scripts/ci_post_clone.sh"
