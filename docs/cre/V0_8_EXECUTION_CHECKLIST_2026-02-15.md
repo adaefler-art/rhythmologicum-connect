@@ -89,8 +89,11 @@ Ziel:
 - [~] CRE-UC1-E2E-01 Vollständige UC1 Journey gegen produktionsnahe Backends (nicht nur Mock) als End-to-End-Nachweis fahren
 	- [ ] Lauf auf Staging mit realem Auth-/Session-Verhalten dokumentiert
 	- [ ] API-Latenz-/Retry-Verhalten in Evidence erfasst
-- [ ] CRE-UC1-IOS-01 Hybrid iOS Blackscreen-Ursache isolieren und beheben (Shell/WebView Startup)
-	- [ ] Startup-Pfad geprüft: `capacitor.config.ts` URL + Redirect nach `/patient/start|/patient/dashboard`
+
+- [~] CRE-UC1-IOS-01 Hybrid iOS Blackscreen-Ursache isolieren und beheben (Shell/WebView Startup)
+	- [x] Startup-Pfad geprüft: `capacitor.config.ts` URL + Redirect nach `/patient/start`
+	- [x] Native Bottom-Tab-Shell umgesetzt (`Start` WebView + `Chat` nativ)
+	- [x] Web-Hamburger in iOS-Shell ausgeblendet (`rc_native_shell_nav` + User-Agent-Erkennung)
 	- [ ] Device-Log-Evidence (Xcode Console) in NV2 Evidence-Run referenziert
 - [ ] CRE-UC1-IOS-02 iOS Device-Smoketest für UC1 E2E grün
 	- [ ] Login -> Start -> Dialog -> Follow-up -> Abschluss -> Read-only nach Relaunch
