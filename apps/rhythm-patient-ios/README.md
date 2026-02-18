@@ -5,7 +5,7 @@ Hybrid iOS shell for the deployed patient web UI.
 ## MVP Scope
 
 - Loads deployed patient UI in an iOS `WKWebView` via Capacitor `server.url`
-- Starts at `/patient/dashboard`
+- Starts at `/patient/start` (UC1 entry)
 - Preserves cookie/session behavior by using the first-party deployed domain
 - Adds lightweight diagnostics via query marker + user-agent suffix (no PHI)
 - Supports deep links for `/patient/**` (Universal Links + custom scheme fallback)
@@ -35,8 +35,8 @@ Damit wird ein Startup auf `example.invalid` (Black-Screen-Risiko) vermieden.
 `capacitor.config.ts` builds:
 
 - base: `PATIENT_BASE_URL`
-- start route: `/patient/dashboard`
-- full startup URL: `${PATIENT_BASE_URL}/patient/dashboard?rc_platform=ios_shell`
+- start route: `/patient/start`
+- full startup URL: `${PATIENT_BASE_URL}/patient/start?rc_platform=ios_shell`
 
 ## 3) Generate iOS project
 
@@ -97,7 +97,7 @@ Use backend access logs to verify shell traffic and auth redirects without loggi
 On real iOS device, verify:
 
 1. Login succeeds in webview
-2. Post-login lands on dashboard
+2. Post-login lands on `/patient/start`
 3. Start assessment flow and complete normal step progression
 4. App relaunch keeps session as expected
 5. Open `/patient/**` universal link and confirm app opens in the shell

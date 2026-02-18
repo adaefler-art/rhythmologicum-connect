@@ -3,7 +3,7 @@ import 'dotenv/config'
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const DEFAULT_PATIENT_BASE_URL = 'https://rhythm-patient.vercel.app'
-const DEFAULT_PATIENT_ROUTE = '/patient/dashboard'
+const DEFAULT_PATIENT_ROUTE = '/patient/start'
 const baseUrlFromEnv =
   process.env.PATIENT_BASE_URL ?? process.env.NEXT_PUBLIC_PATIENT_BASE_URL ?? ''
 const selectedBaseUrl = baseUrlFromEnv.trim() || DEFAULT_PATIENT_BASE_URL
