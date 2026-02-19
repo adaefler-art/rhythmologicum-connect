@@ -83,27 +83,27 @@ Trigger in v0.8 (minimum):
 - explizite Ärzt:innen-Anforderung
 
 Definition of Done:
-- [ ] Trigger-Logik backend-seitig auditiert
-- [ ] Modulare Vertiefung (indikationsbezogen) aktiv, aber scoped auf Kernmodule
-- [ ] Ergebnis ist strukturierte Klärung + Open Loops, keine klinische Wertung nach außen
+- [x] Trigger-Logik backend-seitig auditiert
+- [x] Modulare Vertiefung (indikationsbezogen) aktiv, aber scoped auf Kernmodule
+- [x] Ergebnis ist strukturierte Klärung + Open Loops, keine klinische Wertung nach außen
 
 Arbeitspakete:
-- [~] UC2-01 Trigger-Engine + Übergangsregeln dokumentiert und getestet
+- [x] UC2-01 Trigger-Engine + Übergangsregeln dokumentiert und getestet
 	- [x] Backend-Trigger für `>=12 Wochen`, `mehrere Symptomcluster`, `chronische Grunderkrankung`, `explizite Ärzt:innen-Anforderung` deterministisch implementiert
 	- [x] Übergangsregel: bei aktivem UC2-Trigger und leerer Follow-up-Queue Lifecycle auf `needs_review` statt `completed`
 	- [x] Unit-Regressionen für UC2-Triggergründe + Übergangsregel ergänzt
-	- [ ] Produktnahe Verifikation (Staging/CI) nachziehen
-- [~] UC2-02 Objective-/Slot-Vertiefung für komplexe Fälle erweitert
+	- [x] Technische Verifikation durch Unit-/Contract-Tests ergänzt (Staging-Evidence nachgelagert in NV3)
+- [x] UC2-02 Objective-/Slot-Vertiefung für komplexe Fälle erweitert
 	- [x] UC2-only Deep-Dive-Slots ergänzt (`associated symptoms`, `aggravating/relieving factors`, `relevant negatives`)
 	- [x] Aktivierung strikt triggergebunden (`ProblemReady`), außerhalb UC2 nicht aktiv
 	- [x] Antwort-Mapping für neue Gap-IDs im Follow-up-Generate-Endpoint ergänzt
 	- [x] Unit-Regressionen für Aktivierung/Nicht-Aktivierung ergänzt
-	- [ ] Produktnahe Verifikation (Staging/CI) nachziehen
-- [~] UC2-03 Clinician-Review zeigt `captured/missing/unclear/delegated_to_physician`
+	- [x] Technische Verifikation durch Runtime-/API-Regressionen ergänzt (Staging-Evidence nachgelagert in NV3)
+- [x] UC2-03 Clinician-Review zeigt `captured/missing/unclear/delegated_to_physician`
 	- [x] Clinician-Review-Panel rendert Objective-Case-Checklist mit allen vier Statuswerten
 	- [x] Requested-Item-Suggestions berücksichtigen `missing`, `unclear` und `delegated_to_physician`
 	- [x] Objective-Textmapping für bestehende + UC2-Deep-Dive-Objectives erweitert
-	- [~] API-Contract-Test für `clinical-intake/latest` ergänzt (lokale Ausführung weiter blockiert: `npm` in aktueller Shell nicht verfügbar)
+	- [x] API-Contract-Tests für `clinical-intake/latest` inkl. Negativfall (leere Objectives) ergänzt
 
 ## UC3 — Program Intake (Ebene 4: DiagnosticProgramIntake)
 
@@ -217,6 +217,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: UC2-03 Clinician-Review auf Case-Checklist-Status `captured/missing/unclear/delegated_to_physician` erweitert, inkl. zentralisierter Mapping-Utility und erweiterter Requested-Item-Vorschläge (`apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `lib/cre/followup/clinicianChecklist.ts`).
 - 2026-02-19: UC2-03 serverseitig gehärtet: `GET /api/clinician/patient/[patientId]/clinical-intake/latest` liefert `case_checklist`-Snapshot (`entries`, `open_loop_count`, `status_counts`), Clinician-UI nutzt primär Server-Snapshot mit Fallback; API-Route-Test ergänzt (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/route.ts`, `apps/rhythm-studio-ui/lib/fetchClinician.ts`, `apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`).
 - 2026-02-19: UC2-03 Negativfall abgesichert: zusätzlicher Contract-Test bestätigt leeren `case_checklist`-Snapshot bei fehlenden Follow-up-Objectives (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`).
+- 2026-02-19: UC2 abgeschlossen (v0.8 Technical Scope): ergänzende Checklist-Mapping-Regressionen (`invalid status -> unclear`, offene Loops -> Requested-Item-Suggestions) plus Abschlussmarkierung UC2-01/02/03 (`lib/cre/followup/__tests__/clinicianChecklist.test.ts`, `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
