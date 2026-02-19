@@ -153,6 +153,19 @@ const resolveObjectiveIdFromQuestionId = (questionId: string) => {
   if (normalized.includes('psychosocial') || normalized.includes('stress') || normalized.includes('schlaf')) {
     return 'objective:psychosocial'
   }
+  if (normalized.includes('associated-symptoms') || normalized.includes('begleit')) {
+    return 'objective:associated-symptoms'
+  }
+  if (
+    normalized.includes('aggravating-relieving') ||
+    normalized.includes('aggravating') ||
+    normalized.includes('relieving')
+  ) {
+    return 'objective:aggravating-relieving-factors'
+  }
+  if (normalized.includes('relevant-negatives') || normalized.includes('negativ')) {
+    return 'objective:relevant-negatives'
+  }
   return null
 }
 
@@ -189,6 +202,15 @@ const resolveObjectiveIdFromQuestionText = (questionText?: string) => {
   }
   if (/psycho|stress|alltag|schlaf|belastung/.test(normalized)) {
     return 'objective:psychosocial'
+  }
+  if (/begleitsymptom|begleit|associated symptom|symptomcluster/.test(normalized)) {
+    return 'objective:associated-symptoms'
+  }
+  if (/verschlechter|linder|aggravat|reliev/.test(normalized)) {
+    return 'objective:aggravating-relieving-factors'
+  }
+  if (/relevante\s+negativ|explizit\s+nicht/.test(normalized)) {
+    return 'objective:relevant-negatives'
   }
 
   return null
@@ -477,6 +499,31 @@ const applyAskedAnswerToStructuredData = (params: {
         next.psychosocial_factors = [...psychosocial, answer]
       }
     }
+
+    if (questionId === 'gap:associated-symptoms') {
+      const currentSymptoms = asStringArray(hpi.associated_symptoms)
+      if (!currentSymptoms.includes(answer)) {
+        hpi.associated_symptoms = [...currentSymptoms, answer]
+      }
+    }
+
+    if (questionId === 'gap:aggravating-relieving-factors') {
+      const currentAggravating = asStringArray(hpi.aggravating_factors)
+      const currentRelieving = asStringArray(hpi.relieving_factors)
+      if (!currentAggravating.includes(answer)) {
+        hpi.aggravating_factors = [...currentAggravating, answer]
+      }
+      if (!currentRelieving.includes(answer)) {
+        hpi.relieving_factors = [...currentRelieving, answer]
+      }
+    }
+
+    if (questionId === 'gap:relevant-negatives') {
+      const currentNegatives = asStringArray(next.relevant_negatives)
+      if (!currentNegatives.includes(answer)) {
+        next.relevant_negatives = [...currentNegatives, answer]
+      }
+    }
   }
 
   if (hasObjective('objective:chief-complaint')) {
@@ -525,6 +572,31 @@ const applyAskedAnswerToStructuredData = (params: {
     const psychosocial = asStringArray(next.psychosocial_factors)
     if (!psychosocial.includes(answer)) {
       next.psychosocial_factors = [...psychosocial, answer]
+    }
+  }
+
+  if (hasObjective('objective:associated-symptoms')) {
+    const currentSymptoms = asStringArray(hpi.associated_symptoms)
+    if (!currentSymptoms.includes(answer)) {
+      hpi.associated_symptoms = [...currentSymptoms, answer]
+    }
+  }
+
+  if (hasObjective('objective:aggravating-relieving-factors')) {
+    const currentAggravating = asStringArray(hpi.aggravating_factors)
+    const currentRelieving = asStringArray(hpi.relieving_factors)
+    if (!currentAggravating.includes(answer)) {
+      hpi.aggravating_factors = [...currentAggravating, answer]
+    }
+    if (!currentRelieving.includes(answer)) {
+      hpi.relieving_factors = [...currentRelieving, answer]
+    }
+  }
+
+  if (hasObjective('objective:relevant-negatives')) {
+    const currentNegatives = asStringArray(next.relevant_negatives)
+    if (!currentNegatives.includes(answer)) {
+      next.relevant_negatives = [...currentNegatives, answer]
     }
   }
 

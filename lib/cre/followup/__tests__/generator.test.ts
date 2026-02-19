@@ -307,6 +307,188 @@ describe('followup generator', () => {
     expect(sameQuestionCount).toBe(1)
   })
 
+  it('sets ProblemReady when symptom duration is at least 12 weeks', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Brustschmerzen',
+        history_of_present_illness: {
+          duration: 'seit 14 Wochen',
+        },
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.readiness?.state).toBe('ProblemReady')
+    expect(generated.readiness?.uc2_triggered).toBe(true)
+    expect(generated.readiness?.uc2_trigger_reasons).toContain('symptom_duration_gte_12_weeks')
+  })
+
+  it('sets ProblemReady when multiple symptom clusters are present without explicit connection', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Herzrasen und Schwindel',
+        history_of_present_illness: {
+          associated_symptoms: ['Atemnot'],
+        },
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.readiness?.state).toBe('ProblemReady')
+    expect(generated.readiness?.uc2_trigger_reasons).toContain('multiple_symptom_clusters')
+  })
+
+  it('sets ProblemReady on chronic condition signal', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Muedigkeit',
+        past_medical_history: ['Diabetes mellitus Typ 2'],
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.readiness?.state).toBe('ProblemReady')
+    expect(generated.readiness?.uc2_trigger_reasons).toContain('chronic_condition_signal')
+  })
+
+  it('sets ProblemReady on explicit clinician requirement', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Kopfschmerz',
+        followup: {
+          next_questions: [
+            {
+              id: 'clinician-request:bitte-chronologie-klaeren',
+              question: 'Bitte Chronologie klaeren?',
+              why: 'Rueckfrage aus aerztlicher Pruefung',
+              priority: 1,
+              source: 'clinician_request',
+            },
+          ],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.readiness?.state).toBe('ProblemReady')
+    expect(generated.readiness?.uc2_trigger_reasons).toContain('explicit_clinician_requirement')
+  })
+
+  it('keeps lifecycle at needs_review when UC2 is triggered and no open followup questions remain', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Kopfschmerz',
+        history_of_present_illness: {
+          duration: 'seit 6 Monaten',
+          onset: 'vor 6 Monaten',
+          course: 'stabil',
+          trigger: 'kein klarer Zusammenhang',
+          frequency: 'taeglich',
+        },
+        medication: ['none_reported'],
+        past_medical_history: ['chronische Migräne'],
+        psychosocial_factors: ['Arbeitsstress'],
+        prior_findings_documents: [{ id: 'doc-1', name: 'arztbrief.pdf' }],
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    expect(generated.next_questions).toHaveLength(0)
+    expect(generated.lifecycle?.state).toBe('needs_review')
+    expect(generated.readiness?.state).toBe('ProblemReady')
+    expect(generated.readiness?.uc2_triggered).toBe(true)
+  })
+
+  it('adds UC2 deep-dive objective slots when ProblemReady is active', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Herzrasen und Atemnot',
+        history_of_present_illness: {
+          duration: 'seit 5 Monaten',
+          onset: 'vor 5 Monaten',
+          course: 'zunehmend',
+          trigger: 'nicht eindeutig',
+          frequency: 'mehrmals pro Woche',
+        },
+        medication: ['none_reported'],
+        past_medical_history: ['Hypertonie'],
+        psychosocial_factors: ['Belastung im Alltag'],
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    const objectiveIds = (generated.objectives ?? []).map((entry) => entry.id)
+    expect(objectiveIds).toContain('objective:associated-symptoms')
+    expect(objectiveIds).toContain('objective:aggravating-relieving-factors')
+    expect(objectiveIds).toContain('objective:relevant-negatives')
+
+    const questionIds = generated.next_questions.map((entry) => entry.id)
+    expect(questionIds.some((id) => id === 'gap:associated-symptoms')).toBe(true)
+  })
+
+  it('keeps UC2 deep-dive slots hidden when UC2 is not triggered', () => {
+    const generated = generateFollowupQuestions({
+      structuredData: {
+        status: 'draft',
+        chief_complaint: 'Kopfschmerz seit gestern',
+        history_of_present_illness: {
+          onset: 'gestern',
+        },
+        followup: {
+          next_questions: [],
+          queue: [],
+          asked_question_ids: [],
+          last_generated_at: '2026-02-20T00:00:00.000Z',
+        },
+      },
+      now: new Date('2026-02-20T10:00:00.000Z'),
+    })
+
+    const objectiveIds = (generated.objectives ?? []).map((entry) => entry.id)
+    expect(objectiveIds).not.toContain('objective:associated-symptoms')
+    expect(objectiveIds).not.toContain('objective:aggravating-relieving-factors')
+    expect(objectiveIds).not.toContain('objective:relevant-negatives')
+  })
+
   it('transitions lifecycle via skip and complete without repeating asked questions', () => {
     const structuredData = {
       status: 'draft' as const,

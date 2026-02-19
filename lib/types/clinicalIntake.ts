@@ -198,6 +198,20 @@ export interface ClinicalFollowupObjective {
   rationale: string
 }
 
+export type ClinicalReadinessState = 'SafetyReady' | 'VisitReady' | 'ProblemReady' | 'ProgramReady'
+
+export type ClinicalUc2TriggerReason =
+  | 'symptom_duration_gte_12_weeks'
+  | 'multiple_symptom_clusters'
+  | 'chronic_condition_signal'
+  | 'explicit_clinician_requirement'
+
+export interface ClinicalReadinessSnapshot {
+  state: ClinicalReadinessState
+  uc2_triggered: boolean
+  uc2_trigger_reasons: ClinicalUc2TriggerReason[]
+}
+
 export interface ClinicalFollowup {
   next_questions: ClinicalFollowupQuestion[]
   queue?: ClinicalFollowupQuestion[]
@@ -206,6 +220,7 @@ export interface ClinicalFollowup {
   objectives?: ClinicalFollowupObjective[]
   active_objective_ids?: string[]
   objective_state_overrides?: Record<string, 'missing' | 'unclear' | 'resolved'>
+  readiness?: ClinicalReadinessSnapshot
   lifecycle?: {
     state: 'active' | 'needs_review' | 'completed'
     completed_question_ids: string[]

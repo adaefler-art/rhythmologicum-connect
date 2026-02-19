@@ -41,6 +41,25 @@ export const clinicalFollowupSchema = z.object({
       z.union([z.literal('missing'), z.literal('unclear'), z.literal('resolved')]),
     )
     .optional(),
+  readiness: z
+    .object({
+      state: z.union([
+        z.literal('SafetyReady'),
+        z.literal('VisitReady'),
+        z.literal('ProblemReady'),
+        z.literal('ProgramReady'),
+      ]),
+      uc2_triggered: z.boolean(),
+      uc2_trigger_reasons: z.array(
+        z.union([
+          z.literal('symptom_duration_gte_12_weeks'),
+          z.literal('multiple_symptom_clusters'),
+          z.literal('chronic_condition_signal'),
+          z.literal('explicit_clinician_requirement'),
+        ]),
+      ),
+    })
+    .optional(),
   lifecycle: z
     .object({
       state: z.union([z.literal('active'), z.literal('needs_review'), z.literal('completed')]),

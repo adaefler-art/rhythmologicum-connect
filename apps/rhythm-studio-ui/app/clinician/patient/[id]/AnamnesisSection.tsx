@@ -43,6 +43,11 @@ import type {
   EscalationLevel,
 } from '@/lib/types/clinicalIntake'
 import { getSafetyUiState } from '@/lib/cre/safety/policy'
+import {
+  extractFollowupObjectiveReviewItems,
+  getObjectiveRequestedItemSuggestions,
+  type CaseChecklistStatus,
+} from '@/lib/cre/followup/clinicianChecklist'
 
 export interface AnamnesisEntry {
   id: string
@@ -111,6 +116,20 @@ type TriggeredRuleUi = {
 const MAX_EXCERPT_LENGTH = 220
 const MAX_RULE_EXCERPTS = 3
 const REVIEW_STATUSES = ['draft', 'in_review', 'approved', 'needs_more_info', 'rejected'] as const
+
+const getChecklistBadgeVariant = (status: CaseChecklistStatus) => {
+  if (status === 'captured') return 'success' as const
+  if (status === 'missing') return 'warning' as const
+  if (status === 'delegated_to_physician') return 'danger' as const
+  return 'secondary' as const
+}
+
+const getChecklistBadgeLabel = (status: CaseChecklistStatus) => {
+  if (status === 'captured') return 'captured'
+  if (status === 'missing') return 'missing'
+  if (status === 'delegated_to_physician') return 'delegated_to_physician'
+  return 'unclear'
+}
 
 const isReviewStatus = (
   value: unknown,
@@ -217,41 +236,6 @@ const buildIntakeExcerpts = (structuredIntakeData: Record<string, unknown> | nul
   })
 
   return excerpts
-}
-
-const OBJECTIVE_REQUEST_TEXT: Record<string, string> = {
-  'objective:chief-complaint': 'Bitte Hauptanliegen/Leitsymptom präzisieren',
-  'objective:onset': 'Bitte Beginn/erstes Auftreten zeitlich klären',
-  'objective:duration': 'Bitte Dauer/Frequenz genauer erfassen',
-  'objective:course': 'Bitte Verlauf (stabil/verschlechtert/gebessert) konkretisieren',
-  'objective:medication': 'Bitte aktuelle Medikation/NEM vollständig erfassen',
-  'objective:psychosocial': 'Bitte psychosoziale Belastungsfaktoren ergänzen',
-}
-
-const getObjectiveRequestedItemSuggestions = (structuredIntakeData: Record<string, unknown> | null) => {
-  if (!structuredIntakeData) return [] as string[]
-
-  const followup = structuredIntakeData.followup
-  if (!followup || typeof followup !== 'object' || Array.isArray(followup)) return [] as string[]
-
-  const followupRecord = followup as Record<string, unknown>
-  const activeObjectiveIds = Array.isArray(followupRecord.active_objective_ids)
-    ? followupRecord.active_objective_ids.filter((id): id is string => typeof id === 'string')
-    : []
-  const objectiveStatuses = Array.isArray(followupRecord.objectives)
-    ? followupRecord.objectives
-        .filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === 'object' && !Array.isArray(entry))
-        .filter((entry) => entry.status === 'missing')
-        .map((entry) => entry.id)
-        .filter((id): id is string => typeof id === 'string')
-    : []
-
-  const candidateIds = objectiveStatuses.length > 0 ? objectiveStatuses : activeObjectiveIds
-
-  return Array.from(new Set(candidateIds))
-    .map((id) => OBJECTIVE_REQUEST_TEXT[id])
-    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-    .slice(0, 3)
 }
 
 const resolveEvidenceRefs = (params: {
@@ -1111,6 +1095,9 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const suggestedRequestedItems = getObjectiveRequestedItemSuggestions(
     structuredIntakeData as Record<string, unknown> | null,
   )
+  const followupChecklist = extractFollowupObjectiveReviewItems(
+    structuredIntakeData as Record<string, unknown> | null,
+  )
 
   const appendRequestedItem = (value: string) => {
     const current = requestedItemsText
@@ -1341,6 +1328,24 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
                           >
                             {item}
                           </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {followupChecklist.length > 0 && (
+                    <div className="mt-3 rounded-md border border-slate-200 p-2">
+                      <p className="mb-2 text-xs font-semibold text-slate-600">
+                        Case Checklist (captured/missing/unclear/delegated_to_physician)
+                      </p>
+                      <div className="space-y-1">
+                        {followupChecklist.map((item) => (
+                          <div key={item.id} className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-slate-700">{item.label}</span>
+                            <Badge variant={getChecklistBadgeVariant(item.status)} size="sm">
+                              {getChecklistBadgeLabel(item.status)}
+                            </Badge>
+                          </div>
                         ))}
                       </div>
                     </div>

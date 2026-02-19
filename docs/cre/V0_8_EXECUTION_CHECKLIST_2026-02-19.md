@@ -88,9 +88,22 @@ Definition of Done:
 - [ ] Ergebnis ist strukturierte Klärung + Open Loops, keine klinische Wertung nach außen
 
 Arbeitspakete:
-- [ ] UC2-01 Trigger-Engine + Übergangsregeln dokumentiert und getestet
-- [ ] UC2-02 Objective-/Slot-Vertiefung für komplexe Fälle erweitert
-- [ ] UC2-03 Clinician-Review zeigt `captured/missing/unclear/delegated_to_physician`
+- [~] UC2-01 Trigger-Engine + Übergangsregeln dokumentiert und getestet
+	- [x] Backend-Trigger für `>=12 Wochen`, `mehrere Symptomcluster`, `chronische Grunderkrankung`, `explizite Ärzt:innen-Anforderung` deterministisch implementiert
+	- [x] Übergangsregel: bei aktivem UC2-Trigger und leerer Follow-up-Queue Lifecycle auf `needs_review` statt `completed`
+	- [x] Unit-Regressionen für UC2-Triggergründe + Übergangsregel ergänzt
+	- [ ] Produktnahe Verifikation (Staging/CI) nachziehen
+- [~] UC2-02 Objective-/Slot-Vertiefung für komplexe Fälle erweitert
+	- [x] UC2-only Deep-Dive-Slots ergänzt (`associated symptoms`, `aggravating/relieving factors`, `relevant negatives`)
+	- [x] Aktivierung strikt triggergebunden (`ProblemReady`), außerhalb UC2 nicht aktiv
+	- [x] Antwort-Mapping für neue Gap-IDs im Follow-up-Generate-Endpoint ergänzt
+	- [x] Unit-Regressionen für Aktivierung/Nicht-Aktivierung ergänzt
+	- [ ] Produktnahe Verifikation (Staging/CI) nachziehen
+- [~] UC2-03 Clinician-Review zeigt `captured/missing/unclear/delegated_to_physician`
+	- [x] Clinician-Review-Panel rendert Objective-Case-Checklist mit allen vier Statuswerten
+	- [x] Requested-Item-Suggestions berücksichtigen `missing`, `unclear` und `delegated_to_physician`
+	- [x] Objective-Textmapping für bestehende + UC2-Deep-Dive-Objectives erweitert
+	- [ ] Automatisierte Tests nach Tooling-Fix (fehlende Jest-Typdeklarationen im aktuellen Setup)
 
 ## UC3 — Program Intake (Ebene 4: DiagnosticProgramIntake)
 
@@ -199,6 +212,9 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert) [Commit: `6ee7c54e`].
 - 2026-02-19: UC1 Safety-E2E auf alle 4 Routen erweitert (`NOTRUF`, `NOTAUFNAHME`, `DRINGENDER_TERMIN`, `STANDARD_INTAKE`) und VisitPreparation-Kurzakte in `GET /api/patient/intake/latest` integriert [Commit: `f2aa1557`].
 - 2026-02-19: Offene manuelle UC1/NV2-NV5 Nachholtests aus alter Checklist konsolidiert (Runbook) und zusätzlicher API-Autotest für `GET /api/patient/intake/latest` ergänzt [Commit: `cb7d2d35`].
+- 2026-02-19: UC2-Trigger-Engine in der Follow-up-Runtime ergänzt (`>=12 Wochen`, Symptomcluster, chronische Signale, explizite Ärzt:innen-Anforderung) inkl. Übergangsregel auf `needs_review` und Unit-Tests (`lib/cre/followup/generator.ts`, `lib/cre/followup/__tests__/generator.test.ts`, `lib/cre/followup/schema.ts`, `lib/types/clinicalIntake.ts`).
+- 2026-02-19: UC2 Deep-Dive-Objective-Slots für komplexe Fälle ergänzt (nur bei aktivem UC2-Trigger), inkl. Gap-Answer-Mapping im Follow-up-Endpoint und Regressionstests (`lib/cre/followup/generator.ts`, `apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `lib/cre/followup/__tests__/generator.test.ts`).
+- 2026-02-19: UC2-03 Clinician-Review auf Case-Checklist-Status `captured/missing/unclear/delegated_to_physician` erweitert, inkl. zentralisierter Mapping-Utility und erweiterter Requested-Item-Vorschläge (`apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `lib/cre/followup/clinicianChecklist.ts`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
