@@ -186,7 +186,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: Patient Support Zielseite für Triage/Safety-Gate eingeführt (`/patient/support`) [Commit: `f5ba4d26`].
 - 2026-02-19: Shared Support-Helfer + Testabdeckung für Triage→Support-Flow ergänzt [Commit: `1997519f`].
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect zu `/patient/support` ergänzt [Commit: `ee4c9aaf`].
-- 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert).
+- 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert) [Commit: `6ee7c54e`].
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
