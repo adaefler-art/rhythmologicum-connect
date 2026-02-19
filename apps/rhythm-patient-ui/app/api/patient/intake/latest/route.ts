@@ -22,6 +22,19 @@ type IntakeReviewState = {
   updated_at: string
 }
 
+const toStructuredIntakeData = (value: Record<string, unknown>): StructuredIntakeData => {
+  const withUnknownCast = value as unknown as Partial<StructuredIntakeData>
+
+  if (withUnknownCast && withUnknownCast.status === 'draft') {
+    return withUnknownCast as StructuredIntakeData
+  }
+
+  return {
+    status: 'draft',
+    ...withUnknownCast,
+  } as StructuredIntakeData
+}
+
 const mapIntake = (intake: IntakeRecord | null) =>
   intake
     ? {
@@ -32,7 +45,7 @@ const mapIntake = (intake: IntakeRecord | null) =>
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
         visit_preparation: buildVisitPreparationSummary(
-          intake.structured_data as StructuredIntakeData,
+          toStructuredIntakeData(intake.structured_data),
         ),
         trigger_reason: intake.trigger_reason,
         review_state: null as IntakeReviewState | null,
