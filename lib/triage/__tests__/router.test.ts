@@ -270,6 +270,21 @@ describe('lib/triage/router', () => {
       })
     })
 
+    it('includes safety route in escalation URL when present', () => {
+      const result = createTriageResult(
+        TRIAGE_NEXT_ACTION.SHOW_ESCALATION,
+        TRIAGE_TIER.ESCALATE,
+      )
+      result.safetyRoute = UC1_SAFETY_ROUTE.NOTRUF
+
+      const target = getNavigationTarget(TRIAGE_NEXT_ACTION.SHOW_ESCALATION, result)
+
+      expect(target.url).toBe('/patient/support?source=triage&tier=ESCALATE&route=NOTRUF')
+      expect(target.state).toMatchObject({
+        triageSafetyRoute: UC1_SAFETY_ROUTE.NOTRUF,
+      })
+    })
+
     it('handles routes without state gracefully', () => {
       const result = createTriageResult(TRIAGE_NEXT_ACTION.RESUME_FUNNEL)
       const target = getNavigationTarget(TRIAGE_NEXT_ACTION.RESUME_FUNNEL, result)

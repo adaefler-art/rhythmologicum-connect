@@ -28,6 +28,7 @@ import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 import QuestionRenderer from '@/lib/questionnaire/QuestionRenderer'
 import { isStepVisible } from '@/lib/questionnaire/conditionalLogic'
 import { getLastTriageResult } from '@/lib/triage/storage'
+import { buildSafetyGateSupportUrl, isUc1SafetyRoute } from '@/lib/triage/support'
 import { UC1_SAFETY_ROUTE, type Uc1SafetyRoute } from '@/lib/api/contracts/triage'
 import type { FunnelQuestionnaireConfig, QuestionnaireStep, QuestionConfig, ConditionalLogic } from '@/lib/contracts/funnelManifest'
 import type { StartAssessmentResponseData, ResumeAssessmentResponseData } from '@/lib/api/contracts/patient'
@@ -87,14 +88,6 @@ interface ErrorDetails {
   type: ErrorType
   message: string
   retryable: boolean
-}
-
-function isUc1SafetyRoute(value: string | undefined | null): value is Uc1SafetyRoute {
-  if (!value) {
-    return false
-  }
-
-  return Object.values(UC1_SAFETY_ROUTE).includes(value as Uc1SafetyRoute)
 }
 
 // ============================================================
@@ -410,9 +403,12 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     }
 
     if (validation.safetyGate?.blocked) {
-      const routeParam = encodeURIComponent(validation.safetyGate.route)
-      const messageParam = encodeURIComponent(validation.safetyGate.message)
-      router.push(`/patient/support?source=uc1_safety_gate&route=${routeParam}&message=${messageParam}`)
+      router.push(
+        buildSafetyGateSupportUrl({
+          route: validation.safetyGate.route,
+          message: validation.safetyGate.message,
+        }),
+      )
       setIsSubmitting(false)
       return
     }

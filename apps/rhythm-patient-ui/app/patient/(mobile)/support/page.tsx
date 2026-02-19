@@ -4,52 +4,7 @@ import { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button, Card } from '@/lib/ui/mobile-v2'
 import { UC1_SAFETY_ROUTE, type Uc1SafetyRoute } from '@/lib/api/contracts/triage'
-
-type RouteUi = {
-  title: string
-  message: string
-  blocked: boolean
-}
-
-function isUc1SafetyRoute(value: string | null): value is Uc1SafetyRoute {
-  if (!value) {
-    return false
-  }
-
-  return Object.values(UC1_SAFETY_ROUTE).includes(value as Uc1SafetyRoute)
-}
-
-function getRouteUi(route: Uc1SafetyRoute | null, message: string | null): RouteUi {
-  if (route === UC1_SAFETY_ROUTE.NOTRUF) {
-    return {
-      title: 'Akute Gefahr: Bitte sofort Notruf 112 kontaktieren',
-      message: message || 'Ihre Angaben deuten auf eine akute Notfallsituation hin.',
-      blocked: true,
-    }
-  }
-
-  if (route === UC1_SAFETY_ROUTE.NOTAUFNAHME) {
-    return {
-      title: 'Bitte jetzt in eine Notaufnahme gehen',
-      message: message || 'Ihre Angaben erfordern eine direkte medizinische Abklärung.',
-      blocked: true,
-    }
-  }
-
-  if (route === UC1_SAFETY_ROUTE.DRINGENDER_TERMIN) {
-    return {
-      title: 'Bitte zeitnah einen dringenden Termin vereinbaren',
-      message: message || 'Setzen Sie den Intake fort und planen Sie zeitnah ärztliche Unterstützung ein.',
-      blocked: false,
-    }
-  }
-
-  return {
-    title: 'Unterstützung',
-    message: message || 'Wenn Sie sich akut unsicher fühlen, kontaktieren Sie bitte umgehend den Notruf 112.',
-    blocked: false,
-  }
-}
+import { isUc1SafetyRoute, getSupportRouteUi } from '@/lib/triage/support'
 
 export default function PatientSupportPage() {
   const router = useRouter()
@@ -61,7 +16,7 @@ export default function PatientSupportPage() {
 
   const route = isUc1SafetyRoute(routeFromQuery) ? routeFromQuery : null
 
-  const ui = useMemo(() => getRouteUi(route, messageFromQuery), [route, messageFromQuery])
+  const ui = useMemo(() => getSupportRouteUi(route, messageFromQuery), [route, messageFromQuery])
 
   return (
     <div className="w-full overflow-x-hidden bg-slate-50">
