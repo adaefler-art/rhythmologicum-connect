@@ -13,9 +13,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private weak var tabBarControllerRef: UITabBarController?
     private var sessionKeepAliveTimer: Timer?
     private var isUnlockInProgress = false
+    private var lastBackgroundAt: Date?
 
     private let biometricPreferenceKey = "ios_shell_biometric_unlock_enabled"
     private let sessionKeepAliveInterval: TimeInterval = 240
+    private let biometricUnlockGracePeriod: TimeInterval = 180
     private let shellBaseUrl = URL(string: "https://rhythm-patient.vercel.app")!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -93,7 +95,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         DispatchQueue.main.async { [weak self] in
             self?.startSessionKeepAlive()
-            self?.authenticateIfNeeded()
         }
 
         return true
@@ -102,6 +103,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        lastBackgroundAt = Date()
         stopSessionKeepAlive()
     }
 
@@ -117,7 +119,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
         startSessionKeepAlive()
-        authenticateIfNeeded()
+        authenticateIfNeeded(force: false)
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -150,8 +152,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UserDefaults.standard.set(enabled, forKey: biometricPreferenceKey)
     }
 
-    private func authenticateIfNeeded() {
+    private func authenticateIfNeeded(force: Bool) {
         guard isBiometricUnlockEnabled(), !isUnlockInProgress else { return }
+        guard force || shouldRequireBiometricUnlock() else { return }
+
         isUnlockInProgress = true
 
         let context = LAContext()
@@ -169,9 +173,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 self.isUnlockInProgress = false
                 if !success {
                     self.presentBiometricRetryPrompt()
+                } else {
+                    self.lastBackgroundAt = nil
                 }
             }
         }
+    }
+
+    private func shouldRequireBiometricUnlock() -> Bool {
+        guard let backgroundAt = lastBackgroundAt else { return false }
+        let elapsed = Date().timeIntervalSince(backgroundAt)
+        return elapsed >= biometricUnlockGracePeriod
     }
 
     private func presentBiometricRetryPrompt() {
@@ -183,7 +195,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Erneut versuchen", style: .default, handler: { [weak self] _ in
-            self?.authenticateIfNeeded()
+            self?.authenticateIfNeeded(force: true)
         }))
         alert.addAction(UIAlertAction(title: "Abbrechen", style: .cancel))
 
