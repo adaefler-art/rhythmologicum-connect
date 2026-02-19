@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/db/supabase.server'
 import { ErrorCode } from '@/lib/api/responseTypes'
+import { buildVisitPreparationSummary } from '@/lib/clinicalIntake/visitPreparation'
+import type { StructuredIntakeData } from '@/lib/types/clinicalIntake'
 
 type IntakeRecord = {
   id: string
@@ -29,6 +31,9 @@ const mapIntake = (intake: IntakeRecord | null) =>
         version_number: intake.version_number,
         clinical_summary: intake.clinical_summary,
         structured_data: intake.structured_data,
+        visit_preparation: buildVisitPreparationSummary(
+          intake.structured_data as StructuredIntakeData,
+        ),
         trigger_reason: intake.trigger_reason,
         review_state: null as IntakeReviewState | null,
         created_at: intake.created_at,

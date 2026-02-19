@@ -18,10 +18,19 @@ const setupFunnelSafetyGateMocks = async (
     slug: string
     safetyRoute: 'NOTRUF' | 'NOTAUFNAHME' | 'DRINGENDER_TERMIN' | 'STANDARD_INTAKE'
     safetyMessage: string
+    blocked?: boolean
+    withSecondStep?: boolean
     onValidateRequest?: (routeFromBody: string | null) => void
   },
 ) => {
-  const { slug, safetyRoute, safetyMessage, onValidateRequest } = params
+  const {
+    slug,
+    safetyRoute,
+    safetyMessage,
+    blocked = true,
+    withSecondStep = false,
+    onValidateRequest,
+  } = params
 
   await page.route('**/api/funnels/**', async (route) => {
     const request = route.request()
@@ -51,6 +60,24 @@ const setupFunnelSafetyGateMocks = async (
                 },
               ],
             },
+            ...(withSecondStep
+              ? [
+                  {
+                    id: 'step-2',
+                    title: 'Zweiter Schritt',
+                    description: 'Non-blocking Weiterleitung bleibt im Intake.',
+                    questions: [
+                      {
+                        id: 'q-2',
+                        key: 'q2',
+                        questionType: 'text',
+                        label: 'Zweite Frage',
+                        isRequired: false,
+                      },
+                    ],
+                  },
+                ]
+              : []),
           ],
         }),
       })
@@ -88,11 +115,17 @@ const setupFunnelSafetyGateMocks = async (
           data: {
             isValid: true,
             missingQuestions: [],
-            nextStep: null,
+            nextStep: withSecondStep
+              ? {
+                  stepId: 'step-2',
+                  title: 'Zweiter Schritt',
+                  stepIndex: 1,
+                }
+              : null,
             safetyGate: {
               route: safetyRoute,
-              blocked: true,
-              nextAction: 'SHOW_ESCALATION',
+              blocked,
+              nextAction: blocked ? 'SHOW_ESCALATION' : 'CONTINUE_INTAKE',
               message: safetyMessage,
             },
           },
@@ -194,5 +227,65 @@ test.describe('patient safety gate support routing @patient-safety-gate-support'
     await expect(page.getByRole('button', { name: 'Zurück zum Dialog' })).toBeVisible()
 
     expect(capturedRouteFromValidateBody).toBe('NOTAUFNAHME')
+  })
+
+  test('keeps intake flow for DRINGENDER_TERMIN (non-blocking) and advances to next step', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const slug = 'stress-assessment'
+    let capturedRouteFromValidateBody: string | null = null
+
+    await setupFunnelSafetyGateMocks(page, {
+      slug,
+      safetyRoute: 'DRINGENDER_TERMIN',
+      safetyMessage: 'Bitte zeitnah ärztlichen Termin planen.',
+      blocked: false,
+      withSecondStep: true,
+      onValidateRequest: (routeValue) => {
+        capturedRouteFromValidateBody = routeValue
+      },
+    })
+
+    await page.goto(`/patient/assess/${slug}/flow-v3?triageSafetyRoute=DRINGENDER_TERMIN`)
+    await expect(page.getByRole('heading', { name: 'Mock Stress Assessment' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Weiter' }).click()
+
+    await expect(page).toHaveURL(new RegExp(`/patient/assess/${slug}/flow-v3`))
+    await expect(page).not.toHaveURL(/\/patient\/support\?/)
+    await expect(page.getByText('Schritt 2 von 2')).toBeVisible()
+    await expect(page.getByText('Zweiter Schritt')).toBeVisible()
+
+    expect(capturedRouteFromValidateBody).toBe('DRINGENDER_TERMIN')
+  })
+
+  test('keeps intake flow for STANDARD_INTAKE (non-blocking) and advances to next step', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const slug = 'stress-assessment'
+    let capturedRouteFromValidateBody: string | null = null
+
+    await setupFunnelSafetyGateMocks(page, {
+      slug,
+      safetyRoute: 'STANDARD_INTAKE',
+      safetyMessage: 'Standard-Intake kann fortgesetzt werden.',
+      blocked: false,
+      withSecondStep: true,
+      onValidateRequest: (routeValue) => {
+        capturedRouteFromValidateBody = routeValue
+      },
+    })
+
+    await page.goto(`/patient/assess/${slug}/flow-v3?triageSafetyRoute=STANDARD_INTAKE`)
+    await expect(page.getByRole('heading', { name: 'Mock Stress Assessment' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Weiter' }).click()
+
+    await expect(page).toHaveURL(new RegExp(`/patient/assess/${slug}/flow-v3`))
+    await expect(page).not.toHaveURL(/\/patient\/support\?/)
+    await expect(page.getByText('Schritt 2 von 2')).toBeVisible()
+    await expect(page.getByText('Zweiter Schritt')).toBeVisible()
+
+    expect(capturedRouteFromValidateBody).toBe('STANDARD_INTAKE')
   })
 })

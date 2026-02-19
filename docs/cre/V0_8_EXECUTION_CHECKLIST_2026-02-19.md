@@ -42,8 +42,8 @@ Ziel:
 - In 30s–15min von Erstkontakt zu `VisitReady` oder sicherem Eskalationspfad.
 
 Definition of Done:
-- [ ] Safety-Routing mit 4 Pfaden stabil (`Notruf`, `Notaufnahme`, `dringender Termin`, `Standard-Intake`)
-- [ ] VisitPreparation erzeugt strukturierte Kurzakte (`Hauptbeschwerde`, Verlauf, Red Flags, Medikation)
+- [~] Safety-Routing mit 4 Pfaden stabil (`Notruf`, `Notaufnahme`, `dringender Termin`, `Standard-Intake`)
+- [~] VisitPreparation erzeugt strukturierte Kurzakte (`Hauptbeschwerde`, Verlauf, Red Flags, Medikation)
 - [ ] Keine patient-facing Diagnose-/Risikosprache
 - [ ] UC1 E2E inkl. Hybrid iOS Device-Smoke grün
 
@@ -57,8 +57,13 @@ Arbeitspakete:
 	- [x] UC1 Safety-Route-Output (Notruf/Notaufnahme/dringender Termin/Standard-Intake) im Triage-Contract ergänzt
 	- [x] Deterministische Safety-Route-Ableitung in `lib/triage/engine.ts` verdrahtet
 	- [x] Safety-Route in Runtime-Transition integriert (`validate`-Response mit `safetyGate`)
-	- [~] UC1 E2E Safety-Gate Support-Redirect für `NOTRUF` und `NOTAUFNAHME` abgedeckt (Mock-Flow)
+	- [x] UC1 E2E Safety-Gate Support-Redirect für `NOTRUF` und `NOTAUFNAHME` abgedeckt (Mock-Flow)
+	- [x] UC1 E2E Non-Blocking-Flow für `DRINGENDER_TERMIN` und `STANDARD_INTAKE` abgedeckt (Mock-Flow)
 	- [~] Testlauf lokal/CI verifizieren (aktuelle Shell ohne Node/NPM ausführbar)
+- [~] UC1-05 VisitPreparation-Kurzakte aus `structured_data` bereitstellen
+	- [x] Deterministischer Builder für Kurzakte-Felder (`chiefComplaint`, Verlauf, Red Flags, Medikation)
+	- [x] API `GET /api/patient/intake/latest` liefert `visit_preparation` mit
+	- [~] Integration in Staging/Client-UI verifizieren
 - [ ] UC1-04 iOS Session/Auth-Resilienz inkl. Relogin-Flow auf Device evidenziert
 
 ## UC2 — Problem Clarification (Ebene 3: Problem-Focused Deep Dive)
@@ -187,6 +192,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: Shared Support-Helfer + Testabdeckung für Triage→Support-Flow ergänzt [Commit: `1997519f`].
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect zu `/patient/support` ergänzt [Commit: `ee4c9aaf`].
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert) [Commit: `6ee7c54e`].
+- 2026-02-19: UC1 Safety-E2E auf alle 4 Routen erweitert (`NOTRUF`, `NOTAUFNAHME`, `DRINGENDER_TERMIN`, `STANDARD_INTAKE`) und VisitPreparation-Kurzakte in `GET /api/patient/intake/latest` integriert.
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
