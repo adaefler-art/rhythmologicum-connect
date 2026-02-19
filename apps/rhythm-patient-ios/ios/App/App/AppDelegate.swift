@@ -97,17 +97,6 @@ private struct ChatMessage: Identifiable, Codable {
     let createdAt: Date
 }
 
-private struct PersistedChatMessage: Codable {
-    let id: String
-    let role: ChatRole
-    let content: String
-    let created_at: String
-}
-
-private struct ChatHistoryData: Codable {
-    let messages: [PersistedChatMessage]
-}
-
 private struct SendChatData: Codable {
     let reply: String
     let messageId: String
@@ -128,11 +117,15 @@ private struct SendChatRequest: Codable {
     let message: String
 }
 
+private struct ResumeChatRequest: Codable {
+    let mode: String
+    let resumeContext: [String: String]
+}
+
 private final class NativeChatAPIClient {
     private let config: NativeChatConfig
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
-    private let iso8601Parser = ISO8601DateFormatter()
 
     init(config: NativeChatConfig) {
         self.config = config
@@ -142,11 +135,26 @@ private final class NativeChatAPIClient {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
-    func loadMessages(completion: @escaping (Result<[ChatMessage], Error>) -> Void) {
+    func fetchDynamicStartQuestion(completion: @escaping (Result<String, Error>) -> Void) {
         var request = URLRequest(url: config.baseURL.appendingPathComponent("/api/amy/chat"))
-        request.httpMethod = "GET"
+        request.httpMethod = "POST"
         request.httpShouldHandleCookies = true
         applyCommonHeaders(to: &request)
+
+        let resumeContext = [
+            "platform": "ios_native_shell",
+            "entry": "native_chat_tab",
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+        ]
+
+        do {
+            request.httpBody = try encoder.encode(
+                ResumeChatRequest(mode: "resume", resumeContext: resumeContext)
+            )
+        } catch {
+            completion(.failure(error))
+            return
+        }
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
@@ -160,14 +168,12 @@ private final class NativeChatAPIClient {
             }
 
             do {
-                let response = try self.decoder.decode(ChatApiResponse<ChatHistoryData>.self, from: data)
+                let response = try self.decoder.decode(ChatApiResponse<SendChatData>.self, from: data)
                 guard response.success, let payload = response.data else {
-                    completion(.failure(NativeChatError.apiFailure(response.error?.message ?? "History loading failed")))
+                    completion(.failure(NativeChatError.apiFailure(response.error?.message ?? "Start question loading failed")))
                     return
                 }
-
-                let mapped = payload.messages.compactMap(self.mapPersistedMessage)
-                completion(.success(mapped.sorted(by: { $0.createdAt < $1.createdAt })))
+                completion(.success(payload.reply))
             } catch {
                 completion(.failure(error))
             }
@@ -229,15 +235,6 @@ private final class NativeChatAPIClient {
         }
     }
 
-    private func mapPersistedMessage(_ message: PersistedChatMessage) -> ChatMessage {
-        let parsedDate = iso8601Parser.date(from: message.created_at) ?? Date()
-        return ChatMessage(
-            id: message.id,
-            role: message.role,
-            text: message.content,
-            createdAt: parsedDate
-        )
-    }
 }
 
 private enum NativeChatError: LocalizedError {
@@ -272,15 +269,30 @@ private final class NativeChatViewModel: ObservableObject {
         isLoading = true
         errorText = nil
 
-        apiClient.loadMessages { [weak self] result in
+        apiClient.fetchDynamicStartQuestion { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.isBootstrapped = true
                 self.isLoading = false
                 switch result {
-                case .success(let loaded):
-                    self.messages = loaded
+                case .success(let openingQuestion):
+                    self.messages = [
+                        ChatMessage(
+                            id: "assistant-start-\(Date().timeIntervalSince1970)",
+                            role: .assistant,
+                            text: openingQuestion,
+                            createdAt: Date()
+                        ),
+                    ]
                 case .failure(let error):
+                    self.messages = [
+                        ChatMessage(
+                            id: "assistant-fallback-\(Date().timeIntervalSince1970)",
+                            role: .assistant,
+                            text: "Hallo, ich bin PAT. Wie geht es Ihnen heute?",
+                            createdAt: Date()
+                        ),
+                    ]
                     self.errorText = error.localizedDescription
                 }
             }
@@ -321,6 +333,10 @@ private final class NativeChatViewModel: ObservableObject {
 
 private struct NativeChatView: View {
     @ObservedObject var viewModel: NativeChatViewModel
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -395,6 +411,9 @@ private struct NativeChatView: View {
                     }
                     .padding(16)
                 }
+                .onTapGesture {
+                    dismissKeyboard()
+                }
                 .onChange(of: viewModel.messages.count) { _ in
                     guard let last = viewModel.messages.last else { return }
                     withAnimation {
@@ -412,11 +431,25 @@ private struct NativeChatView: View {
             }
 
             HStack(spacing: 8) {
-                TextField("Nachricht schreiben...", text: $viewModel.inputText)
+                TextField("Nachricht schreiben...", text: $viewModel.inputText, onCommit: {
+                    viewModel.sendMessage()
+                    dismissKeyboard()
+                })
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                Button {
+                    dismissKeyboard()
+                } label: {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .frame(width: 32, height: 40)
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
 
                 Button {
                     viewModel.sendMessage()
@@ -436,12 +469,7 @@ private struct NativeChatView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
-            .padding(.bottom, 8)
-
-            Text("Info-Chat • Keine Aktionen möglich")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.bottom, 10)
+            .padding(.bottom, 10)
         }
         .navigationBarTitle("Chat", displayMode: .inline)
         .onAppear {
