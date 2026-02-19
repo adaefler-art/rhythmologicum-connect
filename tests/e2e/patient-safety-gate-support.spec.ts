@@ -120,7 +120,7 @@ const setupFunnelSafetyGateMocks = async (
 }
 
 test.describe('patient safety gate support routing @patient-safety-gate-support', () => {
-  test('redirects to support page with route and message after blocked safety gate', async ({ page }) => {
+  test('redirects to support page with route and message after blocked safety gate (NOTRUF)', async ({ page }) => {
     test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
 
     const slug = 'stress-assessment'
@@ -159,5 +159,40 @@ test.describe('patient safety gate support routing @patient-safety-gate-support'
     )
 
     expect(capturedRouteFromValidateBody).toBe('NOTRUF')
+  })
+
+  test('redirects to support page and shows emergency-room copy for NOTAUFNAHME', async ({ page }) => {
+    test.skip(backendMode !== 'mock', 'Test only runs in mock backend mode.')
+
+    const slug = 'stress-assessment'
+    const safetyMessage = 'Mock-Notaufnahme-Hinweis: bitte jetzt in eine Notaufnahme gehen.'
+    let capturedRouteFromValidateBody: string | null = null
+
+    await setupFunnelSafetyGateMocks(page, {
+      slug,
+      safetyRoute: 'NOTAUFNAHME',
+      safetyMessage,
+      onValidateRequest: (routeValue) => {
+        capturedRouteFromValidateBody = routeValue
+      },
+    })
+
+    await page.goto(`/patient/assess/${slug}/flow-v3?triageSafetyRoute=NOTAUFNAHME`)
+
+    await expect(page.getByRole('heading', { name: 'Mock Stress Assessment' })).toBeVisible()
+    await page.getByRole('button', { name: 'Weiter' }).click()
+
+    await expect(page).toHaveURL(/\/patient\/support\?/) 
+    await expect(page).toHaveURL(/source=uc1_safety_gate/)
+    await expect(page).toHaveURL(/route=NOTAUFNAHME/)
+    await expect(page).toHaveURL(/message=/)
+
+    await expect(page.getByRole('heading', { name: 'Unterstützung' })).toBeVisible()
+    await expect(page.getByText('Bitte jetzt in eine Notaufnahme gehen')).toBeVisible()
+    await expect(page.getByText(safetyMessage)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Zur Übersicht' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Zurück zum Dialog' })).toBeVisible()
+
+    expect(capturedRouteFromValidateBody).toBe('NOTAUFNAHME')
   })
 })
