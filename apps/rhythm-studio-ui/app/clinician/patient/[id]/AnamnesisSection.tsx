@@ -1095,9 +1095,41 @@ export function AnamnesisSection({ patientId, loading, errorEvidenceCode }: Anam
   const suggestedRequestedItems = getObjectiveRequestedItemSuggestions(
     structuredIntakeData as Record<string, unknown> | null,
   )
-  const followupChecklist = extractFollowupObjectiveReviewItems(
-    structuredIntakeData as Record<string, unknown> | null,
-  )
+  const followupChecklist =
+    Array.isArray(
+      (latestClinicalIntake as { case_checklist?: { entries?: unknown[] } } | null)?.case_checklist
+        ?.entries,
+    )
+      ? ((latestClinicalIntake as { case_checklist?: { entries?: unknown[] } })
+          .case_checklist?.entries ?? [])
+          .filter(
+            (
+              item,
+            ): item is {
+              id: string
+              label: string
+              status: CaseChecklistStatus
+            } => {
+              if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+              const entry = item as {
+                id?: unknown
+                label?: unknown
+                status?: unknown
+              }
+
+              return (
+                typeof entry.id === 'string' &&
+                typeof entry.label === 'string' &&
+                (entry.status === 'captured' ||
+                  entry.status === 'missing' ||
+                  entry.status === 'unclear' ||
+                  entry.status === 'delegated_to_physician')
+              )
+            },
+          )
+      : extractFollowupObjectiveReviewItems(
+          structuredIntakeData as Record<string, unknown> | null,
+        )
 
   const appendRequestedItem = (value: string) => {
     const current = requestedItemsText

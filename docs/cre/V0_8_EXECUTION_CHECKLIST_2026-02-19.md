@@ -103,7 +103,7 @@ Arbeitspakete:
 	- [x] Clinician-Review-Panel rendert Objective-Case-Checklist mit allen vier Statuswerten
 	- [x] Requested-Item-Suggestions berücksichtigen `missing`, `unclear` und `delegated_to_physician`
 	- [x] Objective-Textmapping für bestehende + UC2-Deep-Dive-Objectives erweitert
-	- [ ] Automatisierte Tests nach Tooling-Fix (fehlende Jest-Typdeklarationen im aktuellen Setup)
+	- [~] API-Contract-Test für `clinical-intake/latest` ergänzt (lokale Ausführung weiter blockiert: `npm` in aktueller Shell nicht verfügbar)
 
 ## UC3 — Program Intake (Ebene 4: DiagnosticProgramIntake)
 
@@ -215,6 +215,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: UC2-Trigger-Engine in der Follow-up-Runtime ergänzt (`>=12 Wochen`, Symptomcluster, chronische Signale, explizite Ärzt:innen-Anforderung) inkl. Übergangsregel auf `needs_review` und Unit-Tests (`lib/cre/followup/generator.ts`, `lib/cre/followup/__tests__/generator.test.ts`, `lib/cre/followup/schema.ts`, `lib/types/clinicalIntake.ts`).
 - 2026-02-19: UC2 Deep-Dive-Objective-Slots für komplexe Fälle ergänzt (nur bei aktivem UC2-Trigger), inkl. Gap-Answer-Mapping im Follow-up-Endpoint und Regressionstests (`lib/cre/followup/generator.ts`, `apps/rhythm-patient-ui/app/api/patient/followup/generate/route.ts`, `lib/cre/followup/__tests__/generator.test.ts`).
 - 2026-02-19: UC2-03 Clinician-Review auf Case-Checklist-Status `captured/missing/unclear/delegated_to_physician` erweitert, inkl. zentralisierter Mapping-Utility und erweiterter Requested-Item-Vorschläge (`apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `lib/cre/followup/clinicianChecklist.ts`).
+- 2026-02-19: UC2-03 serverseitig gehärtet: `GET /api/clinician/patient/[patientId]/clinical-intake/latest` liefert `case_checklist`-Snapshot (`entries`, `open_loop_count`, `status_counts`), Clinician-UI nutzt primär Server-Snapshot mit Fallback; API-Route-Test ergänzt (`apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/route.ts`, `apps/rhythm-studio-ui/lib/fetchClinician.ts`, `apps/rhythm-studio-ui/app/clinician/patient/[id]/AnamnesisSection.tsx`, `apps/rhythm-studio-ui/app/api/clinician/patient/[patientId]/clinical-intake/latest/__tests__/route.test.ts`).
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).

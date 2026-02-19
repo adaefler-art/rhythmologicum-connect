@@ -460,7 +460,18 @@ export const getClinicalIntakeLatest = (patientId: string) =>
   requestClinicianJson<{
     success?: boolean
     data?: {
-      intake?: Record<string, unknown> | null
+      intake?:
+        | (Record<string, unknown> & {
+            case_checklist?: {
+              entries?: Array<{
+                id?: string
+                label?: string
+                status?: 'captured' | 'missing' | 'unclear' | 'delegated_to_physician'
+              }>
+              open_loop_count?: number
+            }
+          })
+        | null
     }
   }>({
     endpoint: `/api/clinician/patient/${patientId}/clinical-intake/latest`,

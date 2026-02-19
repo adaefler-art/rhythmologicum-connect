@@ -16,6 +16,7 @@ import { setPolicyOverride } from '@/lib/cre/safety/overridePersistence'
 import { getCorrelationId } from '@/lib/telemetry/correlationId'
 import type { PolicyOverride, SafetyEvaluation } from '@/lib/types/clinicalIntake'
 import type { Json } from '@/lib/types/supabase'
+import { extractFollowupObjectiveReviewItems } from '@/lib/cre/followup/clinicianChecklist'
 
 type RouteContext = {
   params: Promise<{ patientId: string }>
@@ -33,6 +34,41 @@ type IntakeRecord = {
   created_at: string
   updated_at: string
   organization_id?: string | null
+}
+
+type CaseChecklistStatus = 'captured' | 'missing' | 'unclear' | 'delegated_to_physician'
+
+type CaseChecklistSnapshot = {
+  entries: Array<{
+    id: string
+    label: string
+    status: CaseChecklistStatus
+  }>
+  open_loop_count: number
+  status_counts: Record<CaseChecklistStatus, number>
+}
+
+const buildCaseChecklistSnapshot = (
+  structuredData: Record<string, unknown> | null,
+): CaseChecklistSnapshot => {
+  const entries = extractFollowupObjectiveReviewItems(structuredData)
+  const statusCounts: Record<CaseChecklistStatus, number> = {
+    captured: 0,
+    missing: 0,
+    unclear: 0,
+    delegated_to_physician: 0,
+  }
+
+  entries.forEach((entry) => {
+    statusCounts[entry.status] += 1
+  })
+
+  return {
+    entries,
+    open_loop_count:
+      statusCounts.missing + statusCounts.unclear + statusCounts.delegated_to_physician,
+    status_counts: statusCounts,
+  }
 }
 
 const mapIntake = (intake: IntakeRecord | null) =>
@@ -303,6 +339,7 @@ export async function GET(_request: Request, context: RouteContext) {
           ...intakeRecord.structured_data,
           safety,
         },
+        case_checklist: buildCaseChecklistSnapshot(intakeRecord.structured_data),
         policy_override: intakeRecord.policy_override ?? null,
       }
     }
