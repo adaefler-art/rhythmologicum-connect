@@ -198,7 +198,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect zu `/patient/support` ergänzt [Commit: `ee4c9aaf`].
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert) [Commit: `6ee7c54e`].
 - 2026-02-19: UC1 Safety-E2E auf alle 4 Routen erweitert (`NOTRUF`, `NOTAUFNAHME`, `DRINGENDER_TERMIN`, `STANDARD_INTAKE`) und VisitPreparation-Kurzakte in `GET /api/patient/intake/latest` integriert [Commit: `f2aa1557`].
-- 2026-02-19: Offene manuelle UC1/NV2-NV5 Nachholtests aus alter Checklist konsolidiert (Runbook) und zusätzlicher API-Autotest für `GET /api/patient/intake/latest` ergänzt.
+- 2026-02-19: Offene manuelle UC1/NV2-NV5 Nachholtests aus alter Checklist konsolidiert (Runbook) und zusätzlicher API-Autotest für `GET /api/patient/intake/latest` ergänzt [Commit: `cb7d2d35`].
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
