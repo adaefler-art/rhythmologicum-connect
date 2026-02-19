@@ -22,6 +22,80 @@ import {
 } from '@/lib/logging/logger'
 import { withIdempotency } from '@/lib/api/idempotency'
 import { loadFunnelVersionWithClient } from '@/lib/funnels/loadFunnelVersion'
+import { UC1_SAFETY_ROUTE, type Uc1SafetyRoute } from '@/lib/api/contracts/triage'
+
+type ValidateStepRequestBody = {
+  triageSafetyRoute?: string
+}
+
+type SafetyGatePayload = {
+  route: Uc1SafetyRoute
+  blocked: boolean
+  nextAction: 'SHOW_ESCALATION' | 'CONTINUE_INTAKE'
+  message: string
+}
+
+function isUc1SafetyRoute(value: string | undefined): value is Uc1SafetyRoute {
+  if (!value) {
+    return false
+  }
+
+  return Object.values(UC1_SAFETY_ROUTE).includes(value as Uc1SafetyRoute)
+}
+
+async function parseValidateRequestBody(request: NextRequest): Promise<ValidateStepRequestBody> {
+  try {
+    const body = await request.json()
+    if (!body || typeof body !== 'object') {
+      return {}
+    }
+
+    return {
+      triageSafetyRoute:
+        typeof (body as { triageSafetyRoute?: unknown }).triageSafetyRoute === 'string'
+          ? (body as { triageSafetyRoute: string }).triageSafetyRoute
+          : undefined,
+    }
+  } catch {
+    return {}
+  }
+}
+
+function buildSafetyGatePayload(route: Uc1SafetyRoute): SafetyGatePayload {
+  if (route === UC1_SAFETY_ROUTE.NOTRUF) {
+    return {
+      route,
+      blocked: true,
+      nextAction: 'SHOW_ESCALATION',
+      message: 'Akute Notfallhinweise erkannt. Bitte sofort Notruf kontaktieren.',
+    }
+  }
+
+  if (route === UC1_SAFETY_ROUTE.NOTAUFNAHME) {
+    return {
+      route,
+      blocked: true,
+      nextAction: 'SHOW_ESCALATION',
+      message: 'Dringende Vorstellung in der Notaufnahme empfohlen.',
+    }
+  }
+
+  if (route === UC1_SAFETY_ROUTE.DRINGENDER_TERMIN) {
+    return {
+      route,
+      blocked: false,
+      nextAction: 'CONTINUE_INTAKE',
+      message: 'Bitte zeitnahen ärztlichen Termin einplanen.',
+    }
+  }
+
+  return {
+    route,
+    blocked: false,
+    nextAction: 'CONTINUE_INTAKE',
+    message: 'Standard-Intake kann fortgesetzt werden.',
+  }
+}
 
 /**
  * B5/B8: Validate a step and determine next step
@@ -56,6 +130,11 @@ async function handleValidateStep(
     if (!slug || !assessmentId || !stepId) {
       return missingFieldsResponse('Fehlende Parameter.')
     }
+
+    const requestBody = await parseValidateRequestBody(request)
+    const triageSafetyRoute = isUc1SafetyRoute(requestBody.triageSafetyRoute)
+      ? requestBody.triageSafetyRoute
+      : null
 
     const supabase = await createServerSupabaseClient()
 
@@ -166,6 +245,18 @@ async function handleValidateStep(
       return internalErrorResponse(stepValidation.error!.message)
     }
 
+    if (triageSafetyRoute) {
+      const safetyGate = buildSafetyGatePayload(triageSafetyRoute)
+      if (safetyGate.blocked) {
+        return successResponse({
+          isValid: true,
+          missingQuestions: [],
+          nextStep: null,
+          safetyGate,
+        })
+      }
+    }
+
     const validationResult = await validateRequiredQuestions(assessmentId, stepId)
 
     if (!validationResult.isValid) {
@@ -240,6 +331,7 @@ async function handleValidateStep(
       isValid: true,
       missingQuestions: [],
       nextStep,
+      safetyGate: triageSafetyRoute ? buildSafetyGatePayload(triageSafetyRoute) : undefined,
     })
   } catch (error) {
     logDatabaseError(

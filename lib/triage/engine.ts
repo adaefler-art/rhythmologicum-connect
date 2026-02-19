@@ -16,9 +16,20 @@ import type {
   TriageTier,
   TriageNextAction,
   RedFlagType,
+  Uc1SafetyRoute,
 } from '@/lib/api/contracts/triage'
-import { TRIAGE_TIER, TRIAGE_NEXT_ACTION, TRIAGE_SCHEMA_VERSION } from '@/lib/api/contracts/triage'
-import { hasAnyRedFlag, detectClinicalRedFlags } from './redFlagCatalog'
+import {
+  TRIAGE_TIER,
+  TRIAGE_NEXT_ACTION,
+  TRIAGE_SCHEMA_VERSION,
+  UC1_SAFETY_ROUTE,
+} from '@/lib/api/contracts/triage'
+import {
+  CLINICAL_RED_FLAG,
+  hasAnyRedFlag,
+  detectClinicalRedFlags,
+  type ClinicalRedFlag,
+} from './redFlagCatalog'
 
 /**
  * Ruleset version for governance and auditing
@@ -99,6 +110,23 @@ const INFO_KEYWORDS = [
   'can you explain',
   'information about',
   'tell me about',
+] as const
+
+/**
+ * Urgent (but not emergency) markers for physician appointment routing
+ */
+const URGENT_APPOINTMENT_KEYWORDS = [
+  'dringend',
+  'heute noch',
+  'sofort termin',
+  'schnell termin',
+  'zeitnah',
+  'akut',
+  'stark verschlechtert',
+  'rasch schlechter',
+  'urgent',
+  'same day',
+  'asap',
 ] as const
 
 /**
@@ -209,6 +237,48 @@ export function determineNextAction(
   return TRIAGE_NEXT_ACTION.START_FUNNEL_A
 }
 
+function hasAnyUrgentAppointmentKeyword(normalizedInput: string): boolean {
+  return URGENT_APPOINTMENT_KEYWORDS.some((keyword) => normalizedInput.includes(keyword))
+}
+
+/**
+ * Determine PAT-v2 UC1 safety route
+ *
+ * Priority:
+ * 1) Critical emergency flags -> NOTRUF
+ * 2) Other escalations -> NOTAUFNAHME
+ * 3) Urgent non-emergency markers -> DRINGENDER_TERMIN
+ * 4) Default -> STANDARD_INTAKE
+ */
+export function determineSafetyRoute(
+  tier: TriageTier,
+  normalizedInput: string,
+  clinicalRedFlags: ClinicalRedFlag[],
+): Uc1SafetyRoute {
+  if (tier === TRIAGE_TIER.ESCALATE) {
+    const criticalNotrufFlags = new Set<ClinicalRedFlag>([
+      CLINICAL_RED_FLAG.SUICIDAL_IDEATION,
+      CLINICAL_RED_FLAG.ACUTE_NEUROLOGICAL,
+      CLINICAL_RED_FLAG.SEVERE_DYSPNEA,
+      CLINICAL_RED_FLAG.SEVERE_UNCONTROLLED_SYMPTOMS,
+    ])
+
+    const hasCriticalNotrufFlag = clinicalRedFlags.some((flag) => criticalNotrufFlags.has(flag))
+
+    if (hasCriticalNotrufFlag) {
+      return UC1_SAFETY_ROUTE.NOTRUF
+    }
+
+    return UC1_SAFETY_ROUTE.NOTAUFNAHME
+  }
+
+  if (hasAnyUrgentAppointmentKeyword(normalizedInput)) {
+    return UC1_SAFETY_ROUTE.DRINGENDER_TERMIN
+  }
+
+  return UC1_SAFETY_ROUTE.STANDARD_INTAKE
+}
+
 /**
  * Generate deterministic rationale based on tier and flags
  * This is generic routing rationale, NOT medical diagnosis
@@ -252,6 +322,7 @@ export function runTriageEngine(input: TriageEngineInput): TriageResultV1 {
 
   // Step 2: Detect red flags (highest priority)
   const redFlags = detectRedFlagsInInput(normalizedInput)
+  const clinicalRedFlags = detectClinicalRedFlags(normalizedInput)
 
   // Step 3: Determine tier
   let tier: TriageTier
@@ -266,6 +337,8 @@ export function runTriageEngine(input: TriageEngineInput): TriageResultV1 {
   // Step 4: Determine next action (I72.6: considers assessment state)
   const nextAction = determineNextAction(tier, input.assessmentSummary)
 
+  const safetyRoute = determineSafetyRoute(tier, normalizedInput, clinicalRedFlags)
+
   // Step 5: Generate rationale
   const rationale = generateRationale(tier, redFlags)
 
@@ -275,6 +348,7 @@ export function runTriageEngine(input: TriageEngineInput): TriageResultV1 {
     nextAction,
     redFlags,
     rationale,
+    safetyRoute,
     version: TRIAGE_SCHEMA_VERSION,
     correlationId: input.correlationId,
   }

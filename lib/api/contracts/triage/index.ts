@@ -47,6 +47,20 @@ export const TRIAGE_NEXT_ACTION = {
 export type TriageNextAction = typeof TRIAGE_NEXT_ACTION[keyof typeof TRIAGE_NEXT_ACTION]
 
 /**
+ * PAT-v2 UC1 safety routing paths
+ *
+ * Deterministic output for Ultra-Rapid Triage (Ebene 1)
+ */
+export const UC1_SAFETY_ROUTE = {
+  NOTRUF: 'NOTRUF',
+  NOTAUFNAHME: 'NOTAUFNAHME',
+  DRINGENDER_TERMIN: 'DRINGENDER_TERMIN',
+  STANDARD_INTAKE: 'STANDARD_INTAKE',
+} as const
+
+export type Uc1SafetyRoute = typeof UC1_SAFETY_ROUTE[keyof typeof UC1_SAFETY_ROUTE]
+
+/**
  * Red flag allowlist - only these values are permitted
  * Based on existing escalation types in lib/types/escalation.ts
  */
@@ -181,6 +195,14 @@ export const TriageResultV1Schema = z.object({
       message: `Rationale must be ≤${TRIAGE_RATIONALE_MAX_LENGTH} chars or bullet list with max ${TRIAGE_RATIONALE_MAX_BULLETS} items`,
     }),
   confidenceBand: ConfidenceBandSchema,
+  safetyRoute: z
+    .enum([
+      UC1_SAFETY_ROUTE.NOTRUF,
+      UC1_SAFETY_ROUTE.NOTAUFNAHME,
+      UC1_SAFETY_ROUTE.DRINGENDER_TERMIN,
+      UC1_SAFETY_ROUTE.STANDARD_INTAKE,
+    ])
+    .optional(),
   version: z.literal(TRIAGE_SCHEMA_VERSION),
   correlationId: z.string().optional(),
 })

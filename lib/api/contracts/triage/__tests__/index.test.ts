@@ -11,6 +11,7 @@ import {
   TRIAGE_SCHEMA_VERSION,
   TRIAGE_TIER,
   TRIAGE_NEXT_ACTION,
+  UC1_SAFETY_ROUTE,
   RED_FLAG_ALLOWLIST,
   AGE_RANGE_BUCKET,
   TRIAGE_INPUT_MIN_LENGTH,
@@ -144,6 +145,7 @@ describe('Triage Contracts - E6.6.2', () => {
         nextAction: TRIAGE_NEXT_ACTION.START_FUNNEL_A,
         redFlags: ['report_risk_level'],
         rationale: 'Patient reports moderate stress levels. Assessment recommended.',
+        safetyRoute: UC1_SAFETY_ROUTE.STANDARD_INTAKE,
         confidenceBand: {
           value: 0.85,
           label: 'high',
@@ -208,6 +210,34 @@ describe('Triage Contracts - E6.6.2', () => {
         nextAction: 'INVALID_ACTION',
         redFlags: [],
         rationale: 'Test',
+        version: TRIAGE_SCHEMA_VERSION,
+      }
+
+      const result = TriageResultV1Schema.safeParse(invalidResult)
+      expect(result.success).toBe(false)
+    })
+
+    it('should validate result with valid safety route', () => {
+      const validResult = {
+        tier: TRIAGE_TIER.ASSESSMENT,
+        nextAction: TRIAGE_NEXT_ACTION.START_FUNNEL_A,
+        redFlags: [],
+        rationale: 'Structured assessment recommended.',
+        safetyRoute: UC1_SAFETY_ROUTE.DRINGENDER_TERMIN,
+        version: TRIAGE_SCHEMA_VERSION,
+      }
+
+      const result = TriageResultV1Schema.safeParse(validResult)
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject result with invalid safety route', () => {
+      const invalidResult = {
+        tier: TRIAGE_TIER.ASSESSMENT,
+        nextAction: TRIAGE_NEXT_ACTION.START_FUNNEL_A,
+        redFlags: [],
+        rationale: 'Structured assessment recommended.',
+        safetyRoute: 'INVALID_ROUTE',
         version: TRIAGE_SCHEMA_VERSION,
       }
 

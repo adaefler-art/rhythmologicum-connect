@@ -14,10 +14,11 @@ import {
   detectRedFlagsInInput,
   classifyTier,
   determineNextAction,
+  determineSafetyRoute,
   generateRationale,
   TRIAGE_RULESET_VERSION,
 } from '../engine'
-import { TRIAGE_TIER, TRIAGE_NEXT_ACTION } from '@/lib/api/contracts/triage'
+import { TRIAGE_TIER, TRIAGE_NEXT_ACTION, UC1_SAFETY_ROUTE } from '@/lib/api/contracts/triage'
 
 describe('Triage Engine v1 - E6.6.3', () => {
   // ============================================================
@@ -89,6 +90,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
     })
 
     it('should escalate for emergency keyword even with assessment keywords', () => {
@@ -102,6 +104,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags.length).toBeGreaterThan(0)
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
     })
 
     it('should always prioritize red flags over classification', () => {
@@ -115,6 +118,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
         const result = runTriageEngine({ inputText: text })
         expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
         expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
+        expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
       })
     })
 
@@ -129,6 +133,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
     })
 
     it('should escalate for clinical red flags from catalog (CHEST_PAIN)', () => {
@@ -142,6 +147,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTAUFNAHME)
     })
 
     it('should escalate for clinical red flags from catalog (SEVERE_DYSPNEA)', () => {
@@ -155,6 +161,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
     })
 
     it('should escalate for clinical red flags from catalog (SYNCOPE)', () => {
@@ -168,6 +175,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.tier).toBe(TRIAGE_TIER.ESCALATE)
       expect(result.nextAction).toBe(TRIAGE_NEXT_ACTION.SHOW_ESCALATION)
       expect(result.redFlags).toContain('answer_pattern')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTAUFNAHME)
     })
   })
 
@@ -188,6 +196,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.rationale).not.toContain('Diagnose')
       expect(result.rationale).not.toContain('diagnosis')
       expect(result.rationale).toContain('informativ')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.STANDARD_INTAKE)
     })
 
     it('should provide generic rationale for ASSESSMENT tier', () => {
@@ -202,6 +211,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.rationale).not.toContain('Diagnose')
       expect(result.rationale).not.toContain('diagnosis')
       expect(result.rationale).toContain('Fragebogen')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.STANDARD_INTAKE)
     })
 
     it('should provide generic rationale for ESCALATE tier', () => {
@@ -216,6 +226,7 @@ describe('Triage Engine v1 - E6.6.3', () => {
       expect(result.rationale).not.toContain('Diagnose')
       expect(result.rationale).not.toContain('diagnosis')
       expect(result.rationale).toContain('Notfall')
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.NOTRUF)
     })
   })
 
@@ -327,6 +338,15 @@ describe('Triage Engine v1 - E6.6.3', () => {
         expect(result.correlationId).toBe('test-123')
       })
     })
+
+    it('routes urgent non-emergency input to DRINGENDER_TERMIN', () => {
+      const result = runTriageEngine({
+        inputText: 'Ich brauche dringend heute noch einen Termin wegen starker Belastung',
+      })
+
+      expect(result.tier).toBe(TRIAGE_TIER.ASSESSMENT)
+      expect(result.safetyRoute).toBe(UC1_SAFETY_ROUTE.DRINGENDER_TERMIN)
+    })
   })
 
   // ============================================================
@@ -391,6 +411,13 @@ describe('Triage Engine v1 - E6.6.3', () => {
 
     it('should prioritize INFO over ASSESSMENT when both present', () => {
       expect(classifyTier('was ist stress und burnout')).toBe(TRIAGE_TIER.INFO)
+    })
+  })
+
+  describe('determineSafetyRoute', () => {
+    it('returns STANDARD_INTAKE for non-urgent informational route', () => {
+      const route = determineSafetyRoute(TRIAGE_TIER.INFO, 'was ist stress', [])
+      expect(route).toBe(UC1_SAFETY_ROUTE.STANDARD_INTAKE)
     })
   })
 

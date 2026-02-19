@@ -27,6 +27,8 @@ import {
 import { ChevronDown, ChevronUp } from '@/lib/ui/mobile-v2/icons'
 import QuestionRenderer from '@/lib/questionnaire/QuestionRenderer'
 import { isStepVisible } from '@/lib/questionnaire/conditionalLogic'
+import { getLastTriageResult } from '@/lib/triage/storage'
+import { UC1_SAFETY_ROUTE, type Uc1SafetyRoute } from '@/lib/api/contracts/triage'
 import type { FunnelQuestionnaireConfig, QuestionnaireStep, QuestionConfig, ConditionalLogic } from '@/lib/contracts/funnelManifest'
 import type { StartAssessmentResponseData, ResumeAssessmentResponseData } from '@/lib/api/contracts/patient'
 
@@ -66,6 +68,12 @@ interface ValidationResult {
     stepId: string
     title: string
     stepIndex: number
+  }
+  safetyGate?: {
+    route: Uc1SafetyRoute
+    blocked: boolean
+    nextAction: 'SHOW_ESCALATION' | 'CONTINUE_INTAKE'
+    message: string
   }
 }
 
@@ -248,11 +256,15 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     if (!runtime) return null
 
     try {
+      const triageResult = getLastTriageResult()
       const response = await fetch(
         `/api/funnels/${slug}/assessments/${runtime.assessmentId}/steps/${stepId}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            triageSafetyRoute: triageResult?.safetyRoute,
+          }),
         },
       )
 
@@ -378,6 +390,14 @@ export function FunnelRunner({ slug, mode = 'live', onComplete, onExit }: Funnel
     const validation = await validateStep(runtime.currentStepId)
     if (!validation) {
       setValidationErrors(['Validierung fehlgeschlagen. Bitte versuchen Sie es erneut.'])
+      setIsSubmitting(false)
+      return
+    }
+
+    if (validation.safetyGate?.blocked) {
+      const routeParam = encodeURIComponent(validation.safetyGate.route)
+      const messageParam = encodeURIComponent(validation.safetyGate.message)
+      router.push(`/patient/support?source=uc1_safety_gate&route=${routeParam}&message=${messageParam}`)
       setIsSubmitting(false)
       return
     }

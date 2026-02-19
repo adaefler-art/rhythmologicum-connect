@@ -1,13 +1,13 @@
 # Open Manual Gates — Daily View (NV2-NV5)
 
-Stand: 2026-02-18
+Stand: 2026-02-19
 Zweck: 1-Seiten-Übersicht für Daily/Weekly, nur verbleibende manuelle/operative Restschritte.
 
 ## 1) Aktueller Fokus
 
 - Ziel: v0.8 manuell/operativ abschließen, ohne weitere technische Scope-Erweiterung.
-- Primärfokus diese Woche: **UC1 End-to-End stabil** (inkl. Hybrid iOS Shell auf realem Device).
-- Quelle der Wahrheit: `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`
+- Primärfokus diese Woche: **UC1 Clinical Entry End-to-End stabil** (Safety+Visit, inkl. Hybrid iOS auf realem Device).
+- Quelle der Wahrheit: `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-19.md`
 
 ## 1b) UC1 E2E + Hybrid iOS Fokusspur
 
