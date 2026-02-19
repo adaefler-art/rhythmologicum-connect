@@ -273,15 +273,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private func extractStartWebView() -> WKWebView? {
         guard let startVC = startWebRootViewController else { return nil }
 
-        if let direct = startVC.value(forKey: "webView") as? WKWebView {
-            return direct
+        return findWKWebView(in: startVC)
+    }
+
+    private func findWKWebView(in controller: UIViewController?) -> WKWebView? {
+        guard let controller = controller else { return nil }
+
+        if let found = findWKWebView(in: controller.view) {
+            return found
         }
 
-        if let direct = startVC.value(forKey: "wkWebView") as? WKWebView {
-            return direct
+        for child in controller.children {
+            if let found = findWKWebView(in: child) {
+                return found
+            }
         }
 
-        return findWKWebView(in: startVC.view)
+        return nil
     }
 
     private func findWKWebView(in root: UIView?) -> WKWebView? {
