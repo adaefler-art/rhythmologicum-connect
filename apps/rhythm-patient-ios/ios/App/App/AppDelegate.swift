@@ -9,6 +9,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Design token: public/design-tokens.json -> colors.primary.600 (#0284c7)
+        let shellHeaderBlue = UIColor(red: 2.0 / 255.0, green: 132.0 / 255.0, blue: 199.0 / 255.0, alpha: 1.0)
+
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithOpaqueBackground()
+        navBarAppearance.backgroundColor = shellHeaderBlue
+        navBarAppearance.shadowColor = .clear
+        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let webRootViewController = storyboard.instantiateInitialViewController() ?? UIViewController()
         webRootViewController.title = "Start"
@@ -24,6 +34,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let startNavigationController = UINavigationController(rootViewController: webRootViewController)
         let chatNavigationController = UINavigationController(rootViewController: chatHostingController)
+
+        startNavigationController.navigationBar.standardAppearance = navBarAppearance
+        startNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
+        startNavigationController.navigationBar.compactAppearance = navBarAppearance
+        startNavigationController.navigationBar.tintColor = .white
+        startNavigationController.navigationBar.isTranslucent = false
+
+        chatNavigationController.navigationBar.standardAppearance = navBarAppearance
+        chatNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
+        chatNavigationController.navigationBar.compactAppearance = navBarAppearance
+        chatNavigationController.navigationBar.tintColor = .white
+        chatNavigationController.navigationBar.isTranslucent = false
 
         let tabBarController = UITabBarController()
         tabBarController.viewControllers = [startNavigationController, chatNavigationController]
