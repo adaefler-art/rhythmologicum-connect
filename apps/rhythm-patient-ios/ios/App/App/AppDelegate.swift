@@ -340,6 +340,18 @@ private struct NativeChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
+                        if viewModel.isLoading && viewModel.messages.isEmpty {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .padding(12)
+                                    .background(Color(UIColor.systemBackground).opacity(0.9))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                Spacer()
+                            }
+                            .padding(.top, 8)
+                        }
+
                         if viewModel.messages.isEmpty && !viewModel.isLoading {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("👋 Hallo! Ich bin PAT.")
@@ -365,6 +377,21 @@ private struct NativeChatView: View {
                             }
                             .id(message.id)
                         }
+
+                        if viewModel.isLoading && !viewModel.messages.isEmpty {
+                            HStack {
+                                HStack(spacing: 6) {
+                                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
+                                }
+                                .padding(10)
+                                .background(Color(UIColor.systemGray6))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                Spacer(minLength: 32)
+                            }
+                            .id("typing-indicator")
+                        }
                     }
                     .padding(16)
                 }
@@ -385,8 +412,7 @@ private struct NativeChatView: View {
             }
 
             HStack(spacing: 8) {
-                TextField("Nachricht schreiben...", text: $viewModel.inputText, axis: .vertical)
-                    .lineLimit(1...4)
+                TextField("Nachricht schreiben...", text: $viewModel.inputText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background(Color(UIColor.secondarySystemBackground))
@@ -418,28 +444,6 @@ private struct NativeChatView: View {
                 .padding(.bottom, 10)
         }
         .navigationBarTitle("Chat", displayMode: .inline)
-        .overlay(alignment: .center) {
-            if viewModel.isLoading && viewModel.messages.isEmpty {
-                ProgressView()
-                    .padding(12)
-                    .background(Color(UIColor.systemBackground).opacity(0.9))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            if viewModel.isLoading && !viewModel.messages.isEmpty {
-                HStack(spacing: 6) {
-                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
-                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
-                    Circle().fill(Color.gray.opacity(0.7)).frame(width: 6, height: 6)
-                }
-                .padding(10)
-                .background(Color(UIColor.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.leading, 16)
-                .padding(.bottom, 78)
-            }
-        }
         .onAppear {
             viewModel.bootstrapIfNeeded()
         }
