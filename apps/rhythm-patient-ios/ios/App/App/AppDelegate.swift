@@ -2,11 +2,21 @@ import UIKit
 import Capacitor
 import SwiftUI
 import Foundation
+import LocalAuthentication
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    private weak var startWebRootViewController: UIViewController?
+    private weak var tabBarControllerRef: UITabBarController?
+    private var sessionKeepAliveTimer: Timer?
+    private var isUnlockInProgress = false
+
+    private let biometricPreferenceKey = "ios_shell_biometric_unlock_enabled"
+    private let sessionKeepAliveInterval: TimeInterval = 240
+    private let shellBaseUrl = URL(string: "https://rhythm-patient.vercel.app")!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Design token: public/design-tokens.json -> colors.primary.600 (#0284c7)
@@ -21,6 +31,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let webRootViewController = storyboard.instantiateInitialViewController() ?? UIViewController()
+        startWebRootViewController = webRootViewController
         webRootViewController.title = "Start"
         webRootViewController.tabBarItem = UITabBarItem(title: "Start", image: UIImage(systemName: "house"), tag: 0)
 
@@ -32,8 +43,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatHostingController.title = "PAT Chat"
         chatHostingController.tabBarItem = UITabBarItem(title: "Chat", image: UIImage(systemName: "message"), tag: 1)
 
+        let accountView = ShellAccountView(
+            biometricEnabled: isBiometricUnlockEnabled(),
+            onBiometricToggle: { [weak self] enabled in
+                self?.setBiometricUnlockEnabled(enabled)
+            },
+            onReLogin: { [weak self] in
+                self?.navigateToLogin(clearSession: false)
+            },
+            onResetSession: { [weak self] in
+                self?.navigateToLogin(clearSession: true)
+            }
+        )
+        let accountHostingController = UIHostingController(rootView: accountView)
+        accountHostingController.title = "Konto"
+        accountHostingController.tabBarItem = UITabBarItem(title: "Konto", image: UIImage(systemName: "person.crop.circle"), tag: 2)
+
         let startNavigationController = UINavigationController(rootViewController: webRootViewController)
         let chatNavigationController = UINavigationController(rootViewController: chatHostingController)
+        let accountNavigationController = UINavigationController(rootViewController: accountHostingController)
 
         startNavigationController.navigationBar.standardAppearance = navBarAppearance
         startNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
@@ -47,14 +75,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         chatNavigationController.navigationBar.tintColor = .white
         chatNavigationController.navigationBar.isTranslucent = false
 
+        accountNavigationController.navigationBar.standardAppearance = navBarAppearance
+        accountNavigationController.navigationBar.scrollEdgeAppearance = navBarAppearance
+        accountNavigationController.navigationBar.compactAppearance = navBarAppearance
+        accountNavigationController.navigationBar.tintColor = .white
+        accountNavigationController.navigationBar.isTranslucent = false
+
         let tabBarController = UITabBarController()
-        tabBarController.viewControllers = [startNavigationController, chatNavigationController]
+        tabBarController.viewControllers = [startNavigationController, chatNavigationController, accountNavigationController]
         tabBarController.selectedIndex = 0
+        tabBarControllerRef = tabBarController
 
         let appWindow = UIWindow(frame: UIScreen.main.bounds)
         appWindow.rootViewController = tabBarController
         appWindow.makeKeyAndVisible()
         window = appWindow
+
+        DispatchQueue.main.async { [weak self] in
+            self?.startSessionKeepAlive()
+            self?.authenticateIfNeeded()
+        }
 
         return true
     }
@@ -62,6 +102,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
+        stopSessionKeepAlive()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
@@ -75,6 +116,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        startSessionKeepAlive()
+        authenticateIfNeeded()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
@@ -94,6 +137,206 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+    private func isBiometricUnlockEnabled() -> Bool {
+        if UserDefaults.standard.object(forKey: biometricPreferenceKey) == nil {
+            UserDefaults.standard.set(true, forKey: biometricPreferenceKey)
+            return true
+        }
+
+        return UserDefaults.standard.bool(forKey: biometricPreferenceKey)
+    }
+
+    private func setBiometricUnlockEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: biometricPreferenceKey)
+    }
+
+    private func authenticateIfNeeded() {
+        guard isBiometricUnlockEnabled(), !isUnlockInProgress else { return }
+        isUnlockInProgress = true
+
+        let context = LAContext()
+        context.localizedCancelTitle = "Später"
+
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+            isUnlockInProgress = false
+            return
+        }
+
+        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Rhythmologicum Connect entsperren") { [weak self] success, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isUnlockInProgress = false
+                if !success {
+                    self.presentBiometricRetryPrompt()
+                }
+            }
+        }
+    }
+
+    private func presentBiometricRetryPrompt() {
+        guard let root = window?.rootViewController else { return }
+
+        let alert = UIAlertController(
+            title: "Entsperrung erforderlich",
+            message: "Bitte entsperren Sie die App mit Face ID oder Gerätecode.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Erneut versuchen", style: .default, handler: { [weak self] _ in
+            self?.authenticateIfNeeded()
+        }))
+        alert.addAction(UIAlertAction(title: "Abbrechen", style: .cancel))
+
+        root.present(alert, animated: true)
+    }
+
+    private func startSessionKeepAlive() {
+        stopSessionKeepAlive()
+
+        sessionKeepAliveTimer = Timer.scheduledTimer(withTimeInterval: sessionKeepAliveInterval, repeats: true) { [weak self] _ in
+            self?.pingSessionKeepAlive()
+        }
+    }
+
+    private func stopSessionKeepAlive() {
+        sessionKeepAliveTimer?.invalidate()
+        sessionKeepAliveTimer = nil
+    }
+
+    private func pingSessionKeepAlive() {
+        var request = URLRequest(url: shellBaseUrl.appendingPathComponent("/api/patient/state"))
+        request.httpMethod = "GET"
+        request.httpShouldHandleCookies = true
+
+        if let cookies = HTTPCookieStorage.shared.cookies(for: shellBaseUrl), !cookies.isEmpty {
+            let headers = HTTPCookie.requestHeaderFields(with: cookies)
+            for (header, value) in headers {
+                request.setValue(value, forHTTPHeaderField: header)
+            }
+        }
+
+        URLSession.shared.dataTask(with: request).resume()
+    }
+
+    private func navigateToLogin(clearSession: Bool) {
+        let goToLogin = { [weak self] in
+            self?.tabBarControllerRef?.selectedIndex = 0
+            self?.loadWebPath("/patient")
+        }
+
+        if clearSession {
+            clearWebSessionData {
+                DispatchQueue.main.async {
+                    goToLogin()
+                }
+            }
+            return
+        }
+
+        goToLogin()
+    }
+
+    private func clearWebSessionData(completion: @escaping () -> Void) {
+        if let cookies = HTTPCookieStorage.shared.cookies {
+            for cookie in cookies {
+                HTTPCookieStorage.shared.deleteCookie(cookie)
+            }
+        }
+
+        let dataStore = WKWebsiteDataStore.default()
+        let allDataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
+        dataStore.fetchDataRecords(ofTypes: allDataTypes) { records in
+            dataStore.removeData(ofTypes: allDataTypes, for: records) {
+                completion()
+            }
+        }
+    }
+
+    private func loadWebPath(_ path: String) {
+        guard let webView = extractStartWebView() else { return }
+        let escapedPath = path.replacingOccurrences(of: "'", with: "\\'")
+        webView.evaluateJavaScript("window.location.assign('" + escapedPath + "')", completionHandler: nil)
+    }
+
+    private func extractStartWebView() -> WKWebView? {
+        guard let startVC = startWebRootViewController else { return nil }
+
+        if let direct = startVC.value(forKey: "webView") as? WKWebView {
+            return direct
+        }
+
+        if let direct = startVC.value(forKey: "wkWebView") as? WKWebView {
+            return direct
+        }
+
+        return findWKWebView(in: startVC.view)
+    }
+
+    private func findWKWebView(in root: UIView?) -> WKWebView? {
+        guard let root = root else { return nil }
+        if let webView = root as? WKWebView { return webView }
+        for child in root.subviews {
+            if let found = findWKWebView(in: child) {
+                return found
+            }
+        }
+        return nil
+    }
+
+}
+
+private struct ShellAccountView: View {
+    @State var biometricEnabled: Bool
+
+    let onBiometricToggle: (Bool) -> Void
+    let onReLogin: () -> Void
+    let onResetSession: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Anmeldung")
+                    .font(.headline)
+
+                Toggle(isOn: Binding(
+                    get: { biometricEnabled },
+                    set: { value in
+                        biometricEnabled = value
+                        onBiometricToggle(value)
+                    }
+                )) {
+                    Text("App mit Face ID/Code entsperren")
+                        .font(.body)
+                }
+
+                Button(action: onReLogin) {
+                    Text("Neu anmelden")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+
+                Button(action: onResetSession) {
+                    Text("Session zurücksetzen und Login öffnen")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(UIColor.systemGray5))
+                        .foregroundColor(.primary)
+                        .cornerRadius(10)
+                }
+
+                Text("Hinweis: Die Session bleibt im WebView persistent. Bei abgelaufener Session können Sie hier direkt erneut einloggen.")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+        }
+        .background(Color(UIColor.systemGroupedBackground))
+    }
 }
 
 private struct NativeChatConfig {
