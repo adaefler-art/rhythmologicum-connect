@@ -180,3 +180,11 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: Neue Checklist-Version auf Basis PAT Intake Architektur v2 erstellt.
 - 2026-02-19: Use-Cases auf klinische Readiness-Ebenen umgestellt (UC1/UC2/UC3 neu geschnitten).
 - 2026-02-19: Offene Liste konsolidiert in `übernehmen` vs `verwerfen/verschieben`.
+- 2026-02-19: UC1 Safety-Route in Runtime-Ende-zu-Ende verdrahtet (`validate` + `safetyGate` + Runner-Redirect) [Commit: `3935594b`].
+- 2026-02-19: Safety-Route-Propagation über Router-Query und Runner-Fallback ergänzt [Commit: `3d96dc9b`].
+- 2026-02-19: Patient Support Zielseite für Triage/Safety-Gate eingeführt (`/patient/support`) [Commit: `f5ba4d26`].
+- 2026-02-19: Shared Support-Helfer + Testabdeckung für Triage→Support-Flow ergänzt [Commit: `1997519f`].
+- 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect zu `/patient/support` ergänzt [Commit: `ee4c9aaf`].
+
+Pflegeregel (ab sofort verbindlich):
+- Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
