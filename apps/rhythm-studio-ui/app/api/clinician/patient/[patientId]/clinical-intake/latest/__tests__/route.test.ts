@@ -194,4 +194,116 @@ describe('GET /api/clinician/patient/[patientId]/clinical-intake/latest', () => 
       },
     })
   })
+
+  it('returns empty case_checklist snapshot when followup objectives are missing', async () => {
+    resolvePatientIds.mockResolvedValue({
+      patientProfileId: 'profile-2',
+      patientUserId: 'user-2',
+    })
+
+    createAdminSupabaseClient.mockReturnValue({})
+
+    const makeClinicalIntakeBuilder = () => {
+      let isCountQuery = false
+
+      const builder = {
+        select: jest.fn((_fields: string, options?: { head?: boolean }) => {
+          isCountQuery = Boolean(options?.head)
+          return builder
+        }),
+        eq: jest.fn(() => {
+          if (isCountQuery) {
+            return Promise.resolve({ count: 1 })
+          }
+          return builder
+        }),
+        order: jest.fn(() => {
+          return builder
+        }),
+        limit: jest.fn(() => {
+          return builder
+        }),
+        maybeSingle: jest.fn(async () => {
+          return {
+            data: {
+              id: 'intake-2',
+              status: 'active',
+              version_number: 1,
+              clinical_summary: 'Summary',
+              structured_data: {
+                status: 'draft',
+              },
+              policy_override: null,
+              trigger_reason: 'submitted',
+              last_updated_from_messages: [],
+              created_at: '2026-02-19T09:00:00.000Z',
+              updated_at: '2026-02-19T09:05:00.000Z',
+              organization_id: 'org-1',
+            },
+            error: null,
+          }
+        }),
+      }
+
+      return builder
+    }
+
+    createServerSupabaseClient.mockResolvedValue({
+      auth: {
+        getUser: jest.fn(async () => ({
+          data: {
+            user: {
+              id: 'admin-1',
+              app_metadata: { role: 'admin' },
+              user_metadata: {},
+            },
+          },
+          error: null,
+        })),
+      },
+      from: jest.fn((table: string) => {
+        if (table === 'clinical_intakes') {
+          return makeClinicalIntakeBuilder()
+        }
+
+        const fallbackBuilder = {
+          select: jest.fn(() => {
+            return fallbackBuilder
+          }),
+          eq: jest.fn(() => {
+            return fallbackBuilder
+          }),
+          maybeSingle: jest.fn(async () => ({ data: null, error: null })),
+        }
+
+        return {
+          ...fallbackBuilder,
+        }
+      }),
+    })
+
+    const request = new Request(
+      'http://localhost/api/clinician/patient/patient-2/clinical-intake/latest',
+      { method: 'GET' },
+    )
+
+    const response = await GET(request, {
+      params: Promise.resolve({ patientId: 'patient-2' }),
+    })
+
+    expect(response.status).toBe(200)
+
+    const json = await response.json()
+    expect(json.success).toBe(true)
+    expect(json.data?.intake?.case_checklist).toEqual({
+      entries: [],
+      open_loop_count: 0,
+      status_counts: {
+        captured: 0,
+        missing: 0,
+        unclear: 0,
+        delegated_to_physician: 0,
+      },
+    })
+  })
 })
