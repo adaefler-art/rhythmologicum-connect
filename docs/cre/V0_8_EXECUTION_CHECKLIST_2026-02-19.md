@@ -10,6 +10,7 @@ Referenzen:
 - `docs/cre/OPEN_MANUAL_GATES_DAILY_VIEW.md`
 - `docs/cre/V0_8_EXECUTION_CHECKLIST_2026-02-15.md`
 - `docs/cre/ROLLOUT_USE_CASE_PLAN_2026-02-17.md`
+- `docs/cre/UC1_MANUAL_TEST_CATCHUP_RUNBOOK_2026-02-19.md`
 
 Statuswerte:
 - [ ] offen
@@ -65,6 +66,10 @@ Arbeitspakete:
 	- [x] API `GET /api/patient/intake/latest` liefert `visit_preparation` mit
 	- [~] Integration in Staging/Client-UI verifizieren
 - [ ] UC1-04 iOS Session/Auth-Resilienz inkl. Relogin-Flow auf Device evidenziert
+- [~] UC1-06 Manuelle Nachholtests (Alt-Checklist/Docs) konsolidiert und nachgeführt
+	- [x] Nachhol-Runbook mit offenen Pflicht-Nachweisen erstellt
+	- [x] Automatisierbare Nachholpunkte um API-Test erweitert (`GET /api/patient/intake/latest` inkl. `visit_preparation`)
+	- [ ] Device-/Staging-Evidence gemäß Runbook ausführen und dokumentieren
 
 ## UC2 — Problem Clarification (Ebene 3: Problem-Focused Deep Dive)
 
@@ -193,6 +198,7 @@ Release nur wenn alle Punkte erfüllt sind:
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect zu `/patient/support` ergänzt [Commit: `ee4c9aaf`].
 - 2026-02-19: E2E-Szenario für blockenden Safety-Gate-Redirect `NOTAUFNAHME` ergänzt (UC1 Safety-Pfad erweitert) [Commit: `6ee7c54e`].
 - 2026-02-19: UC1 Safety-E2E auf alle 4 Routen erweitert (`NOTRUF`, `NOTAUFNAHME`, `DRINGENDER_TERMIN`, `STANDARD_INTAKE`) und VisitPreparation-Kurzakte in `GET /api/patient/intake/latest` integriert [Commit: `f2aa1557`].
+- 2026-02-19: Offene manuelle UC1/NV2-NV5 Nachholtests aus alter Checklist konsolidiert (Runbook) und zusätzlicher API-Autotest für `GET /api/patient/intake/latest` ergänzt.
 
 Pflegeregel (ab sofort verbindlich):
 - Jede umgesetzte Änderung mit v0.8-Impact wird direkt nach Implementierung im Change Log dieser Datei nachgetragen (Datum, kurzer Scope, optional Commit-ID).
